@@ -1,0 +1,7 @@
+{
+  "version": "vasm 1.9a / m68k backend 2.5f / mot syntax 3.16",
+  "source_url": "https://github.com/alfishe/vasm",
+  "download_url": "https://codeload.github.com/alfishe/vasm/tar.gz/refs/heads/master",
+  "source_tar_sha256": "504130cb9081661941b00aeab3478f4873d27462f4ffe54591df3ffa98faf3d4",
+  "build_command": "make CPU=m68k SYNTAX=mot -j4"
+}

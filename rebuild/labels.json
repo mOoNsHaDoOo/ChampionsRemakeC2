@@ -1,0 +1,446 @@
+[
+  {
+    "hunk": 0,
+    "offset": 0,
+    "label": "FN_program_entry",
+    "description": "program_entry"
+  },
+  {
+    "hunk": 1,
+    "offset": 88,
+    "label": "FN_main_entry",
+    "description": "main_entry"
+  },
+  {
+    "hunk": 1,
+    "offset": 102,
+    "label": "FN_select_volume_prefix",
+    "description": "select_volume_prefix"
+  },
+  {
+    "hunk": 15,
+    "offset": 406,
+    "label": "FN_runtime_start",
+    "description": "runtime_start"
+  },
+  {
+    "hunk": 15,
+    "offset": 830,
+    "label": "FN_runtime_cleanup",
+    "description": "runtime_cleanup"
+  },
+  {
+    "hunk": 24,
+    "offset": 42,
+    "label": "FN_build_NewScreen_OpenScreen",
+    "description": "build_NewScreen_OpenScreen"
+  },
+  {
+    "hunk": 25,
+    "offset": 40,
+    "label": "FN_build_NewWindow_OpenWindow",
+    "description": "build_NewWindow_OpenWindow"
+  },
+  {
+    "hunk": 10,
+    "offset": 2178,
+    "label": "FN_poll_IntuiMessages",
+    "description": "poll_IntuiMessages"
+  },
+  {
+    "hunk": 43,
+    "offset": 772,
+    "label": "FN_allocate_message_port",
+    "description": "allocate_message_port"
+  },
+  {
+    "hunk": 43,
+    "offset": 6416,
+    "label": "FN_sound_control_body",
+    "description": "sound_control_body"
+  },
+  {
+    "hunk": 94,
+    "offset": 6,
+    "label": "FN_audio_vblank_schedule_Cause",
+    "description": "audio_vblank_schedule_Cause"
+  },
+  {
+    "hunk": 94,
+    "offset": 22,
+    "label": "FN_audio_softinterrupt_worker",
+    "description": "audio_softinterrupt_worker"
+  },
+  {
+    "hunk": 49,
+    "offset": 1772,
+    "label": "FN_queued_blitter_callback",
+    "description": "queued_blitter_callback"
+  },
+  {
+    "hunk": 49,
+    "offset": 1922,
+    "label": "FN_queued_blitter_cleanup",
+    "description": "queued_blitter_cleanup"
+  },
+  {
+    "hunk": 64,
+    "offset": 342,
+    "label": "FN_ECL_0_EXIT",
+    "description": "ECL_0_EXIT"
+  },
+  {
+    "hunk": 64,
+    "offset": 514,
+    "label": "FN_ECL_1_GOTO",
+    "description": "ECL_1_GOTO"
+  },
+  {
+    "hunk": 64,
+    "offset": 564,
+    "label": "FN_ECL_2_GOSUB",
+    "description": "ECL_2_GOSUB"
+  },
+  {
+    "hunk": 64,
+    "offset": 600,
+    "label": "FN_ECL_3_COMPARE",
+    "description": "ECL_3_COMPARE"
+  },
+  {
+    "hunk": 64,
+    "offset": 774,
+    "label": "FN_ECL_4_ADD__5_SUBTRAT__6_DIVIDE__7_MULTIPLY",
+    "description": "ECL_4_ADD__5_SUBTRAT__6_DIVIDE__7_MULTIPLY"
+  },
+  {
+    "hunk": 64,
+    "offset": 1020,
+    "label": "FN_ECL_8_RANDOM",
+    "description": "ECL_8_RANDOM"
+  },
+  {
+    "hunk": 64,
+    "offset": 1128,
+    "label": "FN_ECL_9_SAVE",
+    "description": "ECL_9_SAVE"
+  },
+  {
+    "hunk": 64,
+    "offset": 1244,
+    "label": "FN_ECL_10_LOAD_CHARACTER",
+    "description": "ECL_10_LOAD_CHARACTER"
+  },
+  {
+    "hunk": 64,
+    "offset": 1696,
+    "label": "FN_ECL_11_LOAD_MONSTER",
+    "description": "ECL_11_LOAD_MONSTER"
+  },
+  {
+    "hunk": 64,
+    "offset": 1506,
+    "label": "FN_ECL_12_SETUP_MONSTER",
+    "description": "ECL_12_SETUP_MONSTER"
+  },
+  {
+    "hunk": 64,
+    "offset": 2750,
+    "label": "FN_ECL_13_APPROACH",
+    "description": "ECL_13_APPROACH"
+  },
+  {
+    "hunk": 64,
+    "offset": 2832,
+    "label": "FN_ECL_14_PICTURE",
+    "description": "ECL_14_PICTURE"
+  },
+  {
+    "hunk": 64,
+    "offset": 3170,
+    "label": "FN_ECL_15_INPUT_NUMBER",
+    "description": "ECL_15_INPUT_NUMBER"
+  },
+  {
+    "hunk": 64,
+    "offset": 3268,
+    "label": "FN_ECL_16_INPUT_STRING",
+    "description": "ECL_16_INPUT_STRING"
+  },
+  {
+    "hunk": 64,
+    "offset": 3402,
+    "label": "FN_ECL_17_PRINT__18_PRINTCLEAR",
+    "description": "ECL_17_PRINT__18_PRINTCLEAR"
+  },
+  {
+    "hunk": 64,
+    "offset": 3648,
+    "label": "FN_ECL_19_RETURN",
+    "description": "ECL_19_RETURN"
+  },
+  {
+    "hunk": 64,
+    "offset": 3740,
+    "label": "FN_ECL_20_COMPARE_AND",
+    "description": "ECL_20_COMPARE_AND"
+  },
+  {
+    "hunk": 64,
+    "offset": 5036,
+    "label": "FN_ECL_21_VERTICAL_MENU",
+    "description": "ECL_21_VERTICAL_MENU"
+  },
+  {
+    "hunk": 64,
+    "offset": 3888,
+    "label": "FN_ECL_22_IF__23_IF__24_IF__25_IF__26_IF__27_IF",
+    "description": "ECL_22_IF__23_IF__24_IF__25_IF__26_IF__27_IF"
+  },
+  {
+    "hunk": 64,
+    "offset": 5960,
+    "label": "FN_ECL_28_CLEARMONSTERS",
+    "description": "ECL_28_CLEARMONSTERS"
+  },
+  {
+    "hunk": 64,
+    "offset": 6076,
+    "label": "FN_ECL_29_PARTYSTRENGTH",
+    "description": "ECL_29_PARTYSTRENGTH"
+  },
+  {
+    "hunk": 12,
+    "offset": 506,
+    "label": "FN_ECL_30_CHECKPARTY",
+    "description": "ECL_30_CHECKPARTY"
+  },
+  {
+    "hunk": 64,
+    "offset": 3984,
+    "label": "FN_ECL_32_NEWECL",
+    "description": "ECL_32_NEWECL"
+  },
+  {
+    "hunk": 64,
+    "offset": 4100,
+    "label": "FN_ECL_33_LOAD_FILES__55_LOAD_PIECES",
+    "description": "ECL_33_LOAD_FILES__55_LOAD_PIECES"
+  },
+  {
+    "hunk": 12,
+    "offset": 1494,
+    "label": "FN_ECL_34_PARTY_SURPRISE",
+    "description": "ECL_34_PARTY_SURPRISE"
+  },
+  {
+    "hunk": 12,
+    "offset": 1672,
+    "label": "FN_ECL_35_SURPRISE",
+    "description": "ECL_35_SURPRISE"
+  },
+  {
+    "hunk": 12,
+    "offset": 1894,
+    "label": "FN_ECL_36_COMBAT",
+    "description": "ECL_36_COMBAT"
+  },
+  {
+    "hunk": 12,
+    "offset": 2840,
+    "label": "FN_ECL_37_ON_GOTO__38_ON_GOSUB",
+    "description": "ECL_37_ON_GOTO__38_ON_GOSUB"
+  },
+  {
+    "hunk": 12,
+    "offset": 3050,
+    "label": "FN_ECL_39_TREASURE",
+    "description": "ECL_39_TREASURE"
+  },
+  {
+    "hunk": 12,
+    "offset": 5320,
+    "label": "FN_ECL_40_ROB",
+    "description": "ECL_40_ROB"
+  },
+  {
+    "hunk": 12,
+    "offset": 5550,
+    "label": "FN_ECL_41_ENCOUNTER_MENU",
+    "description": "ECL_41_ENCOUNTER_MENU"
+  },
+  {
+    "hunk": 64,
+    "offset": 4810,
+    "label": "FN_ECL_42_GETTABLE",
+    "description": "ECL_42_GETTABLE"
+  },
+  {
+    "hunk": 64,
+    "offset": 5444,
+    "label": "FN_ECL_43_HORIZONTAL_MENU",
+    "description": "ECL_43_HORIZONTAL_MENU"
+  },
+  {
+    "hunk": 12,
+    "offset": 7646,
+    "label": "FN_ECL_44_PARLAY",
+    "description": "ECL_44_PARLAY"
+  },
+  {
+    "hunk": 12,
+    "offset": 9942,
+    "label": "FN_ECL_45_CALL",
+    "description": "ECL_45_CALL"
+  },
+  {
+    "hunk": 12,
+    "offset": 8040,
+    "label": "FN_ECL_46_DAMAGE",
+    "description": "ECL_46_DAMAGE"
+  },
+  {
+    "hunk": 64,
+    "offset": 4636,
+    "label": "FN_ECL_47_AND__48_OR",
+    "description": "ECL_47_AND__48_OR"
+  },
+  {
+    "hunk": 12,
+    "offset": 9048,
+    "label": "FN_ECL_49_SPRITE_OFF",
+    "description": "ECL_49_SPRITE_OFF"
+  },
+  {
+    "hunk": 12,
+    "offset": 7824,
+    "label": "FN_ECL_50_FIND_ITEM",
+    "description": "ECL_50_FIND_ITEM"
+  },
+  {
+    "hunk": 12,
+    "offset": 9174,
+    "label": "FN_ECL_51_PRINT_RETURN",
+    "description": "ECL_51_PRINT_RETURN"
+  },
+  {
+    "hunk": 12,
+    "offset": 9106,
+    "label": "FN_ECL_52_ECL_CLOCK",
+    "description": "ECL_52_ECL_CLOCK"
+  },
+  {
+    "hunk": 64,
+    "offset": 4934,
+    "label": "FN_ECL_53_SAVE_TABLE",
+    "description": "ECL_53_SAVE_TABLE"
+  },
+  {
+    "hunk": 12,
+    "offset": 9474,
+    "label": "FN_ECL_54_ADD_NPC",
+    "description": "ECL_54_ADD_NPC"
+  },
+  {
+    "hunk": 12,
+    "offset": 10662,
+    "label": "FN_ECL_56_PROGRAM",
+    "description": "ECL_56_PROGRAM"
+  },
+  {
+    "hunk": 12,
+    "offset": 9350,
+    "label": "FN_ECL_57_WHO",
+    "description": "ECL_57_WHO"
+  },
+  {
+    "hunk": 12,
+    "offset": 8012,
+    "label": "FN_ECL_58_DELAY",
+    "description": "ECL_58_DELAY"
+  },
+  {
+    "hunk": 12,
+    "offset": 9622,
+    "label": "FN_ECL_59_SPELL",
+    "description": "ECL_59_SPELL"
+  },
+  {
+    "hunk": 12,
+    "offset": 10926,
+    "label": "FN_ECL_60_PROTECTION",
+    "description": "ECL_60_PROTECTION"
+  },
+  {
+    "hunk": 12,
+    "offset": 9244,
+    "label": "FN_ECL_61_CLEAR_BOX",
+    "description": "ECL_61_CLEAR_BOX"
+  },
+  {
+    "hunk": 12,
+    "offset": 10942,
+    "label": "FN_ECL_62_DUMP",
+    "description": "ECL_62_DUMP"
+  },
+  {
+    "hunk": 12,
+    "offset": 10998,
+    "label": "FN_ECL_63_FIND_SPECIAL",
+    "description": "ECL_63_FIND_SPECIAL"
+  },
+  {
+    "hunk": 12,
+    "offset": 11108,
+    "label": "FN_ECL_64_DESTROY_ITEMS",
+    "description": "ECL_64_DESTROY_ITEMS"
+  },
+  {
+    "hunk": 12,
+    "offset": 11304,
+    "label": "FN_ECL_65_ADD_EP",
+    "description": "ECL_65_ADD_EP"
+  },
+  {
+    "hunk": 56,
+    "offset": 616,
+    "label": "FN_ECL_opcode_diagnostic_name",
+    "description": "ECL_opcode_diagnostic_name"
+  },
+  {
+    "hunk": 61,
+    "offset": 5744,
+    "label": "FN_ECL_read_operands",
+    "description": "ECL_read_operands"
+  },
+  {
+    "hunk": 61,
+    "offset": 16000,
+    "label": "FN_ECL_skip_instruction",
+    "description": "ECL_skip_instruction"
+  },
+  {
+    "hunk": 12,
+    "offset": 11762,
+    "label": "FN_ECL_execute_opcode",
+    "description": "ECL_execute_opcode"
+  },
+  {
+    "hunk": 28,
+    "offset": 3544,
+    "label": "FN_DAX_load_block",
+    "description": "DAX_load_block"
+  },
+  {
+    "hunk": 28,
+    "offset": 2524,
+    "label": "FN_DAX_decompress_RLE",
+    "description": "DAX_decompress_RLE"
+  },
+  {
+    "hunk": 66,
+    "offset": 8154,
+    "label": "FN_load_MON_CHA_to_runtime_character",
+    "description": "load_MON_CHA_to_runtime_character"
+  }
+]
