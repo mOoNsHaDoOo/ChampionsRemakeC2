@@ -173,16 +173,46 @@ void SetBPen(struct RastPort *rp, ULONG pen)
 
 /*
  * Riempie il rettangolo (estremi compresi) con FgPen, tagliato ai bordi
- * della bitmap; in COMPLEMENT inverte i bit dei piani.  Il contorno con
- * AOlPen (AREAOUTLINE) non e' emulato: il gioco lo usa con AOlPen uguale a
- * FgPen, che da' lo stesso risultato.
+ * della bitmap; in COMPLEMENT inverte i bit dei piani.  Con AREAOUTLINE
+ * (SetOPen) il bordo del rettangolo e' poi ridisegnato con AOlPen, come
+ * fa graphics.library: il segno del party sulla mappa all'aperto
+ * (H069+$0012, APen $E, OPen 0) e' un quadrato col bordo nero.
  */
+static void outline_pixel(struct BitMap *bm, LONG x, LONG y, UBYTE pen,
+                          UBYTE mode)
+{
+    int i;
+
+    for (i = 0; i < bm->Depth; ++i) {
+        UBYTE *plane = bm->Planes[i];
+        UBYTE *p;
+        UBYTE mask;
+
+        if (plane == NULL) {
+            continue;
+        }
+        p = plane + (size_t)y * bm->BytesPerRow + (x >> 3);
+        mask = (UBYTE)(0x80 >> (x & 7));
+        if (mode & COMPLEMENT) {
+            *p ^= mask;
+        } else if ((pen >> i) & 1) {
+            *p |= mask;
+        } else {
+            *p &= (UBYTE)~mask;
+        }
+    }
+}
+
 void RectFill(struct RastPort *rp, LONG xmin, LONG ymin, LONG xmax, LONG ymax)
 {
     struct BitMap *bm = rp->BitMap;
     LONG x;
     LONG y;
     int i;
+    LONG oxmin = xmin;
+    LONG oymin = ymin;
+    LONG oxmax = xmax;
+    LONG oymax = ymax;
 
     if (bm == NULL) {
         return;
@@ -218,6 +248,26 @@ void RectFill(struct RastPort *rp, LONG xmin, LONG ymin, LONG xmax, LONG ymax)
                 } else {
                     *p &= (UBYTE)~mask;
                 }
+            }
+        }
+    }
+    if ((rp->Flags & AREAOUTLINE) && xmin <= xmax && ymin <= ymax) {
+        UBYTE pen = (UBYTE)rp->AOlPen;
+
+        for (x = xmin; x <= xmax; ++x) {
+            if (oymin == ymin) {
+                outline_pixel(bm, x, ymin, pen, rp->DrawMode);
+            }
+            if (oymax == ymax && ymax != ymin) {
+                outline_pixel(bm, x, ymax, pen, rp->DrawMode);
+            }
+        }
+        for (y = ymin + 1; y < ymax; ++y) {
+            if (oxmin == xmin) {
+                outline_pixel(bm, xmin, y, pen, rp->DrawMode);
+            }
+            if (oxmax == xmax && xmax != xmin) {
+                outline_pixel(bm, xmax, y, pen, rp->DrawMode);
             }
         }
     }
