@@ -5,6 +5,13 @@
 
 u8 g_h020_0055;                 /* H020+$0055 */
 
+/*
+ * Runtime di I/O del compilatore Pascal, sostituito da stdio (nessuna
+ * funzione C corrispondente):
+ * PORT H020+$00C2: svuota il buffer di riga del runtime (via H020+$085A).
+ * PORT H020+$00F0: aggiunge un carattere al buffer di riga; pieno a $4F.
+ */
+
 /* PORT H020+$00BA */
 void h020_init(void)
 {

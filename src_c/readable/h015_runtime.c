@@ -7,6 +7,9 @@
  * continua nel chiamante.  In C la riga di comando e il messaggio del
  * Workbench li gestisce il runtime del compilatore (c.o di SAS/C): qui
  * restano l'apertura e la chiusura delle librerie.
+ * PORT H015+$0196 (Runtime_Start): sostituita dall'avvio del compilatore
+ * C; le librerie si aprono in h015_runtime_init.
+ * PORT H015+$033E (Runtime_Cleanup): vedi h015_runtime_exit.
  */
 #include <stdlib.h>
 

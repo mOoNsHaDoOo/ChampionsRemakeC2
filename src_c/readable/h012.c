@@ -41,6 +41,7 @@ void h012_init(void)
 {
 }
 
+/* PORT H012+$0186: trampolino (bra.w) verso H012+$2DF2, la routine qui sotto. */
 /*
  * PORT H012+$2DF2 (raggiunta da H012+$0186): esegue il comando ECL
  * $2493 col suo gestore (H064 o H012); i codici fuori tabella non fanno
@@ -48,7 +49,7 @@ void h012_init(void)
  */
 static void ecl_execute(void)
 {
-    switch (H005_B(0x2493)) {
+    switch (H005_B(0x2493)) { /* $2493: codice del comando ECL in esecuzione */
     case 0x00: ecl_exit(); break;
     case 0x01: ecl_goto(); break;
     case 0x02: ecl_gosub_cmd(); break;
@@ -114,15 +115,20 @@ static void ecl_execute(void)
  */
 void run_ecl(u16 addr)
 {
-    H005_SET_W(0x3DE8, addr);
-    H005_SET_W(0x3DEA, addr);
-    H064_B(0x0B) = 0;
+    H005_SET_W(0x3DE8, addr); /* $3DE8: (word) indirizzo d'inizio dell'esecuzione ECL corrente */
+    H005_SET_W(0x3DEA, addr); /* $3DEA: (word) PC logico del programma ECL (base $3500) */
+    H064_B(0x0B) = 0; /* H064_data+$B: flag fine esecuzione ECL (EXIT o NEWECL) */
+    /* H064_data+$B: flag fine esecuzione ECL (EXIT o NEWECL); $24D0: 1 party perduto o uscito:
+     * ferma ECL e ciclo dell'esplorazione */
     while (!H064_B(0x0B) && !H005_B(0x24D0)) {
+        /* $2494: codice del comando ECL precedente; $2493: codice del comando ECL in esecuzione */
         H005_B(0x2494) = H005_B(0x2493);
+        /* $2493: codice del comando ECL in esecuzione; $3DEA: (word) PC logico del programma ECL
+         * (base $3500) */
         H005_B(0x2493) = g_ecl_buffer[(u16)(H005_W(0x3DEA) - 0x3500)];
         ecl_execute();
     }
-    H064_B(0x0B) = 0;
+    H064_B(0x0B) = 0; /* H064_data+$B: flag fine esecuzione ECL (EXIT o NEWECL) */
 }
 
 #define OPD(i)  operand_desc(i)
@@ -132,10 +138,10 @@ void run_ecl(u16 addr)
 /* Audio prima e dopo le scene: H043 (non portato, i comandi si saltano). */
 static void scene_audio(void)
 {
-    if (H005_B(0x24A7)) {
+    if (H005_B(0x24A7)) { /* $24A7: uso: 1 ferma l'audio attorno alle scene, 0 riavvia H043 */
         h043_190e(0xFF);
     }
-    if (!H005_B(0x24A7)) {
+    if (!H005_B(0x24A7)) { /* $24A7: uso: 1 ferma l'audio attorno alle scene, 0 riavvia H043 */
         h043_0584();
     }
 }
@@ -220,7 +226,7 @@ void ecl_party_survey(void)
     case 1:
         for (; p != NULL; p = p->next) {
             ++count;
-            v = p->b[0x1B];
+            v = p->b[0x1B]; /* pg+$1B: carisma corrente */
             if (v > f.max) f.max = v;
             if (v < f.min) f.min = v;
             total = (u16)(total + v);
@@ -232,6 +238,7 @@ void ecl_party_survey(void)
         k = (u16)(addr - 0xA4);
         for (; p != NULL; p = p->next) {
             ++count;
+            /* pg+$DF: tipo di non morto (0 = no); base -1 abilita' da ladro +$E0..+$E7 */
             v = p->b[0xE0 + k - 1];
             if (v < f.min) f.min = v;
             if (v > f.max) f.max = v;
@@ -243,7 +250,7 @@ void ecl_party_survey(void)
     case 0x0A:
         for (; p != NULL; p = p->next) {
             ++count;
-            v = p->b[0x1A9];
+            v = p->b[0x1A9]; /* pg+$1A9: movimento corrente (armatura e ingombro) */
             if (v < f.min) f.min = v;
             if (v > f.max) f.max = v;
             total = (u16)(total + v);
@@ -265,6 +272,7 @@ void ecl_party_has_class(void)
 
     read_operands(2);
     for (p = g_party_head; p != NULL; p = p->next) {
+        /* pg+$5C: classe o combinazione di classi (0..16, nomi H005+$4D84) */
         if (p->b[0x5C] == 4 || p->b[0x5C] == 0x0A) {
             r = 1;
         }
@@ -320,23 +328,28 @@ void ecl_combat(void)
     u8 redraw = 1;                      /* -$7(a5) */
     u16 steps;                          /* -$2(a5) */
 
-    H005_B(0x24AE) = 0;
-    save = H005_B(0x24B0);
-    H005_B(0x24B0) = 0;
-    H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1);
-    if (!H005_B(0x24B6)) {
+    H005_B(0x24AE) = 0; /* $24AE: 1 con un'immagine grande a tutto schermo: niente elenco party */
+    save = H005_B(0x24B0); /* $24B0: modo Move dell'esplorazione: clic sulla vista come movimento */
+    H005_B(0x24B0) = 0; /* $24B0: modo Move dell'esplorazione: clic sulla vista come movimento */
+    H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1); /* $3DEA: (word) PC logico del programma ECL (base $3500) */
+    if (!H005_B(0x24B6)) { /* $24B6: 1 se ci sono mostri caricati (LOAD MONSTER) per COMBAT */
+        /* B+$6D8: (word) 1: il prossimo COMBAT apre il negozio (poi 0) */
         if (COK_GET16(g_state_b + 0x6D8) == 1) {
+            /* B+$6D8: (word) 1: il prossimo COMBAT apre il negozio (poi 0) */
             COK_PUT16(g_state_b + 0x6D8, 0);
             scene_audio();
             shop();
+            /* A+$1CC: (word) 1 area 3D (mappa 16x16), 0 mappa all'aperto */
             if (COK_GET16(g_state_a + 0x1CC) == 0) {
                 redraw = 0;
             }
             scene_audio();
+        /* B+$5C4: (word) 1: il prossimo COMBAT apre il tempio (poi 0) */
         } else if (COK_GET16(g_state_b + 0x5C4) == 1) {
-            COK_PUT16(g_state_b + 0x5C4, 0);
+            COK_PUT16(g_state_b + 0x5C4, 0); /* B+$5C4: (word) 1: il prossimo COMBAT apre il tempio (poi 0) */
             scene_audio();
             temple();
+            /* A+$1CC: (word) 1 area 3D (mappa 16x16), 0 mappa all'aperto */
             if (COK_GET16(g_state_a + 0x1CC) == 0) {
                 redraw = 0;
             }
@@ -348,20 +361,25 @@ void ecl_combat(void)
         }
     } else {
         scene_audio();
+        /* $281C: (word) x del party sulla mappa dell'area 16x16; $281E: (word) y del party sulla
+         * mappa dell'area 16x16 */
         steps = free_steps((s16)H005_W(0x281C), (s16)H005_W(0x281E),
-                           H005_B(0x2820));
+                           H005_B(0x2820)); /* $2820: direzione del party (0 nord, 2 est, 4 sud, 6 ovest) */
+        /* B+$582: (word) distanza attuale dei nemici, limitata alle caselle libere */
         if (steps < COK_GET16(g_state_b + 0x582)) {
+            /* B+$582: (word) distanza attuale dei nemici, limitata alle caselle libere */
             COK_PUT16(g_state_b + 0x582, steps);
         }
         release_picture_set();
         combat_main_loop();
-        if (H005_B(0x24A7)) {
+        if (H005_B(0x24A7)) { /* $24A7: uso: 1 ferma l'audio attorno alle scene, 0 riavvia H043 */
             h043_190e(0xFF);
         }
         combat_end();
-        if (!H005_B(0x24A7)) {
+        if (!H005_B(0x24A7)) { /* $24A7: uso: 1 ferma l'audio attorno alle scene, 0 riavvia H043 */
             h043_0584();
         }
+        /* A+$1CC: (word) 1 area 3D (mappa 16x16), 0 mappa all'aperto */
         if (COK_GET16(g_state_a + 0x1CC) == 0) {
             scene_audio();
             load_big_picture(0x79);
@@ -369,19 +387,25 @@ void ecl_combat(void)
             scene_audio();
         }
     }
+    /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento); A+$1CC: (word) 1
+     * area 3D (mappa 16x16), 0 mappa all'aperto */
     H005_B(0x3DE3) = (u8)(COK_GET16(g_state_a + 0x1CC) ? 4 : 3);
-    COK_PUT16(g_state_b + 0x594,
+    COK_PUT16(g_state_b + 0x594, /* B+$594: (word) bit 0 modo search, bit 1 Look in corso */
               mask_byte((u8)COK_GET16(g_state_b + 0x594), 1));
+    /* $2378: flag: sprite dell'evento gia' mostrato (flags[0], 2 byte con +$2379) */
     h029_fill_bytes(1, &H005_B(0x2378), 2, 0);
-    H005_B(0x24BD) = 0;
+    H005_B(0x24BD) = 0; /* $24BD: 1 se l'immagine/ritratto dell'evento e' a schermo */
     if (redraw) {
         redraw_game_screen();
+        /* A+$1CC: (word) 1 area 3D (mappa 16x16), 0 mappa all'aperto; $24D0: 1 party perduto o
+         * uscito: ferma ECL e ciclo dell'esplorazione */
         if (COK_GET16(g_state_a + 0x1CC) == 0 && !H005_B(0x24D0) &&
+            /* A+$270: (word) area citta': niente ridisegno vista ne' EXIT dal campo */
             COK_GET16(g_state_a + 0x270) == 0) {
             h069_draw_marker();
         }
     }
-    H005_B(0x24B0) = save;
+    H005_B(0x24B0) = save; /* $24B0: modo Move dell'esplorazione: clic sulla vista come movimento */
 }
 
 /* PORT H012+$0B18 (comandi $25 ON GOTO e $26 ON GOSUB). */
@@ -395,12 +419,12 @@ void ecl_on_goto(void)
     read_operands(2);
     v = eval_operand(1);
     n = eval_operand(2);
-    H005_SET_W(0x3DEA, H005_W(0x3DEA) - 1);
+    H005_SET_W(0x3DEA, H005_W(0x3DEA) - 1); /* $3DEA: (word) PC logico del programma ECL (base $3500) */
     read_operands(n);
     while (i < n && !done) {
         if (v == i) {
-            if (H005_B(0x2493) == 0x25) {
-                H005_SET_W(0x3DEA, ADDR(i + 1));
+            if (H005_B(0x2493) == 0x25) { /* $2493: codice del comando ECL in esecuzione */
+                H005_SET_W(0x3DEA, ADDR(i + 1)); /* $3DEA: (word) PC logico del programma ECL (base $3500) */
             } else {
                 ecl_gosub((u16)(i + 1));
             }
@@ -531,13 +555,17 @@ void ecl_treasure(void)
 
     read_operands(8);
     for (i = 0; i <= 6; ++i) {
+        /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
         H005_SET_L(0x2A1E + i * 4, (u32)eval_operand((u16)(i + 1)));
     }
     k = eval_operand(8);
     if (k < 0x80) {
+        /* $246E: disco dei dati / gruppo di risorse corrente (G_RESOURCE_GROUP) */
         format_number(1, num, (s32)H005_B(0x246E), 0, 0x0A, 1, '0');
-        strcpy(TEXT64, "ITEM");
+        strcpy(TEXT64, "ITEM"); /* H064_data+$C: buffer di testo TEXT64 ($50 byte): nomi file e messaggi */
+        /* H064_data+$C: buffer di testo TEXT64 ($50 byte): nomi file e messaggi */
         h026_append(0x50, TEXT64, 1, num);
+        /* H064_data+$C: buffer di testo TEXT64 ($50 byte): nomi file e messaggi */
         dax_load_block(0x50, TEXT64, 4, ".DAX", k, &size, &buf);
         if (size == 0) {
             show_message_wait(0x0F, 0, 0x18, "Unable to find item file");
@@ -549,23 +577,31 @@ void ecl_treasure(void)
             len = buf[pos];
             exec_copy_mem(buf + pos + 1, it.b, 0x28);
             it.b[len] = 0;
+            /* ogg+$2A: flag intestazione: copiato in header della voce di menu */
             it.b[0x2A] = buf[pos + 0x29];
             it.next = NULL;
+            /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
             it.b[0x30] = buf[pos + 0x2E];
             for (j = 1; j <= 3; ++j) {
+                /* ogg+$31: base tabella 3 parole del nome +$32..+$34 (indice 1..3) */
                 it.b[0x32 + j - 1] = buf[pos + 0x2E + j];
             }
+            /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno */
             COK_PUT16(&it.b[0x36], (u16)h031_signed_byte(buf[pos + 0x32]));
+            /* ogg+$38: (word) secondo bonus, sommato a CH +$18A quando pronto */
             COK_PUT16(&it.b[0x38], (u16)h031_signed_byte(buf[pos + 0x33]));
-            it.b[0x3A] = buf[pos + 0x34];
+            it.b[0x3A] = buf[pos + 0x34]; /* ogg+$3A: flag oggetto pronto all'uso (Ready) */
+            /* ogg+$3B: bit 0..2 parole del nome non identificate; bit 5/4 pergamena cl.1/2 */
             it.b[0x3B] = buf[pos + 0x35];
-            it.b[0x3C] = buf[pos + 0x36];
-            exec_copy_mem(buf + pos + 0x37, &it.b[0x3E], 2);
-            h031_swap_word(&it.b[0x3E]);
-            it.b[0x40] = buf[pos + 0x39];
+            it.b[0x3C] = buf[pos + 0x36]; /* ogg+$3C: flag oggetto maledetto */
+            exec_copy_mem(buf + pos + 0x37, &it.b[0x3E], 2); /* ogg+$3E: (word) peso unitario dell'oggetto */
+            h031_swap_word(&it.b[0x3E]); /* ogg+$3E: (word) peso unitario dell'oggetto */
+            it.b[0x40] = buf[pos + 0x39]; /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
+            /* ogg+$42: (word) valore in monete (Sell offre la meta') */
             exec_copy_mem(buf + pos + 0x3A, &it.b[0x42], 2);
-            h031_swap_word(&it.b[0x42]);
+            h031_swap_word(&it.b[0x42]); /* ogg+$42: (word) valore in monete (Sell offre la meta') */
             for (j = 1; j <= 3; ++j) {
+                /* ogg+$43: base tabella 3 incantesimi +$44..+$46 (indice 1..3, bit7=da scrivere) */
                 it.b[0x44 + j - 1] = buf[pos + 0x3B + j];
             }
             pos = (u16)(pos + 0x3F);
@@ -613,17 +649,18 @@ void ecl_encounter(void)
     u8 clear;                           /* -$418(a5) */
     u8 animate;                         /* -$419(a5) */
 
-    H005_B(0x24B4) = 1;
-    H005_B(0x24B9) = 0;
-    H005_B(0x24CE) = 1;
+    H005_B(0x24B4) = 1; /* $24B4: 1 durante il comando ENCOUNTER */
+    H005_B(0x24B9) = 0; /* $24B9: 0 dopo testo ECL; il menu comandi pulisce righe $11..$16 e mette 1 */
+    H005_B(0x24CE) = 1; /* $24CE: 1: pausa per carattere nella scrittura del testo */
     party_speed_range(&maxv, &minv);
     title[0] = '\0';
     title[1] = '\0';
     text[0] = '\0';
     read_operands(0x0E);
-    H005_B(0x2491) = (u8)eval_operand(1);
+    H005_B(0x2491) = (u8)eval_operand(1); /* $2491: sprite SPRIT dell'incontro (ENCOUNTER/APPROACH) */
+    /* B+$580: (word) distanza richiesta dell'incontro (ENCOUNTER/APPROACH) */
     COK_PUT16(g_state_b + 0x580, eval_operand(2));
-    H005_B(0x2490) = (u8)eval_operand(3);
+    H005_B(0x2490) = (u8)eval_operand(3); /* $2490: ritratto PIC dell'incontro (ENCOUNTER/APPROACH) */
     dst = ADDR(4);
     for (i = 0; i <= 4; ++i) {
         act[i] = eval_operand((u16)(i + 5));
@@ -633,21 +670,39 @@ void ecl_encounter(void)
     }
     near_speed = eval_operand(0x0D);
     flee_speed = eval_operand(0x0E);
+    /* $281C: (word) x del party sulla mappa dell'area 16x16; $281E: (word) y del party sulla mappa
+     * dell'area 16x16; $2820: direzione del party (0 nord, 2 est, 4 sud, 6 ovest); B+$582: (word)
+     * distanza attuale dei nemici, limitata alle caselle libere */
     COK_PUT16(g_state_b + 0x582,
               free_steps((s16)H005_W(0x281C), (s16)H005_W(0x281E),
                          H005_B(0x2820)));
+    /* B+$580: (word) distanza richiesta dell'incontro (ENCOUNTER/APPROACH); B+$582: (word) distanza
+     * attuale dei nemici, limitata alle caselle libere */
     if (COK_GET16(g_state_b + 0x580) < COK_GET16(g_state_b + 0x582)) {
+        /* B+$580: (word) distanza richiesta dell'incontro (ENCOUNTER/APPROACH); B+$582: (word)
+         * distanza attuale dei nemici, limitata alle caselle libere */
         COK_PUT16(g_state_b + 0x582, COK_GET16(g_state_b + 0x580));
     }
+    /* $2491: sprite SPRIT dell'incontro (ENCOUNTER/APPROACH); $2490: ritratto PIC dell'incontro
+     * (ENCOUNTER/APPROACH) */
     show_event_picture(H005_B(0x2491), H005_B(0x2490),
+                       /* B+$582: (word) distanza attuale dei nemici, limitata alle caselle libere;
+                        * $2378: flag: sprite dell'evento gia' mostrato (flags[0], 2 byte con
+                        * +$2379) */
                        (u8)COK_GET16(g_state_b + 0x582), &H005_B(0x2378));
     do {
+        /* $24BD: 1 se l'immagine/ritratto dell'evento e' a schermo; $24BC: 1 se l'immagine
+         * dell'evento e' animabile (non testa+corpo) */
         animate = (u8)(H005_B(0x24BD) && H005_B(0x24BC) &&
+                       /* A+$1CC: (word) 1 area 3D (mappa 16x16), 0 mappa all'aperto; $2486: id
+                        * della sequenza caricata in $27BC (nome a $27A6), $FF nessuna */
                        COK_GET16(g_state_a + 0x1CC) && H005_B(0x2486) != 9);
+        /* A+$1CC: (word) 1 area 3D (mappa 16x16), 0 mappa all'aperto */
         clear = (u8)(COK_GET16(g_state_a + 0x1CC) != 0);
         again = 0;
-        H005_SET_W(0x334E, 1);
-        H005_SET_W(0x334C, 0x11);
+        H005_SET_W(0x334E, 1); /* $334E: (word) cursore del testo: colonna */
+        H005_SET_W(0x334C, 0x11); /* $334C: (word) cursore del testo: riga */
+        /* B+$582: (word) distanza attuale dei nemici, limitata alle caselle libere */
         switch (COK_GET16(g_state_b + 0x582)) {
         case 0:
             k = 1;
@@ -679,14 +734,18 @@ void ecl_encounter(void)
             clear = 0;
         }
         word_wrap_text(1, 0x11, 0x26, 0x16, 0x0A, 0, clear, 0xFF, text);
+        /* B+$582: (word) distanza attuale dei nemici, limitata alle caselle libere */
         if (COK_GET16(g_state_b + 0x582) == 0 ||
+            /* A+$1CC: (word) 1 area 3D (mappa 16x16), 0 mappa all'aperto */
             COK_GET16(g_state_a + 0x1CC) == 0) {
             strcpy(opts, "~COMBAT ~WAIT ~FLEE ~PARLAY");
         } else {
             strcpy(opts, "~COMBAT ~WAIT ~FLEE ~ADVANCE");
         }
         choice = ecl_menu(1, title, 0x28, opts, 0x0D, 0x0A, 0x0F, 0, animate);
+        /* B+$582: (word) distanza attuale dei nemici, limitata alle caselle libere */
         if ((COK_GET16(g_state_b + 0x582) == 0 ||
+             /* A+$1CC: (word) 1 area 3D (mappa 16x16), 0 mappa all'aperto */
              COK_GET16(g_state_a + 0x1CC) == 0) && choice == 3) {
             choice = 4;
         }
@@ -711,11 +770,19 @@ void ecl_encounter(void)
                 break;
             case 2: write_var(dst, 2); break;
             case 3:
+                /* B+$582: (word) distanza attuale dei nemici, limitata alle caselle libere */
                 if (COK_GET16(g_state_b + 0x582) != 0) {
+                    /* B+$582: (word) distanza attuale dei nemici, limitata alle caselle libere */
                     COK_PUT16(g_state_b + 0x582,
                               COK_GET16(g_state_b + 0x582) - 1);
+                    /* $2491: sprite SPRIT dell'incontro (ENCOUNTER/APPROACH); $2490: ritratto PIC
+                     * dell'incontro (ENCOUNTER/APPROACH) */
                     show_event_picture(H005_B(0x2491), H005_B(0x2490),
+                                       /* B+$582: (word) distanza attuale dei nemici, limitata alle
+                                        * caselle libere */
                                        (u8)COK_GET16(g_state_b + 0x582),
+                                       /* $2378: flag: sprite dell'evento gia' mostrato (flags[0], 2
+                                        * byte con +$2379) */
                                        &H005_B(0x2378));
                 } else {
                     word_wrap_text(1, 0x11, 0x26, 0x16, 0x0A, 0, 1, 0x10,
@@ -724,13 +791,21 @@ void ecl_encounter(void)
                 }
                 break;
             case 4:
+                /* B+$582: (word) distanza attuale dei nemici, limitata alle caselle libere */
                 if (COK_GET16(g_state_b + 0x582) == 0) {
                     write_var(dst, 3);
                 } else {
+                    /* B+$582: (word) distanza attuale dei nemici, limitata alle caselle libere */
                     COK_PUT16(g_state_b + 0x582,
                               COK_GET16(g_state_b + 0x582) - 1);
+                    /* $2491: sprite SPRIT dell'incontro (ENCOUNTER/APPROACH); $2490: ritratto PIC
+                     * dell'incontro (ENCOUNTER/APPROACH) */
                     show_event_picture(H005_B(0x2491), H005_B(0x2490),
+                                       /* B+$582: (word) distanza attuale dei nemici, limitata alle
+                                        * caselle libere */
                                        (u8)COK_GET16(g_state_b + 0x582),
+                                       /* $2378: flag: sprite dell'evento gia' mostrato (flags[0], 2
+                                        * byte con +$2379) */
                                        &H005_B(0x2378));
                     again = 1;
                 }
@@ -743,8 +818,8 @@ void ecl_encounter(void)
                 write_var(dst, 1);
             } else if (choice <= 4) {
                 write_var(dst, 0);
-                H005_SET_W(0x334E, 1);
-                H005_SET_W(0x334C, 0x11);
+                H005_SET_W(0x334E, 1); /* $334E: (word) cursore del testo: colonna */
+                H005_SET_W(0x334C, 0x11); /* $334C: (word) cursore del testo: riga */
                 word_wrap_text(1, 0x11, 0x26, 0x16, 0x0A, 0, 1, 0x12,
                                "The monsters flee.");
             }
@@ -754,11 +829,19 @@ void ecl_encounter(void)
             case 0: write_var(dst, 1); break;
             case 1:
             case 3:
+                /* B+$582: (word) distanza attuale dei nemici, limitata alle caselle libere */
                 if (COK_GET16(g_state_b + 0x582) != 0) {
+                    /* B+$582: (word) distanza attuale dei nemici, limitata alle caselle libere */
                     COK_PUT16(g_state_b + 0x582,
                               COK_GET16(g_state_b + 0x582) - 1);
+                    /* $2491: sprite SPRIT dell'incontro (ENCOUNTER/APPROACH); $2490: ritratto PIC
+                     * dell'incontro (ENCOUNTER/APPROACH) */
                     show_event_picture(H005_B(0x2491), H005_B(0x2490),
+                                       /* B+$582: (word) distanza attuale dei nemici, limitata alle
+                                        * caselle libere */
                                        (u8)COK_GET16(g_state_b + 0x582),
+                                       /* $2378: flag: sprite dell'evento gia' mostrato (flags[0], 2
+                                        * byte con +$2379) */
                                        &H005_B(0x2378));
                 } else {
                     word_wrap_text(1, 0x11, 0x26, 0x16, 0x0A, 0, 1, 0x10,
@@ -768,13 +851,21 @@ void ecl_encounter(void)
                 break;
             case 2: write_var(dst, 2); break;
             case 4:
+                /* B+$582: (word) distanza attuale dei nemici, limitata alle caselle libere */
                 if (COK_GET16(g_state_b + 0x582) == 0) {
                     write_var(dst, 3);
                 } else {
+                    /* B+$582: (word) distanza attuale dei nemici, limitata alle caselle libere */
                     COK_PUT16(g_state_b + 0x582,
                               COK_GET16(g_state_b + 0x582) - 1);
+                    /* $2491: sprite SPRIT dell'incontro (ENCOUNTER/APPROACH); $2490: ritratto PIC
+                     * dell'incontro (ENCOUNTER/APPROACH) */
                     show_event_picture(H005_B(0x2491), H005_B(0x2490),
+                                       /* B+$582: (word) distanza attuale dei nemici, limitata alle
+                                        * caselle libere */
                                        (u8)COK_GET16(g_state_b + 0x582),
+                                       /* $2378: flag: sprite dell'evento gia' mostrato (flags[0], 2
+                                        * byte con +$2379) */
                                        &H005_B(0x2378));
                     again = 1;
                 }
@@ -788,13 +879,21 @@ void ecl_encounter(void)
             case 1:
             case 3:
             case 4:
+                /* B+$582: (word) distanza attuale dei nemici, limitata alle caselle libere */
                 if (COK_GET16(g_state_b + 0x582) == 0) {
                     write_var(dst, 3);
                 } else {
+                    /* B+$582: (word) distanza attuale dei nemici, limitata alle caselle libere */
                     COK_PUT16(g_state_b + 0x582,
                               COK_GET16(g_state_b + 0x582) - 1);
+                    /* $2491: sprite SPRIT dell'incontro (ENCOUNTER/APPROACH); $2490: ritratto PIC
+                     * dell'incontro (ENCOUNTER/APPROACH) */
                     show_event_picture(H005_B(0x2491), H005_B(0x2490),
+                                       /* B+$582: (word) distanza attuale dei nemici, limitata alle
+                                        * caselle libere */
                                        (u8)COK_GET16(g_state_b + 0x582),
+                                       /* $2378: flag: sprite dell'evento gia' mostrato (flags[0], 2
+                                        * byte con +$2379) */
                                        &H005_B(0x2378));
                     again = 1;
                 }
@@ -808,8 +907,8 @@ void ecl_encounter(void)
         }
     } while (again);
     clear_message_line();
-    H005_B(0x24CE) = 0;
-    H005_B(0x24B4) = 0;
+    H005_B(0x24CE) = 0; /* $24CE: 1: pausa per carattere nella scrittura del testo */
+    H005_B(0x24B4) = 0; /* $24B4: 1 durante il comando ENCOUNTER */
 }
 
 /*
@@ -842,13 +941,15 @@ void ecl_find_item(void)
 
     read_operands(1);
     t = eval_operand(1);
+    /* $237E: risultati dell'ultimo confronto ECL, 6 byte: +0 uguale */
     h029_fill_bytes(5, &H005_B(0x237E), 6, 0);
-    H005_B(0x237F) = 1;
+    H005_B(0x237F) = 1; /* $237F: risultati del confronto +1: diverso */
     for (p = g_party_head; p != NULL && !found; p = p->next) {
         for (it = p->items; it != NULL && !found; it = it->next) {
+            /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
             if (it->b[0x30] == t) {
-                H005_B(0x237E) = 1;
-                H005_B(0x237F) = 0;
+                H005_B(0x237E) = 1; /* $237E: risultati dell'ultimo confronto ECL, 6 byte: +0 uguale */
+                H005_B(0x237F) = 0; /* $237F: risultati del confronto +1: diverso */
                 found = 1;
             }
         }
@@ -858,7 +959,7 @@ void ecl_find_item(void)
 /* PORT H012+$1F4C (comando $3A, DELAY): pausa. */
 void ecl_delay(void)
 {
-    H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1);
+    H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1); /* $3DEA: (word) PC logico del programma ECL (base $3500) */
     message_delay();
 }
 
@@ -931,6 +1032,7 @@ void ecl_damage(void)
     if (mask_byte((u8)flags, 0x40)) {
         group = 1;
     } else {
+        /* B+$67C: (word) numero dei membri del party (max 8) */
         victim = roll_dice(1, COK_GET16(g_state_b + 0x67C));
     }
     if (mask_byte((u8)flags, 0x80)) {
@@ -966,6 +1068,7 @@ void ecl_damage(void)
     } else {
         for (i = 1; i <= flags; ++i) {
             p = g_party_head;
+            /* B+$67C: (word) numero dei membri del party (max 8) */
             victim = roll_dice(1, COK_GET16(g_state_b + 0x67C));
             for (j = 1; j < victim; ++j) {
                 p = p->next;
@@ -976,16 +1079,16 @@ void ecl_damage(void)
             dmg = (u16)(roll_dice(n, sides) + bonus);
         }
     }
-    H005_B(0x24D0) = 1;
+    H005_B(0x24D0) = 1; /* $24D0: 1 party perduto o uscito: ferma ECL e ciclo dell'esplorazione */
     for (p = g_party_head; p != NULL; p = p->next) {
-        if (p->b[0x198]) {
-            H005_B(0x24D0) = 0;
+        if (p->b[0x198]) { /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
+            H005_B(0x24D0) = 0; /* $24D0: 1 party perduto o uscito: ferma ECL e ciclo dell'esplorazione */
         }
     }
-    if (H005_B(0x24D0)) {
+    if (H005_B(0x24D0)) { /* $24D0: 1 party perduto o uscito: ferma ECL e ciclo dell'esplorazione */
         draw_screen_frame(1);
-        H005_SET_W(0x334E, 2);
-        H005_SET_W(0x334C, 2);
+        H005_SET_W(0x334E, 2); /* $334E: (word) cursore del testo: colonna */
+        H005_SET_W(0x334C, 2); /* $334C: (word) cursore del testo: riga */
         word_wrap_text(1, 1, 0x26, 0x16, 0x0A, 0, 1, 0x1B,
                        "The entire party is killed!");
         dos_delay(0x96);
@@ -997,12 +1100,12 @@ void ecl_damage(void)
 /* PORT H012+$2358 (comando $31): chiude le immagini dell'evento. */
 void ecl_clear_picture(void)
 {
-    H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1);
-    if (H005_B(0x24BA)) {
-        H005_B(0x24E1) = 1;
+    H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1); /* $3DEA: (word) PC logico del programma ECL (base $3500) */
+    if (H005_B(0x24BA)) { /* $24BA: 1 se lo sprite SPRIT dell'evento e' a schermo */
+        H005_B(0x24E1) = 1; /* $24E1: 1: immagine/vista dell'esplorazione da ridisegnare */
         refresh_view();
-        H005_B(0x24BA) = 0;
-        H005_B(0x24BD) = 0;
+        H005_B(0x24BA) = 0; /* $24BA: 1 se lo sprite SPRIT dell'evento e' a schermo */
+        H005_B(0x24BD) = 0; /* $24BD: 1 se l'immagine/ritratto dell'evento e' a schermo */
     }
 }
 
@@ -1021,31 +1124,31 @@ void ecl_advance_time(void)
 /* PORT H012+$23D6 (comando $33): a capo nella finestra di testo. */
 void ecl_new_line(void)
 {
-    H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1);
-    if (H005_B(0x24BE)) {
-        H005_SET_W(0x334E, 1);
-        H005_SET_W(0x334C, H005_W(0x334C) + 1);
-        H005_B(0x24BE) = 0;
+    H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1); /* $3DEA: (word) PC logico del programma ECL (base $3500) */
+    if (H005_B(0x24BE)) { /* $24BE: uso: azzerato all'avvio e dal comando ECL $33 (a capo) */
+        H005_SET_W(0x334E, 1); /* $334E: (word) cursore del testo: colonna */
+        H005_SET_W(0x334C, H005_W(0x334C) + 1); /* $334C: (word) cursore del testo: riga */
+        H005_B(0x24BE) = 0; /* $24BE: uso: azzerato all'avvio e dal comando ECL $33 (a capo) */
     } else {
-        H005_SET_W(0x334E, 1);
-        H005_SET_W(0x334C, H005_W(0x334C) + 1);
+        H005_SET_W(0x334E, 1); /* $334E: (word) cursore del testo: colonna */
+        H005_SET_W(0x334C, H005_W(0x334C) + 1); /* $334C: (word) cursore del testo: riga */
     }
 }
 
 /* PORT H012+$241C (comando $3D): ridisegna la schermata dell'esplorazione. */
 void ecl_redraw_screen(void)
 {
-    H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1);
-    H005_B(0x24AE) = 0;
+    H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1); /* $3DEA: (word) PC logico del programma ECL (base $3500) */
+    H005_B(0x24AE) = 0; /* $24AE: 1 con un'immagine grande a tutto schermo: niente elenco party */
     draw_explore_frame();
     draw_party(g_current_char);
     draw_status_line();
-    if (!H005_B(0x24D7)) {
+    if (!H005_B(0x24D7)) { /* $24D7: 1 se e' stata scelta la dimostrazione (Demo) */
         show_picture(3, 3, 1, g_pic_rec_27c2);
     }
     draw_status_line();
-    H005_B(0x24B2) = 0;
-    H005_B(0x24BF) = 1;
+    H005_B(0x24B2) = 0; /* $24B2: 1: cornice dell'esplorazione da ridisegnare (dopo LOAD FILES) */
+    H005_B(0x24BF) = 1; /* $24BF: uso: 1 dopo il comando ECL $3D (ridisegno), 0 dopo EXIT */
 }
 
 /* PORT H012+$2486 (comando $39): sceglie il personaggio corrente col testo dato. */
@@ -1054,14 +1157,14 @@ void ecl_who(void)
     u8 save;                            /* -$53(a5) */
     char prompt[0x51];                  /* -$52(a5) */
 
-    save = H005_B(0x24B0);
-    H005_B(0x24B0) = 0;
-    H005_B(0x24B3) = 0;
+    save = H005_B(0x24B0); /* $24B0: modo Move dell'esplorazione: clic sulla vista come movimento */
+    H005_B(0x24B0) = 0; /* $24B0: modo Move dell'esplorazione: clic sulla vista come movimento */
+    H005_B(0x24B3) = 0; /* $24B3: 1 se LOAD CHARACTER non ha trovato il personaggio (var $1F = 0) */
     read_operands(1);
     clear_text_cells(1, 0x11, 0x26, 0x16);
     h026_copy(0x50, prompt, 0xFF, ecl_string(1));
     choose_party_member(0x50, prompt, 0, 0, &g_current_char);
-    H005_B(0x24B0) = save;
+    H005_B(0x24B0) = save; /* $24B0: modo Move dell'esplorazione: clic sulla vista come movimento */
 }
 
 /* PORT H012+$2502 (comando $36): aggiunge un PNG (H066+$276E) con l'IA data. */
@@ -1073,7 +1176,7 @@ void ecl_add_npc(void)
     add_npc(eval_operand(1));
     v = (u16)(eval_operand(2) >> 1);
     v = or_byte((u8)v, 0x80);
-    g_current_char->b[0xEC] = (u8)v;
+    g_current_char->b[0xEC] = (u8)v; /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
     recompute_stats(g_current_char);
     draw_party(g_current_char);
 }
@@ -1102,6 +1205,7 @@ void ecl_find_spell(void)
     while (p != NULL && !found) {
         k = 1;
         do {
+            /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
             if (p->b[0x1E + k] == s) {
                 found = 1;
             } else if (k <= 0x39) {
@@ -1135,7 +1239,7 @@ void ecl_nop_3c(void)
 /* PORT H012+$2ABE (comando $3E): il personaggio corrente lascia il party. */
 void ecl_remove_character(void)
 {
-    H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1);
+    H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1); /* $3DEA: (word) PC logico del programma ECL (base $3500) */
     remove_from_party(0, 1);
     g_h064_saved_char = g_current_char;
     draw_party(g_current_char);
@@ -1146,12 +1250,13 @@ void ecl_has_effect(void)
 {
     CokEffect *e;                       /* -$4(a5) */
 
+    /* $237E: risultati dell'ultimo confronto ECL, 6 byte: +0 uguale */
     h029_fill_bytes(5, &H005_B(0x237E), 6, 0);
     read_operands(1);
     if (find_effect(g_current_char, eval_operand(1), &e)) {
-        H005_B(0x237E) = 1;
+        H005_B(0x237E) = 1; /* $237E: risultati dell'ultimo confronto ECL, 6 byte: +0 uguale */
     } else {
-        H005_B(0x237F) = 1;
+        H005_B(0x237F) = 1; /* $237F: risultati del confronto +1: diverso */
     }
 }
 
@@ -1171,9 +1276,10 @@ void ecl_remove_items(void)
         it = p->items;
         while (it != NULL) {
             next = it->next;
+            /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
             if (it->b[0x30] == t) {
                 g_current_char = p;
-                if (it->b[0x3A]) {
+                if (it->b[0x3A]) { /* ogg+$3A: flag oggetto pronto all'uso (Ready) */
                     ready_item(it);
                 }
                 delete_item(p, it);
@@ -1198,7 +1304,7 @@ static void give_xp(Character *p, u16 xp)
     u16 share;                          /* -$E(a5) */
 
     for (i = 0; i <= 7; ++i) {
-        if (p->b[0xFE + i] > 0) {
+        if (p->b[0xFE + i] > 0) { /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
             ++classes;
         }
     }
@@ -1206,8 +1312,8 @@ static void give_xp(Character *p, u16 xp)
         return;
     }
     share = (u16)(xp / classes);
-    if (p->b[0x198]) {
-        COK_PUT32(&p->b[0x11E], COK_GET32(&p->b[0x11E]) + share);
+    if (p->b[0x198]) { /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
+        COK_PUT32(&p->b[0x11E], COK_GET32(&p->b[0x11E]) + share); /* pg+$11E: punti esperienza (long) */
     }
 }
 
@@ -1220,8 +1326,8 @@ void ecl_experience(void)
     read_operands(2);
     xp = eval_operand(2);
     all = (u8)eval_operand(1);
-    H005_SET_W(0x334C, 0x11);
-    H005_SET_W(0x334E, 1);
+    H005_SET_W(0x334C, 0x11); /* $334C: (word) cursore del testo: riga */
+    H005_SET_W(0x334E, 1); /* $334E: (word) cursore del testo: colonna */
     if (all) {
         word_wrap_text(1, 0x11, 0x26, 0x16, 0x0A, 0, 1, 0x2B,
                        "Congratulations the party gains experience!");
@@ -1231,9 +1337,13 @@ void ecl_experience(void)
         }
     } else {
         p = g_current_char;
+        /* H064_data+$C: buffer di testo TEXT64 ($50 byte): nomi file e messaggi */
         strcpy(TEXT64, "Congratulations ");
+        /* H064_data+$C: buffer di testo TEXT64 ($50 byte): nomi file e messaggi */
         h026_append(0x50, TEXT64, 0x0F, (const char *)p->b);
+        /* H064_data+$C: buffer di testo TEXT64 ($50 byte): nomi file e messaggi */
         h026_append(0x50, TEXT64, 0x12, " gains experience!");
+        /* H064_data+$C: buffer di testo TEXT64 ($50 byte): nomi file e messaggi */
         word_wrap_text(1, 0x11, 0x26, 0x16, 0x0A, 0, 1, 0x50, TEXT64);
         message_delay();
         give_xp(p, xp);
@@ -1248,7 +1358,7 @@ void ecl_experience(void)
 void ecl_special(void)
 {
     u16 w;                              /* -$2(a5) */
-    u8 *set = &g_h005[0x27BC];
+    u8 *set = &g_h005[0x27BC]; /* $27BC: (word) fotogrammi della sequenza caricata (max 6), base del blocco */
 
     read_operands(1);
     w = make_word(operand_lo(1), operand_hi(1));
@@ -1259,20 +1369,33 @@ void ecl_special(void)
     else if (w == 0xC01E) w = 4;
     switch (w) {
     case 0:
+        /* $2822: flag della casella del party (map_flags); bit 7 sceglie il cielo; $281C: (word) x
+         * del party sulla mappa dell'area 16x16; $281E: (word) y del party sulla mappa dell'area
+         * 16x16 */
         H005_B(0x2822) = map_flags((s16)H005_W(0x281C), (s16)H005_W(0x281E));
+        /* $24BD: 1 se l'immagine/ritratto dell'evento e' a schermo; $24BA: 1 se lo sprite SPRIT
+         * dell'evento e' a schermo; $24B8: 1 se $247E/$247F cambiati: vista da ridisegnare */
         if (H005_B(0x24BD) || H005_B(0x24BA) || H005_B(0x24B8) ||
+            /* $24B7: 1 se posizione/direzione del party cambiate: vista da ridisegnare; $24B5: 1 se
+             * ECL ha scritto le var $FD/$FE: vista da ridisegnare */
             H005_B(0x24B7) || H005_B(0x24B5)) {
+            /* $2378: flag: sprite dell'evento gia' mostrato (flags[0], 2 byte con +$2379) */
             h029_fill_bytes(1, &H005_B(0x2378), 2, 0);
-            H005_B(0x24E1) = 1;
+            H005_B(0x24E1) = 1; /* $24E1: 1: immagine/vista dell'esplorazione da ridisegnare */
             refresh_view();
             draw_status_line();
-            H005_B(0x24B5) = 0;
-            H005_B(0x24B8) = 0;
-            H005_B(0x24B7) = 0;
-            H005_B(0x24BD) = 0;
-            H005_B(0x24BA) = 0;
+            H005_B(0x24B5) = 0; /* $24B5: 1 se ECL ha scritto le var $FD/$FE: vista da ridisegnare */
+            H005_B(0x24B8) = 0; /* $24B8: 1 se $247E/$247F cambiati: vista da ridisegnare */
+            H005_B(0x24B7) = 0; /* $24B7: 1 se posizione/direzione del party cambiate: vista da ridisegnare */
+            H005_B(0x24BD) = 0; /* $24BD: 1 se l'immagine/ritratto dell'evento e' a schermo */
+            H005_B(0x24BA) = 0; /* $24BA: 1 se lo sprite SPRIT dell'evento e' a schermo */
+            /* $2821: muro davanti al party (map_wall sulla casella e direzione); $281C: (word) x
+             * del party sulla mappa dell'area 16x16 */
             H005_B(0x2821) = (u8)map_wall((s16)H005_W(0x281C),
+                                          /* $281E: (word) y del party sulla mappa dell'area 16x16 */
                                           (s16)H005_W(0x281E),
+                                          /* $2820: direzione del party (0 nord, 2 est, 4 sud, 6
+                                           * ovest) */
                                           H005_B(0x2820));
         }
         break;
@@ -1285,15 +1408,22 @@ void ecl_special(void)
         message_delay();
         break;
     case 2:
+        /* $2376: uso: codice (word) letto dal comando ECL $2D, azione 2 ($A o altro) */
         switch (H005_W(0x2376)) {
         case 0x0A: h043_190e(0x13); break;
         default: h043_190e(0x11); break;
         }
         break;
     case 3:
+        /* A+$1CC: (word) 1 area 3D (mappa 16x16), 0 mappa all'aperto */
         if (COK_GET16(g_state_a + 0x1CC) == 0) {
+            /* $2821: muro davanti al party (map_wall sulla casella e direzione); $281C: (word) x
+             * del party sulla mappa dell'area 16x16 */
             H005_B(0x2821) = (u8)map_wall((s16)H005_W(0x281C),
+                                          /* $281E: (word) y del party sulla mappa dell'area 16x16 */
                                           (s16)H005_W(0x281E),
+                                          /* $2820: direzione del party (0 nord, 2 est, 4 sud, 6
+                                           * ovest) */
                                           H005_B(0x2820));
         }
         break;
@@ -1314,17 +1444,20 @@ void ecl_camp_entry(void)
 {
     u8 r = 0;                           /* -$1(a5) */
 
-    run_ecl(H005_W(0x3DF0));
+    run_ecl(H005_W(0x3DF0)); /* $3DF0: (word) indirizzo d'ingresso ECL del riposo/campo dell'area */
     encamp(&r);
     if (r) {
         redraw_game_screen();
-        run_ecl(H005_W(0x3DEE));
+        run_ecl(H005_W(0x3DEE)); /* $3DEE: (word) indirizzo d'ingresso ECL dopo il riposo/campo */
     }
-    H005_B(0x24E1) = 1;
+    H005_B(0x24E1) = 1; /* $24E1: 1: immagine/vista dell'esplorazione da ridisegnare */
+    /* A+$270: (word) area citta': niente ridisegno vista ne' EXIT dal campo */
     if (COK_GET16(g_state_a + 0x270) == 0) {
         refresh_view();
     }
-    H005_B(0x24A3) = 0;
+    H005_B(0x24A3) = 0; /* $24A3: 1 se la partita e' salvata (avviso all'uscita); letto da eff. $36 */
+    /* A+$1CC: (word) 1 area 3D (mappa 16x16), 0 mappa all'aperto; A+$270: (word) area citta':
+     * niente ridisegno vista ne' EXIT dal campo */
     if (COK_GET16(g_state_a + 0x1CC) == 0 && COK_GET16(g_state_a + 0x270) == 0) {
         h069_draw_marker();
     }
@@ -1340,29 +1473,33 @@ void ecl_party_menu(void)
     u16 pc;                             /* -$4(a5) */
     u16 v;                              /* -$2(a5) */
 
-    save = H005_B(0x24B0);
-    H005_B(0x24B0) = 0;
-    if (H064_B(9)) {
+    save = H005_B(0x24B0); /* $24B0: modo Move dell'esplorazione: clic sulla vista come movimento */
+    H005_B(0x24B0) = 0; /* $24B0: modo Move dell'esplorazione: clic sulla vista come movimento */
+    if (H064_B(9)) { /* H064_data+$9: flag LOAD CHARACTER: ripristinare il personaggio salvato */
         g_current_char = g_h064_saved_char;
-        H064_B(9) = 0;
+        H064_B(9) = 0; /* H064_data+$9: flag LOAD CHARACTER: ripristinare il personaggio salvato */
     }
-    pc = H005_W(0x3DEA);
+    pc = H005_W(0x3DEA); /* $3DEA: (word) PC logico del programma ECL (base $3500) */
     read_operands(1);
     v = eval_operand(1);
     switch (v) {
     case 0:
-        H005_B(0x249C) = 0;
+        H005_B(0x249C) = 0; /* $249C: 0 durante il menu del party da ECL $38: Drop non perde il party */
         main_menu();
-        H005_B(0x249C) = 1;
+        H005_B(0x249C) = 1; /* $249C: 0 durante il menu del party da ECL $38: Drop non perde il party */
+        /* $2486: id della sequenza caricata in $27BC (nome a $27A6), $FF nessuna; A+$270: (word)
+         * area citta': niente ridisegno vista ne' EXIT dal campo */
         if (H005_B(0x2486) != 9 && COK_GET16(g_state_a + 0x270) == 0 &&
+            /* A+$1CC: (word) 1 area 3D (mappa 16x16), 0 mappa all'aperto */
             COK_GET16(g_state_a + 0x1CC) == 0) {
             redraw_game_screen();
         }
         break;
     case 9:
-        pc = H005_W(0x3DEA);
+        pc = H005_W(0x3DEA); /* $3DEA: (word) PC logico del programma ECL (base $3500) */
         ecl_camp_entry();
-        H005_SET_W(0x3DEA, pc);
+        H005_SET_W(0x3DEA, pc); /* $3DEA: (word) PC logico del programma ECL (base $3500) */
+        /* A+$270: (word) area citta': niente ridisegno vista ne' EXIT dal campo */
         if (COK_GET16(g_state_a + 0x270) == 0) {
             ecl_exit();
         }
@@ -1371,7 +1508,7 @@ void ecl_party_menu(void)
         break;
     }
     (void)pc;
-    H005_B(0x24B0) = save;
+    H005_B(0x24B0) = save; /* $24B0: modo Move dell'esplorazione: clic sulla vista come movimento */
 }
 
 /*
@@ -1384,32 +1521,48 @@ static void enter_area(void)
 {
     do {
         release_picture_set();
+        /* $279C: nome (8 car.) della sequenza salvata da Encamp per ricaricarla */
         H005_B(0x279C) = 0;             /* stringa vuota di H012+$16F */
-        H005_B(0x2485) = 0xFF;
-        H064_B(0x0A) = 0;
+        H005_B(0x2485) = 0xFF; /* $2485: id della sequenza salvato entrando al campo, ricaricato all'uscita */
+        H064_B(0x0A) = 0; /* H064_data+$A: flag NEWECL: nuovo programma caricato, riparte l'ingresso */
+        /* $2822: flag della casella del party (map_flags); bit 7 sceglie il cielo; $281C: (word) x
+         * del party sulla mappa dell'area 16x16; $281E: (word) y del party sulla mappa dell'area
+         * 16x16 */
         H005_B(0x2822) = map_flags((s16)H005_W(0x281C), (s16)H005_W(0x281E));
+        /* B+$5AA: (word) 1 se il passo esce dalla mappa 16x16 (uscita dall'area) */
         COK_PUT16(g_state_b + 0x5AA, 0);
         g_h064_saved_char = g_current_char;
-        run_ecl(H005_W(0x3DEC));
-        if (!H064_B(0x0A)) {
+        run_ecl(H005_W(0x3DEC)); /* $3DEC: (word) primo indirizzo d'ingresso ECL dell'area (all'ingresso) */
+        if (!H064_B(0x0A)) { /* H064_data+$A: flag NEWECL: nuovo programma caricato, riparte l'ingresso */
+            /* $2498: id del programma ECL dell'area corrente ($24 iniziale, $39 demo); A+$1E4:
+             * (word) numero dell'area ECL corrente (copia di $2498) */
             COK_PUT16(g_state_a + 0x1E4, H005_B(0x2498));
         }
-        if (!H064_B(0x0A)) {
+        if (!H064_B(0x0A)) { /* H064_data+$A: flag NEWECL: nuovo programma caricato, riparte l'ingresso */
+            /* $3DE2: contesto di gioco precedente (copia di $3DE3), salvato; $3DE3: modo/contesto
+             * di gioco corrente (0 menu, 1 vista, 5 combattimento) */
             if ((H005_B(0x3DE2) == 4 && H005_B(0x3DE3) == 4) ||
+                /* $3DE2: contesto di gioco precedente (copia di $3DE3), salvato; H064_data+$8: flag
+                 * LOAD FILES/PIECES eseguito: ridisegna la vista */
                 (H005_B(0x3DE2) != 4 && H064_B(8))) {
                 refresh_view();
             }
-            H064_B(0x0A) = 0;
+            H064_B(0x0A) = 0; /* H064_data+$A: flag NEWECL: nuovo programma caricato, riparte l'ingresso */
+            /* $3DF4: (word) ingresso ECL eseguito dopo $3DEC e nel ciclo d'esplorazione */
             run_ecl(H005_W(0x3DF4));
-            if (!H064_B(0x0A)) {
+            if (!H064_B(0x0A)) { /* H064_data+$A: flag NEWECL: nuovo programma caricato, riparte l'ingresso */
+                /* $3DF2: (word) ingresso ECL dopo $3DF4; PC riportato qui dal passo all'aperto */
                 run_ecl(H005_W(0x3DF2));
+                /* H064_data+$A: flag NEWECL: nuovo programma caricato, riparte l'ingresso */
                 if (!H064_B(0x0A)) {
                     g_current_char = g_h064_saved_char;
                     draw_party(g_current_char);
                 }
             }
         }
-    } while (H064_B(0x0A));
+    } while (H064_B(0x0A)); /* H064_data+$A: flag NEWECL: nuovo programma caricato, riparte l'ingresso */
+    /* $3DE2: contesto di gioco precedente (copia di $3DE3), salvato; $3DE3: modo/contesto di gioco
+     * corrente (0 menu, 1 vista, 5 combattimento) */
     H005_B(0x3DE2) = H005_B(0x3DE3);
 }
 
@@ -1447,100 +1600,138 @@ void explore_loop(void)
     u8 key;                             /* -$1(a5) */
 
     g_h064_saved_char = g_current_char;
-    H005_B(0x24E1) = 1;
-    H005_B(0x24BB) = 0;
-    H064_B(7) = 0;
-    H064_B(6) = 0;
-    H064_B(9) = 0;
-    H064_B(8) = 0;
-    H005_B(0x24B2) = 1;
-    H005_B(0x3DE3) = 4;
-    H064_B(0x0A) = 0;
+    H005_B(0x24E1) = 1; /* $24E1: 1: immagine/vista dell'esplorazione da ridisegnare */
+    H005_B(0x24BB) = 0; /* $24BB: uso: azzerato a inizio area; con 1 EXIT ridisegna la cornice */
+    H064_B(7) = 0; /* H064_data+$7: flag muri caricati (LOAD PIECES $37) nel programma */
+    H064_B(6) = 0; /* H064_data+$6: flag mappa GEO caricata (LOAD FILES $21) nel programma */
+    H064_B(9) = 0; /* H064_data+$9: flag LOAD CHARACTER: ripristinare il personaggio salvato */
+    H064_B(8) = 0; /* H064_data+$8: flag LOAD FILES/PIECES eseguito: ridisegna la vista */
+    H005_B(0x24B2) = 1; /* $24B2: 1: cornice dell'esplorazione da ridisegnare (dopo LOAD FILES) */
+    H005_B(0x3DE3) = 4; /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
+    H064_B(0x0A) = 0; /* H064_data+$A: flag NEWECL: nuovo programma caricato, riparte l'ingresso */
+    /* A+$1E4: (word) numero dell'area ECL corrente (copia di $2498) */
     if (COK_GET16(g_state_a + 0x1E4) == 0) {
-        H005_B(0x24B2) = 0;
-        if (H005_B(0x24D7)) {
+        H005_B(0x24B2) = 0; /* $24B2: 1: cornice dell'esplorazione da ridisegnare (dopo LOAD FILES) */
+        if (H005_B(0x24D7)) { /* $24D7: 1 se e' stata scelta la dimostrazione (Demo) */
+            /* $2498: id del programma ECL dell'area corrente ($24 iniziale, $39 demo) */
             H005_B(0x2498) = 0x39;
         } else {
+            /* $2498: id del programma ECL dell'area corrente ($24 iniziale, $39 demo) */
             H005_B(0x2498) = 0x24;
             draw_party(g_current_char);
         }
     } else {
+        /* $2498: id del programma ECL dell'area corrente ($24 iniziale, $39 demo); A+$1E4: (word)
+         * numero dell'area ECL corrente (copia di $2498) */
         H005_B(0x2498) = (u8)COK_GET16(g_state_a + 0x1E4);
     }
-    if (COK_GET16(g_state_a + 0x1CC) == 0) {
-        H005_B(0x3DE3) = 3;
+    if (COK_GET16(g_state_a + 0x1CC) == 0) { /* A+$1CC: (word) 1 area 3D (mappa 16x16), 0 mappa all'aperto */
+        H005_B(0x3DE3) = 3; /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
     }
+    /* $2498: id del programma ECL dell'area corrente ($24 iniziale, $39 demo) */
     load_ecl_program(H005_B(0x2498));
+    /* H064_data+$C: buffer di testo TEXT64 ($50 byte): nomi file e messaggi */
     ui_draw_text(0, 0, 0x0B, 0, 0x50, TEXT64);
     ecl_start_area();
-    run_ecl(H005_W(0x3DEC));
-    if (H005_B(0x24D7)) {
+    run_ecl(H005_W(0x3DEC)); /* $3DEC: (word) primo indirizzo d'ingresso ECL dell'area (all'ingresso) */
+    if (H005_B(0x24D7)) { /* $24D7: 1 se e' stata scelta la dimostrazione (Demo) */
         dismiss_party(1);
         return;
     }
-    if (!H064_B(0x0A)) {
+    if (!H064_B(0x0A)) { /* H064_data+$A: flag NEWECL: nuovo programma caricato, riparte l'ingresso */
+        /* $2498: id del programma ECL dell'area corrente ($24 iniziale, $39 demo); A+$1E4: (word)
+         * numero dell'area ECL corrente (copia di $2498) */
         COK_PUT16(g_state_a + 0x1E4, H005_B(0x2498));
     } else {
         enter_area();
     }
+    /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento); $24D1: 1 dopo Load
+     * Saved Game: l'area non azzera le sue variabili */
     if (H005_B(0x3DE3) != 3 && H005_B(0x24D1)) {
-        if (H005_B(0x24B2) == 1) {
+        if (H005_B(0x24B2) == 1) { /* $24B2: 1: cornice dell'esplorazione da ridisegnare (dopo LOAD FILES) */
             redraw_game_screen();
         }
-        H005_B(0x24E1) = 1;
+        H005_B(0x24E1) = 1; /* $24E1: 1: immagine/vista dell'esplorazione da ridisegnare */
         refresh_view();
     }
-    H005_B(0x24D1) = 0;
-    H005_B(0x24B0) = 0;
+    H005_B(0x24D1) = 0; /* $24D1: 1 dopo Load Saved Game: l'area non azzera le sue variabili */
+    H005_B(0x24B0) = 0; /* $24B0: modo Move dell'esplorazione: clic sulla vista come movimento */
     do {
+        /* $3DE8: (word) indirizzo d'inizio dell'esecuzione ECL corrente; $3DF4: (word) ingresso ECL
+         * eseguito dopo $3DEC e nel ciclo d'esplorazione; H064_data+$A: flag NEWECL: nuovo
+         * programma caricato, riparte l'ingresso */
         if (H005_W(0x3DE8) != H005_W(0x3DF4) && !H064_B(0x0A)) {
             key = explore_command_menu();
             g_h064_saved_char = g_current_char;
-            if (!H064_B(0x0A)) {
+            if (!H064_B(0x0A)) { /* H064_data+$A: flag NEWECL: nuovo programma caricato, riparte l'ingresso */
+                /* $2498: id del programma ECL dell'area corrente ($24 iniziale, $39 demo); A+$1E4:
+                 * (word) numero dell'area ECL corrente (copia di $2498) */
                 COK_PUT16(g_state_a + 0x1E4, H005_B(0x2498));
             }
+            /* B+$594: (word) bit 0 modo search, bit 1 Look in corso */
             while ((COK_GET16(g_state_b + 0x594) > 1 ||
+                    /* $24D0: 1 party perduto o uscito: ferma ECL e ciclo dell'esplorazione */
                     key_upper(key) == 'E') && !H005_B(0x24D0)) {
                 if (key_upper(key) == 'E') {
                     ecl_camp_entry();
                 } else {
+                    /* $2497: copia del bit Search ($3E00+$594) durante l'ingresso $3DF2; B+$594:
+                     * (word) bit 0 modo search, bit 1 Look in corso */
                     H005_B(0x2497) = mask_byte((u8)COK_GET16(g_state_b + 0x594), 1);
+                    /* B+$594: (word) bit 0 modo search, bit 1 Look in corso */
                     COK_PUT16(g_state_b + 0x594, 1);
-                    H005_B(0x24E1) = 1;
+                    H005_B(0x24E1) = 1; /* $24E1: 1: immagine/vista dell'esplorazione da ridisegnare */
                     refresh_view();
+                    /* $3DF2: (word) ingresso ECL dopo $3DF4; PC riportato qui dal passo all'aperto */
                     run_ecl(H005_W(0x3DF2));
+                    /* H064_data+$A: flag NEWECL: nuovo programma caricato, riparte l'ingresso */
                     if (H064_B(0x0A)) {
                         enter_area();
                     }
+                    /* $2497: copia del bit Search ($3E00+$594) durante l'ingresso $3DF2; B+$594:
+                     * (word) bit 0 modo search, bit 1 Look in corso */
                     COK_PUT16(g_state_b + 0x594, H005_B(0x2497));
                 }
+                /* $24D0: 1 party perduto o uscito: ferma ECL e ciclo dell'esplorazione */
                 if (!H005_B(0x24D0)) {
                     key = explore_command_menu();
                     g_h064_saved_char = g_current_char;
                 }
             }
-            if (!H005_B(0x24D0)) {
+            if (!H005_B(0x24D0)) { /* $24D0: 1 party perduto o uscito: ferma ECL e ciclo dell'esplorazione */
+                /* $3DF4: (word) ingresso ECL eseguito dopo $3DEC e nel ciclo d'esplorazione */
                 run_ecl(H005_W(0x3DF4));
             }
+        /* H064_data+$A: flag NEWECL: nuovo programma caricato, riparte l'ingresso */
         } else if (H064_B(0x0A)) {
             enter_area();
+        /* $24D0: 1 party perduto o uscito: ferma ECL e ciclo dell'esplorazione */
         } else if (!H005_B(0x24D0)) {
+            /* $281C: (word) x del party sulla mappa dell'area 16x16; A+$1E0: (word) x del party
+             * prima del passo (per rilevare lo spostamento) */
             COK_PUT16(g_state_a + 0x1E0, H005_W(0x281C));
+            /* $281E: (word) y del party sulla mappa dell'area 16x16; A+$1E2: (word) y del party
+             * prima del passo (per rilevare lo spostamento) */
             COK_PUT16(g_state_a + 0x1E2, H005_W(0x281E));
             explore_move_or_door();
             refresh_view();
+            /* $281C: (word) x del party sulla mappa dell'area 16x16; A+$1E0: (word) x del party
+             * prima del passo (per rilevare lo spostamento) */
             if (H005_W(0x281C) != COK_GET16(g_state_a + 0x1E0) ||
+                /* $281E: (word) y del party sulla mappa dell'area 16x16; A+$1E2: (word) y del party
+                 * prima del passo (per rilevare lo spostamento) */
                 H005_W(0x281E) != COK_GET16(g_state_a + 0x1E2)) {
                 h043_190e(0x11);
             }
-            H005_B(0x24BD) = 0;
-            H005_B(0x24BC) = 1;
+            H005_B(0x24BD) = 0; /* $24BD: 1 se l'immagine/ritratto dell'evento e' a schermo */
+            H005_B(0x24BC) = 1; /* $24BC: 1 se l'immagine dell'evento e' animabile (non testa+corpo) */
+            /* $3DF2: (word) ingresso ECL dopo $3DF4; PC riportato qui dal passo all'aperto */
             run_ecl(H005_W(0x3DF2));
-            if (H064_B(0x0A)) {
+            if (H064_B(0x0A)) { /* H064_data+$A: flag NEWECL: nuovo programma caricato, riparte l'ingresso */
                 enter_area();
             }
         }
-    } while (!H005_B(0x24D0));
-    H005_B(0x24D0) = 0;
+    } while (!H005_B(0x24D0)); /* $24D0: 1 party perduto o uscito: ferma ECL e ciclo dell'esplorazione */
+    H005_B(0x24D0) = 0; /* $24D0: 1 party perduto o uscito: ferma ECL e ciclo dell'esplorazione */
     dismiss_party(0);
 }

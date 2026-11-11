@@ -21,7 +21,9 @@
 #include "h067.h"
 #include "h071.h"
 
+/* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
 #define POOL(k)         H005_L(0x2A1E + (k) * 4)
+/* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
 #define SET_POOL(k, v)  H005_SET_L(0x2A1E + (k) * 4, (v))
 #define TURN(c)         ((c)->block_192)
 
@@ -68,16 +70,26 @@ static void compute_experience(u32 *out)
 
     for (p = g_party_head; p != NULL; p = p->next) {
         it = p->items;
+        /* pg+$199: lato in combattimento (0 party, 1 avversari); pg+$197: stato: 0 ok, 4
+         * incosciente, 5 morente, 6-8 morto, $0A a terra */
         if (p->b[0x199] != 1 || p->b[0x197] == 0 || p->b[0x197] == 3) {
             continue;
         }
         s_enemies = 1;
+        /* turno+$15: 1 = combattente oltre i membri del party, lo lascia a fine scontro */
         if (TURN(p)->b[0x15] == 1) {
             for (k = 0; k <= 6; ++k) {
+                /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio); pg+$F0:
+                 * monete, 7 word passo 2 (0..4 monete, 4 acciaio, 5 gemme, 6 gioielli); $2A20: word
+                 * bassa del long della cassa per il tipo di moneta 0 */
                 SET_POOL(k, POOL(k) + CH_W(p, 0xF0 + k * 2));
             }
         }
+        /* pg+$13C: esperienza data dal mostro sconfitto (word); pg+$13E: esperienza del mostro per
+         * punto ferita (moltiplica +$123); pg+$123: PF massimi senza costituzione; base -1 slot
+         * incantesimi +$124 */
         xp = xp + CH_W(p, 0x13C) + h015_mulu32(p->b[0x13E], p->b[0x123]);
+        /* B+$5C6: (word) 1: oggetti dei nemici non vanno nel tesoro */
         if (COK_GET16(g_state_b + 0x5C6) == 1) {
             continue;
         }
@@ -86,25 +98,32 @@ static void compute_experience(u32 *out)
             n = (CokItem *)exec_alloc_mem(sizeof(CokItem), COK_MEMF_CLEAR);
             build_item_name(p, it, 0, 0, 0, 0);
             memcpy(n->b, it->b, 0x48);
-            n->b[0x3A] = 0;
+            n->b[0x3A] = 0; /* ogg+$3A: flag oggetto pronto all'uso (Ready) */
             n->next = g_treasure_items;
             g_treasure_items = n;
         }
     }
     (void)count;
+    /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
     xp += (u32)h015_divs32((s32)POOL(0), 0x64, NULL);
+    /* $2A22: (long) cassa, monete del tipo 1 (xp: quantita' / 20) */
     xp += (u32)h015_divs32((s32)POOL(1), 0x14, NULL);
+    /* $2A26: (long) cassa, monete del tipo 2 (xp: quantita' / 10) */
     xp += (u32)h015_divs32((s32)POOL(2), 0x0A, NULL);
-    xp += POOL(3);
-    xp += POOL(4) << 1;
-    xp += h015_mulu32(POOL(5), 0xFA);
-    xp += h015_mulu32(POOL(6), 0x898);
+    xp += POOL(3); /* $2A2A: (long) cassa, monete del tipo 3 (xp: quantita' x 1) */
+    xp += POOL(4) << 1; /* $2A2E: (long) cassa, pezzi d'acciaio (tipo 4; xp: quantita' x 2) */
+    xp += h015_mulu32(POOL(5), 0xFA); /* $2A32: (long) cassa, monete del tipo 5 (xp: quantita' x 250) */
+    xp += h015_mulu32(POOL(6), 0x898); /* $2A36: (long) cassa, monete del tipo 6 (xp: quantita' x 2200) */
     for (it = g_treasure_items; it != NULL && it != g_thrown_tail;
          it = it->next) {
+        /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno */
         if ((s16)COK_GET16(it->b + 0x36) > 0) {
+            /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno */
             xp += (u32)((s32)(s16)COK_GET16(it->b + 0x36) * 0x190);
         }
     }
+    /* B+$67C: (word) numero dei membri del party (max 8); $2499: personaggi caduti a fine
+     * combattimento (tolti dal divisore XP) */
     div = (s32)COK_GET16(g_state_b + 0x67C) - (s32)H005_B(0x2499);
     *out = div != 0 ? (u32)h015_divs32((s32)xp, div, NULL) : xp;
 }
@@ -120,25 +139,32 @@ static void award_experience(u32 xp)
     u32 v;                              /* -$8(a5) */
     u8 bonus;
 
-    if (COK_GET16(g_state_a + 0x3EA)) {
+    if (COK_GET16(g_state_a + 0x3EA)) { /* A+$3EA: (word) esito e' un prelievo in banca: niente esperienza */
         return;
     }
     for (p = g_party_head; p != NULL; p = p->next) {
+        /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento); pg+$197: stato: 0 ok, 4
+         * incosciente, 5 morente, 6-8 morto, $0A a terra */
         if (!p->b[0x198] || p->b[0x197] == 1) {
             continue;
         }
         v = xp;
         bonus = 0;
-        switch (p->b[0x5C]) {
-        case 0: bonus = (u8)(p->b[0x15] > 0x0E); break;
+        switch (p->b[0x5C]) { /* pg+$5C: classe o combinazione di classi (0..16, nomi H005+$4D84) */
+        case 0: bonus = (u8)(p->b[0x15] > 0x0E); break; /* pg+$15: saggezza corrente */
+        /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza corrente */
         case 2: bonus = (u8)(p->b[0x11] > 0x0F); break;
+        /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza corrente; pg+$15:
+         * saggezza corrente */
         case 3: bonus = (u8)(p->b[0x11] > 0x0F && p->b[0x15] > 0x0F); break;
         case 4:
+            /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza corrente; pg+$13:
+             * intelligenza corrente */
             bonus = (u8)(p->b[0x11] > 0x0F && p->b[0x13] > 0x0F &&
-                         p->b[0x15] > 0x0F);
+                         p->b[0x15] > 0x0F); /* pg+$15: saggezza corrente */
             break;
-        case 5: bonus = (u8)(p->b[0x13] > 0x0F); break;
-        case 6: bonus = (u8)(p->b[0x17] > 0x0F); break;
+        case 5: bonus = (u8)(p->b[0x13] > 0x0F); break; /* pg+$13: intelligenza corrente */
+        case 6: bonus = (u8)(p->b[0x17] > 0x0F); break; /* pg+$17: destrezza corrente */
         case 8: case 0x0A: case 0x0B: case 0x0C: case 0x0D: case 0x0E:
         case 0x10:
             v = (u32)h015_divs32((s32)xp, 2, NULL);
@@ -152,7 +178,7 @@ static void award_experience(u32 xp)
         if (bonus) {
             v = (u32)h015_divs32((s32)xp, 0x0A, NULL) + xp;
         }
-        CH_PUTL(p, 0x11E, CH_L(p, 0x11E) + v);
+        CH_PUTL(p, 0x11E, CH_L(p, 0x11E) + v); /* pg+$11E: punti esperienza (long) */
     }
 }
 
@@ -176,76 +202,97 @@ static void combat_outcome(void)
     u8 stop;                            /* -$1B(a5) */
     u16 k;                              /* -$1E(a5) */
 
-    H005_B(0x2499) = 0;
-    H005_B(0x24D0) = 1;
+    H005_B(0x2499) = 0; /* $2499: personaggi caduti a fine combattimento (tolti dal divisore XP) */
+    H005_B(0x24D0) = 1; /* $24D0: 1 party perduto o uscito: ferma ECL e ciclo dell'esplorazione */
     s_fled = 0;
+    /* turno+$15: 1 = combattente oltre i membri del party, lo lascia a fine scontro */
     for (p = g_party_head; p != NULL && TURN(p)->b[0x15] != 1; p = p->next) {
-        if (p->b[0x197] == 3) {
+        if (p->b[0x197] == 3) { /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
             s_fled = 1;
         }
     }
     for (p = g_party_head; p != NULL && !alive; p = p->next) {
+        /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento); pg+$197: stato: 0 ok, 4
+         * incosciente, 5 morente, 6-8 morto, $0A a terra */
         if (p->b[0x198] || p->b[0x197] == 4 || p->b[0x197] == 3 ||
-            p->b[0x197] == 5) {
+            p->b[0x197] == 5) { /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
             alive = 1;
         }
     }
+    /* B+$5CC: (word) sconfitta non fatale: i caduti si rialzano a 1 PF */
     if (COK_GET16(g_state_b + 0x5CC) && alive) {
-        H005_B(0x24D0) = 0;
+        H005_B(0x24D0) = 0; /* $24D0: 1 party perduto o uscito: ferma ECL e ciclo dell'esplorazione */
     }
-    H005_B(0x24C0) = 0;
-    if (H005_B(0x24D7)) {
+    H005_B(0x24C0) = 0; /* $24C0: 1 se il party ha vinto l'ultimo combattimento */
+    if (H005_B(0x24D7)) { /* $24D7: 1 se e' stata scelta la dimostrazione (Demo) */
         return;
     }
+    /* turno+$15: 1 = combattente oltre i membri del party, lo lascia a fine scontro */
     for (p = g_party_head; p != NULL && TURN(p)->b[0x15] != 1; p = p->next) {
+        /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
         if ((p->b[0x197] == 3 || p->b[0x197] == 1 || p->b[0x197] == 0) &&
+            /* pg+$199: lato in combattimento (0 party, 1 avversari); pg+$EC: controllo: <$80 PG,
+             * >$7F PNG/IA ($B3 = charme o confuso) */
             p->b[0x199] == 0 && p->b[0xEC] < 0x80) {
-            H005_B(0x24D0) = 0;
+            H005_B(0x24D0) = 0; /* $24D0: 1 party perduto o uscito: ferma ECL e ciclo dell'esplorazione */
         }
+        /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
         if (p->b[0x197] == 1 || p->b[0x197] == 0) {
-            H005_B(0x24C0) = 1;
+            H005_B(0x24C0) = 1; /* $24C0: 1 se il party ha vinto l'ultimo combattimento */
             s_fled = 0;
         }
+        /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento); pg+$197: stato: 0 ok, 4
+         * incosciente, 5 morente, 6-8 morto, $0A a terra */
         if (!p->b[0x198] || p->b[0x197] == 1) {
+            /* $2499: personaggi caduti a fine combattimento (tolti dal divisore XP) */
             add_to_byte(&H005_B(0x2499), 1);
         }
         for (k = 1; k <= 0x0B; ++k) {
             remove_effect(p, effects[k - 1], NULL);
         }
     }
-    if (H005_B(0x24C0)) {
+    if (H005_B(0x24C0)) { /* $24C0: 1 se il party ha vinto l'ultimo combattimento */
         u32 xp = 0;
 
         compute_experience(&xp);
-        H005_SET_L(0x236E, xp);
-        award_experience(H005_L(0x236E));
+        H005_SET_L(0x236E, xp); /* $236E: esperienza guadagnata nel combattimento (long) */
+        award_experience(H005_L(0x236E)); /* $236E: esperienza guadagnata nel combattimento (long) */
     }
     p = g_party_head;
-    if (!H005_B(0x24D0)) {
+    if (!H005_B(0x24D0)) { /* $24D0: 1 party perduto o uscito: ferma ECL e ciclo dell'esplorazione */
+        /* turno+$15: 1 = combattente oltre i membri del party, lo lascia a fine scontro */
         while (p != NULL && TURN(p)->b[0x15] != 1) {
             if (!s_fled) {
+                /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
                 switch (p->b[0x197]) {
                 case 3:
+                    /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
                     p->b[0x197] = 0;
-                    p->b[0x198] = 1;
+                    p->b[0x198] = 1; /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
                     break;
                 case 4:
+                    /* B+$5CC: (word) sconfitta non fatale: i caduti si rialzano a 1 PF */
                     if (COK_GET16(g_state_b + 0x5CC)) {
+                        /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
                         p->b[0x197] = 0;
-                        p->b[0x198] = 1;
-                        p->b[0x1A8] = 1;
+                        p->b[0x198] = 1; /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
+                        p->b[0x1A8] = 1; /* pg+$1A8: punti ferita correnti */
                     } else {
+                        /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
                         p->b[0x197] = 4;
                     }
                     break;
                 case 5:
-                    if (p->b[0x1A8] > 0) {
+                    if (p->b[0x1A8] > 0) { /* pg+$1A8: punti ferita correnti */
+                        /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
                         p->b[0x197] = 0;
-                        p->b[0x198] = 1;
+                        p->b[0x198] = 1; /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
+                    /* B+$5CC: (word) sconfitta non fatale: i caduti si rialzano a 1 PF */
                     } else if (COK_GET16(g_state_b + 0x5CC)) {
+                        /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
                         p->b[0x197] = 0;
-                        p->b[0x198] = 1;
-                        p->b[0x1A8] = 1;
+                        p->b[0x198] = 1; /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
+                        p->b[0x1A8] = 1; /* pg+$1A8: punti ferita correnti */
                     }
                     break;
                 default:
@@ -253,10 +300,13 @@ static void combat_outcome(void)
                 }
                 p = p->next;
             } else {
+                /* B+$58E: (word) esito lotta: 1 qualcuno fuggito, $80 sconfitta, $81 fuga party */
                 COK_PUT16(g_state_b + 0x58E, 0x81);
+                /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
                 if (p->b[0x197] == 3) {
+                    /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
                     p->b[0x197] = 0;
-                    p->b[0x198] = 1;
+                    p->b[0x198] = 1; /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
                     p = p->next;
                 } else {
                     g_current_char = p;
@@ -269,6 +319,7 @@ static void combat_outcome(void)
         stop = 0;
         while (p != NULL && !stop) {
             n = p->next;
+            /* turno+$15: 1 = combattente oltre i membri del party, lo lascia a fine scontro */
             if (TURN(p)->b[0x15] != 1) {
                 g_current_char = p;
                 remove_from_party(0, 1);
@@ -277,7 +328,7 @@ static void combat_outcome(void)
             }
             p = n;
         }
-        COK_PUT16(g_state_b + 0x67C, 0);
+        COK_PUT16(g_state_b + 0x67C, 0); /* B+$67C: (word) numero dei membri del party (max 8) */
     }
 }
 
@@ -299,14 +350,19 @@ static void show_outcome(u32 xp)
             ui_draw_text(1, 3, 0x0A, 0, 0x13, "The party has fled.");
             xp = 0;
             free_treasure();
+            /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
             h029_fill_bytes(0x1B, &H005_B(0x2A1E), 0x1C, 0);
+        /* $24C0: 1 se il party ha vinto l'ultimo combattimento; B+$5CC: (word) sconfitta non
+         * fatale: i caduti si rialzano a 1 PF */
         } else if (!H005_B(0x24C0) && COK_GET16(g_state_b + 0x5CC)) {
+            /* B+$58E: (word) esito lotta: 1 qualcuno fuggito, $80 sconfitta, $81 fuga party */
             COK_PUT16(g_state_b + 0x58E, 0x80);
             ui_draw_text(1, 3, 0x0A, 0, 0x18, "You have lost the fight.");
             xp = 0;
         } else {
             ui_draw_text(1, 3, 0x0A, 0, 0x12, "The party has won.");
         }
+    /* A+$3EA: (word) esito e' un prelievo in banca: niente esperienza */
     } else if (COK_GET16(g_state_a + 0x3EA)) {
         ui_draw_text(1, 5, 0x0A, 0, 0x25,
                      "The party makes a withdrawl.  A small");
@@ -319,7 +375,7 @@ static void show_outcome(u32 xp)
     trim_leading_spaces(0x0A, num);
     strcpy(line, "Each character receives ");
     h026_append(0x50, line, 0x0A, num);
-    if (!COK_GET16(g_state_a + 0x3EA)) {
+    if (!COK_GET16(g_state_a + 0x3EA)) { /* A+$3EA: (word) esito e' un prelievo in banca: niente esperienza */
         ui_draw_text(1, 5, 0x0A, 0, 0x50, line);
         ui_draw_text(1, 7, 0x0A, 0, 0x12, "experience points.");
     }
@@ -345,7 +401,7 @@ static CokMenuItem *treasure_as_menu(void)
                                                        COK_MEMF_CLEAR);
 
         memcpy(n->text, it->b, 0x2A);
-        n->header = it->b[0x2A];
+        n->header = it->b[0x2A]; /* ogg+$2A: flag intestazione: copiato in header della voce di menu */
         if (tail == NULL) {
             s_treasure_menu = n;
         } else {
@@ -393,7 +449,9 @@ static void treasure_list(u16 *index, CokMenuItem **cursor, CokItem **out,
 
 /*
  * PORT H070+$0E94 (Take Items): il personaggio corrente prende oggetti
- * dal tesoro (H071+$047C) finche' esce o il tesoro e' vuoto.
+ * dal tesoro (H071+$047C) finche' esce o il tesoro e' vuoto.  Indice e
+ * scelta si azzerano una volta sola, prima del ciclo (H070+$0E9E/$0EAA):
+ * dopo un Take la selezione resta alla stessa riga.
  */
 static void take_items(void)
 {
@@ -405,9 +463,10 @@ static void take_items(void)
     u8 done;                            /* -$A(a5) */
     u8 fail;                            /* -$11(a5) */
 
+    chosen = NULL;
+    cursor = NULL;
+    index = 0;
     do {
-        index = 0;
-        chosen = NULL;
         treasure_list(&index, &cursor, &chosen, &key);
         if ((key != 'T' && key != 0x0D) || chosen == NULL) {
             done = 1;
@@ -514,8 +573,10 @@ static void treasure_screen(void)
         detect = 0;
         if (items) {
             for (k = 0; k <= 0x39 && !detect; ++k) {
+                /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
                 s = g_current_char->b[0x1E + k];
                 if ((s == 5 || s == 0x0B || s == 0x4D || s == 0x67) &&
+                    /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
                     g_current_char->b[0x198]) {
                     detect = 1;
                     spell = s;
@@ -539,7 +600,7 @@ static void treasure_screen(void)
             draw_party(g_current_char);
             continue;
         }
-        saved = H005_B(0x2483);
+        saved = H005_B(0x2483); /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
         switch (key) {
         case 'V':
             view_character(&special);
@@ -579,7 +640,7 @@ static void treasure_screen(void)
         default:
             break;
         }
-        H005_B(0x2483) = saved;
+        H005_B(0x2483) = saved; /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
     } while (!done);
 }
 
@@ -594,24 +655,31 @@ static void remove_combatants(void)
     Character *p;                       /* -$4(a5) */
     Character *n;                       /* -$8(a5) */
 
-    COK_PUT16(g_state_b + 0x590, 0);
+    COK_PUT16(g_state_b + 0x590, 0); /* B+$590: (word) nemici caduti contati a fine combattimento */
     p = g_party_head;
     while (p != NULL) {
+        /* turno+$15: 1 = combattente oltre i membri del party, lo lascia a fine scontro; pg+$199:
+         * lato in combattimento (0 party, 1 avversari) */
         if (TURN(p)->b[0x15] == 1 || p->b[0x199] == 1) {
             s_enemies = 1;
-            if (p->b[0x198] != 1) {
-                COK_PUT16(g_state_b + 0x590,
+            if (p->b[0x198] != 1) { /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
+                COK_PUT16(g_state_b + 0x590, /* B+$590: (word) nemici caduti contati a fine combattimento */
                           COK_GET16(g_state_b + 0x590) + 1);
                 if (first) {
+                    /* A+$3F0: tab. word fasi cicli (idx CH+$5F, 1..3); voce 0 posta a 1 da H070 */
                     COK_PUT16(g_state_a + 0x3F0, 1);
                 }
             }
+            /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra; B+$58E:
+             * (word) esito lotta: 1 qualcuno fuggito, $80 sconfitta, $81 fuga party */
             if (p->b[0x197] == 3 && COK_GET16(g_state_b + 0x58E) == 0) {
+                /* B+$58E: (word) esito lotta: 1 qualcuno fuggito, $80 sconfitta, $81 fuga party */
                 COK_PUT16(g_state_b + 0x58E, 1);
             }
             first = 0;
             n = p->next;
             g_current_char = p;
+            /* turno+$15: 1 = combattente oltre i membri del party, lo lascia a fine scontro */
             remove_from_party((u8)(TURN(p)->b[0x15] == 1), 1);
             p = n;
         } else {
@@ -643,8 +711,12 @@ static void npc_shares(void)
     u8 k;                               /* -$D(a5) */
 
     for (p = g_party_head; p != NULL; p = p->next) {
+        /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso); pg+$197: stato: 0 ok, 4
+         * incosciente, 5 morente, 6-8 morto, $0A a terra */
         if (p->b[0xEC] > 0x7F && p->b[0x197] == 0) {
+            /* pg+$ED: quota del PNG nella spartizione (bit 0-2); 1 dopo Modify */
             shares = (u16)(shares + mask_byte(p->b[0xED], 7));
+            /* pg+$ED: quota del PNG nella spartizione (bit 0-2); 1 dopo Modify */
             total = (u16)(total + mask_byte(p->b[0xED], 7));
         } else {
             ++total;
@@ -652,8 +724,11 @@ static void npc_shares(void)
     }
     if (shares > 0) {
         for (k = 0; k <= 6; ++k) {
-            if ((s32)POOL(k) > 0) {
+            if ((s32)POOL(k) > 0) { /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
+                /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
                 per = (u16)h015_divs32((s32)POOL(k), (s32)total, NULL);
+                /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio); $2A20: word
+                 * bassa del long della cassa per il tipo di moneta 0 */
                 SET_POOL(k, POOL(k) - (u32)shares * per);
                 hidden = 1;
             }
@@ -665,9 +740,12 @@ static void npc_shares(void)
     draw_screen_frame(1);
     row = 0;
     for (p = g_party_head; p != NULL; p = p->next) {
+        /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso); pg+$197: stato: 0 ok, 4
+         * incosciente, 5 morente, 6-8 morto, $0A a terra; pg+$ED: quota del PNG nella spartizione
+         * (bit 0-2); 1 dopo Modify */
         if (p->b[0xEC] > 0x7F && p->b[0x197] == 0 && p->b[0xED] > 0) {
             h026_copy(0x50, text, 0x0F, (const char *)p->b);
-            if (!p->b[0x10E]) {
+            if (!p->b[0x10E]) { /* pg+$10E: sesso (0 maschio, 1 femmina; nomi H005+$4BD2) */
                 h026_append(0x50, text, 0x1B, " takes and hides his share.");
             } else {
                 h026_append(0x50, text, 0x1B, " takes and hides her share.");
@@ -718,43 +796,47 @@ void combat_end(void)
     Character *p;                       /* -$C(a5) */
 
     return_dropped_items();
+    /* B+$58E: (word) esito lotta: 1 qualcuno fuggito, $80 sconfitta, $81 fuga party */
     COK_PUT16(g_state_b + 0x58E, 0);
     s_enemies = 0;
-    if (!H005_B(0x24D7)) {
+    if (!H005_B(0x24D7)) { /* $24D7: 1 se e' stata scelta la dimostrazione (Demo) */
         combat_outcome();
     }
-    H005_B(0x3DE3) = 6;
+    H005_B(0x3DE3) = 6; /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
     remove_combatants();
-    if (H005_B(0x24D7)) {
+    if (H005_B(0x24D7)) { /* $24D7: 1 se e' stata scelta la dimostrazione (Demo) */
         return;
     }
     for (p = g_party_head; p != NULL; p = p->next) {
         recompute_stats(p);
     }
+    /* $24D0: 1 party perduto o uscito: ferma ECL e ciclo dell'esplorazione; $24C1: uso: azzerato
+     * all'avvio; con 1 esito e caduti trattati diversamente */
     if (!H005_B(0x24D0) || H005_B(0x24C1)) {
         if (s_fled) {
             free_treasure();
         }
-        if (!H005_B(0x24D7)) {
+        if (!H005_B(0x24D7)) { /* $24D7: 1 se e' stata scelta la dimostrazione (Demo) */
             npc_shares();
-            show_outcome(H005_L(0x236E));
+            show_outcome(H005_L(0x236E)); /* $236E: esperienza guadagnata nel combattimento (long) */
             treasure_screen();
         }
         free_treasure();
     } else {
+        /* B+$58E: (word) esito lotta: 1 qualcuno fuggito, $80 sconfitta, $81 fuga party */
         COK_PUT16(g_state_b + 0x58E, 0x80);
         draw_screen_frame(1);
-        H005_SET_W(0x334E, 2);
-        H005_SET_W(0x334C, 6);
+        H005_SET_W(0x334E, 2); /* $334E: (word) cursore del testo: colonna */
+        H005_SET_W(0x334C, 6); /* $334C: (word) cursore del testo: riga */
         word_wrap_text(2, 5, 0x25, 0x16, 0x0A, 0, 1, 0x36,
                        "The monsters rejoice for the party has been destroyed.");
         show_message_wait(0x0D, 0, 0x19, "Press any key to continue");
     }
-    H005_B(0x24CE) = 1;
-    COK_PUT16(g_state_b + 0x6E0, 0);
-    COK_PUT16(g_state_b + 0x6E2, 0);
-    COK_PUT16(g_state_b + 0x6E4, 0);
-    COK_PUT16(g_state_b + 0x5C6, 0);
-    COK_PUT16(g_state_b + 0x5CC, 0);
-    COK_PUT16(g_state_a + 0x3EA, 0);
+    H005_B(0x24CE) = 1; /* $24CE: 1: pausa per carattere nella scrittura del testo */
+    COK_PUT16(g_state_b + 0x6E0, 0); /* B+$6E0: (word) bonus al tiro per colpire dei nemici (lato 1) */
+    COK_PUT16(g_state_b + 0x6E2, 0); /* B+$6E2: (word) bonus al tiro per colpire del party (lato 0) */
+    COK_PUT16(g_state_b + 0x6E4, 0); /* B+$6E4: (word) bonus al movimento del party in combattimento */
+    COK_PUT16(g_state_b + 0x5C6, 0); /* B+$5C6: (word) 1: oggetti dei nemici non vanno nel tesoro */
+    COK_PUT16(g_state_b + 0x5CC, 0); /* B+$5CC: (word) sconfitta non fatale: i caduti si rialzano a 1 PF */
+    COK_PUT16(g_state_a + 0x3EA, 0); /* A+$3EA: (word) esito e' un prelievo in banca: niente esperienza */
 }

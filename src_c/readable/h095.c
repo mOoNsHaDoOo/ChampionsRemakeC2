@@ -50,7 +50,7 @@ static u8 *map_cell(s16 x, s16 y)
 
 static u8 tile_frame(u8 t)
 {
-    return H005_B(0x3EF4 + (t - 1) * 4 + 3);
+    return H005_B(0x3EF4 + (t - 1) * 4 + 3); /* $3EF7: terreno +3: fotogramma grafico della tessera */
 }
 
 static u8 in_map(s16 x, s16 y)
@@ -67,7 +67,10 @@ static void set_block_cell(s16 dx, s16 dy, u16 tile)
     s16 x;                              /* -$2(a5) */
     s16 y;                              /* -$4(a5) */
 
+    /* H095_bss+$10: (word) colonna (in blocchi) della casella del dungeon in esame; H095_bss+$E:
+     * (word) riga (in blocchi) della casella del dungeon in esame */
     x = (s16)(H095_W(0x332) * 6 + H095_W(0x334) * 5 + 0x15 + dx);
+    /* H095_bss+$E: (word) riga (in blocchi) della casella del dungeon in esame */
     y = (s16)(H095_W(0x334) * 5 + 0x0A + dy);
     if (in_map(x, y)) {
         map_cell(x, y)[1] = (u8)(tile + 1);
@@ -93,23 +96,43 @@ static void plant_trees(void)
     u16 k;                              /* -$1E(a5) */
     u8 ok = 0;
 
+    /* H095_bss+$D: parete nord del blocco (0 aperto, 1 parete, 3 porta); H095_bss+$B: parete est
+     * del blocco (0 aperto, 1 parete, 3 porta); H095_bss+$A: parete sud del blocco (0 aperto, 1
+     * parete, 3 porta); H095_bss+$C: parete ovest del blocco (0 aperto, 1 parete, 3 porta) */
     if (WALL_N == 1 || WALL_E == 1 || WALL_S == 1 || WALL_W == 1) {
         ok = 1;
+        /* H095_bss+$D: parete nord del blocco (0 aperto, 1 parete, 3 porta); H095_bss+$A: parete
+         * sud del blocco (0 aperto, 1 parete, 3 porta); H095_bss+$B: parete est del blocco (0
+         * aperto, 1 parete, 3 porta); H095_bss+$C: parete ovest del blocco (0 aperto, 1 parete, 3
+         * porta) */
         if (WALL_N == 1 && WALL_S == 1 && !(WALL_E == 1 && WALL_W == 1)) {
             ok = 0;
+        /* H095_bss+$B: parete est del blocco (0 aperto, 1 parete, 3 porta); H095_bss+$C: parete
+         * ovest del blocco (0 aperto, 1 parete, 3 porta) */
         } else if (WALL_E == 1 && WALL_W == 1 &&
+                   /* H095_bss+$D: parete nord del blocco (0 aperto, 1 parete, 3 porta);
+                    * H095_bss+$A: parete sud del blocco (0 aperto, 1 parete, 3 porta) */
                    !(WALL_N == 1 && WALL_S == 1)) {
             ok = 0;
+        /* H095_bss+$D: parete nord del blocco (0 aperto, 1 parete, 3 porta); H095_bss+$B: parete
+         * est del blocco (0 aperto, 1 parete, 3 porta); H095_bss+$A: parete sud del blocco (0
+         * aperto, 1 parete, 3 porta); H095_bss+$C: parete ovest del blocco (0 aperto, 1 parete, 3
+         * porta) */
         } else if (WALL_N == 3 || WALL_E == 3 || WALL_S == 3 || WALL_W == 3) {
             ok = 0;
         }
     }
-    H095_B(0x342) = ok;
+    H095_B(0x342) = ok; /* H095_bss+$0: flag casella adatta al bosco (pareti senza porte) */
     for (i = 2; i <= 3; ++i) {
         for (j = 2; j <= 4; ++j) {
+            /* H095_bss+$10: (word) colonna (in blocchi) della casella del dungeon in esame;
+             * H095_bss+$E: (word) riga (in blocchi) della casella del dungeon in esame */
             x = (s16)(H095_W(0x332) * 6 + H095_W(0x334) * 5 + 0x15 + i + j);
+            /* H095_bss+$E: (word) riga (in blocchi) della casella del dungeon in esame */
             y = (s16)(H095_W(0x334) * 5 + 0x0A + j);
             if (!in_map(x, y) || tile_frame(map_cell(x, y)[1]) != 0x16 ||
+                /* H095_bss+$1: casella all'aperto: bit 6 dei flag della mappa; H095_bss+$0: flag
+                 * casella adatta al bosco (pareti senza porte) */
                 !H095_B(0x341) || !H095_B(0x342) || roll_dice(1, 0x0A) > 5) {
                 continue;
             }
@@ -142,6 +165,7 @@ static u8 wall_side(s16 x, s16 y, u16 dir)
         }
         return 3;
     }
+    /* $281E: (word) y del party sulla mappa dell'area 16x16 */
     if (y == (s16)H005_W(0x281E) && (dir == 2 || dir == 6)) {
         return 0;
     }
@@ -157,7 +181,9 @@ static u8 wall_between(s16 x, s16 y, u16 dir)
 
     opposite = (u16)((dir + 4) & 7);
     a = wall_side(x, y, dir);
+    /* $3EE2: (word) spostamento x per direzione d (passo 2) */
     b = wall_side((s16)(x + H005_W(0x3EE2 + dir * 2)),
+                  /* $3ED0: (word) spostamento y per direzione d (passo 2) */
                   (s16)(y + H005_W(0x3ED0 + dir * 2)), opposite);
     return or_byte(a, b);
 }
@@ -173,13 +199,13 @@ static void block_floor_and_west(void)
             set_block_cell(i, j, 0x16);
         }
     }
-    if (WALL_W == 1) {
+    if (WALL_W == 1) { /* H095_bss+$C: parete ovest del blocco (0 aperto, 1 parete, 3 porta) */
         for (j = 2; j <= 4; ++j) {
             set_block_cell((s16)(j - 1), j, 4);
             set_block_cell(j, j, 3);
             set_block_cell((s16)(j + 1), j, 0x0D);
         }
-    } else if (WALL_W == 3) {
+    } else if (WALL_W == 3) { /* H095_bss+$C: parete ovest del blocco (0 aperto, 1 parete, 3 porta) */
         set_block_cell(1, 2, 8);
         set_block_cell(5, 4, 0);
     }
@@ -188,7 +214,8 @@ static void block_floor_and_west(void)
 /* PORT H095+$0912 (annidata in $083A): lato nord al centro del blocco. */
 static void block_north_middle(void)
 {
-    u16 t = (WALL_N == 1) ? 5 : 0x16;
+    u16 t = (WALL_N == 1) ? 5 : 0x16; /* H095_bss+$D: parete nord del blocco (0 aperto, 1 parete, 3 porta) */
+    /* H095_bss+$D: parete nord del blocco (0 aperto, 1 parete, 3 porta) */
     u16 b = (WALL_N == 1) ? 0x0A : 0x16;
 
     set_block_cell(3, 0, t);
@@ -214,9 +241,9 @@ static void block_north_west(s16 x, s16 y)
     corner = (u8)(!wall_between(x, (s16)(y - 1), 6) &&
                   !wall_between((s16)(x - 1), y, 0));
     /* k = 1 */
-    switch (WALL_N) {
+    switch (WALL_N) { /* H095_bss+$D: parete nord del blocco (0 aperto, 1 parete, 3 porta) */
     case 0:
-        switch (WALL_W) {
+        switch (WALL_W) { /* H095_bss+$C: parete ovest del blocco (0 aperto, 1 parete, 3 porta) */
         case 0: t1 = 0x16; break;
         case 1: t1 = corner ? 0 : 0x0D; break;
         case 3: t1 = 0x0D; break;
@@ -225,7 +252,7 @@ static void block_north_west(s16 x, s16 y)
         break;
     case 1:
     case 3:
-        if (WALL_W == 0) {
+        if (WALL_W == 0) { /* H095_bss+$C: parete ovest del blocco (0 aperto, 1 parete, 3 porta) */
             t1 = corner ? 0x0F : 5;
         } else {
             t1 = corner ? 0x12 : 2;
@@ -235,16 +262,16 @@ static void block_north_west(s16 x, s16 y)
         break;
     }
     /* k = 2 */
-    switch (WALL_N) {
+    switch (WALL_N) { /* H095_bss+$D: parete nord del blocco (0 aperto, 1 parete, 3 porta) */
     case 0: t2 = 0x16; break;
     case 1: t2 = 5; break;
     case 3: t2 = 0x11; break;
     default: break;
     }
     /* k = 3 */
-    switch (WALL_W) {
+    switch (WALL_W) { /* H095_bss+$C: parete ovest del blocco (0 aperto, 1 parete, 3 porta) */
     case 0:
-        if (WALL_N == 0) {
+        if (WALL_N == 0) { /* H095_bss+$D: parete nord del blocco (0 aperto, 1 parete, 3 porta) */
             t3 = 0x16;
         } else {
             t3 = corner ? 0x10 : 0x0A;
@@ -255,10 +282,10 @@ static void block_north_west(s16 x, s16 y)
     default: break;
     }
     /* k = 4 */
-    switch (WALL_W) {
+    switch (WALL_W) { /* H095_bss+$C: parete ovest del blocco (0 aperto, 1 parete, 3 porta) */
     case 0:
     case 3:
-        switch (WALL_N) {
+        switch (WALL_N) { /* H095_bss+$D: parete nord del blocco (0 aperto, 1 parete, 3 porta) */
         case 0: t4 = 0x16; break;
         case 1: t4 = 0x0A; break;
         case 3: t4 = 0x17; break;
@@ -266,7 +293,7 @@ static void block_north_west(s16 x, s16 y)
         }
         break;
     case 1:
-        switch (WALL_N) {
+        switch (WALL_N) { /* H095_bss+$D: parete nord del blocco (0 aperto, 1 parete, 3 porta) */
         case 0: t4 = 0x0D; break;
         case 1: t4 = 6; break;
         case 3: t4 = 0x15; break;
@@ -301,27 +328,28 @@ static void block_north_east(s16 x, s16 y)
     en = wall_between((s16)(x + 1), y, 0);
     corner = (u8)(!ne && !en);
     /* k = 1 */
-    switch (WALL_N) {
+    switch (WALL_N) { /* H095_bss+$D: parete nord del blocco (0 aperto, 1 parete, 3 porta) */
     case 0: t1 = (ne == 1) ? 4 : 0x16; break;
     case 1: t1 = 5; break;
     case 3: t1 = 0x0F; break;
     default: break;
     }
     /* k = 2 */
-    if (WALL_N == 0) {
+    if (WALL_N == 0) { /* H095_bss+$D: parete nord del blocco (0 aperto, 1 parete, 3 porta) */
         switch (ne) {
         case 0: t2 = 0x16; break;
         case 1:
-            if (WALL_E != 0) {
+            if (WALL_E != 0) { /* H095_bss+$B: parete est del blocco (0 aperto, 1 parete, 3 porta) */
                 t2 = 3;
             } else {
                 t2 = en ? 0x0B : 7;
             }
             break;
+        /* H095_bss+$B: parete est del blocco (0 aperto, 1 parete, 3 porta) */
         case 3: t2 = (WALL_E == 0 && en) ? 0x18 : 1; break;
         default: break;
         }
-    } else if (WALL_E) {
+    } else if (WALL_E) { /* H095_bss+$B: parete est del blocco (0 aperto, 1 parete, 3 porta) */
         t2 = 9;
     } else if (en) {
         t2 = 5;
@@ -331,24 +359,24 @@ static void block_north_east(s16 x, s16 y)
         t2 = 0x13;
     }
     /* k = 3 */
-    switch (WALL_N) {
+    switch (WALL_N) { /* H095_bss+$D: parete nord del blocco (0 aperto, 1 parete, 3 porta) */
     case 0: t3 = 0x16; break;
     case 1: t3 = 0x0A; break;
     case 3: t3 = 0x10; break;
     default: break;
     }
     /* k = 4 */
-    if (WALL_N == 0) {
+    if (WALL_N == 0) { /* H095_bss+$D: parete nord del blocco (0 aperto, 1 parete, 3 porta) */
         if (ne == 0) {
             t4 = 0x16;
-        } else if (WALL_E) {
+        } else if (WALL_E) { /* H095_bss+$B: parete est del blocco (0 aperto, 1 parete, 3 porta) */
             t4 = 4;
         } else if (en == 0) {
             t4 = 8;
         } else {
             t4 = 0x0C;
         }
-    } else if (WALL_E) {
+    } else if (WALL_E) { /* H095_bss+$B: parete est del blocco (0 aperto, 1 parete, 3 porta) */
         t4 = 0x0E;
     } else if (en == 0) {
         t4 = 0x17;
@@ -374,19 +402,29 @@ static void build_dungeon_map(void)
     s16 col;                            /* -$332(a4) */
 
     for (row = -2; row <= 2; ++row) {
-        H095_SETW(0x334, row);
+        H095_SETW(0x334, row); /* H095_bss+$E: (word) riga (in blocchi) della casella del dungeon in esame */
         for (col = -6; col <= 6; ++col) {
+            /* H095_bss+$10: (word) colonna (in blocchi) della casella del dungeon in esame */
             H095_SETW(0x332, col);
+            /* $281C: (word) x del party sulla mappa dell'area 16x16; H095_bss+$10: (word) colonna
+             * (in blocchi) della casella del dungeon in esame */
             x = (s16)(H005_W(0x281C) + H095_W(0x332));
+            /* $281E: (word) y del party sulla mappa dell'area 16x16; H095_bss+$E: (word) riga (in
+             * blocchi) della casella del dungeon in esame */
             y = (s16)(H005_W(0x281E) + H095_W(0x334));
+            /* H095_bss+$C: parete ovest del blocco (0 aperto, 1 parete, 3 porta) */
             WALL_W = wall_between(x, y, 6);
+            /* H095_bss+$D: parete nord del blocco (0 aperto, 1 parete, 3 porta) */
             WALL_N = wall_between(x, y, 0);
+            /* H095_bss+$B: parete est del blocco (0 aperto, 1 parete, 3 porta) */
             WALL_E = wall_between(x, y, 2);
+            /* H095_bss+$A: parete sud del blocco (0 aperto, 1 parete, 3 porta) */
             WALL_S = wall_between(x, y, 4);
             block_floor_and_west();
             block_north_middle();
             block_north_west(x, y);
             block_north_east(x, y);
+            /* H095_bss+$1: casella all'aperto: bit 6 dei flag della mappa */
             H095_B(0x341) = mask_byte(map_flags(x, y), 0x40);
             plant_trees();
         }
@@ -481,7 +519,7 @@ static void decorate_wild_ground(void)
 static void build_wild_map(void)
 {
     h029_fill_bytes(0x9C3, g_combat_area + 0x0A, 0x9C3, 0x17);
-    H095_SETW(0x33E, 0x0F);
+    H095_SETW(0x33E, 0x0F); /* H095_bss+$4: uso: (word) posto a $0F costruendo la mappa all'aperto */
     scatter_wild_objects();
     decorate_wild_ground();
 }
@@ -497,22 +535,22 @@ static void build_combat_map(void)
     u16 y;                              /* -$4(a5) */
     u16 x;                              /* -$6(a5) */
 
-    if (COK_GET16(g_state_a + 0x1CC)) {
-        if (H095_W(0x340) != 1) {
+    if (COK_GET16(g_state_a + 0x1CC)) { /* A+$1CC: (word) 1 area 3D (mappa 16x16), 0 mappa all'aperto */
+        if (H095_W(0x340) != 1) { /* H095_bss+$2: (word) set di tile caricato: 1 dungeon, 2 all'aperto */
             load_24x24_set(7, "DungCom", 1, 0, 0x19);
             load_24x24_set(7, "RandCom", 1, 0x22, 6);
-            H095_SETW(0x340, 1);
+            H095_SETW(0x340, 1); /* H095_bss+$2: (word) set di tile caricato: 1 dungeon, 2 all'aperto */
         }
-    } else if (H095_W(0x340) != 2) {
+    } else if (H095_W(0x340) != 2) { /* H095_bss+$2: (word) set di tile caricato: 1 dungeon, 2 all'aperto */
         load_24x24_set(7, "WildCom", 1, 0, 0x21);
         load_24x24_set(7, "RandCom", 1, 0x22, 6);
-        H095_SETW(0x340, 2);
+        H095_SETW(0x340, 2); /* H095_bss+$2: (word) set di tile caricato: 1 dungeon, 2 all'aperto */
     }
     g_combat_area = (u8 *)exec_alloc_mem(0x9CE, COK_MEMF_CLEAR);
     g_combat_area[6] = 0;
     g_combat_area[7] = 1;
     g_combat_area[8] = 0;
-    if (COK_GET16(g_state_a + 0x1CC)) {
+    if (COK_GET16(g_state_a + 0x1CC)) { /* A+$1CC: (word) 1 area 3D (mappa 16x16), 0 mappa all'aperto */
         build_dungeon_map();
     } else {
         build_wild_map();
@@ -542,16 +580,26 @@ static void prepare_turn_blocks(void)
         ++n;
         p->block_192 = (CokTurn *)exec_alloc_mem(sizeof(CokTurn),
                                                  COK_MEMF_CLEAR);
-        if (n > COK_GET16(g_state_b + 0x67C)) {
+        if (n > COK_GET16(g_state_b + 0x67C)) { /* B+$67C: (word) numero dei membri del party (max 8) */
+            /* turno+$15: 1 = combattente oltre i membri del party, lo lascia a fine scontro */
             p->block_192->b[0x15] = 1;
         }
+        /* turno+$B: orientamento/fotogramma del combattente (direzione 0..7); H095_bss+$2FA: 4
+         * word: direzione 0..7 per quarto 0..3 (anche orientamento); $2820: direzione del party (0
+         * nord, 2 est, 4 sud, 6 ovest) */
         p->block_192->b[0x0B] = (u8)H095_W(0x48 - (H005_B(0x2820) >> 1) * 2);
-        if (p->b[0x199] == 1) {
+        if (p->b[0x199] == 1) { /* pg+$199: lato in combattimento (0 party, 1 avversari) */
+            /* turno+$B: orientamento/fotogramma del combattente (direzione 0..7) */
             p->block_192->b[0x0B] = (u8)((p->block_192->b[0x0B] + 4) & 7);
         }
+        /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
         ai = mask_byte(p->b[0xEC], 0x7F);
+        /* pg+$199: lato in combattimento (0 party, 1 avversari); turno+$15: 1 = combattente oltre i
+         * membri del party, lo lascia a fine scontro */
         if (p->b[0x199] == 0 && p->block_192->b[0x15] == 1 &&
             (ai == 0 || ai > 0x66)) {
+            /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso); B+$58C: uso: IA
+             * ($80+v) dei PNG fuori lotta; tolto da 100 nel test fuga */
             p->b[0xEC] = (u8)(COK_GET16(g_state_b + 0x58C) + 0x80);
         }
     }
@@ -582,13 +630,20 @@ static u8 try_place(u16 n, s16 cx, s16 cy, s16 gx, s16 gy, u16 set)
     u8 in_acid;                         /* -$6(a5) */
 
     if (cx < 0 || cy < 0 || cx > 0x0A || cy > 5 ||
+        /* H095_bss+$22: griglie schieramento: lato*$120+set*$48+riga*$C+col, 1=libera; H095_bss+$9:
+         * lato in esame (0 party, 1 nemici): indice di GROUP_* */
         !PLACE_TABLE(H095_B(0x339), set, cy, cx)) {
         return 0;
     }
+    /* $3154: posizioni combattenti, 6 byte per n (da 1): +0 colonna (word) */
     H005_SET_W(0x3154 + (n - 1) * 6, (u16)(gx * 6 + cx + gy * 5 + 0x16));
+    /* $3156: posizioni combattenti +2: riga sulla mappa (word) */
     H005_SET_W(0x3154 + (n - 1) * 6 + 2, (u16)(gy * 5 + cy + 0x0A));
     probe_move(g_combatants[n - 1], 8, &blocker, &tile, &in_cloud, &in_acid);
+    /* $3EF4: terreno, $41 voci da 4 byte (da 1): +0 costo ($FF invalicabile) */
     if (blocker == 0 && tile > 0 && H005_B(0x3EF4 + (tile - 1) * 4) < 0xFF) {
+        /* H095_bss+$22: griglie schieramento: lato*$120+set*$48+riga*$C+col, 1=libera; H095_bss+$9:
+         * lato in esame (0 party, 1 nemici): indice di GROUP_* */
         PLACE_TABLE(H095_B(0x339), set, cy, cx) = 0;
         return 1;
     }
@@ -635,17 +690,27 @@ static u8 place_in_spiral(u16 n)
     u16 sel;
     u16 e;
 
+    /* H095_bss+$1E: (word) GROUP_X lato 0: x del punto di partenza del party; H095_bss+$9: lato in
+     * esame (0 party, 1 nemici): indice di GROUP_* */
     gx = GROUP_X();
+    /* H095_bss+$1A: (word) GROUP_Y lato 0: y del punto di partenza del party; H095_bss+$9: lato in
+     * esame (0 party, 1 nemici): indice di GROUP_* */
     gy = GROUP_Y();
     do {
+        /* H095_bss+$302: (word) dir*2 dello schieramento: gdir 0..3 (passo 8), set (passo 2);
+         * H095_bss+$12: (word) GROUP_DIR lato 0: quarto di direzione del party; H095_bss+$9: lato
+         * in esame (0 party, 1 nemici): indice di GROUP_* */
         dir = (u16)((u16)H095_W(0x40 - GROUP_DIR() * 8 - set * 2) >> 1);
         switch (state) {
         case 1:
+            /* H095_bss+$2FA: 4 word: direzione 0..7 per quarto 0..3 (anche orientamento) */
             e = (u16)H095_W(0x48 - ((dir + 2) & 3) * 2);
-            dx = (s16)H005_W(0x3EE2 + e * 2);
-            dy = (s16)H005_W(0x3ED0 + e * 2);
+            dx = (s16)H005_W(0x3EE2 + e * 2); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
+            dy = (s16)H005_W(0x3ED0 + e * 2); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
             sel = set > 0 ? 1 : 0;
+            /* H095_bss+$2EA: (word) x base della spirale: sel 0..1 (passo 8), dir 0..3 (passo 2) */
             bx = (s16)(H095_W(0x58 - sel * 8 - dir * 2) + dx * ring);
+            /* H095_bss+$2DA: (word) y base della spirale: sel 0..1 (passo 8), dir 0..3 (passo 2) */
             by = (s16)(H095_W(0x68 - sel * 8 - dir * 2) + dy * ring);
             cx = bx;
             cy = by;
@@ -654,18 +719,20 @@ static u8 place_in_spiral(u16 n)
             side = 1;
             break;
         case 2:
+            /* H095_bss+$2FA: 4 word: direzione 0..7 per quarto 0..3 (anche orientamento) */
             e = (u16)H095_W(0x48 - ((dir + 1) & 3) * 2);
-            dx = (s16)H005_W(0x3EE2 + e * 2);
-            dy = (s16)H005_W(0x3ED0 + e * 2);
+            dx = (s16)H005_W(0x3EE2 + e * 2); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
+            dy = (s16)H005_W(0x3ED0 + e * 2); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
             cx = (s16)(dx * step + bx);
             cy = (s16)(dy * step + by);
             state = 3;
             ++side;
             break;
         case 3:
+            /* H095_bss+$2FA: 4 word: direzione 0..7 per quarto 0..3 (anche orientamento) */
             e = (u16)H095_W(0x48 - ((dir + 3) & 3) * 2);
-            dx = (s16)H005_W(0x3EE2 + e * 2);
-            dy = (s16)H005_W(0x3ED0 + e * 2);
+            dx = (s16)H005_W(0x3EE2 + e * 2); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
+            dy = (s16)H005_W(0x3ED0 + e * 2); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
             cx = (s16)(dx * step + bx);
             cy = (s16)(dy * step + by);
             state = 2;
@@ -682,19 +749,33 @@ static u8 place_in_spiral(u16 n)
             if (out && !outside_grid(cx, cy)) {
                 next_ring = 1;
             } else if (first) {
+                /* H095_bss+$16: 2 word per lato: (combattenti del lato+1)/2, primo anello;
+                 * H095_bss+$9: lato in esame (0 party, 1 nemici): indice di GROUP_* */
                 next_ring = (u8)(side >= (u16)H095_W(0x32C - H095_B(0x339) * 2));
             } else {
                 next_ring = (u8)(side > 0x0B);
             }
             if (next_ring) {
                 ++ring;
+                /* H095_bss+$9: lato in esame (0 party, 1 nemici): indice di GROUP_*; H095_bss+$12:
+                 * (word) GROUP_DIR lato 0: quarto di direzione del party */
                 if (H095_B(0x339) == 0 && (H095_W(0x330) & 1) && set == 0 &&
                     ring == 1) {
+                    /* H095_bss+$1E: (word) GROUP_X lato 0: x del punto di partenza del party;
+                     * H095_bss+$9: lato in esame (0 party, 1 nemici): indice di GROUP_*; $281C:
+                     * (word) x del party sulla mappa dell'area 16x16 */
                     mx = (s16)(GROUP_X() + H005_W(0x281C));
+                    /* H095_bss+$1A: (word) GROUP_Y lato 0: y del punto di partenza del party;
+                     * H095_bss+$9: lato in esame (0 party, 1 nemici): indice di GROUP_*; $281E:
+                     * (word) y del party sulla mappa dell'area 16x16 */
                     my = (s16)(GROUP_Y() + H005_W(0x281E));
                     blocked = 0;
                     for (k = 1; k <= 3; ++k) {
+                        /* H095_bss+$322: (word) direzione 0..7 dello schieramento k=1..3 per gdir
+                         * (passo 8); H095_bss+$12: (word) GROUP_DIR lato 0: quarto di direzione del
+                         * party; H095_bss+$9: lato in esame (0 party, 1 nemici): indice di GROUP_* */
                         d = H095_W(0x20 - GROUP_DIR() * 8 - k * 2);
+                        /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
                         if (H005_B(0x3DE3) == 3 ||
                             wall_between(mx, my, (u16)d) != 1) {
                             blocked = 1;
@@ -713,11 +794,27 @@ static u8 place_in_spiral(u16 n)
             state = 0;
             while (set < 3 && state != 1) {
                 ++set;
+                /* H095_bss+$1E: (word) GROUP_X lato 0: x del punto di partenza del party;
+                 * H095_bss+$9: lato in esame (0 party, 1 nemici): indice di GROUP_*; $281C: (word)
+                 * x del party sulla mappa dell'area 16x16 */
                 mx = (s16)(GROUP_X() + H005_W(0x281C));
+                /* H095_bss+$1A: (word) GROUP_Y lato 0: y del punto di partenza del party;
+                 * H095_bss+$9: lato in esame (0 party, 1 nemici): indice di GROUP_*; $281E: (word)
+                 * y del party sulla mappa dell'area 16x16 */
                 my = (s16)(GROUP_Y() + H005_W(0x281E));
+                /* H095_bss+$322: (word) direzione 0..7 dello schieramento k=1..3 per gdir (passo
+                 * 8); H095_bss+$12: (word) GROUP_DIR lato 0: quarto di direzione del party;
+                 * H095_bss+$9: lato in esame (0 party, 1 nemici): indice di GROUP_* */
                 d = H095_W(0x20 - GROUP_DIR() * 8 - set * 2);
+                /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
                 if (H005_B(0x3DE3) == 3 || wall_between(mx, my, (u16)d) != 1) {
+                    /* H095_bss+$1E: (word) GROUP_X lato 0: x del punto di partenza del party;
+                     * H095_bss+$9: lato in esame (0 party, 1 nemici): indice di GROUP_*; $3EE2:
+                     * (word) spostamento x per direzione d (passo 2) */
                     gx = (s16)(GROUP_X() + H005_W(0x3EE2 + d * 2));
+                    /* H095_bss+$1A: (word) GROUP_Y lato 0: y del punto di partenza del party;
+                     * H095_bss+$9: lato in esame (0 party, 1 nemici): indice di GROUP_*; $3ED0:
+                     * (word) spostamento y per direzione d (passo 2) */
                     gy = (s16)(GROUP_Y() + H005_W(0x3ED0 + d * 2));
                     ring = 0;
                     state = 1;
@@ -760,30 +857,60 @@ static void deploy_combatants(void)
 
     count_sides();
     for (i = 1; i <= 0x28; ++i) {
+        /* $3159: posizioni combattenti +5: forma/taglia (0 = fuori mappa) */
         H005_B(0x3154 + (i - 1) * 6 + 5) = 0;
     }
     rebuild_occupancy();
-    H095_SETW(0x324, 0);
-    H095_SETW(0x328, 0);
+    H095_SETW(0x324, 0); /* H095_bss+$1E: (word) GROUP_X lato 0: x del punto di partenza del party */
+    H095_SETW(0x328, 0); /* H095_bss+$1A: (word) GROUP_Y lato 0: y del punto di partenza del party */
+    /* $2820: direzione del party (0 nord, 2 est, 4 sud, 6 ovest); H095_bss+$12: (word) GROUP_DIR
+     * lato 0: quarto di direzione del party */
     H095_SETW(0x330, H005_B(0x2820) >> 1);
+    /* $3EE2: (word) spostamento x per direzione d (passo 2); $2820: direzione del party (0 nord, 2
+     * est, 4 sud, 6 ovest); B+$582: (word) distanza attuale dei nemici, limitata alle caselle
+     * libere; H095_bss+$1E: (word) GROUP_X lato 0: x del punto di partenza del party; H095_bss+$20:
+     * (word) GROUP_X lato 1: x del punto di partenza dei nemici */
     H095_SETW(0x322, (s16)H005_W(0x3EE2 + H005_B(0x2820) * 2) *
                      (s16)COK_GET16(g_state_b + 0x582) + H095_W(0x324));
+    /* $3ED0: (word) spostamento y per direzione d (passo 2); $2820: direzione del party (0 nord, 2
+     * est, 4 sud, 6 ovest); B+$582: (word) distanza attuale dei nemici, limitata alle caselle
+     * libere; H095_bss+$1A: (word) GROUP_Y lato 0: y del punto di partenza del party; H095_bss+$1C:
+     * (word) GROUP_Y lato 1: y del punto di partenza dei nemici */
     H095_SETW(0x326, (s16)H005_W(0x3ED0 + H005_B(0x2820) * 2) *
                      (s16)COK_GET16(g_state_b + 0x582) + H095_W(0x328));
+    /* $2820: direzione del party (0 nord, 2 est, 4 sud, 6 ovest); H095_bss+$14: (word) GROUP_DIR
+     * lato 1: quarto di direzione dei nemici */
     H095_SETW(0x32E, ((H005_B(0x2820) + 4) & 7) >> 1);
+    /* H095_bss+$9: lato in esame (0 party, 1 nemici): indice di GROUP_* */
     for (H095_B(0x339) = 0; H095_B(0x339) <= 1; ++H095_B(0x339)) {
+        /* $2A1C: combattenti attivi del lato 0; tabella byte indicizzata dal lato; H095_bss+$9:
+         * lato in esame (0 party, 1 nemici): indice di GROUP_*; H095_bss+$16: 2 word per lato:
+         * (combattenti del lato+1)/2, primo anello */
         H095_SETW(0x32C - H095_B(0x339) * 2,
                   (H005_B(0x2A1C + H095_B(0x339)) + 1) >> 1);
     }
+    /* H095_bss+$9: lato in esame (0 party, 1 nemici): indice di GROUP_* */
     for (H095_B(0x339) = 0; H095_B(0x339) <= 1; ++H095_B(0x339)) {
         for (set = 0; set <= 3; ++set) {
+            /* H095_bss+$12: (word) GROUP_DIR lato 0: quarto di direzione del party; H095_bss+$9:
+             * lato in esame (0 party, 1 nemici): indice di GROUP_* */
             shape = (set == 1) ? 4 : (u16)GROUP_DIR();
             for (r = 0; r <= 5; ++r) {
                 for (c = 0; c <= 0x0A; ++c) {
+                    /* H095_bss+$262: (word) colonna minima: forma 0..4 (passo $18), riga 0..5
+                     * (passo 4) */
                     if (c < H095_W(0xE0 - shape * 0x18 - r * 4) ||
+                        /* H095_bss+$264: (word) colonna massima: forma 0..4 (passo $18), riga 0..5
+                         * (passo 4) */
                         c > H095_W(0xE0 - shape * 0x18 - r * 4 - 2)) {
+                        /* H095_bss+$22: griglie schieramento: lato*$120+set*$48+riga*$C+col,
+                         * 1=libera; H095_bss+$9: lato in esame (0 party, 1 nemici): indice di
+                         * GROUP_* */
                         PLACE_TABLE(H095_B(0x339), set, r, c) = 0;
                     } else {
+                        /* H095_bss+$22: griglie schieramento: lato*$120+set*$48+riga*$C+col,
+                         * 1=libera; H095_bss+$9: lato in esame (0 party, 1 nemici): indice di
+                         * GROUP_* */
                         PLACE_TABLE(H095_B(0x339), set, r, c) = 1;
                     }
                 }
@@ -791,23 +918,35 @@ static void deploy_combatants(void)
         }
     }
     i = 1;
-    H005_B(0x247B) = 1;
+    H005_B(0x247B) = 1; /* $247B: numero di combattenti nella tabella +$2B32 (+1 dopo lo schieramento) */
     prev = g_party_head;
     p = g_party_head;
     while (p != NULL) {
         g_combatants[i - 1] = p;
+        /* H095_bss+$9: lato in esame (0 party, 1 nemici): indice di GROUP_*; pg+$199: lato in
+         * combattimento (0 party, 1 avversari) */
         H095_B(0x339) = p->b[0x199];
+        /* $3158: posizioni combattenti +4: numero del combattente (byte) */
         H005_B(0x3154 + (i - 1) * 6 + 4) = (u8)i;
+        /* $3159: posizioni combattenti +5: forma/taglia (0 = fuori mappa); pg+$D3: forma/taglia
+         * sulla mappa di combattimento (bit 0-2, >1 grande) */
         H005_B(0x3154 + (i - 1) * 6 + 5) = mask_byte(p->b[0xD3], 7);
         if (place_in_spiral(i)) {
             prev = p;
-            if (p->b[0x198] == 0) {
+            if (p->b[0x198] == 0) { /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
+                /* $3159: posizioni combattenti +5: forma/taglia (0 = fuori mappa) */
                 H005_B(0x3154 + (i - 1) * 6 + 5) = 0;
+                /* $24C1: uso: azzerato all'avvio; con 1 esito e caduti trattati diversamente;
+                 * turno+$15: 1 = combattente oltre i membri del party, lo lascia a fine scontro */
                 if (!H005_B(0x24C1) && p->block_192->b[0x15] == 0) {
+                    /* $3154: posizioni combattenti, 6 byte per n (da 1): +0 colonna (word) */
                     x = (s16)H005_W(0x3154 + (i - 1) * 6);
+                    /* $3156: posizioni combattenti +2: riga sulla mappa (word) */
                     y = (s16)H005_W(0x3154 + (i - 1) * 6 + 2);
-                    if (H005_B(0x247A) < 8) {
+                    if (H005_B(0x247A) < 8) { /* $247A: numero di corpi nella tabella +$2AE2 (max 8) */
+                        /* $247A: numero di corpi nella tabella +$2AE2 (max 8) */
                         add_to_byte(&H005_B(0x247A), 1);
+                        /* $247A: numero di corpi nella tabella +$2AE2 (max 8) */
                         b = &g_bodies[H005_B(0x247A) - 1];
                         b->tile = map_cell(x, y)[1];
                         map_cell(x, y)[1] = 0x1F;
@@ -817,16 +956,21 @@ static void deploy_combatants(void)
                     }
                 }
             }
+            /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
             if (p->b[0x197] == 9) {
-                p->b[0x198] = 0;
+                p->b[0x198] = 0; /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
+                /* $3159: posizioni combattenti +5: forma/taglia (0 = fuori mappa) */
                 H005_B(0x3154 + (i - 1) * 6 + 5) = 0;
             }
             rebuild_occupancy();
             ++i;
+            /* $247B: numero di combattenti nella tabella +$2B32 (+1 dopo lo schieramento) */
             add_to_byte(&H005_B(0x247B), 1);
             ++placed;
         } else {
+            /* $3159: posizioni combattenti +5: forma/taglia (0 = fuori mappa) */
             H005_B(0x3154 + (i - 1) * 6 + 5) = 0;
+            /* turno+$15: 1 = combattente oltre i membri del party, lo lascia a fine scontro */
             if (p->block_192->b[0x15] == 1) {
                 ++skipped;
                 g_combatants[i - 1] = NULL;
@@ -836,6 +980,7 @@ static void deploy_combatants(void)
             } else {
                 prev = p;
                 ++i;
+                /* $247B: numero di combattenti nella tabella +$2B32 (+1 dopo lo schieramento) */
                 add_to_byte(&H005_B(0x247B), 1);
             }
         }
@@ -858,30 +1003,30 @@ void start_combat(void)
 {
     Character *p;                       /* -$10(a5) */
 
-    H005_B(0x24CE) = 0;
+    H005_B(0x24CE) = 0; /* $24CE: 1: pausa per carattere nella scrittura del testo */
     free_gfx_record(&g_gfx_27b0[0]);
     free_gfx_record(&g_gfx_27b0[1]);
     free_gfx_record(&g_gfx_2798);
-    H005_B(0x2484) = 0xFF;
-    H005_B(0x27B0) = 0xFF;
-    H005_B(0x27B6) = 0xFF;
+    H005_B(0x2484) = 0xFF; /* $2484: id dell'immagine grande BIGPIC caricata ($FF nessuna) */
+    H005_B(0x27B0) = 0xFF; /* $27B0: 2 voci da 6 byte (id + long gfx a +2): id HEAD caricato, $FF nessuno */
+    H005_B(0x27B6) = 0xFF; /* $27B6: id del BODY caricato (2a voce da 6 byte di $27B0), $FF nessuno */
     clear_message_line();
     message_delay();
     ui_draw_text(0, 0x18, 0x0A, 0, 0x12, "A battle begins...");
-    H005_B(0x24A0) = 0;
-    H005_B(0x24AF) = 0;
-    H005_B(0x247C) = 0;
-    H005_B(0x2477) = 0x0F;
-    H005_SET_W(0x2A1A, 0);
-    H005_B(0x247A) = 0;
+    H005_B(0x24A0) = 0; /* $24A0: Magic On/Off (tasto 2): i personaggi in automatico lanciano magie */
+    H005_B(0x24AF) = 0; /* $24AF: uso: azzerato a inizio combattimento; se 1 l'effetto $43 non agisce */
+    H005_B(0x247C) = 0; /* $247C: numero del round del combattimento (0 all'inizio; bit 0 arrotonda) */
+    H005_B(0x2477) = 0x0F; /* $2477: round limite del combattimento (+$247C + 15) */
+    H005_SET_W(0x2A1A, 0); /* $2A1A: (word) tiro per colpire: d20 (20 vale 100) + modificatori effetti */
+    H005_B(0x247A) = 0; /* $247A: numero di corpi nella tabella +$2AE2 (max 8) */
     g_clouds = NULL;                    /* $2514 */
     g_acid_pools = NULL;                /* $250C */
-    H005_SET_L(0x2510, 0);
+    H005_SET_L(0x2510, 0); /* $2510: uso: (long) azzerato a inizio combattimento accanto a $250C/$2514 */
     g_h005_2432 = NULL;
     g_thrown_tail = NULL;               /* $335C */
     g_dropped_items = NULL;             /* $3360 */
     memset(g_bodies, 0, sizeof g_bodies);   /* H029+$0312 su $50 byte */
-    COK_PUT16(g_state_b + 0x666, 0);
+    COK_PUT16(g_state_b + 0x666, 0); /* B+$666: (word) 1 se e' stato confermato l'attacco a un alleato */
     build_combat_map();
     prepare_turn_blocks();
     p = g_party_head;
@@ -892,15 +1037,15 @@ void start_combat(void)
     redraw_combat_screen();
     copy_intuition_colors();
     for (p = g_party_head; p != NULL; p = p->next) {
-        p->block_192->b[0x13] = 0;
+        p->block_192->b[0x13] = 0; /* turno+$13: Turn Undead gia' usati nel combattimento (max H005+$248F) */
         trigger_event(&p, 8);
         trigger_event(&p, 0x16);
     }
     enemy_strength();
-    H005_B(0x24CB) = 0;
-    H005_B(0x24CC) = 0;
-    H005_B(0x3DE3) = 5;
-    H005_B(0x24B0) = 0;
+    H005_B(0x24CB) = 0; /* $24CB: 1 nel modo Move/Attack: cursore sulla mappa di combattimento */
+    H005_B(0x24CC) = 0; /* $24CC: 1 nel modo Manual: cursore sulla mappa di combattimento */
+    H005_B(0x3DE3) = 5; /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
+    H005_B(0x24B0) = 0; /* $24B0: modo Move dell'esplorazione: clic sulla vista come movimento */
     memset(g_h005_0016, 0, sizeof g_h005_0016); /* H029+$0312 su $50 byte */
-    H005_SET_W(0x14, 0);
+    H005_SET_W(0x14, 0); /* $14: numero di personaggi a terra nella lista +$16 (word, max 20) */
 }

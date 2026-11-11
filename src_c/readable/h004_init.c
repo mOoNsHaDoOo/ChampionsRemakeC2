@@ -50,13 +50,14 @@ static void apply(const H004InitOp *op, size_t n)
             break;
         }
         case H004_B:
+            /* op->dst: indirizzo H005 della voce della tabella generata (vedi init_data) */
             H005_B(op->dst) = (u8)op->value;
             break;
         case H004_W:
-            H005_SET_W(op->dst, op->value);
+            H005_SET_W(op->dst, op->value); /* op->dst: indirizzo H005 della voce */
             break;
         default:
-            H005_SET_L(op->dst, op->value);
+            H005_SET_L(op->dst, op->value); /* op->dst: indirizzo H005 della voce */
             break;
         }
     }
@@ -121,15 +122,17 @@ static void init_class_tables(void)
         unsigned j;
 
         for (i = 0; i < 11; ++i) {
+            /* t->base ($1946..): tabella classe +$00: soglia XP (long) del livello i+1 */
             H005_SET_L(t->base + i * 4, t->xp[i]);
         }
         for (level = 2; level <= 12; ++level) {
             for (j = 1; j <= 5; ++j) {
+                /* tabella classe +$2C: slot incantesimi, 5 word per i livelli 2..12 */
                 H005_SET_W(t->base + 0x2C + (level - 2) * 10 + (j - 1) * 2, 0);
             }
         }
         for (i = 0; i < 11 && t->ones[i] != 0; ++i) {
-            H005_SET_W(t->base + t->ones[i], 1);
+            H005_SET_W(t->base + t->ones[i], 1); /* slot incantesimi della tabella classe a 1 */
         }
     }
 }
@@ -140,8 +143,9 @@ static void table_3ef4_range(unsigned first, unsigned last, u8 b0)
     unsigned i;
 
     for (i = first; i <= last; ++i) {
+        /* $3EF4: terreno, $41 voci da 4 byte (da 1): +0 costo ($FF invalicabile) */
         H005_B(0x3EF4 + (i - 1) * 4) = b0;
-        H005_B(0x3EF4 + (i - 1) * 4 + 2) = 0;
+        H005_B(0x3EF4 + (i - 1) * 4 + 2) = 0; /* $3EF6: terreno +2: altezza che ferma la linea di vista */
     }
 }
 
@@ -156,8 +160,8 @@ void h004_init(void)
 
     /* H004+$1A10 */
     for (i = 0; i <= 0x0F; ++i) {
-        H005_B(0x3DA2 + i) = (u8)i;
-        H005_B(0x3D92 + i) = (u8)i;
+        H005_B(0x3DA2 + i) = (u8)i; /* $3DA2: ricolorazione dei set grafici: colori di partenza (16 byte) */
+        H005_B(0x3D92 + i) = (u8)i; /* $3D92: ricolorazione dei set grafici: colori di arrivo (16 byte) */
     }
 
     APPLY(s_init_1a48);
@@ -165,6 +169,7 @@ void h004_init(void)
     /* H004+$1B86: 11 x 5 word a $3FF8. */
     for (i = 9; i <= 0x13; ++i) {
         for (j = 1; j <= 5; ++j) {
+            /* $3FF8: (word) correzioni abilita' ladro per destrezza 9..19, 5 per riga */
             H005_SET_W(0x3FF8 + (i - 9) * 10 + (j - 1) * 2, 0);
         }
     }
@@ -175,6 +180,9 @@ void h004_init(void)
     for (i = 1; i <= 0x41; ++i) {
         u16 p = (u16)(0x3EF4 + (i - 1) * 4);
 
+        /* p = voce i del terreno $3EF4: +0 costo ($FF invalicabile), +1 altezza
+         * dell'origine e +2 altezza che ferma la linea di vista, +3 fotogramma
+         * grafico della tessera */
         H005_B(p) = 0xFF;
         H005_B(p + 1) = 1;
         H005_B(p + 2) = 2;
@@ -196,9 +204,11 @@ void h004_init(void)
     table_3ef4_range(0x30, 0x35, 2);
     table_3ef4_range(0x36, 0x3C, 1);
     for (i = 0x3D; i <= 0x3F; ++i) {
+        /* $3EF4: terreno, $41 voci da 4 byte (da 1): +0 costo ($FF invalicabile) */
         H005_B(0x3EF4 + (i - 1) * 4) = 4;
+        /* $3EF5: terreno +1: altezza dell'origine per la linea di vista */
         H005_B(0x3EF4 + (i - 1) * 4 + 1) = 0;
-        H005_B(0x3EF4 + (i - 1) * 4 + 2) = 0;
+        H005_B(0x3EF4 + (i - 1) * 4 + 2) = 0; /* $3EF6: terreno +2: altezza che ferma la linea di vista */
     }
     table_3ef4_range(0x40, 0x41, 1);
 
@@ -206,6 +216,7 @@ void h004_init(void)
 
     /* H004+$3CB8 */
     for (i = 7; i <= 0x0E; ++i) {
+        /* $1F4A: bonus PF per costituzione (word), indice costituzione-3 */
         H005_SET_W(0x1F4A + (i - 3) * 2, 0);
     }
 
@@ -213,6 +224,7 @@ void h004_init(void)
 
     /* H004+$3CE8 */
     for (i = 0x10; i <= 0x19; ++i) {
+        /* $1F4A: bonus PF per costituzione (word), indice costituzione-3 */
         H005_SET_W(0x1F4A + (i - 3) * 2, 2);
     }
     init_class_tables();
@@ -223,6 +235,7 @@ void h004_init(void)
     for (i = 1; i <= 3; ++i) {
         for (j = 1; j <= 4; ++j) {
             for (k = 1; k <= 10; ++k) {
+                /* $1476: inc. per classe/livello: 3x4 righe di 10 word ($14), 0 = fine */
                 H005_SET_W(0x1476 + (i - 1) * 0x50 + (j - 1) * 0x14 +
                            (k - 1) * 2, 0);
             }
@@ -232,10 +245,11 @@ void h004_init(void)
     APPLY(s_init_54f8);
 
     /* H004+$5E9E */
-    H005_SET_L(0x0000, 1);
-    H005_SET_L(0x0004, 5);
-    H005_SET_L(0x0008, 0x0A);
-    H005_SET_L(0x000C, 0x19);
+    H005_SET_L(0x0000, 1); /* $0: valori delle 5 monete (long: 1,5,10,25,50), moneta 1; vedi CH +$F0 */
+    H005_SET_L(0x0004, 5); /* $4: valore della moneta 2 (long, 5); H029 vi scrive $10F (asm H024+$4) */
+    H005_SET_L(0x0008, 0x0A); /* $8: valore della moneta 3 (long, 10) */
+    H005_SET_L(0x000C, 0x19); /* $C: valore della moneta 4 (long, 25) */
+    /* $10: valore della moneta 5 (long, 50): divisore per la ricchezza in acciaio */
     H005_SET_L(0x0010, 0x32);
 
     APPLY(s_init_5ec6);

@@ -34,9 +34,10 @@ static void cure_wounds(u16 dice, u16 extra)
 {
     u16 bonus;                          /* -$2(a5) */
 
-    if (H005_B(0x246C) == 0) {
+    if (H005_B(0x246C) == 0) { /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
         return;
     }
+    /* pg+$5E: divinita' del chierico (0 nessuna, 1..7; 6 per le razze 3-4) */
     if (g_current_char->b[0x5E] == 4) {
         bonus = roll_dice(1, 8);
     } else {
@@ -68,7 +69,7 @@ static u8 cure_target_disease(void)
 {
     u8 ok = 0;                          /* -$1(a5) */
 
-    H005_B(0x24AA) = 1;
+    H005_B(0x24AA) = 1; /* $24AA: 1 durante le cure: i gestori non riaggiungono effetti */
     if (cure_effect(g_spell_targets[0], 0x22)) {
         ok = 1;
     }
@@ -78,7 +79,7 @@ static u8 cure_target_disease(void)
         remove_effect(g_spell_targets[0], 0x1F, NULL);
         recompute_stat(g_spell_targets[0], 0);
     }
-    H005_B(0x24AA) = 0;
+    H005_B(0x24AA) = 0; /* $24AA: 1 durante le cure: i gestori non riaggiungono effetti */
     return ok;
 }
 
@@ -97,22 +98,22 @@ void neutralize_poison(void)
     Character *t = g_spell_targets[0];  /* -$4(a5) */
     CokEffect *e;                       /* -$8(a5) */
 
-    if (t->b[0x197] == 1) {
+    if (t->b[0x197] == 1) { /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
         g_spell_targets[0] = NULL;
         return;
     }
     if (find_effect(t, 0x37, &e)) {
-        if (t->b[0x1A8] == 0) {
-            t->b[0x1A8] = 1;
+        if (t->b[0x1A8] == 0) { /* pg+$1A8: punti ferita correnti */
+            t->b[0x1A8] = 1; /* pg+$1A8: punti ferita correnti */
         }
-        H005_B(0x24AA) = 1;
+        H005_B(0x24AA) = 1; /* $24AA: 1 durante le cure: i gestori non riaggiungono effetti */
         remove_effect(t, 0x37, NULL);
         remove_effect(t, 0x16, NULL);
         remove_effect(t, 0x0F, NULL);
-        H005_B(0x24AA) = 0;
+        H005_B(0x24AA) = 0; /* $24AA: 1 durante le cure: i gestori non riaggiungono effetti */
         show_char_message(t, 0x0D, "is unpoisoned", 0x0A, 1);
-        t->b[0x198] = 1;
-        t->b[0x197] = 0;
+        t->b[0x198] = 1; /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
+        t->b[0x197] = 0; /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
     } else {
         show_char_message(t, 0x0D, "is unaffected", 0x0A, 1);
     }
@@ -138,6 +139,7 @@ static u16 spell_duration(u16 spell)
         d = (u16)(roll_dice(1, 4) * 10 + 0x28);
         break;
     case 0x3F:
+        /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
         if (H005_B(0x3DE3) == 5) {
             d = (u16)(roll_dice(2, 0x0A) * 10);
         } else {
@@ -166,24 +168,38 @@ void enlarge(void)
     Character *t = g_spell_targets[0];  /* -$6(a5) */
     u16 value;                          /* -$2(a5) */
 
+    /* H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita */
     H085_SET_W(2, 0x12);
-    H085_SET_W(0, 0);
-    switch (caster_level(H005_B(0x2471))) {
+    H085_SET_W(0, 0); /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
+    switch (caster_level(H005_B(0x2471))) { /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
     case 1:  H085_SET_W(0, 0);    break;
+    /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
     case 2:  H085_SET_W(0, 1);    break;
+    /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
     case 3:  H085_SET_W(0, 0x33); break;
+    /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
     case 4:  H085_SET_W(0, 0x4C); break;
+    /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
     case 5:  H085_SET_W(0, 0x5B); break;
+    /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
     case 6:  H085_SET_W(0, 0x64); break;
+    /* H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita */
     case 7:  H085_SET_W(2, 0x13); break;
+    /* H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita */
     case 8:  H085_SET_W(2, 0x14); break;
+    /* H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita */
     case 9:  H085_SET_W(2, 0x15); break;
     case 10:
+    /* H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita */
     case 11: H085_SET_W(2, 0x16); break;
     default: break;
     }
+    /* H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita;
+     * H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
     if (strength_raises(t, H085_W(2), H085_W(0), &value)) {
         show_char_message(t, 0x0B, "is stronger", 0x0A, 1);
+        /* $2471: incantesimo in corso di lancio (0 = nessuno) */
         add_effect(t, 0x0C, spell_duration(H005_B(0x2471)), value, 1);
         recompute_stat(t, 0);
     } else {
@@ -204,21 +220,38 @@ void strength_spell(void)
     u16 str;                            /* -$a(a5) */
     u16 value;                          /* -$c(a5) */
 
+    /* pg+$103: livello da mago; pg+$10B: livello precedente da mago; pg+$DC: uso: soglia per i
+     * livelli +$106..+$10D e i PF; !=0 vieta Modify */
     if (t->b[0x103] > 0 || t->b[0x10B] > t->b[0xDC]) {
         bonus = roll_dice(1, 4);
     }
+    /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico; pg+$106: livelli
+     * della classe precedente, 8 voci come +$FE; chierico; pg+$DC: uso: soglia per i livelli
+     * +$106..+$10D e i PF; !=0 vieta Modify; pg+$104: livello da ladro */
     if (t->b[0xFE] > 0 || t->b[0x106] > t->b[0xDC] || t->b[0x104] > 0 ||
+        /* pg+$10C: livello precedente da ladro; pg+$DC: uso: soglia per i livelli +$106..+$10D e i
+         * PF; !=0 vieta Modify */
         t->b[0x10C] > t->b[0xDC]) {
         bonus = roll_dice(1, 6);
     }
+    /* pg+$100: livello da guerriero; pg+$108: livello precedente da guerriero; pg+$DC: uso: soglia
+     * per i livelli +$106..+$10D e i PF; !=0 vieta Modify */
     if (t->b[0x100] > 0 || t->b[0x108] > t->b[0xDC]) {
         bonus = roll_dice(1, 8);
     }
+    /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza corrente */
     str = (u16)(t->b[0x11] + bonus);
     if (str > 0x12) {
+        /* pg+$100: livello da guerriero; pg+$108: livello precedente da guerriero; pg+$DC: uso:
+         * soglia per i livelli +$106..+$10D e i PF; !=0 vieta Modify */
         if (t->b[0x100] > 0 || t->b[0x108] > t->b[0xDC] ||
+            /* pg+$105: livello da cavaliere; pg+$10D: livello precedente da cavaliere; pg+$DC: uso:
+             * soglia per i livelli +$106..+$10D e i PF; !=0 vieta Modify */
             t->b[0x105] > 0 || t->b[0x10D] > t->b[0xDC] ||
+            /* pg+$102: livello da ranger; pg+$10A: livello precedente da ranger; pg+$DC: uso:
+             * soglia per i livelli +$106..+$10D e i PF; !=0 vieta Modify */
             t->b[0x102] > 0 || t->b[0x10A] > t->b[0xDC]) {
+            /* pg+$1C: forza eccezionale corrente (18/xx, 1..100) */
             ext = (u16)(t->b[0x1C] + (str - 0x12) * 10);
             if (ext > 0x64) {
                 ext = 0x64;
@@ -230,6 +263,7 @@ void strength_spell(void)
     }
     if (strength_raises(t, str, ext, &value)) {
         value = (u16)(bonus + 0x64);
+        /* $2471: incantesimo in corso di lancio (0 = nessuno) */
         add_effect(t, 0x26, spell_duration(H005_B(0x2471)), value, 1);
         recompute_stat(t, 0);
     }
@@ -248,14 +282,15 @@ void apply_spell_effect(u16 spell, u16 level, u8 b5, u16 dmg, u16 dmg_type,
     u16 i;                              /* -$4(a5) */
     u8 saved;                           /* -$9(a5) */
     Character *t;
+/* $66: tabella incantesimi, 16 byte per incantesimo (da 1); k/o = campo */
 #define SP(k) H005_B(0x66 + (spell - 1) * 16 + (k))
 
     if (dmg == 0) {
-        H005_B(0x2473) = 0;
+        H005_B(0x2473) = 0; /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
     } else {
-        H005_B(0x2473) = (u8)dmg_type;
+        H005_B(0x2473) = (u8)dmg_type; /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
     }
-    if (H005_B(0x246C) == 0) {
+    if (H005_B(0x246C) == 0) { /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
         return;
     }
     if (level == 0) {
@@ -263,6 +298,7 @@ void apply_spell_effect(u16 spell, u16 level, u8 b5, u16 dmg, u16 dmg_type,
     } else {
         lvl = (s16)level;
     }
+    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
     for (i = 1; i <= H005_B(0x246C); ++i) {
         if (g_spell_targets[i - 1] == NULL) {
             continue;
@@ -272,10 +308,12 @@ void apply_spell_effect(u16 spell, u16 level, u8 b5, u16 dmg, u16 dmg_type,
         } else {
             saved = saving_throw_roll(g_spell_targets[i - 1], SP(9), 0);
         }
+        /* $2471: incantesimo in corso di lancio (0 = nessuno) */
         if (H005_B(0x66 + (H005_B(0x2471) - 1) * 16 + 2) == 0xFF) {
             recompute_stats(g_spell_targets[i - 1]);
             trigger_event(&g_spell_targets[i - 1], 0x0B);
             t = g_spell_targets[i - 1];
+            /* pg+$19C: classe d'armatura corrente codificata (60 - CA) */
             if (!attack_roll(g_current_char, t, t->b[0x19C])) {
                 dmg = 0;
                 saved = 1;
@@ -290,15 +328,16 @@ void apply_spell_effect(u16 spell, u16 level, u8 b5, u16 dmg, u16 dmg_type,
                                   SP(8), saved, len, text);
         }
     }
-    H005_B(0x2473) = 0;
+    H005_B(0x2473) = 0; /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
 #undef SP
 }
 
-#define SPELL_NOW H005_B(0x2471)
+#define SPELL_NOW H005_B(0x2471) /* $2471: incantesimo in corso di lancio (0 = nessuno) */
 
 /* Incantesimo con solo effetto e messaggio (H085+$07B6 senza danno). */
 static void simple_effect(u16 len, const char *text)
 {
+    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
     apply_spell_effect(SPELL_NOW, 0, 0, 0, 0, len, text);
 }
 
@@ -311,35 +350,42 @@ static void side_effect(u8 side, u16 len, const char *text)
 {
     u16 i;                              /* -$2(a5) */
 
-    H005_B(0x24A9) = 1;
+    H005_B(0x24A9) = 1; /* $24A9: 1 se l'incantesimo agisce su area/gruppo (immagini illese) */
+    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
     for (i = 1; i <= H005_B(0x246C); ++i) {
+        /* pg+$199: lato in combattimento (0 party, 1 avversari) */
         if (g_spell_targets[i - 1]->b[0x199] != side) {
             g_spell_targets[i - 1] = NULL;
+        /* $2471: incantesimo in corso di lancio (0 = nessuno) */
         } else if ((SPELL_NOW == 1 || SPELL_NOW == 0x69) &&
+                   /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
                    H005_B(0x3DE3) == 5 &&
                    count_enemies_near(g_spell_targets[i - 1], 1) > 0) {
             g_spell_targets[i - 1] = NULL;
         }
     }
+    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
     apply_spell_effect(SPELL_NOW, 0, 0, 0, 0, len, text);
 }
 
 /* PORT H085+$1C60: Bless. */
 void spell_bless(void)
 {
+    /* pg+$199: lato in combattimento (0 party, 1 avversari) */
     side_effect(g_current_char->b[0x199], 0x0A, "is Blessed");
 }
 
 /* PORT H085+$1C86: Curse. */
 void spell_curse(void)
 {
-    H005_B(0x24A9) = 1;
+    H005_B(0x24A9) = 1; /* $24A9: 1 se l'incantesimo agisce su area/gruppo (immagini illese) */
     side_effect(other_side(g_current_char), 9, "is Cursed");
 }
 
 /* PORT H085+$1D3C: Cause Light Wounds, 1d8. */
 void spell_cause_light_wounds(void)
 {
+    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
     apply_spell_effect(SPELL_NOW, 0, 0, roll_damage_dice(1, 8), 8, 0, "");
 }
 
@@ -352,6 +398,7 @@ void spell_resist_cold(void)
 /* PORT H085+$1DA6: Burning Hands, danno = livello d'incantatore. */
 void spell_burning_hands(void)
 {
+    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
     apply_spell_effect(SPELL_NOW, 0, 0, (u16)caster_level(SPELL_NOW), 9, 0,
                        "");
 }
@@ -365,12 +412,16 @@ void spell_charm_person(void)
     if (t == NULL) {
         return;
     }
+    /* pg+$14C: flag del tipo di creatura (bit usati da effetti e incantesimi); pg+$D3: forma/taglia
+     * sulla mappa di combattimento (bit 0-2, >1 grande) */
     if (t->b[0x14C] > 1 || t->b[0xD3] > 1) {
         show_char_message(t, 0x0D, "is unaffected", 0x0A, 1);
         return;
     }
-    apply_spell_effect(SPELL_NOW,
+    apply_spell_effect(SPELL_NOW, /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+                       /* $2471: incantesimo in corso di lancio (0 = nessuno) */
                        (u16)(caster_level(SPELL_NOW) +
+                             /* pg+$199: lato in combattimento (0 party, 1 avversari) */
                              (g_current_char->b[0x199] << 7)),
                        1, 0, 0, 0x0A, "is charmed");
     if (find_effect(t, 0x0B, &e)) {
@@ -384,6 +435,7 @@ void spell_reduce(void)
     Character *t = g_spell_targets[0];  /* -$8(a5) */
     CokEffect *e;                       /* -$4(a5) */
 
+    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
     if (t == NULL || H005_B(0x246C) == 0) {
         return;
     }
@@ -400,6 +452,7 @@ void spell_reduce(void)
 /* PORT H085+$2090: Friends (livello 2d4), poi ricalcola il carisma. */
 void spell_friends(void)
 {
+    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
     apply_spell_effect(SPELL_NOW, roll_dice(2, 4), 1, 0, 0, 0x0B,
                        "is friENDly");
     recompute_stat(g_current_char, 5);
@@ -408,9 +461,11 @@ void spell_friends(void)
 /* PORT H085+$20DE: Magic Missile, (livello+1)/2 dadi d4 + altrettanti. */
 void spell_magic_missile(void)
 {
+    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
     u16 n = (u16)(caster_level(SPELL_NOW) + 1);   /* -$2(a5) */
     u16 dmg = roll_damage_dice((u16)(n >> 1), 4);
 
+    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
     apply_spell_effect(SPELL_NOW, 0, 0, (u16)(dmg + (n >> 1)), 8, 0, "");
 }
 
@@ -425,7 +480,8 @@ void spell_shocking_grasp(void)
 {
     u16 dmg = roll_damage_dice(1, 8);
 
-    dmg = (u16)(dmg + caster_level(SPELL_NOW));
+    dmg = (u16)(dmg + caster_level(SPELL_NOW)); /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
     apply_spell_effect(SPELL_NOW, 0, 0, dmg, 0x0C, 0, "");
 }
 
@@ -443,31 +499,45 @@ void spell_sleep(void)
     Character *t;
     u16 i;                              /* -$2(a5) */
 
-    H005_B(0x24A9) = 1;
+    H005_B(0x24A9) = 1; /* $24A9: 1 se l'incantesimo agisce su area/gruppo (immagini illese) */
+    /* H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita */
     H085SETW(2, roll_dice(4, 4));
+    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
     for (i = 1; i <= H005_B(0x246C); ++i) {
         t = g_spell_targets[i - 1];
-        switch (t->b[0xDB]) {
+        switch (t->b[0xDB]) { /* pg+$DB: livello massimo fra le classi (usato anche come dadi vita) */
         case 0:
+        /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
         case 1: H085SETW(0, 1); break;
+        /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
         case 2: H085SETW(0, 2); break;
+        /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
         case 3: H085SETW(0, 4); break;
+        /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
         case 4: H085SETW(0, 6); break;
         case 5:
-            if (t->b[0x5B] == 7) {
+            if (t->b[0x5B] == 7) { /* pg+$5B: razza (0..6, nomi H005+$4D04) */
+                /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
                 H085SETW(0, 0x0A);
             } else {
+                /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
                 H085SETW(0, 0x14);
             }
             break;
         default:
+            /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
             H085SETW(0, 0x14);
             break;
         }
+        /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
         if (t->b[0x197] == 1 || find_effect(t, 0x35, &e) ||
+            /* H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita;
+             * H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
             H085W(2) < H085W(0)) {
             g_spell_targets[i - 1] = NULL;
         } else {
+            /* H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita;
+             * H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
             H085SETW(2, (u16)(H085W(2) - H085W(0)));
         }
     }
@@ -492,16 +562,17 @@ void spell_slow_poison(void)
     Character *t = g_spell_targets[0];  /* -$8(a5) */
     CokEffect *e;                       /* -$4(a5) */
 
-    if (t->b[0x197] == 1) {
+    if (t->b[0x197] == 1) { /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
         g_spell_targets[0] = NULL;
         return;
     }
     if (find_effect(t, 0x37, &e)) {
-        if (t->b[0x1A8] == 0) {
-            t->b[0x1A8] = 1;
+        if (t->b[0x1A8] == 0) { /* pg+$1A8: punti ferita correnti */
+            t->b[0x1A8] = 1; /* pg+$1A8: punti ferita correnti */
         }
-        t->b[0x197] = 0;
-        t->b[0x198] = 1;
+        t->b[0x197] = 0; /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+        t->b[0x198] = 1; /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
+        /* $2471: incantesimo in corso di lancio (0 = nessuno) */
         apply_spell_effect(SPELL_NOW, 0xFF, 1, 0, 0, 0x0B, "is affected");
         add_effect(t, 0x0F, 0x0A, 0xFF, 1);
     }
@@ -516,13 +587,23 @@ void spell_snake_charm(void)
     Character *p;                       /* -$4(a5) */
     CokEffect *e;                       /* -$8(a5) */
 
+    /* pg+$1A8: punti ferita correnti; H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF
+     * residui, % riuscita */
     H085SETW(2, g_current_char->b[0x1A8]);
-    H005_B(0x246C) = 0;
+    H005_B(0x246C) = 0; /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
     for (p = g_party_head; p != NULL; p = p->next) {
+        /* pg+$14C: flag del tipo di creatura (bit usati da effetti e incantesimi); pg+$198:
+         * attivo/in piedi (0 a terra o fuori combattimento) */
         if (mask_byte(p->b[0x14C], 0x10) && p->b[0x198] &&
+            /* H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita;
+             * pg+$1A8: punti ferita correnti */
             !find_effect(p, 0x33, &e) && H085W(2) >= p->b[0x1A8]) {
+            /* H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita;
+             * pg+$1A8: punti ferita correnti */
             H085SETW(2, (u16)(H085W(2) - p->b[0x1A8]));
+            /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
             add_to_byte(&H005_B(0x246C), 1);
+            /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
             g_spell_targets[H005_B(0x246C) - 1] = p;
         }
     }
@@ -532,6 +613,7 @@ void spell_snake_charm(void)
 /* PORT H085+$25B8: Spiritual Hammer: effetto, poi il gestore $17. */
 void spell_spiritual_hammer(void)
 {
+    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
     apply_spell_effect(SPELL_NOW, 0, 1, 0, 0, 0, "");
     call_effect_handler(0x17, &g_spell_targets[0], NULL, 0);
 }
@@ -548,7 +630,8 @@ void spell_mirror_image(void)
     u8 v;                               /* -$1(a5) */
 
     v = (u8)(roll_dice(1, 4) << 4);
-    v = or_byte(v, (u16)caster_level(SPELL_NOW));
+    v = or_byte(v, (u16)caster_level(SPELL_NOW)); /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
     apply_spell_effect(SPELL_NOW, v, 0, 0, 0, 0x0D, "is duplicated");
 }
 
@@ -575,14 +658,17 @@ void spell_cause_blindness(void)
 /* PORT H085+$2E40: Cause Disease. */
 void spell_cause_disease(void)
 {
+    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
     apply_spell_effect(SPELL_NOW, 0, 1, 0, 0, 0x0B, "is diseased");
 }
 
 /* PORT H085+$2E70: Prayer (livello: lato * 16 + livello d'incantatore). */
 void spell_prayer(void)
 {
+    /* pg+$199: lato in combattimento (0 party, 1 avversari) */
     u16 side = (u16)(g_current_char->b[0x199] << 4);
 
+    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
     apply_spell_effect(SPELL_NOW, (u16)(side + caster_level(SPELL_NOW)), 0,
                        0, 0, 0x0A, "is praying");
 }
@@ -604,11 +690,13 @@ void spell_remove_curse(void)
     found = 0;
     for (it = g_spell_targets[0]->items; it != NULL && !found;
          it = it->next) {
-        if (it->b[0x3C]) {
+        if (it->b[0x3C]) { /* ogg+$3C: flag oggetto maledetto */
             found = 1;
-            it->b[0x3A] = 0;
+            it->b[0x3A] = 0; /* ogg+$3A: flag oggetto pronto all'uso (Ready) */
+            /* ogg+$46: tipo dell'effetto magico: bit7 = effetto passivo, bit 0..6 tipo */
             if (it->b[0x46] > 0x7F) {
-                H005_B(0x24E0) = 1;
+                H005_B(0x24E0) = 1; /* $24E0: 1: gli effetti passano al gestore $2A0E (oggetti magici) */
+                /* ogg+$46: tipo dell'effetto magico: bit7 = effetto passivo, bit 0..6 tipo */
                 call_effect_handler(it->b[0x46], &g_spell_targets[0], it, 1);
                 for (k = 0; k <= 5; ++k) {
                     recompute_stat(g_spell_targets[0], k);
@@ -644,9 +732,11 @@ static void side_limited_effect(u16 type, u8 side, u16 len, const char *text)
     s16 left;                           /* -$2(a5) */
     u16 i;                              /* -$4(a5) */
 
-    H005_B(0x24A9) = 1;
-    left = caster_level(SPELL_NOW);
+    H005_B(0x24A9) = 1; /* $24A9: 1 se l'incantesimo agisce su area/gruppo (immagini illese) */
+    left = caster_level(SPELL_NOW); /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
     for (i = 1; i <= H005_B(0x246C); ++i) {
+        /* pg+$199: lato in combattimento (0 party, 1 avversari) */
         if (g_spell_targets[i - 1]->b[0x199] == side && (u16)left > 0) {
             --left;
             if (cure_effect(g_spell_targets[i - 1], type)) {
@@ -656,7 +746,9 @@ static void side_limited_effect(u16 type, u8 side, u16 len, const char *text)
             g_spell_targets[i - 1] = NULL;
         }
     }
+    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
     apply_spell_effect(SPELL_NOW, 0, 0, 0, 0, len, text);
+    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
     for (i = 1; i <= H005_B(0x246C); ++i) {
         if (g_spell_targets[i - 1] != NULL) {
             trigger_event(&g_spell_targets[i - 1], 0x12);
@@ -667,6 +759,7 @@ static void side_limited_effect(u16 type, u8 side, u16 len, const char *text)
 /* PORT H085+$318A: Haste (annulla Slow, $2A). */
 void spell_haste(void)
 {
+    /* pg+$199: lato in combattimento (0 party, 1 avversari) */
     side_limited_effect(0x2A, g_current_char->b[0x199], 9, "is Hasted");
 }
 
@@ -723,6 +816,7 @@ void spell_invisible(void)
 /* PORT H085+$34B0: danno 2d4+2. */
 void spell_damage_2d4(void)
 {
+    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
     apply_spell_effect(SPELL_NOW, 0, 0, (u16)(roll_damage_dice(2, 4) + 2),
                        8, 0, "");
 }
@@ -732,12 +826,13 @@ void spell_cause_serious_wounds(void)
 {
     u16 bonus;                          /* -$2(a5) */
 
+    /* pg+$5E: divinita' del chierico (0 nessuna, 1..7; 6 per le razze 3-4) */
     if (g_current_char->b[0x5E] == 4) {
         bonus = 3;
     } else {
         bonus = 1;
     }
-    apply_spell_effect(SPELL_NOW, 0, 0,
+    apply_spell_effect(SPELL_NOW, 0, 0, /* $2471: incantesimo in corso di lancio (0 = nessuno) */
                        (u16)(roll_damage_dice(2, 8) + bonus), 8, 0, "");
 }
 
@@ -746,7 +841,9 @@ void spell_sticks_to_snakes(void)
 {
     CokEffect *e;                       /* -$4(a5) */
 
+    /* pg+$DB: livello massimo fra le classi (usato anche come dadi vita) */
     if (g_spell_targets[0]->b[0xDB] < 6) {
+        /* $2471: incantesimo in corso di lancio (0 = nessuno) */
         apply_spell_effect(SPELL_NOW, (u16)caster_level(SPELL_NOW), 0, 0, 8,
                            0, "");
         if (find_effect(g_spell_targets[0], 3, &e)) {
@@ -766,9 +863,10 @@ void spell_confusion(void)
     u16 i;                              /* -$2(a5) */
     u8 saved;                           /* -$3(a5) */
 
-    if (H005_B(0x246C) > n) {
-        H005_B(0x246C) = (u8)n;
+    if (H005_B(0x246C) > n) { /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
+        H005_B(0x246C) = (u8)n; /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
     }
+    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
     for (i = 1; i <= H005_B(0x246C); ++i) {
         if (g_spell_targets[i - 1] != NULL) {
             t = g_spell_targets[i - 1];
@@ -787,7 +885,7 @@ void spell_fire_shield(void)
     u8 done = 0;                        /* -$3(a5) */
 
     do {
-        if (g_current_char->b[0x19A]) {
+        if (g_current_char->b[0x19A]) { /* pg+$19A: controllo automatico in combattimento (1 = IA) */
             if (roll_dice(1, 0x0A) > 5) {
                 key = 'H';
             } else {
@@ -829,7 +927,7 @@ void spell_fumble(void)
     Character *t = g_spell_targets[0];  /* -$4(a5) */
     CokEffect *e;                       /* -$8(a5) */
 
-    H005_B(0x2473) = 0x40;
+    H005_B(0x2473) = 0x40; /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
     if (!saving_throw_roll(t, 4, 0)) {
         apply_spell_effect_on(t, 0x1B, spell_duration(0x56), 0, 0, 0, 0, 9,
                               "is clumsy");
@@ -843,12 +941,14 @@ void spell_fumble(void)
             call_effect_handler(0x2A, &t, NULL, 0);
         }
     }
+    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
     apply_spell_effect(SPELL_NOW, 0, 1, 0, 0, 9, "is clumsy");
 }
 
 /* PORT H085+$3D0A: Ice Storm, 3d10. */
 void spell_ice_storm(void)
 {
+    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
     apply_spell_effect(SPELL_NOW, 0, 0, roll_damage_dice(3, 0x0A), 8, 0, "");
 }
 
@@ -907,20 +1007,29 @@ void spell_heal_3df8(void)
 }
 
 /*
+ * PORT H085+$3EE2 (annidata in Dispel Magic, H085+$3ED4).
  * Probabilita' (in H085+$2) di dissolvere un effetto di livello level
  * (H085+$0) con il livello d'incantatore caster: +5% per livello sopra,
  * -2% per livello sotto, 50% alla pari.  Poi il tiro d100.
  */
 static u8 dispel_roll(s16 caster, u16 level)
 {
-    H085SETW(0, level);
+    H085SETW(0, level); /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
+    /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
     if ((u16)caster > H085W(0)) {
+        /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello;
+         * H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita */
         H085SETW(2, (u16)(((u16)caster - H085W(0)) * 5 + 0x32));
+    /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
     } else if ((u16)caster < H085W(0)) {
+        /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello;
+         * H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita */
         H085SETW(2, (u16)(0x32 - (H085W(0) - (u16)caster) * 2));
     } else {
+        /* H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita */
         H085SETW(2, 0x32);
     }
+    /* H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita */
     return (u8)(roll_dice(1, 0x64) <= H085W(2));
 }
 
@@ -947,16 +1056,18 @@ void spell_dispel_magic(void)
     u8 dispelled;                       /* -$9(a5) */
     u8 found;                           /* -$a(a5) */
 
-    H005_B(0x24A9) = 1;
-    caster = caster_level(SPELL_NOW);
+    H005_B(0x24A9) = 1; /* $24A9: 1 se l'incantesimo agisce su area/gruppo (immagini illese) */
+    caster = caster_level(SPELL_NOW); /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
     for (i = 1; i <= H005_B(0x246C); ++i) {
         dispelled = 0;
         t = g_spell_targets[0];
         for (e = t->effects; e != NULL; e = next) {
             next = e->next;
-            if (e->b[4] < 0xFF &&
+            if (e->b[4] < 0xFF && /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
+                /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
                 dispel_roll(caster, mask_byte(e->b[4], 0x0F))) {
-                remove_effect(t, e->b[0], e);
+                remove_effect(t, e->b[0], e); /* eff+$0: tipo dell'effetto (codice del gestore) */
                 dispelled = 1;
             }
         }
@@ -966,14 +1077,24 @@ void spell_dispel_magic(void)
     }
     for (k = 0; k <= 8; ++k) {
         switch (k) {
+        /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518:
+         * (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
         case 0: x = (s16)H005_W(0x251A); y = (s16)H005_W(0x2518); break;
+        /* $2518: (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
         case 1: y = (s16)(H005_W(0x2518) - 1); break;
+        /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.) */
         case 2: x = (s16)(H005_W(0x251A) + 1); break;
+        /* $2518: (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
         case 3: y = (s16)H005_W(0x2518); break;
+        /* $2518: (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
         case 4: y = (s16)(H005_W(0x2518) + 1); break;
+        /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.) */
         case 5: x = (s16)H005_W(0x251A); break;
+        /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.) */
         case 6: x = (s16)(H005_W(0x251A) - 1); break;
+        /* $2518: (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
         case 7: y = (s16)H005_W(0x2518); break;
+        /* $2518: (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
         case 8: y = (s16)(H005_W(0x2518) - 1); break;
         }
         combat_map_cell(x, y, &count, &tile);
@@ -985,17 +1106,24 @@ void spell_dispel_magic(void)
         while (p != NULL) {
             p_next = p->next;
             for (i = 1; i <= count; ++i) {
+                /* $5021: base i-1 delle 4 direzioni delle caselle di una nube ($5022) */
                 dir = H005_B(0x5022 + i - 1);
-                if ((s16)(COK_GET16(&p->b[0x1C - 8]) +
+                if ((s16)(COK_GET16(&p->b[0x1C - 8]) + /* nube+$14: (word) x del centro della nube/pozza */
+                          /* $3EE2: (word) spostamento x per direzione d (passo 2) */
                           H005_W(0x3EE2 + dir * 2)) == x &&
-                    (s16)(COK_GET16(&p->b[0x1E - 8]) +
+                    (s16)(COK_GET16(&p->b[0x1E - 8]) + /* nube+$16: (word) y del centro della nube/pozza */
+                          /* $3ED0: (word) spostamento y per direzione d (passo 2) */
                           H005_W(0x3ED0 + dir * 2)) == y &&
-                    !p->b[0x21 - 8]) {
-                    if (dispel_roll(caster, p->owner->b[0x103])) {
+                    !p->b[0x21 - 8]) { /* nube+$19: flag Dispel Magic gia' fallito su questa nube */
+                    if (dispel_roll(caster, p->owner->b[0x103])) { /* pg+$103: livello da mago */
                         found = 0;
                         e = p->owner->effects;
                         while (e != NULL && !found) {
+                            /* eff+$0: tipo dell'effetto (codice del gestore) */
                             if (e->b[0] == 0x28 && tile == 0x1E &&
+                                /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n.
+                                 * nube); nube+$18: numero della nube (= nibble alto di EF +$4
+                                 * dell'effetto) */
                                 (e->b[4] >> 4) == p->b[0x20 - 8]) {
                                 found = 1;
                             } else {
@@ -1006,12 +1134,14 @@ void spell_dispel_magic(void)
                             remove_effect(p->owner, 0x28, e);
                         }
                     } else {
-                        p->b[0x21 - 8] = 1;
+                        p->b[0x21 - 8] = 1; /* nube+$19: flag Dispel Magic gia' fallito su questa nube */
                     }
                 }
             }
             p = p_next;
         }
+        /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518:
+         * (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
         center_view(H005_W(0x251A), H005_W(0x2518), 3, 8);
     }
 }
@@ -1026,22 +1156,31 @@ void spell_fireball(void)
     u16 level;                          /* -$2(a5) */
     u16 k;                              /* -$4(a5) */
 
-    H005_B(0x24A9) = 1;
-    if (H005_B(0x2471) == 0x40) {
+    H005_B(0x24A9) = 1; /* $24A9: 1 se l'incantesimo agisce su area/gruppo (immagini illese) */
+    if (H005_B(0x2471) == 0x40) { /* $2471: incantesimo in corso di lancio (0 = nessuno) */
         level = (u16)(roll_dice(1, 3) * 2 + 1);
     } else {
-        level = (u16)caster_level(H005_B(0x2471));
+        level = (u16)caster_level(H005_B(0x2471)); /* $2471: incantesimo in corso di lancio (0 = nessuno) */
     }
-    if (COK_GET16(g_state_a + 0x1CC) == 0) {
+    if (COK_GET16(g_state_a + 0x1CC) == 0) { /* A+$1CC: (word) 1 area 3D (mappa 16x16), 0 mappa all'aperto */
+        /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518:
+         * (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
         find_in_area((s16)H005_W(0x251A), (s16)H005_W(0x2518), 2, 0xFF, 1,
                      g_combat_area);
+        /* $2479: numero di voci della lista dell'area +$2A3E (4 byte per voce) */
         for (k = 1; k <= H005_B(0x2479); ++k) {
             g_spell_targets[k - 1] =
+                /* $2A3E: lista dell'area: voci da 4 byte ($2479), byte 0 = n. combattente */
                 g_combatants[H005_B(0x2A3E + (k - 1) * 4) - 1];
         }
+        /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520); $2479: numero di
+         * voci della lista dell'area +$2A3E (4 byte per voce) */
         H005_B(0x246C) = H005_B(0x2479);
     }
+    /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518: (word) y
+     * della casella bersaglio scelta (incantesimi, soffi, telep.) */
     center_view((s16)H005_W(0x251A), (s16)H005_W(0x2518), 0, 8);
+    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
     apply_spell_effect(H005_B(0x2471), 0, 0, roll_damage_dice(level, 6), 9,
                        0, "");
 }
@@ -1165,7 +1304,9 @@ static void breath_area(s16 ax, s16 ay, s16 tx, s16 ty, u16 width,
             } else {
                 cost = (u16)(cost + 3);
             }
+            /* $3EE2: (word) spostamento x per direzione d (passo 2) */
             tx = (s16)(tx + (s16)H005_W(0x3EE2 + dirs[n] * 2));
+            /* $3ED0: (word) spostamento y per direzione d (passo 2) */
             ty = (s16)(ty + (s16)H005_W(0x3ED0 + dirs[n] * 2));
             if (n == last) {
                 n = 0;
@@ -1221,15 +1362,18 @@ static void breath_area(s16 ax, s16 ay, s16 tx, s16 ty, u16 width,
     }
     if (width == 0xFF) {
         find_in_area(tx, ty, 3, 0xFF, 1, g_combat_area);
+        /* $2479: numero di voci della lista dell'area +$2A3E (4 byte per voce) */
         for (k = 1; k <= H005_B(0x2479); ++k) {
+            /* $2A3E: lista dell'area: voci da 4 byte ($2479), byte 0 = n. combattente */
             f.hit[k - 1] = H005_B(0x2A3E + (k - 1) * 4);
         }
     }
     count = 1;
     slot = 1;
-    H005_B(0x246C) = 0;
+    H005_B(0x246C) = 0; /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
     while (count <= 0x1E && f.hit[count - 1] != 0) {
         if (g_combatants[f.hit[count - 1] - 1] != g_current_char) {
+            /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
             add_to_byte(&H005_B(0x246C), 1);
             g_spell_targets[slot - 1] = g_combatants[f.hit[count - 1] - 1];
             ++slot;
@@ -1262,37 +1406,48 @@ void effect_breath(Character **cp, void *obj, u8 flag)
 
     (void)flag;
     what[0] = 0;
+    /* $247C: numero del round del combattimento (0 all'inizio; bit 0 arrotonda); eff+$4:
+     * parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
     if (H005_B(0x247C) == 0 || e->b[4] > 3) {
+        /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube); eff+$0: tipo
+         * dell'effetto (codice del gestore) */
         e->b[4] = (u8)(e->b[0] == 6 ? 1 : 3);
     }
-    if (e->b[4] == 0) {
+    if (e->b[4] == 0) { /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
         return;
     }
-    if (e->b[0] == 6 || e->b[0] == 0x53) {
-        H005_B(0x2473) = 0x22;
+    if (e->b[0] == 6 || e->b[0] == 0x53) { /* eff+$0: tipo dell'effetto (codice del gestore) */
+        H005_B(0x2473) = 0x22; /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
         width = 3;
-        length = (u16)(e->b[0] == 6 ? 8 : 7);
+        length = (u16)(e->b[0] == 6 ? 8 : 7); /* eff+$0: tipo dell'effetto (codice del gestore) */
         h026_copy(5, what, 4, "cold");
     }
-    if (e->b[0] == 0x68) {
-        H005_B(0x2473) = 0x21;
+    if (e->b[0] == 0x68) { /* eff+$0: tipo dell'effetto (codice del gestore) */
+        H005_B(0x2473) = 0x21; /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
         width = 3;
         length = 9;
         h026_copy(5, what, 4, "Fire");
     }
     ax = (s16)combatant_x(*cp);
     ay = (s16)combatant_y(*cp);
+    /* $24C5: esito della scelta del bersaglio (soffi, effetto $42) */
     ((void (*)(u8, u8, u8 *))g_handlers_25c0[107])(0x3D, 1, &H005_B(0x24C5));
-    if (!H005_B(0x24C5)) {
+    if (!H005_B(0x24C5)) { /* $24C5: esito della scelta del bersaglio (soffi, effetto $42) */
         return;
     }
+    /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518: (word) y
+     * della casella bersaglio scelta (incantesimi, soffi, telep.) */
     breath_area(ax, ay, (s16)H005_W(0x251A), (s16)H005_W(0x2518), width,
                 length);
+    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
     for (k = 1; k <= H005_B(0x246C); ++k) {
+        /* pg+$199: lato in combattimento (0 party, 1 avversari) */
         if (g_spell_targets[k - 1]->b[0x199] != other_side(*cp)) {
-            H005_B(0x24C5) = 0;
+            H005_B(0x24C5) = 0; /* $24C5: esito della scelta del bersaglio (soffi, effetto $42) */
         }
     }
+    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520); $24C5: esito della
+     * scelta del bersaglio (soffi, effetto $42) */
     if (H005_B(0x246C) == 0 || !H005_B(0x24C5)) {
         return;
     }
@@ -1306,14 +1461,15 @@ void effect_breath(Character **cp, void *obj, u8 flag)
     animate_missile((s16)combatant_x(*cp), (s16)combatant_y(*cp),
                     (s16)combatant_x(g_spell_targets[0]),
                     (s16)combatant_y(g_spell_targets[0]), 1, 1);
+    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
     for (k = 1; k <= H005_B(0x246C); ++k) {
         if (g_spell_targets[k - 1] != NULL) {
             t = g_spell_targets[k - 1];
             saved = saving_throw_roll(t, 3, 0);
-            apply_damage(t, (*cp)->b[0x64], 2, saved);
+            apply_damage(t, (*cp)->b[0x64], 2, saved); /* pg+$64: punti ferita massimi */
         }
     }
-    e->b[4] = (u8)(e->b[4] - 1);
+    e->b[4] = (u8)(e->b[4] - 1); /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
     r = end_combat_turn(*cp);
     (void)r;
 }
@@ -1329,11 +1485,12 @@ void spell_event_9(void)
 {
     Character *target;                  /* -$8(a5) */
 
+    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
     apply_spell_effect(H005_B(0x2471), 0, 0, 0, 8, 0, "");
     target = g_current_char->block_192->target;
-    H005_B(0x2475) = 0x40;
+    H005_B(0x2475) = 0x40; /* $2475: effetto in arrivo (0 = annullato dai gestori) */
     trigger_event(&target, 9);
-    if (H005_B(0x2475) == 0x40) {
+    if (H005_B(0x2475) == 0x40) { /* $2475: effetto in arrivo (0 = annullato dai gestori) */
         call_effect_handler(0x40, &g_current_char, NULL, 0);
     }
 }
@@ -1349,6 +1506,8 @@ void spell_teleport(void)
     u8 ok;                              /* -$9(a5) */
 
     redraw_ground(0, 0, combatant_index(c));
+    /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518: (word) y
+     * della casella bersaglio scelta (incantesimi, soffi, telep.) */
     ok = place_combatant(c, (u8)H005_W(0x251A), (u8)H005_W(0x2518), 0);
     (void)ok;
     center_view((s16)combatant_x(c), (s16)combatant_y(c), 0, 8);
@@ -1367,21 +1526,23 @@ static void spell_on_targets(s16 bonus, u16 len, const char *text)
     u8 saved;                           /* -$5(a5) */
     u16 i;                              /* -$8(a5) */
     u8 kind;                            /* -$9(a5) */
-    u16 spell = SPELL_NOW;
+    u16 spell = SPELL_NOW; /* $2471: incantesimo in corso di lancio (0 = nessuno) */
 
+    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
     for (i = H005_B(0x246C); i >= 1; --i) {
         if (g_spell_targets[i - 1] == NULL) {
             continue;
         }
         t = g_spell_targets[i - 1];
-        if (i < H005_B(0x246C)) {
+        if (i < H005_B(0x246C)) { /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
             h043_190e(2);
             load_missile_frames(0x12);
             animate_missile((s16)combatant_x(g_current_char),
                             (s16)combatant_y(g_current_char),
                             (s16)combatant_x(t), (s16)combatant_y(t), 4, 1);
         }
-        spell = SPELL_NOW;
+        spell = SPELL_NOW; /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+        /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
         if ((spell == 0x4F || spell == 0x51) && i == H005_B(0x246C)) {
             saved = 1;
             kind = 1;
@@ -1390,7 +1551,7 @@ static void spell_on_targets(s16 bonus, u16 len, const char *text)
                                       bonus);
             kind = H005_B(0x66 + (spell - 1) * 16 + 8);
         }
-        if (t->b[0x5B] == 7 && (spell == 0x17 || spell == 0x31)) {
+        if (t->b[0x5B] == 7 && (spell == 0x17 || spell == 0x31)) { /* pg+$5B: razza (0..6, nomi H005+$4D04) */
             saved = 1;
         }
         apply_spell_effect_on(t, H005_B(0x66 + (spell - 1) * 16 + 0x0A),
@@ -1410,9 +1571,9 @@ void spell_hold_person(void)
 {
     s16 bonus = 0;                      /* -$2(a5) */
 
-    switch (H005_B(0x246C)) {
+    switch (H005_B(0x246C)) { /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
     case 1:
-        bonus = (s16)(SPELL_NOW == 0x17 ? -2 : -3);
+        bonus = (s16)(SPELL_NOW == 0x17 ? -2 : -3); /* $2471: incantesimo in corso di lancio (0 = nessuno) */
         break;
     case 2:
         bonus = -1;
@@ -1428,8 +1589,8 @@ void spell_hold_person(void)
 }
 
 /* Spostamenti della direzione d (tabelle H005+$3EE2 / $3ED0). */
-#define DIR_DX(d)   ((s16)H005_W(0x3EE2 + (d) * 2))
-#define DIR_DY(d)   ((s16)H005_W(0x3ED0 + (d) * 2))
+#define DIR_DX(d)   ((s16)H005_W(0x3EE2 + (d) * 2))  /* $3EE2: (word) spostamento x per direzione d (passo 2) */
+#define DIR_DY(d)   ((s16)H005_W(0x3ED0 + (d) * 2))  /* $3ED0: (word) spostamento y per direzione d (passo 2) */
 
 /*
  * PORT H085+$26C0: nube puzzolente sul punto scelto ($251A, $2518): un
@@ -1454,8 +1615,8 @@ void spell_stinking_cloud(void)
     s16 x;
     s16 y;
 
-    H005_B(0x24A9) = 1;
-    level = (u16)caster_level(SPELL_NOW);
+    H005_B(0x24A9) = 1; /* $24A9: 1 se l'incantesimo agisce su area/gruppo (immagini illese) */
+    level = (u16)caster_level(SPELL_NOW); /* $2471: incantesimo in corso di lancio (0 = nessuno) */
     r = g_clouds;
     if (g_clouds == NULL) {
         g_clouds = (CokCloud *)exec_alloc_mem(sizeof(CokCloud),
@@ -1476,17 +1637,28 @@ void spell_stinking_cloud(void)
     memset(r, 0, sizeof(CokCloud));
     add_effect(g_current_char, 0x28, level, (u16)(count * 16 + level), 1);
     r->owner = g_current_char;
-    r->b[0x20 - 8] = (u8)count;
+    r->b[0x20 - 8] = (u8)count; /* nube+$18: numero della nube (= nibble alto di EF +$4 dell'effetto) */
+    /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); nube+$14: (word)
+     * x del centro della nube/pozza */
     COK_PUT16(&r->b[0x1C - 8], H005_W(0x251A));
+    /* $2518: (word) y della casella bersaglio scelta (incantesimi, soffi, telep.); nube+$16: (word)
+     * y del centro della nube/pozza */
     COK_PUT16(&r->b[0x1E - 8], H005_W(0x2518));
     for (i = 1; i <= 4; ++i) {
-        d = H005_B(0x5022 + i - 1);
+        d = H005_B(0x5022 + i - 1); /* $5021: base i-1 delle 4 direzioni delle caselle di una nube ($5022) */
+        /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $3EE2:
+         * (word) spostamento x per direzione d (passo 2) */
         x = (s16)(H005_W(0x251A) + DIR_DX(d));
+        /* $2518: (word) y della casella bersaglio scelta (incantesimi, soffi, telep.); $3ED0:
+         * (word) spostamento y per direzione d (passo 2) */
         y = (s16)(H005_W(0x2518) + DIR_DY(d));
         combat_map_cell(x, y, &who[i - 1], &tile);
+        /* $3EF4: terreno, $41 voci da 4 byte (da 1): +0 costo ($FF invalicabile) */
         if (tile > 0 && H005_B(0x3EF4 + (tile - 1) * 4) < 0xFF) {
+            /* nube+$9: base tabella 4 flag casella coperta +$A..+$D (indice 1..4) */
             r->b[0x12 - 8 + i - 1] = 1;
         } else {
+            /* nube+$9: base tabella 4 flag casella coperta +$A..+$D (indice 1..4) */
             r->b[0x12 - 8 + i - 1] = 0;
         }
         if (tile == 0x1E) {
@@ -1495,10 +1667,17 @@ void spell_stinking_cloud(void)
                     continue;
                 }
                 for (k = 1; k <= 4; ++k) {
+                    /* nube+$9: base tabella 4 flag casella coperta +$A..+$D (indice 1..4) */
                     if (q->b[0x12 - 8 + k - 1] &&
+                        /* nube+$14: (word) x del centro della nube/pozza */
                         (s16)(COK_GET16(&q->b[0x1C - 8]) +
+                              /* $3EE2: (word) spostamento x per direzione d (passo 2); $5021: base
+                               * i-1 delle 4 direzioni delle caselle di una nube ($5022) */
                               DIR_DX(H005_B(0x5022 + k - 1))) == x &&
+                        /* nube+$16: (word) y del centro della nube/pozza */
                         (s16)(COK_GET16(&q->b[0x1E - 8]) +
+                              /* $3ED0: (word) spostamento y per direzione d (passo 2); $5021: base
+                               * i-1 delle 4 direzioni delle caselle di una nube ($5022) */
                               DIR_DY(H005_B(0x5022 + k - 1))) == y &&
                         q->b[k - 1] != 0x1E) {
                         tile = q->b[k - 1];
@@ -1506,7 +1685,7 @@ void spell_stinking_cloud(void)
                 }
             }
         } else if (tile == 0x1F) {
-            for (k = 1; k <= H005_B(0x247A); ++k) {
+            for (k = 1; k <= H005_B(0x247A); ++k) { /* $247A: numero di corpi nella tabella +$2AE2 (max 8) */
                 if (g_bodies[k - 1].x == (u16)x &&
                     g_bodies[k - 1].y == (u16)y) {
                     tile = g_bodies[k - 1].tile;
@@ -1514,12 +1693,15 @@ void spell_stinking_cloud(void)
             }
         }
         r->b[i - 1] = (u8)tile;
+        /* nube+$9: base tabella 4 flag casella coperta +$A..+$D (indice 1..4) */
         if (r->b[0x12 - 8 + i - 1]) {
             g_combat_area[0x0A + (s32)y * 0x64 + x * 2 + 1] = 0x1E;
         }
     }
     show_char_message(g_current_char, 0x17, "Creates a noxious cloud", 0x0A,
                       0);
+    /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518: (word) y
+     * della casella bersaglio scelta (incantesimi, soffi, telep.) */
     center_view((s16)H005_W(0x251A), (s16)H005_W(0x2518), 0xFF, 8);
     message_delay();
     clear_message_area();
@@ -1547,6 +1729,7 @@ void spell_charm_monster(void)
     CokEffect *e;                       /* -$A(a5) */
 
     spell_on_targets(0, 0x0A, "is charmed");
+    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
     for (i = 1; i <= H005_B(0x246C); ++i) {
         if (find_effect(g_spell_targets[i - 1], 0x0B, &e)) {
             call_effect_handler(0x0B, &g_spell_targets[i - 1], e, 0);
@@ -1569,17 +1752,20 @@ void spell_fear(void)
     u8 saved;                           /* -$B(a5) */
 
     breath_area((s16)combatant_x(c), (s16)combatant_y(c),
+                /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.);
+                 * $2518: (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
                 (s16)H005_W(0x251A), (s16)H005_W(0x2518), 3, 6);
+    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
     for (i = 1; i <= H005_B(0x246C); ++i) {
         t = g_spell_targets[i - 1];
         saved = saving_throw_roll(t, 4, 0);
         if (!saved) {
             apply_spell_effect_on(t, 0x6F, spell_duration(0x54), 0, 1, 1,
                                   saved, 0x0E, "runs in terror");
-            t->block_192->b[0x12] = 1;
-            t->b[0x19A] = 1;
-            if (t->b[0xEC] <= 0x7F) {
-                t->b[0xEC] = 0xB3;
+            t->block_192->b[0x12] = 1; /* turno+$12: flag costretto a fuggire (paura, confusione) */
+            t->b[0x19A] = 1; /* pg+$19A: controllo automatico in combattimento (1 = IA) */
+            if (t->b[0xEC] <= 0x7F) { /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
+                t->b[0xEC] = 0xB3; /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
             }
             t->block_192->target = NULL;
         } else {
@@ -1589,6 +1775,7 @@ void spell_fear(void)
 }
 
 /* Riga della tabella del terreno H005+$3EF4 (4 byte per tipo, da 1). */
+/* $3EF4: terreno, $41 voci da 4 byte (da 1): +0 costo ($FF invalicabile) */
 #define TERRAIN(tile)   H005_B(0x3EF4 + ((s32)(tile) - 1) * 4)
 
 /*
@@ -1605,7 +1792,9 @@ static void bolt_hit(s16 x, s16 y, u16 dmg, u8 kind, u16 skip, u8 *bounce)
     u8 saved;
 
     combat_map_cell(x, y, &who, &tile);
+    /* $3EF4: terreno, $41 voci da 4 byte (da 1): +0 costo ($FF invalicabile) */
     if (tile > 0 && TERRAIN(tile) == 0xFF &&
+        /* A+$1CC: (word) 1 area 3D (mappa 16x16), 0 mappa all'aperto */
         COK_GET16(g_state_a + 0x1CC) == 1 && !*bounce) {
         *bounce = 1;
     } else {
@@ -1646,23 +1835,33 @@ static void bolt(u16 length, u16 dmg, u8 kind, u8 can_bounce)
     u16 used = 0;                       /* -$48(a5) */
 
     load_missile_frames(0x13);
+    /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518: (word) y
+     * della casella bersaglio scelta (incantesimi, soffi, telep.) */
     combat_map_cell((s16)H005_W(0x251A), (s16)H005_W(0x2518), &last_who,
                     &tile);
     ax = (s16)combatant_x(g_current_char);
     ay = (s16)combatant_y(g_current_char);
     may_bounce = can_bounce;
+    /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518: (word) y
+     * della casella bersaglio scelta (incantesimi, soffi, telep.) */
     if (ax == (s16)H005_W(0x251A) && ay == (s16)H005_W(0x2518)) {
         return;
     }
     left = (u16)(length * 2);
-    H005_B(0x24A9) = 1;
+    H005_B(0x24A9) = 1; /* $24A9: 1 se l'incantesimo agisce su area/gruppo (immagini illese) */
     while (left > 0) {
         memset(&l1, 0, sizeof(l1));
+        /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.) */
         l1.x0 = (s16)H005_W(0x251A);
+        /* $2518: (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
         l1.y0 = (s16)H005_W(0x2518);
+        /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.) */
         l1.x1 = (s16)((s16)H005_W(0x251A) +
+                      /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.) */
                       (s16)((s16)H005_W(0x251A) - ax) * sign * (s16)left);
+        /* $2518: (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
         l1.y1 = (s16)((s16)H005_W(0x2518) +
+                      /* $2518: (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
                       (s16)((s16)H005_W(0x2518) - ay) * sign * (s16)left);
         line_init(&l1);
         do {
@@ -1672,10 +1871,12 @@ static void bolt(u16 length, u16 dmg, u8 kind, u8 can_bounce)
                 do {
                     stepped = line_step(&l1);
                     combat_map_cell(l1.cx, l1.cy, &who, &tile);
+                    /* $3EF4: terreno, $41 voci da 4 byte (da 1): +0 costo ($FF invalicabile) */
                     if (TERRAIN(tile) == 1) {
                         bounce = 0;
                     }
                 } while (stepped && (who == 0 || who == last_who) &&
+                         /* $3EF4: terreno, $41 voci da 4 byte (da 1): +0 costo ($FF invalicabile) */
                          tile != 0 && TERRAIN(tile) <= 1 && l1.cost < left);
             }
             if (tile == 0) {
@@ -1685,10 +1886,14 @@ static void bolt(u16 length, u16 dmg, u8 kind, u8 can_bounce)
             bolt_hit(l1.cx, l1.cy, dmg, kind, last_who, &bounce);
             last_who = who;
             if (bounce) {
+                /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.) */
                 H005_SET_W(0x251A, (u16)l1.cx);
+                /* $2518: (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
                 H005_SET_W(0x2518, (u16)l1.cy);
                 memset(&l2, 0, sizeof(l2));
+                /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.) */
                 l2.x0 = (s16)H005_W(0x251A);
+                /* $2518: (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
                 l2.y0 = (s16)H005_W(0x2518);
                 l2.x1 = ax;
                 l2.y1 = ay;
@@ -1711,7 +1916,7 @@ static void bolt(u16 length, u16 dmg, u8 kind, u8 can_bounce)
             used = l1.cost;
         } while (!bounce && left != 0);
     }
-    H005_B(0x24A9) = 0;
+    H005_B(0x24A9) = 0; /* $24A9: 1 se l'incantesimo agisce su area/gruppo (immagini illese) */
 }
 
 /*
@@ -1723,8 +1928,11 @@ void spell_lightning_bolt(void)
     u16 dmg;                            /* -$2(a5) */
     u8 bounce = 1;                      /* -$3(a5) */
 
+    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
     dmg = roll_dice((u16)caster_level(SPELL_NOW), 6);
-    H005_B(0x2473) = 0x0C;
+    H005_B(0x2473) = 0x0C; /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
+    /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518: (word) y
+     * della casella bersaglio scelta (incantesimi, soffi, telep.) */
     bolt_hit((s16)H005_W(0x251A), (s16)H005_W(0x2518), dmg, 4, 0, &bounce);
     bolt(7, dmg, 4, 1);
 }
@@ -1738,7 +1946,9 @@ void spell_bolt_20(void)
 {
     u8 bounce = 0;                      /* -$1(a5) */
 
-    H005_B(0x2473) = 4;
+    H005_B(0x2473) = 4; /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
+    /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518: (word) y
+     * della casella bersaglio scelta (incantesimi, soffi, telep.) */
     bolt_hit((s16)H005_W(0x251A), (s16)H005_W(0x2518),
              (u16)(roll_dice(1, 6) + 0x14), 4, 0, &bounce);
     bolt(3, 0x14, 4, 0);
@@ -1778,11 +1988,12 @@ static void breath_damage(Character *c)
     Character *t;
     u8 saved;
 
+    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
     for (k = 1; k <= H005_B(0x246C); ++k) {
         if (g_spell_targets[k - 1] != NULL) {
             t = g_spell_targets[k - 1];
             saved = saving_throw_roll(t, 3, 0);
-            apply_damage(t, c->b[0x64], 2, saved);
+            apply_damage(t, c->b[0x64], 2, saved); /* pg+$64: punti ferita massimi */
         }
     }
 }
@@ -1796,16 +2007,17 @@ void effect_fireball(Character **cp, void *obj, u8 flag)
     u8 ok;                              /* -$3(a5) */
 
     (void)obj; (void)flag;
-    H005_B(0x24A9) = 1;
+    H005_B(0x24A9) = 1; /* $24A9: 1 se l'incantesimo agisce su area/gruppo (immagini illese) */
     select_target_for(0x2F, &ok);
     if (!ok) {
         return;
     }
-    H005_B(0x2471) = 0x2F;
+    H005_B(0x2471) = 0x2F; /* $2471: incantesimo in corso di lancio (0 = nessuno) */
     center_view((s16)combatant_x(*cp), (s16)combatant_y(*cp), 0, 8);
     show_char_message(*cp, 0x11, "throws a fireball", 0x0A, 1);
     load_missile_frames(0x12);
     missile_to_first(*cp);
+    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
     apply_spell_effect(H005_B(0x2471), 0, 0, roll_damage_dice(0x0F, 6), 9,
                        0, "");
     remove_effect(*cp, 0x4E, NULL);
@@ -1825,10 +2037,10 @@ void effect_poison_breath(Character **cp, void *obj, u8 flag)
     u8 r;                               /* -$B(a5) */
 
     (void)flag;
-    if (H005_B(0x247C) == 0) {
-        e->b[4] = 3;
+    if (H005_B(0x247C) == 0) { /* $247C: numero del round del combattimento (0 all'inizio; bit 0 arrotonda) */
+        e->b[4] = 3; /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
     }
-    if (e->b[4] == 0) {
+    if (e->b[4] == 0) { /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
         return;
     }
     ax = (s16)combatant_x(*cp);
@@ -1837,15 +2049,17 @@ void effect_poison_breath(Character **cp, void *obj, u8 flag)
     if (!ok) {
         return;
     }
+    /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518: (word) y
+     * della casella bersaglio scelta (incantesimi, soffi, telep.) */
     breath_area(ax, ay, (s16)H005_W(0x251A), (s16)H005_W(0x2518), 0xFF, 3);
-    if (H005_B(0x246C) == 0) {
+    if (H005_B(0x246C) == 0) { /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
         return;
     }
-    H005_B(0x2473) = 0x20;
+    H005_B(0x2473) = 0x20; /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
     breath_pose(*cp, 0x0F, "breathes poison", 0x12);
     missile_to_first(*cp);
     breath_damage(*cp);
-    e->b[4] = (u8)(e->b[4] - 1);
+    e->b[4] = (u8)(e->b[4] - 1); /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
     r = end_combat_turn(*cp);
     (void)r;
 }
@@ -1865,25 +2079,30 @@ void effect_lightning_breath(Character **cp, void *obj, u8 flag)
     u8 r;
 
     (void)flag;
-    if (H005_B(0x247C) == 0) {
-        e->b[4] = 3;
+    if (H005_B(0x247C) == 0) { /* $247C: numero del round del combattimento (0 all'inizio; bit 0 arrotonda) */
+        e->b[4] = 3; /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
     }
-    if (e->b[4] == 0) {
+    if (e->b[4] == 0) { /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
         return;
     }
-    H005_B(0x2473) = 0x24;
+    H005_B(0x2473) = 0x24; /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
     ax = (s16)combatant_x(*cp);
     ay = (s16)combatant_y(*cp);
+    /* $24C5: esito della scelta del bersaglio (soffi, effetto $42) */
     select_target_for(0x33, &H005_B(0x24C5));
-    if (!H005_B(0x24C5)) {
+    if (!H005_B(0x24C5)) { /* $24C5: esito della scelta del bersaglio (soffi, effetto $42) */
         return;
     }
     breath_pose(*cp, 9, "Breathes!", 0x13);
+    /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518: (word) y
+     * della casella bersaglio scelta (incantesimi, soffi, telep.) */
     animate_missile(ax, ay, (s16)H005_W(0x251A), (s16)H005_W(0x2518), 4, 2);
+    /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518: (word) y
+     * della casella bersaglio scelta (incantesimi, soffi, telep.); pg+$64: punti ferita massimi */
     bolt_hit((s16)H005_W(0x251A), (s16)H005_W(0x2518), (*cp)->b[0x64], 3, 0,
              &bounce);
-    bolt(0x0A, (*cp)->b[0x64], 3, 0);
-    e->b[4] = (u8)(e->b[4] - 1);
+    bolt(0x0A, (*cp)->b[0x64], 3, 0); /* pg+$64: punti ferita massimi */
+    e->b[4] = (u8)(e->b[4] - 1); /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
     r = end_combat_turn(*cp);
     (void)r;
 }
@@ -1903,32 +2122,39 @@ void effect_acid_breath(Character **cp, void *obj, u8 flag)
     u8 r;
 
     (void)flag;
-    H005_B(0x24C5) = 0;
-    if (H005_B(0x247C) == 0) {
-        e->b[4] = 3;
+    H005_B(0x24C5) = 0; /* $24C5: esito della scelta del bersaglio (soffi, effetto $42) */
+    if (H005_B(0x247C) == 0) { /* $247C: numero del round del combattimento (0 all'inizio; bit 0 arrotonda) */
+        e->b[4] = 3; /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
     }
-    if (e->b[4] == 0) {
+    if (e->b[4] == 0) { /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
         return;
     }
-    H005_B(0x2473) = 0x30;
+    H005_B(0x2473) = 0x30; /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
     ax = (s16)combatant_x(*cp);
     ay = (s16)combatant_y(*cp);
+    /* $24C5: esito della scelta del bersaglio (soffi, effetto $42) */
     select_target_for(0x3D, &H005_B(0x24C5));
-    if (H005_B(0x24C5)) {
+    if (H005_B(0x24C5)) { /* $24C5: esito della scelta del bersaglio (soffi, effetto $42) */
+        /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518:
+         * (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
         breath_area(ax, ay, (s16)H005_W(0x251A), (s16)H005_W(0x2518), 1, 6);
     }
+    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
     for (k = 1; k <= H005_B(0x246C); ++k) {
+        /* pg+$199: lato in combattimento (0 party, 1 avversari) */
         if (g_spell_targets[k - 1]->b[0x199] != other_side(*cp)) {
-            H005_B(0x24C5) = 0;
+            H005_B(0x24C5) = 0; /* $24C5: esito della scelta del bersaglio (soffi, effetto $42) */
         }
     }
+    /* $24C5: esito della scelta del bersaglio (soffi, effetto $42); $246C: numero di bersagli
+     * dell'incantesimo in g_spell_targets ($2520) */
     if (!H005_B(0x24C5) || H005_B(0x246C) == 0) {
         return;
     }
     breath_pose(*cp, 0x0D, "breathes acid", 0x12);
     missile_to_first(*cp);
     breath_damage(*cp);
-    e->b[4] = (u8)(e->b[4] - 1);
+    e->b[4] = (u8)(e->b[4] - 1); /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
     r = end_combat_turn(*cp);
     (void)r;
 }
@@ -1950,19 +2176,22 @@ void effect_eye_attack(Character **cp, void *obj, u8 flag)
     Character *c;
 
     (void)flag;
-    if (H005_B(0x247C) == 0) {
-        e->b[4] = 3;
+    if (H005_B(0x247C) == 0) { /* $247C: numero del round del combattimento (0 all'inizio; bit 0 arrotonda) */
+        e->b[4] = 3; /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
     }
     if (roll_dice(1, 0x64) > 0x4B) {
         return;
     }
+    /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
     if (e->b[4] != 0 && roll_dice(1, 0x64) <= 0x19) {
         t = NULL;
         find_in_area((s16)combatant_x(*cp), (s16)combatant_y(*cp), 1, 0xFF, 1,
                      g_combat_area);
+        /* $2479: numero di voci della lista dell'area +$2A3E (4 byte per voce) */
         for (k = 2; k <= H005_B(0x2479); ++k) {
+            /* $2A3E: lista dell'area: voci da 4 byte ($2479), byte 0 = n. combattente */
             c = g_combatants[H005_B(0x2A3E + (k - 1) * 4) - 1];
-            if (c->b[0x199] != (*cp)->b[0x199]) {
+            if (c->b[0x199] != (*cp)->b[0x199]) { /* pg+$199: lato in combattimento (0 party, 1 avversari) */
                 t = c;
             }
         }
@@ -1977,6 +2206,7 @@ void effect_eye_attack(Character **cp, void *obj, u8 flag)
                                       "is blinded");
                 r = end_combat_turn(*cp);
             }
+            /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
             e->b[4] = (u8)(e->b[4] - 1);
         }
     }
@@ -1986,7 +2216,9 @@ void effect_eye_attack(Character **cp, void *obj, u8 flag)
     r = 0;
     k = 0;
     do {
+        /* $24C5: esito della scelta del bersaglio (soffi, effetto $42) */
         select_target_for(0x3D, &H005_B(0x24C5));
+        /* $24C5: esito della scelta del bersaglio (soffi, effetto $42) */
         if (g_spell_targets[0] != NULL && H005_B(0x24C5)) {
             ++k;
             show_char_message(*cp, 0x15, "Fires An Energy Bolt!", 0x0A, 1);
@@ -1994,6 +2226,7 @@ void effect_eye_attack(Character **cp, void *obj, u8 flag)
             missile_to_first(*cp);
             apply_damage(g_spell_targets[0],
                          (u16)(roll_damage_dice(1, 8) + 2), 0, 0);
+            /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
             if (g_spell_targets[0]->b[0x198] && k == 1) {
                 apply_damage(g_spell_targets[0],
                              (u16)(roll_damage_dice(1, 8) + 2), 0, 0);

@@ -17,8 +17,10 @@
 #include "h048.h"
 
 /* Tabella degli incantesimi H005+$66: 16 byte per incantesimo (1..). */
+/* $66: tabella incantesimi, 16 byte per incantesimo (da 1); k/o = campo */
 #define SPELL_B(s, k)   H005_B(0x66 + ((int)(s) - 1) * 16 + (k))
 /* Nomi degli incantesimi H005+$716: 32 byte per incantesimo. */
+/* $716: nomi degli incantesimi, 32 byte per incantesimo (1..) */
 #define SPELL_NAME(s)   ((const char *)&H005_B(0x716 + ((int)(s) - 1) * 32))
 
 static CokMenuItem *new_menu_item(void)
@@ -61,7 +63,7 @@ u16 choose_spell(u16 mode, s16 *index)
     }
     if (mode == 2) {
         last_row = 0x0F;
-        redraw = H005_B(0x24DD);
+        redraw = H005_B(0x24DD); /* $24DD: uso: Memorize lo pone a 1 per il tipo 2; ridisegno del menu */
     } else {
         last_row = 0x16;
     }
@@ -142,6 +144,7 @@ static void add_scroll_line(u16 spell)
         strcpy(node->text, "  ");
     }
     h026_append(0x28, node->text, 0x1F,
+                /* $716: nomi degli incantesimi, 32 byte per incantesimo (1..) */
                 SPELL_NAME(mask_byte((u8)spell, 0x7F)));
     node->header = 0;
     g_h085_spell_ids[lines] = mask_byte((u8)spell, 0x7F);
@@ -160,15 +163,23 @@ static void scroll_item_spells(u8 usable)
     u8 v;
 
     if (find_effect(c, 0x10, &effect) ||
+        /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico; pg+$106: livelli
+         * della classe precedente, 8 voci come +$FE; chierico; pg+$DC: uso: soglia per i livelli
+         * +$106..+$10D e i PF; !=0 vieta Modify */
         ((c->b[0xFE] > 0 || c->b[0x106] > c->b[0xDC]) &&
+         /* $336C: tipi di oggetto, $12 byte per tipo (+$30): +0 slot/genere; ogg+$30: tipo
+          * dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
          H005_B(0x336C + g_scroll_item->b[0x30] * 0x12) == 0x0C)) {
+        /* ogg+$3B: bit 0..2 parole del nome non identificate; bit 5/4 pergamena cl.1/2 */
         g_scroll_item->b[0x3B] = mask_byte(g_scroll_item->b[0x3B], 0xF8);
     }
     it = g_scroll_item;
+    /* ogg+$3B: bit 0..2 parole del nome non identificate; bit 5/4 pergamena cl.1/2 */
     if (mask_byte(it->b[0x3B], 7) != 0) {
         return;
     }
     for (k = 1; k <= 3; ++k) {
+        /* ogg+$43: base tabella 3 incantesimi +$44..+$46 (indice 1..3, bit7=da scrivere) */
         v = it->b[0x44 + k - 1];
         if ((usable && v > 0x80) || (!usable && v > 0)) {
             add_scroll_line(v);
@@ -200,9 +211,13 @@ static void collect_scroll_spells(u8 usable)
     for (g_scroll_item = g_current_char->items; g_scroll_item != NULL;
          g_scroll_item = g_scroll_item->next) {
         if (is_scroll(g_scroll_item) &&
+            /* pg+$5F: ordine del mago (1 allineam. 0/3/6, 2 per 1/4/7, 0 nessuno) */
             ((g_current_char->b[0x5F] == 1 &&
+              /* ogg+$3B: bit 0..2 parole del nome non identificate; bit 5/4 pergamena cl.1/2 */
               mask_byte(g_scroll_item->b[0x3B], 0x20)) ||
+             /* pg+$5F: ordine del mago (1 allineam. 0/3/6, 2 per 1/4/7, 0 nessuno) */
              (g_current_char->b[0x5F] == 2 &&
+              /* ogg+$3B: bit 0..2 parole del nome non identificate; bit 5/4 pergamena cl.1/2 */
               mask_byte(g_scroll_item->b[0x3B], 0x10)))) {
             scroll_item_spells(usable);
         }
@@ -225,6 +240,7 @@ static u8 spell_in_memory(Character *c, u16 spell)
         i = 1;
         found = 0;
         while (!found && i <= 0x39) {
+            /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
             if (mask_byte(c->b[0x1E + i], 0x7F) == spell) {
                 found = 1;
             }
@@ -308,6 +324,7 @@ static void add_spell(u16 spell)
         strcpy(node->text, "  ");
     }
     h026_append(0x28, node->text, 0x1F,
+                /* $716: nomi degli incantesimi, 32 byte per incantesimo (1..) */
                 SPELL_NAME(mask_byte((u8)spell, 0x7F)));
     node->header = 0;
     if (g_h085_spell_counts[i] > 1) {
@@ -340,16 +357,20 @@ static u8 spell_class_usable(Character *c, u16 spell)
     switch (SPELL_B(spell, 0)) {
     case 0:
     case 2:
-        result = (u8)(c->b[0x15] > 8 &&
+        result = (u8)(c->b[0x15] > 8 && /* pg+$15: saggezza corrente */
+                      /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico;
+                       * pg+$105: livello da cavaliere */
                       (c->b[0xFE] > 0 || c->b[0x105] > 5));
         break;
     case 1:
         result = 0;
         break;
     case 3:
-        if (c->b[0x13] > 8 &&
-            !(c->b[0x5B] == 6 && c->readied[2] != NULL &&
+        if (c->b[0x13] > 8 && /* pg+$13: intelligenza corrente */
+            !(c->b[0x5B] == 6 && c->readied[2] != NULL && /* pg+$5B: razza (0..6, nomi H005+$4D04) */
+              /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
               H005_B(0x3DE3) == 5)) {
+            /* pg+$102: livello da ranger; pg+$103: livello da mago */
             result = (u8)(c->b[0x102] > 8 || c->b[0x103] > 0);
         } else {
             result = 0;
@@ -392,15 +413,20 @@ u8 build_spell_list(u16 kind)
     switch (kind) {
     case 0:                             /* $0DC2 */
         for (i = 0; i <= 0x39; ++i) {
+            /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
             if (c->b[0x1E + i] > 0 &&
+                /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
                 spell_class_usable(c, mask_byte(c->b[0x1E + i], 0x7F)) &&
+                /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
                 c->b[0x1E + i] < 0x80) {
+                /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
                 add_spell(c->b[0x1E + i]);
             }
         }
         break;
     case 1:                             /* $0EE2 */
         for (i = 1; i <= 0x6B; ++i) {
+            /* pg+$65: base -1 incantesimi noti +$66+s-1 (s = 1..$6B, flag per incantesimo) */
             if (c->b[0x66 + i - 1] && spell_class_usable(c, i) &&
                 !spell_in_memory(c, i)) {
                 add_spell(i);
@@ -416,14 +442,18 @@ u8 build_spell_list(u16 kind)
         headers = 0;
         break;
     case 4:                             /* $0F6C */
+        /* pg+$5F: ordine del mago (1 allineam. 0/3/6, 2 per 1/4/7, 0 nessuno) */
         row = (c->b[0x5F] == 1) ? 2 : 3;
         for (level = 1; level <= 4; ++level) {
+            /* pg+$135: base -1 slot da mago (tipo 3, +$136..+$13B) per livello */
             if (c->b[0x136 + level - 1] > 0) {
                 i = 1;
                 s = 0xFF;
                 while (i <= 0x0A && s != 0) {
+                    /* $1476: inc. per classe/livello: 3x4 righe di 10 word ($14), 0 = fine */
                     s = H005_W(0x1476 + (row - 1) * 0x50 +
                                (level - 1) * 0x14 + (i - 1) * 2);
+                    /* pg+$65: base -1 incantesimi noti +$66+s-1 (s = 1..$6B, flag per incantesimo) */
                     if (s != 0 && c->b[0x66 + s - 1] == 0) {
                         add_spell(s);
                     }
@@ -434,8 +464,11 @@ u8 build_spell_list(u16 kind)
         break;
     case 5:                             /* $0E60 */
         for (i = 0; i <= 0x39; ++i) {
+            /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
             if (c->b[0x1E + i] > 0x7F &&
+                /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
                 spell_class_usable(c, mask_byte(c->b[0x1E + i], 0x7F))) {
+                /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
                 add_spell(c->b[0x1E + i]);
             }
         }
@@ -493,10 +526,10 @@ void h033_init(void)
 void install_action_handlers(void)
 {
     g_handlers_25c0[107] = (CokHandler)select_spell_target;   /* $276C */
-    H005_B(0x24AA) = 0;
-    H005_B(0x24D9) = 0;
+    H005_B(0x24AA) = 0; /* $24AA: 1 durante le cure: i gestori non riaggiungono effetti */
+    H005_B(0x24D9) = 0; /* $24D9: 1 se l'incantesimo viene da un oggetto (non si dimentica) */
     g_spell_target = NULL;              /* $251C */
-    H005_B(0x24A8) = 1;
+    H005_B(0x24A8) = 1; /* $24A8: 1: la schermata degli oggetti va ridisegnata per intero */
     g_handlers_25c0[0] = spell_bless;   /* $25C0 */
     g_handlers_25c0[1] = spell_curse;   /* $25C4 */
     g_handlers_25c0[2] = cure_light_wounds;   /* $25C8 */
@@ -622,6 +655,7 @@ void spell_no_effect(void)
 /* PORT H033+$17E6: l'oggetto e' una pergamena (tipo $27 o $28)? */
 u8 is_scroll(const CokItem *it)
 {
+    /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
     if (it != NULL && (it->b[0x30] == 0x27 || it->b[0x30] == 0x28)) {
         return 1;
     }
@@ -640,7 +674,7 @@ void select_spell_target(u8 spell, u8 unused, u8 *ok)
         g_spell_target = g_current_char;
     }
     g_spell_targets[0] = g_current_char;
-    H005_B(0x246C) = 1;
+    H005_B(0x246C) = 1; /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
     *ok = 1;
     switch (SPELL_B(spell, 7)) {
     case 1:                             /* $1326 */
@@ -651,17 +685,22 @@ void select_spell_target(u8 spell, u8 unused, u8 *ok)
                             &g_spell_target);
         if (g_spell_target == NULL) {
             g_spell_targets[0] = NULL;
-            H005_B(0x246C) = 0;
+            H005_B(0x246C) = 0; /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
             *ok = 0;
         } else {
             g_spell_targets[0] = g_spell_target;
         }
         break;
     case 4:                             /* $1376 */
+        /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
         g_spell_targets[H005_B(0x246C) - 1] = g_party_head;
+        /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
         while (g_spell_targets[H005_B(0x246C) - 1]->next != NULL) {
+            /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
             g_spell_targets[H005_B(0x246C)] =
+                /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
                 g_spell_targets[H005_B(0x246C) - 1]->next;
+            /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
             add_to_byte(&H005_B(0x246C), 1);
         }
         break;
@@ -686,8 +725,10 @@ void cast_spell(u16 spell, u8 auto_abort, u8 announce, u8 *redraw)
     u16 b;                              /* -$6(a5) */
     u16 n;                              /* -$8(a5) */
 
+    /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
     if (H005_B(0x3DE3) != 5 && SPELL_B(spell, 7) == 0) {
-        if (!H005_B(0x24D9)) {
+        if (!H005_B(0x24D9)) { /* $24D9: 1 se l'incantesimo viene da un oggetto (non si dimentica) */
+            /* $716: nomi degli incantesimi, 32 byte per incantesimo (1..) */
             ui_draw_text(1, 0x13, 0x0A, 0, 0x1F, SPELL_NAME(spell));
             ui_draw_text(1, 0x14, 0x0A, 0, 0x15, "can't be cast here...");
             if (ask_yes_no(9, "Lose it? ", 0x0D, 0x0A, 0x0F) == 'Y') {
@@ -703,7 +744,7 @@ void cast_spell(u16 spell, u8 auto_abort, u8 announce, u8 *redraw)
         announce = 0;
         go = 0;
     }
-    if (announce && !H005_B(0x24D9)) {
+    if (announce && !H005_B(0x24D9)) { /* $24D9: 1 se l'incantesimo viene da un oggetto (non si dimentica) */
         announce_spell(c, 5, "casts", spell);
     }
     while (go) {
@@ -711,16 +752,20 @@ void cast_spell(u16 spell, u8 auto_abort, u8 announce, u8 *redraw)
                                                        redraw);
         if (*redraw) {
             go = 0;
+            /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
             if (H005_B(0x3DE3) == 5) {
                 load_missile_frames(0x12);
                 a = combatant_x(c);
                 b = combatant_y(c);
                 n = 0;
+                /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.) */
                 while (!in_direction((s16)a, (s16)b, (s16)H005_W(0x251A),
+                                     /* $2518: (word) y della casella bersaglio scelta (incantesimi,
+                                      * soffi, telep.) */
                                      (s16)H005_W(0x2518), n)) {
                     ++n;
                 }
-                H005_B(0x24C6) = 1;
+                H005_B(0x24C6) = 1; /* $24C6: 1 se le azioni del combattente vanno disegnate (visibile) */
                 set_combatant_frame(c, (u8)n, 1, 0);
                 switch (spell) {
                 case 0x2F:
@@ -733,34 +778,39 @@ void cast_spell(u16 spell, u8 auto_abort, u8 announce, u8 *redraw)
                     h043_190e(2);
                     break;
                 }
+                /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.);
+                 * $2518: (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
                 animate_missile(a, b, H005_W(0x251A), H005_W(0x2518), 4, 1);
                 if (combatant_visible(c, 0)) {
+                    /* turno+$B: orientamento/fotogramma del combattente (direzione 0..7) */
                     set_combatant_frame(c, (c->block_192->b)[0x0B], 1, 1);
+                    /* turno+$B: orientamento/fotogramma del combattente (direzione 0..7) */
                     set_combatant_frame(c, (c->block_192->b)[0x0B], 0, 0);
                 }
             }
             remove_effects_19(c);
-            if (!H005_B(0x24D9)) {
+            if (!H005_B(0x24D9)) { /* $24D9: 1 se l'incantesimo viene da un oggetto (non si dimentica) */
                 forget_spell(c, spell);
             }
-            H005_B(0x2471) = (u8)spell;
-            g_handlers_25c0[H005_B(0x2471) - 1]();
-            H005_B(0x2471) = 0;
-            H005_B(0x24A9) = 0;
+            H005_B(0x2471) = (u8)spell; /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+            g_handlers_25c0[H005_B(0x2471) - 1](); /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+            H005_B(0x2471) = 0; /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+            H005_B(0x24A9) = 0; /* $24A9: 1 se l'incantesimo agisce su area/gruppo (immagini illese) */
+        /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
         } else if (H005_B(0x3DE3) != 5) {
             go = 0;
         } else if (auto_abort ||
                    ask_yes_no(0x0D, "Abort Spell? ", 0x0E, 0x0A, 0x0F) ==
                    'Y') {
             show_message_line(0x0D, "Spell Aborted");
-            if (!H005_B(0x24D9)) {
+            if (!H005_B(0x24D9)) { /* $24D9: 1 se l'incantesimo viene da un oggetto (non si dimentica) */
                 forget_spell(c, spell);
             }
             go = 0;
         }
     }
     clear_message_area();
-    if (H005_B(0x3DE3) == 5) {
+    if (H005_B(0x3DE3) == 5) { /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
         clear_text_cells(0, 0x17, 0x27, 0x17);
     }
 }
@@ -777,6 +827,7 @@ void remove_scroll_spell(Character *c, CokItem *it, u16 spell)
     u16 slot = 0;                       /* -$6(a5) */
 
     for (k = 1; k <= 3; ++k) {
+        /* ogg+$43: base tabella 3 incantesimi +$44..+$46 (indice 1..3, bit7=da scrivere) */
         if (mask_byte(it->b[0x44 + k - 1], 0x7F) == wanted) {
             slot = k;
         }
@@ -784,9 +835,11 @@ void remove_scroll_spell(Character *c, CokItem *it, u16 spell)
     if (slot == 0) {
         return;
     }
+    /* ogg+$43: base tabella 3 incantesimi +$44..+$46 (indice 1..3, bit7=da scrivere) */
     it->b[0x44 + slot - 1] = 0;
+    /* ogg+$32: parola 1 del nome (indice 1-based in H005+$406E, $16 byte) */
     it->b[0x32] = (u8)(it->b[0x32] - 1);
-    if (it->b[0x32] < 0x64) {
+    if (it->b[0x32] < 0x64) { /* ogg+$32: parola 1 del nome (indice 1-based in H005+$406E, $16 byte) */
         delete_item(c, it);
     }
 }
@@ -800,10 +853,11 @@ void announce_spell(Character *c, u16 len, const char *text, u16 spell)
 {
     char line[0x52];                    /* -$52(a5) */
 
-    if (H005_B(0x3DE3) == 5) {
+    if (H005_B(0x3DE3) == 5) { /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
         show_char_message(c, 0x0D, "Casts a Spell", 0x0A, 1);
         clear_text_cells(0, 0x17, 0x27, 0x17);
         strcpy(line, "Spell  :  ");
+        /* $716: nomi degli incantesimi, 32 byte per incantesimo (1..) */
         h026_append(0x50, line, 0x1F, SPELL_NAME(spell));
         ui_draw_text(0, 0x17, 0x0A, 0, 0x50, line);
     } else {
@@ -811,6 +865,7 @@ void announce_spell(Character *c, u16 len, const char *text, u16 spell)
         draw_character_name(c, 1, 0x13, 0);
         ui_draw_text((u16)(h026_strlen(0x0F, (const char *)c->b) + 1 + 1),
                      0x13, 0x0A, 0, len, text);
+        /* $716: nomi degli incantesimi, 32 byte per incantesimo (1..) */
         ui_draw_text(1, 0x14, 0x0A, 0, 0x1F, SPELL_NAME(spell));
         message_delay();
         clear_message_area();
@@ -827,7 +882,7 @@ u16 spell_range(u16 spell)
     u16 r;                              /* -$2(a5) */
     const u8 *e = &g_h005[0x66 + (spell - 1) * 16];
 
-    if (!H005_B(0x24D9)) {
+    if (!H005_B(0x24D9)) { /* $24D9: 1 se l'incantesimo viene da un oggetto (non si dimentica) */
         r = (u16)((u16)caster_level(spell) * (u16)(e[3] >> 2) + e[2]);
     } else {
         r = (u16)(e[3] * 6 + e[2]);

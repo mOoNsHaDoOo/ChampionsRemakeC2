@@ -32,9 +32,13 @@ void h011_init(void)
  */
 void load_game_palette(void)
 {
+    /* $52AE: palette corrente dello schermo, RGB4 (16 o 32 colori) */
     exec_copy_mem(&g_h005[0x52AE], g_h011_bss, 0x40);
+    /* H011_bss+$22: (word) colore 17 della palette di gioco ($AAA) */
     COK_PUT16(&g_h011_bss[0xAC - 0x8A], 0x0AAA);
+    /* H011_bss+$24: (word) colore 18 della palette di gioco ($555) */
     COK_PUT16(&g_h011_bss[0xAC - 0x88], 0x0555);
+    /* H011_bss+$26: (word) colore 19 della palette di gioco ($FFF) */
     COK_PUT16(&g_h011_bss[0xAC - 0x86], 0x0FFF);
     graphics_load_rgb4(&g_screen->ViewPort, g_h011_bss, 0x14);
 }
@@ -55,6 +59,7 @@ static u8 map_inside(s16 x, s16 y)
  */
 static u8 map_wrap(s16 *x, s16 *y)
 {
+    /* $2498: id del programma ECL dell'area corrente ($24 iniziale, $39 demo) */
     if (!map_inside(*x, *y) && (H005_B(0x2498) == 0 || H005_B(0x2498) == 0x0A)) {
         return 0;
     }
@@ -156,18 +161,18 @@ u16 map_door(s16 x, s16 y, u16 dir)
  */
 void set_view_start(u16 a, u16 b, u16 c, u16 d)
 {
-    H005_B(0x2829) = (u8)a;
-    H005_B(0x2828) = (u8)b;
-    H005_B(0x2827) = (u8)c;
-    H005_B(0x2826) = (u8)d;
+    H005_B(0x2829) = (u8)a; /* $2829: colore del cielo della vista (1o byte di partenza vista) */
+    H005_B(0x2828) = (u8)b; /* $2828: uso: 2o byte di partenza vista (arg b di H011+$04A6) */
+    H005_B(0x2827) = (u8)c; /* $2827: uso: 3o byte di partenza vista (arg c di H011+$04A6) */
+    H005_B(0x2826) = (u8)d; /* $2826: uso: 4o byte di partenza vista (arg d di H011+$04A6), 8 nel dungeon */
 }
 
 /* Tabelle di word del modulo: H011_W(-off) e' -off(a4). */
 #define H011_W(off) ((s16)COK_GET16(&g_h011_bss[0xAC - (off)]))
 #define VIEW_X(k)   H011_W(0x58 - (k) * 2)  /* colonna del pezzo k */
 #define VIEW_Y(k)   H011_W(0x6C - (k) * 2)  /* riga del pezzo k */
-#define DX(d)       ((s16)H005_W(0x3EE2 + (d) * 2))
-#define DY(d)       ((s16)H005_W(0x3ED0 + (d) * 2))
+#define DX(d)       ((s16)H005_W(0x3EE2 + (d) * 2))  /* $3EE2: (word) spostamento x per direzione d (passo 2) */
+#define DY(d)       ((s16)H005_W(0x3ED0 + (d) * 2))  /* $3ED0: (word) spostamento y per direzione d (passo 2) */
 
 /*
  * PORT H011+$14EA (Load_WallDefinitions): carica il blocco id di
@@ -196,6 +201,7 @@ void load_wall_defs(u16 id, u16 slot)
     if (slot < 1 || slot > 3) {
         return;
     }
+    /* $246E: disco dei dati / gruppo di risorse corrente (G_RESOURCE_GROUP) */
     format_number(4, num, (s32)H005_B(0x246E), 0, 0x0A, 1, '0');
     strcpy(name, "WALLDEF");
     h026_append(0x50, name, 4, num);
@@ -210,6 +216,8 @@ void load_wall_defs(u16 id, u16 slot)
         wait_for_key();
         quit_game();
     }
+    /* $3EC6: (word) base tessere per posto muri (slot 1..3, passo 2); $3EC8: (word) base tessere
+     * del posto muri 1 (sottratta alle altre) */
     base = (s16)(H005_W(0x3EC6 + slot * 2) - H005_W(0x3EC8));
     pos = 0;
     k = 1;
@@ -226,11 +234,14 @@ void load_wall_defs(u16 id, u16 slot)
         if (s == 0 || s >= 4) {
             continue;
         }
+        /* $2810: tab. 3 voci da 4 byte dei set di muri: word id WALLDEF, $FFFF vuoto */
         H005_SET_W(0x2810 + (s - 1) * 4, 0xFFFF);
+        /* $2812: word +2 delle voci $2810: posizione (slot 1..3), $FFFF vuoto */
         H005_SET_W(0x2812 + (s - 1) * 4, 0xFFFF);
         for (j = 1; j <= 5; ++j) {
             for (t = 0; t <= 0x9B; ++t) {
                 b = &g_h005_282e[(s - 1) * 0x30C + (j - 1) * 0x9C + t];
+                /* $3EBC: (word) prima tessera dei muri da spostare al set del posto */
                 if (*b >= H005_W(0x3EBC)) {
                     *b = (u8)(*b + base);
                 }
@@ -242,7 +253,9 @@ void load_wall_defs(u16 id, u16 slot)
             load_8x8_set((u8)id, (u8)s);
         }
     }
+    /* $2810: tab. 3 voci da 4 byte dei set di muri: word id WALLDEF, $FFFF vuoto */
     H005_SET_W(0x2810 + (slot - 1) * 4, id);
+    /* $2812: word +2 delle voci $2810: posizione (slot 1..3), $FFFF vuoto */
     H005_SET_W(0x2812 + (slot - 1) * 4, slot);
 }
 
@@ -259,6 +272,7 @@ void load_geo_map(u16 id)
     u8 *buf = NULL;                     /* -$58(a5) */
     u16 pos;                            /* -$5A(a5) */
 
+    /* $246E: disco dei dati / gruppo di risorse corrente (G_RESOURCE_GROUP) */
     format_number(1, num, (s32)H005_B(0x246E), 0, 0x0A, 1, '0');
     strcpy(name, "GEO");
     h026_append(0x50, name, 1, num);
@@ -277,7 +291,7 @@ void load_geo_map(u16 id)
     pos = (u16)(pos + 0x100);
     exec_copy_mem(buf + pos, g_geo_planes + 0x300, 0x100);
     exec_free_mem(buf, size);
-    COK_PUT16(g_state_a + 0x18A, id);
+    COK_PUT16(g_state_a + 0x18A, id); /* A+$18A: (word) id della mappa GEO caricata (ricaricata al Load) */
 }
 
 /*
@@ -342,14 +356,17 @@ static void draw_view_background(void)
     s16 f = 0;                          /* -$10(a5) */
     s16 h;                              /* -$2(a5) */
 
+    /* $2829: colore del cielo della vista (1o byte di partenza vista) */
     graphics_set_apen(g_rastport, H005_B(0x2829));
     graphics_rect_fill(g_rastport, 0x17, 0x17, 0x70, 0x50);
+    /* $281C: (word) x del party sulla mappa dell'area 16x16; $281E: (word) y del party sulla mappa
+     * dell'area 16x16 */
     if (map_flags((s16)H005_W(0x281C), (s16)H005_W(0x281E)) < 0x80 &&
-        H005_B(0x2829) == 0x0B) {
-        h = (s16)COK_GET16(g_state_a + 0x192);
+        H005_B(0x2829) == 0x0B) { /* $2829: colore del cielo della vista (1o byte di partenza vista) */
+        h = (s16)COK_GET16(g_state_a + 0x192); /* A+$192: (word) ore del tempo di gioco */
         switch (h) {
         case 1: case 2: case 3: case 4: case 5:
-            switch (H005_B(0x2820)) {
+            switch (H005_B(0x2820)) { /* $2820: direzione del party (0 nord, 2 est, 4 sud, 6 ovest) */
             case 2:
                 e = (s16)(0x0A - 3);
                 f = (s16)(2 + 5 - h);
@@ -365,7 +382,7 @@ static void draw_view_background(void)
             }
             break;
         case 0x0D: case 0x0E: case 0x0F: case 0x10: case 0x11: case 0x12:
-            switch (H005_B(0x2820)) {
+            switch (H005_B(0x2820)) { /* $2820: direzione del party (0 nord, 2 est, 4 sud, 6 ovest) */
             case 6:
                 e = 0;
                 f = (s16)(2 + h - 0x0D);
@@ -386,7 +403,7 @@ static void draw_view_background(void)
         if (e != 0x3E7) {
             blit_sky(g_gfx_sky_2808, e, f);
         }
-        if (H005_B(0x2820) == 0) {
+        if (H005_B(0x2820) == 0) { /* $2820: direzione del party (0 nord, 2 est, 4 sud, 6 ovest) */
             blit_sky(g_gfx_sky_280c, 0, 2);
         }
     }
@@ -413,8 +430,10 @@ static void draw_wall_piece(s16 x, s16 y, u16 wall, u16 kind)
     s16 c;                              /* -$6(a5) */
     u8 b;
 
-    tile = H011_W(0x1C - kind * 2);
+    tile = H011_W(0x1C - kind * 2); /* H011_bss+$90: tabella 10 word: tile iniziale del pezzo kind 0..9 */
+    /* H011_bss+$7C: tabella 10 word: larghezza in tile del pezzo kind 0..9 */
     x_end = (s16)(H011_W(0x30 - kind * 2) + x - 1);
+    /* H011_bss+$68: tabella 10 word: altezza in tile del pezzo kind 0..9 */
     y_end = (s16)(H011_W(0x44 - kind * 2) + y - 1);
     set = (s16)(wall / 5 + 1);
     sub = (s16)(wall % 5);
@@ -452,21 +471,29 @@ static void draw_view_far(s16 vx, s16 vy, u16 dir, u16 left, u16 right)
         }
         if (w) {
             if (prev > 0) {
+                /* H011_bss+$66: (word) VIEW_X(9): colonna del pezzo di muro 9 nella vista;
+                 * H011_bss+$52: (word) VIEW_Y(9): riga del pezzo di muro 9 nella vista */
                 draw_wall_piece((s16)(VIEW_X(9) + off + 1), VIEW_Y(9), prev, 9);
             }
             prev = w;
+            /* H011_bss+$54: (word) VIEW_X(0): colonna del pezzo di muro 0 nella vista;
+             * H011_bss+$40: (word) VIEW_Y(0): riga del pezzo di muro 0 nella vista */
             draw_wall_piece((s16)(VIEW_X(0) + off), VIEW_Y(0), w, 0);
         } else {
             if (prev > 0 &&
+                /* $3EE2: (word) spostamento x per direzione d (passo 2); $3ED0: (word) spostamento
+                 * y per direzione d (passo 2) */
                 map_wall((s16)(px - DX(left)), (s16)(py - DY(left)), left)) {
+                /* H011_bss+$66: (word) VIEW_X(9): colonna del pezzo di muro 9 nella vista;
+                 * H011_bss+$52: (word) VIEW_Y(9): riga del pezzo di muro 9 nella vista */
                 draw_wall_piece((s16)(VIEW_X(9) + off + 1), VIEW_Y(9), prev, 9);
             }
             prev = 0;
         }
         ++i;
         off = (s16)(off - 2);
-        px = (s16)(px + DX(left));
-        py = (s16)(py + DY(left));
+        px = (s16)(px + DX(left)); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
+        py = (s16)(py + DY(left)); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
     }
     px = vx; py = vy; i = 0; off = 0; prev = 0;
     while (i < 4) {
@@ -476,51 +503,67 @@ static void draw_view_far(s16 vx, s16 vy, u16 dir, u16 left, u16 right)
         }
         if (w) {
             if (prev > 0) {
+                /* H011_bss+$66: (word) VIEW_X(9): colonna del pezzo di muro 9 nella vista;
+                 * H011_bss+$52: (word) VIEW_Y(9): riga del pezzo di muro 9 nella vista */
                 draw_wall_piece((s16)(VIEW_X(9) + off - 1), VIEW_Y(9), prev, 9);
             }
             prev = w;
+            /* H011_bss+$54: (word) VIEW_X(0): colonna del pezzo di muro 0 nella vista;
+             * H011_bss+$40: (word) VIEW_Y(0): riga del pezzo di muro 0 nella vista */
             draw_wall_piece((s16)(VIEW_X(0) + off), VIEW_Y(0), w, 0);
         } else {
             if (prev > 0 &&
+                /* $3EE2: (word) spostamento x per direzione d (passo 2); $3ED0: (word) spostamento
+                 * y per direzione d (passo 2) */
                 map_wall((s16)(px - DX(right)), (s16)(py - DY(right)), right)) {
+                /* H011_bss+$66: (word) VIEW_X(9): colonna del pezzo di muro 9 nella vista;
+                 * H011_bss+$52: (word) VIEW_Y(9): riga del pezzo di muro 9 nella vista */
                 draw_wall_piece((s16)(VIEW_X(9) + off - 1), VIEW_Y(9), prev, 9);
             }
             prev = 0;
         }
         ++i;
         off = (s16)(off + 2);
-        px = (s16)(px + DX(right));
-        py = (s16)(py + DY(right));
+        px = (s16)(px + DX(right)); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
+        py = (s16)(py + DY(right)); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
     }
     px = vx; py = vy; i = 0; off = 0;
     while (i < 3) {
         w = map_wall(px, py, left);
         if (w) {
             if (i == 0) {
+                /* H011_bss+$56: (word) VIEW_X(1): colonna del pezzo di muro 1 nella vista;
+                 * H011_bss+$42: (word) VIEW_Y(1): riga del pezzo di muro 1 nella vista */
                 draw_wall_piece((s16)(VIEW_X(1) + off), VIEW_Y(1), w, 1);
             } else {
+                /* H011_bss+$56: (word) VIEW_X(1): colonna del pezzo di muro 1 nella vista;
+                 * H011_bss+$42: (word) VIEW_Y(1): riga del pezzo di muro 1 nella vista */
                 draw_wall_piece((s16)(VIEW_X(1) + off - 1), VIEW_Y(1), w, 1);
             }
         }
         ++i;
         off = (s16)(off - 2);
-        px = (s16)(px + DX(left));
-        py = (s16)(py + DY(left));
+        px = (s16)(px + DX(left)); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
+        py = (s16)(py + DY(left)); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
     }
     px = vx; py = vy; i = 0; off = 0;
     while (i < 3) {
         w = map_wall(px, py, right);
         if (w) {
             if (i == 0) {
+                /* H011_bss+$58: (word) VIEW_X(2): colonna del pezzo di muro 2 nella vista;
+                 * H011_bss+$44: (word) VIEW_Y(2): riga del pezzo di muro 2 nella vista */
                 draw_wall_piece((s16)(VIEW_X(2) + off), VIEW_Y(2), w, 2);
             } else {
+                /* H011_bss+$58: (word) VIEW_X(2): colonna del pezzo di muro 2 nella vista;
+                 * H011_bss+$44: (word) VIEW_Y(2): riga del pezzo di muro 2 nella vista */
                 draw_wall_piece((s16)(VIEW_X(2) + off + 1), VIEW_Y(2), w, 2);
             }
         }
         ++i;
         off = (s16)(off + 2);
-        px = (s16)(px + DX(right));
-        py = (s16)(py + DY(right));
+        px = (s16)(px + DX(right)); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
+        py = (s16)(py + DY(right)); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
     }
 }
 
@@ -534,41 +577,49 @@ static void draw_view_mid(s16 vx, s16 vy, u16 dir, u16 left, u16 right)
     u16 w;
     u16 w2;
 
-    px = (s16)(vx + DX(left) + DX(left));
-    py = (s16)(vy + DY(left) + DY(left));
+    px = (s16)(vx + DX(left) + DX(left)); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
+    py = (s16)(vy + DY(left) + DY(left)); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
     i = 0;
     off = -6;
     while (i < 3) {
         w = map_wall(px, py, dir);
         if (w) {
+            /* H011_bss+$5A: (word) VIEW_X(3): colonna del pezzo di muro 3 nella vista;
+             * H011_bss+$46: (word) VIEW_Y(3): riga del pezzo di muro 3 nella vista */
             draw_wall_piece((s16)(VIEW_X(3) + off), VIEW_Y(3), w, 3);
         }
         w2 = map_wall(px, py, left);
         if (w2) {
+            /* H011_bss+$5C: (word) VIEW_X(4): colonna del pezzo di muro 4 nella vista;
+             * H011_bss+$48: (word) VIEW_Y(4): riga del pezzo di muro 4 nella vista */
             draw_wall_piece((s16)(VIEW_X(4) + off), VIEW_Y(4), w2, 4);
         }
         ++i;
         off = (s16)(off + 3);
-        px = (s16)(px + DX(right));
-        py = (s16)(py + DY(right));
+        px = (s16)(px + DX(right)); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
+        py = (s16)(py + DY(right)); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
     }
-    px = (s16)(vx + DX(right) + DX(right));
-    py = (s16)(vy + DY(right) + DY(right));
+    px = (s16)(vx + DX(right) + DX(right)); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
+    py = (s16)(vy + DY(right) + DY(right)); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
     i = 0;
     off = 6;
     while (i < 3) {
         w = map_wall(px, py, dir);
         if (w) {
+            /* H011_bss+$5A: (word) VIEW_X(3): colonna del pezzo di muro 3 nella vista;
+             * H011_bss+$46: (word) VIEW_Y(3): riga del pezzo di muro 3 nella vista */
             draw_wall_piece((s16)(VIEW_X(3) + off), VIEW_Y(3), w, 3);
         }
         w2 = map_wall(px, py, right);
         if (w2) {
+            /* H011_bss+$5E: (word) VIEW_X(5): colonna del pezzo di muro 5 nella vista;
+             * H011_bss+$4A: (word) VIEW_Y(5): riga del pezzo di muro 5 nella vista */
             draw_wall_piece((s16)(VIEW_X(5) + off), VIEW_Y(5), w2, 5);
         }
         ++i;
         off = (s16)(off - 3);
-        px = (s16)(px + DX(left));
-        py = (s16)(py + DY(left));
+        px = (s16)(px + DX(left)); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
+        py = (s16)(py + DY(left)); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
     }
 }
 
@@ -582,41 +633,49 @@ static void draw_view_near(s16 vx, s16 vy, u16 dir, u16 left, u16 right)
     u16 w;
     u16 w2;
 
-    px = (s16)(vx + DX(left));
-    py = (s16)(vy + DY(left));
+    px = (s16)(vx + DX(left)); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
+    py = (s16)(vy + DY(left)); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
     i = 0;
     off = -7;
     while (i < 2) {
         w = map_wall(px, py, dir);
         if (w) {
+            /* H011_bss+$60: (word) VIEW_X(6): colonna del pezzo di muro 6 nella vista;
+             * H011_bss+$4C: (word) VIEW_Y(6): riga del pezzo di muro 6 nella vista */
             draw_wall_piece((s16)(VIEW_X(6) + off), VIEW_Y(6), w, 6);
         }
         w2 = map_wall(px, py, left);
         if (w2) {
+            /* H011_bss+$62: (word) VIEW_X(7): colonna del pezzo di muro 7 nella vista;
+             * H011_bss+$4E: (word) VIEW_Y(7): riga del pezzo di muro 7 nella vista */
             draw_wall_piece((s16)(VIEW_X(7) + off), VIEW_Y(7), w2, 7);
         }
         ++i;
         off = (s16)(off + 7);
-        px = (s16)(px + DX(right));
-        py = (s16)(py + DY(right));
+        px = (s16)(px + DX(right)); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
+        py = (s16)(py + DY(right)); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
     }
-    px = (s16)(vx + DX(right));
-    py = (s16)(vy + DY(right));
+    px = (s16)(vx + DX(right)); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
+    py = (s16)(vy + DY(right)); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
     i = 0;
     off = 7;
     while (i < 2) {
         w = map_wall(px, py, dir);
         if (w) {
+            /* H011_bss+$60: (word) VIEW_X(6): colonna del pezzo di muro 6 nella vista;
+             * H011_bss+$4C: (word) VIEW_Y(6): riga del pezzo di muro 6 nella vista */
             draw_wall_piece((s16)(VIEW_X(6) + off), VIEW_Y(6), w, 6);
         }
         w2 = map_wall(px, py, right);
         if (w2) {
+            /* H011_bss+$64: (word) VIEW_X(8): colonna del pezzo di muro 8 nella vista;
+             * H011_bss+$50: (word) VIEW_Y(8): riga del pezzo di muro 8 nella vista */
             draw_wall_piece((s16)(VIEW_X(8) + off), VIEW_Y(8), w2, 8);
         }
         ++i;
         off = (s16)(off - 7);
-        px = (s16)(px + DX(left));
-        py = (s16)(py + DY(left));
+        px = (s16)(px + DX(left)); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
+        py = (s16)(py + DY(left)); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
     }
 }
 
@@ -637,10 +696,10 @@ void draw_3d_view(s16 x, s16 y, u16 dir)
 
     copy_intuition_colors();
     begin_screen_update();
-    if (H005_B(0x2825)) {
+    if (H005_B(0x2825)) { /* $2825: flag mappa dall'alto attiva al posto della vista 3D */
         draw_area_map(x, y, dir);
     } else {
-        H005_B(0x2486) = 0xFF;
+        H005_B(0x2486) = 0xFF; /* $2486: id della sequenza caricata in $27BC (nome a $27A6), $FF nessuna */
         draw_view_background();
         left = (u16)((dir + 6) & 7);
         back = (u16)((dir + 4) & 7);
@@ -648,8 +707,8 @@ void draw_3d_view(s16 x, s16 y, u16 dir)
         vx = x;
         vy = y;
         dist = 2;
-        vx = (s16)(vx + DX(dir) * dist);
-        vy = (s16)(vy + DY(dir) * dist);
+        vx = (s16)(vx + DX(dir) * dist); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
+        vy = (s16)(vy + DY(dir) * dist); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
         do {
             switch (dist) {
             case 2: draw_view_far(vx, vy, dir, left, right); break;
@@ -657,8 +716,8 @@ void draw_3d_view(s16 x, s16 y, u16 dir)
             case 0: draw_view_near(vx, vy, dir, left, right); break;
             default: break;
             }
-            vx = (s16)(vx + DX(back));
-            vy = (s16)(vy + DY(back));
+            vx = (s16)(vx + DX(back)); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
+            vy = (s16)(vy + DY(back)); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
             --dist;
         } while (dist > -1);
     }

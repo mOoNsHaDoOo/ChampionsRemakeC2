@@ -49,14 +49,17 @@ static void cycle_icon(u16 idx, u16 limit)
     }
     switch (idx) {
     case 0x1FC:
+        /* A+$3F2: (word) fase (0..3) del ciclo 1: icona cornice colonna 8 */
         tile = (u16)(COK_GET16(g_state_a + 0x3F2) + 0x0A);
         col = 8;
         break;
     case 0x1FD:
+        /* A+$3F4: (word) fase (0..3) del ciclo 2: icona cornice colonna $13 */
         tile = (u16)(COK_GET16(g_state_a + 0x3F4) + 6);
         col = 0x13;
         break;
     case 0x1FE:
+        /* A+$3F6: (word) fase (0..3) del ciclo 3: icona cornice colonna $1E */
         tile = (u16)(COK_GET16(g_state_a + 0x3F6) + 0x0E);
         col = 0x1E;
         break;
@@ -86,19 +89,20 @@ static void normalize_time(u8 *t)
     Character *p;                       /* -$6(a5) */
 
     for (i = 0; i <= 6; ++i) {
+        /* $500A: (word) limiti delle unita' di tempo t[0..6] (riporto) */
         if (COK_GET16(t + i * 2) < H005_W(0x500A + i * 2)) {
             continue;
         }
         if (i != 6) {
             COK_PUT16(t + (i + 1) * 2, COK_GET16(t + (i + 1) * 2) + 1);
-            COK_PUT16(t + i * 2,
+            COK_PUT16(t + i * 2, /* $500A: (word) limiti delle unita' di tempo t[0..6] (riporto) */
                       COK_GET16(t + i * 2) - H005_W(0x500A + i * 2));
             if (i == 3) {
                 hourly_icons();
             }
         } else {
             for (p = g_party_head; p != NULL; p = p->next) {
-                COK_PUT16(&p->b[0x62], COK_GET16(&p->b[0x62]) + 1);
+                COK_PUT16(&p->b[0x62], COK_GET16(&p->b[0x62]) + 1); /* pg+$62: eta' (word) */
             }
         }
     }
@@ -123,7 +127,7 @@ static void age_effects(u16 amount, u8 unit)
     CokEffect *next;                    /* -$1A(a5) */
     u8 u;                               /* -$1(a5) */
 
-    if (H005_B(0x3DE3) != 2) {
+    if (H005_B(0x3DE3) != 2) { /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
         h029_fill_bytes(0x27, g_h058_bss, 0x28, 1);
     } else {
         found = 0;
@@ -133,6 +137,7 @@ static void age_effects(u16 amount, u8 unit)
                 found = 1;
             }
             ++i;
+        /* B+$67C: (word) numero dei membri del party (max 8) */
         } while (!found && i <= COK_GET16(g_state_b + 0x67C));
         if (!found) {
             return;
@@ -140,6 +145,7 @@ static void age_effects(u16 amount, u8 unit)
     }
     left = amount;
     for (u = unit; u > 1; --u) {
+        /* $500A: (word) limiti delle unita' di tempo t[0..6] (riporto) */
         left = (u16)(left * H005_W(0x500A + (u - 1) * 2));
     }
     while (left > 0) {
@@ -160,17 +166,26 @@ static void age_effects(u16 amount, u8 unit)
                         if (e == last) {
                             done = 1;
                         }
+                        /* eff+$2: (word) durata residua dell'effetto, scalata col tempo; 0 =
+                         * permanente */
                         if (COK_GET16(&e->b[2]) != 0) {
+                            /* eff+$2: (word) durata residua dell'effetto, scalata col tempo; 0 =
+                             * permanente */
                             if (COK_GET16(&e->b[2]) > step) {
+                                /* eff+$2: (word) durata residua dell'effetto, scalata col tempo; 0
+                                 * = permanente */
                                 COK_PUT16(&e->b[2], COK_GET16(&e->b[2]) - step);
                                 H058_FLAG(i - 1) = 1;
                             } else {
+                                /* eff+$0: tipo dell'effetto (codice del gestore) */
                                 remove_effect(p, e->b[0], e);
                             }
                         }
                         e = next;
                     }
                     while (e != NULL) {
+                        /* eff+$2: (word) durata residua dell'effetto, scalata col tempo; 0 =
+                         * permanente */
                         if (COK_GET16(&e->b[2]) > 0) {
                             H058_FLAG(i - 1) = 1;
                         }
@@ -195,6 +210,7 @@ void advance_time(u16 amount, u8 unit)
     u16 k;                              /* -$12(a5) */
 
     for (i = 0; i <= 6; ++i) {
+        /* A+$18C: tempo di gioco: 7 word da qui (secondi, minuti, decine, ore, giorni) */
         COK_PUT16(&t[i * 2], STATE_W(0xC6 + i));
     }
     for (k = 1; k <= amount; ++k) {
@@ -202,6 +218,7 @@ void advance_time(u16 amount, u8 unit)
         normalize_time(t);
     }
     for (i = 0; i <= 6; ++i) {
+        /* A+$18C: tempo di gioco: 7 word da qui (secondi, minuti, decine, ore, giorni) */
         STATE_SETW(0xC6 + i, COK_GET16(&t[i * 2]));
     }
     age_effects(amount, unit);
@@ -211,7 +228,9 @@ void advance_time(u16 amount, u8 unit)
  * Tempo di riposo: 7 word a $24F4 (0 secondi, 1 minuti, 2 decine di
  * minuti, 3 ore, 4 giorni, 5..6 oltre), limiti a $500A.
  */
+/* $24F4: tempo di riposo: 7 word (sec, min, decine, ore, giorni, oltre) */
 #define REST_T(i)       H005_W(0x24F4 + (i) * 2)
+/* $24F4: tempo di riposo: 7 word (sec, min, decine, ore, giorni, oltre) */
 #define REST_SET_T(i, v) H005_SET_W(0x24F4 + (i) * 2, (u16)(v))
 #define REST_TIMER(i)   H005_B(0x24EC + (i))  /* per personaggio */
 
@@ -221,12 +240,16 @@ void advance_time(u16 amount, u8 unit)
  */
 static void rest_normalize(void)
 {
+    /* $24F4: tempo di riposo: 7 word (sec, min, decine, ore, giorni, oltre) */
     normalize_time(&g_h005[0x24F4]);
-    if (REST_T(5) > 0) {
+    if (REST_T(5) > 0) { /* $24FE: tempo di riposo: riporto oltre i giorni (word, voce 5) */
+        /* $5012: (word) limite dell'unita' 4 (giorni) per il riporto; $24FE: tempo di riposo:
+         * riporto oltre i giorni (word, voce 5); $24FC: tempo di riposo: giorni, al massimo 99
+         * (word, voce 4) */
         REST_SET_T(4, H005_W(0x5012) * REST_T(5) + REST_T(4));
-        REST_SET_T(5, 0);
-        if (REST_T(4) > 0x63) {
-            REST_SET_T(4, 0x63);
+        REST_SET_T(5, 0); /* $24FE: tempo di riposo: riporto oltre i giorni (word, voce 5) */
+        if (REST_T(4) > 0x63) { /* $24FC: tempo di riposo: giorni, al massimo 99 (word, voce 4) */
+            REST_SET_T(4, 0x63); /* $24FC: tempo di riposo: giorni, al massimo 99 (word, voce 4) */
         }
     }
 }
@@ -241,21 +264,29 @@ static void rest_subtract(u16 amount, u8 unit)
     u8 j;                               /* -$1(a5) */
     u8 k;                               /* -$2(a5) */
 
+    /* $24FC: tempo di riposo: giorni, al massimo 99 (word, voce 4); $24FA: tempo di riposo: ore
+     * (word, voce 3); $24F8: tempo di riposo: decine di minuti (word, voce 2) */
     if (REST_T(4) == 0 && REST_T(3) == 0 && REST_T(2) == 0 &&
-        REST_T(1) == 0) {
+        REST_T(1) == 0) { /* $24F6: tempo di riposo: minuti (word, voce 1) */
         return;
     }
+    /* $24F4: tempo di riposo: 7 word (sec, min, decine, ore, giorni, oltre) */
     while (amount > REST_T(unit)) {
         j = (u8)(unit + 1);
+        /* $24F4: tempo di riposo: 7 word (sec, min, decine, ore, giorni, oltre) */
         while (REST_T(j) == 0 && j < 5) {
             j = (u8)(j + 1);
         }
         if (j == 5) {
+            /* $24F4: tempo di riposo: 7 word (sec, min, decine, ore, giorni, oltre) */
             h029_fill_bytes(0x0D, &g_h005[0x24F4], 0x0E, 0);
             amount = 0;
         } else {
             for (k = j; k >= (u8)(unit + 1); --k) {
+                /* $24F4: tempo di riposo: 7 word (sec, min, decine, ore, giorni, oltre) */
                 REST_SET_T(k, REST_T(k) - 1);
+                /* $24F4: tempo di riposo: 7 word (sec, min, decine, ore, giorni, oltre); $500A:
+                 * (word) limiti delle unita' di tempo t[0..6] (riporto) */
                 REST_SET_T(k - 1, REST_T(k - 1) + H005_W(0x500A + (k - 1) * 2));
                 if (k == 0) {
                     break;
@@ -263,6 +294,7 @@ static void rest_subtract(u16 amount, u8 unit)
             }
         }
     }
+    /* $24F4: tempo di riposo: 7 word (sec, min, decine, ore, giorni, oltre) */
     REST_SET_T(unit, REST_T(unit) - amount);
     rest_normalize();
 }
@@ -285,11 +317,14 @@ static void rest_display(u8 sel)
     ui_draw_text(1, 0x11, 0x0A, 0, 0x0C, "Rest Time : ");
     col = 0x0B;
     for (i = 4; i >= 3; --i) {
+        /* $24F4: tempo di riposo: 7 word (sec, min, decine, ore, giorni, oltre) */
         format_number(0x28, buf, (s32)REST_T(i), 0, 0x0A, 2, '0');
         ui_draw_text((u16)(col + 1), 0x11, color[i], 0, 0x28, buf);
         ui_draw_text((u16)(col + 1 + 2), 0x11, 0x0A, 0, 3, " : ");
         col = (u16)(col + 3);
     }
+    /* $24F8: tempo di riposo: decine di minuti (word, voce 2); $24F6: tempo di riposo: minuti
+     * (word, voce 1) */
     format_number(0x28, buf, (s32)(u16)(REST_T(2) * 0x0A + REST_T(1)), 0,
                   0x0A, 2, '0');
     ui_draw_text((u16)(col + 1), 0x11, color[2], 0, 0x28, buf);
@@ -356,8 +391,9 @@ static u8 rest_menu(void)
             break;
         case 'A':
             if (sel == 2) {
-                REST_SET_T(1, REST_T(1) + 5);
+                REST_SET_T(1, REST_T(1) + 5); /* $24F6: tempo di riposo: minuti (word, voce 1) */
             } else {
+                /* $24F4: tempo di riposo: 7 word (sec, min, decine, ore, giorni, oltre) */
                 REST_SET_T(sel, REST_T(sel) + 1);
             }
             rest_normalize();
@@ -386,8 +422,9 @@ static void rest_heal(u8 show)
     u8 healed;                          /* -$1(a5) */
     Character *p;                       /* -$6(a5) */
 
+    /* $24EA: contatore dei passi di riposo per +1 PF ogni $120 (word) */
     H005_SET_W(0x24EA, H005_W(0x24EA) + 1);
-    if (H005_W(0x24EA) < 0x120) {
+    if (H005_W(0x24EA) < 0x120) { /* $24EA: contatore dei passi di riposo per +1 PF ogni $120 (word) */
         return;
     }
     healed = 0;
@@ -405,7 +442,7 @@ static void rest_heal(u8 show)
     }
     message_delay();
     clear_message_area();
-    H005_SET_W(0x24EA, 0);
+    H005_SET_W(0x24EA, 0); /* $24EA: contatore dei passi di riposo per +1 PF ogni $120 (word) */
 }
 
 /*
@@ -420,13 +457,17 @@ static u16 memorize_next(Character *c, u8 *flag)
     u16 spell;
 
     for (i = 0; i <= 0x39 && level == 0; ++i) {
+        /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
         if (c->b[0x1E + i] > 0x7F) {
             if (*flag) {
+                /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
                 spell = mask_byte(c->b[0x1E + i], 0x7F);
                 level = H005_B(0x66 + (spell - 1) * 16 + 1);
             } else {
+                /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
                 c->b[0x1E + i] = (u8)(c->b[0x1E + i] - 0x80);
                 rest_display(0);
+                /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
                 announce_spell(c, 0x0D, "has memorized", c->b[0x1E + i]);
             }
             *flag = 1;
@@ -453,15 +494,19 @@ static u16 scribe_next(Character *c, u8 *flag)
             continue;
         }
         for (; k <= 3 && level == 0; ++k) {
+            /* ogg+$43: base tabella 3 incantesimi +$44..+$46 (indice 1..3, bit7=da scrivere) */
             if (it->b[0x44 + k - 1] <= 0x80) {
                 continue;
             }
             found = 1;
             if (*flag) {
+                /* ogg+$43: base tabella 3 incantesimi +$44..+$46 (indice 1..3, bit7=da scrivere) */
                 spell = mask_byte(it->b[0x44 + k - 1], 0x7F);
                 level = H005_B(0x66 + (spell - 1) * 16 + 1);
             } else {
+                /* ogg+$43: base tabella 3 incantesimi +$44..+$46 (indice 1..3, bit7=da scrivere) */
                 spell = mask_byte(it->b[0x44 + k - 1], 0x7F);
+                /* pg+$65: base -1 incantesimi noti +$66+s-1 (s = 1..$6B, flag per incantesimo) */
                 c->b[0x66 + spell - 1] = 1;
                 remove_scroll_spell(c, it, spell);
                 rest_display(0);
@@ -487,15 +532,19 @@ static void rest_learn(void)
     u8 flag;                            /* -$9(a5) */
 
     for (p = g_party_head; p != NULL; p = p->next, ++i) {
-        if (REST_TIMER(i - 1) > 0) {
+        if (REST_TIMER(i - 1) > 0) { /* $24EC: contatori di studio per personaggio (8 byte, indice = posto) */
+            /* $24EC: contatori di studio per personaggio (8 byte, indice = posto) */
             REST_TIMER(i - 1) = (u8)(REST_TIMER(i - 1) - 1);
         }
+        /* $24EC: contatori di studio per personaggio (8 byte, indice = posto); pg+$58: ore di
+         * studio residue (memorizzazione/trascrizione) (word) */
         if (REST_TIMER(i - 1) == 0 && COK_GET16(&p->b[0x58]) == 0) {
             flag = 0;
             level = scribe_next(p, &flag);
             if (level == 0) {
                 level = memorize_next(p, &flag);
             }
+            /* $24EC: contatori di studio per personaggio (8 byte, indice = posto) */
             REST_TIMER(i - 1) = (u8)(level * 3);
         }
     }
@@ -519,14 +568,18 @@ static void rest_wait(u16 *count)
     *count = 0;
     i = 1;
     for (p = g_party_head; p != NULL; p = p->next, ++i) {
+        /* pg+$58: ore di studio residue (memorizzazione/trascrizione) (word) */
         if ((s16)COK_GET16(&p->b[0x58]) > 0) {
+            /* pg+$58: ore di studio residue (memorizzazione/trascrizione) (word) */
             COK_PUT16(&p->b[0x58], COK_GET16(&p->b[0x58]) - 1);
+            /* pg+$58: ore di studio residue (memorizzazione/trascrizione) (word) */
             if (COK_GET16(&p->b[0x58]) == 0) {
                 flag = 1;
                 level = scribe_next(p, &flag);
                 if (level == 0) {
                     level = memorize_next(p, &flag);
                 }
+                /* $24EC: contatori di studio per personaggio (8 byte, indice = posto) */
                 REST_TIMER(i - 1) = (u8)(level * 3);
             }
         }
@@ -549,7 +602,7 @@ u8 rest_party(u8 interactive)
 
     i = 1;
     for (p = g_party_head; p != NULL; p = p->next) {
-        REST_TIMER(i - 1) = 0;
+        REST_TIMER(i - 1) = 0; /* $24EC: contatori di studio per personaggio (8 byte, indice = posto) */
         ++i;
     }
     h029_fill_bytes(0x27, g_h058_bss, 0x28, 1);
@@ -560,12 +613,14 @@ u8 rest_party(u8 interactive)
         rest_display(0);
     }
     set_pointer_shape(9);
-    H005_B(0x24E2) = 1;
+    H005_B(0x24E2) = 1; /* $24E2: 1 durante il riposo: puntatore d'attesa, messaggi dalla riga $12 */
     stop = (u8)(interactive ? !rest_menu() : 0);
+    /* $24FC: tempo di riposo: giorni, al massimo 99 (word, voce 4); $24FA: tempo di riposo: ore
+     * (word, voce 3); $24F8: tempo di riposo: decine di minuti (word, voce 2) */
     while (!stop && (REST_T(4) > 0 || REST_T(3) > 0 || REST_T(2) > 0 ||
-                     REST_T(1) > 0)) {
+                     REST_T(1) > 0)) { /* $24F6: tempo di riposo: minuti (word, voce 1) */
         poll_intuition_events();
-        if (interactive && G_KEY) {
+        if (interactive && G_KEY) { /* $5305: tasto/azione pendente dall'input (G_KEY) */
             rest_display(0);
             if (ask_yes_no(0x0E, "Stop Resting? ", 0x0D, 0x0A, 0x0F) == 'Y') {
                 stop = 1;
@@ -586,10 +641,15 @@ u8 rest_party(u8 interactive)
         rest_heal(interactive);
         rest_learn();
         rest_wait(&wait_count);
+        /* B+$5A4: (word) passi di riposo (5 min) fra i tiri d'incontro, 0 mai */
         if (COK_GET16(g_state_b + 0x5A4) > 0) {
+            /* $3DDE: (word) passi di riposo dall'ultimo controllo incontri */
             H005_SET_W(0x3DDE, H005_W(0x3DDE) + 1);
+            /* $3DDE: (word) passi di riposo dall'ultimo controllo incontri; B+$5A4: (word) passi di
+             * riposo (5 min) fra i tiri d'incontro, 0 mai */
             if (H005_W(0x3DDE) >= COK_GET16(g_state_b + 0x5A4)) {
-                H005_SET_W(0x3DDE, 0);
+                H005_SET_W(0x3DDE, 0); /* $3DDE: (word) passi di riposo dall'ultimo controllo incontri */
+                /* B+$5A6: (word) probabilita' % d'incontro durante il riposo */
                 if (roll_dice(1, 0x64) <= COK_GET16(g_state_b + 0x5A6)) {
                     clear_message_area();
                     rest_display(0);
@@ -603,7 +663,7 @@ u8 rest_party(u8 interactive)
         }
     }
     clear_text_cells(1, 0x11, 0x26, 0x16);
-    H005_B(0x24E2) = 0;
+    H005_B(0x24E2) = 0; /* $24E2: 1 durante il riposo: puntatore d'attesa, messaggi dalla riga $12 */
     set_pointer_shape(0x0A);
     return interrupted;
 }

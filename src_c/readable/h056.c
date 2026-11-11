@@ -20,7 +20,7 @@ void debug_trace(u16 len, const char *text, u8 a, u8 b, u8 c)
     char sb[0x52];                      /* -$a4(a5) */
     char sc[0x52];                      /* -$f6(a5) */
 
-    if (!H005_B(0x24D2)) {
+    if (!H005_B(0x24D2)) { /* $24D2: debug attivo ("*" in stato, valori extra) */
         return;
     }
     format_number(0x50, line, a, 0, 0x0A, 4, '0');

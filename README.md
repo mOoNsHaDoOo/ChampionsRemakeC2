@@ -1,44 +1,77 @@
-# Port in C dall'assembly
+# Champions of Krynn: C port of the Amiga assembly
 
-Questa cartella è un port **da zero**, scritto a mano routine per routine
-dall'assembly annotato di `rebuild/source`. Non deriva dal vecchio livello
-leggibile né dalla decompilazione Ghidra (`src_c/H*.c`).
+This folder is a **from-scratch** C port of the Amiga version of Champions of
+Krynn. It was written by hand, routine by routine, from the annotated 68000
+assembly in `rebuild/source`. It does not derive from the old readable layer
+or from the Ghidra decompilation (`src_c/H*.c`).
 
-## Regole
+The same sources build two targets:
 
-- **Un file per hunk:** `hNNN_<ruolo>.c` con il suo header `hNNN_<ruolo>.h`.
-- **Marcatore:** ogni funzione portata ha sopra il commento
-  `PORT Hnnn+$XXXX` con l'indirizzo della routine originale.
-- **Fedeltà:** il comportamento segue l'assembly. Dove il C deve scostarsi
-  (build host, puntatori a 64 bit, accessi fuori dai limiti, runtime del
-  compilatore) il commento lo dice esplicitamente.
-- **Dati globali:** `globals.h` raccoglie i dati di `H005` e degli altri
-  moduli con nomi descrittivi. Ogni variabile riporta il suo offset
-  originale; se l'uso non è ancora chiaro, il nome resta l'offset.
-- **Convenzione di chiamata:** gli argomenti seguono l'ordine dell'originale
-  (il primo argomento è quello all'offset più alto dello stack).
-- **Routine mancanti:** quelle non ancora portate stanno in `unported.c`.
-  Fermano il programma stampando il loro indirizzo, quindi il port gira
-  esattamente fin dove è portato.
+- **AmigaOS**, with SAS/C 6.x (`smakefile`).
+- **Host** (Linux, macOS, Windows), with SDL2: CMake, a plain `Makefile` or
+  Visual Studio 2022.
 
-## Avanzamento
+## Status
 
-`PORT_STATUS.md` elenca tutte le routine dell'asm e quali sono portate. Si
-rigenera con:
+All the routines of the assembly are ported: `PORT_STATUS.md` reports
+**1132 / 1132**. A routine counts as ported when a source file carries its
+`PORT Hnnn+$XXXX` marker. A few markers document routines that have no C
+function of their own:
 
-```sh
-python3 scripts/port_status.py --check
-```
+- **Trampolines** (`bra.w` stubs) point to the ported routine they jump to.
+- **Nested Pascal procedures** are ported inside their parent, or share an
+  identical C helper.
+- **Compiler runtime I/O** (H002 `IoErr`, H015 start-up and clean-up, parts
+  of H020, H074 and H075) is replaced by the C library.
+- **Blitter callbacks** of the queued blit (H049) run inside
+  `queue_bitplane_blit`.
 
-(da eseguire dalla radice del repository, oppure con `make status` da qui).
+`unported.c` only holds the three H043 audio entry points, used when the game
+is built **without** audio (see below).
 
-Ordine di lavoro: l'avvio di `H000+$0000` inizializza 99 moduli in un ordine
-fisso, poi entra nel main `H001+$0058`. Il port segue quest'ordine, così il
-programma avanza un modulo alla volta.
+The game has been play-tested on the host build with AddressSanitizer. The
+tested features are:
+
+- character creation and the party menu;
+- the first town, the caravan battle and party defeat;
+- treasure, Take and Pool;
+- camp: Fix, Rest, Memorize, Order and Drop;
+- Turn Undead;
+- potions, scrolls and wands, at camp and in combat.
+
+The playtest reports, and the fixes they led to, are kept in `backlog.md`.
+
+## Rules
+
+- **One file per hunk:** `hNNN_<role>.c` with its header `hNNN_<role>.h`.
+- **Marker:** every ported function has a comment above it with
+  `PORT Hnnn+$XXXX`, the address of the original routine.
+- **Faithfulness:** behaviour follows the assembly. Where the C code has to
+  differ (host build, 64-bit pointers, out-of-bounds reads, compiler runtime),
+  the comment says so explicitly.
+- **Calling convention:** arguments keep the original order (the first
+  argument is the one at the highest stack offset). A byte push takes a word
+  slot. Nested Pascal procedures become C functions that receive their
+  parent's frame as a struct.
+- **Global data:** `globals.h` maps the data hunk `H005` as a byte image of
+  `$531C` bytes with the original big-endian layout (`g_h005`, read with
+  `H005_B`/`H005_W`/`H005_L` and written with `H005_SET_*`), because the game
+  reads the same addresses as bytes and as words and saves contiguous ranges.
+  Original 32-bit pointers are plain C variables. The persistent state blocks
+  are `g_state_a` (`$3E04`), `g_state_b` (`$3E00`) and `g_state_c` (`$3DFC`).
+- **Records:** characters and monsters (`Character`, `$1AA` bytes), items
+  (`CokItem`, `$48`), combat turn blocks (`CokTurn`, `$18`) and effects
+  (`CokEffect`, `$0A`) keep the original byte layout in a `b[]` array.
+- **Commented accesses:** every read or write of an anonymous array or record
+  field (`g_h005`, the state blocks, `->b[]`, the module-local data arrays)
+  carries a comment that explains the element, for example
+  `/* $3DF6: game speed (0..9) */`. Descriptions starting with `uso:` record
+  the observed use where the exact meaning is not yet known.
+- **Comments and identifiers** are in Italian, as in the rest of the port.
 
 ## Build
 
-Host con CMake e SDL2 (Linux, macOS, Windows):
+### Host with CMake and SDL2 (Linux, macOS, Windows)
 
 ```sh
 cmake -S . -B build-cmake -DCMAKE_BUILD_TYPE=Release
@@ -46,11 +79,11 @@ cmake --build build-cmake
 ./build-cmake/cok
 ```
 
-SDL2 si installa con `libsdl2-dev` (Debian/Ubuntu), `brew install sdl2`
-(macOS) o vcpkg; CMake la cerca come pacchetto CMake e poi con pkg-config.
-In alternativa resta il `Makefile` (`make`, `./build/cok`).
+Install SDL2 with `libsdl2-dev` (Debian/Ubuntu), `brew install sdl2` (macOS)
+or vcpkg. CMake looks for it as a CMake package first, then with pkg-config.
+The plain `Makefile` also works (`make`, then `./build/cok`).
 
-Visual Studio 2022, x86 (Win32) e x64 (AMD64):
+### Visual Studio 2022, x86 (Win32) and x64 (AMD64)
 
 ```bat
 windows\get-sdl2-nuget.cmd
@@ -58,50 +91,95 @@ cmake --preset vs2022-x64
 cmake --build --preset vs2022-x64-release
 ```
 
-(per x86: `vs2022-x86` e `vs2022-x86-release`). `get-sdl2-nuget.cmd`
-scarica da nuget.org i pacchetti `sdl2.nuget` e `sdl2.nuget.redist`
-(pacchetti della comunità che ridistribuiscono le librerie ufficiali di
-libsdl.org) in `third_party/sdl2-nuget`, con librerie e DLL per Win32 e
-x64; CMake li usa da solo e copia `SDL2.dll` accanto a `cok.exe`.
-In Visual Studio si può anche aprire la cartella (File > Apri > Cartella):
-i preset compaiono nell'elenco delle configurazioni. La soluzione `.sln`
-generata è in `build-vs2022-x64` / `build-vs2022-x86`.
+For x86, use `vs2022-x86` and `vs2022-x86-release`. `get-sdl2-nuget.cmd`
+downloads the `sdl2.nuget` and `sdl2.nuget.redist` packages from nuget.org
+into `third_party/sdl2-nuget`. These are community packages that
+redistribute the official libsdl.org libraries, with libraries and DLLs for
+Win32 and x64. CMake picks them up and copies `SDL2.dll` next to `cok.exe`.
 
-Sull'host le librerie di AmigaOS usate dal gioco sono emulate in `host/`
-(`host/ndk.h` riproduce strutture e funzioni dell'NDK con gli stessi nomi,
-così gli adattatori del gioco sono identici sui due target); lo schermo
-è mostrato con SDL2. Variabili utili: `COK_SCALE=n` (ingrandimento),
-`COK_SCREENSHOT=file.bmp` (salva l'ultimo fotogramma all'uscita),
-`COK_SCREENSHOT_AT=t1,t2,...` (con `COK_SCREENSHOT=base`: salva anche
-`base-1.bmp`, `base-2.bmp`, ... ai millisecondi indicati),
-`COK_KEYS=ms=Tasto,...` (tasti simulati a tempo, nomi SDL come `P`,
-`Return`, `Escape`, `Left`), `SDL_VIDEODRIVER=dummy` (senza finestra),
-`COK_DATA=dir` (directory dei
-file del gioco, altrimenti quella corrente). Come su AmigaDOS i nomi dei file
-non distinguono maiuscole e minuscole e il volume ("df0:", "Disk Two:") è
-ignorato. Le richieste di sistema (es. "inserisci il disco") si chiudono con
-Invio/R (Retry) o Esc/C (Cancel); senza finestra il programma termina.
-Tastiera e mouse arrivano al gioco come eventi IDCMP (RAWKEY con i codici
-della tastiera Amiga, MOUSEBUTTONS); il pulsante destro vale come quello
-del menu (la finestra ha RMBTRAP).
+Visual Studio can also open the folder directly (File > Open > Folder), and
+the presets then appear in the configuration list. The generated `.sln` is
+in `build-vs2022-x64` / `build-vs2022-x86`.
 
-L'audio (H043) non è ancora portato: le sue routine chiamate finora sono
-saltate con un avviso ("routine non ancora portata (saltata)") invece di
-fermare il programma.
+### AmigaOS with SAS/C 6.x
 
-AmigaOS con SAS/C 6.x: `smake` (ogni nuovo file va aggiunto a `OBJS` nello
-`smakefile`).
+```sh
+smake          # game without audio
+smake AUDIO    # game with audio (DEFINE=COK_AUDIO)
+```
 
-## Test
+Every new source file must be added to `OBJS` in the `smakefile`. FFP math
+uses `mathffp.library` through `#pragma libcall` (no float types), so no
+math library needs to be linked.
 
-`tests/` contiene i test delle singole routine, per esempio:
+## Audio
+
+Audio is a critical part, so it is optional and isolated behind the
+`COK_AUDIO` define:
+
+- `smake AUDIO` on the Amiga, `make AUDIO=1` with the Makefile.
+- With `COK_AUDIO`, H043 (the "SoundX" IFF SMUS player with 8SVX samples) and
+  H094 (the vertical-blank server and software interrupt) are compiled with
+  their Exec helpers (H079, H090, H092).
+- Without it, the three H043 entry points in `unported.c` do nothing.
+- On the host, `host/audio.c` emulates `audio.device` with SDL2: four Paula
+  channels at the PAL clock, mixed at 44100 Hz, with completed requests
+  handed back on the main thread.
+
+## Host environment
+
+On the host, the AmigaOS libraries used by the game are emulated in `host/`.
+`host/ndk.h` reproduces NDK structures and functions with the same names, so
+the game's library adapters are identical on both targets. The screen is
+shown with SDL2.
+
+Useful variables:
+
+- `COK_DATA=dir`: directory of the game files (default: the current one).
+- `COK_SCALE=n`: window scale.
+- `COK_SCREENSHOT=file.bmp`: saves the last frame on exit.
+- `COK_SCREENSHOT_AT=t1,t2,...`: with `COK_SCREENSHOT=base`, also saves
+  `base-1.bmp`, `base-2.bmp`, ... at the given milliseconds.
+- `COK_KEYS=ms=Key,...`: timed simulated keys, with SDL names such as `P`,
+  `Return`, `Escape`, `Left`.
+- `SDL_VIDEODRIVER=dummy`: runs without a window.
+
+**File names and system requesters**
+- As on AmigaDOS, file names are case-insensitive and the volume name
+  ("df0:", "Disk Two:") is ignored.
+- System requesters (e.g. "insert disk") are answered with Return/R (Retry)
+  or Esc/C (Cancel). Without a window the program exits.
+
+**Input**
+- Keyboard and mouse reach the game as IDCMP events: RAWKEY with Amiga
+  keyboard codes, and MOUSEBUTTONS.
+- The right mouse button acts as the menu button, because the window has
+  RMBTRAP.
+
+## Tests
+
+`tests/` holds tests for single routines, for example:
 
 ```sh
 cc -std=c99 tests/h015_test.c h015_runtime.c -o h015_test && ./h015_test
 ```
 
-Le inizializzazioni dei dati sono confrontate byte per byte con
-l'emulazione dell'assembly (`scripts/emu68k_init.py`), vedi l'intestazione di
-`tests/bss_test.c` e `tests/h004_test.c`. Le tabelle di costanti sono
-generate (`scripts/gen_init_data.py`, `scripts/gen_h004_init_data.py`) e
-applicate da `init_data.c`; i cicli sono scritti a mano.
+With CMake they are built by default (`COK_BUILD_TESTS`) and run with
+`ctest`.
+
+Data initialisation is compared byte by byte with an emulation of the
+assembly (`scripts/emu68k_init.py`); see the headers of `tests/bss_test.c`
+and `tests/h004_test.c`. The constant tables are generated
+(`scripts/gen_init_data.py`, `scripts/gen_h004_init_data.py`) and applied by
+`init_data.c`; the loops are written by hand.
+
+## Port status report
+
+`PORT_STATUS.md` lists every routine of the assembly and the file and line
+of its port. It is regenerated from the repository root with:
+
+```sh
+python3 scripts/port_status.py --check
+```
+
+or with `make status` from this folder.

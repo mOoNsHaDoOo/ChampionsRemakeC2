@@ -23,9 +23,9 @@ void h027_init(void)
  */
 static void cancel_incoming(u16 type)
 {
-    if (type == 0 || H005_B(0x2475) == type) {
-        H005_B(0x2474) = 0;
-        H005_B(0x2475) = 0;
+    if (type == 0 || H005_B(0x2475) == type) { /* $2475: effetto in arrivo (0 = annullato dai gestori) */
+        H005_B(0x2474) = 0; /* $2474: punti di danno in arrivo, modificabili dai gestori degli effetti */
+        H005_B(0x2475) = 0; /* $2475: effetto in arrivo (0 = annullato dai gestori) */
     }
 }
 
@@ -58,6 +58,7 @@ static void effect_none(Character **cp, void *obj, u8 flag)
 #define EH(name) static void name(Character **cp, void *obj, u8 flag)
 #define UNUSED_ARGS (void)cp; (void)obj; (void)flag
 #define EFF ((CokEffect *)obj)
+/* $66: tabella incantesimi, 16 byte per incantesimo (da 1); k/o = campo */
 #define SPELL_B(s, k)   H005_B(0x66 + ((int)(s) - 1) * 16 + (k))
 
 /* PORT H027+$0312 (effetti $1B, $1F, $33-$35): fine del turno. */
@@ -73,7 +74,8 @@ EH(effect_end_turn)
 EH(effect_01)
 {
     UNUSED_ARGS;
-    add_to_byte(&H005_B(0x2478), 5);
+    add_to_byte(&H005_B(0x2478), 5); /* $2478: morale del mostro (0..100) passato agli eventi $11 */
+    /* $2A1A: (word) tiro per colpire: d20 (20 vale 100) + modificatori effetti */
     H005_SET_W(0x2A1A, (u16)(H005_W(0x2A1A) + 1));
 }
 
@@ -81,11 +83,12 @@ EH(effect_01)
 EH(effect_02)
 {
     UNUSED_ARGS;
-    if (H005_B(0x2478) < 5) {
-        H005_B(0x2478) = 0;
+    if (H005_B(0x2478) < 5) { /* $2478: morale del mostro (0..100) passato agli eventi $11 */
+        H005_B(0x2478) = 0; /* $2478: morale del mostro (0..100) passato agli eventi $11 */
     } else {
-        add_to_byte(&H005_B(0x2478), 0xFFFB);
+        add_to_byte(&H005_B(0x2478), 0xFFFB); /* $2478: morale del mostro (0..100) passato agli eventi $11 */
     }
+    /* $2A1A: (word) tiro per colpire: d20 (20 vale 100) + modificatori effetti */
     H005_SET_W(0x2A1A, (u16)(H005_W(0x2A1A) + 1));
 }
 
@@ -99,8 +102,11 @@ EH(effect_03)
     u8 r;                               /* -$2(a5) */
 
     (void)flag;
+    /* pg+$19E: attacchi del round, attacco 1 (2 voci +$19E..+$19F); pg+$19F: attacchi del round,
+     * attacco 2; base -1 dadi +$1A0.. */
     hits = (u8)((*cp)->b[0x19E] + (*cp)->b[0x19F]);
-    if (EFF->b[4] > hits) {
+    if (EFF->b[4] > hits) { /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
+        /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
         add_to_byte(&EFF->b[4], (u16)-(s16)hits);
     } else {
         remove_effect(*cp, 3, NULL);
@@ -114,14 +120,15 @@ EH(effect_03)
 /* Bonus +2 al tiro salvezza e al tiro per colpire. */
 static void bonus_2(void)
 {
-    add_to_byte(&H005_B(0x2476), 2);
+    add_to_byte(&H005_B(0x2476), 2); /* $2476: tiro salvezza: d20 piu' i bonus dei gestori degli effetti */
+    /* $2A1A: (word) tiro per colpire: d20 (20 vale 100) + modificatori effetti */
     H005_SET_W(0x2A1A, (u16)(H005_W(0x2A1A) + 2));
 }
 
 /* PORT H027+$05C6 (effetti 8, $2D): +2 se +$10F del corrente e' 2, 5 o 8. */
 EH(effect_08)
 {
-    u8 a = g_current_char->b[0x10F];
+    u8 a = g_current_char->b[0x10F]; /* pg+$10F: allineamento (0..8, malvagi 2/5/8; nomi H005+$4C62) */
     UNUSED_ARGS;
     if (a == 2 || a == 5 || a == 8) {
         bonus_2();
@@ -131,7 +138,7 @@ EH(effect_08)
 /* PORT H027+$0622 (effetti 9, $2E): +2 se +$10F del corrente e' 0, 3 o 6. */
 EH(effect_09)
 {
-    u8 a = g_current_char->b[0x10F];
+    u8 a = g_current_char->b[0x10F]; /* pg+$10F: allineamento (0..8, malvagi 2/5/8; nomi H005+$4C62) */
     UNUSED_ARGS;
     if (a == 0 || a == 3 || a == 6) {
         bonus_2();
@@ -142,8 +149,10 @@ EH(effect_09)
 EH(effect_0a)
 {
     UNUSED_ARGS;
-    if (mask_byte(H005_B(0x2473), 2)) {
+    if (mask_byte(H005_B(0x2473), 2)) { /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
+        /* $2474: punti di danno in arrivo, modificabili dai gestori degli effetti */
         H005_B(0x2474) = (u8)(H005_B(0x2474) >> 1);
+        /* $2476: tiro salvezza: d20 piu' i bonus dei gestori degli effetti */
         add_to_byte(&H005_B(0x2476), 3);
     }
 }
@@ -161,7 +170,7 @@ EH(effect_nothing)
  */
 static u8 add_effect_unless_quiet(Character **cp, u8 type, u8 b4, u16 value)
 {
-    if (H005_B(0x24AA)) {
+    if (H005_B(0x24AA)) { /* $24AA: 1 durante le cure: i gestori non riaggiungono effetti */
         return 0;
     }
     add_effect(*cp, type, value, b4, 1);
@@ -172,10 +181,12 @@ static u8 add_effect_unless_quiet(Character **cp, u8 type, u8 b4, u16 value)
 EH(effect_0f)
 {
     (void)flag;
+    /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
     if (add_effect_unless_quiet(cp, 0x0F, EFF->b[4], 0x0A) &&
-        (*cp)->b[0x1A8] > 1) {
-        H005_B(0x2473) = 0;
+        (*cp)->b[0x1A8] > 1) { /* pg+$1A8: punti ferita correnti */
+        H005_B(0x2473) = 0; /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
         apply_damage(*cp, 1, 0, 0);
+        /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
         if (H005_B(0x3DE3) != 5) {
             draw_party(g_current_char);
         }
@@ -186,12 +197,12 @@ EH(effect_0f)
 EH(effect_11)
 {
     (void)obj; (void)flag;
-    if ((*cp)->b[0x19C] < 0x39) {
-        (*cp)->b[0x19C] = 0x39;
+    if ((*cp)->b[0x19C] < 0x39) { /* pg+$19C: classe d'armatura corrente codificata (60 - CA) */
+        (*cp)->b[0x19C] = 0x39; /* pg+$19C: classe d'armatura corrente codificata (60 - CA) */
     }
-    add_to_byte(&H005_B(0x2476), 1);
-    if (H005_B(0x2471) == 0x0F) {
-        H005_B(0x2474) = 0;
+    add_to_byte(&H005_B(0x2476), 1); /* $2476: tiro salvezza: d20 piu' i bonus dei gestori degli effetti */
+    if (H005_B(0x2471) == 0x0F) { /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+        H005_B(0x2474) = 0; /* $2474: punti di danno in arrivo, modificabili dai gestori degli effetti */
     }
 }
 
@@ -199,8 +210,11 @@ EH(effect_11)
 EH(effect_14)
 {
     (void)cp; (void)obj;
+    /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
     if (!flag && mask_byte(H005_B(0x2473), 1)) {
+        /* $2474: punti di danno in arrivo, modificabili dai gestori degli effetti */
         H005_B(0x2474) = (u8)(H005_B(0x2474) >> 1);
+        /* $2476: tiro salvezza: d20 piu' i bonus dei gestori degli effetti */
         add_to_byte(&H005_B(0x2476), 3);
     }
 }
@@ -225,7 +239,8 @@ EH(effect_19)
 
     (void)cp; (void)obj;
     if (!flag && !find_effect(g_current_char, 0x18, &e)) {
-        H005_B(0x24AB) = 1;
+        H005_B(0x24AB) = 1; /* $24AB: 1 se un gestore d'effetto vieta l'attacco (H096+$1562) */
+        /* $2A1A: (word) tiro per colpire: d20 (20 vale 100) + modificatori effetti */
         H005_SET_W(0x2A1A, (u16)(H005_W(0x2A1A) - 4));
     }
 }
@@ -237,12 +252,16 @@ EH(effect_19)
 EH(effect_1c)
 {
     (void)flag;
+    /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
     if (roll_dice(1, (u16)((EFF->b[4] >> 4) + 1)) > 1 &&
+        /* $2471: incantesimo in corso di lancio (0 = nessuno); $24A9: 1 se l'incantesimo agisce su
+         * area/gruppo (immagini illese) */
         !(H005_B(0x2471) > 0 && H005_B(0x24A9))) {
         cancel_incoming(0);
         show_char_message(*cp, 0x0D, "lost an image", 0x0A, 1);
+        /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
         add_to_byte(&EFF->b[4], 0xFFFF);
-        if (EFF->b[4] == 0) {
+        if (EFF->b[4] == 0) { /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
             remove_effect(*cp, 0x1C, NULL);
         }
     }
@@ -252,6 +271,7 @@ EH(effect_1c)
 EH(effect_1d)
 {
     UNUSED_ARGS;
+    /* $2474: punti di danno in arrivo, modificabili dai gestori degli effetti */
     H005_B(0x2474) = (u8)(H005_B(0x2474) - (H005_B(0x2474) >> 2));
 }
 
@@ -259,9 +279,12 @@ EH(effect_1d)
 EH(effect_21)
 {
     (void)obj; (void)flag;
+    /* $2A1A: (word) tiro per colpire: d20 (20 vale 100) + modificatori effetti */
     H005_SET_W(0x2A1A, (u16)(H005_W(0x2A1A) - 4));
-    add_to_byte(&(*cp)->b[0x19C], 0xFFFC);
+    add_to_byte(&(*cp)->b[0x19C], 0xFFFC); /* pg+$19C: classe d'armatura corrente codificata (60 - CA) */
+    /* pg+$19D: CA da dietro (senza destrezza); base -1 attacchi +$19E.. */
     add_to_byte(&(*cp)->b[0x19D], 0xFFFC);
+    /* $2476: tiro salvezza: d20 piu' i bonus dei gestori degli effetti */
     add_to_byte(&H005_B(0x2476), 0xFFFC);
 }
 
@@ -276,7 +299,9 @@ EH(effect_22)
 EH(effect_24)
 {
     UNUSED_ARGS;
+    /* $2A1A: (word) tiro per colpire: d20 (20 vale 100) + modificatori effetti */
     H005_SET_W(0x2A1A, (u16)(H005_W(0x2A1A) - 4));
+    /* $2476: tiro salvezza: d20 piu' i bonus dei gestori degli effetti */
     add_to_byte(&H005_B(0x2476), 0xFFFC);
 }
 
@@ -284,8 +309,10 @@ EH(effect_24)
 EH(effect_25)
 {
     (void)obj; (void)flag;
+    /* turno+$4: (word) iniziativa del round (1d6+destrezza); <=0 turno finito */
     if (COK_GET16((*cp)->block_192->b + 4) == 0) {
-        H005_B(0x24AB) = 1;
+        H005_B(0x24AB) = 1; /* $24AB: 1 se un gestore d'effetto vieta l'attacco (H096+$1562) */
+        /* $2A1A: (word) tiro per colpire: d20 (20 vale 100) + modificatori effetti */
         H005_SET_W(0x2A1A, 0xFFFF);
     }
 }
@@ -294,11 +321,14 @@ EH(effect_25)
 EH(effect_27)
 {
     (void)flag;
+    /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
     if (mask_byte(EFF->b[4], 0x10) == 0) {
+        /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
         EFF->b[4] = (u8)(EFF->b[4] + 0x10);
         show_char_message(*cp, 4, "ages", 0x0A, 1);
-        CH_PUTW(*cp, 0x62, (u16)(CH_W(*cp, 0x62) + 1));
+        CH_PUTW(*cp, 0x62, (u16)(CH_W(*cp, 0x62) + 1)); /* pg+$62: eta' (word) */
     }
+    /* $2472: valore di lavoro degli eventi: velocita' o attacchi del round */
     H005_B(0x2472) = (u8)(H005_B(0x2472) << 1);
 }
 
@@ -306,6 +336,7 @@ EH(effect_27)
 EH(effect_2a)
 {
     UNUSED_ARGS;
+    /* $2472: valore di lavoro degli eventi: velocita' o attacchi del round */
     H005_B(0x2472) = (u8)(H005_B(0x2472) >> 1);
 }
 
@@ -313,7 +344,9 @@ EH(effect_2a)
 EH(effect_2f)
 {
     UNUSED_ARGS;
+    /* pg+$14C: flag del tipo di creatura (bit usati da effetti e incantesimi) */
     if (mask_byte(g_current_char->b[0x14C], 4)) {
+        /* $2A1A: (word) tiro per colpire: d20 (20 vale 100) + modificatori effetti */
         H005_SET_W(0x2A1A, (u16)(H005_W(0x2A1A) - 4));
     }
 }
@@ -322,20 +355,31 @@ EH(effect_2f)
 EH(effect_32)
 {
     UNUSED_ARGS;
-    if (mask_byte(H005_B(0x2473), 2)) {
+    if (mask_byte(H005_B(0x2473), 2)) { /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
+        /* $2476: tiro salvezza: d20 piu' i bonus dei gestori degli effetti */
         add_to_byte(&H005_B(0x2476), 2);
+    /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20); $24A5: esito dell'ultimo
+     * tiro salvezza (1 riuscito) */
     } else if (mask_byte(H005_B(0x2473), 1) && !H005_B(0x24A5)) {
+        /* $2474: punti di danno in arrivo, modificabili dai gestori degli effetti */
         H005_B(0x2474) = (u8)(H005_B(0x2474) << 1);
     }
 }
 
-/* PORT H027+$1C7A (effetto $36): fuoco +2 salvezza, freddo doppio. */
+/*
+ * PORT H027+$1C7A (effetto $36): fuoco +2 salvezza, freddo doppio.  Il
+ * test legge $24A3 come l'asm (H027+$1CD0); il gemello $32 legge $24A5.
+ */
 EH(effect_36)
 {
     UNUSED_ARGS;
-    if (mask_byte(H005_B(0x2473), 1)) {
+    if (mask_byte(H005_B(0x2473), 1)) { /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
+        /* $2476: tiro salvezza: d20 piu' i bonus dei gestori degli effetti */
         add_to_byte(&H005_B(0x2476), 2);
+    /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20); $24A3: 1 se la partita e'
+     * salvata (avviso all'uscita); letto da eff. $36 */
     } else if (mask_byte(H005_B(0x2473), 2) && !H005_B(0x24A3)) {
+        /* $2474: punti di danno in arrivo, modificabili dai gestori degli effetti */
         H005_B(0x2474) = (u8)(H005_B(0x2474) << 1);
     }
 }
@@ -351,9 +395,10 @@ EH(effect_38)
 EH(effect_39)
 {
     (void)obj; (void)flag;
+    /* $2A1A: (word) tiro per colpire: d20 (20 vale 100) + modificatori effetti */
     H005_SET_W(0x2A1A, (u16)(H005_W(0x2A1A) + 2));
-    add_to_byte(&(*cp)->b[0x19C], 2);
-    add_to_byte(&(*cp)->b[0x19D], 2);
+    add_to_byte(&(*cp)->b[0x19C], 2); /* pg+$19C: classe d'armatura corrente codificata (60 - CA) */
+    add_to_byte(&(*cp)->b[0x19D], 2); /* pg+$19D: CA da dietro (senza destrezza); base -1 attacchi +$19E.. */
 }
 
 /* PORT H027+$1E1A (effetto $3B): annulla effetto e danno. */
@@ -361,14 +406,15 @@ EH(effect_3b)
 {
     UNUSED_ARGS;
     cancel_incoming(0);
-    H005_B(0x2474) = 0;
+    H005_B(0x2474) = 0; /* $2474: punti di danno in arrivo, modificabili dai gestori degli effetti */
 }
 
 /* PORT H027+$2138 (effetto $3F): annulla gli incantesimi sotto il 4o livello. */
 EH(effect_3f)
 {
     UNUSED_ARGS;
-    if (H005_B(0x2471) > 0 &&
+    if (H005_B(0x2471) > 0 && /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+        /* $2471: incantesimo in corso di lancio (0 = nessuno) */
         H005_B(0x66 + (H005_B(0x2471) - 1) * 16 + 1) < 4) {
         cancel_incoming(0);
     }
@@ -378,6 +424,7 @@ EH(effect_3f)
 EH(effect_49)
 {
     (void)obj; (void)flag;
+    /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
     if (mask_byte(H005_B(0x2473), 0x20) > 0) {
         cancel_incoming(0);
         show_char_message(*cp, 0x0D, "is unaffected", 0x0A, 1);
@@ -400,15 +447,22 @@ EH(effect_4a)
 EH(effect_59)
 {
     (void)cp;
+    /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
     if (flag || H005_B(0x3DE3) != 5) {
         return;
     }
+    /* $247C: numero del round del combattimento (0 all'inizio; bit 0 arrotonda); $2A1A: (word) tiro
+     * per colpire: d20 (20 vale 100) + modificatori effetti */
     if (H005_B(0x247C) == 0 && H005_W(0x2A1A) == 0) {
+        /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
         EFF->b[4] = mask_byte(EFF->b[4], 0x0F);
     } else {
+        /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
         if (mask_byte(EFF->b[4], 0x10) == 0) {
+            /* $2A1A: (word) tiro per colpire: d20 (20 vale 100) + modificatori effetti */
             H005_SET_W(0x2A1A, 0xFFFF);
         }
+        /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
         EFF->b[4] = or_byte(EFF->b[4], 0x10);
     }
 }
@@ -432,7 +486,7 @@ EH(effect_61)
 EH(effect_62)
 {
     UNUSED_ARGS;
-    if (mask_byte(H005_B(0x2473), 2)) {
+    if (mask_byte(H005_B(0x2473), 2)) { /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
         cancel_incoming(0);
     }
 }
@@ -443,8 +497,8 @@ EH(effect_63)
     UNUSED_ARGS;
     cancel_incoming(0x37);
     cancel_incoming(0x34);
-    if (H005_B(0x2A13) == 0) {
-        H005_B(0x2476) = 0x64;
+    if (H005_B(0x2A13) == 0) { /* $2A13: tipo del tiro salvezza in corso (indice in +$D4), per gli effetti */
+        H005_B(0x2476) = 0x64; /* $2476: tiro salvezza: d20 piu' i bonus dei gestori degli effetti */
     }
 }
 
@@ -453,7 +507,9 @@ EH(effect_65)
 {
     CokItem *w = g_current_char->readied[0];   /* +$154 */
     UNUSED_ARGS;
+    /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
     if (w != NULL && w->b[0x30] == 0x36) {
+        /* $2474: punti di danno in arrivo, modificabili dai gestori degli effetti */
         H005_B(0x2474) = (u8)(roll_damage_dice(1, 6) + 1);
     }
 }
@@ -481,6 +537,8 @@ EH(effect_6e)
 
     (void)obj;
     if (flag) {
+        /* pg+$60: uso: (livello cavaliere - 1) / 5 + 1, scritto alla fine eff. $6E; pg+$105:
+         * livello da cavaliere; pg+$10D: livello precedente da cavaliere */
         c->b[0x60] = (u8)((u16)(c->b[0x105] + c->b[0x10D] * h073_130a(c) - 1)
                           / 5 + 1);
     }
@@ -493,11 +551,11 @@ EH(effect_6f)
 
     (void)obj;
     if (flag) {
-        if (c->b[0xEC] == 0xB3) {
-            c->b[0xEC] = 0;
-            c->b[0x19A] = 0;
+        if (c->b[0xEC] == 0xB3) { /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
+            c->b[0xEC] = 0; /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
+            c->b[0x19A] = 0; /* pg+$19A: controllo automatico in combattimento (1 = IA) */
         }
-        (c->block_192->b)[0x12] = 0;
+        (c->block_192->b)[0x12] = 0; /* turno+$12: flag costretto a fuggire (paura, confusione) */
     }
 }
 
@@ -505,6 +563,7 @@ EH(effect_6f)
 EH(effect_76)
 {
     UNUSED_ARGS;
+    /* $2A1A: (word) tiro per colpire: d20 (20 vale 100) + modificatori effetti */
     H005_SET_W(0x2A1A, (u16)(H005_W(0x2A1A) - 2));
 }
 
@@ -512,6 +571,7 @@ EH(effect_76)
 EH(effect_77)
 {
     UNUSED_ARGS;
+    /* $2A1A: (word) tiro per colpire: d20 (20 vale 100) + modificatori effetti */
     H005_SET_W(0x2A1A, (u16)(H005_W(0x2A1A) - 1));
 }
 
@@ -523,10 +583,12 @@ EH(effect_item)
 {
     CokItem *it = (CokItem *)obj;       /* -$4(a5) */
 
-    H005_B(0x24E0) = 0;
+    H005_B(0x24E0) = 0; /* $24E0: 1: gli effetti passano al gestore $2A0E (oggetti magici) */
     if (flag) {
+        /* ogg+$45: incantesimo/parametro dell'oggetto magico (bit 7 escluso) */
         remove_effect(*cp, it->b[0x45], NULL);
     } else {
+        /* ogg+$45: incantesimo/parametro dell'oggetto magico (bit 7 escluso) */
         add_effect(*cp, it->b[0x45], 0, 0xFF, 1);
     }
 }
@@ -548,7 +610,8 @@ static void paralyze_turn_target(Character **cp, u16 dur, s16 bonus)
 EH(effect_bonus_1)
 {
     UNUSED_ARGS;
-    add_to_byte(&H005_B(0x2476), 1);
+    add_to_byte(&H005_B(0x2476), 1); /* $2476: tiro salvezza: d20 piu' i bonus dei gestori degli effetti */
+    /* $2A1A: (word) tiro per colpire: d20 (20 vale 100) + modificatori effetti */
     H005_SET_W(0x2A1A, (u16)(H005_W(0x2A1A) + 1));
 }
 
@@ -565,6 +628,7 @@ static void poison_turn_target(Character **cp, s16 bonus)
         if (bonus < 0) {
             bonus = 0;
         } else {
+            /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
             bonus = (s16)(bonus + e->b[4]);
         }
     }
@@ -592,6 +656,8 @@ EH(effect_17)
     it = c->items;
     found = 0;
     while (it != NULL && !found) {
+        /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce); ogg+$34:
+         * parola 3 del nome (indice in H005+$406E); nome base del tipo */
         if (it->b[0x30] == 6 && it->b[0x34] == 0x79) {
             found = 1;
         } else {
@@ -601,19 +667,21 @@ EH(effect_17)
     if (flag && it != NULL) {
         delete_item(*cp, it);
     }
-    if (!flag && !found && (*cp)->b[0x14F] < 0x10) {
+    if (!flag && !found && (*cp)->b[0x14F] < 0x10) { /* pg+$14F: numero di oggetti posseduti (max 16) */
         it = (CokItem *)exec_alloc_mem(sizeof(CokItem), COK_MEMF_CLEAR);
-        it->b[0x30] = 6;
-        it->b[0x33] = 6;
-        it->b[0x34] = 0x79;
-        COK_PUT16(&it->b[0x36], 1);
-        it->b[0x45] = 0x17;
-        it->b[0x46] = 0x80;
+        it->b[0x30] = 6; /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
+        it->b[0x33] = 6; /* ogg+$33: parola 2 del nome (indice 1-based in H005+$406E, $16 byte) */
+        it->b[0x34] = 0x79; /* ogg+$34: parola 3 del nome (indice in H005+$406E); nome base del tipo */
+        COK_PUT16(&it->b[0x36], 1); /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno */
+        it->b[0x45] = 0x17; /* ogg+$45: incantesimo/parametro dell'oggetto magico (bit 7 escluso) */
+        it->b[0x46] = 0x80; /* ogg+$46: tipo dell'effetto magico: bit7 = effetto passivo, bit 0..6 tipo */
         give_item_copy(*cp, it);
         exec_free_mem(it, sizeof(CokItem));     /* FreeMem($48) */
         it = (*cp)->items;
         found = 0;
         while (it != NULL && !found) {
+            /* ogg+$34: parola 3 del nome (indice in H005+$406E); nome base del tipo; ogg+$30: tipo
+             * dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
             found = (u8)(it->b[0x34] == 0x79 && it->b[0x30] == 6);
             it = it->next;
         }
@@ -621,9 +689,10 @@ EH(effect_17)
         g_current_char = *cp;
         if (it != NULL && (*cp)->readied[0] == NULL) {
             ready_item(it);
-            it->b[0x3A] = 1;
+            it->b[0x3A] = 1; /* ogg+$3A: flag oggetto pronto all'uso (Ready) */
         }
         g_current_char = saved;
+        /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
         if ((*cp)->b[0x197] == 0) {
             show_char_message(*cp, 0x0D, "Gains an item", 0x0A, 1);
         }
@@ -637,11 +706,13 @@ EH(effect_2b)
     CokEffect *e;                       /* -$4(a5) */
 
     (void)flag;
+    /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
     if (!add_effect_unless_quiet(cp, 0x2B, EFF->b[4], 0x3C)) {
         return;
     }
-    if ((*cp)->b[0x11] > 3) {
+    if ((*cp)->b[0x11] > 3) { /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza corrente */
         show_char_message(*cp, 0x0B, "is weakened", 0x0A, 1);
+        /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza corrente */
         add_to_byte(&(*cp)->b[0x11], 0xFFFF);
     } else if (!find_effect(*cp, 0x1F, &e)) {
         add_effect(*cp, 0x1F, 0, 0xFF, 0);
@@ -654,12 +725,14 @@ EH(effect_2c)
     CokEffect *e;                       /* -$4(a5) */
 
     (void)flag;
+    /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
     if (!add_effect_unless_quiet(cp, 0x2C, EFF->b[4], 0x0A)) {
         return;
     }
-    if ((*cp)->b[0x1A8] > 1) {
-        H005_B(0x2473) = 0;
+    if ((*cp)->b[0x1A8] > 1) { /* pg+$1A8: punti ferita correnti */
+        H005_B(0x2473) = 0; /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
         apply_damage(*cp, 1, 0, 0);
+        /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
         if (H005_B(0x3DE3) != 5) {
             draw_party(g_current_char);
         }
@@ -686,13 +759,15 @@ EH(effect_30)
     b = combatant_y(*cp);
     find_in_area((s16)a, (s16)b, 1, 0xFF, combatant_size(*cp), g_combat_area);
     show_char_message(*cp, 9, "immolates", 0x0A, 1);
-    n = (u16)(H005_B(0x2479) - 1);
+    n = (u16)(H005_B(0x2479) - 1); /* $2479: numero di voci della lista dell'area +$2A3E (4 byte per voce) */
+    /* $2479: numero di voci della lista dell'area +$2A3E (4 byte per voce) */
     for (j = 2; j <= H005_B(0x2479); ++j) {
+        /* $2A3E: lista dell'area: voci da 4 byte ($2479), byte 0 = n. combattente */
         list[j - 2] = H005_B(0x2A3E + (j - 1) * 4);
     }
     for (j = 1; j <= n; ++j) {
         p = g_combatants[list[j - 1] - 1];
-        if (p->b[0x198]) {
+        if (p->b[0x198]) { /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
             apply_damage(p, roll_damage_dice(1, 6), 0, 0);
         }
     }
@@ -703,11 +778,14 @@ EH(effect_31)
 {
     u8 side;                            /* -$1(a5) */
 
+    /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
     side = (u8)(mask_byte(EFF->b[4], 0x10) >> 4);
-    if ((*cp)->b[0x199] == side) {
+    if ((*cp)->b[0x199] == side) { /* pg+$199: lato in combattimento (0 party, 1 avversari) */
         effect_bonus_1(cp, obj, flag);
     } else {
+        /* $2A1A: (word) tiro per colpire: d20 (20 vale 100) + modificatori effetti */
         H005_SET_W(0x2A1A, (u16)(H005_W(0x2A1A) - 1));
+        /* $2476: tiro salvezza: d20 piu' i bonus dei gestori degli effetti */
         add_to_byte(&H005_B(0x2476), 0xFFFF);
     }
 }
@@ -737,9 +815,9 @@ EH(effect_16)
         knock_out(*cp, 6, 0x10, "dies from poison");
         remove_effect(*cp, 0x37, NULL);
     }
-    H005_B(0x24AA) = 1;
+    H005_B(0x24AA) = 1; /* $24AA: 1 durante le cure: i gestori non riaggiungono effetti */
     remove_effect(*cp, 0x0F, NULL);
-    H005_B(0x24AA) = 0;
+    H005_B(0x24AA) = 0; /* $24AA: 1 durante le cure: i gestori non riaggiungono effetti */
 }
 
 /* PORT H027+$0DB8 (effetto $1A): +1 a colpire un bersaglio col bit 7 di +$14C. */
@@ -747,7 +825,9 @@ EH(effect_1a)
 {
     (void)obj; (void)flag;
     g_h005_2a14 = (*cp)->block_192->target;
+    /* pg+$14C: flag del tipo di creatura (bit usati da effetti e incantesimi) */
     if (mask_byte(g_h005_2a14->b[0x14C], 0x80)) {
+        /* $2A1A: (word) tiro per colpire: d20 (20 vale 100) + modificatori effetti */
         H005_SET_W(0x2A1A, (u16)(H005_W(0x2A1A) + 1));
     }
 }
@@ -761,16 +841,23 @@ EH(effect_3d)
     u16 j;                              /* -$2(a5) */
 
     UNUSED_ARGS;
+    /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
     if (!mask_byte(H005_B(0x2473), 1)) {
         return;
     }
-    for (j = 1; j <= H005_B(0x2470); ++j) {
+    for (j = 1; j <= H005_B(0x2470); ++j) { /* $2470: numero di dadi dell'ultimo tiro di danno */
+        /* $2474: punti di danno in arrivo, modificabili dai gestori degli effetti */
         add_to_byte(&H005_B(0x2474), 0xFFFE);
+        /* $2474: punti di danno in arrivo, modificabili dai gestori degli effetti; $2470: numero di
+         * dadi dell'ultimo tiro di danno */
         if (H005_B(0x2474) < H005_B(0x2470)) {
+            /* $2474: punti di danno in arrivo, modificabili dai gestori degli effetti; $2470:
+             * numero di dadi dell'ultimo tiro di danno */
             H005_B(0x2474) = H005_B(0x2470);
         }
     }
-    add_to_byte(&H005_B(0x2476), 4);
+    add_to_byte(&H005_B(0x2476), 4); /* $2476: tiro salvezza: d20 piu' i bonus dei gestori degli effetti */
+    /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
     if (mask_byte(H005_B(0x2473), 8) == 0) {
         cancel_incoming(0);
     }
@@ -780,6 +867,7 @@ EH(effect_3d)
 EH(effect_3e)
 {
     (void)flag;
+    /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
     if (add_effect_unless_quiet(cp, 0x3E, EFF->b[4], 0x3C) &&
         heal_character(*cp, 1, 1)) {
         heal_message(*cp);
@@ -815,17 +903,21 @@ EH(effect_42)
     a = combatant_x(*cp);
     b = combatant_y(*cp);
     find_in_area((s16)a, (s16)b, 1, 0xFF, combatant_size(*cp), g_combat_area);
-    H005_B(0x24C5) = 0;
+    H005_B(0x24C5) = 0; /* $24C5: esito della scelta del bersaglio (soffi, effetto $42) */
     j = 2;
     do {
-        if (j <= H005_B(0x2479)) {
+        if (j <= H005_B(0x2479)) { /* $2479: numero di voci della lista dell'area +$2A3E (4 byte per voce) */
+            /* $2A3E: lista dell'area: voci da 4 byte ($2479), byte 0 = n. combattente */
             p = g_combatants[H005_B(0x2A3E + (j - 1) * 4) - 1];
+            /* pg+$199: lato in combattimento (0 party, 1 avversari) */
             if (p != NULL && p->b[0x199] != (*cp)->b[0x199]) {
                 target = p;
-                H005_B(0x24C5) = 1;
+                H005_B(0x24C5) = 1; /* $24C5: esito della scelta del bersaglio (soffi, effetto $42) */
             }
         }
         ++j;
+    /* $24C5: esito della scelta del bersaglio (soffi, effetto $42); $2479: numero di voci della
+     * lista dell'area +$2A3E (4 byte per voce) */
     } while (!H005_B(0x24C5) && j <= H005_B(0x2479));
     if (target != NULL) {
         show_char_message(target, 0x0C, "gets zapped!", 0x0A, 1);
@@ -839,18 +931,20 @@ EH(effect_42)
 EH(effect_44)
 {
     (void)obj; (void)flag;
-    if ((*cp)->b[0x198]) {
+    if ((*cp)->b[0x198]) { /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
         return;
     }
-    (*cp)->b[0x197] = 0x0A;
+    (*cp)->b[0x197] = 0x0A; /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+    /* $14: numero di personaggi a terra nella lista +$16 (word, max 20) */
     H005_SET_W(0x14, (u16)(H005_W(0x14) + 1));
-    if (H005_W(0x14) < 1) {
-        H005_SET_W(0x14, 1);
+    if (H005_W(0x14) < 1) { /* $14: numero di personaggi a terra nella lista +$16 (word, max 20) */
+        H005_SET_W(0x14, 1); /* $14: numero di personaggi a terra nella lista +$16 (word, max 20) */
     }
-    if (H005_W(0x14) <= 0x14) {
+    if (H005_W(0x14) <= 0x14) { /* $14: numero di personaggi a terra nella lista +$16 (word, max 20) */
+        /* $14: numero di personaggi a terra nella lista +$16 (word, max 20) */
         g_h005_0016[H005_W(0x14) - 1] = *cp;
     } else {
-        H005_SET_W(0x14, 0x14);
+        H005_SET_W(0x14, 0x14); /* $14: numero di personaggi a terra nella lista +$16 (word, max 20) */
     }
     remove_effect(*cp, 0x44, NULL);
 }
@@ -865,7 +959,7 @@ EH(effect_51) { (void)obj; (void)flag; paralyze_turn_target(cp, 0x64, 0); }
 EH(effect_58)
 {
     (void)obj; (void)flag;
-    if ((*cp)->block_192->target->b[0x5B] > 1) {
+    if ((*cp)->block_192->target->b[0x5B] > 1) { /* pg+$5B: razza (0..6, nomi H005+$4D04) */
         paralyze_turn_target(cp, 0x64, 0);
     }
 }
@@ -876,11 +970,15 @@ EH(effect_72)
     Character *t;                       /* -$4(a5) */
 
     (void)obj;
+    /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
     if (flag || H005_B(0x3DE3) != 5) {
         return;
     }
     t = (*cp)->block_192->target;
+    /* pg+$14D: flag del tipo di creatura, secondo byte (bit 0: effetto $72) */
     if (mask_byte(t->b[0x14D], 1)) {
+        /* $2474: punti di danno in arrivo, modificabili dai gestori degli effetti; pg+$1A8: punti
+         * ferita correnti */
         H005_B(0x2474) = (*cp)->b[0x1A8];
     }
 }
@@ -891,11 +989,14 @@ EH(effect_73)
     Character *t;                       /* -$4(a5) */
 
     (void)obj;
+    /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
     if (flag || H005_B(0x3DE3) != 5) {
         return;
     }
     t = (*cp)->block_192->target;
+    /* pg+$14C: flag del tipo di creatura (bit usati da effetti e incantesimi) */
     if (mask_byte(t->b[0x14C], 0x20)) {
+        /* $2474: punti di danno in arrivo, modificabili dai gestori degli effetti */
         add_to_byte(&H005_B(0x2474), 3);
     }
 }
@@ -906,14 +1007,17 @@ EH(effect_75)
     Character *t;                       /* -$4(a5) */
 
     (void)obj;
+    /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
     if (flag || H005_B(0x3DE3) != 5) {
         return;
     }
     t = (*cp)->block_192->target;
+    /* pg+$14C: flag del tipo di creatura (bit usati da effetti e incantesimi) */
     if (mask_byte(t->b[0x14C], 2)) {
-        if (t->b[0xDF]) {
+        if (t->b[0xDF]) { /* pg+$DF: tipo di non morto (0 = no); base -1 abilita' da ladro +$E0..+$E7 */
             knock_out(t, 8, 0x0C, "is disrupted");
         } else {
+            /* $2474: punti di danno in arrivo, modificabili dai gestori degli effetti */
             H005_B(0x2474) = (u8)(H005_B(0x2474) << 1);
         }
     }
@@ -940,17 +1044,20 @@ EH(effect_1e)
     Character *c = *cp;
 
     (void)obj; (void)flag;
-    if (c->block_192->b[2]) {
+    if (c->block_192->b[2]) { /* turno+$2: flag puo' usare oggetti (azzerato tossendo nella nube) */
         show_char_message(c, 0x0B, "is coughing", 0x0A, 1);
     }
-    c->block_192->b[2] = 0;
-    c->block_192->b[1] = 0;
+    c->block_192->b[2] = 0; /* turno+$2: flag puo' usare oggetti (azzerato tossendo nella nube) */
+    c->block_192->b[1] = 0; /* turno+$1: flag puo' lanciare incantesimi (non in nube; azzerato attaccando) */
     recompute_stats(c);
-    if (c->b[0x19D] > 0x34) {
+    if (c->b[0x19D] > 0x34) { /* pg+$19D: CA da dietro (senza destrezza); base -1 attacchi +$19E.. */
+        /* pg+$19D: CA da dietro (senza destrezza); base -1 attacchi +$19E.. */
         add_to_byte(&c->b[0x19D], 0xFFFE);
     } else {
-        c->b[0x19D] = 0x32;
+        c->b[0x19D] = 0x32; /* pg+$19D: CA da dietro (senza destrezza); base -1 attacchi +$19E.. */
     }
+    /* pg+$19C: classe d'armatura corrente codificata (60 - CA); pg+$19D: CA da dietro (senza
+     * destrezza); base -1 attacchi +$19E.. */
     c->b[0x19C] = c->b[0x19D];
     if (c == g_current_char) {
         draw_combat_status(c);
@@ -964,7 +1071,10 @@ EH(effect_5d)
 
     UNUSED_ARGS;
     w = combat_weapon(g_current_char);
+    /* $3374: tipi di oggetto +8: bit del genere di danno dell'arma; ogg+$30: tipo dell'oggetto
+     * (indice tabella H005+$336C, $12 byte per voce) */
     if (w != NULL && mask_byte(H005_B(0x336C + w->b[0x30] * 0x12 + 8), 0x81)) {
+        /* $2474: punti di danno in arrivo, modificabili dai gestori degli effetti */
         H005_B(0x2474) = (u8)(H005_B(0x2474) >> 1);
     }
 }
@@ -980,8 +1090,11 @@ EH(effect_64)
     if (w == NULL) {
         return;
     }
+    /* $3374: tipi di oggetto +8: bit del genere di danno dell'arma; ogg+$30: tipo dell'oggetto
+     * (indice tabella H005+$336C, $12 byte per voce) */
     v = H005_B(0x336C + w->b[0x30] * 0x12 + 8);
     if (v == 0 || mask_byte(v, 1)) {
+        /* $2474: punti di danno in arrivo, modificabili dai gestori degli effetti */
         H005_B(0x2474) = (u8)(H005_B(0x2474) >> 1);
     }
 }
@@ -993,9 +1106,12 @@ EH(effect_66)
 
     UNUSED_ARGS;
     w = combat_weapon(g_current_char);
+    /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno */
     if ((w == NULL || COK_GET16(&w->b[0x36]) == 0) &&
+        /* pg+$5B: razza (0..6, nomi H005+$4D04); pg+$DB: livello massimo fra le classi (usato anche
+         * come dadi vita) */
         (g_current_char->b[0x5B] < 7 || g_current_char->b[0xDB] < 4)) {
-        H005_B(0x2474) = 0;
+        H005_B(0x2474) = 0; /* $2474: punti di danno in arrivo, modificabili dai gestori degli effetti */
     }
 }
 
@@ -1004,8 +1120,11 @@ EH(effect_69)
 {
     (void)obj; (void)flag;
     g_h005_2a14 = (*cp)->block_192->target;
+    /* pg+$14C: flag del tipo di creatura (bit usati da effetti e incantesimi) */
     if (mask_byte(g_h005_2a14->b[0x14C], 8) &&
         combat_distance(*cp, g_h005_2a14) == 1) {
+        /* $2474: punti di danno in arrivo, modificabili dai gestori degli effetti; pg+$102: livello
+         * da ranger */
         add_to_byte(&H005_B(0x2474), (*cp)->b[0x102]);
     }
 }
@@ -1020,14 +1139,16 @@ EH(effect_70)
     if (combat_distance(g_current_char, *cp) >= 2) {
         return;
     }
-    dmg = H005_B(0x2474);
+    dmg = H005_B(0x2474); /* $2474: punti di danno in arrivo, modificabili dai gestori degli effetti */
+    /* $2474: punti di danno in arrivo, modificabili dai gestori degli effetti */
     H005_B(0x2474) = (u8)(H005_B(0x2474) << 1);
-    kind = H005_B(0x2473);
-    H005_B(0x2473) = 8;
+    kind = H005_B(0x2473); /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
+    H005_B(0x2473) = 8; /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
     show_char_message(g_current_char, 0x0B, "gets zapped", 0x0A, 1);
+    /* $2474: punti di danno in arrivo, modificabili dai gestori degli effetti */
     apply_damage(g_current_char, H005_B(0x2474), 0, 0);
-    H005_B(0x2474) = dmg;
-    H005_B(0x2473) = kind;
+    H005_B(0x2474) = dmg; /* $2474: punti di danno in arrivo, modificabili dai gestori degli effetti */
+    H005_B(0x2473) = kind; /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
 }
 
 /*
@@ -1044,23 +1165,31 @@ EH(effect_07)
     u16 dmg;
 
     (void)obj;
+    /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
     if (flag || H005_B(0x3DE3) != 5) {
         return;
     }
     if (c->readied[0] != NULL) {
+        /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno */
         bonus = COK_GET16(&c->readied[0]->b[0x36]);
     }
     t = c->block_192->target;
     dist = combat_distance(c, t);
+    /* pg+$19B: THAC0 corrente codificato (60 - THAC0); pg+$5A: THAC0 base codificato (60 - THAC0)
+     * dalla tabella per livello */
     c->b[0x19B] = c->b[0x5A];
     if (dist < 2) {
         dmg = roll_damage_dice(1, 6);
         dmg = (u16)(dmg + str_damage_bonus(c) + 2 + bonus);
+        /* $2474: punti di danno in arrivo, modificabili dai gestori degli effetti */
         H005_B(0x2474) = (u8)dmg;
+        /* pg+$19B: THAC0 corrente codificato (60 - THAC0) */
         c->b[0x19B] = (u8)(c->b[0x19B] + str_hit_bonus(c));
     } else {
         dmg = roll_damage_dice(1, 4);
+        /* $2474: punti di danno in arrivo, modificabili dai gestori degli effetti */
         H005_B(0x2474) = (u8)(dmg + 1 + bonus);
+        /* pg+$19B: THAC0 corrente codificato (60 - THAC0) */
         c->b[0x19B] = (u8)(c->b[0x19B] + dex_missile_adj(c));
     }
 }
@@ -1074,24 +1203,31 @@ EH(effect_0b)
     Character *c = *cp;
 
     if (flag) {
+        /* pg+$199: lato in combattimento (0 party, 1 avversari); eff+$4: parametro/livello
+         * dell'effetto (per $28 nibble alto = n. nube) */
         c->b[0x199] = (u8)(mask_byte(EFF->b[4], 0x40) >> 6);
-        if (c->b[0xEC] == 0xB3) {
-            c->b[0xEC] = 0;
-            c->b[0x19A] = 0;
+        if (c->b[0xEC] == 0xB3) { /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
+            c->b[0xEC] = 0; /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
+            c->b[0x19A] = 0; /* pg+$19A: controllo automatico in combattimento (1 = IA) */
         }
         return;
     }
+    /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
     if (mask_byte(EFF->b[4], 0x20) == 0) {
+        /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube); pg+$199: lato in
+         * combattimento (0 party, 1 avversari) */
         EFF->b[4] = (u8)(EFF->b[4] + 0x20 + (c->b[0x199] << 6));
+        /* pg+$199: lato in combattimento (0 party, 1 avversari); eff+$4: parametro/livello
+         * dell'effetto (per $28 nibble alto = n. nube) */
         c->b[0x199] = (u8)(EFF->b[4] >> 7);
-        c->b[0x19A] = 1;
-        if (c->b[0xEC] <= 0x7F) {
-            c->b[0xEC] = 0xB3;
+        c->b[0x19A] = 1; /* pg+$19A: controllo automatico in combattimento (1 = IA) */
+        if (c->b[0xEC] <= 0x7F) { /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
+            c->b[0xEC] = 0xB3; /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
         }
         c->block_192->target = NULL;
         count_sides();
     }
-    H005_B(0x2478) = 0x64;
+    H005_B(0x2478) = 0x64; /* $2478: morale del mostro (0..100) passato agli eventi $11 */
 }
 
 /* PORT H027+$080A (effetto $D): rinasce furioso ("goes mad!"), senza incantesimi. */
@@ -1100,11 +1236,11 @@ EH(effect_0d)
     Character *c = *cp;
 
     (void)flag;
-    if (c->b[0x197] == 0) {
+    if (c->b[0x197] == 0) { /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
         return;
     }
-    c->b[0x197] = 0;
-    c->b[0x198] = 1;
+    c->b[0x197] = 0; /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+    c->b[0x198] = 1; /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
     if (!revive(*cp, 0x14, 9, "goes mad!")) {
         return;
     }
@@ -1113,6 +1249,7 @@ EH(effect_0d)
     add_effect(*cp, 0x39, 0, 0xFF, 0);
     add_effect(*cp, 0x3A, 6, 0xFF, 1);
     remove_effect(*cp, 0x0D, EFF);
+    /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
     h029_fill_bytes(0x39, &(*cp)->b[0x1E], 0x3A, 0);
 }
 
@@ -1122,11 +1259,11 @@ EH(effect_20)
     Character *c = *cp;
 
     (void)obj; (void)flag;
-    if (c->b[0x197] == 0) {
+    if (c->b[0x197] == 0) { /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
         return;
     }
-    c->b[0x197] = 0;
-    c->b[0x198] = 1;
+    c->b[0x197] = 0; /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+    c->b[0x198] = 1; /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
     if (!revive(*cp, 0x14, 0x14, "Arises in a new form")) {
         return;
     }
@@ -1155,10 +1292,10 @@ EH(effect_23)
     switch (r) {
     case 1:                             /* $1186 */
         remove_effect(c, 0x23, NULL);
-        c->block_192->b[0x12] = 1;
-        c->b[0x19A] = 1;
-        if (c->b[0xEC] <= 0x7F) {
-            c->b[0xEC] = 0xB3;
+        c->block_192->b[0x12] = 1; /* turno+$12: flag costretto a fuggire (paura, confusione) */
+        c->b[0x19A] = 1; /* pg+$19A: controllo automatico in combattimento (1 = IA) */
+        if (c->b[0xEC] <= 0x7F) { /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
+            c->b[0xEC] = 0xB3; /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
         }
         c->block_192->target = NULL;
         apply_spell_effect_on(c, 0x6F, 0x0A, 0, 1, 1, 0, 9, "runs away");
@@ -1169,6 +1306,7 @@ EH(effect_23)
         effect_end_turn(cp, obj, 0);
         break;
     case 7: case 8:                     /* $123A */
+        /* pg+$199: lato in combattimento (0 party, 1 avversari) */
         apply_spell_effect_on(c, 0x4D, 1, c->b[0x199], 1, 1, 0, 0x0C,
                               "goes berserk");
         call_effect_handler(0x4D, cp, NULL, 0);
@@ -1198,13 +1336,17 @@ static u8 *combat_cell(s16 x, s16 y)
 /* Casella i (1..4) di una nube: centro +$1C/+$1E piu' la direzione $5022. */
 static s16 cloud_x(CokCloud *p, u16 i)
 {
-    return (s16)(COK_GET16(&p->b[0x1C - 8]) +
+    return (s16)(COK_GET16(&p->b[0x1C - 8]) + /* nube+$14: (word) x del centro della nube/pozza */
+                 /* $3EE2: (word) spostamento x per direzione d (passo 2); $5021: base i-1 delle 4
+                  * direzioni delle caselle di una nube ($5022) */
                  H005_W(0x3EE2 + H005_B(0x5022 + i - 1) * 2));
 }
 
 static s16 cloud_y(CokCloud *p, u16 i)
 {
-    return (s16)(COK_GET16(&p->b[0x1E - 8]) +
+    return (s16)(COK_GET16(&p->b[0x1E - 8]) + /* nube+$16: (word) y del centro della nube/pozza */
+                 /* $3ED0: (word) spostamento y per direzione d (passo 2); $5021: base i-1 delle 4
+                  * direzioni delle caselle di una nube ($5022) */
                  H005_W(0x3ED0 + H005_B(0x5022 + i - 1) * 2));
 }
 
@@ -1214,7 +1356,7 @@ static u8 on_2ae2_table(u16 x, u16 y)
     u16 k;
     u8 found = 0;
 
-    for (k = 1; k <= H005_B(0x247A); ++k) {
+    for (k = 1; k <= H005_B(0x247A); ++k) { /* $247A: numero di corpi nella tabella +$2AE2 (max 8) */
         if (g_bodies[k - 1].who != NULL && g_bodies[k - 1].x == x &&
             g_bodies[k - 1].y == y) {
             found = 1;
@@ -1252,13 +1394,15 @@ static void redraw_clouds_and_pools(void)
 
     for (p = g_clouds; p != NULL; p = p->next) {
         for (i = 1; i <= 4; ++i) {
+            /* nube+$9: base tabella 4 flag casella coperta +$A..+$D (indice 1..4) */
             if (p->b[0x12 - 8 + i - 1]) {
                 *combat_cell(cloud_x(p, i), cloud_y(p, i)) = 0x1E;
             }
         }
     }
     for (p = g_acid_pools; p != NULL; p = p->next) {
-        *combat_cell((s16)COK_GET16(&p->b[0x1C - 8]),
+        *combat_cell((s16)COK_GET16(&p->b[0x1C - 8]), /* nube+$14: (word) x del centro della nube/pozza */
+                     /* nube+$16: (word) y del centro della nube/pozza */
                      (s16)COK_GET16(&p->b[0x1E - 8])) = 0x1D;
     }
 }
@@ -1278,9 +1422,10 @@ EH(effect_28)
     u8 y;                               /* -$F(a5) */
 
     (void)flag;
-    id = (u16)(EFF->b[4] >> 4);
+    id = (u16)(EFF->b[4] >> 4); /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
     p = g_clouds;
     while (p != NULL && !found) {
+        /* nube+$18: numero della nube (= nibble alto di EF +$4 dell'effetto) */
         if (p->owner == *cp && p->b[0x20 - 8] == id) {
             found = 1;
         } else {
@@ -1292,6 +1437,7 @@ EH(effect_28)
     }
     show_message_line(0x1A, "The air clears a little...");
     for (i = 1; i <= 4; ++i) {
+        /* nube+$9: base tabella 4 flag casella coperta +$A..+$D (indice 1..4) */
         if (!p->b[0x12 - 8 + i - 1]) {
             continue;
         }
@@ -1321,9 +1467,10 @@ EH(effect_50)
     s16 y;
 
     (void)flag;
-    id = EFF->b[4];
+    id = EFF->b[4]; /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
     r = g_acid_pools;
     while (r != NULL && !found) {
+        /* nube+$18: numero della nube (= nibble alto di EF +$4 dell'effetto) */
         if (r->owner == *cp && r->b[0x20 - 8] == id) {
             found = 1;
         } else {
@@ -1334,12 +1481,12 @@ EH(effect_50)
         return;
     }
     show_message_line(0x16, "The acid drains away..");
-    x = (s16)COK_GET16(&r->b[0x1C - 8]);
-    y = (s16)COK_GET16(&r->b[0x1E - 8]);
+    x = (s16)COK_GET16(&r->b[0x1C - 8]); /* nube+$14: (word) x del centro della nube/pozza */
+    y = (s16)COK_GET16(&r->b[0x1E - 8]); /* nube+$16: (word) y del centro della nube/pozza */
     if (on_2ae2_table((u16)x, (u16)y)) {
         *combat_cell(x, y) = 0x1F;
     } else {
-        *combat_cell(x, y) = r->b[0];
+        *combat_cell(x, y) = r->b[0]; /* nube+$0: tabella 4 byte: contenuto salvato delle caselle coperte */
     }
     unlink_cloud(&g_acid_pools, r);
     redraw_clouds_and_pools();
@@ -1366,6 +1513,7 @@ EH(effect_46)
     s16 y;
 
     (void)obj; (void)flag;
+    /* pg+$1A8: punti ferita correnti; pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
     if ((*cp)->b[0x1A8] > 0 && (*cp)->b[0x198]) {
         return;
     }
@@ -1388,15 +1536,16 @@ EH(effect_46)
     memset(r, 0, sizeof(CokCloud));
     r->next = NULL;
     r->owner = *cp;
-    r->b[0x20 - 8] = (u8)count;
-    COK_PUT16(&r->b[0x1C - 8], combatant_x(*cp));
-    COK_PUT16(&r->b[0x1E - 8], combatant_y(*cp));
-    x = (s16)COK_GET16(&r->b[0x1C - 8]);
-    y = (s16)COK_GET16(&r->b[0x1E - 8]);
+    r->b[0x20 - 8] = (u8)count; /* nube+$18: numero della nube (= nibble alto di EF +$4 dell'effetto) */
+    COK_PUT16(&r->b[0x1C - 8], combatant_x(*cp)); /* nube+$14: (word) x del centro della nube/pozza */
+    COK_PUT16(&r->b[0x1E - 8], combatant_y(*cp)); /* nube+$16: (word) y del centro della nube/pozza */
+    x = (s16)COK_GET16(&r->b[0x1C - 8]); /* nube+$14: (word) x del centro della nube/pozza */
+    y = (s16)COK_GET16(&r->b[0x1E - 8]); /* nube+$16: (word) y del centro della nube/pozza */
     combat_map_cell(x, y, &value, &tile);
     if (tile == 0x1E) {
         for (q = g_clouds; q != NULL; q = q->next) {
             for (i = 1; i <= 4; ++i) {
+                /* nube+$9: base tabella 4 flag casella coperta +$A..+$D (indice 1..4) */
                 if (q->b[0x12 - 8 + i - 1] &&
                     cloud_x(q, i) == x && cloud_y(q, i) == y &&
                     q->b[i - 1] != 0x1E) {
@@ -1405,16 +1554,20 @@ EH(effect_46)
             }
         }
     } else if (tile == 0x1F) {
-        for (k = 1; k <= H005_B(0x247A); ++k) {
+        for (k = 1; k <= H005_B(0x247A); ++k) { /* $247A: numero di corpi nella tabella +$2AE2 (max 8) */
             if (g_bodies[k - 1].x ==
+                    /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.);
+                     * $3EE2: (word) spostamento x per direzione d (passo 2) */
                     (u16)(H005_W(0x251A) + H005_W(0x3EE2 + dir * 2)) &&
                 g_bodies[k - 1].y ==
+                    /* $2518: (word) y della casella bersaglio scelta (incantesimi, soffi, telep.);
+                     * $3ED0: (word) spostamento y per direzione d (passo 2) */
                     (u16)(H005_W(0x2518) + H005_W(0x3ED0 + dir * 2))) {
                 tile = g_bodies[k - 1].tile;
             }
         }
     }
-    r->b[0] = (u8)tile;
+    r->b[0] = (u8)tile; /* nube+$0: tabella 4 byte: contenuto salvato delle caselle coperte */
     *combat_cell(x, y) = 0x1D;
     center_view(combatant_x(*cp), combatant_y(*cp), 0xFF, 8);
     show_char_message(*cp, 0x14, "dissolves into acid!", 0x0A, 0);
@@ -1436,8 +1589,9 @@ static void avoid_missile(Character **cp, u16 chance)
         return;
     }
     show_char_message(*cp, 9, "Avoids it", 0x0A, 1);
-    H005_B(0x2474) = 0;
-    H005_SET_W(0x2A1A, 0xFFFF);
+    H005_B(0x2474) = 0; /* $2474: punti di danno in arrivo, modificabili dai gestori degli effetti */
+    H005_SET_W(0x2A1A, 0xFFFF); /* $2A1A: (word) tiro per colpire: d20 (20 vale 100) + modificatori effetti */
+    /* $2A18: colpi a segno del round con l'attacco 1 (azzerato a ogni attacco) */
     add_to_byte(&H005_B(0x2A18), 0xFFFF);
 }
 
@@ -1448,6 +1602,7 @@ EH(effect_29)
 
     (void)obj; (void)flag;
     w = combat_weapon(g_current_char);
+    /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno */
     if (w != NULL && COK_GET16(&w->b[0x36]) == 0) {
         avoid_missile(cp, 100);
     }
@@ -1475,13 +1630,15 @@ EH(effect_3c)
     b = combatant_y(*cp);
     find_in_area((s16)a, (s16)b, 1, 0xFF, combatant_size(*cp), g_combat_area);
     knock_out(*cp, 8, 9, "explodes!");
-    n = (u8)(H005_B(0x2479) - 1);
+    n = (u8)(H005_B(0x2479) - 1); /* $2479: numero di voci della lista dell'area +$2A3E (4 byte per voce) */
+    /* $2479: numero di voci della lista dell'area +$2A3E (4 byte per voce) */
     for (j = 2; j <= H005_B(0x2479); ++j) {
+        /* $2A3E: lista dell'area: voci da 4 byte ($2479), byte 0 = n. combattente */
         list[j - 2] = H005_B(0x2A3E + (j - 1) * 4);
     }
     for (j = 1; j <= n; ++j) {
         p = g_combatants[list[j - 1] - 1];
-        if (p->b[0x198]) {
+        if (p->b[0x198]) { /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
             apply_damage(p, roll_damage_dice(3, 6), 0, 0);
             if (!saving_throw_roll(g_combatants[list[j - 1] - 1], 4, 0)) {
                 show_char_message(g_combatants[list[j - 1] - 1], 0x0A,
@@ -1506,9 +1663,11 @@ EH(effect_43)
 
     (void)obj; (void)flag;
     w = combat_weapon(g_current_char);
-    if (roll_dice(1, 0x14) < (u16)(g_current_char->b[0x17] - 3)) {
+    if (roll_dice(1, 0x14) < (u16)(g_current_char->b[0x17] - 3)) { /* pg+$17: destrezza corrente */
         return;
     }
+    /* $2471: incantesimo in corso di lancio (0 = nessuno); ogg+$3C: flag oggetto maledetto; $24AF:
+     * uso: azzerato a inizio combattimento; se 1 l'effetto $43 non agisce */
     if (H005_B(0x2471) != 0 || w == NULL || w->b[0x3C] || H005_B(0x24AF)) {
         return;
     }
@@ -1517,6 +1676,8 @@ EH(effect_43)
     }
     show_char_message(g_current_char, 0x10, "loses his weapon", 0x0A, 1);
     d = g_dropped_items;
+    /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce); ogg+$34: parola 3
+     * del nome (indice in H005+$406E); nome base del tipo */
     if (w->b[0x30] == 6 && w->b[0x34] == 0x79) {
         return;
     }
@@ -1554,13 +1715,17 @@ EH(effect_47)
     u16 i;                              /* -$2(a5) */
 
     (void)obj; (void)flag;
+    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
     if (!(roll_dice(1, 0x0A) == 1 && SPELL_B(H005_B(0x2471), 6) < 8) &&
-        SPELL_B(H005_B(0x2471), 6) <= 0x0E) {
+        SPELL_B(H005_B(0x2471), 6) <= 0x0E) { /* $2471: incantesimo in corso di lancio (0 = nessuno) */
         return;
     }
     show_char_message(*cp, 0x12, "reflects the spell", 0x0A, 0);
+    /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.) */
     H005_SET_W(0x251A, combatant_x(g_current_char));
+    /* $2518: (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
     H005_SET_W(0x2518, combatant_y(g_current_char));
+    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
     for (i = 1; i <= H005_B(0x246C); ++i) {
         if (g_spell_targets[i - 1] == *cp) {
             g_spell_targets[i - 1] = g_current_char;
@@ -1577,12 +1742,12 @@ EH(effect_47)
 /* Spavento: fugge ($19A, $EC = $B3), niente bersaglio, turno +$12. */
 static void make_flee(Character *p)
 {
-    p->b[0x19A] = 1;
-    if (p->b[0xEC] <= 0x7F) {
-        p->b[0xEC] = 0xB3;
+    p->b[0x19A] = 1; /* pg+$19A: controllo automatico in combattimento (1 = IA) */
+    if (p->b[0xEC] <= 0x7F) { /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
+        p->b[0xEC] = 0xB3; /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
     }
     p->block_192->target = NULL;
-    p->block_192->b[0x12] = 1;
+    p->block_192->b[0x12] = 1; /* turno+$12: flag costretto a fuggire (paura, confusione) */
 }
 
 /*
@@ -1601,8 +1766,11 @@ EH(effect_48)
     a = combatant_x(*cp);
     b = combatant_y(*cp);
     find_in_area((s16)a, (s16)b, 1, 0xFF, combatant_size(*cp), g_combat_area);
+    /* $2479: numero di voci della lista dell'area +$2A3E (4 byte per voce) */
     for (j = 2; j <= H005_B(0x2479); ++j) {
+        /* $2A3E: lista dell'area: voci da 4 byte ($2479), byte 0 = n. combattente */
         p = g_combatants[H005_B(0x2A3E + (j - 1) * 4) - 1];
+        /* pg+$199: lato in combattimento (0 party, 1 avversari) */
         if (p->b[0x199] == (*cp)->b[0x199] || find_effect(p, 0x5C, &e) ||
             saving_throw_roll(p, 4, 0)) {
             continue;
@@ -1638,14 +1806,17 @@ EH(effect_4c)
     u16 n;                              /* -$1A(a5) */
 
     (void)obj; (void)flag;
+    /* pg+$1A8: punti ferita correnti; pg+$64: punti ferita massimi */
     if ((*cp)->b[0x1A8] >= (u16)((*cp)->b[0x64] >> 1)) {
         return;
     }
     s = g_party_head;
     anchor = g_party_head;
+    /* pg+$199: lato in combattimento (0 party, 1 avversari) */
     while (anchor != NULL && anchor->b[0x199] == (*cp)->b[0x199]) {
         anchor = anchor->next;
     }
+    /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
     while (s != NULL && s->b[0x197] != 9) {
         s = s->next;
     }
@@ -1656,6 +1827,7 @@ EH(effect_4c)
                 done = 1;
             } else {
                 anchor = anchor->next;
+                /* pg+$199: lato in combattimento (0 party, 1 avversari) */
                 if (anchor == NULL || anchor->b[0x199] == (*cp)->b[0x199]) {
                     done = 1;
                     anchor = *cp;
@@ -1671,7 +1843,9 @@ EH(effect_4c)
         y0 = (s16)combatant_y(anchor);
         revived = 0;
         do {
+            /* $3EE2: (word) spostamento x per direzione d (passo 2) */
             x = (s16)(x0 + H005_W(0x3EE2 + dir * 2));
+            /* $3ED0: (word) spostamento y per direzione d (passo 2) */
             y = (s16)(y0 + H005_W(0x3ED0 + dir * 2));
             if (x > 0x31 || x < 0 || y > 0x18 || y < 0) {
                 continue;
@@ -1679,12 +1853,17 @@ EH(effect_4c)
             combat_map_cell(x, y, &value, &tile);
             if (value == 0 && tile == 0x17) {
                 n = combatant_index(s);
+                /* $3159: posizioni combattenti +5: forma/taglia (0 = fuori mappa); pg+$D3:
+                 * forma/taglia sulla mappa di combattimento (bit 0-2, >1 grande) */
                 H005_B(0x3154 + (n - 1) * 6 + 5) = mask_byte(s->b[0xD3], 7);
+                /* $3154: posizioni combattenti, 6 byte per n (da 1): +0 colonna (word) */
                 H005_SET_W(0x3154 + (n - 1) * 6, (u16)x);
+                /* $3156: posizioni combattenti +2: riga sulla mappa (word) */
                 H005_SET_W(0x3154 + (n - 1) * 6 + 2, (u16)y);
                 h043_190e(0x16);
-                revived = revive(s, s->b[0x64], 8, "gates in");
+                revived = revive(s, s->b[0x64], 8, "gates in"); /* pg+$64: punti ferita massimi */
                 s = s->next;
+                /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
                 if (s == NULL || s->b[0x197] != 9) {
                     done = 1;
                 }
@@ -1709,20 +1888,21 @@ EH(effect_4d)
 
     (void)obj;
     if (flag) {
-        if (c->b[0xEC] == 0xB3) {
-            c->b[0xEC] = 0;
-            c->b[0x19A] = 0;
+        if (c->b[0xEC] == 0xB3) { /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
+            c->b[0xEC] = 0; /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
+            c->b[0x19A] = 0; /* pg+$19A: controllo automatico in combattimento (1 = IA) */
         }
-        c->b[0x199] = 0;
+        c->b[0x199] = 0; /* pg+$199: lato in combattimento (0 party, 1 avversari) */
         return;
     }
-    c->b[0x19A] = 1;
+    c->b[0x19A] = 1; /* pg+$19A: controllo automatico in combattimento (1 = IA) */
+    /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
     if (c->b[0xEC] <= 0x7F || c->b[0xEC] == 0xB3) {
-        c->b[0xEC] = 0xB3;
+        c->b[0xEC] = 0xB3; /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
     } else {
-        c->b[0xEC] = 0xB2;
+        c->b[0xEC] = 0xB2; /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
     }
-    if (H005_B(0x3DE3) != 5) {
+    if (H005_B(0x3DE3) != 5) { /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
         return;
     }
     c->block_192->target = NULL;
@@ -1730,8 +1910,11 @@ EH(effect_4d)
     b = combatant_y(*cp);
     find_in_area((s16)a, (s16)b, 0xFF, 0xFF,
                  combatant_size(*cp), g_combat_area);
+    /* $2A42: lista dell'area: combattente della seconda voce (primo dopo c) */
     (*cp)->block_192->target = g_combatants[H005_B(0x2A42) - 1];
+    /* turno+$1: flag puo' lanciare incantesimi (non in nube; azzerato attaccando) */
     (*cp)->block_192->b[1] = 0;
+    /* pg+$199: lato in combattimento (0 party, 1 avversari) */
     (*cp)->b[0x199] = xor_byte((*cp)->block_192->target->b[0x199], 1);
     show_char_message(*cp, 0x0C, "goes berserk", 0x0A, 1);
 }
@@ -1748,24 +1931,29 @@ EH(effect_6b)
     u16 b;
 
     if (flag) {
-        if (c->b[0xEC] == 0xB3) {
-            c->b[0xEC] = 0;
+        if (c->b[0xEC] == 0xB3) { /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
+            c->b[0xEC] = 0; /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
         }
+        /* pg+$199: lato in combattimento (0 party, 1 avversari); eff+$4: parametro/livello
+         * dell'effetto (per $28 nibble alto = n. nube) */
         c->b[0x199] = EFF->b[4];
         return;
     }
-    c->b[0x19A] = 1;
+    c->b[0x19A] = 1; /* pg+$19A: controllo automatico in combattimento (1 = IA) */
+    /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
     if (c->b[0xEC] <= 0x7F || c->b[0xEC] == 0xB3) {
-        c->b[0xEC] = 0xB3;
+        c->b[0xEC] = 0xB3; /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
     } else {
-        c->b[0xEC] = 0xB2;
+        c->b[0xEC] = 0xB2; /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
     }
     c->block_192->target = NULL;
     a = combatant_x(*cp);
     b = combatant_y(*cp);
     find_in_area((s16)a, (s16)b, 0xFF, 0xFF,
                  combatant_size(*cp), g_combat_area);
+    /* $2A42: lista dell'area: combattente della seconda voce (primo dopo c) */
     (*cp)->block_192->target = g_combatants[H005_B(0x2A42) - 1];
+    /* pg+$199: lato in combattimento (0 party, 1 avversari) */
     (*cp)->b[0x199] = xor_byte((*cp)->block_192->target->b[0x199], 1);
 }
 
@@ -1787,8 +1975,11 @@ EH(effect_4f)
     a = combatant_x(*cp);
     b = combatant_y(*cp);
     find_in_area((s16)a, (s16)b, 1, 0xFF, combatant_size(*cp), g_combat_area);
+    /* $2479: numero di voci della lista dell'area +$2A3E (4 byte per voce) */
     for (j = 2; j <= H005_B(0x2479); ++j) {
+        /* $2A3E: lista dell'area: voci da 4 byte ($2479), byte 0 = n. combattente */
         p = g_combatants[H005_B(0x2A3E + (j - 1) * 4) - 1];
+        /* pg+$199: lato in combattimento (0 party, 1 avversari) */
         if (p->b[0x199] == (*cp)->b[0x199] || saving_throw_roll(p, 4, 0) ||
             find_effect(p, 0x76, &e)) {
             continue;
@@ -1810,11 +2001,12 @@ EH(effect_52)
 
     (void)obj; (void)flag;
     for (p = g_party_head; p != NULL; p = p->next) {
+        /* pg+$199: lato in combattimento (0 party, 1 avversari) */
         if (p->b[0x199] == (*cp)->b[0x199] || find_effect(p, 0x5C, &e) ||
             find_effect(p, 0x6F, &e) || find_effect(p, 0x77, &e)) {
             continue;
         }
-        if (p->b[0xDB] <= 3) {
+        if (p->b[0xDB] <= 3) { /* pg+$DB: livello massimo fra le classi (usato anche come dadi vita) */
             apply_spell_effect_on(p, 0x6F, 0, 0xFF, 1, 1, 0, 0x0C,
                                   "is terrified");
             if (find_effect(p, 0x6F, &e)) {
@@ -1838,10 +2030,11 @@ EH(effect_5e)
     u8 con;
 
     (void)obj; (void)flag;
+    /* $2A13: tipo del tiro salvezza in corso (indice in +$D4), per gli effetti */
     if (H005_B(0x2A13) != 4 && H005_B(0x2A13) != 2 && H005_B(0x2A13) != 0) {
         return;
     }
-    con = (*cp)->b[0x19];
+    con = (*cp)->b[0x19]; /* pg+$19: costituzione corrente */
     if (con >= 4 && con <= 6) {
         bonus = 1;
     } else if (con >= 7 && con <= 10) {
@@ -1853,6 +2046,7 @@ EH(effect_5e)
     } else if (con >= 18 && con <= 20) {
         bonus = 5;
     }
+    /* $2476: tiro salvezza: d20 piu' i bonus dei gestori degli effetti */
     H005_B(0x2476) = (u8)(H005_B(0x2476) + bonus);
 }
 

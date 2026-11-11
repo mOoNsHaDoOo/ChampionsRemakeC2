@@ -75,47 +75,48 @@ static void show_free_memory(void)
  */
 static void convert_rawkey(void)
 {
-    u8 key = G_KEY;
+    u8 key = G_KEY; /* $5305: tasto/azione pendente dall'input (G_KEY) */
 
     if (key == 0x60 || key == 0x61) {
         g_input_shift = 1;
-        G_KEY = 0;
+        G_KEY = 0; /* $5305: tasto/azione pendente dall'input (G_KEY) */
     } else if (key == 0xE0 || key == 0xE1) {
         g_input_shift = 0;
-        G_KEY = 0;
+        G_KEY = 0; /* $5305: tasto/azione pendente dall'input (G_KEY) */
     } else if (key == 0x64 || key == 0x65) {
         g_input_alt = 1;
-        G_KEY = 0;
+        G_KEY = 0; /* $5305: tasto/azione pendente dall'input (G_KEY) */
     } else if (key == 0xE4 || key == 0xE5) {
         g_input_alt = 0;
-        G_KEY = 0;
+        G_KEY = 0; /* $5305: tasto/azione pendente dall'input (G_KEY) */
     } else if (key == 0x63) {
         g_input_ctrl = 1;
-        G_KEY = 0;
+        G_KEY = 0; /* $5305: tasto/azione pendente dall'input (G_KEY) */
     } else if (key == 0xE3) {
         g_input_ctrl = 0;
-        G_KEY = 0;
+        G_KEY = 0; /* $5305: tasto/azione pendente dall'input (G_KEY) */
     } else {
         u16 index = (u16)(key - 1);
 
+        /* $5305: tasto/azione pendente dall'input (G_KEY) */
         G_KEY = index <= 0x4E ? s_rawkey_ascii[index] : 0;
     }
     if (g_input_shift || g_input_ctrl || !g_input_alt) {
         return;
     }
     g_input_alt = 0;
-    switch (G_KEY) {
+    switch (G_KEY) { /* $5305: tasto/azione pendente dall'input (G_KEY) */
     case 'a':
-        G_KEY = 1;
+        G_KEY = 1; /* $5305: tasto/azione pendente dall'input (G_KEY) */
         break;
     case 'm':
-        G_KEY = 2;
+        G_KEY = 2; /* $5305: tasto/azione pendente dall'input (G_KEY) */
         break;
     case 'q':
-        G_KEY = 3;
+        G_KEY = 3; /* $5305: tasto/azione pendente dall'input (G_KEY) */
         break;
     case 'x':
-        G_KEY = 4;
+        G_KEY = 4; /* $5305: tasto/azione pendente dall'input (G_KEY) */
         break;
     case 'c':
         show_free_memory();
@@ -132,30 +133,31 @@ static void convert_rawkey(void)
  * convertito; un clic (MOUSEBUTTONS) aggiorna la posizione del mouse
  * (H005+$2356/$2354) e il pulsante sinistro vale Invio, il destro Esc, con
  * G_MOUSE_CLICK = 1.
+ * PORT H010+$0882 (Poll_IntuitionEvents): il corpo, qui nella stessa funzione.
  */
 void poll_intuition_events(void)
 {
     struct IntuiMessage *msg;
 
-    G_KEY = 0;
-    G_MOUSE_CLICK = 0;
+    G_KEY = 0; /* $5305: tasto/azione pendente dall'input (G_KEY) */
+    G_MOUSE_CLICK = 0; /* $249E: 1 se il tasto viene dal mouse (clic) */
     do {
         msg = (struct IntuiMessage *)exec_get_msg(g_window->UserPort);
         if (msg != NULL) {
             if (msg->Class == 0x400) {             /* RAWKEY */
-                if (G_KEY == 0) {
-                    G_KEY = (u8)msg->Code;
+                if (G_KEY == 0) { /* $5305: tasto/azione pendente dall'input (G_KEY) */
+                    G_KEY = (u8)msg->Code; /* $5305: tasto/azione pendente dall'input (G_KEY) */
                     convert_rawkey();
                 }
             } else if (msg->Class == 0x8) {        /* MOUSEBUTTONS */
-                H005_SET_W(0x2356, (u16)msg->MouseX);
-                H005_SET_W(0x2354, (u16)msg->MouseY);
+                H005_SET_W(0x2356, (u16)msg->MouseX); /* $2356: X del mouse (word, iniziale $A0) */
+                H005_SET_W(0x2354, (u16)msg->MouseY); /* $2354: Y del mouse (word, iniziale $64) */
                 if (msg->Code == 0x68) {           /* SELECTDOWN */
-                    G_KEY = 0x0D;
-                    G_MOUSE_CLICK = 1;
+                    G_KEY = 0x0D; /* $5305: tasto/azione pendente dall'input (G_KEY) */
+                    G_MOUSE_CLICK = 1; /* $249E: 1 se il tasto viene dal mouse (clic) */
                 } else if (msg->Code == 0x69) {    /* MENUDOWN */
-                    G_KEY = 0x1B;
-                    G_MOUSE_CLICK = 1;
+                    G_KEY = 0x1B; /* $5305: tasto/azione pendente dall'input (G_KEY) */
+                    G_MOUSE_CLICK = 1; /* $249E: 1 se il tasto viene dal mouse (clic) */
                 }
             }
             exec_reply_msg(&msg->ExecMessage);
@@ -169,7 +171,7 @@ void wait_for_key(void)
     do {
         (void)exec_wait_port(g_window->UserPort);
         poll_intuition_events();
-    } while (G_KEY == 0);
+    } while (G_KEY == 0); /* $5305: tasto/azione pendente dall'input (G_KEY) */
 }
 
 /*

@@ -43,6 +43,7 @@ static void copy_text(char *dst, const char *src, u16 max)
 }
 
 /* Riga della tabella dei tipi di oggetto H005+$336C ($12 byte). */
+/* $336C: tabella dei tipi di oggetto (ogg+$30), $12 byte per tipo; off = campo */
 #define ITEM_TYPE(t, off) H005_B(0x336C + (t) * 0x12 + (off))
 #define ITEM_W(it, off)   ((s16)COK_GET16((it)->b + (off)))
 
@@ -62,6 +63,7 @@ void trim_leading_spaces(u16 len, char *s)
 /* PORT H063+$016A: correzione di destrezza (+$17) per le armi da lancio. */
 s16 dex_missile_adj(Character *c)
 {
+    /* pg+$17: destrezza corrente */
     s16 dex = c->b[0x17];               /* -$2(a5) */
 
     switch (dex) {
@@ -89,25 +91,25 @@ s16 dex_missile_adj(Character *c)
  */
 static s16 effective_strength(Character *c)
 {
-    u8 s = c->b[0x11];
+    u8 s = c->b[0x11]; /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza corrente */
 
     if (s <= 17) {
         return s;
     }
     if (s == 18) {
-        if (c->b[0x1C] == 0) {
+        if (c->b[0x1C] == 0) { /* pg+$1C: forza eccezionale corrente (18/xx, 1..100) */
             return 0x12;
         }
-        if (c->b[0x1C] < 0x33) {
+        if (c->b[0x1C] < 0x33) { /* pg+$1C: forza eccezionale corrente (18/xx, 1..100) */
             return 0x13;
         }
-        if (c->b[0x1C] < 0x4C) {
+        if (c->b[0x1C] < 0x4C) { /* pg+$1C: forza eccezionale corrente (18/xx, 1..100) */
             return 0x14;
         }
-        if (c->b[0x1C] < 0x5B) {
+        if (c->b[0x1C] < 0x5B) { /* pg+$1C: forza eccezionale corrente (18/xx, 1..100) */
             return 0x15;
         }
-        if (c->b[0x1C] < 0x64) {
+        if (c->b[0x1C] < 0x64) { /* pg+$1C: forza eccezionale corrente (18/xx, 1..100) */
             return 0x16;
         }
         return 0x17;
@@ -124,7 +126,7 @@ s16 str_hit_bonus(Character *c)
     s16 bonus = 0;                      /* -$4(a5) */
     s16 s = effective_strength(c);      /* -$2(a5) */
 
-    if (!c->b[0x11B]) {
+    if (!c->b[0x11B]) { /* pg+$11B: applica i bonus della forza a colpire e ai danni (1 per i PG) */
         return bonus;
     }
     switch (s) {
@@ -161,6 +163,7 @@ s16 str_hit_bonus(Character *c)
 /* PORT H063+$18F8: correzione di destrezza alla classe d'armatura. */
 static s16 dex_ac_adj(Character *c)
 {
+    /* pg+$17: destrezza corrente */
     s16 dex = c->b[0x17];               /* -$2(a5) */
 
     switch (dex) {
@@ -187,7 +190,7 @@ s16 str_damage_bonus(Character *c)
     s16 bonus = 0;                      /* -$2(a5) */
     s16 s = effective_strength(c);      /* -$4(a5) */
 
-    if (!c->b[0x11B]) {
+    if (!c->b[0x11B]) { /* pg+$11B: applica i bonus della forza a colpire e ai danni (1 per i PG) */
         return bonus;
     }
     switch (s) {
@@ -262,53 +265,80 @@ static void weapon_stats(Character *c)
     if (w == NULL) {
         return;
     }
-    t = w->b[0x30];
+    t = w->b[0x30]; /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
+    /* pg+$19B: THAC0 corrente codificato (60 - THAC0); pg+$5A: THAC0 base codificato (60 - THAC0)
+     * dalla tabella per livello */
     c->b[0x19B] = c->b[0x5A];
+    /* $337C: tipi di oggetto +$10: flag arma (des/for, munizioni, mischia) */
     if (mask_byte(ITEM_TYPE(t, 0x10), 2)) {
+        /* pg+$19B: THAC0 corrente codificato (60 - THAC0) */
         c->b[0x19B] = (u8)(c->b[0x19B] + dex_missile_adj(c));
     }
+    /* $3378: tipi di oggetto +$C: (word) bonus al danno, in +$1A4; pg+$1A4: bonus ai danni, 2 word
+     * (attacco 1 e 2) */
     CH_PUTW(c, 0x1A4, COK_GET16(&g_h005[0x336C + t * 0x12 + 0x0C]));
+    /* $337C: tipi di oggetto +$10: flag arma (des/for, munizioni, mischia) */
     if (mask_byte(ITEM_TYPE(t, 0x10), 4)) {
+        /* pg+$19B: THAC0 corrente codificato (60 - THAC0) */
         c->b[0x19B] = (u8)(c->b[0x19B] + str_hit_bonus(c));
+        /* pg+$1A4: bonus ai danni, 2 word (attacco 1 e 2) */
         CH_PUTW(c, 0x1A4, (u16)(str_damage_bonus(c) + CH_W(c, 0x1A4)));
     }
-    bonus = ITEM_W(w, 0x36);
+    bonus = ITEM_W(w, 0x36); /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno */
+    /* $337C: tipi di oggetto +$10: flag arma (des/for, munizioni, mischia) */
     if (ITEM_TYPE(t, 0x10) > 0x7F && c->readied[12] != NULL) {
+        /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno */
         bonus = (s16)(bonus + ITEM_W(c->readied[12], 0x36));
     }
+    /* $337C: tipi di oggetto +$10: flag arma (des/for, munizioni, mischia) */
     if (mask_byte(ITEM_TYPE(t, 0x10), 1) && c->readied[11] != NULL) {
+        /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno */
         bonus = (s16)(bonus + ITEM_W(c->readied[11], 0x36));
     }
-    CH_PUTW(c, 0x1A4, (u16)(CH_W(c, 0x1A4) + bonus));
-    if (c->b[0x5B] == 0 || c->b[0x5B] == 1) {
+    CH_PUTW(c, 0x1A4, (u16)(CH_W(c, 0x1A4) + bonus)); /* pg+$1A4: bonus ai danni, 2 word (attacco 1 e 2) */
+    if (c->b[0x5B] == 0 || c->b[0x5B] == 1) { /* pg+$5B: razza (0..6, nomi H005+$4D04) */
+        /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
         if ((w->b[0x30] > 0x15 && w->b[0x30] < 0x1B) || w->b[0x30] == 0x13 ||
+            /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
             w->b[0x30] == 0x12) {
             ++bonus;
         }
     }
+    /* pg+$5B: razza (0..6, nomi H005+$4D04); ogg+$30: tipo dell'oggetto (indice tabella H005+$336C,
+     * $12 byte per voce) */
     if (c->b[0x5B] == 5 && w->b[0x30] == 0x43) {
         bonus = (s16)(bonus + 2);
     }
-    c->b[0x19B] = (u8)(c->b[0x19B] + bonus);
+    c->b[0x19B] = (u8)(c->b[0x19B] + bonus); /* pg+$19B: THAC0 corrente codificato (60 - THAC0) */
+    /* pg+$1A0: numero di dadi dell'attacco 1 (2 voci +$1A0..+$1A1); $3376: tipi di oggetto +$A:
+     * dato di danno copiato in +$1A0 */
     c->b[0x1A0] = ITEM_TYPE(t, 0x0A);
+    /* pg+$1A2: facce del dado dell'attacco 1 (2 voci +$1A2..+$1A3); $3377: tipi di oggetto +$B:
+     * dato di danno copiato in +$1A2 */
     c->b[0x1A2] = ITEM_TYPE(t, 0x0B);
 }
 
 /* PORT H063+$06AE: movimento (+$1A9) con l'armatura indossata. */
 static void armor_movement(Character *c, CokItem *it)
 {
+    /* $336C: tipi di oggetto, $12 byte per tipo (+$30): +0 slot/genere; ogg+$30: tipo dell'oggetto
+     * (indice tabella H005+$336C, $12 byte per voce) */
     if (ITEM_TYPE(it->b[0x30], 0) != 2) {
         return;
     }
-    if (COK_GET16(it->b + 0x3E) < 0x97) {
+    if (COK_GET16(it->b + 0x3E) < 0x97) { /* ogg+$3E: (word) peso unitario dell'oggetto */
+        /* pg+$1A9: movimento corrente (armatura e ingombro); pg+$DA: movimento base (12 alla
+         * creazione) */
         c->b[0x1A9] = c->b[0xDA];
-    } else if (COK_GET16(it->b + 0x3E) < 0x190) {
-        c->b[0x1A9] = 9;
+    } else if (COK_GET16(it->b + 0x3E) < 0x190) { /* ogg+$3E: (word) peso unitario dell'oggetto */
+        c->b[0x1A9] = 9; /* pg+$1A9: movimento corrente (armatura e ingombro) */
     } else {
-        c->b[0x1A9] = 6;
+        c->b[0x1A9] = 6; /* pg+$1A9: movimento corrente (armatura e ingombro) */
     }
+    /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno; pg+$1A9: movimento corrente
+     * (armatura e ingombro) */
     if (COK_GET16(it->b + 0x36) != 0 && c->b[0x1A9] <= 9) {
-        c->b[0x1A9] = (u8)(c->b[0x1A9] + 3);
+        c->b[0x1A9] = (u8)(c->b[0x1A9] + 3); /* pg+$1A9: movimento corrente (armatura e ingombro) */
     }
 }
 
@@ -318,6 +348,8 @@ static void armor_movement(Character *c, CokItem *it)
  */
 static void armor_class_part(Character *c, CokItem *it, s16 *ac, u8 *flag)
 {
+    /* $3373: tipi di oggetto +7: CA dell'oggetto (bit 7 = la fornisce); ogg+$30: tipo dell'oggetto
+     * (indice tabella H005+$336C, $12 byte per voce) */
     u16 v = ITEM_TYPE(it->b[0x30], 7); /* -$2(a5) */
     u8 kind;                            /* -$3(a5) */
 
@@ -325,20 +357,27 @@ static void armor_class_part(Character *c, CokItem *it, s16 *ac, u8 *flag)
         return;
     }
     v = mask_byte((u8)v, 0x7F);
+    /* $336C: tipi di oggetto, $12 byte per tipo (+$30): +0 slot/genere; ogg+$30: tipo dell'oggetto
+     * (indice tabella H005+$336C, $12 byte per voce) */
     kind = ITEM_TYPE(it->b[0x30], 0);
     if (kind == 1) {
-        ac[1] = (s16)(v + ITEM_W(it, 0x36));
+        ac[1] = (s16)(v + ITEM_W(it, 0x36)); /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno */
     } else if (v == 0) {
         if (kind == 9) {
-            if (ITEM_W(it, 0x36) > ac[3]) {
-                ac[3] = ITEM_W(it, 0x36);
+            if (ITEM_W(it, 0x36) > ac[3]) { /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno */
+                ac[3] = ITEM_W(it, 0x36); /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno */
             }
         } else {
+            /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno */
             ac[2] = (s16)(ac[2] + ITEM_W(it, 0x36));
         }
+        /* pg+$18A: bonus ai tiri salvezza dagli oggetti pronti (word, +$38); ogg+$38: (word)
+         * secondo bonus, sommato a CH +$18A quando pronto */
         CH_PUTW(c, 0x18A, (u16)(CH_W(c, 0x18A) + ITEM_W(it, 0x38)));
+    /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno */
     } else if ((s16)(v + ITEM_W(it, 0x36)) > ac[4]) {
-        ac[4] = (s16)(v + ITEM_W(it, 0x36));
+        ac[4] = (s16)(v + ITEM_W(it, 0x36)); /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno */
+        /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno */
         if (ITEM_W(it, 0x36) > 0 && kind == 2) {
             *flag = 1;
         }
@@ -348,6 +387,7 @@ static void armor_class_part(Character *c, CokItem *it, s16 *ac, u8 *flag)
 /* PORT H063+$08A2: movimento ridotto dall'ingombro (+$18C). */
 static void encumbrance_movement(Character *c)
 {
+    /* pg+$18C: ingombro: peso di oggetti e monete (word) */
     s16 extra = (s16)(CH_W(c, 0x18C) - str_weight_allowance(c));
     u16 move;                           /* -$4(a5) */
 
@@ -355,7 +395,7 @@ static void encumbrance_movement(Character *c)
         extra = 0;
     }
     if (extra < 0x201) {
-        move = c->b[0x1A9];
+        move = c->b[0x1A9]; /* pg+$1A9: movimento corrente (armatura e ingombro) */
     } else if (extra < 0x301) {
         move = 9;
     } else if (extra < 0x401) {
@@ -363,8 +403,8 @@ static void encumbrance_movement(Character *c)
     } else {
         move = 3;
     }
-    if (move < c->b[0x1A9]) {
-        c->b[0x1A9] = (u8)move;
+    if (move < c->b[0x1A9]) { /* pg+$1A9: movimento corrente (armatura e ingombro) */
+        c->b[0x1A9] = (u8)move; /* pg+$1A9: movimento corrente (armatura e ingombro) */
     }
 }
 
@@ -375,7 +415,7 @@ u8 find_effect(Character *c, u16 type, CokEffect **out)
 
     *out = c->effects;
     while (*out != NULL && !found) {
-        if ((*out)->b[0] == type) {
+        if ((*out)->b[0] == type) { /* eff+$0: tipo dell'effetto (codice del gestore) */
             found = 1;
         } else {
             *out = (*out)->next;
@@ -405,6 +445,7 @@ void build_item_name(Character *c, CokItem *it, u16 col, u16 row,
     (void)c;
     copy_text(name, "", 0x28);
     if (ready_mark) {
+        /* ogg+$3A: flag oggetto pronto all'uso (Ready) */
         copy_text(name, it->b[0x3A] ? " Yes  " : " No   ", 0x28);
     }
     for (m = g_party_head; m != NULL && !found; m = m->next) {
@@ -412,11 +453,14 @@ void build_item_name(Character *c, CokItem *it, u16 col, u16 row,
             found = 1;
         }
     }
+    /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno; ogg+$38: (word) secondo bonus,
+     * sommato a CH +$18A quando pronto */
     if (found && (ITEM_W(it, 0x36) > 0 || ITEM_W(it, 0x38) > 0 ||
-                  it->b[0x3C] != 0)) {
+                  it->b[0x3C] != 0)) { /* ogg+$3C: flag oggetto maledetto */
         h026_append(0x28, name, 2, "* ");
     }
-    if (it->b[0x40] > 0) {
+    if (it->b[0x40] > 0) { /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
+        /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
         format_number(0x50, tmp, it->b[0x40], 0, 0x0A, 4, ' ');
         for (i = 0; i <= 2; ++i) {
             if (tmp[0] == ' ') {
@@ -427,7 +471,8 @@ void build_item_name(Character *c, CokItem *it, u16 col, u16 row,
         h026_append(0x28, name, 1, " ");
     }
     for (i = 1; i <= 3; ++i) {
-        if (it->b[0x32 + i - 1] != 0 &&
+        if (it->b[0x32 + i - 1] != 0 && /* ogg+$31: base tabella 3 parole del nome +$32..+$34 (indice 1..3) */
+            /* ogg+$3B: bit 0..2 parole del nome non identificate; bit 5/4 pergamena cl.1/2 */
             !mask_byte((u8)(it->b[0x3B] >> (3 - i)), 1)) {
             mask = (u16)(mask + (u8)(1 << (i - 1)));
         }
@@ -437,17 +482,24 @@ void build_item_name(Character *c, CokItem *it, u16 col, u16 row,
         if (!mask_byte((u8)(mask >> (i - 1)), 1)) {
             continue;
         }
+        /* $406E: parti del nome degli oggetti, $16 byte per voce (da 1) */
         h026_append(0x28, name, 0x14, (const char *)&g_h005[0x406E +
+                    /* ogg+$31: base tabella 3 parole del nome +$32..+$34 (indice 1..3) */
                     ((s16)it->b[0x32 + i - 1] - 1) * 0x16]);
-        if (it->b[0x40] < 2 || plural) {
+        if (it->b[0x40] < 2 || plural) { /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
             h026_append(0x28, name, 1, " ");
             continue;
         }
         if ((u16)(u8)(1 << (i - 1)) == mask ||
+            /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
             (i == 1 && mask > 4 && it->b[0x30] != 0x37) ||
             (i == 2 && (mask & 1) == 0) ||
+            /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
             (i == 3 && it->b[0x30] == 0x37) ||
+            /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
             ((it->b[0x30] == 0x1E || it->b[0x30] == 5 ||
+              /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce); ogg+$34:
+               * parola 3 del nome (indice in H005+$406E); nome base del tipo */
               it->b[0x30] == 0x0C) && it->b[0x34] != 0x5D)) {
             h026_append(0x28, name, 2, "s ");
             plural = 1;
@@ -464,11 +516,11 @@ void build_item_name(Character *c, CokItem *it, u16 col, u16 row,
 void draw_armor_class(Character *c, u16 col, u16 row)
 {
     char text[0x51];                    /* -$52(a5) */
-    s16 v = (s16)(c->b[0x19C] - 0x3C);
+    s16 v = (s16)(c->b[0x19C] - 0x3C); /* pg+$19C: classe d'armatura corrente codificata (60 - CA) */
 
     format_number(0x50, text, v < 0 ? -v : v, 0, 0x0A, 3, ' ');
     trim_leading_spaces(0x50, text);
-    if (c->b[0x19C] > 0x3C) {
+    if (c->b[0x19C] > 0x3C) { /* pg+$19C: classe d'armatura corrente codificata (60 - CA) */
         h026_insert(0x50, text, 1, "-", 0);
     }
     ui_draw_text(col, row, 0x0A, 0, 0x50, text);
@@ -485,16 +537,17 @@ void draw_hit_points(Character *c, u16 col, u16 row, u8 highlight,
     u16 pen;                            /* -$54(a5) */
     u16 n;                              /* -$56(a5) */
 
+    /* pg+$1A8: punti ferita correnti; pg+$64: punti ferita massimi */
     pen = (u16)(c->b[0x1A8] < c->b[0x64] ? 0x0E : 0x0A);
     if (highlight) {
         pen = 0x0D;
     }
-    format_number(0x50, text, c->b[0x1A8], 0, 0x0A, 6, ' ');
+    format_number(0x50, text, c->b[0x1A8], 0, 0x0A, 6, ' '); /* pg+$1A8: punti ferita correnti */
     trim_leading_spaces(0x50, text);
     ui_draw_text(col, row, pen, 0, 0x50, text);
     if (with_max) {
         n = h026_strlen(0x50, text);
-        format_number(0x50, text, c->b[0x64], 0, 0x0A, 6, ' ');
+        format_number(0x50, text, c->b[0x64], 0, 0x0A, 6, ' '); /* pg+$64: punti ferita massimi */
         trim_leading_spaces(0x50, text);
         h026_insert(0x50, text, 1, "/", 0);
         ui_draw_text((u16)(col + n), row, 0x0A, 0, 0x50, text);
@@ -519,20 +572,22 @@ void recompute_stats(Character *c)
     for (i = 0; i <= 0x0C; ++i) {
         c->readied[i] = NULL;
     }
-    c->b[0x14F] = 0;
+    c->b[0x14F] = 0; /* pg+$14F: numero di oggetti posseduti (max 16) */
     it = c->items;
-    c->b[0x188] = 0;
-    CH_PUTW(c, 0x18C, 0);
+    c->b[0x188] = 0; /* pg+$188: mani occupate dagli oggetti pronti (max 2) */
+    CH_PUTW(c, 0x18C, 0); /* pg+$18C: ingombro: peso di oggetti e monete (word) */
     s_ready_weight = 0;
     while (it != NULL) {
-        add_to_byte(&c->b[0x14F], 1);
-        w = COK_GET16(it->b + 0x3E);
-        if (it->b[0x40] > 0) {
-            w = (u16)(it->b[0x40] * w);
+        add_to_byte(&c->b[0x14F], 1); /* pg+$14F: numero di oggetti posseduti (max 16) */
+        w = COK_GET16(it->b + 0x3E); /* ogg+$3E: (word) peso unitario dell'oggetto */
+        if (it->b[0x40] > 0) { /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
+            w = (u16)(it->b[0x40] * w); /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
         }
-        CH_PUTW(c, 0x18C, (u16)(CH_W(c, 0x18C) + w));
-        if (it->b[0x3A]) {
+        CH_PUTW(c, 0x18C, (u16)(CH_W(c, 0x18C) + w)); /* pg+$18C: ingombro: peso di oggetti e monete (word) */
+        if (it->b[0x3A]) { /* ogg+$3A: flag oggetto pronto all'uso (Ready) */
             s_ready_weight = (u16)(s_ready_weight + w);
+            /* $336C: tipi di oggetto, $12 byte per tipo (+$30): +0 slot/genere; ogg+$30: tipo
+             * dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
             slot = ITEM_TYPE(it->b[0x30], 0);
             if (slot <= 8) {
                 c->readied[slot] = it;
@@ -545,39 +600,59 @@ void recompute_stats(Character *c)
                     c->readied[9] = it;
                 }
             }
+            /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
             if (it->b[0x30] == 0x1E) {
                 c->readied[11] = it;
             }
+            /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
             if (it->b[0x30] == 0x0C) {
                 c->readied[12] = it;
             }
+            /* pg+$188: mani occupate dagli oggetti pronti (max 2); $336D: tipi di oggetto +1: mani
+             * occupate (si somma a +$188, max 2); ogg+$30: tipo dell'oggetto (indice tabella
+             * H005+$336C, $12 byte per voce) */
             c->b[0x188] = (u8)(c->b[0x188] + ITEM_TYPE(it->b[0x30], 1));
         }
         it = it->next;
     }
     for (i = 1; i <= 6; ++i) {
+        /* pg+$18C: ingombro: peso di oggetti e monete (word); pg+$F0: monete, 7 word passo 2 (0..4
+         * monete, 4 acciaio, 5 gemme, 6 gioielli) */
         CH_PUTW(c, 0x18C, (u16)(CH_W(c, 0x18C) + CH_W(c, 0xF0 + i * 2)));
     }
     for (i = 1; i <= 2; ++i) {
+        /* pg+$19F: attacchi del round, attacco 2; base -1 dadi +$1A0..; pg+$111: attacchi ogni 2
+         * round dell'attacco 2; base -1 dadi +$112.. */
         c->b[0x1A0 + i - 1] = c->b[0x112 + i - 1];
+        /* pg+$1A1: numero di dadi dell'attacco 2; base -1 facce +$1A2..; pg+$113: numero di dadi
+         * dell'attacco 2; base -1 facce +$114.. */
         c->b[0x1A2 + i - 1] = c->b[0x114 + i - 1];
+        /* pg+$116: bonus ai danni base, 2 word (attacco 1 e 2); pg+$1A4: bonus ai danni, 2 word
+         * (attacco 1 e 2) */
         CH_PUTW(c, 0x1A4 + (i - 1) * 2, CH_W(c, 0x116 + (i - 1) * 2));
     }
     for (i = 0; i <= 4; ++i) {
         ac[i] = 0;
     }
-    CH_PUTW(c, 0x18A, 0);
+    CH_PUTW(c, 0x18A, 0); /* pg+$18A: bonus ai tiri salvezza dagli oggetti pronti (word, +$38) */
+    /* pg+$19C: classe d'armatura corrente codificata (60 - CA); pg+$11A: classe d'armatura base
+     * codificata (50 = CA 10) */
     c->b[0x19C] = c->b[0x11A];
+    /* pg+$1A9: movimento corrente (armatura e ingombro); pg+$DA: movimento base (12 alla creazione) */
     c->b[0x1A9] = c->b[0xDA];
+    /* pg+$19B: THAC0 corrente codificato (60 - THAC0); pg+$5A: THAC0 base codificato (60 - THAC0)
+     * dalla tabella per livello */
     c->b[0x19B] = c->b[0x5A];
     ac[0] = dex_ac_adj(c);
     if (c->readied[0] == NULL) {
+        /* pg+$19B: THAC0 corrente codificato (60 - THAC0) */
         c->b[0x19B] = (u8)(c->b[0x19B] + str_hit_bonus(c));
+        /* pg+$1A4: bonus ai danni, 2 word (attacco 1 e 2) */
         CH_PUTW(c, 0x1A4, (u16)(str_damage_bonus(c) + CH_W(c, 0x1A4)));
     }
     weapon_stats(c);
     for (it = c->items; it != NULL; it = it->next) {
-        if (it->b[0x3A]) {
+        if (it->b[0x3A]) { /* ogg+$3A: flag oggetto pronto all'uso (Ready) */
             armor_movement(c, it);
             armor_class_part(c, it, ac, &flag9);
         }
@@ -586,35 +661,51 @@ void recompute_stats(Character *c)
         ac[3] = 0;
     }
     if (flag_a) {
-        if (CH_W(c, 0x18C) < 0x1388) {
-            CH_PUTW(c, 0x18C, 0);
+        if (CH_W(c, 0x18C) < 0x1388) { /* pg+$18C: ingombro: peso di oggetti e monete (word) */
+            CH_PUTW(c, 0x18C, 0); /* pg+$18C: ingombro: peso di oggetti e monete (word) */
         } else {
+            /* pg+$18C: ingombro: peso di oggetti e monete (word) */
             CH_PUTW(c, 0x18C, (u16)(CH_W(c, 0x18C) - 0x1388));
         }
-        if (CH_W(c, 0x18C) < s_ready_weight) {
-            CH_PUTW(c, 0x18C, s_ready_weight);
+        if (CH_W(c, 0x18C) < s_ready_weight) { /* pg+$18C: ingombro: peso di oggetti e monete (word) */
+            CH_PUTW(c, 0x18C, s_ready_weight); /* pg+$18C: ingombro: peso di oggetti e monete (word) */
         }
     }
     encumbrance_movement(c);
-    if (ac[4] < (s16)c->b[0x19C]) {
-        ac[4] = c->b[0x19C];
+    if (ac[4] < (s16)c->b[0x19C]) { /* pg+$19C: classe d'armatura corrente codificata (60 - CA) */
+        ac[4] = c->b[0x19C]; /* pg+$19C: classe d'armatura corrente codificata (60 - CA) */
     }
-    c->b[0x19C] = 0;
+    c->b[0x19C] = 0; /* pg+$19C: classe d'armatura corrente codificata (60 - CA) */
     for (i = 0; i <= 4; ++i) {
+        /* pg+$19C: classe d'armatura corrente codificata (60 - CA) */
         c->b[0x19C] = (u8)(c->b[0x19C] + ac[i]);
     }
+    /* pg+$19D: CA da dietro (senza destrezza); base -1 attacchi +$19E.. */
     c->b[0x19D] = (u8)(ac[4] + ac[2] + ac[3] - 2);
+    /* pg+$100: livello da guerriero; pg+$108: livello precedente da guerriero */
     if ((c->b[0x100] > 0 || (c->b[0x108] > 0 && h073_130a(c)) ||
+         /* pg+$105: livello da cavaliere; pg+$102: livello da ranger; pg+$5B: razza (0..6, nomi
+          * H005+$4D04) */
          c->b[0x105] > 0 || c->b[0x102] > 0) && c->b[0x5B] < 7) {
+        /* pg+$D2: livello da combattente (max +$100/+$105/+$102, o 1): spazzate; pg+$100: livello
+         * da guerriero */
         c->b[0xD2] = c->b[0x100];
+        /* pg+$105: livello da cavaliere; pg+$D2: livello da combattente (max +$100/+$105/+$102, o
+         * 1): spazzate */
         if (c->b[0x105] > c->b[0xD2]) {
+            /* pg+$D2: livello da combattente (max +$100/+$105/+$102, o 1): spazzate; pg+$105:
+             * livello da cavaliere */
             c->b[0xD2] = c->b[0x105];
         }
+        /* pg+$102: livello da ranger; pg+$D2: livello da combattente (max +$100/+$105/+$102, o 1):
+         * spazzate */
         if (c->b[0x102] > c->b[0xD2]) {
+            /* pg+$D2: livello da combattente (max +$100/+$105/+$102, o 1): spazzate; pg+$102:
+             * livello da ranger */
             c->b[0xD2] = c->b[0x102];
         }
     } else {
-        c->b[0xD2] = 1;
+        c->b[0xD2] = 1; /* pg+$D2: livello da combattente (max +$100/+$105/+$102, o 1): spazzate */
     }
 }
 
@@ -627,8 +718,10 @@ void draw_character_name(Character *c, u16 col, u16 row, u8 possessive)
 {
     u16 pen;                            /* -$2(a5) */
 
-    if (c->b[0x198] == 0) {
+    if (c->b[0x198] == 0) { /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
         pen = 0x0C;
+    /* pg+$199: lato in combattimento (0 party, 1 avversari); $3DE3: modo/contesto di gioco corrente
+     * (0 menu, 1 vista, 5 combattimento) */
     } else if (c->b[0x199] == 1 && H005_B(0x3DE3) == 5) {
         pen = 0x0E;
     } else {
@@ -653,6 +746,7 @@ u8 class_xp_row(Character *c, u8 cls)
 
     switch (cls) {
     case 0:
+        /* pg+$5E: divinita' del chierico (0 nessuna, 1..7; 6 per le razze 3-4) */
         row = (u8)(c->b[0x5E] > 4 ? 1 : 0);
         break;
     case 2:
@@ -662,13 +756,14 @@ u8 class_xp_row(Character *c, u8 cls)
         row = 6;
         break;
     case 5:
+        /* pg+$5F: ordine del mago (1 allineam. 0/3/6, 2 per 1/4/7, 0 nessuno) */
         row = (u8)(c->b[0x5F] == 1 ? 7 : 8);
         break;
     case 6:
         row = 9;
         break;
     case 7:
-        switch (c->b[0x5D]) {
+        switch (c->b[0x5D]) { /* pg+$5D: ordine di cavalleria (1 Corona, 2 Spada, 3 Rosa) */
         case 1:
             row = 3;
             break;
@@ -720,40 +815,43 @@ void draw_party(Character *current)
     u16 row;                            /* -$8(a5) */
     u16 off;                            /* -$a(a5) */
 
+    /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento); A+$270: (word)
+     * area citta': niente ridisegno vista ne' EXIT dal campo */
     if ((H005_B(0x3DE3) == 3 && COK_GET16(g_state_a + 0x270) == 0) ||
-        H005_B(0x24AE)) {
+        H005_B(0x24AE)) { /* $24AE: 1 con un'immagine grande a tutto schermo: niente elenco party */
         return;
     }
+    /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
     col = (u16)(H005_B(0x3DE3) == 0 ? 1 : 0x11);
-    H005_B(0x248D) = (u8)col;
-    H005_B(0x248B) = 4;
-    H005_B(0x248C) = 0x26;
-    H005_B(0x248A) = 3;
+    H005_B(0x248D) = (u8)col; /* $248D: area cliccabile del party: prima colonna (1 o $11) */
+    H005_B(0x248B) = 4; /* $248B: area cliccabile del party: prima riga (4) */
+    H005_B(0x248C) = 0x26; /* $248C: area cliccabile del party: ultima colonna ($26) */
+    H005_B(0x248A) = 3; /* $248A: area cliccabile del party: ultima riga (3 + membri) */
     row = 2;
     ui_draw_text(col, row, 0x0F, 0, 4, "Name");
     ui_draw_text(0x21, row, 0x0F, 0, 6, "AC  HP");
     row = (u16)(row + 2);
     for (m = g_party_head; m != NULL; m = m->next) {
-        add_to_byte(&H005_B(0x248A), 1);
+        add_to_byte(&H005_B(0x248A), 1); /* $248A: area cliccabile del party: ultima riga (3 + membri) */
         clear_text_cells(col, row, 0x26, row);
         if (m == current) {
             ui_draw_text(col, row, 0x0F, 0, 0x0F, (const char *)m->b);
         } else {
             draw_character_name(m, col, row, 0);
         }
-        if (m->b[0x19C] < 0x33) {
+        if (m->b[0x19C] < 0x33) { /* pg+$19C: classe d'armatura corrente codificata (60 - CA) */
             off = 1;
-        } else if (m->b[0x19C] < 0x3D) {
+        } else if (m->b[0x19C] < 0x3D) { /* pg+$19C: classe d'armatura corrente codificata (60 - CA) */
             off = 2;
-        } else if (m->b[0x19C] < 0x46) {
+        } else if (m->b[0x19C] < 0x46) { /* pg+$19C: classe d'armatura corrente codificata (60 - CA) */
             off = 1;
         } else {
             off = 0;
         }
         draw_armor_class(m, (u16)(off + 0x20), row);
-        if (m->b[0x1A8] < 0x0A) {
+        if (m->b[0x1A8] < 0x0A) { /* pg+$1A8: punti ferita correnti */
             off = 2;
-        } else if (m->b[0x1A8] < 0x64) {
+        } else if (m->b[0x1A8] < 0x64) { /* pg+$1A8: punti ferita correnti */
             off = 1;
         } else {
             off = 0;
@@ -771,18 +869,21 @@ void draw_party(Character *current)
  */
 void redraw_game_screen(void)
 {
-    H005_B(0x24E1) = 1;
-    switch (H005_B(0x3DE3)) {
+    H005_B(0x24E1) = 1; /* $24E1: 1: immagine/vista dell'esplorazione da ridisegnare */
+    switch (H005_B(0x3DE3)) { /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
     case 0:                             /* H063+$3238 */
         draw_screen_frame(1);
         break;
     case 1:                             /* H063+$3244 */
-        if (H005_B(0x24C2)) {
+        if (H005_B(0x24C2)) { /* $24C2: 1: nel contesto 1 il ridisegno include la cornice esplorazione */
             draw_explore_frame();
         }
+        /* A+$1CC: (word) 1 area 3D (mappa 16x16), 0 mappa all'aperto */
         if (COK_GET16(g_state_a + 0x1CC) == 0) {
             show_picture(3, 3, 1, g_pic_rec_27c2);
         } else {
+            /* $2488: testa del ritratto testa+corpo mostrato (per il ridisegno); $2487: corpo del
+             * ritratto testa+corpo mostrato (per il ridisegno) */
             load_head_body(H005_B(0x2488), H005_B(0x2487));
             draw_head_body(3, 3, 1);
         }
@@ -797,14 +898,17 @@ void redraw_game_screen(void)
         break;
     case 4:                             /* H063+$32EE */
         draw_explore_frame();
+        /* A+$270: (word) area citta': niente ridisegno vista ne' EXIT dal campo */
         if (COK_GET16(g_state_a + 0x270) == 0) {
             refresh_view();
         }
         draw_party(g_current_char);
         draw_status_line();
-        H005_B(0x24B2) = 0;
+        H005_B(0x24B2) = 0; /* $24B2: 1: cornice dell'esplorazione da ridisegnare (dopo LOAD FILES) */
         break;
     case 3:                             /* H063+$3320 */
+        /* $2486: id della sequenza caricata in $27BC (nome a $27A6), $FF nessuna; A+$270: (word)
+         * area citta': niente ridisegno vista ne' EXIT dal campo */
         if (H005_B(0x2486) != 9 && COK_GET16(g_state_a + 0x270) == 0) {
             refresh_view();
         }
@@ -860,13 +964,13 @@ void show_char_message(Character *c, u16 len, const char *text, u16 row,
 {
     u16 top;                            /* -$2(a5) */
 
-    if (H005_B(0x3DE3) == 5) {
+    if (H005_B(0x3DE3) == 5) { /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
         clear_text_cells(0x17, row, 0x26, 0x15);
         draw_character_name(c, 0x17, row, 0);
         word_wrap_text(0x17, (u16)(row + 1), 0x26, 0x15, 0x0A, 0, 1, len,
                        text);
     } else {
-        if (H005_B(0x24E2)) {
+        if (H005_B(0x24E2)) { /* $24E2: 1 durante il riposo: puntatore d'attesa, messaggi dalla riga $12 */
             top = 0x12;
         } else {
             top = 0x11;
@@ -884,7 +988,7 @@ void show_char_message(Character *c, u16 len, const char *text, u16 row,
 /* PORT H063+$1EE8: cancella la zona dei messaggi. */
 void clear_message_area(void)
 {
-    if (H005_B(0x3DE3) == 5) {
+    if (H005_B(0x3DE3) == 5) { /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
         clear_text_cells(0x17, 0x0A, 0x26, 0x15);
     } else {
         clear_text_cells(1, 0x12, 0x26, 0x16);
@@ -915,13 +1019,14 @@ void choose_party_member(u16 len, const char *text, u8 with_exit,
     char options[0x2A];                 /* -$5c(a5) */
     char tail[0x2A];                    /* -$32(a5) */
     Character *node;                    /* -$8(a5) */
+    /* $24A2: 1: il clic su un nome del party sceglie il personaggio */
     u8 saved = H005_B(0x24A2);          /* -$5d(a5) */
     u8 animate;                         /* -$3(a5) */
     u8 special;                         /* -$2(a5) */
     u8 key;                             /* -$1(a5) */
 
     h026_copy(sizeof(prompt) - 1, prompt, len, text);
-    H005_B(0x24D8) = mode;
+    H005_B(0x24D8) = mode; /* $24D8: modo di scelta membro: il clic va in $2508 e non nel corrente */
     g_h005_2508 = g_current_char;
     key = ' ';
     strcpy(tail, "");
@@ -931,19 +1036,21 @@ void choose_party_member(u16 len, const char *text, u8 with_exit,
     }
     while (key != 'E' && key != 0x1B && key != 'S' && key != '\r') {
         draw_party(*out);
+        /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
         if (H005_B(0x3DE3) == 2 || H005_B(0x3DE3) == 6) {
             animate = 1;
         } else {
             animate = 0;
         }
+        /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
         if (H005_B(0x3DE3) == 0) {
-            H005_B(0x24A2) = 1;
+            H005_B(0x24A2) = 1; /* $24A2: 1: il clic su un nome del party sceglie il personaggio */
         }
         strcpy(options, "Select");
         h026_append(0x28, options, 0x28, tail);
         key = ui_request_choice(len, prompt, 0x28, options, 0x0D, 0x0A, 0x0F,
                                 1, animate, &special);
-        H005_B(0x24A2) = saved;
+        H005_B(0x24A2) = saved; /* $24A2: 1: il clic su un nome del party sceglie il personaggio */
         node = *out;
         if (special) {
             switch (key) {
@@ -954,7 +1061,8 @@ void choose_party_member(u16 len, const char *text, u8 with_exit,
                 }
                 break;
             case 'H':                   /* $3BB0: freccia su */
-                if (H005_B(0x249E)) {
+                if (H005_B(0x249E)) { /* $249E: 1 se il tasto viene dal mouse (clic) */
+                    /* $24D8: modo di scelta membro: il clic va in $2508 e non nel corrente */
                     if (H005_B(0x24D8)) {
                         node = g_h005_2508;
                     } else {
@@ -983,7 +1091,7 @@ void choose_party_member(u16 len, const char *text, u8 with_exit,
         }
         *out = node;
     }
-    H005_B(0x24D8) = 0;
+    H005_B(0x24D8) = 0; /* $24D8: modo di scelta membro: il clic va in $2508 e non nel corrente */
 }
 
 /* PORT H063+$1CC0: accoda a c una copia dell'oggetto it. */
@@ -1011,13 +1119,13 @@ void heal_message(Character *c)
 {
     char text[0x2A];                    /* -$2a(a5) */
 
-    if (c->b[0x1A8] == c->b[0x64]) {
+    if (c->b[0x1A8] == c->b[0x64]) { /* pg+$1A8: punti ferita correnti; pg+$64: punti ferita massimi */
         strcpy(text, "is fully healed");
     } else {
         strcpy(text, "is partially healed");
     }
     show_char_message(c, 0x28, text, 0x0A, 1);
-    if (H005_B(0x3DE3) != 5) {
+    if (H005_B(0x3DE3) != 5) { /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
         draw_party(g_current_char);
     }
 }
@@ -1035,14 +1143,19 @@ s16 caster_level(u16 spell)
     s16 b;                              /* -$4(a5) */
     s16 level = 0;                      /* -$8(a5) */
 
+    /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico; pg+$103: livello da
+     * mago; pg+$105: livello da cavaliere */
     if (c->b[0xFE] == 0 && c->b[0x103] == 0 && c->b[0x105] < 9 &&
-        c->b[0x102] < 8) {
+        c->b[0x102] < 8) { /* pg+$102: livello da ranger */
         level = 6;
     } else {
         switch (H005_B(0x66 + (spell - 1) * 16)) {
         case 0:
         case 2:                         /* $3012 */
+            /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico; pg+$106:
+             * livelli della classe precedente, 8 voci come +$FE; chierico */
             a = (s16)(c->b[0xFE] + c->b[0x106] * h073_130a(c));
+            /* pg+$105: livello da cavaliere; pg+$10D: livello precedente da cavaliere */
             b = (s16)(c->b[0x105] + c->b[0x10D] * h073_130a(c) - 8);
             level = a > b ? a : b;
             break;
@@ -1050,9 +1163,15 @@ s16 caster_level(u16 spell)
             level = 0;
             break;
         case 3:                         /* $30AC */
+            /* pg+$103: livello da mago; pg+$10B: livello precedente da mago */
             a = (s16)(c->b[0x103] + c->b[0x10B] * h073_130a(c));
+            /* pg+$102: livello da ranger; pg+$10A: livello precedente da ranger */
             b = (s16)(c->b[0x102] + c->b[0x10A] * h073_130a(c) - 8);
+            /* pg+$103: livello da mago; pg+$5F: ordine del mago (1 allineam. 0/3/6, 2 per 1/4/7, 0
+             * nessuno) */
             if (c->b[0x103] > 0 && c->b[0x5F] > 0) {
+                /* A+$3F0: tab. word fasi cicli (idx CH+$5F, 1..3); voce 0 posta a 1 da H070;
+                 * pg+$5F: ordine del mago (1 allineam. 0/3/6, 2 per 1/4/7, 0 nessuno) */
                 switch (COK_GET16(g_state_a + (c->b[0x5F] + 0x1F8) * 2)) {
                 case 0:
                     --a;
@@ -1073,6 +1192,7 @@ s16 caster_level(u16 spell)
             break;
         }
     }
+    /* $24D9: 1 se l'incantesimo viene da un oggetto (non si dimentica) */
     if (H005_B(0x24D9) && H005_B(0x66 + (spell - 1) * 16) != 4) {
         level = 6;
     }
@@ -1085,7 +1205,9 @@ void forget_spell(Character *c, u16 spell)
     u16 i;                              /* -$2(a5) */
 
     for (i = 0; i <= 0x39; ++i) {
+        /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
         if (c->b[0x1E + i] == spell) {
+            /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
             c->b[0x1E + i] = 0;
             i = 0x3A;
         }
@@ -1106,7 +1228,7 @@ void show_effect_message(Character *c, u8 flag, u16 len, const char *text)
     u16 times;                          /* -$c(a5) */
     u16 k;                              /* indice di c, letto una volta */
 
-    if (H005_B(0x3DE3) != 5) {
+    if (H005_B(0x3DE3) != 5) { /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
         show_char_message(c, len, text, 0x0A, 1);
         return;
     }
@@ -1118,20 +1240,23 @@ void show_effect_message(Character *c, u8 flag, u16 len, const char *text)
     }
     if (flag) {
         h043_190e(7);
+    /* $2475: effetto in arrivo (0 = annullato dai gestori) */
     } else if (H005_B(0x2475) == 0x42 || H005_B(0x2475) == 0x55 ||
-               H005_B(0x2471) == 0x33) {
+               H005_B(0x2471) == 0x33) { /* $2471: incantesimo in corso di lancio (0 = nessuno) */
         h043_190e(3);
     } else {
         h043_190e(0x13);
     }
     show_char_message(c, len, text, 0x0A, 0);
     if (flag) {
-        times = H005_W(0x3DF6);
+        times = H005_W(0x3DF6); /* $3DF6: (word) velocita' del gioco 0..9 (pausa dei messaggi) */
     } else {
         times = 0;
     }
     k = combatant_index(c);
+    /* $3104: (word) colonna nella vista per combattente n (passo 2, da 1) */
     x = (s16)(H005_W(0x3104 + (k - 1) * 2) * 3);
+    /* $30B4: (word) riga nella vista per combattente n (passo 2, da 1) */
     y = (s16)(H005_W(0x30B4 + (k - 1) * 2) * 3);
     for (n = 0; n <= times; ++n) {
         for (frame = 0; frame <= 3; ++frame) {
@@ -1157,31 +1282,41 @@ void damage_hit_points(Character *c, u16 dmg)
     u16 below = 0;                      /* -$2(a5) */
     u16 left = 0;                       /* -$4(a5) */
 
-    if (c->b[0x1A8] >= dmg) {
-        left = (u16)(c->b[0x1A8] - dmg);
+    if (c->b[0x1A8] >= dmg) { /* pg+$1A8: punti ferita correnti */
+        left = (u16)(c->b[0x1A8] - dmg); /* pg+$1A8: punti ferita correnti */
     } else {
-        below = (u16)(dmg - c->b[0x1A8]);
+        below = (u16)(dmg - c->b[0x1A8]); /* pg+$1A8: punti ferita correnti */
     }
+    /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
     if (below > 9 || (left == 0 && c->b[0x197] == 1)) {
-        c->b[0x197] = 6;
+        c->b[0x197] = 6; /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
     } else if (below > 0) {
-        c->b[0x197] = 5;
+        c->b[0x197] = 5; /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+        /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
         if (H005_B(0x3DE3) == 5) {
+            /* turno+$10: round passati sotto zero punti ferita (oltre 9 muore) */
             (c->block_192->b)[0x10] = (u8)below;
         }
     } else if (left == 0) {
-        c->b[0x197] = 4;
+        c->b[0x197] = 4; /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
     }
+    /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
     if (c->b[0x197] != 0 && c->b[0x197] != 1) {
-        c->b[0x198] = 0;
-        c->b[0x1A8] = 0;
+        c->b[0x198] = 0; /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
+        c->b[0x1A8] = 0; /* pg+$1A8: punti ferita correnti */
+        /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
         if (H005_B(0x3DE3) == 5) {
+            /* $2A1C: combattenti attivi del lato 0; tabella byte indicizzata dal lato; pg+$199:
+             * lato in combattimento (0 party, 1 avversari) */
             H005_B(0x2A1C + c->b[0x199]) =
+                /* $2A1C: combattenti attivi del lato 0; tabella byte indicizzata dal lato; pg+$199:
+                 * lato in combattimento (0 party, 1 avversari) */
                 (u8)(H005_B(0x2A1C + c->b[0x199]) - 1);
+            /* turno+$4: (word) iniziativa del round (1d6+destrezza); <=0 turno finito */
             COK_PUT16(c->block_192->b + 4, 0);
         }
     } else {
-        c->b[0x1A8] = (u8)left;
+        c->b[0x1A8] = (u8)left; /* pg+$1A8: punti ferita correnti */
     }
 }
 
@@ -1190,10 +1325,12 @@ void count_sides(void)
 {
     Character *p;                       /* -$4(a5) */
 
-    H005_B(0x2A1C) = 0;
-    H005_B(0x2A1D) = 0;
+    H005_B(0x2A1C) = 0; /* $2A1C: combattenti attivi del lato 0; tabella byte indicizzata dal lato */
+    H005_B(0x2A1D) = 0; /* $2A1D: combattenti attivi del lato 1 (voce 2 di $2A1C) */
     for (p = g_party_head; p != NULL; p = p->next) {
-        if (p->b[0x198]) {
+        if (p->b[0x198]) { /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
+            /* $2A1C: combattenti attivi del lato 0; tabella byte indicizzata dal lato; pg+$199:
+             * lato in combattimento (0 party, 1 avversari) */
             add_to_byte(&H005_B(0x2A1C + p->b[0x199]), 1);
         }
     }
@@ -1207,6 +1344,7 @@ u8 is_helpless(Character *c)
     u8 found = 0;                       /* -$7(a5) */
 
     for (i = 1; i <= 4; ++i) {
+        /* $4065: base i-1 dei 4 effetti di impotenza ($4066..$4069) */
         if (find_effect(c, H005_B(0x4066 + i - 1), &e)) {
             found = 1;
         }
@@ -1222,10 +1360,10 @@ void draw_combat_status(Character *c)
 {
     u16 row;                            /* -$4(a5) */
 
-    if (!H005_B(0x24C7)) {
+    if (!H005_B(0x24C7)) { /* $24C7: 1: pannello del combattente a destra da ridisegnare */
         return;
     }
-    H005_B(0x24C7) = 0;
+    H005_B(0x24C7) = 0; /* $24C7: 1: pannello del combattente a destra da ridisegnare */
     clear_text_cells(0x17, 1, 0x26, 0x15);
     row = 1;
     show_char_message(c, 1, " ", row, 0);
@@ -1235,19 +1373,22 @@ void draw_combat_status(Character *c)
     row = (u16)(row + 2);
     ui_draw_text(0x17, (u16)(row + 1), 0x0A, 0, 2, "AC");
     draw_armor_class(c, 0x1A, (u16)(row + 1));
-    H005_SET_W(0x334C, (u16)(row + 1));
+    H005_SET_W(0x334C, (u16)(row + 1)); /* $334C: (word) cursore del testo: riga */
     if (c->readied[0] != NULL) {
         row = (u16)(row + 2);
         build_item_name(c, c->readied[0], 0, 0, 0, 0);
         word_wrap_text(0x17, (u16)(row + 1), 0x26, (u16)(row + 1 + 2), 0x0A, 0,
                        1, 0x28, (const char *)c->readied[0]->b);
     }
-    row = (u16)(H005_W(0x334C) + 1);
-    if (!c->b[0x198]) {
+    row = (u16)(H005_W(0x334C) + 1); /* $334C: (word) cursore del testo: riga */
+    if (!c->b[0x198]) { /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
         ui_draw_text(0x17, (u16)(row + 1), 0x0F, 0, 0x0C,
+                     /* $4B00: nomi dello stato del personaggio (+$197), $0E byte; base var ECL;
+                      * pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
                      (const char *)&H005_B(0x4B00 + c->b[0x197] * 0x0E));
     } else if (is_helpless(c)) {
         ui_draw_text(0x17, (u16)(row + 1), 0x0F, 0, 0x0A, "(Helpless)");
+    /* turno+$0: incantesimo in preparazione da lanciare all'inizio del turno */
     } else if (c->block_192->b[0] > 0) {
         ui_draw_text(0x17, (u16)(row + 1), 0x0F, 0, 9, "(Casting)");
     }
@@ -1265,6 +1406,7 @@ u16 combat_distance(Character *c, Character *t)
     u16 a;
     u16 b;
 
+    /* $2A3E: lista dell'area: voci da 4 byte ($2479), byte 0 = n. combattente */
     memcpy(saved, &H005_B(0x2A3E), 0xA0);
     g_combat_area[8] = 1;
     a = combatant_x(c);
@@ -1272,11 +1414,14 @@ u16 combat_distance(Character *c, Character *t)
     find_in_area((s16)a, (s16)b, 0xFF, 0xFF, combatant_size(c), g_combat_area);
     g_combat_area[8] = 0;
     i = 1;
+    /* $2A3E: lista dell'area: voci da 4 byte ($2479), byte 0 = n. combattente */
     while (g_combatants[H005_B(0x2A3E + (i - 1) * 4) - 1] != t &&
-           i < H005_B(0x2479)) {
+           i < H005_B(0x2479)) { /* $2479: numero di voci della lista dell'area +$2A3E (4 byte per voce) */
         ++i;
     }
+    /* $2A3F: lista dell'area, byte 1: distanza (costo, meta' = caselle) */
     d = (u16)(H005_B(0x2A3E + (i - 1) * 4 + 1) >> 1);
+    /* $2A3E: lista dell'area: voci da 4 byte ($2479), byte 0 = n. combattente */
     memcpy(&H005_B(0x2A3E), saved, 0xA0);
     return d;
 }
@@ -1293,6 +1438,8 @@ u8 find_weapon(Character *c, CokItem **weapon)
 
     *weapon = NULL;
     if (it != NULL) {
+        /* $337C: tipi di oggetto +$10: flag arma (des/for, munizioni, mischia); ogg+$30: tipo
+         * dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
         f = H005_B(0x336C + it->b[0x30] * 0x12 + 0x10);
         if (mask_byte((u8)f, 0x10)) {
             *weapon = it;
@@ -1528,7 +1675,7 @@ void animate_missile(s16 x0, s16 y0, s16 x1, s16 y1, u16 frames, u16 unused)
 /* PORT H063+$2B4C: lato opposto a quello di c (+$199). */
 u8 other_side(Character *c)
 {
-    return (u8)(c->b[0x199] == 0);
+    return (u8)(c->b[0x199] == 0); /* pg+$199: lato in combattimento (0 party, 1 avversari) */
 }
 
 /*
@@ -1548,29 +1695,40 @@ u16 count_enemies_near(Character *c, u16 radius)
 
     find_in_area((s16)combatant_x(c), (s16)combatant_y(c), radius, 0xFF,
                  combatant_size(c), g_combat_area);
-    n = H005_B(0x2479);
+    n = H005_B(0x2479); /* $2479: numero di voci della lista dell'area +$2A3E (4 byte per voce) */
     if (n > 0) {
         for (i = 1; i <= n; ++i) {
+            /* pg+$199: lato in combattimento (0 party, 1 avversari); $2A3E: lista dell'area: voci
+             * da 4 byte ($2479), byte 0 = n. combattente */
             if (g_combatants[H005_B(0x2A3E + (i - 1) * 4) - 1]->b[0x199] ==
                 other_side(c)) {
                 ++k;
+                /* $2A3E: lista dell'area: voci da 4 byte ($2479), byte 0 = n. combattente */
                 memcpy(&H005_B(0x2A3E + (k - 1) * 4),
+                       /* $2A3E: lista dell'area: voci da 4 byte ($2479), byte 0 = n. combattente */
                        &H005_B(0x2A3E + (i - 1) * 4), 4);
             }
         }
         n = k;
-        H005_B(0x2479) = (u8)k;
+        H005_B(0x2479) = (u8)k; /* $2479: numero di voci della lista dell'area +$2A3E (4 byte per voce) */
     }
     result = n;
     for (i = 1; i <= n; ++i) {
+        /* $2444..: lista dei nemici vicini ($2444+i-1, i da 1); $2A3E: lista
+         * dell'area: voci da 4 byte ($2479), byte 0 = n. combattente */
         H005_B(0x2444 + i - 1) = H005_B(0x2A3E + (i - 1) * 4);
     }
     if (find_effect(c, 0x5B, &e)) {
         done = 0;
         for (i = 1; i <= n && !done; ++i) {
+            /* $2444..: lista dei nemici vicini ($2444+i-1, i da 1) */
             if (g_combatants[H005_B(0x2444 + i - 1) - 1] == g_h005_2432) {
+                /* $2444: lista dei nemici vicini (numero del combattente, 1 byte per voce) */
                 t = H005_B(0x2444);
+                /* $2444: lista dei nemici vicini (numero del combattente, 1 byte per voce);
+                 * $2444..: nemici vicini ($2444+i-1) */
                 H005_B(0x2444) = H005_B(0x2444 + i - 1);
+                /* $2444..: lista dei nemici vicini ($2444+i-1, i da 1) */
                 H005_B(0x2444 + i - 1) = (u8)t;
                 done = 1;
             }
@@ -1594,18 +1752,22 @@ void draw_status_line(void)
     u16 y;                              /* -$4(a5) */
     u16 dir;                            /* -$62(a5) */
 
-    if (H005_B(0x3DE3) == 3) {
+    if (H005_B(0x3DE3) == 3) { /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
         return;
     }
     line[0] = '\0';
-    x = H005_W(0x281C);
-    y = H005_W(0x281E);
+    x = H005_W(0x281C); /* $281C: (word) x del party sulla mappa dell'area 16x16 */
+    y = H005_W(0x281E); /* $281E: (word) y del party sulla mappa dell'area 16x16 */
+    /* A+$192: (word) ore del tempo di gioco */
     format_number(2, hours, (s32)COK_GET16(g_state_a + 0x192), 0, 0x0A, 2,
                   '0');
     format_number(2, minutes,
+                  /* A+$190: (word) decine di minuti del tempo di gioco */
                   (s32)(u16)(COK_GET16(g_state_a + 0x190) * 0x0A +
+                             /* A+$18E: (word) minuti (unita') del tempo di gioco */
                              COK_GET16(g_state_a + 0x18E)),
                   0, 0x0A, 2, '0');
+    /* A+$1F6: (word) area senza mappa: coordinate nascoste, mappa "Not Here" */
     if (COK_GET16(g_state_a + 0x1F6) == 0) {
         format_number(0x28, line, (s32)x, 0, 0x0A, 2, '0');
         h026_append(0x28, line, 1, ",");
@@ -1613,24 +1775,30 @@ void draw_status_line(void)
         h026_append(0x28, line, 0x28, tmp);
         h026_append(0x28, line, 1, " ");
     }
-    if (COK_GET16(g_state_a + 0x1CC) != 0) {
+    if (COK_GET16(g_state_a + 0x1CC) != 0) { /* A+$1CC: (word) 1 area 3D (mappa 16x16), 0 mappa all'aperto */
+        /* A+$3FE: uso: forza l'animazione in attesa scelta; sommato alla direzione; $2820:
+         * direzione del party (0 nord, 2 est, 4 sud, 6 ovest) */
         dir = (u16)(COK_GET16(g_state_a + 0x3FE) * 2 + H005_B(0x2820));
     } else {
+        /* $2820: direzione del party (0 nord, 2 est, 4 sud, 6 ovest); A+$3FE: uso: forza
+         * l'animazione in attesa scelta; sommato alla direzione */
         dir = (u16)(H005_B(0x2820) + COK_GET16(g_state_a + 0x3FE));
     }
     if (dir >= 8) {
         dir = (u16)(dir - 8);
     }
+    /* $3DB2: nomi dei punti cardinali, 4 byte per direzione 0..7 */
     h026_append(0x28, line, 2, (const char *)&H005_B(0x3DB2 + dir * 4));
     h026_append(0x28, line, 1, " ");
     h026_append(0x28, line, 2, hours);
     h026_append(0x28, line, 1, ":");
     h026_append(0x28, line, 2, minutes);
-    if (H005_B(0x24D2)) {
+    if (H005_B(0x24D2)) { /* $24D2: debug attivo ("*" in stato, valori extra) */
         h026_append(0x28, line, 1, "*");
     }
-    if (H005_B(0x3DE3) == 2) {
+    if (H005_B(0x3DE3) == 2) { /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
         h026_append(0x28, line, 8, " camping");
+    /* B+$594: (word) bit 0 modo search, bit 1 Look in corso */
     } else if (mask_byte((u8)COK_GET16(g_state_b + 0x594), 1) > 0) {
         h026_append(0x28, line, 7, " search");
     }
@@ -1715,6 +1883,8 @@ u16 direction_toward(Character *a, Character *b)
 u8 has_ranged_weapon(Character *c)
 {
     if (c->readied[0] != NULL &&
+        /* $337A: tipi di oggetto +$E: gittata dell'arma (>1 = a distanza); ogg+$30: tipo
+         * dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
         H005_B(0x336C + c->readied[0]->b[0x30] * 0x12 + 0x0E) > 1) {
         return 1;
     }
@@ -1724,6 +1894,7 @@ u8 has_ranged_weapon(Character *c)
 /* PORT H063+$36EE: l'arma in mano e' del tipo $43? */
 u8 weapon_is_43(Character *c)
 {
+    /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
     if (c->readied[0] != NULL && c->readied[0]->b[0x30] == 0x43) {
         return 1;
     }
@@ -1738,10 +1909,13 @@ u8 weapon_is_43(Character *c)
 u8 weapon_melee_ok(Character *c)
 {
     if (has_ranged_weapon(c) &&
+        /* $337C: tipi di oggetto +$10: flag arma (des/for, munizioni, mischia); ogg+$30: tipo
+         * dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
         mask_byte(H005_B(0x336C + c->readied[0]->b[0x30] * 0x12 + 0x10),
                   0x14) == 0x14) {
         return 1;
     }
+    /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
     if (c->readied[0] != NULL && c->readied[0]->b[0x30] == 0x43) {
         return 1;
     }
@@ -1759,11 +1933,14 @@ u8 bandage_dying(u8 bandage)
     Character *p;                       /* -$4(a5) */
 
     for (p = g_party_head; p != NULL; p = p->next) {
+        /* turno+$15: 1 = combattente oltre i membri del party, lo lascia a fine scontro; pg+$199:
+         * lato in combattimento (0 party, 1 avversari) */
         if (p->block_192->b[0x15] == 0 && p->b[0x199] == 0 &&
-            p->b[0x197] == 5) {
+            p->b[0x197] == 5) { /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
             found = 1;
             if (bandage) {
-                p->b[0x197] = 4;
+                p->b[0x197] = 4; /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+                /* turno+$10: round passati sotto zero punti ferita (oltre 9 muore) */
                 p->block_192->b[0x10] = 0;
                 show_char_message(p, 0x0B, "is bandaged", 0x0A, 1);
                 bandage = 0;
@@ -1779,8 +1956,8 @@ u8 guard_turn(Character *c)
     u8 r;                               /* -$1(a5) */
 
     r = end_combat_turn(c);
-    if (c->block_192->b[0x12] == 0) {
-        c->block_192->b[9] = 1;
+    if (c->block_192->b[0x12] == 0) { /* turno+$12: flag costretto a fuggire (paura, confusione) */
+        c->block_192->b[9] = 1; /* turno+$9: flag in guardia (Guard), attacca chi si avvicina */
         show_message_line(8, "Guarding");
     }
     return r;

@@ -326,6 +326,10 @@ QuizEntry *quiz_entry(u16 index)
  * programmato al passaggio del raggio; qui il nodo non c'e' e i blit
  * partono subito, piano per piano, nello stesso ordine e con gli stessi
  * valori dei registri.  Restituiva il nodo (non usato): qui NULL.
+ * PORT H049+$06EC (QueuedBlit_Callback): programmava il blitter per un
+ * piano del nodo a ogni passaggio; qui e' il ciclo dei piani sopra.
+ * PORT H049+$0782 (QueuedBlit_Cleanup): liberava il nodo ($4A byte); qui
+ * non c'e' nodo da liberare.
  */
 void *queue_bitplane_blit(struct BitMap *src, u16 sx, u16 sy, void *dest,
                           u16 dx, u16 dy, u16 w, u16 h, u8 minterm, u8 *mask)

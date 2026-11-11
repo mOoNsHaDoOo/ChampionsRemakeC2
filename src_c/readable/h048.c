@@ -29,6 +29,7 @@ void combat_map_cell(s16 x, s16 y, u16 *value, u16 *tile)
         } else {
             *tile = 0;
         }
+        /* $2BD2: occupazione mappa combattimento 50x25 byte: n. combattente o 0 */
         *value = H005_B(0x2BD2 + y * 0x32 + x);
     } else {
         *value = 0;
@@ -45,11 +46,17 @@ void combat_map_cell(s16 x, s16 y, u16 *value, u16 *tile)
  */
 #define AREA_X0         ((s16)COK_GET16(g_combat_area + 2))
 #define AREA_Y0         ((s16)COK_GET16(g_combat_area + 4))
+/* $3154: posizioni combattenti, 6 byte per n (da 1): +0 colonna (word) */
 #define POS_X(n)        ((s16)H005_W(0x3154 + ((n) - 1) * 6))
+/* $3156: posizioni combattenti +2: riga sulla mappa (word) */
 #define POS_Y(n)        ((s16)H005_W(0x3154 + ((n) - 1) * 6 + 2))
+/* $3159: posizioni combattenti +5: forma/taglia (0 = fuori mappa) */
 #define POS_SIZE(n)     H005_B(0x3154 + ((n) - 1) * 6 + 5)
+/* $3104: (word) colonna nella vista per combattente n (passo 2, da 1) */
 #define VIEW_X(n)       ((s16)H005_W(0x3104 + ((n) - 1) * 2))
+/* $30B4: (word) riga nella vista per combattente n (passo 2, da 1) */
 #define VIEW_Y(n)       ((s16)H005_W(0x30B4 + ((n) - 1) * 2))
+/* $3EF7: terreno +3, fotogramma grafico della tessera t ($41 voci da 4 byte, da 1) */
 #define TILE_FRAME(t)   H005_B(0x3EF4 + ((t) - 1) * 4 + 3)
 
 static u8 *map_cell(s16 x, s16 y)
@@ -62,8 +69,9 @@ static void draw_map_cell(s16 col, s16 row, s16 x, s16 y)
 {
     u8 *cell = map_cell(x, y);
 
-    draw_map_tile(col, row, TILE_FRAME(cell[0]), 0);
+    draw_map_tile(col, row, TILE_FRAME(cell[0]), 0); /* $3EF7: terreno +3: fotogramma grafico della tessera */
     if (cell[0] != cell[1]) {
+        /* $3EF7: terreno +3: fotogramma grafico della tessera */
         draw_map_tile(col, row, TILE_FRAME(cell[1]), 1);
     }
 }
@@ -73,7 +81,11 @@ static void draw_combatant(u16 n)
 {
     Character *c = g_combatants[n - 1];
 
+    /* $3104: (word) colonna nella vista per combattente n (passo 2, da 1); $30B4: (word) riga nella
+     * vista per combattente n (passo 2, da 1); turno+$B: orientamento/fotogramma del combattente
+     * (direzione 0..7) */
     draw_sprite_set((u16)VIEW_X(n), (u16)VIEW_Y(n), c->block_192->b[0x0B], 0,
+                    /* pg+$143: posto delle icone 24x24 (0..7 nel party; $0A creazione, $0C editor) */
                     c->b[0x143]);
 }
 
@@ -87,8 +99,9 @@ u8 shape_cell(u16 size, u16 i, s16 *dx, s16 *dy)
     if (size == 0) {
         return 0;
     }
+    /* $5048: celle delle forme: 16 byte per forma, 4 celle; +0 dx (word) */
     *dx = (s16)H005_W(0x5048 + (size - 1) * 16 + i * 4);
-    *dy = (s16)H005_W(0x5048 + (size - 1) * 16 + i * 4 + 2);
+    *dy = (s16)H005_W(0x5048 + (size - 1) * 16 + i * 4 + 2); /* $504A: celle delle forme +2: dy (word) */
     return (u8)(*dx >= 0);
 }
 
@@ -97,8 +110,13 @@ void update_view_positions(void)
 {
     u16 i;
 
+    /* $247B: numero di combattenti nella tabella +$2B32 (+1 dopo lo schieramento) */
     for (i = 1; i <= H005_B(0x247B); ++i) {
+        /* $3154: posizioni combattenti, 6 byte per n (da 1): +0 colonna (word); $3104: (word)
+         * colonna nella vista per combattente n (passo 2, da 1) */
         H005_SET_W(0x3104 + (i - 1) * 2, (u16)(POS_X(i) - AREA_X0));
+        /* $3156: posizioni combattenti +2: riga sulla mappa (word); $30B4: (word) riga nella vista
+         * per combattente n (passo 2, da 1) */
         H005_SET_W(0x30B4 + (i - 1) * 2, (u16)(POS_Y(i) - AREA_Y0));
     }
 }
@@ -125,13 +143,16 @@ u8 combatant_visible(Character *c, u8 all)
     s16 dy;                             /* -$8(a5) */
 
     n = combatant_index(c);
-    if (POS_SIZE(n) == 0) {
+    if (POS_SIZE(n) == 0) { /* $3159: posizioni combattenti +5: forma/taglia (0 = fuori mappa) */
         return 0;
     }
     for (i = 0; i <= 3; ++i) {
+        /* $3159: posizioni combattenti +5: forma/taglia (0 = fuori mappa) */
         if (!shape_cell(POS_SIZE(n), i, &dx, &dy)) {
             continue;
         }
+        /* $3104: (word) colonna nella vista per combattente n (passo 2, da 1); $30B4: (word) riga
+         * nella vista per combattente n (passo 2, da 1) */
         if (!in_view((s16)(VIEW_X(n) + dx), (s16)(VIEW_Y(n) + dy))) {
             r = 0;
             if (all) {
@@ -204,11 +225,11 @@ void redraw_ground(s16 sx, s16 sy, u16 who)
         combat_map_cell(x, y, &who, &tile);
     }
     if (who > 0) {
-        sx = VIEW_X(who);
-        sy = VIEW_Y(who);
+        sx = VIEW_X(who); /* $3104: (word) colonna nella vista per combattente n (passo 2, da 1) */
+        sy = VIEW_Y(who); /* $30B4: (word) riga nella vista per combattente n (passo 2, da 1) */
         x = (s16)(sx + AREA_X0);
         y = (s16)(sy + AREA_Y0);
-        size = POS_SIZE(who);
+        size = POS_SIZE(who); /* $3159: posizioni combattenti +5: forma/taglia (0 = fuori mappa) */
         for (i = 0; i <= 3; ++i) {
             if (shape_cell(size, i, &dx, &dy) &&
                 in_view((s16)(sx + dx), (s16)(sy + dy))) {
@@ -251,18 +272,28 @@ void rebuild_occupancy(void)
     s16 dx;                             /* -$6(a5) */
     s16 dy;                             /* -$8(a5) */
 
+    /* $2BD2: occupazione mappa combattimento 50x25 byte: n. combattente o 0 */
     h029_fill_bytes(0x4E1, &H005_B(0x2BD2), 0x4E2, 0);
+    /* $247B: numero di combattenti nella tabella +$2B32 (+1 dopo lo schieramento) */
     for (n = 1; n <= H005_B(0x247B); ++n) {
-        if (POS_SIZE(n) == 0) {
+        if (POS_SIZE(n) == 0) { /* $3159: posizioni combattenti +5: forma/taglia (0 = fuori mappa) */
             continue;
         }
         for (i = 0; i <= 3; ++i) {
+            /* $3159: posizioni combattenti +5: forma/taglia (0 = fuori mappa) */
             if (shape_cell(POS_SIZE(n), i, &dx, &dy)) {
+                /* $2BD2: occupazione mappa combattimento 50x25 byte: n. combattente o 0; $3156:
+                 * posizioni combattenti +2: riga sulla mappa (word); $3154: posizioni combattenti,
+                 * 6 byte per n (da 1): +0 colonna (word) */
                 H005_B(0x2BD2 + (s32)(POS_Y(n) + dy) * 0x32 + POS_X(n) + dx) =
                     (u8)n;
             }
         }
+        /* $3154: posizioni combattenti, 6 byte per n (da 1): +0 colonna (word); $3104: (word)
+         * colonna nella vista per combattente n (passo 2, da 1) */
         H005_SET_W(0x3104 + (n - 1) * 2, (u16)(POS_X(n) - AREA_X0));
+        /* $3156: posizioni combattenti +2: riga sulla mappa (word); $30B4: (word) riga nella vista
+         * per combattente n (passo 2, da 1) */
         H005_SET_W(0x30B4 + (n - 1) * 2, (u16)(POS_Y(n) - AREA_Y0));
     }
 }
@@ -282,6 +313,7 @@ u16 combatant_index(Character *c)
         if (g_combatants[i - 1] == c) {
             found = 1;
         }
+    /* $247B: numero di combattenti nella tabella +$2B32 (+1 dopo lo schieramento) */
     } while (!found && i != H005_B(0x247B) && i < 40);
     return (u16)(found ? i : 0);
 }
@@ -372,9 +404,10 @@ void center_view(s16 x, s16 y, u16 margin, u16 dir)
     Character *c;                       /* -$4(a5) */
 
     begin_screen_update();
-    nx = (s16)(x + H005_W(0x3EE2 + dir * 2));
-    ny = (s16)(y + H005_W(0x3ED0 + dir * 2));
+    nx = (s16)(x + H005_W(0x3EE2 + dir * 2)); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
+    ny = (s16)(y + H005_W(0x3ED0 + dir * 2)); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
     if (scroll_view_to(nx, ny, (u8)margin)) {
+        /* $247B: numero di combattenti nella tabella +$2B32 (+1 dopo lo schieramento) */
         for (n = 1; n <= H005_B(0x247B); ++n) {
             c = g_combatants[n - 1];
             /*
@@ -382,6 +415,8 @@ void center_view(s16 x, s16 y, u16 margin, u16 dir)
              * l'originale legge +$198 dalla memoria bassa e la scarta per
              * la forma 0; qui la voce NULL si salta.
              */
+            /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento); $3159: posizioni
+             * combattenti +5: forma/taglia (0 = fuori mappa) */
             if (c != NULL && c->b[0x198] && POS_SIZE(n) > 0) {
                 draw_combatant(n);
             }
@@ -409,7 +444,7 @@ u16 combatant_x(Character *c)
 {
     s16 i = (s16)combatant_index(c);
 
-    return (u16)POS_X(i);
+    return (u16)POS_X(i); /* $3154: posizioni combattenti, 6 byte per n (da 1): +0 colonna (word) */
 }
 
 /* PORT H048+$0FBA: riga di c sulla mappa. */
@@ -417,7 +452,7 @@ u16 combatant_y(Character *c)
 {
     s16 i = (s16)combatant_index(c);
 
-    return (u16)POS_Y(i);
+    return (u16)POS_Y(i); /* $3156: posizioni combattenti +2: riga sulla mappa (word) */
 }
 
 /*
@@ -432,16 +467,22 @@ void set_combatant_frame(Character *c, u8 frame, u8 which, u8 skip)
 
     begin_screen_update();
     n = combatant_index(c);
+    /* $24C6: 1 se le azioni del combattente vanno disegnate (visibile) */
     if (!combatant_visible(c, 1) && H005_B(0x24C6)) {
         center_view((s16)combatant_x(c), (s16)combatant_y(c), 3, 8);
     }
+    /* turno+$B: orientamento/fotogramma del combattente (direzione 0..7) */
     if (((c->block_192->b[0x0B] >> 2) != (frame >> 2) || which || skip) &&
-        H005_B(0x24C6)) {
+        H005_B(0x24C6)) { /* $24C6: 1 se le azioni del combattente vanno disegnate (visibile) */
         redraw_ground(0, 0, n);
     }
-    c->block_192->b[0x0B] = frame;
-    if (!skip && H005_B(0x24C6)) {
+    c->block_192->b[0x0B] = frame; /* turno+$B: orientamento/fotogramma del combattente (direzione 0..7) */
+    if (!skip && H005_B(0x24C6)) { /* $24C6: 1 se le azioni del combattente vanno disegnate (visibile) */
+        /* $3104: (word) colonna nella vista per combattente n (passo 2, da 1); $30B4: (word) riga
+         * nella vista per combattente n (passo 2, da 1) */
         draw_sprite_set((u16)VIEW_X(n), (u16)VIEW_Y(n), frame, which,
+                        /* pg+$143: posto delle icone 24x24 (0..7 nel party; $0A creazione, $0C
+                         * editor) */
                         c->b[0x143]);
     }
     end_screen_update();
@@ -450,6 +491,7 @@ void set_combatant_frame(Character *c, u8 frame, u8 which, u8 skip)
 /* PORT H048+$110C: forma (+$5 in $3154) del combattente c. */
 u8 combatant_size(Character *c)
 {
+    /* $3159: posizioni combattenti +5: forma/taglia (0 = fuori mappa) */
     return POS_SIZE((s16)combatant_index(c));
 }
 
@@ -479,13 +521,16 @@ void probe_move(Character *c, u16 dir, u16 *blocker, u16 *tile, u8 *in_cloud,
     *in_cloud = 0;
     *in_acid = 0;
     n = combatant_index(c);
-    x0 = POS_X(n);
-    y0 = POS_Y(n);
+    x0 = POS_X(n); /* $3154: posizioni combattenti, 6 byte per n (da 1): +0 colonna (word) */
+    y0 = POS_Y(n); /* $3156: posizioni combattenti +2: riga sulla mappa (word) */
     for (i = 0; i <= 3; ++i) {
+        /* $3159: posizioni combattenti +5: forma/taglia (0 = fuori mappa) */
         if (!shape_cell(POS_SIZE(n), i, &dx, &dy)) {
             continue;
         }
+        /* $3EE2: (word) spostamento x per direzione d (passo 2) */
         x = (s16)(x0 + dx + H005_W(0x3EE2 + dir * 2));
+        /* $3ED0: (word) spostamento y per direzione d (passo 2) */
         y = (s16)(y0 + dy + H005_W(0x3ED0 + dir * 2));
         combat_map_cell(x, y, &who, &t);
         if (who == n) {
@@ -506,7 +551,9 @@ void probe_move(Character *c, u16 dir, u16 *blocker, u16 *tile, u8 *in_cloud,
             *in_acid = 1;
             break;
         default:
+            /* $3EF4: terreno, $41 voci da 4 byte (da 1): +0 costo ($FF invalicabile) */
             if (H005_B(0x3EF4 + (t - 1) * 4) >= best) {
+                /* $3EF4: terreno, $41 voci da 4 byte (da 1): +0 costo ($FF invalicabile) */
                 best = H005_B(0x3EF4 + (t - 1) * 4);
                 *tile = t;
             }
@@ -536,7 +583,7 @@ void combatant_falls(Character *c)
     s16 y;                              /* -$E(a5) */
     CokBody *b;
 
-    if (H005_B(0x3DE3) != 5) {
+    if (H005_B(0x3DE3) != 5) { /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
         h043_190e(0x0A);
         message_delay();
         return;
@@ -548,9 +595,10 @@ void combatant_falls(Character *c)
         center_view(x, y, 3, 8);
     }
     redraw_ground(0, 0, n);
-    switch (POS_SIZE(n)) {
+    switch (POS_SIZE(n)) { /* $3159: posizioni combattenti +5: forma/taglia (0 = fuori mappa) */
     case 1:
-        if (c->b[0xDB] == 0) {
+        if (c->b[0xDB] == 0) { /* pg+$DB: livello massimo fra le classi (usato anche come dadi vita) */
+            /* pg+$123: PF massimi senza costituzione; base -1 slot incantesimi +$124 */
             if (c->b[0x123] < 3) {
                 h043_190e(8);
             } else {
@@ -572,20 +620,27 @@ void combatant_falls(Character *c)
     }
     for (f = 0; f <= 8; ++f) {
         for (i = 0; i <= 3; ++i) {
+            /* $3159: posizioni combattenti +5: forma/taglia (0 = fuori mappa) */
             if (shape_cell(POS_SIZE(n), i, &dx, &dy) &&
+                /* $3104: (word) colonna nella vista per combattente n (passo 2, da 1); $30B4:
+                 * (word) riga nella vista per combattente n (passo 2, da 1) */
                 in_view((s16)(VIEW_X(n) + dx), (s16)(VIEW_Y(n) + dy))) {
                 /* $3304 e' il posto $18 della tabella dei set $3244. */
+                /* $3104: (word) colonna nella vista per combattente n (passo 2, da 1) */
                 draw_tile24_saving((u16)((VIEW_X(n) + dx) * 0x18),
+                                   /* $30B4: (word) riga nella vista per combattente n (passo 2, da
+                                    * 1) */
                                    (u16)((VIEW_Y(n) + dy) * 0x18), 0, 5,
                                    g_sprite_sets[0x18][f & 1], g_gfx_3d8e);
             }
         }
         dos_delay(1);
     }
+    /* turno+$15: 1 = combattente oltre i membri del party, lo lascia a fine scontro */
     if (c->block_192->b[0x15] == 0) {
-        if (H005_B(0x247A) < 8) {
-            ++H005_B(0x247A);
-            b = &g_bodies[H005_B(0x247A) - 1];
+        if (H005_B(0x247A) < 8) { /* $247A: numero di corpi nella tabella +$2AE2 (max 8) */
+            ++H005_B(0x247A); /* $247A: numero di corpi nella tabella +$2AE2 (max 8) */
+            b = &g_bodies[H005_B(0x247A) - 1]; /* $247A: numero di corpi nella tabella +$2AE2 (max 8) */
             b->tile = map_cell(x, y)[1];
             if (map_cell(x, y)[1] != 0x1E) {
                 map_cell(x, y)[1] = 0x1F;
@@ -597,13 +652,15 @@ void combatant_falls(Character *c)
     }
     message_delay();
     redraw_ground(0, 0, n);
+    /* $3159: posizioni combattenti +5: forma/taglia (0 = fuori mappa) */
     H005_B(0x3154 + (combatant_index(c) - 1) * 6 + 5) = 0;
     rebuild_occupancy();
     center_view((s16)(AREA_X0 + 3), (s16)(AREA_Y0 + 3), 3, 8);
+    /* turno+$4: (word) iniziativa del round (1d6+destrezza); <=0 turno finito */
     COK_PUT16(&c->block_192->b[4], 0);
-    c->block_192->b[8] = 0;
-    c->block_192->b[0] = 0;
-    c->block_192->b[9] = 0;
+    c->block_192->b[8] = 0; /* turno+$8: punti movimento rimasti nel turno */
+    c->block_192->b[0] = 0; /* turno+$0: incantesimo in preparazione da lanciare all'inizio del turno */
+    c->block_192->b[9] = 0; /* turno+$9: flag in guardia (Guard), attacca chi si avvicina */
 }
 
 /*
@@ -624,22 +681,28 @@ u8 place_combatant(Character *c, u8 x, u8 y, u8 restore)
     u8 in_acid;                         /* -$B(a5) */
     u8 found;                           /* -$9(a5) */
 
-    if (H005_B(0x3DE3) != 5) {
+    if (H005_B(0x3DE3) != 5) { /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
         return 1;
     }
     n = combatant_index(c);
+    /* $3159: posizioni combattenti +5: forma/taglia (0 = fuori mappa); pg+$D3: forma/taglia sulla
+     * mappa di combattimento (bit 0-2, >1 grande) */
     H005_B(0x3154 + (n - 1) * 6 + 5) = mask_byte(c->b[0xD3], 0x7F);
+    /* $3154: posizioni combattenti, 6 byte per n (da 1): +0 colonna (word) */
     H005_SET_W(0x3154 + (n - 1) * 6, x);
-    H005_SET_W(0x3154 + (n - 1) * 6 + 2, y);
+    H005_SET_W(0x3154 + (n - 1) * 6 + 2, y); /* $3156: posizioni combattenti +2: riga sulla mappa (word) */
     probe_move(c, 8, &blocker, &tile, &in_cloud, &in_acid);
     if (blocker != 0 || tile == 0 ||
+        /* $3EF4: terreno, $41 voci da 4 byte (da 1): +0 costo ($FF invalicabile) */
         H005_B(0x3EF4 + (tile - 1) * 4) == 0xFF) {
+        /* $3159: posizioni combattenti +5: forma/taglia (0 = fuori mappa) */
         H005_B(0x3154 + (n - 1) * 6 + 5) = 0;
         return ok;
     }
     ok = 1;
+    /* turno+$15: 1 = combattente oltre i membri del party, lo lascia a fine scontro */
     if (restore && c->block_192->b[0x15] == 0) {
-        for (i = 1; i <= H005_B(0x247A); ++i) {
+        for (i = 1; i <= H005_B(0x247A); ++i) { /* $247A: numero di corpi nella tabella +$2AE2 (max 8) */
             if (g_bodies[i - 1].who == c) {
                 if (g_bodies[i - 1].tile != 0x1F) {
                     tile = g_bodies[i - 1].tile;
@@ -652,7 +715,7 @@ u8 place_combatant(Character *c, u8 x, u8 y, u8 restore)
             }
         }
         found = 0;
-        for (i = 1; i <= H005_B(0x247A); ++i) {
+        for (i = 1; i <= H005_B(0x247A); ++i) { /* $247A: numero di corpi nella tabella +$2AE2 (max 8) */
             if (g_bodies[i - 1].who != NULL && g_bodies[i - 1].x == x &&
                 g_bodies[i - 1].y == y) {
                 found = 1;
@@ -673,8 +736,9 @@ u8 place_combatant(Character *c, u8 x, u8 y, u8 restore)
 void show_combatant_cursor(Character *c, u16 margin, u8 flag)
 {
     g_combat_area[6] = flag;
+    /* $3159: posizioni combattenti +5: forma/taglia (0 = fuori mappa) */
     g_combat_area[7] = POS_SIZE((s16)combatant_index(c));
-    if (H005_B(0x24C6)) {
+    if (H005_B(0x24C6)) { /* $24C6: 1 se le azioni del combattente vanno disegnate (visibile) */
         center_view((s16)combatant_x(c), (s16)combatant_y(c), margin, 8);
     }
     g_combat_area[6] = 0;

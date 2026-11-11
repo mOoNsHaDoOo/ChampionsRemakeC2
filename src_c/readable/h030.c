@@ -122,7 +122,7 @@ void input_line(u16 prompt_len, const char *prompt, u16 fg, u16 bg,
     key[1] = 0;
     do {
         wait_for_key();
-        key[0] = (char)G_KEY;
+        key[0] = (char)G_KEY; /* $5305: tasto/azione pendente dall'input (G_KEY) */
         if ((u8)key[0] >= 0x20 && (u8)key[0] <= 0x7A) {
             if (h026_strlen(0x50, text) < max_chars) {
                 h026_append(0x50, text, 1, key);
@@ -137,6 +137,7 @@ void input_line(u16 prompt_len, const char *prompt, u16 fg, u16 bg,
                 --col;
             }
         }
+    /* $24D7: 1 se e' stata scelta la dimostrazione (Demo) */
     } while (key[0] != 0x0D && key[0] != 0x1B && !G_DEMO_FLAG);
     fill_text_cells(0, 0x18, 0, 0x28);
     h026_upcase(0x50, text);
@@ -187,7 +188,7 @@ void free_gothic_font(void)
 /* PORT H030+$0B4A: pausa dei messaggi: H005+$3DF6 * 5 tick. */
 void message_delay(void)
 {
-    dos_delay((u32)H005_W(0x3DF6) * 5);
+    dos_delay((u32)H005_W(0x3DF6) * 5); /* $3DF6: (word) velocita' del gioco 0..9 (pausa dei messaggi) */
 }
 
 /*
@@ -239,8 +240,8 @@ typedef struct WrapFrame {
 } WrapFrame;
 
 /* Cursore del testo (H005+$334E colonna, $334C riga). */
-#define TEXT_COL H005_W(0x334E)
-#define TEXT_ROW H005_W(0x334C)
+#define TEXT_COL H005_W(0x334E) /* $334E: (word) cursore del testo: colonna */
+#define TEXT_ROW H005_W(0x334C) /* $334C: (word) cursore del testo: riga */
 
 /*
  * PORT H030+$0310: procedura annidata: scrive i caratteri da pos a end al
@@ -250,12 +251,14 @@ static void wrap_emit(WrapFrame *f)
 {
     while (f->pos <= f->end) {
         if (f->text[f->pos] != 0) {
+            /* $334E: (word) cursore del testo: colonna; $334C: (word) cursore del testo: riga */
             draw_char_run(TEXT_COL, TEXT_ROW, f->fg, f->bg, 1,
                           (u8)f->text[f->pos], 1);
-            if (H005_B(0x24CE)) {
+            if (H005_B(0x24CE)) { /* $24CE: 1: pausa per carattere nella scrittura del testo */
+                /* $3DF6: (word) velocita' del gioco 0..9 (pausa dei messaggi) */
                 dos_delay((u32)(H005_W(0x3DF6) >> 1));
             }
-            H005_SET_W(0x334E, (u16)(TEXT_COL + 1));
+            H005_SET_W(0x334E, (u16)(TEXT_COL + 1)); /* $334E: (word) cursore del testo: colonna */
         }
         ++f->pos;
     }
@@ -304,14 +307,15 @@ void word_wrap_text(u16 x1, u16 y1, u16 x2, u16 y2, u16 fg, u16 bg,
     if (x1 > 0x27 || y1 > 0x18 || x2 > 0x27 || y2 > 0x27) {
         return;
     }
+    /* $334E: (word) cursore del testo: colonna; $334C: (word) cursore del testo: riga */
     if (TEXT_COL < x1 || TEXT_COL > x2 || TEXT_ROW < y1 || TEXT_ROW > y2) {
-        H005_SET_W(0x334E, x1);
-        H005_SET_W(0x334C, y1);
+        H005_SET_W(0x334E, x1); /* $334E: (word) cursore del testo: colonna */
+        H005_SET_W(0x334C, y1); /* $334C: (word) cursore del testo: riga */
     }
     if (clear) {
         clear_text_cells(x1, y1, x2, y2);
-        H005_SET_W(0x334E, x1);
-        H005_SET_W(0x334C, y1);
+        H005_SET_W(0x334E, x1); /* $334E: (word) cursore del testo: colonna */
+        H005_SET_W(0x334C, y1); /* $334C: (word) cursore del testo: riga */
     }
     f.text = copy;
     f.fg = fg;
@@ -337,19 +341,19 @@ void word_wrap_text(u16 x1, u16 y1, u16 x2, u16 y2, u16 fg, u16 bg,
                 ++f.end;
             }
         }
-        if ((u16)(f.end - f.pos + TEXT_COL) > x2) {
+        if ((u16)(f.end - f.pos + TEXT_COL) > x2) { /* $334E: (word) cursore del testo: colonna */
             /* Uguaglianza impossibile qui: ramo morto nell'originale. */
-            if ((u16)(f.end - f.pos + TEXT_COL) == x2 &&
+            if ((u16)(f.end - f.pos + TEXT_COL) == x2 && /* $334E: (word) cursore del testo: colonna */
                 copy[f.end] == ' ') {
                 --f.end;
                 wrap_emit(&f);
             }
-            H005_SET_W(0x334E, x1);
-            H005_SET_W(0x334C, (u16)(TEXT_ROW + 1));
+            H005_SET_W(0x334E, x1); /* $334E: (word) cursore del testo: colonna */
+            H005_SET_W(0x334C, (u16)(TEXT_ROW + 1)); /* $334C: (word) cursore del testo: riga */
             wrap_skip_spaces(&f);
-            if (TEXT_ROW > y2 && f.pos < f.len) {
-                H005_SET_W(0x334E, x1);
-                H005_SET_W(0x334C, y1);
+            if (TEXT_ROW > y2 && f.pos < f.len) { /* $334C: (word) cursore del testo: riga */
+                H005_SET_W(0x334E, x1); /* $334E: (word) cursore del testo: colonna */
+                H005_SET_W(0x334C, y1); /* $334C: (word) cursore del testo: riga */
                 show_message_wait(0x0D, 0, 0x19,
                                   "Press any key to continue");
                 clear_text_cells(x1, y1, x2, y2);
@@ -359,9 +363,9 @@ void word_wrap_text(u16 x1, u16 y1, u16 x2, u16 y2, u16 fg, u16 bg,
             wrap_emit(&f);
         }
     } while (f.pos <= (u16)(f.len - 1));
-    if (TEXT_COL > x2) {
-        H005_SET_W(0x334E, x1);
-        H005_SET_W(0x334C, (u16)(TEXT_ROW + 1));
+    if (TEXT_COL > x2) { /* $334E: (word) cursore del testo: colonna */
+        H005_SET_W(0x334E, x1); /* $334E: (word) cursore del testo: colonna */
+        H005_SET_W(0x334C, (u16)(TEXT_ROW + 1)); /* $334C: (word) cursore del testo: riga */
     }
 }
 

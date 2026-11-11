@@ -50,11 +50,13 @@ static void set_part_range(IconEditor *e)
     Character *c = g_current_char;
 
     if (e->mode == 'H') {
-        e->cur = c->b[0x141];
+        e->cur = c->b[0x141]; /* pg+$141: parte della testa dell'icona (0..$0B) */
+        /* pg+$144: taglia dell'icona (1 piccola, 2 grande) */
         e->count = (s16)(c->b[0x144] == 1 ? 0x0B : 0x0D);
     } else {
+        /* pg+$144: taglia dell'icona (1 piccola, 2 grande) */
         e->count = (s16)(c->b[0x144] == 1 ? 0x24 : 0x28);
-        e->cur = c->b[0x142];
+        e->cur = c->b[0x142]; /* pg+$142: figura del corpo dell'icona (>31: icone speciali) */
     }
 }
 
@@ -67,8 +69,8 @@ static void pick_by_mouse(IconEditor *e, s16 *x, s16 *y, u8 *done)
 {
     s16 n;                              /* -$6(a5) */
 
-    *x = (s16)((s16)H005_W(0x2356) / 0x18 - 6);
-    *y = (s16)((s16)H005_W(0x2354) / 0x18 - 1);
+    *x = (s16)((s16)H005_W(0x2356) / 0x18 - 6); /* $2356: X del mouse (word, iniziale $A0) */
+    *y = (s16)((s16)H005_W(0x2354) / 0x18 - 1); /* $2354: Y del mouse (word, iniziale $64) */
     set_part_range(e);
     if (*x < 0 || *x > 6 || *y < 0 || *y > 6) {
         *x = 0;
@@ -98,13 +100,14 @@ static void draw_part_cell(s16 n, s16 head, s16 body, u8 highlight)
     Character *c = g_current_char;
     s16 cx = (s16)((n - 1) % 7 + 6);    /* -$6(a5) */
     s16 cy = (s16)((n - 1) / 7 + 1);    /* -$8(a5) */
+    /* pg+$143: posto delle icone 24x24 (0..7 nel party; $0A creazione, $0C editor) */
     u8 old_143 = c->b[0x143];
-    u8 old_141 = c->b[0x141];
-    u8 old_142 = c->b[0x142];
+    u8 old_141 = c->b[0x141]; /* pg+$141: parte della testa dell'icona (0..$0B) */
+    u8 old_142 = c->b[0x142]; /* pg+$142: figura del corpo dell'icona (>31: icone speciali) */
 
-    c->b[0x143] = 0x0C;
-    c->b[0x141] = (u8)head;
-    c->b[0x142] = (u8)body;
+    c->b[0x143] = 0x0C; /* pg+$143: posto delle icone 24x24 (0..7 nel party; $0A creazione, $0C editor) */
+    c->b[0x141] = (u8)head; /* pg+$141: parte della testa dell'icona (0..$0B) */
+    c->b[0x142] = (u8)body; /* pg+$142: figura del corpo dell'icona (>31: icone speciali) */
     if (highlight) {
         draw_sprite_set((u16)cx, (u16)cy, 0, 0, 0x19);
     } else {
@@ -112,9 +115,9 @@ static void draw_part_cell(s16 n, s16 head, s16 body, u8 highlight)
     }
     build_char_icon(0);
     draw_sprite_set((u16)cx, (u16)cy, 0, 0, 0x0C);
-    c->b[0x143] = old_143;
-    c->b[0x141] = old_141;
-    c->b[0x142] = old_142;
+    c->b[0x143] = old_143; /* pg+$143: posto delle icone 24x24 (0..7 nel party; $0A creazione, $0C editor) */
+    c->b[0x141] = old_141; /* pg+$141: parte della testa dell'icona (0..$0B) */
+    c->b[0x142] = old_142; /* pg+$142: figura del corpo dell'icona (>31: icone speciali) */
 }
 
 /*
@@ -166,20 +169,21 @@ static void move_part_cursor(IconEditor *e, s16 dx, s16 dy, u8 redraw_all)
     }
     n = (s16)(row * 7 + col + 1);
     if (e->mode == 'H') {
-        c->b[0x141] = (u8)n;
+        c->b[0x141] = (u8)n; /* pg+$141: parte della testa dell'icona (0..$0B) */
     } else {
-        c->b[0x142] = (u8)n;
+        c->b[0x142] = (u8)n; /* pg+$142: figura del corpo dell'icona (>31: icone speciali) */
     }
-    body = c->b[0x142];
-    head = c->b[0x141];
+    body = c->b[0x142]; /* pg+$142: figura del corpo dell'icona (>31: icone speciali) */
+    head = c->b[0x141]; /* pg+$141: parte della testa dell'icona (0..$0B) */
     if (redraw_all) {
         fill_cells(0x12, 3, 0x15, 0x12, 0, g_gfx_3d8e);
         for (i = 1; i <= e->count; ++i) {
             if (e->mode == 'H') {
                 head = i;
-                highlight = (u8)(c->b[0x141] == i);
+                highlight = (u8)(c->b[0x141] == i); /* pg+$141: parte della testa dell'icona (0..$0B) */
             } else {
                 body = i;
+                /* pg+$142: figura del corpo dell'icona (>31: icone speciali) */
                 highlight = (u8)(c->b[0x142] == i);
             }
             draw_part_cell(i, head, body, highlight);
@@ -223,11 +227,14 @@ static void copy_icon_set(u16 src, u16 dst, u8 recolor)
         to[i] = (u8)i;
     }
     for (i = 1; i <= 6; ++i) {
+        /* $5227: base i-1 dei 6 registri colore delle icone ($5228); pg+$145: base -1 colori
+         * dell'icona +$146..+$14B */
         to[H005_B(0x5228 + i - 1)] = mask_byte(c->b[0x146 + i - 1], 0x0F);
-        to[H005_B(0x5228 + i - 1) + 8] =
+        to[H005_B(0x5228 + i - 1) + 8] = /* $5227: base i-1 dei 6 registri colore delle icone ($5228) */
+            /* pg+$145: base -1 colori dell'icona +$146..+$14B */
             (u8)(mask_byte(c->b[0x146 + i - 1], 0xF0) >> 4);
     }
-    if (c->b[0x142] < 0x20) {
+    if (c->b[0x142] < 0x20) { /* pg+$142: figura del corpo dell'icona (>31: icone speciali) */
         remap_gfx_colors(from, to, 0, g_sprite_sets[dst][0]);
         remap_gfx_colors(from, to, 0, g_sprite_sets[dst][1]);
     }
@@ -282,8 +289,9 @@ void edit_character_icon(void)
     e.cur = 0;
     e.count = 0;
     e.mode = 0;
+    /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
     saved_3de3 = H005_B(0x3DE3);
-    H005_B(0x3DE3) = 0;
+    H005_B(0x3DE3) = 0; /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
     copy_menu(menus[1], "Head Weapon Exit");
     copy_menu(menus[2], "Weapon Body xxxx Shield Arm Leg Exit");
     copy_menu(menus[3], " Keep Exit");
@@ -291,20 +299,25 @@ void edit_character_icon(void)
     copy_menu(menus[5], "Done");
     draw_screen_frame(1);
     load_char_screens();
+    /* $522E: palette dell'immagine caricata, 32 colori RGB4 ($40 byte) */
     graphics_load_rgb4(&g_screen->ViewPort, &g_h005[0x522E], 0x20);
     build_char_icon(0);
 
     for (;;) {                          /* H047+$0960 */
         c = g_current_char;
         state = 1;
+        /* pg+$146: colori dell'icona, 6 byte (due nibble per registro H005+$5228) */
         memcpy(saved_colors, &c->b[0x146], 6);
+        /* pg+$143: posto delle icone 24x24 (0..7 nel party; $0A creazione, $0C editor) */
         saved_143 = c->b[0x143];
-        c->b[0x143] = 0x0C;
+        c->b[0x143] = 0x0C; /* pg+$143: posto delle icone 24x24 (0..7 nel party; $0A creazione, $0C editor) */
         build_char_icon(0);
+        /* pg+$143: posto delle icone 24x24 (0..7 nel party; $0A creazione, $0C editor) */
         c->b[0x143] = (u8)saved_143;
-        head = c->b[0x141];
-        body = c->b[0x142];
-        size = c->b[0x144];
+        head = c->b[0x141]; /* pg+$141: parte della testa dell'icona (0..$0B) */
+        body = c->b[0x142]; /* pg+$142: figura del corpo dell'icona (>31: icone speciali) */
+        size = c->b[0x144]; /* pg+$144: taglia dell'icona (1 piccola, 2 grande) */
+        /* pg+$143: posto delle icone 24x24 (0..7 nel party; $0A creazione, $0C editor) */
         copy_icon_set(c->b[0x143], 0x0C, 1);
         draw_icon_pair(1, 2);
         ui_draw_text(8, 6, 0x0F, 0, 3, "old");
@@ -314,7 +327,7 @@ void edit_character_icon(void)
         do {                            /* H047+$0A70 */
             draw_icon_pair(1, 4);
             in_grid = (u8)(state == 6);
-            if (c->b[0x142] >= 0x20) {
+            if (c->b[0x142] >= 0x20) { /* pg+$142: figura del corpo dell'icona (>31: icone speciali) */
                 copy_menu(menus[0], "Body Size Exit");
             } else {
                 copy_menu(menus[0], "Parts 1st-color 2nd-color Size Exit");
@@ -344,16 +357,18 @@ void edit_character_icon(void)
                                     key == '1' ? "Hair" : "Face", 0x0C);
                         break;
                     case 'S':
-                        if (c->b[0x144] == 2) {
-                            c->b[0x144] = 1;
+                        if (c->b[0x144] == 2) { /* pg+$144: taglia dell'icona (1 piccola, 2 grande) */
+                            c->b[0x144] = 1; /* pg+$144: taglia dell'icona (1 piccola, 2 grande) */
+                            /* pg+$142: figura del corpo dell'icona (>31: icone speciali) */
                             if (c->b[0x142] >= 0x24) {
+                                /* pg+$142: figura del corpo dell'icona (>31: icone speciali) */
                                 c->b[0x142] = 0x24;
                             }
-                            if (c->b[0x141] >= 0x0B) {
-                                c->b[0x141] = 0x0B;
+                            if (c->b[0x141] >= 0x0B) { /* pg+$141: parte della testa dell'icona (0..$0B) */
+                                c->b[0x141] = 0x0B; /* pg+$141: parte della testa dell'icona (0..$0B) */
                             }
                         } else {
-                            c->b[0x144] = 2;
+                            c->b[0x144] = 2; /* pg+$144: taglia dell'icona (1 piccola, 2 grande) */
                         }
                         build_char_icon(0);
                         break;
@@ -401,20 +416,20 @@ void edit_character_icon(void)
                 case 4:             /* H047+$0DA4 */
                     switch (key) {
                     case 'L':
-                        c->b[0x144] = 2;
+                        c->b[0x144] = 2; /* pg+$144: taglia dell'icona (1 piccola, 2 grande) */
                         build_char_icon(0);
                         break;
                     case 'S':
-                        c->b[0x144] = 1;
+                        c->b[0x144] = 1; /* pg+$144: taglia dell'icona (1 piccola, 2 grande) */
                         build_char_icon(0);
                         break;
                     case 'K':
-                        size = c->b[0x144];
+                        size = c->b[0x144]; /* pg+$144: taglia dell'icona (1 piccola, 2 grande) */
                         state = 1;
                         key = ' ';
                         break;
                     case 0: case 'E':
-                        c->b[0x144] = (u8)size;
+                        c->b[0x144] = (u8)size; /* pg+$144: taglia dell'icona (1 piccola, 2 grande) */
                         state = 1;
                         key = ' ';
                         break;
@@ -424,7 +439,9 @@ void edit_character_icon(void)
                     build_char_icon(0);
                     break;
                 case 5:             /* H047+$0ED4 */
+                    /* pg+$145: base -1 colori dell'icona +$146..+$14B */
                     lo = mask_byte(c->b[0x146 + color_part - 1], 0x0F);
+                    /* pg+$145: base -1 colori dell'icona +$146..+$14B */
                     hi = (s16)(mask_byte(c->b[0x146 + color_part - 1],
                                          0xF0) >> 4);
                     switch (key) {
@@ -434,6 +451,7 @@ void edit_character_icon(void)
                         } else {
                             lo = (s16)((lo + 1) & 0x0F);
                         }
+                        /* pg+$145: base -1 colori dell'icona +$146..+$14B */
                         c->b[0x146 + color_part - 1] = (u8)((hi << 4) + lo);
                         break;
                     case 'P':
@@ -442,14 +460,17 @@ void edit_character_icon(void)
                         } else {
                             lo = mask_byte((u8)(lo - 1), 0x0F);
                         }
+                        /* pg+$145: base -1 colori dell'icona +$146..+$14B */
                         c->b[0x146 + color_part - 1] = (u8)((hi << 4) + lo);
                         break;
                     case 'K':
+                        /* pg+$146: colori dell'icona, 6 byte (due nibble per registro H005+$5228) */
                         memcpy(saved_colors, &c->b[0x146], 6);
                         state = back;
                         key = ' ';
                         break;
                     case 0: case 'E':
+                        /* pg+$146: colori dell'icona, 6 byte (due nibble per registro H005+$5228) */
                         memcpy(&c->b[0x146], saved_colors, 6);
                         state = back;
                         key = ' ';
@@ -462,16 +483,17 @@ void edit_character_icon(void)
                     switch (key) {
                     case 0:         /* H047+$1220 */
                         if (e.mode == 'H') {
-                            c->b[0x141] = (u8)head;
+                            c->b[0x141] = (u8)head; /* pg+$141: parte della testa dell'icona (0..$0B) */
                         } else {
+                            /* pg+$142: figura del corpo dell'icona (>31: icone speciali) */
                             c->b[0x142] = (u8)body;
                         }
                         state = 0;
                         break;
                     case 0x0D: case 'D':        /* H047+$1188 */
-                        if (G_MOUSE_CLICK) {
-                            if ((s16)H005_W(0x2356) < 0x28 &&
-                                (s16)H005_W(0x2354) >= 0xC0) {
+                        if (G_MOUSE_CLICK) { /* $249E: 1 se il tasto viene dal mouse (clic) */
+                            if ((s16)H005_W(0x2356) < 0x28 && /* $2356: X del mouse (word, iniziale $A0) */
+                                (s16)H005_W(0x2354) >= 0xC0) { /* $2354: Y del mouse (word, iniziale $64) */
                                 done = 1;
                             } else {
                                 pick_by_mouse(&e, &mx, &my, &done);
@@ -484,8 +506,9 @@ void edit_character_icon(void)
                         }
                         if (done) {
                             if (e.mode == 'H') {
-                                head = c->b[0x141];
+                                head = c->b[0x141]; /* pg+$141: parte della testa dell'icona (0..$0B) */
                             } else {
+                                /* pg+$142: figura del corpo dell'icona (>31: icone speciali) */
                                 body = c->b[0x142];
                             }
                             state = 0;
@@ -521,6 +544,7 @@ void edit_character_icon(void)
                     build_char_icon(0);
                     if (state == 0) {
                         fill_cells(0x12, 3, 0x15, 0x12, 0, g_gfx_3d8e);
+                        /* pg+$142: figura del corpo dell'icona (>31: icone speciali) */
                         state = (s16)(c->b[0x142] >= 0x20 ? 1 : 2);
                         key = ' ';
                     }
@@ -529,14 +553,18 @@ void edit_character_icon(void)
                     break;
                 }
             }
+            /* pg+$143: posto delle icone 24x24 (0..7 nel party; $0A creazione, $0C editor) */
             copy_icon_set(c->b[0x143], 0x0C, 1);        /* H047+$1386 */
         } while (!(back == 1 && (key == 'E' || key == 0)));
 
-        c->b[0x141] = (u8)head;
-        c->b[0x142] = (u8)body;
-        c->b[0x144] = (u8)size;
+        c->b[0x141] = (u8)head; /* pg+$141: parte della testa dell'icona (0..$0B) */
+        c->b[0x142] = (u8)body; /* pg+$142: figura del corpo dell'icona (>31: icone speciali) */
+        c->b[0x144] = (u8)size; /* pg+$144: taglia dell'icona (1 piccola, 2 grande) */
+        /* pg+$146: colori dell'icona, 6 byte (due nibble per registro H005+$5228) */
         memcpy(&c->b[0x146], saved_colors, 6);
+        /* pg+$143: posto delle icone 24x24 (0..7 nel party; $0A creazione, $0C editor) */
         copy_icon_set(c->b[0x143], 0x0C, 1);
+        /* pg+$143: posto delle icone 24x24 (0..7 nel party; $0A creazione, $0C editor) */
         copy_icon_set(0x0C, c->b[0x143], 0);
         clear_message_line();
         free_sprite_set(0x0C);
@@ -544,6 +572,7 @@ void edit_character_icon(void)
             break;
         }
     }
+    /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
     H005_B(0x3DE3) = saved_3de3;
     g_h047_0001 = 0;
 }

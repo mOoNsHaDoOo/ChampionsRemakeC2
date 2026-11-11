@@ -31,6 +31,7 @@ void load_8x8_set(u8 id, u8 slot)
         return;
     }
     h026_copy(0x50, name, 4, "8x8d");
+    /* $246E: disco dei dati / gruppo di risorse corrente (G_RESOURCE_GROUP) */
     format_number(1, group, (s32)G_RESOURCE_GROUP, 0, 0x0A, 1, '0');
     h026_append(0x50, name, 1, group);
     load_indexed_gfx_record(0x50, name, id, 1, 0x0D, &g_8x8_sets[slot]);

@@ -24,7 +24,7 @@ u8 g_h072_bss[0xC];
 /* Tipi di effetto delle malattie (-$C(a4), 6 word). */
 #define DISEASE(i)      COK_GET16(&g_h072_bss[((i) - 1) * 2])
 #define CUR             g_current_char
-#define TEXT_BUF        ((char *)&g_h005[0x3C82])
+#define TEXT_BUF        ((char *)&g_h005[0x3C82])  /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
 
 /* PORT H072+$0304 */
 void h072_init(void)
@@ -62,9 +62,10 @@ static u8 pay_for_cure(u16 cost, const char *name)
 
     h026_copy(0x50, text, 0x50, name);
     h026_append(0x50, text, 0x10, " will only cost ");
+    /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
     format_number(0x50, TEXT_BUF, (s32)cost, 0, 0x0A, 0x0A, ' ');
-    trim_leading_spaces(0x50, TEXT_BUF);
-    h026_append(0x50, text, 0x50, TEXT_BUF);
+    trim_leading_spaces(0x50, TEXT_BUF); /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
+    h026_append(0x50, text, 0x50, TEXT_BUF); /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
     h026_append(0x50, text, 0x0E, " steel pieces.");
     word_wrap_text(1, 0x11, 0x26, 0x16, 0x0A, 0, 1, 0x50, text);
     key = ask_yes_no(0x0D, "pay for cure ", 0x0D, 0x0A, 0x0F);
@@ -127,12 +128,12 @@ static void cure_disease(void)
     if (key == 'Y') {
         key = pay_for_cure(0x1F4, "Cure Disease");
         if (key == 'Y') {
-            H005_B(0x24AA) = 1;
+            H005_B(0x24AA) = 1; /* $24AA: 1 durante le cure: i gestori non riaggiungono effetti */
             for (i = 1; i <= 6; ++i) {
                 remove_effect(CUR, DISEASE(i), NULL);
             }
             recompute_stat(CUR, 0);
-            H005_B(0x24AA) = 0;
+            H005_B(0x24AA) = 0; /* $24AA: 1 durante le cure: i gestori non riaggiungono effetti */
         }
     }
 }
@@ -177,10 +178,12 @@ static void cure_wounds(u16 kind)
         if (key == 'Y') {
             amount = roll_dice(1, 4);
         }
+        /* pg+$1A8: punti ferita correnti; pg+$64: punti ferita massimi */
         if ((u16)(CUR->b[0x1A8] + amount) > CUR->b[0x64]) {
             amount = 0;
             break;
         }
+        /* pg+$64: punti ferita massimi; pg+$1A8: punti ferita correnti */
         amount = (u16)(CUR->b[0x64] - CUR->b[0x1A8] - amount);
         (void)heal_character(CUR, amount, 0);
         remove_effect(CUR, 0x21, NULL);
@@ -216,11 +219,12 @@ static void raise_dead(void)
     u8 barred = 0;                      /* -$65(a5) */
 
     (void)unused;
-    weak = (u8)(c->b[0x19] < 1 ? 1 : 0);
+    weak = (u8)(c->b[0x19] < 1 ? 1 : 0); /* pg+$19: costituzione corrente */
+    /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
     if (c->b[0x197] == 6 || c->b[0x197] == 1) {
         dead = 1;
     }
-    if (c->b[0x5B] < 2) {
+    if (c->b[0x5B] < 2) { /* pg+$5B: razza (0..6, nomi H005+$4D04) */
         barred = 1;
     }
     if (!dead || barred || weak) {
@@ -237,42 +241,54 @@ static void raise_dead(void)
     if (key != 'Y' || !dead || barred) {
         return;
     }
-    H005_B(0x24AA) = 1;
+    H005_B(0x24AA) = 1; /* $24AA: 1 durante le cure: i gestori non riaggiungono effetti */
     remove_effect(c, 0x20, NULL);
     remove_effect(c, 0x37, NULL);
-    H005_B(0x24AA) = 0;
-    c->b[0x1A8] = 1;
-    c->b[0x197] = 0;
-    c->b[0x198] = 1;
-    if (c->b[0x19] > 0) {
-        add_to_byte(&c->b[0x19], 0xFFFF);
+    H005_B(0x24AA) = 0; /* $24AA: 1 durante le cure: i gestori non riaggiungono effetti */
+    c->b[0x1A8] = 1; /* pg+$1A8: punti ferita correnti */
+    c->b[0x197] = 0; /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+    c->b[0x198] = 1; /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
+    if (c->b[0x19] > 0) { /* pg+$19: costituzione corrente */
+        add_to_byte(&c->b[0x19], 0xFFFF); /* pg+$19: costituzione corrente */
     }
+    /* pg+$64: punti ferita massimi; pg+$123: PF massimi senza costituzione; base -1 slot
+     * incantesimi +$124 */
     if (c->b[0x64] > c->b[0x123]) {
+        /* pg+$64: punti ferita massimi; pg+$123: PF massimi senza costituzione; base -1 slot
+         * incantesimi +$124 */
         lost = (u16)(c->b[0x64] - c->b[0x123]);
     } else {
         lost = 0;
     }
     levels = 0;
-    if (c->b[0x19] < 0x0E) {
+    if (c->b[0x19] < 0x0E) { /* pg+$19: costituzione corrente */
         return;
     }
     for (cls = 0; cls <= 7; ++cls) {
+        /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
         if (c->b[0xFE + cls] == 0) {
             continue;
         }
         if (cls == 2) {
+            /* pg+$19: costituzione corrente; pg+$FE: livelli per classe, 8 voci (0 chierico..7
+             * cavaliere); chierico */
             levels = (u16)(levels + (u16)(c->b[0x19] - 0x0E) * c->b[0xFE + cls]);
-        } else if (c->b[0x19] > 0x0F) {
+        } else if (c->b[0x19] > 0x0F) { /* pg+$19: costituzione corrente */
+            /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
             levels = (u16)(levels + c->b[0xFE + cls] * 2);
         } else {
+            /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
             levels = (u16)(levels + c->b[0xFE + cls]);
         }
         if (levels > 0) {
             lost = (u16)(lost / levels);
         }
+        /* pg+$19: costituzione corrente; pg+$100: livello da guerriero */
         if (c->b[0x19] < 0x11 || c->b[0x100] > 0 ||
+            /* pg+$100: livello da guerriero; pg+$DC: uso: soglia per i livelli +$106..+$10D e i PF;
+             * !=0 vieta Modify */
             c->b[0x100] > c->b[0xDC]) {
-            add_to_byte(&c->b[0x64], (u16)(0 - lost));
+            add_to_byte(&c->b[0x64], (u16)(0 - lost)); /* pg+$64: punti ferita massimi */
         }
     }
 }
@@ -297,16 +313,16 @@ static void neutralize_poison(void)
     if (key != 'Y' || !poisoned) {
         return;
     }
-    if (CUR->b[0x1A8] == 0) {
-        CUR->b[0x1A8] = 1;
+    if (CUR->b[0x1A8] == 0) { /* pg+$1A8: punti ferita correnti */
+        CUR->b[0x1A8] = 1; /* pg+$1A8: punti ferita correnti */
     }
-    H005_B(0x24AA) = 1;
+    H005_B(0x24AA) = 1; /* $24AA: 1 durante le cure: i gestori non riaggiungono effetti */
     remove_effect(CUR, 0x37, NULL);
     remove_effect(CUR, 0x16, NULL);
     remove_effect(CUR, 0x0F, NULL);
-    H005_B(0x24AA) = 0;
-    CUR->b[0x198] = 1;
-    CUR->b[0x197] = 0;
+    H005_B(0x24AA) = 0; /* $24AA: 1 durante le cure: i gestori non riaggiungono effetti */
+    CUR->b[0x198] = 1; /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
+    CUR->b[0x197] = 0; /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
 }
 
 /*
@@ -321,7 +337,7 @@ static void remove_curse(void)
     u8 key = 'Y';                       /* -$5D(a5) */
 
     for (it = CUR->items; it != NULL && !cursed; it = it->next) {
-        if (it->b[0x3C] != 0) {
+        if (it->b[0x3C] != 0) { /* ogg+$3C: flag oggetto maledetto */
             cursed = 1;
         }
     }
@@ -343,17 +359,18 @@ static void stone_to_flesh(void)
 {
     u8 key = 'Y';                       /* -$57(a5) */
 
-    if (CUR->b[0x197] != 7) {
+    if (CUR->b[0x197] != 7) { /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
         key = cure_anyway("is not stoned.");
     }
     if (key != 'Y') {
         return;
     }
     key = pay_for_cure(0x3E8, "Stone to Flesh");
+    /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
     if (key == 'Y' && CUR->b[0x197] == 7) {
-        CUR->b[0x197] = 0;
-        CUR->b[0x198] = 1;
-        CUR->b[0x1A8] = 1;
+        CUR->b[0x197] = 0; /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+        CUR->b[0x198] = 1; /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
+        CUR->b[0x1A8] = 1; /* pg+$1A8: punti ferita correnti */
     }
 }
 
@@ -447,13 +464,14 @@ void temple(void)
 
     h026_copy(0x28, poor, 0x1C, "Heal View Pool Appraise Exit");
     h026_copy(0x28, rich, 0x27, "Heal View Take Pool Share Appraise Exit");
-    H005_B(0x3DE3) = 1;
-    H005_B(0x24C2) = 0;
+    H005_B(0x3DE3) = 1; /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
+    H005_B(0x24C2) = 0; /* $24C2: 1: nel contesto 1 il ridisegno include la cornice esplorazione */
     redraw_game_screen();
-    H005_B(0x24C2) = 1;
+    H005_B(0x24C2) = 1; /* $24C2: 1: nel contesto 1 il ridisegno include la cornice esplorazione */
     draw_party(CUR);
+    /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
     h029_fill_bytes(0x1B, &g_h005[0x2A1E], 0x1C, 0);
-    H005_B(0x24E3) = 0;
+    H005_B(0x24E3) = 0; /* $24E3: uso: 1 se la cassa comune ha monete (Pool/Share/Take), mai letto */
     done = 0;
     do {
         has_treasure(&money, &items);

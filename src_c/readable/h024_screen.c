@@ -16,7 +16,7 @@ u16 g_h024_m8;                  /* -$8: LeftEdge (0) */
 u16 g_h024_ma;                  /* -$A: TopEdge (0) */
 struct TextAttr *g_h024_me;     /* -$E: Font (NULL) */
 struct BitMap *g_h024_m12;      /* -$12: CustomBitMap (NULL) */
-u16 g_h024_m14;                 /* -$14: bit di Type oltre CUSTOMSCREEN (0) */
+u16 g_h024_m14;                 /* -$14 (H024+$4): bit di Type oltre CUSTOMSCREEN; H029+$1210 vi scrive $10F */
 
 /*
  * PORT H024+$001C.  Sull'host non c'e' GfxBase: si usano i valori NTSC

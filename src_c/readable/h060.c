@@ -28,28 +28,39 @@ void refresh_view(void)
     };
     u16 idx;
 
-    if (H005_B(0x2486) == 9) {
-        H005_B(0x24E1) = 0;
+    if (H005_B(0x2486) == 9) { /* $2486: id della sequenza caricata in $27BC (nome a $27A6), $FF nessuna */
+        H005_B(0x24E1) = 0; /* $24E1: 1: immagine/vista dell'esplorazione da ridisegnare */
     }
-    if (H005_B(0x24D0)) {
+    if (H005_B(0x24D0)) { /* $24D0: 1 party perduto o uscito: ferma ECL e ciclo dell'esplorazione */
         return;
     }
-    if (COK_GET16(g_state_a + 0x1CC)) {
+    if (COK_GET16(g_state_a + 0x1CC)) { /* A+$1CC: (word) 1 area 3D (mappa 16x16), 0 mappa all'aperto */
+        /* $2822: flag della casella del party (map_flags); bit 7 sceglie il cielo; $281C: (word) x
+         * del party sulla mappa dell'area 16x16; $281E: (word) y del party sulla mappa dell'area
+         * 16x16 */
         H005_B(0x2822) = map_flags((s16)H005_W(0x281C), (s16)H005_W(0x281E));
+        /* $2822: flag della casella del party (map_flags); bit 7 sceglie il cielo */
         if (H005_B(0x2822) > 0x7F) {
+            /* A+$1FC: (word) indice colore del cielo per caselle col bit 7 dei flag */
             idx = COK_GET16(g_state_a + 0x1FC);
         } else {
+            /* A+$1FA: (word) indice colore del cielo per caselle senza bit 7 dei flag */
             idx = COK_GET16(g_state_a + 0x1FA);
         }
+        /* $2829: colore del cielo della vista (1o byte di partenza vista) */
         H005_B(0x2829) = (u8)(idx < 16 ? sky[idx] : 0);
-        H005_B(0x2826) = 8;
+        H005_B(0x2826) = 8; /* $2826: uso: 4o byte di partenza vista (arg d di H011+$04A6), 8 nel dungeon */
+        /* A+$1F6: (word) area senza mappa: coordinate nascoste, mappa "Not Here" */
         debug_trace(4, "lost", (u8)COK_GET16(g_state_a + 0x1F6), 0, 0);
+        /* A+$1F6: (word) area senza mappa: coordinate nascoste, mappa "Not Here" */
         if (COK_GET16(g_state_a + 0x1F6)) {
-            H005_B(0x2825) = 0;
+            H005_B(0x2825) = 0; /* $2825: flag mappa dall'alto attiva al posto della vista 3D */
         }
+        /* $281C: (word) x del party sulla mappa dell'area 16x16; $281E: (word) y del party sulla
+         * mappa dell'area 16x16; $2820: direzione del party (0 nord, 2 est, 4 sud, 6 ovest) */
         draw_3d_view((s16)H005_W(0x281C), (s16)H005_W(0x281E), H005_B(0x2820));
-    } else if (H005_B(0x24E1)) {
+    } else if (H005_B(0x24E1)) { /* $24E1: 1: immagine/vista dell'esplorazione da ridisegnare */
         show_big_picture();
     }
-    H005_B(0x24E1) = 0;
+    H005_B(0x24E1) = 0; /* $24E1: 1: immagine/vista dell'esplorazione da ridisegnare */
 }

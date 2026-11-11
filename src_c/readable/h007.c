@@ -187,7 +187,7 @@ static u8 intro_wait(u16 seconds)
         dos_delay(5);
         ++count;
         poll_intuition_events();
-        if (G_KEY != 0) {
+        if (G_KEY != 0) { /* $5305: tasto/azione pendente dall'input (G_KEY) */
             break;
         }
     } while (count < limit);
@@ -272,7 +272,7 @@ void play_intro(void)
         s_open_result = open_resource_file(0x0A, "scrn1b.lbm", 0x1C,
                                            s_insert_disk, 1, &s_file);
         dos_close(s_file);
-        if (H005_B(0x3D79) != 2) {
+        if (H005_B(0x3D79) != 2) { /* $3D79: uso: se diverso da 2 l'introduzione suona l'effetto $17 */
             h043_190e(0x17);
         }
         black_palette();
@@ -309,5 +309,5 @@ void play_intro(void)
     load_game_palette();
     h043_190e(0xFE);
     h043_190e(0xFD);
-    H005_B(0x24C9) = 1;
+    H005_B(0x24C9) = 1; /* $24C9: uso: posto a 1 nell'introduzione (H007), mai letto */
 }

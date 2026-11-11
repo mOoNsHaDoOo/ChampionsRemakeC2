@@ -57,12 +57,16 @@ static void select_data_prefix(void)
 /* Prompt "Play Demo" con attesa massima timeout e tasto predefinito 'D'. */
 static void ask_play_or_demo(s32 timeout)
 {
+    /* $2792: (long) tempo massimo di attesa della scelta, in 1/100 s (0 nessuno); $2794: word bassa
+     * del long $2792 (tempo massimo di attesa) */
     G_SET_PROMPT_TIMEOUT(timeout);
-    G_PROMPT_KEY = 'D';
+    G_PROMPT_KEY = 'D'; /* $52FB: tasto restituito alla scadenza dell'attesa (G_PROMPT_KEY) */
     s_choice = ui_request_choice(0x18, s_title, 9, s_options, 0x0D, 0x0A,
                                  0x0F, 0, 0, &s_special);
+    /* $2792: (long) tempo massimo di attesa della scelta, in 1/100 s (0 nessuno); $2794: word bassa
+     * del long $2792 (tempo massimo di attesa) */
     G_SET_PROMPT_TIMEOUT(0);
-    G_PROMPT_KEY = 0;
+    G_PROMPT_KEY = 0; /* $52FB: tasto restituito alla scadenza dell'attesa (G_PROMPT_KEY) */
 }
 
 /* PORT H001+$0058 */
@@ -80,29 +84,33 @@ void game_main(void)
         if (key >= 'a' && key <= 'z') {
             key = (u8)(key & 0x5F);
         }
-        G_DEMO_FLAG = (u8)(key == 'D');
+        G_DEMO_FLAG = (u8)(key == 'D'); /* $24D7: 1 se e' stata scelta la dimostrazione (Demo) */
 
-        if (!G_DEMO_FLAG) {
+        if (!G_DEMO_FLAG) { /* $24D7: 1 se e' stata scelta la dimostrazione (Demo) */
             if (!manual_check()) {
                 quit_game();
             }
             if (g_distribution_check != 0x3F8F) {
                 quit_game();
             }
-            G_RESOURCE_GROUP = 1;
+            G_RESOURCE_GROUP = 1; /* $246E: disco dei dati / gruppo di risorse corrente (G_RESOURCE_GROUP) */
             main_menu();
         } else {
-            G_RESOURCE_GROUP = 2;
-            H005_SET_W(0x3DF6, 9);
+            G_RESOURCE_GROUP = 2; /* $246E: disco dei dati / gruppo di risorse corrente (G_RESOURCE_GROUP) */
+            H005_SET_W(0x3DF6, 9); /* $3DF6: (word) velocita' del gioco 0..9 (pausa dei messaggi) */
         }
 
+        /* $2829: colore del cielo della vista (1o byte di partenza vista); $2828: uso: 2o byte di
+         * partenza vista (arg b di H011+$04A6); $2827: uso: 3o byte di partenza vista (arg c di
+         * H011+$04A6) */
         set_view_start(G_VIEW_START(3), G_VIEW_START(2), G_VIEW_START(1),
+               /* $2826: uso: 4o byte di partenza vista (arg d di H011+$04A6), 8 nel dungeon */
                G_VIEW_START(0));
         explore_loop();
         reset_game_state();
 
-        if (G_DEMO_FLAG) {
-            G_RESOURCE_GROUP = 0;
+        if (G_DEMO_FLAG) { /* $24D7: 1 se e' stata scelta la dimostrazione (Demo) */
+            G_RESOURCE_GROUP = 0; /* $246E: disco dei dati / gruppo di risorse corrente (G_RESOURCE_GROUP) */
             play_intro();
             ask_play_or_demo(1000);
         }

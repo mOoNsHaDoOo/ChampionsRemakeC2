@@ -170,6 +170,7 @@ u8 open_resource_file(u16 name_len, const char *name, u16 msg_len,
     }
     h026_copy(0x14, disk, 0x50, G_DATA_PREFIX);
     if (h026_compare_nocase(0x14, disk, 4, "DF0:") == 1) {
+        /* $246E: disco dei dati / gruppo di risorse corrente (G_RESOURCE_GROUP) */
         switch (G_RESOURCE_GROUP) {
         case 1:
             h026_copy(0x14, disk, 9, "Disk Two:");
@@ -277,8 +278,12 @@ u8 dax_open(u16 name_len, const char *name, u16 ext_len,
     h026_copy(0x50, path, name_len, name);
     h026_append(0x50, path, ext_len, ext);
     if (!open_resource_file(0x50, path, 0x1D,
+                            /* $3E08: messaggi di inserimento disco, 30 byte per gruppo di risorse */
                             (const char *)&g_h005[0x3E08 +
+                                /* $246E: disco dei dati / gruppo di risorse corrente
+                                 * (G_RESOURCE_GROUP) */
                                 (s32)((s16)(G_RESOURCE_GROUP - 1) * 0x1E)],
+                            /* $24A4: uso: argomento ignorato di Open_ResourceFile; 1 caricando SPC */
                             H005_B(0x24A4), file)) {
         return 0;
     }
@@ -411,6 +416,7 @@ static void load_char_screen(u16 name_len, const char *name,
     *bitmap = (struct BitMap *)exec_alloc_mem(sizeof(struct BitMap),
                                               COK_MEMF_CLEAR);
     if (open_resource_file(name_len, name, 0x1D,
+                           /* $3E08: messaggi di inserimento disco, 30 byte per gruppo di risorse */
                            (const char *)&g_h005[0x3E08], 0, &file) &&
         file != 0) {
         (void)read_ilbm(file, *bitmap, &frame, sized_alloc_chip);
@@ -419,10 +425,13 @@ static void load_char_screen(u16 name_len, const char *name,
          * big-endian (sull'Amiga e' la stessa copia di $40 byte).
          */
         for (i = 0; i < 0x20; ++i) {
+            /* $522E: palette dell'immagine caricata, 32 colori RGB4 ($40 byte) */
             H005_SET_W(0x522E + i * 2, frame.color_map[i]);
         }
+        /* $522E: palette dell'immagine caricata, 32 colori RGB4 ($40 byte); $523E: (word) colore 8
+         * della palette $522E (copia del colore 0) */
         H005_SET_W(0x523E, H005_W(0x522E));
-        H005_SET_W(0x522E, 0);
+        H005_SET_W(0x522E, 0); /* $522E: palette dell'immagine caricata, 32 colori RGB4 ($40 byte) */
         dos_close(file);
     }
 }
@@ -525,6 +534,9 @@ void make_file_name(u16 name_len, const char *name, u16 out_max, char *out)
 /* PORT H028+$1098: disco dei dati dal valore v ((v+2)/3); il precedente in $246D. */
 void set_data_disk(u8 v)
 {
+    /* $246D: disco dei dati precedente (copia di +$246E); $246E: disco dei dati / gruppo di risorse
+     * corrente (G_RESOURCE_GROUP) */
     H005_B(0x246D) = H005_B(0x246E);
+    /* $246E: disco dei dati / gruppo di risorse corrente (G_RESOURCE_GROUP) */
     H005_B(0x246E) = (u8)((u16)(v + 2) / 3);
 }

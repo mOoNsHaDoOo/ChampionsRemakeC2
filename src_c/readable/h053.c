@@ -60,18 +60,20 @@ void remove_from_party(u8 keep_count, u8 free_sprites)
         }
         if (p->next != NULL) {
             if (free_sprites) {
+                /* pg+$143: posto delle icone 24x24 (0..7 nel party; $0A creazione, $0C editor) */
                 free_sprite_set(g_current_char->b[0x143]);
             }
             p->next = g_current_char->next;
             free_character(&g_current_char);
             g_current_char = p;
             if (!keep_count) {
-                COK_PUT16(g_state_b + 0x67C,
+                COK_PUT16(g_state_b + 0x67C, /* B+$67C: (word) numero dei membri del party (max 8) */
                           (u16)(COK_GET16(g_state_b + 0x67C) - 1));
             }
         }
     } else {
         if (free_sprites) {
+            /* pg+$143: posto delle icone 24x24 (0..7 nel party; $0A creazione, $0C editor) */
             free_sprite_set(g_current_char->b[0x143]);
         }
         g_party_head = g_current_char->next;
@@ -79,7 +81,7 @@ void remove_from_party(u8 keep_count, u8 free_sprites)
         free_character(&g_current_char);
         g_current_char = p;
         if (!keep_count) {
-            COK_PUT16(g_state_b + 0x67C,
+            COK_PUT16(g_state_b + 0x67C, /* B+$67C: (word) numero dei membri del party (max 8) */
                       (u16)(COK_GET16(g_state_b + 0x67C) - 1));
         }
     }

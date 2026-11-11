@@ -5,6 +5,8 @@
  * libreria.  Quelle che finiscono con neg.b d0 trasformano DOSTRUE (-1) in
  * un booleano 1.  Sull'host non esiste dos.library: le implementazioni
  * #else sono l'ambiente minimo per far girare il port.
+ * PORT H002+$00C0 (wrapper_IoErr): usata solo dal runtime H074+$0010,
+ * sostituito da stdio; nessuna funzione C.
  */
 /* Host: opendir/strncasecmp di POSIX (prima di ogni header di sistema). */
 #if !defined(__SASC) && !defined(__AMIGA__) && !defined(AMIGA) && !defined(_WIN32)

@@ -139,6 +139,7 @@ static void draw_options(ChoiceFrame *f, u8 selected)
 }
 
 /* Indice dell'opzione selezionata (H005+$2483, persistente tra le chiamate). */
+/* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
 #define CHOICE_SELECTED H005_B(0x2483)
 
 /* Coordinate di combattimento/mappa del cursore (rami $07F8/$0D8E). */
@@ -146,13 +147,17 @@ static void map_target(s16 *dx, s16 *dy)
 {
     const u8 *area = g_combat_area;
 
-    if (H005_B(0x24CC)) {
+    if (H005_B(0x24CC)) { /* $24CC: 1 nel modo Manual: cursore sulla mappa di combattimento */
+        /* $2438: X del cursore sulla mappa del combattimento (word, 0..49) */
         *dx = (s16)(H005_W(0x2438) - COK_GET16(area + 2) + 1);
+        /* $2436: Y del cursore sulla mappa del combattimento (word, 0..24) */
         *dy = (s16)(H005_W(0x2436) - COK_GET16(area + 4) + 1);
     } else {
         s16 who = (s16)combatant_index(g_current_char);
 
+        /* $3154: posizioni combattenti, 6 byte per n (da 1): +0 colonna (word) */
         *dx = (s16)(H005_W(0x3154 + (who - 1) * 6) - COK_GET16(area + 2) + 1);
+        /* $3156: posizioni combattenti +2: riga sulla mappa (word) */
         *dy = (s16)(H005_W(0x3154 + (who - 1) * 6 + 2) - COK_GET16(area + 4) + 1);
     }
 }
@@ -160,6 +165,9 @@ static void map_target(s16 *dx, s16 *dy)
 /* Il cursore e' sulla mappa di combattimento (22x22 celle)? */
 static int over_combat_map(const ChoiceFrame *f)
 {
+    /* $24CB: 1 nel modo Move/Attack: cursore sulla mappa di combattimento; $24CC: 1 nel modo
+     * Manual: cursore sulla mappa di combattimento; $3DE3: modo/contesto di gioco corrente (0 menu,
+     * 1 vista, 5 combattimento) */
     return (H005_B(0x24CB) || H005_B(0x24CC)) && H005_B(0x3DE3) == 5 &&
            f->col >= 0 && f->col <= 0x16 && f->row >= 0 && f->row <= 0x16;
 }
@@ -174,6 +182,8 @@ static int over_area_view(const ChoiceFrame *f)
     if (f->col >= 3 && f->col <= 0x0D && f->row >= 3 && f->row <= 0x0D) {
         return 1;
     }
+    /* A+$1CC: (word) 1 area 3D (mappa 16x16), 0 mappa all'aperto; $3DE3: modo/contesto di gioco
+     * corrente (0 menu, 1 vista, 5 combattimento) */
     return COK_GET16(g_state_a + 0x1CC) == 0 && H005_B(0x3DE3) == 3 &&
            f->col >= 1 && f->col <= 0x26 && f->row >= 1 && f->row <= 0x0F;
 }
@@ -181,11 +191,14 @@ static int over_area_view(const ChoiceFrame *f)
 /* Direzione o azione sotto il cursore nella vista (H046 o tabella $4F86). */
 static u8 area_view_code(const ChoiceFrame *f)
 {
-    if (COK_GET16(g_state_a + 0x1CC) == 0) {
+    if (COK_GET16(g_state_a + 0x1CC) == 0) { /* A+$1CC: (word) 1 area 3D (mappa 16x16), 0 mappa all'aperto */
+        /* A+$186: (word) x del party sulla mappa all'aperto (38x15) */
         return cursor_direction((u16)(COK_GET16(g_state_a + 0x186) + 1),
+                         /* A+$188: (word) y del party sulla mappa all'aperto (38x15) */
                          (u16)(COK_GET16(g_state_a + 0x188) + 1),
                          (u16)f->col, (u16)f->row);
     }
+    /* $4F86: azione sotto il cursore nella vista: righe da $0C, da (3,3) */
     return H005_B(0x4F86 + (f->row - 3) * 0x0C + (f->col - 3));
 }
 
@@ -197,7 +210,8 @@ static u8 area_view_code(const ChoiceFrame *f)
  */
 static void enter_or_click(ChoiceFrame *f)
 {
-    if (!G_MOUSE_CLICK) {
+    if (!G_MOUSE_CLICK) { /* $249E: 1 se il tasto viene dal mouse (clic) */
+        /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
         f->key = (u8)f->options[f->item[CHOICE_SELECTED - 1].start];
         if (f->key == 0) {
             f->key = 0x0D;
@@ -205,20 +219,28 @@ static void enter_or_click(ChoiceFrame *f)
         f->done = 1;
         return;
     }
-    f->row = (s16)((s16)H005_W(0x2354) / 8);
-    f->col = (s16)((s16)H005_W(0x2356) / 8);
+    f->row = (s16)((s16)H005_W(0x2354) / 8); /* $2354: Y del mouse (word, iniziale $64) */
+    f->col = (s16)((s16)H005_W(0x2356) / 8); /* $2356: X del mouse (word, iniziale $A0) */
     if (g_h047_0001) {
         *f->special = 1;
         f->done = 1;
         return;
     }
-    if (H005_B(0x24A2) &&
+    if (H005_B(0x24A2) && /* $24A2: 1: il clic su un nome del party sceglie il personaggio */
+        /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento); A+$270: (word)
+         * area citta': niente ridisegno vista ne' EXIT dal campo */
         (H005_B(0x3DE3) != 3 || COK_GET16(g_state_a + 0x270) != 0) &&
+        /* $24B0: modo Move dell'esplorazione: clic sulla vista come movimento; $3DE3: modo/contesto
+         * di gioco corrente (0 menu, 1 vista, 5 combattimento) */
         !H005_B(0x24B0) && H005_B(0x3DE3) != 5 &&
+        /* $248D: area cliccabile del party: prima colonna (1 o $11); $248C: area cliccabile del
+         * party: ultima colonna ($26) */
         f->col >= H005_B(0x248D) && f->col <= H005_B(0x248C) &&
+        /* $248B: area cliccabile del party: prima riga (4); $248A: area cliccabile del party:
+         * ultima riga (3 + membri) */
         f->row >= H005_B(0x248B) && f->row <= H005_B(0x248A)) {
         /* Clic su un personaggio del party. */
-        u16 index = (u16)(f->row - H005_B(0x248B));
+        u16 index = (u16)(f->row - H005_B(0x248B)); /* $248B: area cliccabile del party: prima riga (4) */
         Character *member = g_party_head;
         u16 i;
 
@@ -231,10 +253,11 @@ static void enter_or_click(ChoiceFrame *f)
             f->key = 'H';
             *f->special = 1;
             f->done = 1;
-            if (H005_B(0x24D8)) {
+            if (H005_B(0x24D8)) { /* $24D8: modo di scelta membro: il clic va in $2508 e non nel corrente */
                 g_h005_2508 = member;
             } else if (g_current_char == member) {
                 *f->special = 0;
+                /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
                 f->key = (u8)f->options[f->item[CHOICE_SELECTED - 1].start];
                 if (f->key == 0) {
                     f->key = 0x0D;
@@ -256,6 +279,7 @@ static void enter_or_click(ChoiceFrame *f)
         f->done = 1;
         return;
     }
+    /* $24B0: modo Move dell'esplorazione: clic sulla vista come movimento */
     if (H005_B(0x24B0) && over_area_view(f)) {
         *f->special = 1;
         f->key = area_view_code(f);
@@ -276,28 +300,33 @@ static void enter_or_click(ChoiceFrame *f)
             if ((s16)(f->item[i - 1].start + 1) <= f->col &&
                 (s16)(f->item[i - 1].end + 1) >= f->col) {
                 f->key = (u8)f->options[f->item[i - 1].start];
+                /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
                 CHOICE_SELECTED = (u8)i;
+                /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
                 draw_options(f, CHOICE_SELECTED);
                 f->done = 1;
             }
         }
         return;
     }
-    if (H005_B(0x24DA) && !f->done) {
+    if (H005_B(0x24DA) && !f->done) { /* $24DA: 1 in Modify Character: il clic sceglie il campo ($2506) */
         f->done = 1;
         switch (f->row) {
         case 1:
             if (f->col >= 1 && f->col <= 0x10) {
+                /* $2506: (word) campo cliccato in Modify Character (0..7), $FF nessuno */
                 H005_SET_W(0x2506, 6);
             }
             break;
         case 3:
             if (f->col >= 0x1F && f->col <= 0x21) {
+                /* $2506: (word) campo cliccato in Modify Character (0..7), $FF nessuno */
                 H005_SET_W(0x2506, 7);
             }
             break;
         case 9: case 10: case 11: case 12: case 13: case 14:
             if (f->col >= 5 && f->col <= 9) {
+                /* $2506: (word) campo cliccato in Modify Character (0..7), $FF nessuno */
                 H005_SET_W(0x2506, (u16)(f->row - 9));
             }
             break;
@@ -309,11 +338,14 @@ static void enter_or_click(ChoiceFrame *f)
         f->key = 'G';
         return;
     }
+    /* $2504: (word) prima colonna dell'area cliccabile del menu a elenco */
     if (!f->done && f->col >= (s16)H005_W(0x2504) &&
+        /* $2502: (word) ultima colonna dell'area cliccabile del menu a elenco */
         f->col <= (s16)H005_W(0x2502)) {
         u16 i;
 
         for (i = 1; i <= 0x19; ++i) {
+            /* $2777: base 1-based della tabella righe voci menu ($2778 + i - 1) */
             u8 limit = H005_B(0x2778 + i - 1);
 
             if (limit == 0xFF) {
@@ -321,6 +353,7 @@ static void enter_or_click(ChoiceFrame *f)
             }
             if (!f->done && !(limit > f->row)) {
                 f->done = 1;
+                /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
                 f->key = (u8)f->options[f->item[CHOICE_SELECTED - 1].start];
             }
         }
@@ -330,7 +363,7 @@ static void enter_or_click(ChoiceFrame *f)
 /* Cifre 1..9 (e '\\' come 7) tradotte con la tabella H005+$4F7C. */
 static void map_digit(ChoiceFrame *f)
 {
-    f->key = H005_B(0x4F7C + f->key - '1');
+    f->key = H005_B(0x4F7C + f->key - '1'); /* $4F7C: traduzione dei tasti cifra 1..9 in tasti azione */
     *f->special = 1;
 }
 
@@ -365,11 +398,12 @@ u8 ui_request_choice(u16 title_len, const char *title, u16 options_len,
     f.special = special;
 
     intuition_modify_idcmp(g_window, g_window->IDCMPFlags | 0x00400000UL);
-    H005_B(0x249D) = 0;
+    H005_B(0x249D) = 0; /* $249D: 1 se l'ultima UI_RequestChoice ha dato un tasto speciale */
     f.title_len = h026_strlen(title_len, title);
     parse_options(&f, options_len, options);
+    /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
     if (CHOICE_SELECTED > f.count || CHOICE_SELECTED == 0) {
-        CHOICE_SELECTED = 1;
+        CHOICE_SELECTED = 1; /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
     }
     f.options_len = h026_strlen(options_len, options);
     f.key = 0;
@@ -379,34 +413,42 @@ u8 ui_request_choice(u16 title_len, const char *title, u16 options_len,
     if (title[0] != 0) {
         ui_draw_text(0, 0x18, title_pen, 0, title_len, title);
     }
+    /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
     draw_options(&f, CHOICE_SELECTED);
 
     do {
         f.key = 0;
         /* Animazione dell'insieme di immagini ($069E). */
+        /* A+$3FE: uso: forza l'animazione in attesa scelta; sommato alla direzione */
         if ((COK_GET16(g_state_a + 0x3FE) != 0 || animate) &&
+            /* $27BE: (word) fotogramma corrente dell'animazione della sequenza (1..n) */
             H005_W(0x27BE) > 0) {
             u16 frame;
             s16 wait;
 
             now = time_hundredths();
+            /* $27BE: (word) fotogramma corrente dell'animazione della sequenza (1..n) */
             frame = (u16)(H005_W(0x27BE) + 1);
+            /* $27BC: (word) fotogrammi della sequenza caricata (max 6), base del blocco */
             if (frame > H005_W(0x27BC)) {
                 frame = 1;
             }
+            /* $27CA: tab. word per fotogramma (idx frame-1): durata in 1/10 s */
             wait = (s16)(H005_W(0x27BC + 0x0E + (frame - 1) * 2) * 10 - 0x0B);
             if (wait < 0) {
                 wait = 0;
             }
+            /* A+$3FE: uso: forza l'animazione in attesa scelta; sommato alla direzione */
             if (COK_GET16(g_state_a + 0x3FE) != 0 ||
                 !(now - last_time < (s32)wait)) {
+                /* $27BE: (word) fotogramma corrente dell'animazione della sequenza (1..n) */
                 H005_SET_W(0x27BE, frame);
                 show_picture(3, 3, animate, sequence_frame(frame));
                 last_time = now;
             }
         }
         /* Forma del puntatore ($076A). */
-        if (H005_B(0x24E2)) {
+        if (H005_B(0x24E2)) { /* $24E2: 1 durante il riposo: puntatore d'attesa, messaggi dalla riga $12 */
             shape_code = 9;
         } else {
             f.col = (s16)(g_window->MouseX / 8);
@@ -419,6 +461,7 @@ u8 ui_request_choice(u16 title_len, const char *title, u16 options_len,
                 map_target(&dx, &dy);
                 shape = cursor_direction((u16)dx, (u16)dy, (u16)((f.col + 2) / 3),
                                   (u16)((f.row + 2) / 3));
+            /* $24B0: modo Move dell'esplorazione: clic sulla vista come movimento */
             } else if (H005_B(0x24B0) && over_area_view(&f)) {
                 shape = area_view_code(&f);
             }
@@ -438,24 +481,26 @@ u8 ui_request_choice(u16 title_len, const char *title, u16 options_len,
         set_pointer_shape(shape_code);
 
         /* Tempo massimo o input ($0A12). */
+        /* $2792: (long) tempo massimo di attesa della scelta, in 1/100 s (0 nessuno) */
         if (G_PROMPT_TIMEOUT > 0) {
             s32 elapsed = time_hundredths() - last_time;
 
             if (elapsed < 0) {
                 elapsed = -elapsed;
             }
+            /* $2792: (long) tempo massimo di attesa della scelta, in 1/100 s (0 nessuno) */
             if (!(elapsed < G_PROMPT_TIMEOUT)) {
-                f.key = G_PROMPT_KEY;
+                f.key = G_PROMPT_KEY; /* $52FB: tasto restituito alla scadenza dell'attesa (G_PROMPT_KEY) */
                 f.done = 1;
             }
         }
         if (!f.done) {
             poll_intuition_events();
-            f.key = G_KEY;
+            f.key = G_KEY; /* $5305: tasto/azione pendente dall'input (G_KEY) */
         }
         if (f.key != 0 && !f.done) {
             *special = 0;
-            if (G_KEY > 0 && G_KEY < 5) {
+            if (G_KEY > 0 && G_KEY < 5) { /* $5305: tasto/azione pendente dall'input (G_KEY) */
                 f.done = 1;
                 *special = 1;
             } else {
@@ -480,11 +525,15 @@ u8 ui_request_choice(u16 title_len, const char *title, u16 options_len,
                 case '4':
                     *special = 1;
                     if (f.count > 1) {
+                        /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
                         if (CHOICE_SELECTED == 1) {
+                            /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
                             CHOICE_SELECTED = (u8)f.count;
                         } else {
+                            /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
                             CHOICE_SELECTED = (u8)(CHOICE_SELECTED - 1);
                         }
+                        /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
                         draw_options(&f, CHOICE_SELECTED);
                     } else {
                         if (digits_map) {
@@ -496,11 +545,15 @@ u8 ui_request_choice(u16 title_len, const char *title, u16 options_len,
                 case '6':
                     *special = 1;
                     if (f.count > 1) {
+                        /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
                         if (CHOICE_SELECTED == f.count) {
+                            /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
                             CHOICE_SELECTED = 1;
                         } else {
+                            /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
                             add_to_byte(&CHOICE_SELECTED, 1);
                         }
+                        /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
                         draw_options(&f, CHOICE_SELECTED);
                     } else {
                         f.done = 1;
@@ -533,7 +586,11 @@ u8 ui_request_choice(u16 title_len, const char *title, u16 options_len,
                                                 f.item[n - 1].start != i; ++n) {
                                     }
                                     if (n <= 0x14) {
+                                        /* $2483: indice dell'opzione selezionata nei menu a riga
+                                         * (persistente) */
                                         CHOICE_SELECTED = (u8)n;
+                                        /* $2483: indice dell'opzione selezionata nei menu a riga
+                                         * (persistente) */
                                         draw_options(&f, CHOICE_SELECTED);
                                     }
                                 }
@@ -545,6 +602,7 @@ u8 ui_request_choice(u16 title_len, const char *title, u16 options_len,
                         if (f.key == '\\') {
                             f.key = '7';
                         } else {
+                            /* $4F7C: traduzione dei tasti cifra 1..9 in tasti azione */
                             f.key = H005_B(0x4F7C + f.key - '1');
                         }
                         *special = 1;
@@ -556,9 +614,10 @@ u8 ui_request_choice(u16 title_len, const char *title, u16 options_len,
         }
     } while (!f.done);
 
+    /* A+$3FE: uso: forza l'animazione in attesa scelta; sommato alla direzione */
     COK_PUT16(g_state_a + 0x3FE, 0);
     f.result = f.key;
-    H005_B(0x249D) = *special;
+    H005_B(0x249D) = *special; /* $249D: 1 se l'ultima UI_RequestChoice ha dato un tasto speciale */
     intuition_modify_idcmp(g_window, g_window->IDCMPFlags & ~0x00400000UL);
     return f.result;
 }
@@ -611,7 +670,8 @@ typedef struct ListFrame {
 } ListFrame;
 
 /* Prima riga mostrata dei menu a elenco (H005+$2796). */
-#define LIST_TOP H005_W(0x2796)
+#define LIST_TOP H005_W(0x2796) /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
+/* $2796: (word) indice della prima voce mostrata nei menu a elenco */
 #define SET_LIST_TOP(v) H005_SET_W(0x2796, (u16)(v))
 
 /*
@@ -648,6 +708,7 @@ static void draw_menu_items(ListFrame *f, u16 top)
     s16 row;
     u16 len;
 
+    /* $2778: tab. 25 byte: riga a schermo di ogni voce menu mostrata, $FF fine */
     h029_fill_bytes(0x18, &g_h005[0x2778], 0x19, 0xFF);
     clear_text_cells(f->first_col, f->first_row, f->last_col, f->last_row);
     node = menu_nth(f->list, top);
@@ -655,6 +716,7 @@ static void draw_menu_items(ListFrame *f, u16 top)
     row = (s16)f->first_row;
     f->row_no = 1;
     while (node != NULL && row <= (s16)f->last_row) {
+        /* $2777: base 1-based della tabella righe voci menu ($2778 + i - 1) */
         H005_B(0x2778 + f->row_no - 1) = (u8)row;
         ui_draw_text(f->first_col, (u16)row,
                      node->header ? f->title_pen : f->normal_pen, 0, 0x28,
@@ -714,6 +776,7 @@ static void highlight_item(ListFrame *f, u16 index)
 {
     u16 col = trimmed_text(f, index);
 
+    /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
     ui_draw_text(col, (u16)(index - LIST_TOP + f->first_row), 0,
                  f->highlight_pen, 0x50, f->text);
 }
@@ -724,6 +787,7 @@ static void unhighlight_item(ListFrame *f, u16 index)
     CokMenuItem *node = menu_nth(f->list, index);
     u16 col = trimmed_text(f, index);
 
+    /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
     ui_draw_text(col, (u16)(index - LIST_TOP + f->first_row),
                  node->header ? f->title_pen : f->normal_pen, 0, 0x50,
                  f->text);
@@ -746,8 +810,9 @@ static void skip_headers(ListFrame *f, u8 down)
         while (i < (s16)f->visible && (node == NULL || node->header)) {
             ++i;
             ++*f->index;
+            /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
             if ((s16)*f->index > (s16)(LIST_TOP + f->visible - 1)) {
-                *f->index = LIST_TOP;
+                *f->index = LIST_TOP; /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
             }
             node = menu_nth(f->list, *f->index);
         }
@@ -755,7 +820,9 @@ static void skip_headers(ListFrame *f, u8 down)
         while (i < (s16)f->visible && (node == NULL || node->header)) {
             ++i;
             --*f->index;
+            /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
             if ((s16)*f->index < (s16)LIST_TOP) {
+                /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
                 *f->index = (u16)(LIST_TOP + f->visible - 1);
             }
             node = menu_nth(f->list, *f->index);
@@ -769,22 +836,27 @@ static void skip_headers(ListFrame *f, u8 down)
  */
 static void page_menu(ListFrame *f, u8 next)
 {
+    /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
     s16 rel = (s16)(*f->index - LIST_TOP);
 
     if (next) {
+        /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
         SET_LIST_TOP(LIST_TOP + f->visible);
+        /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
         if ((s16)LIST_TOP > (s16)(f->count - f->visible)) {
+            /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
             SET_LIST_TOP(f->count - f->visible);
         }
     } else {
+        /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
         SET_LIST_TOP(LIST_TOP - f->visible);
-        if ((s16)LIST_TOP < 0) {
-            SET_LIST_TOP(0);
+        if ((s16)LIST_TOP < 0) { /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
+            SET_LIST_TOP(0); /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
         }
     }
-    *f->index = (u16)(LIST_TOP + rel);
+    *f->index = (u16)(LIST_TOP + rel); /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
     skip_headers(f, next);
-    draw_menu_items(f, LIST_TOP);
+    draw_menu_items(f, LIST_TOP); /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
 }
 
 /* PORT H008+$1A60: selezione giu' (down) o su, con giro nella pagina. */
@@ -792,12 +864,15 @@ static void move_selection(ListFrame *f, u8 down)
 {
     if (down) {
         ++*f->index;
+        /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
         if ((s16)*f->index > (s16)(LIST_TOP + f->visible - 1)) {
-            *f->index = LIST_TOP;
+            *f->index = LIST_TOP; /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
         }
     } else {
         --*f->index;
+        /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
         if ((s16)*f->index < (s16)LIST_TOP) {
+            /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
             *f->index = (u16)(LIST_TOP + f->visible - 1);
         }
     }
@@ -849,8 +924,8 @@ u8 list_menu(u16 title_len, const char *title, u16 options_len,
     f.normal_pen = normal_pen;
     f.highlight_pen = highlight_pen;
 
-    H005_SET_W(0x2504, first_col);
-    H005_SET_W(0x2502, last_col);
+    H005_SET_W(0x2504, first_col); /* $2504: (word) prima colonna dell'area cliccabile del menu a elenco */
+    H005_SET_W(0x2502, last_col); /* $2502: (word) ultima colonna dell'area cliccabile del menu a elenco */
     f.width = (u16)(last_col - first_col + 1);
     f.count = menu_length(list);
     f.visible = (u16)(last_row - first_row + 1);
@@ -860,20 +935,20 @@ u8 list_menu(u16 title_len, const char *title, u16 options_len,
     }
     total = menu_length(list);
     if (!((s16)total > (s16)f.visible)) {
-        SET_LIST_TOP(0);
+        SET_LIST_TOP(0); /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
     }
-    if ((s16)LIST_TOP > (s16)*index) {
-        SET_LIST_TOP(*index);
+    if ((s16)LIST_TOP > (s16)*index) { /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
+        SET_LIST_TOP(*index); /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
         *redraw = 1;
     }
-    if ((s16)LIST_TOP > (s16)total) {
-        SET_LIST_TOP(0);
+    if ((s16)LIST_TOP > (s16)total) { /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
+        SET_LIST_TOP(0); /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
         *redraw = 1;
     }
     ++*index;
     move_selection(&f, 0);
     if (*redraw) {
-        draw_menu_items(&f, LIST_TOP);
+        draw_menu_items(&f, LIST_TOP); /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
     }
     *redraw = 0;
 
@@ -882,10 +957,12 @@ u8 list_menu(u16 title_len, const char *title, u16 options_len,
         h026_copy(0x28, opts, options_len, options);
         has_next = 0;
         has_prev = 0;
+        /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
         if ((s16)LIST_TOP < (s16)(f.count - f.visible)) {
             h026_append(0x28, opts, 5, " Next");
             has_next = 1;
         }
+        /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
         if ((s16)LIST_TOP > (s16)leading) {
             h026_append(0x28, opts, 5, " Prev");
             has_prev = 1;
@@ -895,8 +972,8 @@ u8 list_menu(u16 title_len, const char *title, u16 options_len,
         }
         key = ui_request_choice(title_len, title, 0x28, opts, title_pen,
                                 normal_pen, highlight_pen, 1, 0, &special);
-        row = (s16)((s16)H005_W(0x2354) / 8);
-        col = (s16)((s16)H005_W(0x2356) / 8);
+        row = (s16)((s16)H005_W(0x2354) / 8); /* $2354: Y del mouse (word, iniziale $64) */
+        col = (s16)((s16)H005_W(0x2356) / 8); /* $2356: X del mouse (word, iniziale $A0) */
         unhighlight_item(&f, *index);
         if (special) {
             switch (key) {
@@ -928,38 +1005,43 @@ u8 list_menu(u16 title_len, const char *title, u16 options_len,
             *chosen = NULL;
             return 0;
         case 'P':
-            if (!G_MOUSE_CLICK || row == 0x18) {
+            if (!G_MOUSE_CLICK || row == 0x18) { /* $249E: 1 se il tasto viene dal mouse (clic) */
                 page_menu(&f, 0);
             }
             break;
         case 'N':
-            if (!G_MOUSE_CLICK || row == 0x18) {
+            if (!G_MOUSE_CLICK || row == 0x18) { /* $249E: 1 se il tasto viene dal mouse (clic) */
                 page_menu(&f, 1);
             }
             break;
         default:
-            if (G_MOUSE_CLICK && row != 0x18) {
+            if (G_MOUSE_CLICK && row != 0x18) { /* $249E: 1 se il tasto viene dal mouse (clic) */
+                /* $2504: (word) prima colonna dell'area cliccabile del menu a elenco; $2502: (word)
+                 * ultima colonna dell'area cliccabile del menu a elenco */
                 if (col >= (s16)H005_W(0x2504) && col <= (s16)H005_W(0x2502)) {
                     u16 i;
 
                     for (i = 1; i <= 0x19; ++i) {
+                        /* $2777: base 1-based della tabella righe voci menu ($2778 + i - 1) */
                         u8 item_row = H005_B(0x2778 + i - 1);
 
                         if (item_row == 0xFF) {
                             break;
                         }
                         if ((s16)item_row == row) {
+                            /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
                             if ((u16)(i - 1 + LIST_TOP) == *index) {
                                 *chosen = menu_nth(list, *index);
                                 return key;
                             }
                             unhighlight_item(&f, *index);
+                            /* $2796: (word) indice della prima voce mostrata nei menu a elenco */
                             *index = (u16)(i - 1 + LIST_TOP);
                             highlight_item(&f, *index);
                         }
                     }
                 }
-            } else if (!G_MOUSE_CLICK || prev_key == key) {
+            } else if (!G_MOUSE_CLICK || prev_key == key) { /* $249E: 1 se il tasto viene dal mouse (clic) */
                 *chosen = menu_nth(list, *index);
                 return key;
             }
@@ -979,7 +1061,7 @@ u8 ask_yes_no(u16 text_len, const char *text, u16 title_pen,
     u8 special;                         /* -$1(a5) */
     u8 key;
 
-    H005_B(0x2483) = 2;
+    H005_B(0x2483) = 2; /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
     do {
         key = ui_request_choice(text_len, text, 6, "Yes No", title_pen,
                                 normal_pen, highlight_pen, 0, 0, &special);

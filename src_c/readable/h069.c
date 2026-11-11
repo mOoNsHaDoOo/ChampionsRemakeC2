@@ -20,7 +20,9 @@ void h069_draw_marker(void)
     u16 x;                              /* -$2(a5) */
     u16 y;                              /* -$4(a5) */
 
+    /* A+$186: (word) x del party sulla mappa all'aperto (38x15) */
     x = (u16)(COK_GET16(g_state_a + 0x186) + 1);
+    /* A+$188: (word) y del party sulla mappa all'aperto (38x15) */
     y = (u16)(COK_GET16(g_state_a + 0x188) + 1);
     save_screen_cell(x, y, g_gfx_3334);
     graphics_set_apen(g_rastport, 0x0E);
@@ -32,6 +34,8 @@ void h069_draw_marker(void)
 /* PORT H069+$00A8: rimette lo sfondo sotto il segno del party. */
 void h069_restore_marker(void)
 {
+    /* A+$186: (word) x del party sulla mappa all'aperto (38x15) */
     restore_screen_cell((u16)(COK_GET16(g_state_a + 0x186) + 1),
+                        /* A+$188: (word) y del party sulla mappa all'aperto (38x15) */
                         (u16)(COK_GET16(g_state_a + 0x188) + 1), g_gfx_3334);
 }

@@ -2805,3 +2805,123 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
 - Con questi passi le sequenze non perdono piu' la sincronia sulle pagine di testo di lunghezza variabile.
 
 ---
+
+## v58: collaudo di Order e Drop con due personaggi nuovi (nessuna modifica al codice)
+
+**Party:** CLR (chierico, AC 10, HP 13) e KTST (cavaliere, AC 10, HP 15), entrambi creati con la build attuale. Aggiunti con Add Character to Party; l'elenco mostra L, KTST, BOB, TAS, CLR, KNT con "*" accanto agli aggiunti.
+
+**Percorso** (ASan): Begin, Leave, Encamp, Alter ("Order Drop Speed Icon Pics Level Exit"), Order, Drop.
+
+**Order**
+- Il corrente e' KTST, scritto in bianco: draw_party (H063+$0D80) usa la penna $0F per il corrente e il colore dello stato per gli altri.
+- **Select:** "KTST has been selected", il menu diventa "Place Exit".
+- **Freccia giu':** KTST era l'ultimo e passa in testa (KTST, CLR), come nell'asm (H057+$1FD6: dalla coda in testa).
+- **Place:** si torna a "Select Exit"; Exit riporta al menu Alter.
+
+**Drop**
+- "KTST will be gone", "Drop from party? Yes No", Yes.
+- KTST esce dal party e resta solo CLR; il riquadro del party e il menu del campo si ridisegnano correttamente.
+
+**ASan:** pulito.
+
+**Harness di prova:** il passo Shot non consuma piu' il menu corrente, cosi' un passo condizionale puo' seguirlo subito.
+
+---
+
+## v59: collaudo di Turn Undead (nessuna modifica al codice)
+
+**Personaggi pronti dei dischi** (CHRDATA1..6)
+- Hanno solo equipaggiamento normale (armature, scudi, armi, frecce); MOLLY ha l'oggetto di tipo $43.
+- Nessuna pergamena e nessun oggetto magico: non servono al collaudo di pergamene e oggetti magici.
+
+**Mostri non morti nei file del gioco** (MON1CHA.dax, campo +$DF letto con load_monster_record)
+- SKELETON (26) tipo 1, ZOMBIE (31) tipo 2, GHOUL (7) tipo 3, GHAST (6) tipo 6.
+- Gli altri 31 mostri di MON1 hanno +$DF = 0.
+
+**Collaudo** (ASan, solo CLR, chierico di livello 1)
+- Un gancio di prova sostituisce i mostri della battaglia della carovana con SKELETON, mostro reale dei file del gioco. I danni a CLR sono limitati perche' resti ad almeno 1 HP; i mostri muoiono al primo colpo solo dopo il Turn.
+- **Menu:** compare "Move View Aim Turn Done". Turn appare perche' load_monster (H064) conta i non morti in $248F e il turno di CLR ha +$13 < $248F. Nella carovana normale il menu e' "Move View Aim Done", corretto perche' non ci sono non morti.
+- **Esito:** "CLR turns undead...", poi per ogni scheletro "SKELETON is turned" e gli scheletri fuggono. Dopo l'uso Turn sparisce dal menu (+$13 incrementato).
+- **Tre prove:** il tiro 1d20 e' unico per l'azione e il valore di tabella per tipo 1 e livello 1 e' 10.
+  - tiro 18: due scheletri scacciati;
+  - tiro 13: due scacciati;
+  - tiro 7: "Nothing Happens...".
+- **ASan:** pulito in tutte le prove.
+
+**Restano:** uso delle pergamene e oggetti magici in combattimento. Servono oggetti veri del gioco (tesori o negozi), non dati costruiti a mano.
+
+---
+
+## v60: collaudo di pergamene, pozioni e oggetti magici; correzione di Take Items (H070+$0E94)
+
+**Correzione: h070 take_items** (H070+$0E94)
+- Nell'asm indice (-$10), scelta (-$4) e cursore (-$E) si inizializzano una sola volta, prima del ciclo ($0E9E..$0EAA; il ciclo riparte da $0EAE).
+- Il C li azzerava a ogni giro, quindi dopo un Take la selezione tornava alla prima riga invece di restare dov'era. Ora l'inizializzazione e' fuori dal ciclo.
+
+**Oggetti dei tesori del gioco** (ITEM1.DAX, dump letto come ecl_treasure, H012 comando TREASURE)
+- **Blocchi con oggetti magici:** 17, 32..39, 48..51, 53.
+- **Blocco 17:** Scroll Cler 3 Spells (tipo $28, incantesimi $43 $3A $45), due White MU Scroll e due Red MU Scroll 3 Spells, Potion of Healing, Wand of Magic Missiles (5 cariche, incantesimo $41), frecce e dardi.
+
+**Collaudo** (ASan, solo CLR; ganci di prova fuori dal repository, oggetti tutti dai file del gioco)
+- **Tesoro e Take**
+  - Un gancio mette il blocco 17 nel tesoro della carovana. Il tesoro elenca gli oggetti; Take Items prende la pozione e la pergamena, e la selezione resta sulla riga dopo il Take.
+  - Nota: 'I' su "Money Items Exit" lascia selezionata la 2a opzione ($2483) e in "Take Exit" la 2a e' Exit. Invio quindi esce, anche nell'asm; si prende con T.
+- **Al campo**
+  - **Use senza Ready:** "Must be Readied" (H065+$28D2).
+  - **Pozione:** Ready, poi Use; HP da 1/13 a 8/13, la pozione sparisce (ingombro da 90 a 80).
+  - **Pergamena:** Ready, poi Use; "Spells on Scroll", 4th Level: Neutralize Poison, Cure Serious Wounds, Protection Evil 10' Radius.
+  - **Cure Serious Wounds** su CLR ("Cast Spell on whom"): HP 13/13, l'oggetto diventa "Scroll Cler 2 Spells" e l'incantesimo sparisce dalla pergamena.
+  - **Immagine del campo:** dopo View il fuoco riappare dopo un attimo. E' l'animazione di ui_request_choice ($069E), che ridisegna dopo l'attesa del fotogramma; anche all'ingresso del campo il riquadro e' vuoto per un attimo.
+- **In combattimento** (bacchetta e pergamena date a CLR all'inizio della battaglia con take_item, H071+$047C)
+  - Il menu diventa "Move View Aim Use Done"; Use mostra "Ready Use Drop Halve Join Exit".
+  - **Bacchetta:** Ready, poi Use; "Item Wand of Magic Missiles", Aim (Next Prev Manual Target Center Exit), Next su un Baaz, Target.
+  - **Cariche:** da 5 a 4. In Auto l'IA usa la bacchetta da sola: da 4 a 3 a 2.
+  - **Mira:** senza nemici in vista Next resta su CLR e Target lo colpisce ("CLR takes 6 points of damage from magic"). Errore della sequenza di prova, non del port.
+  - **Pergamena:** Cure Serious Wounds su CLR, HP da 1 a 5; sulla pergamena restano gli incantesimi 43 00 45.
+- **ASan:** pulito in tutte le prove.
+
+---
+
+## v61: commenti a ogni accesso dei dati anonimi, README in inglese, marcatori PORT completi, correzione H029
+
+**Commenti ai dati anonimi**
+- **Cosa e' commentato:** ogni lettura e scrittura degli array anonimi ha un commento che spiega l'elemento. Comprende g_h005 (H005_B/W/L, H005_SET_*), g_state_a/b/c, g_ecl_buffer, i campi b[] dei record e gli array dei moduli.
+  - Campi dei record: Character pg+, CokItem ogg+, CokTurn turno+, CokEffect eff+, CokCloud nube+.
+  - Array dei moduli: g_hNNN_bss/data.
+  - Esempio: `/* $3DF6: (word) velocita' del gioco 0..9 (pausa dei messaggi) */`.
+- **Glossario:** 586 voci ricavate solo dal codice e dall'asm. Dove il significato non e' certo la descrizione inizia con "uso:".
+- **Come sono applicati**
+  - Accessi trovati con l'AST di clang (libclang), quindi col tipo del record anche dentro le macro: 7080 accessi, 4513 righe commentate.
+  - In fondo alla riga se c'e' spazio, altrimenti sulla riga sopra.
+  - Commentate anche le #define con offset fissi (CHOICE_SELECTED, SPELL_B, POS_X, ...) e a mano gli accessi a base variabile (tabelle per classe, terreno, eta').
+- **Verifiche**
+  - I file oggetto compilati prima e dopo sono identici byte per byte, tranne h029_gfx.c (correzione sotto).
+  - Build host, AUDIO, C89, CMake x86_64/i686, MinGW: puliti. ctest 8/8.
+
+**Correzione: H029+$1210 scriveva in H005 invece che in H024**
+- `move.w #$10F, (H024+$4).l` scrive in H024+$4, cioe' -$14(a4) di H024 (A4 = H024+$18), il Type della NewScreen di Open_GameScreen.
+- Il C scriveva `H005_SET_W(0x0004, 0x010F)`, cioe' sopra la parola alta del valore della moneta 2 (long a H005+$4, valore 5).
+- Effetti dell'errore:
+  - lo schermo si apriva senza SCREENQUIET ($100);
+  - il valore della moneta 2 diventava $010F0005.
+- Ora scrive `g_h024_m14 = 0x010F`, cioe' Type = CUSTOMSCREEN | SCREENQUIET, ed e' esportata da h024_screen.h.
+
+**Marcatori PORT: 1132 / 1132**
+- PORT_STATUS.md contava 1107 routine. Le 25 senza marcatore hanno ora un `PORT Hnnn+$XXXX` che spiega dove sono:
+  - **8 trampolini** (bra.w): H012+$0186, H013+$0518/$051C/$0520, H043+$01CA/$01D2/$07F6, H061+$162A. Il marcatore sta sulla routine di arrivo.
+  - **Procedure annidate o inline**:
+    - H010+$0882 (corpo di Poll_IntuitionEvents);
+    - H045+$0014;
+    - H066+$292C, identica a H066+$30A8 game_file_path;
+    - H085+$3EE2, dispel_roll.
+  - **Callback del blitter H049+$06EC/$0782:** dentro queue_bitplane_blit.
+  - **Runtime del compilatore sostituito da stdio:** H002+$00C0 IoErr, H015+$0196/$033E, H020+$00C2/$00F0, H074+$0010/$009A/$0450, H075+$00FE/$0124/$0132.
+- H056+$0268 (nomi degli opcode ECL per il debug) non e' tra le routine dell'analisi; nell'asm nessuno la chiama.
+
+**Stranezze dell'originale trovate scrivendo il glossario** (port fedele, nessuna modifica)
+- L'effetto $36 (H027+$1C7A) testa $24A3 (partita salvata) dove il gemello $32 testa $24A5 (esito del tiro salvezza). Annotato nel commento.
+- In write_state_b_hook (H061) il caso 0, che pone $24C3, sembra irraggiungibile.
+
+**README.md** riscritto in inglese e aggiornato: stato completo, audio con COK_AUDIO, convenzione dei commenti, build SAS/C (smake / smake AUDIO).
+
+---

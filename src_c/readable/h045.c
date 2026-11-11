@@ -67,7 +67,7 @@ u8 parse_number(u16 len, const char *s, s32 *out, u8 is_signed, u16 base)
     u8 negative = 0;                    /* -$b(a5) */
 
     (void)len;
-    /* H045+$0014: salta gli spazi; 0 alla fine della stringa. */
+    /* PORT H045+$0014 (annidata): salta gli spazi; 0 alla fine della stringa. */
     while (s[pos] != 0 && s[pos] == ' ') {
         ++pos;
     }

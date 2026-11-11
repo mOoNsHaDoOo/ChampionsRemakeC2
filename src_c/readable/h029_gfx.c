@@ -130,8 +130,10 @@ static void set_game_palette(void)
     unsigned i;
 
     for (i = 0; i < 16; ++i) {
+        /* $52AE: palette corrente dello schermo, RGB4 (16 o 32 colori) */
         H005_SET_W(0x52AE + i * 2, colors[i]);
     }
+    /* $52AE: palette corrente dello schermo, RGB4 (16 o 32 colori) */
     graphics_load_rgb4(&g_screen->ViewPort, &g_h005[0x52AE], 0x10);
 }
 
@@ -139,11 +141,14 @@ static void set_game_palette(void)
  * PORT H029+$1206: apre lo schermo 320x200 a 5 piani senza titolo e la
  * finestra a schermo intero (BACKDROP|BORDERLESS|ACTIVATE|RMBTRAP, IDCMP
  * MOUSEBUTTONS|RAWKEY), indirizza le richieste di sistema alla finestra,
- * imposta la palette e carica i puntatori del mouse.
+ * imposta la palette e carica i puntatori del mouse.  La prima scrittura
+ * va in H024+$4 (move.w #$10F, (H024+$4).l), il Type della NewScreen:
+ * CUSTOMSCREEN | SCREENQUIET ($100), lo schermo senza barra del titolo
+ * ne' gadget.
  */
 void open_game_display(void)
 {
-    H005_SET_W(0x0004, 0x010F);
+    g_h024_m14 = 0x010F;    /* H024+$4: Type = CUSTOMSCREEN | SCREENQUIET */
     g_screen = open_game_screen(0x140, 0xC8, 5, NULL);
     intuition_show_title(g_screen, 0);
     g_window = open_game_window(0, 0, 0x140, 0xC8, 0x408, 0x11900, NULL,
@@ -439,6 +444,7 @@ void load_indexed_gfx_record(u16 name_len, const char *name, u16 id,
     }
     exec_copy_mem(data, header, 9);
     if (last_plane == 4) {
+        /* $522E: palette dell'immagine caricata, 32 colori RGB4 ($40 byte) */
         exec_copy_mem(data + 9, &g_h005[0x522E], 0x40);
     }
     allocate_gfx_record(COK_GET16(header), COK_GET16(header + 2), header[8],
@@ -595,7 +601,7 @@ void copy_screen_to_offscreen(void)
     r = graphics_blt_bitmap(g_screen->RastPort.BitMap, 0, 0,
                             g_gfx_3d8e->image, 0, 0, 0x140, 0xC8, 0xC0, 0xFF,
                             NULL);
-    H005_SET_W(0x3358, (u16)r);
+    H005_SET_W(0x3358, (u16)r); /* $3358: (word) risultato di BltBitMap nella copia dello schermo */
     g_h029_m8 = 0;
     g_h029_m9 = 0;
 }
@@ -671,6 +677,7 @@ void draw_tile24(u16 x, u16 y, u8 frame, u8 masked, struct GfxRecord *src,
 
     (void)unused;
     src_x = (u16)(frame * 0x18);
+    /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
     off = H005_B(0x3DE3) ? 8 : 0;
     if (g_h029_m5) {
         rp = g_offscreen_rp;

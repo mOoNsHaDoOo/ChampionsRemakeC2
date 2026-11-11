@@ -53,7 +53,7 @@ void take_item(CokItem *it, u8 *fail)
 /* Dati del modulo sotto a4: -$1(a4), ridisegnare l'elenco del negozio. */
 static u8 s_list_redraw;
 
-#define TEXT_BUF ((char *)&g_h005[0x3C82])
+#define TEXT_BUF ((char *)&g_h005[0x3C82]) /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
 
 /*
  * Nell'originale la lista degli oggetti ($2A3A) e' passata al menu a
@@ -73,7 +73,7 @@ static CokMenuItem *shop_as_menu(void)
                                                        COK_MEMF_CLEAR);
 
         memcpy(n->text, it->b, 0x2A);
-        n->header = it->b[0x2A];
+        n->header = it->b[0x2A]; /* ogg+$2A: flag intestazione: copiato in header della voce di menu */
         if (tail == NULL) {
             s_shop_menu = n;
         } else {
@@ -117,9 +117,10 @@ static void shop_list(u16 *index, CokMenuItem **cursor, CokItem **item,
     u16 price;
 
     for (it = g_treasure_items; it != NULL; it = it->next) {
-        if (COK_GET16(&it->b[0x42]) == 0) {
-            COK_PUT16(&it->b[0x42], 1);
+        if (COK_GET16(&it->b[0x42]) == 0) { /* ogg+$42: (word) valore in monete (Sell offre la meta') */
+            COK_PUT16(&it->b[0x42], 1); /* ogg+$42: (word) valore in monete (Sell offre la meta') */
         }
+        /* B+$6DA: (word) livello prezzi del negozio: bit piu' alto del byte basso */
         level = (u16)(COK_GET16(g_state_b + 0x6DA) >> 1);
         if (level > 2) {
             if (level == 4) {
@@ -132,7 +133,7 @@ static void shop_list(u16 *index, CokMenuItem **cursor, CokItem **item,
                 level = 6;
             }
         }
-        price = COK_GET16(&it->b[0x42]);
+        price = COK_GET16(&it->b[0x42]); /* ogg+$42: (word) valore in monete (Sell offre la meta') */
         switch (level) {
         case 0: price = (u16)(price >> 4); break;
         case 1: price = (u16)(price >> 3); break;
@@ -150,7 +151,7 @@ static void shop_list(u16 *index, CokMenuItem **cursor, CokItem **item,
         }
         h026_copy(0x28, (char *)it->b, 0x1E, buf);
     }
-    H005_B(0x2483) = 0;
+    H005_B(0x2483) = 0; /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
     *key = list_menu(7, "Items: ", 3, "Buy", 0x0D, 0x0A, 0x0F, 1, 1, 0x26,
                      0x16, shop_as_menu(), 1, &s_list_redraw, index, cursor);
     *item = shop_menu_item(*cursor);
@@ -162,14 +163,18 @@ static void shop_list(u16 *index, CokMenuItem **cursor, CokItem **item,
 /* Messaggio "<nome> buys <oggetto>" (plural: +$40, quantita'). */
 static void buys_message(CokItem *it)
 {
+    /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
     h026_copy(0x50, TEXT_BUF, 0x0F, (const char *)g_current_char->b);
-    if (it->b[0x40] > 0) {
+    if (it->b[0x40] > 0) { /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
+        /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
         h026_append(0x50, TEXT_BUF, 6, " buys ");
     } else {
+        /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
         h026_append(0x50, TEXT_BUF, 8, " buys a ");
     }
+    /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
     h026_append(0x50, TEXT_BUF, 0x28, (const char *)it->b);
-    show_message_line(0x50, TEXT_BUF);
+    show_message_line(0x50, TEXT_BUF); /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
 }
 
 /*
@@ -203,11 +208,12 @@ static void shop_buy(void)
         }
         done = 0;
         for (i = 0; i <= 7; ++i) {
+            /* B+$6DA: (word) livello prezzi del negozio: bit piu' alto del byte basso */
             if (mask_byte((u8)((u8)COK_GET16(g_state_b + 0x6DA) >> i), 1) > 0) {
                 bit = i;
             }
         }
-        v = COK_GET16(&it->b[0x42]);
+        v = COK_GET16(&it->b[0x42]); /* ogg+$42: (word) valore in monete (Sell offre la meta') */
         switch (bit) {
         case 0: price = (u16)(v >> 4); break;
         case 1: price = (u16)(v >> 3); break;
@@ -260,15 +266,16 @@ void shop(void)
     u8 redraw;                          /* -$33(a5) */
     CokItem *it;                        /* -$38(a5) */
 
-    H005_B(0x3DE3) = 1;
-    H005_B(0x24C2) = 0;
+    H005_B(0x3DE3) = 1; /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
+    H005_B(0x24C2) = 0; /* $24C2: 1: nel contesto 1 il ridisegno include la cornice esplorazione */
     redraw_game_screen();
-    H005_B(0x24C2) = 1;
+    H005_B(0x24C2) = 1; /* $24C2: 1: nel contesto 1 il ridisegno include la cornice esplorazione */
     draw_party(g_current_char);
+    /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
     h029_fill_bytes(0x1B, &g_h005[0x2A1E], 0x1C, 0);
     title[0] = 0;
     title[1] = 0;
-    H005_B(0x24E3) = 0;
+    H005_B(0x24E3) = 0; /* $24E3: uso: 1 se la cassa comune ha monete (Pool/Share/Take), mai letto */
     done = 0;
     for (it = g_treasure_items; it != NULL; it = it->next) {
         build_item_name(NULL, it, 0, 0, 0, 0);

@@ -202,6 +202,7 @@ static void sx_free_object(SxObject **pp)
     *pp = next;
 }
 
+/* PORT H043+$07F6: trampolino (bra.w) verso H043+$15C6, la routine qui sotto. */
 /*
  * PORT H043+$15C6 (anche $07F6): ferma tutto: gli oggetti attivi non
  * suonano piu' in questo turno (bit 4), le voci finiscono subito e la
@@ -534,6 +535,7 @@ static void sx_add_object(u8 play, SxObject *o)
     exec_enable();
 }
 
+/* PORT H043+$01D2: trampolino (bra.w) verso H043+$113E, la routine qui sotto. */
 /*
  * PORT H043+$113E (anche $01D2): l'oggetto name (gia' caricato, oppure
  * dal file SOUND/name o, la prima volta che manca, da SOUND/soundData).
@@ -649,6 +651,7 @@ static SxObject *sx_load_object(char *name, u8 play)
     return result;
 }
 
+/* PORT H043+$01CA: trampolino (bra.w) verso H043+$165A, la routine qui sotto. */
 /*
  * PORT H043+$165A (anche $01CA): "SoundX is quiting, exit code =", il
  * codice, chiusura dell'audio e uscita dal gioco.

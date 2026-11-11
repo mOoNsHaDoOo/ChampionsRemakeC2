@@ -52,9 +52,11 @@ static void build_turn_order(void)
     for (p = g_party_head; p != NULL; p = p->next) {
         i = 1;
         go = 1;
+        /* turno+$4: (word) iniziativa del round (1d6+destrezza); <=0 turno finito */
         v = (s16)COK_GET16(&p->block_192->b[4]);
         while (i < 0x41 && go) {
             if (g_turn_order[i - 1] != NULL) {
+                /* turno+$4: (word) iniziativa del round (1d6+destrezza); <=0 turno finito */
                 w = (s16)COK_GET16(&g_turn_order[i - 1]->block_192->b[4]);
             } else {
                 w = -1;
@@ -106,11 +108,12 @@ static void end_combat_cleanup(void)
         g_acid_pools = next;
     }
     for (p = g_party_head; p != NULL; p = p->next) {
+        /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
         if (find_effect(p, 0x0B, &e) && p->b[0x197] == 0) {
-            if (H005_B(0x2A1D) > 1) {
-                p->b[0x197] = 3;
+            if (H005_B(0x2A1D) > 1) { /* $2A1D: combattenti attivi del lato 1 (voce 2 di $2A1C) */
+                p->b[0x197] = 3; /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
             } else {
-                p->b[0x197] = 0;
+                p->b[0x197] = 0; /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
             }
         }
         drop_effects(p);
@@ -135,26 +138,32 @@ static void combat_menu(Character *c, u8 *key)
     u8 flag;                            /* -$2D(a5) */
 
     line[0] = '\0';
-    if (c->block_192->b[8] > 0) {
+    if (c->block_192->b[8] > 0) { /* turno+$8: punti movimento rimasti nel turno */
         h026_copy(0x28, line, 5, "Move ");
     }
     h026_append(0x28, line, 9, "View Aim ");
-    if (c->b[0x14F] > 0) {
+    if (c->b[0x14F] > 0) { /* pg+$14F: numero di oggetti posseduti (max 16) */
         h026_append(0x28, line, 4, "Use ");
     }
     flag = 0;
     for (i = 0; i <= 0x39; ++i) {
+        /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
         if (c->b[0x1E + i] > 0) {
             flag = 1;
         }
     }
+    /* turno+$1: flag puo' lanciare incantesimi (non in nube; azzerato attaccando); A+$1CA: (word)
+     * se non nullo nell'area non si lanciano incantesimi */
     if (flag && c->block_192->b[1] && COK_GET16(g_state_a + 0x1CA) == 0) {
         h026_append(0x28, line, 5, "Cast ");
     }
+    /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico; turno+$13: Turn
+     * Undead gia' usati nel combattimento (max H005+$248F); $248F: mostri caricati con +$DF: limite
+     * di Turn Undead (turno +$13) */
     if (c->b[0xFE] > 0 && c->block_192->b[0x13] < H005_B(0x248F)) {
         h026_append(0x28, line, 5, "Turn ");
     }
-    if (c->b[0x5B] == 5 && g_h005_2432 == NULL) {
+    if (c->b[0x5B] == 5 && g_h005_2432 == NULL) { /* pg+$5B: razza (0..6, nomi H005+$4D04) */
         h026_append(0x28, line, 5, "Yell ");
     }
     h026_append(0x28, line, 4, "Done");
@@ -212,10 +221,11 @@ typedef struct MoveFrame {
  */
 static void cancel_move(MoveFrame *f)
 {
-    f->c->block_192->b[8] = (u8)f->moves;
+    f->c->block_192->b[8] = (u8)f->moves; /* turno+$8: punti movimento rimasti nel turno */
     redraw_ground(0, 0, combatant_index(f->c));
     *f->done = (u8)!place_combatant(f->c, (u8)f->x0, (u8)f->y0, 0);
     center_view((s16)combatant_x(f->c), (s16)combatant_y(f->c), 0, 8);
+    /* turno+$B: orientamento/fotogramma del combattente (direzione 0..7) */
     f->c->block_192->b[0x0B] = (u8)f->facing;
     f->dir = 8;
 }
@@ -238,11 +248,11 @@ static void move_mode(Character *c, u8 key, u8 *done)
     u16 cost;                           /* -$18(a5) */
     char msg[0x51];                     /* -$6A(a5) */
 
-    H005_B(0x24CB) = 1;
+    H005_B(0x24CB) = 1; /* $24CB: 1 nel modo Move/Attack: cursore sulla mappa di combattimento */
     f.c = c;
     f.done = done;
-    f.moves = c->block_192->b[8];
-    f.facing = c->block_192->b[0x0B];
+    f.moves = c->block_192->b[8]; /* turno+$8: punti movimento rimasti nel turno */
+    f.facing = c->block_192->b[0x0B]; /* turno+$B: orientamento/fotogramma del combattente (direzione 0..7) */
     f.x0 = (s16)combatant_x(c);
     f.y0 = (s16)combatant_y(c);
     k = key;
@@ -256,10 +266,15 @@ static void move_mode(Character *c, u8 key, u8 *done)
         clear_text_cells(0x18, 0x18, 0x27, 0x18);
         if (k == ' ') {
             h026_copy(0x50, msg, 0x19, "Move/Attack, Move Left = ");
+            /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
             format_number(0x50, (char *)&H005_B(0x3C82),
+                          /* turno+$8: punti movimento rimasti nel turno */
                           (s32)(c->block_192->b[8] >> 1), 0, 0x0A, 2, ' ');
+            /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
             h026_append(0x50, msg, 0x50, (const char *)&H005_B(0x3C82));
             k = ui_request_choice(0x50, msg, 5, " Done", 0x0D, 0x0A, 0x0F, 1,
+                                  /* $249F: uso: byte di scarto per *special ed esiti nei menu di
+                                   * combattimento */
                                   0, &H005_B(0x249F));
         }
         switch (k) {
@@ -287,24 +302,27 @@ static void move_mode(Character *c, u8 key, u8 *done)
                 }
             } else {
                 if (f.dir & 1) {
+                    /* $3EF4: terreno, $41 voci da 4 byte (da 1): +0 costo ($FF invalicabile) */
                     cost = (u16)(H005_B(0x3EF4 + (tile - 1) * 4) * 3);
                 } else {
+                    /* $3EF4: terreno, $41 voci da 4 byte (da 1): +0 costo ($FF invalicabile) */
                     cost = (u16)(H005_B(0x3EF4 + (tile - 1) * 4) * 2);
                 }
+                /* $3EF4: terreno, $41 voci da 4 byte (da 1): +0 costo ($FF invalicabile) */
                 if (H005_B(0x3EF4 + (tile - 1) * 4) == 0xFF) {
                     cost = 0xFF;
                 }
-                if (cost > c->block_192->b[8]) {
+                if (cost > c->block_192->b[8]) { /* turno+$8: punti movimento rimasti nel turno */
                     show_message_line(0x0E, "can't go there");
                 } else {
                     combat_leave_attacks(c, f.dir);
-                    if (!c->b[0x198]) {
+                    if (!c->b[0x198]) { /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
                         *done = end_combat_turn(c);
                     } else {
-                        if (c->block_192->b[8] > 0) {
+                        if (c->block_192->b[8] > 0) { /* turno+$8: punti movimento rimasti nel turno */
                             combat_step(c, f.dir);
                         }
-                        if (!c->b[0x198]) {
+                        if (!c->b[0x198]) { /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
                             *done = end_combat_turn(c);
                         }
                         check_cloud(c, 1);
@@ -319,10 +337,10 @@ static void move_mode(Character *c, u8 key, u8 *done)
             k = ' ';
         }
     }
-    if (c->block_192->b[8] < 2) {
-        c->block_192->b[8] = 0;
+    if (c->block_192->b[8] < 2) { /* turno+$8: punti movimento rimasti nel turno */
+        c->block_192->b[8] = 0; /* turno+$8: punti movimento rimasti nel turno */
     }
-    H005_B(0x24CB) = 0;
+    H005_B(0x24CB) = 0; /* $24CB: 1 nel modo Move/Attack: cursore sulla mappa di combattimento */
 }
 
 /*
@@ -337,21 +355,26 @@ static void game_speed_menu(void)
 
     while (key != 'E' && key != 0) {
         h026_copy(0x28, title, 0x0B, "gameSpeed (");
+        /* $3DF6: (word) velocita' del gioco 0..9 (pausa dei messaggi) */
         format_number(0x28, line, (s32)H005_W(0x3DF6), 0, 0x0A, 1, ' ');
         h026_append(0x28, line, 3, ") :");
         h026_append(0x28, title, 0x28, line);
         strcpy(line, " ");
-        if (H005_W(0x3DF6) < 9) {
+        if (H005_W(0x3DF6) < 9) { /* $3DF6: (word) velocita' del gioco 0..9 (pausa dei messaggi) */
             h026_append(0x28, line, 7, "Slower ");
         }
-        if (H005_W(0x3DF6) > 0) {
+        if (H005_W(0x3DF6) > 0) { /* $3DF6: (word) velocita' del gioco 0..9 (pausa dei messaggi) */
             h026_append(0x28, line, 7, "Faster ");
         }
         h026_append(0x28, line, 4, "Exit");
         key = ui_request_choice(0x28, title, 0x28, line, 0x0D, 0x0A, 0x0F, 0,
+                                /* $249F: uso: byte di scarto per *special ed esiti nei menu di
+                                 * combattimento */
                                 0, &H005_B(0x249F));
         switch (key) {
+        /* $3DF6: (word) velocita' del gioco 0..9 (pausa dei messaggi) */
         case 'S': H005_SET_W(0x3DF6, H005_W(0x3DF6) + 1); break;
+        /* $3DF6: (word) velocita' del gioco 0..9 (pausa dei messaggi) */
         case 'F': H005_SET_W(0x3DF6, H005_W(0x3DF6) - 1); break;
         default: break;
         }
@@ -361,8 +384,9 @@ static void game_speed_menu(void)
 /* PORT H059+$0E4A: c passa al controllo automatico e lascia un bersaglio alleato. */
 static void set_auto(Character *c)
 {
-    c->b[0x19A] = 1;
+    c->b[0x19A] = 1; /* pg+$19A: controllo automatico in combattimento (1 = IA) */
     if (c->block_192->target != NULL &&
+        /* pg+$199: lato in combattimento (0 party, 1 avversari) */
         c->block_192->target->b[0x199] == c->b[0x199]) {
         c->block_192->target = NULL;
     }
@@ -393,14 +417,17 @@ static void done_menu(Character *c, u8 *done)
     h026_append(0x28, line, 0x0F, "Auto Speed Exit");
     while (key != 'E' && key != 0 && !*done) {
         key = ui_request_choice(0, "", 0x28, line, 0x0D, 0x0A, 0x0F, 0, 0,
+                                /* $249F: uso: byte di scarto per *special ed esiti nei menu di
+                                 * combattimento */
                                 &H005_B(0x249F));
         switch (key) {
         case 'G':
             *done = guard_turn(c);
             break;
         case 'D':
+            /* turno+$4: (word) iniziativa del round (1d6+destrezza); <=0 turno finito */
             COK_PUT16(&c->block_192->b[4], 1);
-            i = H005_B(0x2480);
+            i = H005_B(0x2480); /* $2480: posizione corrente nell'ordine dei turni (1..$48, g_turn_order) */
             p = g_turn_order[i];
             while (p != NULL && i < 0x48) {
                 g_turn_order[i - 1] = p;
@@ -409,6 +436,7 @@ static void done_menu(Character *c, u8 *done)
                 p = (i < 0x48) ? g_turn_order[i] : NULL;
             }
             g_turn_order[i - 1] = c;
+            /* $2480: posizione corrente nell'ordine dei turni (1..$48, g_turn_order) */
             add_to_byte(&H005_B(0x2480), 0xFFFF);
             *done = 1;
             break;
@@ -449,26 +477,29 @@ static void player_turn(Character *c)
     u16 spell;                          /* -$12(a5) */
     Character *p;                       /* -$6(a5) */
 
-    if (!c->b[0x198]) {
+    if (!c->b[0x198]) { /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
         done = end_combat_turn(c);
         return;
     }
-    if (c->block_192->b[0] > 0) {
+    if (c->block_192->b[0] > 0) { /* turno+$0: incantesimo in preparazione da lanciare all'inizio del turno */
+        /* turno+$0: incantesimo in preparazione da lanciare all'inizio del turno */
         spell = c->block_192->b[0];
-        c->block_192->b[0] = 0;
+        c->block_192->b[0] = 0; /* turno+$0: incantesimo in preparazione da lanciare all'inizio del turno */
         cast_spell(spell, 0, 1, &done);
         done = end_combat_turn(c);
         return;
     }
     done = 0;
     while (!done) {
-        H005_B(0x2483) = 1;
+        H005_B(0x2483) = 1; /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
         combat_menu(c, &key);
-        if (H005_B(0x249D)) {
+        if (H005_B(0x249D)) { /* $249D: 1 se l'ultima UI_RequestChoice ha dato un tasto speciale */
             switch (key) {
             case 1:
             case 3:
+                /* $2480: posizione corrente nell'ordine dei turni (1..$48, g_turn_order) */
                 add_to_byte(&H005_B(0x2480), 0xFFFF);
+                /* turno+$4: (word) iniziativa del round (1d6+destrezza); <=0 turno finito */
                 COK_PUT16(&c->block_192->b[4], 0x14);
                 for (p = g_party_head; p != NULL; p = p->next) {
                     set_auto(p);
@@ -478,7 +509,9 @@ static void player_turn(Character *c)
                 done = 1;
                 break;
             case 2:
+                /* $24A0: Magic On/Off (tasto 2): i personaggi in automatico lanciano magie */
                 H005_B(0x24A0) = (u8)(H005_B(0x24A0) == 0);
+                /* $24A0: Magic On/Off (tasto 2): i personaggi in automatico lanciano magie */
                 if (H005_B(0x24A0)) {
                     show_message_line(8, "Magic On");
                 } else {
@@ -500,8 +533,9 @@ static void player_turn(Character *c)
             switch (key) {
             case ' ':
                 for (p = g_party_head; p != NULL; p = p->next) {
+                    /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
                     if (p->b[0xEC] < 0x80) {
-                        p->b[0x19A] = 0;
+                        p->b[0x19A] = 0; /* pg+$19A: controllo automatico in combattimento (1 = IA) */
                     }
                 }
                 break;
@@ -522,7 +556,7 @@ static void player_turn(Character *c)
                 done = end_combat_turn(c);
                 break;
             case 'U':
-                H005_B(0x2483) = 2;
+                H005_B(0x2483) = 2; /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
                 show_items(&done);
                 combat_attacks(c);
                 if (!done) {
@@ -546,7 +580,7 @@ static void player_turn(Character *c)
         }
         if (!done) {
             show_combatant_cursor(c, 2, 1);
-            H005_B(0x24C7) = 1;
+            H005_B(0x24C7) = 1; /* $24C7: 1: pannello del combattente a destra da ridisegnare */
             draw_combat_status(c);
         }
     }
@@ -559,28 +593,35 @@ static void player_turn(Character *c)
  */
 static void actor_turn(Character *c)
 {
-    c->block_192->b[0x11] = 0;
-    c->block_192->b[0x14] = 0;
-    c->block_192->b[9] = 0;
+    c->block_192->b[0x11] = 0; /* turno+$11: attacchi subiti nel round */
+    c->block_192->b[0x14] = 0; /* turno+$14: somma (mod 8) degli ottavi fuori orientamento degli attacchi */
+    c->block_192->b[9] = 0; /* turno+$9: flag in guardia (Guard), attacca chi si avvicina */
     trigger_event(&c, 7);
+    /* turno+$4: (word) iniziativa del round (1d6+destrezza); <=0 turno finito */
     if ((s16)COK_GET16(&c->block_192->b[4]) <= 0) {
         return;
     }
+    /* turno+$4: (word) iniziativa del round (1d6+destrezza); <=0 turno finito */
     if (COK_GET16(&c->block_192->b[4]) == 0x14) {
+        /* turno+$4: (word) iniziativa del round (1d6+destrezza); <=0 turno finito */
         COK_PUT16(&c->block_192->b[4], 0x13);
     }
     g_current_char = c;
+    /* $24C6: 1 se le azioni del combattente vanno disegnate (visibile); pg+$199: lato in
+     * combattimento (0 party, 1 avversari) */
     H005_B(0x24C6) = (u8)(c->b[0x199] == 0 || combatant_visible(c, 0));
     show_combatant_cursor(c, 2, 1);
     recompute_stats(c);
-    H005_B(0x24C7) = 1;
+    H005_B(0x24C7) = 1; /* $24C7: 1: pannello del combattente a destra da ridisegnare */
     draw_combat_status(c);
     trigger_event(&c, 0x0F);
+    /* turno+$0: incantesimo in preparazione da lanciare all'inizio del turno */
     if (c->block_192->b[0] == 0) {
         trigger_event(&c, 0x15);
     }
+    /* turno+$4: (word) iniziativa del round (1d6+destrezza); <=0 turno finito */
     if (COK_GET16(&c->block_192->b[4]) > 0) {
-        if (c->b[0x19A]) {
+        if (c->b[0x19A]) { /* pg+$19A: controllo automatico in combattimento (1 = IA) */
             monster_turn(c);
         } else {
             player_turn(c);
@@ -602,16 +643,19 @@ static void end_round(u8 *over)
     u16 i;                              /* -$8(a5) */
 
     advance_time(1, 1);
+    /* $247C: numero del round del combattimento (0 all'inizio; bit 0 arrotonda) */
     add_to_byte(&H005_B(0x247C), 1);
     enemy_strength();
     i = 1;
     for (p = g_party_head; p != NULL; p = p->next) {
         trigger_event(&p, 0x13);
         check_cloud(p, 0);
-        if (p->b[0x197] == 5) {
+        if (p->b[0x197] == 5) { /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+            /* turno+$10: round passati sotto zero punti ferita (oltre 9 muore) */
             add_to_byte(&p->block_192->b[0x10], 1);
+            /* turno+$10: round passati sotto zero punti ferita (oltre 9 muore) */
             if (p->block_192->b[0x10] > 9) {
-                p->b[0x197] = 6;
+                p->b[0x197] = 6; /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
             }
         }
         ++i;
@@ -622,10 +666,16 @@ static void end_round(u8 *over)
     count_sides();
     center_view((s16)((s16)COK_GET16(g_combat_area + 2) + 3),
                 (s16)((s16)COK_GET16(g_combat_area + 4) + 3), 0xFF, 8);
+    /* $2A1C: combattenti attivi del lato 0; tabella byte indicizzata dal lato; $2A1D: combattenti
+     * attivi del lato 1 (voce 2 di $2A1C) */
     if (H005_B(0x2A1C) == 0 || H005_B(0x2A1D) == 0 ||
+        /* $247C: numero del round del combattimento (0 all'inizio; bit 0 arrotonda); $2477: round
+         * limite del combattimento (+$247C + 15) */
         H005_B(0x247C) >= H005_B(0x2477)) {
         *over = 1;
     }
+    /* $2A1C: combattenti attivi del lato 0; tabella byte indicizzata dal lato; $2A1D: combattenti
+     * attivi del lato 1 (voce 2 di $2A1C); $24D7: 1 se e' stata scelta la dimostrazione (Demo) */
     if (H005_B(0x2A1C) > 0 && H005_B(0x2A1D) == 0 && !H005_B(0x24D7) &&
         ask_yes_no(0x10, "Continue Battle:", 0x0D, 0x0A, 0x0F) == 'Y') {
         *over = 0;
@@ -643,10 +693,12 @@ void combat_main_loop(void)
     u8 over;                            /* -$1(a5) */
     Character *p;                       /* -$6(a5) */
 
-    H005_B(0x3DE3) = 5;
+    H005_B(0x3DE3) = 5; /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
     g_handlers_25c0[107] = (CokHandler)combat_spell_targets;
     start_combat();
     over = 0;
+    /* $2A1C: combattenti attivi del lato 0; tabella byte indicizzata dal lato; $2A1D: combattenti
+     * attivi del lato 1 (voce 2 di $2A1C) */
     if (H005_B(0x2A1C) == 0 || H005_B(0x2A1D) == 0) {
         over = 1;
     }
@@ -658,22 +710,26 @@ void combat_main_loop(void)
         for (p = g_party_head; p != NULL; p = p->next) {
             combat_prepare_turn(p);
         }
+        /* B+$596: (word) maschera lati sorpresi: bit lato+1 toglie 6 all'iniziativa */
         COK_PUT16(g_state_b + 0x596, 0);
         build_turn_order();
         p = g_turn_order[0];
-        H005_B(0x2480) = 1;
+        H005_B(0x2480) = 1; /* $2480: posizione corrente nell'ordine dei turni (1..$48, g_turn_order) */
         while (p != NULL) {
             actor_turn(p);
             explode_fallen();
+            /* $2480: posizione corrente nell'ordine dei turni (1..$48, g_turn_order) */
             add_to_byte(&H005_B(0x2480), 1);
+            /* $2480: posizione corrente nell'ordine dei turni (1..$48, g_turn_order) */
             if (H005_B(0x2480) > 0x48) {
                 p = NULL;
             } else {
+                /* $2480: posizione corrente nell'ordine dei turni (1..$48, g_turn_order) */
                 p = g_turn_order[H005_B(0x2480) - 1];
             }
         }
         end_round(&over);
     }
     end_combat_cleanup();
-    H005_B(0x24CE) = 1;
+    H005_B(0x24CE) = 1; /* $24CE: 1: pausa per carattere nella scrittura del testo */
 }

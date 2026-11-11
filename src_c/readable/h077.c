@@ -72,6 +72,7 @@ u8 line_step(CokLine *l)
         }
         moved = 1;
     }
+    /* $3DD2: direzione dal passo della linea: indice (dy+1)*4 + (dx+1) */
     l->dir = H005_B(0x3DD2 + iy * 4 + ix);
     return moved;
 }
@@ -104,13 +105,15 @@ u8 line_of_sight(s16 ox, s16 oy, s16 *tx, s16 *ty, u16 *dist, u8 *area)
     l1.y1 = *ty;
     line_init(&l1);
     l2.x0 = 0;
+    /* $3EF5: terreno +1: altezza dell'origine per la linea di vista */
     l2.y0 = H005_B(0x3EF4 + (overlay_at(area, ox, oy) - 1) * 4 + 1);
     l2.x1 = (l1.dx > l1.dy) ? l1.dx : l1.dy;
+    /* $3EF5: terreno +1: altezza dell'origine per la linea di vista */
     l2.y1 = H005_B(0x3EF4 + (overlay_at(area, ox, oy) - 1) * 4 + 1);
     line_init(&l2);
     do {
         if ((area[8] == 0 &&
-             l2.cy < H005_B(0x3EF4 +
+             l2.cy < H005_B(0x3EF4 + /* $3EF6: terreno +2: altezza che ferma la linea di vista */
                             (overlay_at(area, l1.cx, l1.cy) - 1) * 4 + 2)) ||
             l1.cost > limit) {
             *tx = l1.cx;
@@ -145,8 +148,8 @@ u8 in_direction(s16 x0, s16 y0, s16 x1, s16 y1, u16 dir)
     if (dir == 0xFF) {
         dir = 8;
     }
-    px = (s16)(x0 + H005_W(0x3EE2 + dir * 2));
-    py = (s16)(y0 + H005_W(0x3ED0 + dir * 2));
+    px = (s16)(x0 + H005_W(0x3EE2 + dir * 2)); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
+    py = (s16)(y0 + H005_W(0x3ED0 + dir * 2)); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
     if ((x0 == x1 && y0 == y1) || (px == x1 && py == y1)) {
         return 1;
     }
@@ -197,12 +200,16 @@ static void sort_area_list(void)
     u8 *ei;
     u8 *ej;
 
-    if (H005_B(0x2479) <= 1) {
+    if (H005_B(0x2479) <= 1) { /* $2479: numero di voci della lista dell'area +$2A3E (4 byte per voce) */
         return;
     }
+    /* $2479: numero di voci della lista dell'area +$2A3E (4 byte per voce) */
     for (i = 1; i <= (u16)(H005_B(0x2479) - 1); ++i) {
+        /* $2479: numero di voci della lista dell'area +$2A3E (4 byte per voce) */
         for (j = (u16)(i + 1); j <= H005_B(0x2479); ++j) {
+            /* $2A3E: lista dell'area: voci da 4 byte ($2479), byte 0 = n. combattente */
             ei = &H005_B(0x2A3E + (i - 1) * 4);
+            /* $2A3E: lista dell'area: voci da 4 byte ($2479), byte 0 = n. combattente */
             ej = &H005_B(0x2A3E + (j - 1) * 4);
             di = ei[2];
             dj = ej[2];
@@ -251,16 +258,21 @@ void find_in_area(s16 x, s16 y, u16 radius, u16 dir, u16 size, u8 *area)
             ox[i] = -1;
         }
     }
-    H005_B(0x2479) = 0;
+    H005_B(0x2479) = 0; /* $2479: numero di voci della lista dell'area +$2A3E (4 byte per voce) */
+    /* $247B: numero di combattenti nella tabella +$2B32 (+1 dopo lo schieramento) */
     for (n = 1; n <= H005_B(0x247B); ++n) {
+        /* $3159: posizioni combattenti +5: forma/taglia (0 = fuori mappa) */
         if (H005_B(0x3154 + (n - 1) * 6 + 5) == 0) {
             continue;
         }
         found = 0;
         best = 0xFF;
         for (j = 0; j <= 3; ++j) {
+            /* $3159: posizioni combattenti +5: forma/taglia (0 = fuori mappa) */
             if (shape_cell(H005_B(0x3154 + (n - 1) * 6 + 5), j, &dx, &dy)) {
+                /* $3154: posizioni combattenti, 6 byte per n (da 1): +0 colonna (word) */
                 kx[j] = (s16)(H005_W(0x3154 + (n - 1) * 6) + dx);
+                /* $3156: posizioni combattenti +2: riga sulla mappa (word) */
                 ky[j] = (s16)(H005_W(0x3154 + (n - 1) * 6 + 2) + dy);
             } else {
                 kx[j] = -1;
@@ -291,9 +303,12 @@ void find_in_area(s16 x, s16 y, u16 radius, u16 dir, u16 size, u8 *area)
         if (!found) {
             continue;
         }
-        ++H005_B(0x2479);
+        ++H005_B(0x2479); /* $2479: numero di voci della lista dell'area +$2A3E (4 byte per voce) */
+        /* $2479: numero di voci della lista dell'area +$2A3E (4 byte per voce) */
         m = (u16)(H005_B(0x2479) - 1);
+        /* $2A3E: lista dell'area: voci da 4 byte ($2479), byte 0 = n. combattente */
         H005_B(0x2A3E + m * 4) = (u8)n;
+        /* $2A3F: lista dell'area, byte 1: distanza (costo, meta' = caselle) */
         H005_B(0x2A3E + m * 4 + 1) = (u8)best;
         d = 0;
         if (dir < 8) {
@@ -303,6 +318,7 @@ void find_in_area(s16 x, s16 y, u16 radius, u16 dir, u16 size, u8 *area)
                 ++d;
             }
         }
+        /* $2A40: lista dell'area, byte 2: direzione verso il combattente */
         H005_B(0x2A3E + m * 4 + 2) = (u8)d;
     }
     sort_area_list();

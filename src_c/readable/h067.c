@@ -31,12 +31,14 @@ u16 max_carry(Character *c)
 /* PORT H067+$01F2: toglie amount dal peso trasportato (+$18C). */
 static void sub_weight(Character *c, u16 amount)
 {
+    /* pg+$18C: ingombro: peso di oggetti e monete (word) */
     CH_PUTW(c, 0x18C, (u16)(CH_W(c, 0x18C) - amount));
 }
 
 /* PORT H067+$0212: aggiunge amount al peso trasportato (+$18C). */
 static void add_weight(Character *c, u16 amount)
 {
+    /* pg+$18C: ingombro: peso di oggetti e monete (word) */
     CH_PUTW(c, 0x18C, (u16)(CH_W(c, 0x18C) + amount));
 }
 
@@ -66,7 +68,7 @@ u16 input_amount(u16 max, u16 len, const char *prompt, u16 pen)
     input[0] = 0;
     do {
         wait_for_key();
-        key = G_KEY;
+        key = G_KEY; /* $5305: tasto/azione pendente dall'input (G_KEY) */
         if (key >= '0' && key <= '9') {
             tmp[0] = (char)key;
             tmp[1] = 0;
@@ -105,13 +107,16 @@ u16 input_amount(u16 max, u16 len, const char *prompt, u16 pen)
  */
 void transfer_money(u8 coin, u16 amount, Character **to, Character **from)
 {
+    /* pg+$18C: ingombro: peso di oggetti e monete (word) */
     if ((u16)(CH_W(*to, 0x18C) + amount) > max_carry(*to)) {
         show_message_line(0x0A, "Overloaded");
         return;
     }
+    /* pg+$F0: monete, 7 word passo 2 (0..4 monete, 4 acciaio, 5 gemme, 6 gioielli) */
     CH_PUTW(*from, 0xF0 + coin * 2, (u16)(CH_W(*from, 0xF0 + coin * 2) -
                                           amount));
     sub_weight(*from, amount);
+    /* pg+$F0: monete, 7 word passo 2 (0..4 monete, 4 acciaio, 5 gemme, 6 gioielli) */
     CH_PUTW(*to, 0xF0 + coin * 2, (u16)(CH_W(*to, 0xF0 + coin * 2) + amount));
     add_weight(*to, amount);
 }
@@ -122,10 +127,12 @@ void transfer_money(u8 coin, u16 amount, Character **to, Character **from)
  */
 void drop_money(u8 coin, u16 amount, Character *c)
 {
+    /* pg+$F0: monete, 7 word passo 2 (0..4 monete, 4 acciaio, 5 gemme, 6 gioielli) */
     CH_PUTW(c, 0xF0 + coin * 2, (u16)(CH_W(c, 0xF0 + coin * 2) - amount));
     sub_weight(c, amount);
+    /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
     if (H005_B(0x3DE3) == 6 || H005_B(0x3DE3) == 1) {
-        H005_SET_L(0x2A1E + coin * 4,
+        H005_SET_L(0x2A1E + coin * 4, /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
                    (u16)(H005_L(0x2A1E + coin * 4) + amount));
     }
 }
@@ -195,12 +202,12 @@ u8 would_overload(Character *c, u16 amount, u16 *room)
     u16 limit = max_carry(c);           /* -$4(a5) */
     u8 over;                            /* -$1(a5) */
 
-    if ((u16)(CH_W(c, 0x18C) + amount) > limit) {
+    if ((u16)(CH_W(c, 0x18C) + amount) > limit) { /* pg+$18C: ingombro: peso di oggetti e monete (word) */
         over = 1;
-        if (CH_W(c, 0x18C) > limit) {
+        if (CH_W(c, 0x18C) > limit) { /* pg+$18C: ingombro: peso di oggetti e monete (word) */
             *room = 0;
         } else {
-            *room = (u16)(limit - CH_W(c, 0x18C));
+            *room = (u16)(limit - CH_W(c, 0x18C)); /* pg+$18C: ingombro: peso di oggetti e monete (word) */
         }
     } else {
         over = 0;
@@ -219,8 +226,10 @@ u32 pool_value(void)
     u8 k;                               /* -$9(a5) */
 
     for (k = 0; k <= 4; ++k) {
+        /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
         sum += h015_mulu32(H005_L(k * 4), H005_L(0x2A1E + k * 4));
     }
+    /* $10: valore della moneta 5 (long, 50): divisore per la ricchezza in acciaio */
     return (u32)h015_divs32((s32)sum, (s32)H005_L(0x10), NULL);
 }
 
@@ -230,9 +239,10 @@ void set_steel_only(u16 steel)
     u8 k;
 
     for (k = 0; k <= 4; ++k) {
+        /* pg+$F0: monete, 7 word passo 2 (0..4 monete, 4 acciaio, 5 gemme, 6 gioielli) */
         CH_PUTW(g_current_char, 0xF0 + k * 2, 0);
     }
-    CH_PUTW(g_current_char, 0xF8, steel);
+    CH_PUTW(g_current_char, 0xF8, steel); /* pg+$F8: pezzi d'acciaio (moneta tipo 4) (word) */
 }
 
 /* PORT H067+$0374: azzera la cassa (tipi 0..4) e vi mette steel. */
@@ -241,9 +251,10 @@ void set_pool_steel(u16 steel)
     u8 k;
 
     for (k = 0; k <= 4; ++k) {
+        /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
         H005_SET_L(0x2A1E + k * 4, 0);
     }
-    H005_SET_L(0x2A2E, steel);
+    H005_SET_L(0x2A2E, steel); /* $2A2E: (long) cassa, pezzi d'acciaio (tipo 4; xp: quantita' x 2) */
 }
 
 /*
@@ -256,17 +267,21 @@ static void receive_steel(u16 amount)
 
     if (would_overload(g_current_char, amount, &room)) {
         show_message_line(0x27, "Overloaded.  Money will be put in Pool.");
+        /* pg+$F8: pezzi d'acciaio (moneta tipo 4) (word) */
         CH_PUTW(g_current_char, 0xF8, (u16)(CH_W(g_current_char, 0xF8) + room));
         add_weight(g_current_char, room);
+        /* $2A2E: (long) cassa, pezzi d'acciaio (tipo 4; xp: quantita' x 2) */
         H005_SET_L(0x2A2E, H005_L(0x2A2E) + amount - room);
     } else {
-        CH_PUTW(g_current_char, 0xF8,
+        CH_PUTW(g_current_char, 0xF8, /* pg+$F8: pezzi d'acciaio (moneta tipo 4) (word) */
                 (u16)(CH_W(g_current_char, 0xF8) + amount));
         add_weight(g_current_char, amount);
     }
 }
 
+/* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
 #define POOL(k)         H005_L(0x2A1E + (k) * 4)
+/* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
 #define SET_POOL(k, v)  H005_SET_L(0x2A1E + (k) * 4, (v))
 #define COINS(c, k)     CH_W((c), 0xF0 + (k) * 2)
 #define SET_COINS(c, k, v) CH_PUTW((c), 0xF0 + (k) * 2, (v))
@@ -274,6 +289,7 @@ static void receive_steel(u16 amount)
 /* Il party controllato dal giocatore: +$EC nullo o $B3. */
 static u8 is_player(Character *p)
 {
+    /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
     return (u8)(p->b[0xEC] == 0 || p->b[0xEC] == 0xB3);
 }
 
@@ -286,15 +302,20 @@ void pool_party_money(void)
     Character *p;                       /* -$4(a5) */
     u8 k;                               /* -$7(a5) */
 
-    H005_B(0x24E3) = 1;
+    H005_B(0x24E3) = 1; /* $24E3: uso: 1 se la cassa comune ha monete (Pool/Share/Take), mai letto */
     for (p = g_party_head; p != NULL; p = p->next) {
         if (!is_player(p)) {
             continue;
         }
         for (k = 0; k <= 6; ++k) {
+            /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio); pg+$F0: monete, 7
+             * word passo 2 (0..4 monete, 4 acciaio, 5 gemme, 6 gioielli); $2A20: word bassa del
+             * long della cassa per il tipo di moneta 0 */
             SET_POOL(k, POOL(k) + COINS(p, k));
+            /* pg+$F0: monete, 7 word passo 2 (0..4 monete, 4 acciaio, 5 gemme, 6 gioielli) */
             sub_weight(p, COINS(p, k));
         }
+        /* pg+$F0: monete, 7 word passo 2 (0..4 monete, 4 acciaio, 5 gemme, 6 gioielli) */
         h029_fill_bytes(0x0D, &p->b[0xF0], 0x0E, 0);
     }
 }
@@ -333,8 +354,11 @@ void share_money(void)
     memset(share, 0, sizeof share);
     memset(rest, 0, sizeof rest);
     for (k = 0; k <= 6; ++k) {
+        /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
         if ((u16)POOL(k) > 0 && n > 0) {
+            /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
             share[k] = (u16)((u16)POOL(k) / n);
+            /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
             rest[k] = (u16)((u16)POOL(k) % n);
         } else {
             share[k] = 0;
@@ -342,19 +366,22 @@ void share_money(void)
         }
     }
     for (p = g_party_head; p != NULL; p = p->next) {
-        if (p->b[0xEC] >= 0x80) {
+        if (p->b[0xEC] >= 0x80) { /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
             continue;
         }
         for (k = 6; k >= 0; --k) {
             if (!would_overload(p, share[k], &room)) {
+                /* pg+$F0: monete, 7 word passo 2 (0..4 monete, 4 acciaio, 5 gemme, 6 gioielli) */
                 SET_COINS(p, k, (u16)(COINS(p, k) + share[k]));
                 add_weight(p, share[k]);
                 if (rest[k] > 0 && !would_overload(p, 1, &room)) {
+                    /* pg+$F0: monete, 7 word passo 2 (0..4 monete, 4 acciaio, 5 gemme, 6 gioielli) */
                     SET_COINS(p, k, (u16)(COINS(p, k) + 1));
                     add_weight(p, 1);
                     --rest[k];
                 }
             } else {
+                /* pg+$F0: monete, 7 word passo 2 (0..4 monete, 4 acciaio, 5 gemme, 6 gioielli) */
                 SET_COINS(p, k, (u16)(COINS(p, k) + room));
                 rest[k] = (u16)(rest[k] + share[k] - room);
                 add_weight(p, room);
@@ -366,26 +393,31 @@ void share_money(void)
             continue;
         }
         for (p = g_party_head; p != NULL; p = p->next) {
+            /* pg+$18C: ingombro: peso di oggetti e monete (word) */
             room = (u16)(max_carry(p) - CH_W(p, 0x18C));
             if (room == 0) {
                 continue;
             }
             if (room < rest[k]) {
+                /* pg+$F0: monete, 7 word passo 2 (0..4 monete, 4 acciaio, 5 gemme, 6 gioielli) */
                 SET_COINS(p, k, (u16)(COINS(p, k) + room));
                 add_weight(p, room);
                 rest[k] = (u16)(rest[k] - room);
             } else {
+                /* pg+$F0: monete, 7 word passo 2 (0..4 monete, 4 acciaio, 5 gemme, 6 gioielli) */
                 SET_COINS(p, k, (u16)(COINS(p, k) + rest[k]));
                 add_weight(p, rest[k]);
                 rest[k] = 0;
             }
         }
     }
-    H005_B(0x24E3) = 0;
+    H005_B(0x24E3) = 0; /* $24E3: uso: 1 se la cassa comune ha monete (Pool/Share/Take), mai letto */
     for (k = 0; k <= 6; ++k) {
+        /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio); $2A20: word bassa del
+         * long della cassa per il tipo di moneta 0 */
         SET_POOL(k, rest[k]);
-        if ((u16)POOL(k) != 0) {
-            H005_B(0x24E3) = 1;
+        if ((u16)POOL(k) != 0) { /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
+            H005_B(0x24E3) = 1; /* $24E3: uso: 1 se la cassa comune ha monete (Pool/Share/Take), mai letto */
         }
     }
 }
@@ -403,10 +435,13 @@ static void take_pool_money(Character *c, u16 amount, u8 coin)
         show_message_line(0x0A, "Overloaded");
         return;
     }
-    if (amount > (u16)POOL(coin)) {
-        amount = (u16)POOL(coin);
+    if (amount > (u16)POOL(coin)) { /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
+        amount = (u16)POOL(coin); /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
     }
+    /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio); $2A20: word bassa del
+     * long della cassa per il tipo di moneta 0 */
     SET_POOL(coin, POOL(coin) - amount);
+    /* pg+$F0: monete, 7 word passo 2 (0..4 monete, 4 acciaio, 5 gemme, 6 gioielli) */
     SET_COINS(c, coin, (u16)(COINS(c, coin) + amount));
     add_weight(c, amount);
 }
@@ -438,15 +473,17 @@ void take_money_menu(void)
         redraw = 1;
         list = NULL;
         for (k = 0; k <= 6; ++k) {
-            if ((u16)POOL(k) == 0) {
+            if ((u16)POOL(k) == 0) { /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
                 continue;
             }
             old = list;
             list = (CokMenuItem *)exec_alloc_mem(sizeof(CokMenuItem),
                                                  COK_MEMF_CLEAR);
             list->next = old;
+            /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
             format_number(0x50, text, (s32)POOL(k), 0, 0x0A, 5, ' ');
             h026_copy(0x28, list->text, 0x0A,
+                      /* $4B7E: nomi dei tipi di moneta, $0C byte per tipo */
                       (const char *)&g_h005[0x4B7E + k * 0x0C]);
             h026_append(0x28, list->text, 1, " ");
             h026_append(0x28, list->text, 0x50, text);
@@ -454,7 +491,7 @@ void take_money_menu(void)
         }
         chosen = list;
         head = list;
-        H005_B(0x2483) = 1;
+        H005_B(0x2483) = 1; /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
         key = list_menu(0x14, "Select type of coin ", 6, "Select", 0x0D,
                         0x0A, 0x0F, 2, 2, 0x0F, 8, list, 1, &redraw, &index,
                         &chosen);
@@ -464,14 +501,17 @@ void take_money_menu(void)
             coin = coin_type(0x28, chosen->text, 0x50, text);
             h026_insert(0x50, text, 9, "How much ", 0);
             h026_append(0x50, text, 0x10, " will you take? ");
+            /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
             amount = input_amount((u16)POOL(coin), 0x50, text, 0x0A);
             take_pool_money(g_current_char, amount, coin);
             menu_free(&head);
             head = NULL;
-            H005_B(0x24E3) = 0;
+            H005_B(0x24E3) = 0; /* $24E3: uso: 1 se la cassa comune ha monete (Pool/Share/Take), mai letto */
             done = 1;
             for (k = 0; k <= 6; ++k) {
+                /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
                 if ((u16)POOL(k) > 0) {
+                    /* $24E3: uso: 1 se la cassa comune ha monete (Pool/Share/Take), mai letto */
                     H005_B(0x24E3) = 1;
                     done = 0;
                 }
@@ -494,7 +534,7 @@ void has_treasure(u8 *money, u8 *items)
     *money = 0;
     *items = 0;
     for (k = 0; k <= 6; ++k) {
-        if ((u16)POOL(k) != 0) {
+        if ((u16)POOL(k) != 0) { /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
             *money = 1;
         }
     }
@@ -546,141 +586,175 @@ static u16 spell_pick(u16 table, u16 sides)
 static void random_magic_item(CokItem *it, u16 *special)
 {
     u16 r;                              /* -$2(a5) */
-    u16 type = it->b[0x30];
+    u16 type = it->b[0x30]; /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
 
-    IT_SET_W(it, 0x36, random_bonus());
+    IT_SET_W(it, 0x36, random_bonus()); /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno */
     switch (type) {
     case 0x07:
         r = roll_dice(1, 5);
         if (r == 5) {
             *special = 0x31;
         }
-        it->b[0x34] = 7;
+        it->b[0x34] = 7; /* ogg+$34: parola 3 del nome (indice in H005+$406E); nome base del tipo */
+        /* ogg+$33: parola 2 del nome (indice 1-based in H005+$406E, $16 byte); ogg+$36: (word)
+         * bonus magico (+n) dell'oggetto, con segno */
         it->b[0x33] = (u8)(IT_W(it, 0x36) + 0x6E);
         break;
     case 0x0C:
-        it->b[0x34] = 0x0C;
+        it->b[0x34] = 0x0C; /* ogg+$34: parola 3 del nome (indice in H005+$406E); nome base del tipo */
+        /* ogg+$33: parola 2 del nome (indice 1-based in H005+$406E, $16 byte); ogg+$36: (word)
+         * bonus magico (+n) dell'oggetto, con segno */
         it->b[0x33] = (u8)(IT_W(it, 0x36) + 0x6E);
         break;
     case 0x1F:
+        /* ogg+$34: parola 3 del nome (indice in H005+$406E); nome base del tipo; ogg+$30: tipo
+         * dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
         it->b[0x34] = it->b[0x30];
-        it->b[0x33] = 0x30;
+        it->b[0x33] = 0x30; /* ogg+$33: parola 2 del nome (indice 1-based in H005+$406E, $16 byte) */
+        /* ogg+$32: parola 1 del nome (indice 1-based in H005+$406E, $16 byte); ogg+$36: (word)
+         * bonus magico (+n) dell'oggetto, con segno */
         it->b[0x32] = (u8)(IT_W(it, 0x36) + 0x6E);
-        it->b[0x3B] = 4;
+        it->b[0x3B] = 4; /* ogg+$3B: bit 0..2 parole del nome non identificate; bit 5/4 pergamena cl.1/2 */
         break;
     case 0x20: case 0x21: case 0x22: case 0x23: case 0x24:
+        /* ogg+$34: parola 3 del nome (indice in H005+$406E); nome base del tipo; ogg+$30: tipo
+         * dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
         it->b[0x34] = it->b[0x30];
-        it->b[0x33] = 0x2F;
+        it->b[0x33] = 0x2F; /* ogg+$33: parola 2 del nome (indice 1-based in H005+$406E, $16 byte) */
+        /* ogg+$32: parola 1 del nome (indice 1-based in H005+$406E, $16 byte); ogg+$36: (word)
+         * bonus magico (+n) dell'oggetto, con segno */
         it->b[0x32] = (u8)(IT_W(it, 0x36) + 0x6E);
-        it->b[0x3B] = 4;
+        it->b[0x3B] = 4; /* ogg+$3B: bit 0..2 parole del nome non identificate; bit 5/4 pergamena cl.1/2 */
         break;
     case 0x1E:
-        it->b[0x34] = 0x1E;
+        it->b[0x34] = 0x1E; /* ogg+$34: parola 3 del nome (indice in H005+$406E); nome base del tipo */
+        /* ogg+$33: parola 2 del nome (indice 1-based in H005+$406E, $16 byte); ogg+$36: (word)
+         * bonus magico (+n) dell'oggetto, con segno */
         it->b[0x33] = (u8)(IT_W(it, 0x36) + 0x6E);
         break;
     case 0x32:
-        it->b[0x34] = 0x32;
-        it->b[0x33] = 0x5A;
-        IT_SET_W(it, 0x36, 4);
-        it->b[0x32] = 0x6B;
+        it->b[0x34] = 0x32; /* ogg+$34: parola 3 del nome (indice in H005+$406E); nome base del tipo */
+        it->b[0x33] = 0x5A; /* ogg+$33: parola 2 del nome (indice 1-based in H005+$406E, $16 byte) */
+        IT_SET_W(it, 0x36, 4); /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno */
+        it->b[0x32] = 0x6B; /* ogg+$32: parola 1 del nome (indice 1-based in H005+$406E, $16 byte) */
         break;
     case 0x3B:
-        it->b[0x34] = 0x2E;
-        it->b[0x33] = 0x31;
+        it->b[0x34] = 0x2E; /* ogg+$34: parola 3 del nome (indice in H005+$406E); nome base del tipo */
+        it->b[0x33] = 0x31; /* ogg+$33: parola 2 del nome (indice 1-based in H005+$406E, $16 byte) */
+        /* ogg+$32: parola 1 del nome (indice 1-based in H005+$406E, $16 byte); ogg+$36: (word)
+         * bonus magico (+n) dell'oggetto, con segno */
         it->b[0x32] = (u8)(IT_W(it, 0x36) + 0x6E);
         break;
     default:
+        /* ogg+$34: parola 3 del nome (indice in H005+$406E); nome base del tipo; ogg+$30: tipo
+         * dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
         it->b[0x34] = it->b[0x30];
+        /* ogg+$33: parola 2 del nome (indice 1-based in H005+$406E, $16 byte); ogg+$36: (word)
+         * bonus magico (+n) dell'oggetto, con segno */
         it->b[0x33] = (u8)(IT_W(it, 0x36) + 0x6E);
         break;
     }
-    IT_SET_W(it, 0x38, 0);
-    it->b[0x40] = 0;
-    switch (it->b[0x30]) {
+    IT_SET_W(it, 0x38, 0); /* ogg+$38: (word) secondo bonus, sommato a CH +$18A quando pronto */
+    it->b[0x40] = 0; /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
+    switch (it->b[0x30]) { /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
     case 0x01: case 0x11:
-        IT_SET_W(it, 0x3E, 0x4B);
+        IT_SET_W(it, 0x3E, 0x4B); /* ogg+$3E: (word) peso unitario dell'oggetto */
         break;
     case 0x06: case 0x0E: case 0x0F: case 0x17: case 0x19: case 0x1D:
     case 0x25: case 0x43:
-        IT_SET_W(it, 0x3E, 0x32);
+        IT_SET_W(it, 0x3E, 0x32); /* ogg+$3E: (word) peso unitario dell'oggetto */
         break;
     case 0x09:
-        IT_SET_W(it, 0x3E, 0x7D);
+        IT_SET_W(it, 0x3E, 0x7D); /* ogg+$3E: (word) peso unitario dell'oggetto */
         break;
     case 0x08: case 0x10: case 0x18:
-        IT_SET_W(it, 0x3E, 0x64);
+        IT_SET_W(it, 0x3E, 0x64); /* ogg+$3E: (word) peso unitario dell'oggetto */
         break;
     case 0x1F: case 0x46:
-        IT_SET_W(it, 0x3E, 0x96);
+        IT_SET_W(it, 0x3E, 0x96); /* ogg+$3E: (word) peso unitario dell'oggetto */
         break;
     case 0x47:
-        IT_SET_W(it, 0x3E, 0xAF);
+        IT_SET_W(it, 0x3E, 0xAF); /* ogg+$3E: (word) peso unitario dell'oggetto */
         break;
     case 0x04: case 0x32:
-        IT_SET_W(it, 0x3E, 0x0A);
+        IT_SET_W(it, 0x3E, 0x0A); /* ogg+$3E: (word) peso unitario dell'oggetto */
         break;
     case 0x05:
-        IT_SET_W(it, 0x3E, 5);
-        it->b[0x40] = 0x14;
+        IT_SET_W(it, 0x3E, 5); /* ogg+$3E: (word) peso unitario dell'oggetto */
+        it->b[0x40] = 0x14; /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
         break;
     case 0x0A: case 0x12:
-        IT_SET_W(it, 0x3E, 0x3C);
+        IT_SET_W(it, 0x3E, 0x3C); /* ogg+$3E: (word) peso unitario dell'oggetto */
         break;
     case 0x16:
-        IT_SET_W(it, 0x3E, 0x50);
+        IT_SET_W(it, 0x3E, 0x50); /* ogg+$3E: (word) peso unitario dell'oggetto */
         break;
     case 0x07:
-        IT_SET_W(it, 0x3E, 0x14);
+        IT_SET_W(it, 0x3E, 0x14); /* ogg+$3E: (word) peso unitario dell'oggetto */
         break;
     case 0x0D:
-        IT_SET_W(it, 0x3E, 0x28);
+        IT_SET_W(it, 0x3E, 0x28); /* ogg+$3E: (word) peso unitario dell'oggetto */
         break;
     case 0x13:
-        IT_SET_W(it, 0x3E, 0x23);
+        IT_SET_W(it, 0x3E, 0x23); /* ogg+$3E: (word) peso unitario dell'oggetto */
         break;
     case 0x14: case 0x20:
-        IT_SET_W(it, 0x3E, 0xFA);
+        IT_SET_W(it, 0x3E, 0xFA); /* ogg+$3E: (word) peso unitario dell'oggetto */
         break;
     case 0x21:
-        IT_SET_W(it, 0x3E, 0x190);
+        IT_SET_W(it, 0x3E, 0x190); /* ogg+$3E: (word) peso unitario dell'oggetto */
         break;
     case 0x22:
-        IT_SET_W(it, 0x3E, 0x12C);
+        IT_SET_W(it, 0x3E, 0x12C); /* ogg+$3E: (word) peso unitario dell'oggetto */
         break;
     case 0x23:
-        IT_SET_W(it, 0x3E, 0x15E);
+        IT_SET_W(it, 0x3E, 0x15E); /* ogg+$3E: (word) peso unitario dell'oggetto */
         break;
     case 0x24:
-        IT_SET_W(it, 0x3E, 0x1C2);
+        IT_SET_W(it, 0x3E, 0x1C2); /* ogg+$3E: (word) peso unitario dell'oggetto */
         break;
     case 0x1C: case 0x3B:
-        IT_SET_W(it, 0x3E, 1);
+        IT_SET_W(it, 0x3E, 1); /* ogg+$3E: (word) peso unitario dell'oggetto */
         break;
     default:
-        IT_SET_W(it, 0x3E, 4);
-        it->b[0x40] = 0x14;
+        IT_SET_W(it, 0x3E, 4); /* ogg+$3E: (word) peso unitario dell'oggetto */
+        it->b[0x40] = 0x14; /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
         break;
     }
-    switch (it->b[0x30]) {
+    switch (it->b[0x30]) { /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
     case 0x25:
+        /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno; ogg+$42: (word) valore in
+         * monete (Sell offre la meta') */
         IT_SET_W(it, 0x42, IT_W(it, 0x36) * 0x4E2);
         break;
     case 0x1E:
+        /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno; ogg+$42: (word) valore in
+         * monete (Sell offre la meta') */
         IT_SET_W(it, 0x42, IT_W(it, 0x36) * 0x4B);
         break;
     case 0x20: case 0x21: case 0x32:
+        /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno; ogg+$42: (word) valore in
+         * monete (Sell offre la meta') */
         IT_SET_W(it, 0x42, IT_W(it, 0x36) * 0x5DC);
         break;
     case 0x22:
+        /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno; ogg+$42: (word) valore in
+         * monete (Sell offre la meta') */
         IT_SET_W(it, 0x42, IT_W(it, 0x36) * 0x6D6);
         break;
     case 0x23:
+        /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno; ogg+$42: (word) valore in
+         * monete (Sell offre la meta') */
         IT_SET_W(it, 0x42, IT_W(it, 0x36) * 0x7D0);
         break;
     case 0x24:
+        /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno; ogg+$42: (word) valore in
+         * monete (Sell offre la meta') */
         IT_SET_W(it, 0x42, IT_W(it, 0x36) * 0x9C4);
         break;
     default:
+        /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno; ogg+$42: (word) valore in
+         * monete (Sell offre la meta') */
         IT_SET_W(it, 0x42, IT_W(it, 0x36) * 0x3E8);
         break;
     }
@@ -699,29 +773,31 @@ static void random_scroll(CokItem *it)
     u16 spell = 0;                      /* -$A(a5) */
     u16 kind;                           /* -$C(a5) */
 
-    it->b[0x3B] = 4;
+    it->b[0x3B] = 4; /* ogg+$3B: bit 0..2 parole del nome non identificate; bit 5/4 pergamena cl.1/2 */
     count = roll_dice(1, 3);
-    if (it->b[0x30] == 0x27) {
+    if (it->b[0x30] == 0x27) { /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
         if (roll_dice(1, 2) == 1) {
             kind = 3;
-            it->b[0x34] = 0x78;
-            it->b[0x33] = 0x28;
+            it->b[0x34] = 0x78; /* ogg+$34: parola 3 del nome (indice in H005+$406E); nome base del tipo */
+            it->b[0x33] = 0x28; /* ogg+$33: parola 2 del nome (indice 1-based in H005+$406E, $16 byte) */
         } else {
             kind = 2;
-            it->b[0x34] = 0x77;
-            it->b[0x33] = 0x28;
+            it->b[0x34] = 0x77; /* ogg+$34: parola 3 del nome (indice in H005+$406E); nome base del tipo */
+            it->b[0x33] = 0x28; /* ogg+$33: parola 2 del nome (indice 1-based in H005+$406E, $16 byte) */
         }
     } else {
         kind = 0;
-        it->b[0x34] = 0x26;
-        it->b[0x33] = 0x27;
+        it->b[0x34] = 0x26; /* ogg+$34: parola 3 del nome (indice in H005+$406E); nome base del tipo */
+        it->b[0x33] = 0x27; /* ogg+$33: parola 2 del nome (indice 1-based in H005+$406E, $16 byte) */
     }
+    /* ogg+$32: parola 1 del nome (indice 1-based in H005+$406E, $16 byte) */
     it->b[0x32] = (u8)(count + 0x63);
-    IT_SET_W(it, 0x36, 1);
-    IT_SET_W(it, 0x3E, 0x19);
-    it->b[0x40] = 0;
+    IT_SET_W(it, 0x36, 1); /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno */
+    IT_SET_W(it, 0x3E, 0x19); /* ogg+$3E: (word) peso unitario dell'oggetto */
+    it->b[0x40] = 0; /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
     for (k = 1; k <= count; ++k) {
         roll = roll_dice(1, 4);
+        /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
         if (it->b[0x30] == 0x27) {
             switch (roll) {
             case 1:
@@ -761,18 +837,22 @@ static void random_scroll(CokItem *it)
                 break;
             }
         }
+        /* ogg+$43: base tabella 3 incantesimi +$44..+$46 (indice 1..3, bit7=da scrivere) */
         it->b[0x44 + k - 1] = (u8)spell;
+        /* ogg+$42: (word) valore in monete (Sell offre la meta') */
         IT_SET_W(it, 0x42, IT_W(it, 0x42) + roll * 0x96);
     }
     switch (kind) {
     case 2:
+        /* ogg+$3B: bit 0..2 parole del nome non identificate; bit 5/4 pergamena cl.1/2 */
         it->b[0x3B] = or_byte(it->b[0x3B], 0x20);
         break;
     case 3:
+        /* ogg+$3B: bit 0..2 parole del nome non identificate; bit 5/4 pergamena cl.1/2 */
         it->b[0x3B] = or_byte(it->b[0x3B], 0x10);
         break;
     default:
-        it->b[0x3B] = 0;
+        it->b[0x3B] = 0; /* ogg+$3B: bit 0..2 parole del nome non identificate; bit 5/4 pergamena cl.1/2 */
         break;
     }
 }
@@ -789,14 +869,16 @@ void random_item(u16 type, CokItem *it)
     u16 special = 0;                    /* -$8(a5) */
 
     h029_fill_bytes(0x47, it->b, 0x47, 0);
+    /* ogg+$44: cariche dell'oggetto magico; incantesimo 1 della pergamena */
     h029_fill_bytes(2, &it->b[0x44], 3, 0);
     it->next = NULL;
-    it->b[0x3A] = 0;
-    it->b[0x3B] = 6;
-    it->b[0x3C] = 0;
-    it->b[0x30] = (u8)type;
+    it->b[0x3A] = 0; /* ogg+$3A: flag oggetto pronto all'uso (Ready) */
+    it->b[0x3B] = 6; /* ogg+$3B: bit 0..2 parole del nome non identificate; bit 5/4 pergamena cl.1/2 */
+    it->b[0x3C] = 0; /* ogg+$3C: flag oggetto maledetto */
+    it->b[0x30] = (u8)type; /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
+    /* ogg+$32: parola 1 del nome (indice 1-based in H005+$406E, $16 byte) */
     h029_fill_bytes(2, &it->b[0x32], 3, 0);
-    switch (it->b[0x30]) {
+    switch (it->b[0x30]) { /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
     case 0x27: case 0x28:
         random_scroll(it);
         break;
@@ -815,8 +897,11 @@ void random_item(u16 type, CokItem *it)
         special = 9;
         break;
     default:
+        /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
         if ((it->b[0x30] >= 0x01 && it->b[0x30] <= 0x25) ||
+            /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
             it->b[0x30] == 0x32 || it->b[0x30] == 0x3B ||
+            /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
             it->b[0x30] == 0x46 || it->b[0x30] == 0x47) {
             random_magic_item(it, &special);
         }
@@ -826,14 +911,17 @@ void random_item(u16 type, CokItem *it)
         return;
     }
     for (k = 0; k <= 2; ++k) {
+        /* ogg+$32: parola 1 del nome (indice 1-based in H005+$406E, $16 byte) */
         it->b[0x32 + k] = (u8)s_special_items[special + k - 1];
     }
-    IT_SET_W(it, 0x36, 1);
-    IT_SET_W(it, 0x38, 1);
-    IT_SET_W(it, 0x3E, s_special_items[special + 2]);
-    it->b[0x40] = 0;
+    IT_SET_W(it, 0x36, 1); /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno */
+    IT_SET_W(it, 0x38, 1); /* ogg+$38: (word) secondo bonus, sommato a CH +$18A quando pronto */
+    IT_SET_W(it, 0x3E, s_special_items[special + 2]); /* ogg+$3E: (word) peso unitario dell'oggetto */
+    it->b[0x40] = 0; /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
+    /* ogg+$42: (word) valore in monete (Sell offre la meta') */
     IT_SET_W(it, 0x42, s_special_items[special + 3]);
     for (k = 1; k <= 3; ++k) {
+        /* ogg+$43: base tabella 3 incantesimi +$44..+$46 (indice 1..3, bit7=da scrivere) */
         it->b[0x44 + k - 1] = (u8)s_special_items[special + 3 + k];
     }
 }
@@ -868,7 +956,7 @@ static void sell_or_keep(u16 value, u8 name)
     u8 key;                             /* -$A9(a5) */
 
     if (would_overload(g_current_char, 1, &room) ||
-        g_current_char->b[0x14F] >= 0x10) {
+        g_current_char->b[0x14F] >= 0x10) { /* pg+$14F: numero di oggetti posseduti (max 16) */
         copy_text41(menu, "Sell");
         full = 1;
     } else {
@@ -880,14 +968,14 @@ static void sell_or_keep(u16 value, u8 name)
     if (key == 'K' && !full) {
         n = (CokItem *)exec_alloc_mem(sizeof(CokItem), COK_MEMF_CLEAR);
         n->next = NULL;
-        n->b[0x3A] = 0;
-        n->b[0x34] = name;
-        n->b[0x33] = 0;
-        n->b[0x32] = 0;
-        n->b[0x30] = 0x2F;
-        COK_PUT16(&n->b[0x42], value);
-        COK_PUT16(&n->b[0x3E], 1);
-        n->b[0x3B] = 0;
+        n->b[0x3A] = 0; /* ogg+$3A: flag oggetto pronto all'uso (Ready) */
+        n->b[0x34] = name; /* ogg+$34: parola 3 del nome (indice in H005+$406E); nome base del tipo */
+        n->b[0x33] = 0; /* ogg+$33: parola 2 del nome (indice 1-based in H005+$406E, $16 byte) */
+        n->b[0x32] = 0; /* ogg+$32: parola 1 del nome (indice 1-based in H005+$406E, $16 byte) */
+        n->b[0x30] = 0x2F; /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
+        COK_PUT16(&n->b[0x42], value); /* ogg+$42: (word) valore in monete (Sell offre la meta') */
+        COK_PUT16(&n->b[0x3E], 1); /* ogg+$3E: (word) peso unitario dell'oggetto */
+        n->b[0x3B] = 0; /* ogg+$3B: bit 0..2 parole del nome non identificate; bit 5/4 pergamena cl.1/2 */
         p = g_current_char->items;
         if (p == NULL) {
             /* Come l'originale: -$B4 = nuovo, la lista resta vuota. */
@@ -919,23 +1007,26 @@ void appraise_gems(u8 *redraw)
     u8 special;                         /* -$BA(a5) */
 
     *redraw = 1;
+    /* pg+$FA: gemme (moneta tipo 5) (word); pg+$FC: gioielli (moneta tipo 6) (word) */
     if (CH_W(g_current_char, 0xFA) == 0 && CH_W(g_current_char, 0xFC) == 0) {
         show_message_line(0x12, "No Gems or Jewelry");
         *redraw = 0;
         return;
     }
     do {
-        if (CH_W(g_current_char, 0xFA) == 0 &&
-            CH_W(g_current_char, 0xFC) == 0) {
+        if (CH_W(g_current_char, 0xFA) == 0 && /* pg+$FA: gemme (moneta tipo 5) (word) */
+            CH_W(g_current_char, 0xFC) == 0) { /* pg+$FC: gioielli (moneta tipo 6) (word) */
             done = 1;
             continue;
         }
         done = 0;
+        /* pg+$FA: gemme (moneta tipo 5) (word) */
         format_number(0x28, gems, (s32)CH_W(g_current_char, 0xFA), 0, 0x0A,
                       4, ' ');
+        /* pg+$FC: gioielli (moneta tipo 6) (word) */
         format_number(0x28, jewels, (s32)CH_W(g_current_char, 0xFC), 0, 0x0A,
                       4, ' ');
-        switch (CH_W(g_current_char, 0xFA)) {
+        switch (CH_W(g_current_char, 0xFA)) { /* pg+$FA: gemme (moneta tipo 5) (word) */
         case 0:
             copy_text41(gems, "");
             break;
@@ -946,7 +1037,7 @@ void appraise_gems(u8 *redraw)
             h026_append(0x28, gems, 5, " Gems");
             break;
         }
-        switch (CH_W(g_current_char, 0xFC)) {
+        switch (CH_W(g_current_char, 0xFC)) { /* pg+$FC: gioielli (moneta tipo 6) (word) */
         case 0:
             copy_text41(jewels, "");
             break;
@@ -963,10 +1054,10 @@ void appraise_gems(u8 *redraw)
         ui_draw_text(1, 9, 0x0F, 0, 0x28, gems);
         ui_draw_text(1, 0x0A, 0x0F, 0, 0x28, jewels);
         copy_text41(text, "");
-        if (CH_W(g_current_char, 0xFA) != 0) {
+        if (CH_W(g_current_char, 0xFA) != 0) { /* pg+$FA: gemme (moneta tipo 5) (word) */
             copy_text41(text, "  Gems");
         }
-        if (CH_W(g_current_char, 0xFC) != 0) {
+        if (CH_W(g_current_char, 0xFC) != 0) { /* pg+$FC: gioielli (moneta tipo 6) (word) */
             h026_append(0x28, text, 9, "  Jewelry");
         }
         h026_append(0x28, text, 5, " Exit");
@@ -978,9 +1069,10 @@ void appraise_gems(u8 *redraw)
             done = 1;
             break;
         case 'G':
-            if (CH_W(g_current_char, 0xFA) == 0) {
+            if (CH_W(g_current_char, 0xFA) == 0) { /* pg+$FA: gemme (moneta tipo 5) (word) */
                 break;
             }
+            /* pg+$FA: gemme (moneta tipo 5) (word) */
             CH_PUTW(g_current_char, 0xFA, (u16)(CH_W(g_current_char, 0xFA) - 1));
             roll = roll_dice(1, 0x64);
             if (roll < 0x1A) {
@@ -1003,9 +1095,10 @@ void appraise_gems(u8 *redraw)
             sell_or_keep(value, 0x7A);
             break;
         case 'J':
-            if (CH_W(g_current_char, 0xFC) == 0) {
+            if (CH_W(g_current_char, 0xFC) == 0) { /* pg+$FC: gioielli (moneta tipo 6) (word) */
                 break;
             }
+            /* pg+$FC: gioielli (moneta tipo 6) (word) */
             CH_PUTW(g_current_char, 0xFC, (u16)(CH_W(g_current_char, 0xFC) - 1));
             roll = roll_dice(1, 0x0A);
             if (roll == 1) {

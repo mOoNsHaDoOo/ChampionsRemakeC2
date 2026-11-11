@@ -39,13 +39,18 @@ void load_sprite_set(u16 name_len, const char *name, u16 id, u16 slot)
                                 &g_sprite_sets[slot][1]);
         return;
     }
+    /* $246E: disco dei dati / gruppo di risorse corrente (G_RESOURCE_GROUP) */
     format_number(1, group, (s32)G_RESOURCE_GROUP, 0, 0x0A, 1, '0');
     h026_append(0x50, full, 1, group);
     load_indexed_gfx_record(0x50, full, id, 1, 0, &g_sprite_sets[slot][0]);
+    /* $3DA2: ricolorazione dei set grafici: colori di partenza (16 byte); $3D92: ricolorazione dei
+     * set grafici: colori di arrivo (16 byte) */
     remap_gfx_colors(&g_h005[0x3DA2], &g_h005[0x3D92], 0,
                      g_sprite_sets[slot][0]);
     load_indexed_gfx_record(0x50, full, (u16)(id + 0x80), 1, 0,
                             &g_sprite_sets[slot][1]);
+    /* $3DA2: ricolorazione dei set grafici: colori di partenza (16 byte); $3D92: ricolorazione dei
+     * set grafici: colori di arrivo (16 byte) */
     remap_gfx_colors(&g_h005[0x3DA2], &g_h005[0x3D92], 0,
                      g_sprite_sets[slot][1]);
 }
@@ -139,7 +144,7 @@ void draw_sprite_set(u16 col, u16 row, u16 scale, u16 which, u16 slot)
     y = (s16)(row * 0x18);
     width = (s16)(rec->count << 3);
     height = (s16)rec->rows;
-    if (H005_B(0x3DE3) == 0) {
+    if (H005_B(0x3DE3) == 0) { /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
         offset = 0;
     } else {
         offset = 8;

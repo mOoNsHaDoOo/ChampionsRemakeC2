@@ -30,6 +30,7 @@ extern u8 g_h005[H005_SIZE];
 #define G_RESOURCE_GROUP   H005_B(0x246E)  /* 1 gioco, 2 demo, 0 fine demo */
 #define G_DEMO_FLAG        H005_B(0x24D7)  /* 1 se e' stata scelta Demo */
 #define G_PROMPT_TIMEOUT   ((s32)H005_L(0x2792)) /* attesa in 1/100 s */
+/* $2792: (long) tempo massimo di attesa della scelta, in 1/100 s (0 nessuno) */
 #define G_SET_PROMPT_TIMEOUT(v) H005_SET_L(0x2792, (u32)(v))
 #define G_VIEW_START(i)    H005_B(0x2826 + (i))  /* argomenti di H011+$04A6 */
 #define G_DATA_PREFIX      ((char *)&g_h005[0x3D26]) /* "df0:" o "", $51 byte */
