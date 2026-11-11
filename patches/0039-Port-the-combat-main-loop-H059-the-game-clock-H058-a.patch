@@ -1,0 +1,1529 @@
+From c7c957158c53f9b6010fff2038bdae8c2edd9e19 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 22:37:10 +0000
+Subject: [PATCH 39/65] Port the combat main loop (H059), the game clock (H058)
+ and combat helpers in H062/H063
+
+H096/H097 actions and AI are stubs for the next step.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md | 112 +++---
+ src_c/readable/backlog.md     |  74 ++++
+ src_c/readable/h058.c         | 199 +++++++++-
+ src_c/readable/h058.h         |   6 +
+ src_c/readable/h059.c         | 675 +++++++++++++++++++++++++++++++++-
+ src_c/readable/h059.h         |   7 +
+ src_c/readable/h062.c         | 142 ++++++-
+ src_c/readable/h062.h         |   6 +
+ src_c/readable/h063.c         |  75 ++++
+ src_c/readable/h063.h         |   5 +
+ src_c/readable/unported.c     |  16 +
+ src_c/readable/unported.h     |  17 +
+ 12 files changed, 1272 insertions(+), 62 deletions(-)
+ create mode 100644 src_c/readable/h058.h
+ create mode 100644 src_c/readable/h059.h
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index 7a2b887..8e96b44 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **732 / 1066**.
++Routine portate: **760 / 1066**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -64,12 +64,12 @@ Routine portate: **732 / 1066**.
+ | H055 | 180 | 4 | 4 |
+ | H056 | 2528 | 2 | 2 |
+ | H057 | 12872 | 33 | 1 |
+-| H058 | 4720 | 16 | 1 |
+-| H059 | 6340 | 14 | 1 |
++| H058 | 4720 | 16 | 6 |
++| H059 | 6340 | 14 | 14 |
+ | H060 | 396 | 2 | 1 |
+ | H061 | 16936 | 35 | 1 |
+-| H062 | 10496 | 32 | 26 |
+-| H063 | 16496 | 52 | 47 |
++| H062 | 10496 | 32 | 31 |
++| H063 | 16496 | 52 | 52 |
+ | H064 | 6460 | 7 | 1 |
+ | H065 | 14268 | 27 | 27 |
+ | H066 | 13840 | 27 | 23 |
+@@ -962,13 +962,13 @@ Routine portate: **732 / 1066**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$00CE` | `module_init_H058` | parziale | h058.c:4 |
+-| `$017C` | `trampoline_H058_02C4` | parziale |  |
+-| `$018A` | `sub_H058_0000018A` | parziale |  |
+-| `$02F4` | `sub_H058_000002F4` | parziale |  |
+-| `$052C` | `sub_H058_0000052C` | parziale |  |
++| `$00CE` | `module_init_H058` | parziale | h058.c:19 |
++| `$017C` | `trampoline_H058_02C4` | parziale | h058.c:64 |
++| `$018A` | `sub_H058_0000018A` | parziale | h058.c:25 |
++| `$02F4` | `sub_H058_000002F4` | parziale | h058.c:102 |
++| `$052C` | `sub_H058_0000052C` | parziale | h058.c:73 |
+ | `$05F4` | `sub_H058_000005F4` | parziale |  |
+-| `$064A` | `sub_H058_0000064A` | parziale |  |
++| `$064A` | `sub_H058_0000064A` | parziale | h058.c:182 |
+ | `$070E` | `sub_H058_0000070E` | parziale |  |
+ | `$084C` | `sub_H058_0000084C` | parziale |  |
+ | `$09AA` | `sub_H058_000009AA` | parziale |  |
+@@ -983,20 +983,20 @@ Routine portate: **732 / 1066**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0122` | `module_init_H059` | parziale | h059.c:4 |
+-| `$0130` | `sub_H059_00000130` | parziale |  |
+-| `$02AA` | `sub_H059_000002AA` | parziale |  |
+-| `$03BE` | `sub_H059_000003BE` | parziale |  |
+-| `$0670` | `sub_H059_00000670` | parziale |  |
+-| `$0726` | `trampoline_H059_07F6` | parziale |  |
+-| `$0734` | `sub_H059_00000734` | parziale |  |
+-| `$0CCA` | `sub_H059_00000CCA` | parziale |  |
+-| `$0E4A` | `sub_H059_00000E4A` | parziale |  |
+-| `$0EA0` | `sub_H059_00000EA0` | parziale |  |
+-| `$1110` | `sub_H059_00001110` | parziale |  |
+-| `$1498` | `Combat_ActorTurn` | parziale |  |
+-| `$15EE` | `sub_H059_000015EE` | parziale |  |
+-| `$1782` | `Combat_MainLoop` | parziale |  |
++| `$0122` | `module_init_H059` | parziale | h059.c:30 |
++| `$0130` | `sub_H059_00000130` | parziale | h059.c:36 |
++| `$02AA` | `sub_H059_000002AA` | parziale | h059.c:86 |
++| `$03BE` | `sub_H059_000003BE` | parziale | h059.c:124 |
++| `$0670` | `sub_H059_00000670` | parziale | h059.c:175 |
++| `$0726` | `trampoline_H059_07F6` | parziale | h059.c:223 |
++| `$0734` | `sub_H059_00000734` | parziale | h059.c:209 |
++| `$0CCA` | `sub_H059_00000CCA` | parziale | h059.c:328 |
++| `$0E4A` | `sub_H059_00000E4A` | parziale | h059.c:360 |
++| `$0EA0` | `sub_H059_00000EA0` | parziale | h059.c:371 |
++| `$1110` | `sub_H059_00001110` | parziale | h059.c:438 |
++| `$1498` | `Combat_ActorTurn` | parziale | h059.c:555 |
++| `$15EE` | `sub_H059_000015EE` | parziale | h059.c:592 |
++| `$1782` | `Combat_MainLoop` | parziale | h059.c:635 |
+ 
+ ### H060
+ 
+@@ -1050,37 +1050,37 @@ Routine portate: **732 / 1066**.
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+ | `$0106` | `module_init_H062` | parziale | h062.c:17 |
+-| `$0114` | `sub_H062_00000114` | parziale | h062.c:556 |
+-| `$021E` | `sub_H062_0000021E` | parziale |  |
+-| `$02FA` | `sub_H062_000002FA` | parziale | h062.c:778 |
+-| `$03F2` | `sub_H062_000003F2` | parziale | h062.c:112 |
+-| `$0452` | `sub_H062_00000452` | parziale | h062.c:125 |
+-| `$057C` | `sub_H062_0000057C` | parziale | h062.c:426 |
+-| `$0772` | `sub_H062_00000772` | parziale | h062.c:472 |
+-| `$083E` | `trampoline_H062_0F04` | parziale | h062.c:532 |
+-| `$0F24` | `sub_H062_00000F24` | parziale |  |
+-| `$1038` | `trampoline_H062_1262` | parziale |  |
++| `$0114` | `sub_H062_00000114` | parziale | h062.c:555 |
++| `$021E` | `sub_H062_0000021E` | parziale | h062.c:883 |
++| `$02FA` | `sub_H062_000002FA` | parziale | h062.c:777 |
++| `$03F2` | `sub_H062_000003F2` | parziale | h062.c:111 |
++| `$0452` | `sub_H062_00000452` | parziale | h062.c:124 |
++| `$057C` | `sub_H062_0000057C` | parziale | h062.c:425 |
++| `$0772` | `sub_H062_00000772` | parziale | h062.c:471 |
++| `$083E` | `trampoline_H062_0F04` | parziale | h062.c:531 |
++| `$0F24` | `sub_H062_00000F24` | parziale | h062.c:906 |
++| `$1038` | `trampoline_H062_1262` | parziale | h062.c:936 |
+ | `$126C` | `sub_H062_0000126C` | parziale |  |
+-| `$12F6` | `sub_H062_000012F6` | parziale | h062.c:582 |
+-| `$142C` | `sub_H062_0000142C` | parziale | h062.c:619 |
++| `$12F6` | `sub_H062_000012F6` | parziale | h062.c:581 |
++| `$142C` | `sub_H062_0000142C` | parziale | h062.c:618 |
+ | `$156C` | `sub_H062_0000156C` | parziale | h062.c:22 |
+-| `$15C6` | `sub_H062_000015C6` | parziale | h062.c:770 |
++| `$15C6` | `sub_H062_000015C6` | parziale | h062.c:769 |
+ | `$15F2` | `sub_H062_000015F2` | parziale | h062.c:40 |
+-| `$1694` | `sub_H062_00001694` | parziale |  |
++| `$1694` | `sub_H062_00001694` | parziale | h062.c:987 |
+ | `$1780` | `sub_H062_00001780` | parziale | h062.c:65 |
+-| `$17C0` | `sub_H062_000017C0` | parziale | h062.c:657 |
+-| `$1898` | `sub_H062_00001898` | parziale |  |
+-| `$18AC` | `sub_H062_000018AC` | parziale | h062.c:383 |
+-| `$1916` | `sub_H062_00001916` | parziale | h062.c:397 |
+-| `$1952` | `sub_H062_00001952` | parziale | h062.c:169 |
+-| `$19C2` | `sub_H062_000019C2` | parziale | h062.c:409 |
+-| `$1A32` | `trampoline_H062_1C04` | parziale | h062.c:239 |
+-| `$1A40` | `sub_H062_00001A40` | parziale | h062.c:195 |
+-| `$1A9E` | `sub_H062_00001A9E` | parziale | h062.c:204 |
+-| `$2188` | `sub_H062_00002188` | parziale | h062.c:676 |
++| `$17C0` | `sub_H062_000017C0` | parziale | h062.c:656 |
++| `$1898` | `sub_H062_00001898` | parziale | h062.c:1016 |
++| `$18AC` | `sub_H062_000018AC` | parziale | h062.c:382 |
++| `$1916` | `sub_H062_00001916` | parziale | h062.c:396 |
++| `$1952` | `sub_H062_00001952` | parziale | h062.c:168 |
++| `$19C2` | `sub_H062_000019C2` | parziale | h062.c:408 |
++| `$1A32` | `trampoline_H062_1C04` | parziale | h062.c:238 |
++| `$1A40` | `sub_H062_00001A40` | parziale | h062.c:194 |
++| `$1A9E` | `sub_H062_00001A9E` | parziale | h062.c:203 |
++| `$2188` | `sub_H062_00002188` | parziale | h062.c:675 |
+ | `$253C` | `sub_H062_0000253C` | parziale | h062.c:76 |
+-| `$2650` | `sub_H062_00002650` | parziale | h062.c:803 |
+-| `$2734` | `sub_H062_00002734` | parziale | h062.c:830 |
++| `$2650` | `sub_H062_00002650` | parziale | h062.c:802 |
++| `$2734` | `sub_H062_00002734` | parziale | h062.c:829 |
+ 
+ ### H063
+ 
+@@ -1125,16 +1125,16 @@ Routine portate: **732 / 1066**.
+ | `$2BDE` | `sub_H063_00002BDE` | parziale | h063.c:1531 |
+ | `$2DC6` | `sub_H063_00002DC6` | parziale | h063.c:1253 |
+ | `$2F12` | `sub_H063_00002F12` | parziale | h063.c:892 |
+-| `$2F5A` | `sub_H063_00002F5A` | parziale |  |
++| `$2F5A` | `sub_H063_00002F5A` | parziale | h063.c:1772 |
+ | `$2FAA` | `sub_H063_00002FAA` | parziale | h063.c:1024 |
+ | `$321A` | `trampoline_H063_3384` | parziale | h063.c:766 |
+ | `$33A0` | `trampoline_H063_3652` | parziale | h063.c:1579 |
+ | `$3658` | `sub_H063_00003658` | parziale | h063.c:1637 |
+-| `$3698` | `sub_H063_00003698` | parziale |  |
+-| `$36EE` | `sub_H063_000036EE` | parziale |  |
+-| `$3734` | `sub_H063_00003734` | parziale |  |
++| `$3698` | `sub_H063_00003698` | parziale | h063.c:1710 |
++| `$36EE` | `sub_H063_000036EE` | parziale | h063.c:1720 |
++| `$3734` | `sub_H063_00003734` | parziale | h063.c:1730 |
+ | `$37B2` | `sub_H063_000037B2` | parziale | h063.c:1281 |
+-| `$3980` | `sub_H063_00003980` | parziale |  |
++| `$3980` | `sub_H063_00003980` | parziale | h063.c:1748 |
+ | `$3A26` | `sub_H063_00003A26` | parziale | h063.c:905 |
+ | `$3CA0` | `sub_H063_00003CA0` | parziale | h063.c:1646 |
+ | `$3F72` | `trampoline_H063_4042` | parziale | h063.c:643 |
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index b1087f6..130c22d 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -1769,3 +1769,77 @@ Ho portato l'avvio del combattimento, H095+$2496, che lo script (H059) chiama a
+ - **Audio:** H043+$190E.
+ 
+ ---
++
++## 2026-11-10 (cok-port-32)
++
++La richiesta ripeteva "procedi con l'avvio del combattimento", che era già consegnato in cok-port-31. Ho quindi portato il passo successivo: il ciclo del combattimento (H059+$1782, Combat_MainLoop), che il comando COMBAT dello script (H012+$0766) chiama e che a sua volta chiama l'avvio. Routine portate: 760 su 1066 (prima 732).
++
++**H059: ciclo del combattimento (tutte le 13 routine)**
++- **$1782 `combat_main_loop`, il ciclo principale:**
++  - prima del ciclo: contesto 5, gestore $276C (bersaglio in combattimento), avvio (H095) ed evento $18 per tutti;
++  - a ogni round, finché restano entrambi i lati: inizio del round, ordine dei turni, turno di ognuno con le esplosioni dei caduti, fine del round;
++  - alla fine: pulizia.
++- **$0130:** ordine dei turni per iniziativa (+$4 del turno; a parità, a caso) nella tabella H005+$2392, ora `g_turn_order[72]`.
++- **$1498:** turno di un attore (eventi 7, $F e $15, cursore, stato; automatico o col menu).
++- **$1110:** turno del giocatore.
++  - Comandi: Move, View, Aim, Use, Cast, Turn, Yell, Done.
++  - Tasti speciali: tutti in automatico, magia on/off, $4DE8.
++- **$03BE:** menu del turno.
++- **$0726 con $0734:** movimento/attacco con le frecce del tastierino: costo delle caselle, "Flee:", "can't go there"; Esc annulla.
++- **$0670:** attacco da vicino ("Not with that weapon").
++- **$0EA0:** sottomenu Done: Guard, Delay, Quit, Bandage, Auto, Speed, Exit.
++- **$0CCA:** velocità del gioco.
++- **$0E4A:** controllo automatico.
++- **$15EE:** fine del round:
++  - un minuto di gioco, contatore dei round ed evento $13;
++  - acido delle pozze; chi sta morendo muore dopo 10 round; "Your Teammate is Dying";
++  - fine se un lato sparisce o dopo $2477 round, con "Continue Battle:".
++- **$02AA:** pulizia: nubi, pozze, incantati, effetti legati, mappa, icone.
++
++**Aiutanti portati**
++- **H058, orologio di gioco:**
++  - $064A (avanza il tempo);
++  - $052C (riporti, invecchiamento);
++  - $017C e $018A (icone della cornice a ogni ora);
++  - $02F4 (durata degli effetti a passi di 10).
++- **H062:**
++  - $021E (Yell, "wants to kill");
++  - $1038 (nubi: "starts to cough", "chokes and gags from nausea"; acido);
++  - $0F24 (proprietario della nube);
++  - $1694 (caduta con messaggio);
++  - $1898 (vuota);
++  - $17C0 ora è esportata.
++- **H063:**
++  - $3698 e $3734 (arma a distanza, uso da vicino);
++  - $36EE (arma di tipo $43);
++  - $3980 (bende, "is bandaged");
++  - $2F5A (Guard, "Guarding").
++
++**Dove mi discosto dall'asm (tutto documentato nel codice)**
++- **Tabella dei turni:** l'originale azzera 40 voci di $2392 ma scorre fino a $48; oltre la 40 coincide con $2432... Qui la tabella ha 72 voci; la lista chiusa da NULL non le supera.
++- **Delay ($0EA0):** non legge la voce $48 fuori tabella.
++- **H062+$0F24:** legge dirs[count] oltre la copia per valore (stack); qui il byte seguente di H005+$5022.
++- **H063+$3734:** senza arma l'originale legge +$30 da NULL; qui no.
++- **H058+$018A:** con un indice non previsto tile e colonna non inizializzate; qui 0.
++
++**Stub nuovi (H096/H097, il prossimo passo)**
++- **H096:**
++  - inizio round $02CE;
++  - attacco $38DC, $1340, $20E6, $2182;
++  - fuga $10FA;
++  - passo $0C3C e $099C;
++  - $11D4, Aim $4448, Cast $3100, Turn $160A, $4DE8;
++  - bersaglio $2A6C.
++- **H097:** turno automatico $1D68.
++
++**Prove**
++- **Test temporaneo (non committato):** `combat_main_loop()` dal menu esegue avvio, controllo dei lati e pulizia con ASan pulito. Con il solo party non ci sono nemici, quindi i round non partono (per quelli servono H096/H097).
++- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
++
++**Cosa resta**
++- **H096:** azioni e attacchi.
++- **H097:** IA.
++- **H012+$0766:** il comando COMBAT dello script.
++- **Audio.**
++
++---
+diff --git a/src_c/readable/h058.c b/src_c/readable/h058.c
+index 67a3826..6d130be 100644
+--- a/src_c/readable/h058.c
++++ b/src_c/readable/h058.c
+@@ -1,7 +1,202 @@
+-/* H058: Riposo e memorizzazione/recupero; dettaglio parziale. */
+-#include "cok.h"
++/* H058: Riposo, memorizzazione e scorrere del tempo; dettaglio parziale. */
++#include "h058.h"
++#include "globals.h"
++#include "h029_gfx.h"
++#include "h034.h"
++#include "h062.h"
++
++/*
++ * Dati del modulo sotto a4: -$28..-$1 un flag per personaggio del party
++ * (ha ancora effetti a tempo).  g_h058_bss[0x28 - off] e' -off(a4).
++ */
++u8 g_h058_bss[0x28];
++#define H058_FLAG(i)    g_h058_bss[(i)]   /* -$28 + i */
++
++/* Contatore del tempo: word di g_state_a + 2*idx (idx $C6..$CC, $1FC..). */
++#define STATE_W(idx)    COK_GET16(g_state_a + (idx) * 2)
++#define STATE_SETW(idx, v) COK_PUT16(g_state_a + (idx) * 2, (u16)(v))
+ 
+ /* PORT H058+$00CE: link/unlk, nessun effetto. */
+ void h058_init(void)
+ {
+ }
++
++/*
++ * PORT H058+$018A (annidata in $017C): il contatore idx arriva a limit:
++ * il ciclo di idx-3 avanza (0..3), la sua icona (tile 8x8 nella riga 0)
++ * cambia e il contatore torna 0; altrimenti avanza.  Per un idx diverso
++ * l'originale userebbe tile e colonna non inizializzate (qui 0).
++ */
++static void cycle_icon(u16 idx, u16 limit)
++{
++    u16 tile = 0;                       /* -$6 del chiamante */
++    u16 col = 0;                        /* -$4 del chiamante */
++
++    if (STATE_W(idx) < limit) {
++        STATE_SETW(idx, STATE_W(idx) + 1);
++        return;
++    }
++    if (STATE_W(idx - 3) >= 3) {
++        STATE_SETW(idx - 3, 0);
++    } else {
++        STATE_SETW(idx - 3, STATE_W(idx - 3) + 1);
++    }
++    switch (idx) {
++    case 0x1FC:
++        tile = (u16)(COK_GET16(g_state_a + 0x3F2) + 0x0A);
++        col = 8;
++        break;
++    case 0x1FD:
++        tile = (u16)(COK_GET16(g_state_a + 0x3F4) + 6);
++        col = 0x13;
++        break;
++    case 0x1FE:
++        tile = (u16)(COK_GET16(g_state_a + 0x3F6) + 0x0E);
++        col = 0x1E;
++        break;
++    default:
++        break;
++    }
++    draw_8x8_tile(col, 0, (u16)(tile + 0x114), 0, 0);
++    STATE_SETW(idx, 0);
++}
++
++/* PORT H058+$017C: a ogni ora avanzano i tre cicli delle icone della cornice. */
++static void hourly_icons(void)
++{
++    cycle_icon(0x1FC, 8);
++    cycle_icon(0x1FD, 1);
++    cycle_icon(0x1FE, 6);
++}
++
++/*
++ * PORT H058+$052C: riporta il tempo t[0..6] nei limiti di H005+$500A
++ * (riporto all'unita' successiva; a ogni ora le icone; all'ultima unita'
++ * ogni personaggio invecchia di uno, +$62).
++ */
++static void normalize_time(u8 *t)
++{
++    u8 i;                               /* -$1(a5) */
++    Character *p;                       /* -$6(a5) */
++
++    for (i = 0; i <= 6; ++i) {
++        if (COK_GET16(t + i * 2) < H005_W(0x500A + i * 2)) {
++            continue;
++        }
++        if (i != 6) {
++            COK_PUT16(t + (i + 1) * 2, COK_GET16(t + (i + 1) * 2) + 1);
++            COK_PUT16(t + i * 2,
++                      COK_GET16(t + i * 2) - H005_W(0x500A + i * 2));
++            if (i == 3) {
++                hourly_icons();
++            }
++        } else {
++            for (p = g_party_head; p != NULL; p = p->next) {
++                COK_PUT16(&p->b[0x62], COK_GET16(&p->b[0x62]) + 1);
++            }
++        }
++    }
++}
++
++/*
++ * PORT H058+$02F4: fa scorrere amount unita' unit sugli effetti a tempo
++ * dei personaggi (a passi di 10): quelli scaduti si tolgono.  Fuori dal
++ * campo (contesto diverso da 2) tutti i personaggi vanno controllati;
++ * al campo solo quelli che hanno ancora effetti.
++ */
++static void age_effects(u16 amount, u8 unit)
++{
++    u16 i;                              /* -$4(a5) */
++    u16 step;                           /* -$6(a5) */
++    u16 left;                           /* -$8(a5) */
++    Character *p;                       /* -$C(a5) */
++    u8 found;                           /* -$E(a5) */
++    u8 done;                            /* -$D(a5) */
++    CokEffect *e;                       /* -$12(a5) */
++    CokEffect *last;                    /* -$16(a5) */
++    CokEffect *next;                    /* -$1A(a5) */
++    u8 u;                               /* -$1(a5) */
++
++    if (H005_B(0x3DE3) != 2) {
++        h029_fill_bytes(0x27, g_h058_bss, 0x28, 1);
++    } else {
++        found = 0;
++        i = 1;
++        do {
++            if (H058_FLAG(i - 1)) {
++                found = 1;
++            }
++            ++i;
++        } while (!found && i <= COK_GET16(g_state_b + 0x67C));
++        if (!found) {
++            return;
++        }
++    }
++    left = amount;
++    for (u = unit; u > 1; --u) {
++        left = (u16)(left * H005_W(0x500A + (u - 1) * 2));
++    }
++    while (left > 0) {
++        step = (u16)(left > 0x0A ? 0x0A : left);
++        i = 1;
++        for (p = g_party_head; p != NULL; p = p->next) {
++            if (H058_FLAG(i - 1)) {
++                H058_FLAG(i - 1) = 0;
++                e = p->effects;
++                if (e != NULL) {
++                    last = e;
++                    while (last->next != NULL) {
++                        last = last->next;
++                    }
++                    done = 0;
++                    while (e != NULL && !done) {
++                        next = e->next;
++                        if (e == last) {
++                            done = 1;
++                        }
++                        if (COK_GET16(&e->b[2]) != 0) {
++                            if (COK_GET16(&e->b[2]) > step) {
++                                COK_PUT16(&e->b[2], COK_GET16(&e->b[2]) - step);
++                                H058_FLAG(i - 1) = 1;
++                            } else {
++                                remove_effect(p, e->b[0], e);
++                            }
++                        }
++                        e = next;
++                    }
++                    while (e != NULL) {
++                        if (COK_GET16(&e->b[2]) > 0) {
++                            H058_FLAG(i - 1) = 1;
++                        }
++                        e = e->next;
++                    }
++                }
++            }
++            ++i;
++        }
++        left = (u16)(left > 0x0A ? left - 0x0A : 0);
++    }
++}
++
++/*
++ * PORT H058+$064A: avanza il tempo di gioco (g_state_a +$18C, 7 word) di
++ * amount unita' unit, poi gli effetti a tempo.
++ */
++void advance_time(u16 amount, u8 unit)
++{
++    u8 t[0x0E];                         /* -$E(a5) */
++    u8 i;                               /* -$F(a5) */
++    u16 k;                              /* -$12(a5) */
++
++    for (i = 0; i <= 6; ++i) {
++        COK_PUT16(&t[i * 2], STATE_W(0xC6 + i));
++    }
++    for (k = 1; k <= amount; ++k) {
++        COK_PUT16(&t[unit * 2], COK_GET16(&t[unit * 2]) + 1);
++        normalize_time(t);
++    }
++    for (i = 0; i <= 6; ++i) {
++        STATE_SETW(0xC6 + i, COK_GET16(&t[i * 2]));
++    }
++    age_effects(amount, unit);
++}
+diff --git a/src_c/readable/h058.h b/src_c/readable/h058.h
+new file mode 100644
+index 0000000..d9dcfaa
+--- /dev/null
++++ b/src_c/readable/h058.h
+@@ -0,0 +1,6 @@
++/* H058: riposo e scorrere del tempo. */
++#ifndef COK_H058_H
++#define COK_H058_H
++#include "cok.h"
++void advance_time(u16 amount, u8 unit); /* H058+$064A */
++#endif
+diff --git a/src_c/readable/h059.c b/src_c/readable/h059.c
+index 440bcc1..73cbc70 100644
+--- a/src_c/readable/h059.c
++++ b/src_c/readable/h059.c
+@@ -1,7 +1,678 @@
+-/* H059: Ciclo del combattimento tattico e turni degli attori. */
+-#include "cok.h"
++/* H059: ciclo del combattimento tattico e turni degli attori. */
++#include "h059.h"
++#include "globals.h"
++#include "unported.h"
++#include "h003_exec.h"
++#include "h008.h"
++#include "h026_string.h"
++#include "h029_gfx.h"
++#include "h030.h"
++#include "h033.h"
++#include "h036.h"
++#include "h045.h"
++#include "h048.h"
++#include "h058.h"
++#include "h062.h"
++#include "h063.h"
++#include "h065.h"
++#include "h095.h"
++#include "h096.h"
++#include <string.h>
++
++/*
++ * Ordine dei turni del round (H005+$2392).  L'originale azzera 40 voci
++ * ($A0 byte) ma scorre fino a $48: le voci oltre la 40 coincidono con
++ * $2432..; la lista e' chiusa da NULL e non le raggiunge con al massimo
++ * 40 combattenti.  Qui 72 voci.
++ */
++Character *g_turn_order[0x48];
+ 
+ /* PORT H059+$0122: link/unlk, nessun effetto. */
+ void h059_init(void)
+ {
+ }
++
++/*
++ * PORT H059+$0130: ordina i personaggi per iniziativa (+$4 del turno,
++ * dalla piu' alta; a parita' a caso) in H005+$2392.
++ */
++static void build_turn_order(void)
++{
++    Character *p;                       /* -$6(a5) */
++    Character *moved;                   /* -$A(a5) */
++    Character *next;                    /* -$E(a5) */
++    s16 v;                              /* -$10(a5) */
++    s16 w;                              /* -$12(a5) */
++    u16 i;                              /* -$14(a5) */
++    u16 j;                              /* -$16(a5) */
++    u8 go;                              /* -$1(a5) */
++
++    memset(g_turn_order, 0, 0xA0 / 4 * sizeof(Character *));
++    for (p = g_party_head; p != NULL; p = p->next) {
++        i = 1;
++        go = 1;
++        v = (s16)COK_GET16(&p->block_192->b[4]);
++        while (i < 0x41 && go) {
++            if (g_turn_order[i - 1] != NULL) {
++                w = (s16)COK_GET16(&g_turn_order[i - 1]->block_192->b[4]);
++            } else {
++                w = -1;
++            }
++            if (v > w || (v == w && roll_dice(1, 2) == 1)) {
++                go = 0;
++            } else {
++                ++i;
++            }
++        }
++        moved = g_turn_order[i - 1];
++        g_turn_order[i - 1] = p;
++        if (moved != NULL) {
++            j = i;
++            go = 1;
++            while (j < 0x48 && go) {
++                ++j;
++                next = g_turn_order[j - 1];
++                g_turn_order[j - 1] = moved;
++                moved = next;
++                if (next == NULL) {
++                    go = 0;
++                }
++            }
++        }
++    }
++}
++
++/*
++ * PORT H059+$02AA: fine del combattimento: libera nubi e pozze, chi era
++ * incantato torna (stato 3 se restano piu' nemici), gli effetti legati
++ * al combattimento cadono, si liberano la mappa e le icone; il gestore
++ * $276C torna quello degli incantesimi fuori combattimento.
++ */
++static void end_combat_cleanup(void)
++{
++    CokCloud *next;                     /* -$4(a5) */
++    Character *p;                       /* -$8(a5) */
++    CokEffect *e;                       /* -$C(a5) */
++
++    while (g_clouds != NULL) {
++        next = g_clouds->next;
++        exec_free_mem(g_clouds, sizeof(CokCloud));
++        g_clouds = next;
++    }
++    while (g_acid_pools != NULL) {
++        next = g_acid_pools->next;
++        exec_free_mem(g_acid_pools, sizeof(CokCloud));
++        g_acid_pools = next;
++    }
++    for (p = g_party_head; p != NULL; p = p->next) {
++        if (find_effect(p, 0x0B, &e) && p->b[0x197] == 0) {
++            if (H005_B(0x2A1D) > 1) {
++                p->b[0x197] = 3;
++            } else {
++                p->b[0x197] = 0;
++            }
++        }
++        drop_effects(p);
++    }
++    exec_free_mem(g_combat_area, 0x9CE);
++    g_combat_area = NULL;
++    free_gfx_record(&g_gfx_243a);
++    g_handlers_25c0[107] = (CokHandler)select_spell_target;   /* H033+$12D4 */
++}
++
++/*
++ * PORT H059+$03BE: menu del turno: Move (se ha movimento), View Aim, Use
++ * (se ha oggetti), Cast (se ha incantesimi e puo'), Turn (chierici che
++ * possono scacciare), Yell (paladini senza bersaglio scelto), Done.
++ * Restituisce in *key la scelta (lettere, spazio o un tasto speciale
++ * 1/2/3/4/$13).
++ */
++static void combat_menu(Character *c, u8 *key)
++{
++    char line[0x29];                    /* -$2A(a5) */
++    u16 i;                              /* -$2C(a5) */
++    u8 flag;                            /* -$2D(a5) */
++
++    line[0] = '\0';
++    if (c->block_192->b[8] > 0) {
++        h026_copy(0x28, line, 5, "Move ");
++    }
++    h026_append(0x28, line, 9, "View Aim ");
++    if (c->b[0x14F] > 0) {
++        h026_append(0x28, line, 4, "Use ");
++    }
++    flag = 0;
++    for (i = 0; i <= 0x39; ++i) {
++        if (c->b[0x1E + i] > 0) {
++            flag = 1;
++        }
++    }
++    if (flag && c->block_192->b[1] && COK_GET16(g_state_a + 0x1CA) == 0) {
++        h026_append(0x28, line, 5, "Cast ");
++    }
++    if (c->b[0xFE] > 0 && c->block_192->b[0x13] < H005_B(0x248F)) {
++        h026_append(0x28, line, 5, "Turn ");
++    }
++    if (c->b[0x5B] == 5 && g_h005_2432 == NULL) {
++        h026_append(0x28, line, 5, "Yell ");
++    }
++    h026_append(0x28, line, 4, "Done");
++    do {
++        *key = ui_request_choice(0, "", 0x28, line, 0x0D, 0x0A, 0x0F, 1, 0,
++                                 &flag);
++        if (flag && *key != 3 && *key != 1 && *key != 2 && *key != 4 &&
++            *key != 0x13) {
++            *key = 0;
++        }
++    } while (*key != 'M' && *key != 'V' && *key != 'A' && *key != 'U' &&
++             *key != 'C' && *key != 'T' && *key != 'Q' && *key != 'D' &&
++             *key != 'Y' && *key != 2 && *key != ' ' && *key != 3 &&
++             *key != 1 && *key != 4 && *key != 0x13);
++    clear_message_line();
++}
++
++/*
++ * PORT H059+$0670: attacco di actor a target (dal movimento): un'arma a
++ * distanza che non colpisce da vicino non serve; altrimenti, se puo'
++ * attaccare, target diventa il bersaglio e parte l'attacco.
++ */
++static void melee_attack(Character *actor, Character *target, u8 *done)
++{
++    if (has_ranged_weapon(actor) && !weapon_melee_ok(actor)) {
++        show_message_line(0x14, "Not with that weapon");
++        return;
++    }
++    if (!h096_38dc(actor, target)) {
++        return;
++    }
++    actor->block_192->target = target;
++    if (h096_1340(actor, target)) {
++        *done = 1;
++        return;
++    }
++    h096_20e6(actor, target);
++    h096_2182(actor, target, 0, NULL, done);
++}
++
++/* Variabili di H059+$0726 lette dalla procedura annidata $0734. */
++typedef struct MoveFrame {
++    Character *c;                       /* $12(a5) */
++    u8 *done;                           /* $C(a5) */
++    u16 moves;                          /* -$2(a5) */
++    u16 facing;                         /* -$4(a5) */
++    s16 x0;                             /* -$6(a5) */
++    s16 y0;                             /* -$8(a5) */
++    u16 dir;                            /* -$E(a5) */
++} MoveFrame;
++
++/*
++ * PORT H059+$0734 (annidata in $0726): Esc annulla il movimento: c torna
++ * dov'era con il movimento e la direzione di prima.
++ */
++static void cancel_move(MoveFrame *f)
++{
++    f->c->block_192->b[8] = (u8)f->moves;
++    redraw_ground(0, 0, combatant_index(f->c));
++    *f->done = (u8)!place_combatant(f->c, (u8)f->x0, (u8)f->y0, 0);
++    center_view((s16)combatant_x(f->c), (s16)combatant_y(f->c), 0, 8);
++    f->c->block_192->b[0x0B] = (u8)f->facing;
++    f->dir = 8;
++}
++
++/*
++ * PORT H059+$0726: modo movimento/attacco: "Move/Attack, Move Left = n"
++ * e le frecce (codici speciali $47..$51 del tastierino): verso un
++ * combattente attacca, verso fuori mappa chiede "Flee:", altrimenti si
++ * muove se il costo della casella (doppio, triplo in diagonale) e'
++ * coperto dal movimento rimasto.  Esc annulla, Invio o 'D' chiudono.
++ */
++static void move_mode(Character *c, u8 key, u8 *done)
++{
++    MoveFrame f;
++    u16 blocker;                        /* -$10(a5) */
++    u16 tile;                           /* -$12(a5) */
++    u8 k;                               /* -$13(a5) */
++    u8 in_cloud;                        /* -$14(a5) */
++    u8 in_acid;                         /* -$15(a5) */
++    u16 cost;                           /* -$18(a5) */
++    char msg[0x51];                     /* -$6A(a5) */
++
++    H005_B(0x24CB) = 1;
++    f.c = c;
++    f.done = done;
++    f.moves = c->block_192->b[8];
++    f.facing = c->block_192->b[0x0B];
++    f.x0 = (s16)combatant_x(c);
++    f.y0 = (s16)combatant_y(c);
++    k = key;
++    *done = 0;
++    f.dir = 8;
++    /*
++     * L'originale ricontrolla all'uscita (k = ' ' senza *done): con la
++     * condizione del ciclo quel caso non si presenta.
++     */
++    while (k != 0 && k != 0x0D && k != 'D' && !*done) {
++        clear_text_cells(0x18, 0x18, 0x27, 0x18);
++        if (k == ' ') {
++            h026_copy(0x50, msg, 0x19, "Move/Attack, Move Left = ");
++            format_number(0x50, (char *)&H005_B(0x3C82),
++                          (s32)(c->block_192->b[8] >> 1), 0, 0x0A, 2, ' ');
++            h026_append(0x50, msg, 0x50, (const char *)&H005_B(0x3C82));
++            k = ui_request_choice(0x50, msg, 5, " Done", 0x0D, 0x0A, 0x0F, 1,
++                                  0, &H005_B(0x249F));
++        }
++        switch (k) {
++        case 0:    cancel_move(&f); break;
++        case 0x48: f.dir = 0; break;
++        case 0x49: f.dir = 1; break;
++        case 0x4D: f.dir = 2; break;
++        case 0x51: f.dir = 3; break;
++        case 0x50: f.dir = 4; break;
++        case 0x4F: f.dir = 5; break;
++        case 0x4B: f.dir = 6; break;
++        case 0x47: f.dir = 7; break;
++        default:   f.dir = 8; break;
++        }
++        if (f.dir < 8) {
++            set_combatant_frame(c, (u8)f.dir, 0, 0);
++            probe_move(c, f.dir, &blocker, &tile, &in_cloud, &in_acid);
++            if (blocker > 0) {
++                melee_attack(c, g_combatants[blocker - 1], done);
++            } else if (tile == 0) {
++                switch (ask_yes_no(5, "Flee:", 0x0D, 0x0A, 0x0F)) {
++                case 'Y': *done = h096_10fa(c); break;
++                case 'N': *done = 0; break;
++                default: break;
++                }
++            } else {
++                if (f.dir & 1) {
++                    cost = (u16)(H005_B(0x3EF4 + (tile - 1) * 4) * 3);
++                } else {
++                    cost = (u16)(H005_B(0x3EF4 + (tile - 1) * 4) * 2);
++                }
++                if (H005_B(0x3EF4 + (tile - 1) * 4) == 0xFF) {
++                    cost = 0xFF;
++                }
++                if (cost > c->block_192->b[8]) {
++                    show_message_line(0x0E, "can't go there");
++                } else {
++                    h096_0c3c(c, f.dir);
++                    if (!c->b[0x198]) {
++                        *done = end_combat_turn(c);
++                    } else {
++                        if (c->block_192->b[8] > 0) {
++                            h096_099c(c, f.dir);
++                        }
++                        if (!c->b[0x198]) {
++                            *done = end_combat_turn(c);
++                        }
++                        check_cloud(c, 1);
++                        if (is_helpless(c)) {
++                            *done = end_combat_turn(c);
++                        }
++                    }
++                }
++            }
++        }
++        if (k != 0 && k != 0x0D && k != 'D') {
++            k = ' ';
++        }
++    }
++    if (c->block_192->b[8] < 2) {
++        c->block_192->b[8] = 0;
++    }
++    H005_B(0x24CB) = 0;
++}
++
++/*
++ * PORT H059+$0CCA: velocita' del gioco: "gameSpeed (n) :" con Slower (fino
++ * a 9) e Faster (fino a 0) su H005+$3DF6.
++ */
++static void game_speed_menu(void)
++{
++    char title[0x29];                   /* -$54(a5) */
++    char line[0x29];                    /* -$2A(a5) */
++    u8 key = ' ';                       /* -$55(a5) */
++
++    while (key != 'E' && key != 0) {
++        h026_copy(0x28, title, 0x0B, "gameSpeed (");
++        format_number(0x28, line, (s32)H005_W(0x3DF6), 0, 0x0A, 1, ' ');
++        h026_append(0x28, line, 3, ") :");
++        h026_append(0x28, title, 0x28, line);
++        strcpy(line, " ");
++        if (H005_W(0x3DF6) < 9) {
++            h026_append(0x28, line, 7, "Slower ");
++        }
++        if (H005_W(0x3DF6) > 0) {
++            h026_append(0x28, line, 7, "Faster ");
++        }
++        h026_append(0x28, line, 4, "Exit");
++        key = ui_request_choice(0x28, title, 0x28, line, 0x0D, 0x0A, 0x0F, 0,
++                                0, &H005_B(0x249F));
++        switch (key) {
++        case 'S': H005_SET_W(0x3DF6, H005_W(0x3DF6) + 1); break;
++        case 'F': H005_SET_W(0x3DF6, H005_W(0x3DF6) - 1); break;
++        default: break;
++        }
++    }
++}
++
++/* PORT H059+$0E4A: c passa al controllo automatico e lascia un bersaglio alleato. */
++static void set_auto(Character *c)
++{
++    c->b[0x19A] = 1;
++    if (c->block_192->target != NULL &&
++        c->block_192->target->b[0x199] == c->b[0x199]) {
++        c->block_192->target = NULL;
++    }
++}
++
++/*
++ * PORT H059+$0EA0: sottomenu "Done": Guard (se non ha un'arma solo a
++ * distanza), Delay (passa in fondo all'ordine del round), Quit (fine
++ * turno), Bandage (se un compagno muore), Auto (il computer gioca per
++ * lui), Speed, Exit.
++ */
++static void done_menu(Character *c, u8 *done)
++{
++    char line[0x29];                    /* -$2A(a5) */
++    u8 key = ' ';                       /* -$2B(a5) */
++    Character *p;                       /* -$30(a5) */
++    u16 i;                              /* -$32(a5) */
++
++    *done = 0;
++    line[0] = '\0';
++    if (!has_ranged_weapon(c) || weapon_melee_ok(c)) {
++        h026_copy(0x28, line, 6, "Guard ");
++    }
++    h026_append(0x28, line, 0x0B, "Delay Quit ");
++    if (bandage_dying(0)) {
++        h026_append(0x28, line, 8, "Bandage ");
++    }
++    h026_append(0x28, line, 0x0F, "Auto Speed Exit");
++    while (key != 'E' && key != 0 && !*done) {
++        key = ui_request_choice(0, "", 0x28, line, 0x0D, 0x0A, 0x0F, 0, 0,
++                                &H005_B(0x249F));
++        switch (key) {
++        case 'G':
++            *done = guard_turn(c);
++            break;
++        case 'D':
++            COK_PUT16(&c->block_192->b[4], 1);
++            i = H005_B(0x2480);
++            p = g_turn_order[i];
++            while (p != NULL && i < 0x48) {
++                g_turn_order[i - 1] = p;
++                ++i;
++                /* l'originale legge anche la voce $48 (fuori tabella) */
++                p = (i < 0x48) ? g_turn_order[i] : NULL;
++            }
++            g_turn_order[i - 1] = c;
++            add_to_byte(&H005_B(0x2480), 0xFFFF);
++            *done = 1;
++            break;
++        case 'Q':
++            *done = end_combat_turn(c);
++            break;
++        case 'B':
++            *done = bandage_dying(1);
++            *done = end_combat_turn(c);
++            break;
++        case 'S':
++            game_speed_menu();
++            break;
++        case 'A':
++            set_auto(c);
++            clear_message_line();
++            dos_delay(0x0A);
++            *done = 1;
++            h097_1d68(c);
++            break;
++        default:
++            break;
++        }
++    }
++}
++
++/*
++ * PORT H059+$1110: turno di un personaggio del giocatore: un incantesimo
++ * in corso (+$0 del turno) parte subito; altrimenti il menu finche' il
++ * turno non finisce.  Tasti speciali: 1/3 tutti in automatico per il
++ * resto del round, 2 magia on/off, 4 H096+$4DE8.
++ */
++static void player_turn(Character *c)
++{
++    u8 key;                             /* -$1(a5) */
++    u8 done;                            /* -$2(a5) */
++    u8 area[0x0E];                      /* -$10(a5) */
++    u16 spell;                          /* -$12(a5) */
++    Character *p;                       /* -$6(a5) */
++
++    if (!c->b[0x198]) {
++        done = end_combat_turn(c);
++        return;
++    }
++    if (c->block_192->b[0] > 0) {
++        spell = c->block_192->b[0];
++        c->block_192->b[0] = 0;
++        cast_spell(spell, 0, 1, &done);
++        done = end_combat_turn(c);
++        return;
++    }
++    done = 0;
++    while (!done) {
++        H005_B(0x2483) = 1;
++        combat_menu(c, &key);
++        if (H005_B(0x249D)) {
++            switch (key) {
++            case 1:
++            case 3:
++                add_to_byte(&H005_B(0x2480), 0xFFFF);
++                COK_PUT16(&c->block_192->b[4], 0x14);
++                for (p = g_party_head; p != NULL; p = p->next) {
++                    set_auto(p);
++                }
++                clear_message_line();
++                dos_delay(0x0A);
++                done = 1;
++                break;
++            case 2:
++                H005_B(0x24A0) = (u8)(H005_B(0x24A0) == 0);
++                if (H005_B(0x24A0)) {
++                    show_message_line(8, "Magic On");
++                } else {
++                    show_message_line(9, "Magic Off");
++                }
++                break;
++            case 4:
++                if (h096_4de8()) {
++                    show_combatant_cursor(c, 3, 0);
++                    done = 1;
++                } else {
++                    show_message_line(0x11, "That doesn't work");
++                }
++                break;
++            default:
++                break;
++            }
++        } else {
++            switch (key) {
++            case ' ':
++                for (p = g_party_head; p != NULL; p = p->next) {
++                    if (p->b[0xEC] < 0x80) {
++                        p->b[0x19A] = 0;
++                    }
++                }
++                break;
++            case 'A':
++                h096_4448(c, 0xFF, 1, 0, 1, &done, area);
++                break;
++            case 'C':
++                h096_3100(0, 0, &done);
++                break;
++            case 'D':
++                done_menu(c, &done);
++                break;
++            case 'M':
++                move_mode(c, ' ', &done);
++                break;
++            case 'T':
++                h096_160a(c);
++                done = end_combat_turn(c);
++                break;
++            case 'U':
++                H005_B(0x2483) = 2;
++                show_items(&done);
++                h096_11d4(c);
++                if (!done) {
++                    redraw_combat_screen();
++                }
++                break;
++            case 'V':
++                view_character(&done);
++                h096_11d4(c);
++                if (!done) {
++                    redraw_combat_screen();
++                }
++                break;
++            case 'Y':
++                yell_challenge(c);
++                done = end_combat_turn(c);
++                break;
++            default:
++                break;
++            }
++        }
++        if (!done) {
++            show_combatant_cursor(c, 2, 1);
++            H005_B(0x24C7) = 1;
++            draw_combat_status(c);
++        }
++    }
++}
++
++/*
++ * PORT H059+$1498 (Combat_ActorTurn): turno di c: eventi 7, $F e $15,
++ * cursore e stato; chi ha ancora iniziativa (+$4 > 0) gioca: in
++ * automatico (+$19A, H097+$1D68) o col menu.
++ */
++static void actor_turn(Character *c)
++{
++    c->block_192->b[0x11] = 0;
++    c->block_192->b[0x14] = 0;
++    c->block_192->b[9] = 0;
++    trigger_event(&c, 7);
++    if ((s16)COK_GET16(&c->block_192->b[4]) <= 0) {
++        return;
++    }
++    if (COK_GET16(&c->block_192->b[4]) == 0x14) {
++        COK_PUT16(&c->block_192->b[4], 0x13);
++    }
++    g_current_char = c;
++    H005_B(0x24C6) = (u8)(c->b[0x199] == 0 || combatant_visible(c, 0));
++    show_combatant_cursor(c, 2, 1);
++    recompute_stats(c);
++    H005_B(0x24C7) = 1;
++    draw_combat_status(c);
++    trigger_event(&c, 0x0F);
++    if (c->block_192->b[0] == 0) {
++        trigger_event(&c, 0x15);
++    }
++    if (COK_GET16(&c->block_192->b[4]) > 0) {
++        if (c->b[0x19A]) {
++            h097_1d68(c);
++        } else {
++            player_turn(c);
++        }
++    }
++    redraw_combat_cell((s16)combatant_x(c), (s16)combatant_y(c));
++}
++
++/*
++ * PORT H059+$15EE: fine del round: un minuto di gioco, contatore dei
++ * round, forza dei nemici, evento $13, nubi (solo acido) e chi muore
++ * peggiora (morto dopo 10 round); "Your Teammate is Dying".  Il
++ * combattimento finisce se un lato non c'e' piu' o dopo $2477 round; con
++ * solo nemici rimasti si puo' scegliere di continuare.
++ */
++static void end_round(u8 *over)
++{
++    Character *p;                       /* -$4(a5) */
++    u16 i;                              /* -$8(a5) */
++
++    advance_time(1, 1);
++    add_to_byte(&H005_B(0x247C), 1);
++    enemy_strength();
++    i = 1;
++    for (p = g_party_head; p != NULL; p = p->next) {
++        trigger_event(&p, 0x13);
++        check_cloud(p, 0);
++        if (p->b[0x197] == 5) {
++            add_to_byte(&p->block_192->b[0x10], 1);
++            if (p->block_192->b[0x10] > 9) {
++                p->b[0x197] = 6;
++            }
++        }
++        ++i;
++    }
++    if (bandage_dying(0)) {
++        show_message_line(0x16, "Your Teammate is Dying");
++    }
++    count_sides();
++    center_view((s16)((s16)COK_GET16(g_combat_area + 2) + 3),
++                (s16)((s16)COK_GET16(g_combat_area + 4) + 3), 0xFF, 8);
++    if (H005_B(0x2A1C) == 0 || H005_B(0x2A1D) == 0 ||
++        H005_B(0x247C) >= H005_B(0x2477)) {
++        *over = 1;
++    }
++    if (H005_B(0x2A1C) > 0 && H005_B(0x2A1D) == 0 && !H005_B(0x24D7) &&
++        ask_yes_no(0x10, "Continue Battle:", 0x0D, 0x0A, 0x0F) == 'Y') {
++        *over = 0;
++    }
++}
++
++/*
++ * PORT H059+$1782 (Combat_MainLoop), dal comando COMBAT: avvio (H095),
++ * evento $18 per tutti, poi round finche' un lato resta: ordine dei
++ * turni, turno di ognuno con le esplosioni dei caduti, fine del round;
++ * infine la pulizia.
++ */
++void combat_main_loop(void)
++{
++    u8 over;                            /* -$1(a5) */
++    Character *p;                       /* -$6(a5) */
++
++    H005_B(0x3DE3) = 5;
++    g_handlers_25c0[107] = (CokHandler)h096_2a6c;
++    start_combat();
++    over = 0;
++    if (H005_B(0x2A1C) == 0 || H005_B(0x2A1D) == 0) {
++        over = 1;
++    }
++    for (p = g_party_head; p != NULL; p = p->next) {
++        trigger_event(&p, 0x18);
++    }
++    while (!over) {
++        count_sides();
++        for (p = g_party_head; p != NULL; p = p->next) {
++            h096_02ce(p);
++        }
++        COK_PUT16(g_state_b + 0x596, 0);
++        build_turn_order();
++        p = g_turn_order[0];
++        H005_B(0x2480) = 1;
++        while (p != NULL) {
++            actor_turn(p);
++            explode_fallen();
++            add_to_byte(&H005_B(0x2480), 1);
++            if (H005_B(0x2480) > 0x48) {
++                p = NULL;
++            } else {
++                p = g_turn_order[H005_B(0x2480) - 1];
++            }
++        }
++        end_round(&over);
++    }
++    end_combat_cleanup();
++    H005_B(0x24CE) = 1;
++}
+diff --git a/src_c/readable/h059.h b/src_c/readable/h059.h
+new file mode 100644
+index 0000000..e8decc4
+--- /dev/null
++++ b/src_c/readable/h059.h
+@@ -0,0 +1,7 @@
++/* H059: ciclo del combattimento tattico. */
++#ifndef COK_H059_H
++#define COK_H059_H
++#include "character.h"
++extern Character *g_turn_order[0x48];   /* $2392 */
++void combat_main_loop(void);            /* H059+$1782 */
++#endif
+diff --git a/src_c/readable/h062.c b/src_c/readable/h062.c
+index 47e6d16..8f598fe 100644
+--- a/src_c/readable/h062.c
++++ b/src_c/readable/h062.c
+@@ -103,7 +103,6 @@ u8 heal_character(Character *c, u16 amount, u8 full_only)
+     return ok;
+ }
+ 
+-static void drop_effects(Character *c);
+ 
+ /* Gestore della tabella degli effetti H005+$2832 (argomenti come H062+$03F2). */
+ typedef void (*CokEffectHandler)(Character **c, void *obj, u8 flag);
+@@ -655,7 +654,7 @@ u8 saving_throw_roll(Character *c, u8 kind, s16 bonus)
+ }
+ 
+ /* PORT H062+$17C0: toglie a c gli effetti che finiscono con lui a terra. */
+-static void drop_effects(Character *c)
++void drop_effects(Character *c)
+ {
+     static const u8 types[0x10] = {
+         3, 0x0B, 0x15, 0x17, 0x1B, 0x1E, 0x1F, 0x33,
+@@ -879,3 +878,142 @@ void explode_fallen(void)
+         memset(g_h005_0016, 0, sizeof g_h005_0016);
+     }
+ }
++
++/*
++ * PORT H062+$021E (Yell): c diventa il bersaglio preferito ($2432); ogni
++ * avversario in piedi (+$197 = 0) con +$13 > 3, non indifeso, che
++ * fallisce il tiro salvezza "wants to kill <nome>" (effetto $5B).
++ */
++void yell_challenge(Character *c)
++{
++    Character *p;                       /* -$4(a5) */
++    char msg[0x51];                     /* -$56(a5) */
++
++    g_h005_2432 = c;
++    for (p = g_party_head; p != NULL; p = p->next) {
++        if (p->b[0x197] != 0 || p->b[0x13] <= 3 ||
++            p->b[0x199] == c->b[0x199] || is_helpless(p) ||
++            saving_throw_roll(p, 4, 0)) {
++            continue;
++        }
++        strcpy(msg, "wants to kill ");
++        h026_append(0x50, msg, 0x0F, (const char *)c->b);
++        apply_spell_effect_on(p, 0x5B, 0, 0xFF, 0, 0, 0, 0x50, msg);
++    }
++}
++
++/*
++ * PORT H062+$0F24: proprietario della nube della lista list che copre
++ * (x, y) con una delle count caselle; le direzioni sono dirs[1..count]
++ * (copia per valore di len byte: l'originale legge dirs[count], oltre la
++ * copia, dallo stack; qui il byte seguente di H005+$5022).  Senza nube il
++ * primo del party.
++ */
++static Character *cloud_owner_at(s16 x, s16 y, CokCloud *list, u16 count,
++                                 u16 len, const u8 *dirs)
++{
++    CokCloud *p = list;                 /* -$4(a5) */
++    u8 found = 0;                       /* -$5(a5) */
++    u16 i;                              /* -$8(a5) */
++
++    (void)len;
++    while (p != NULL && !found) {
++        for (i = 1; i <= count; ++i) {
++            if (p->b[0x12 - 8 + i - 1] &&
++                (s16)(COK_GET16(&p->b[0x1C - 8]) + H005_W(0x3EE2 + dirs[i] * 2)) == x &&
++                (s16)(COK_GET16(&p->b[0x1E - 8]) + H005_W(0x3ED0 + dirs[i] * 2)) == y) {
++                found = 1;
++            }
++        }
++        if (!found) {
++            p = p->next;
++        }
++    }
++    return found ? p->owner : g_party_head;
++}
++
++/*
++ * PORT H062+$1038: c in una nube (con in_cloud, se non ha $1F/$63/$3F):
++ * col tiro salvezza "starts to cough" ($1E), senza "chokes and gags from
++ * nausea" ($1F), lanciati dal proprietario della nube; in una pozza
++ * d'acido 1d6 di danno.  Nel primo caso l'originale passa al gestore
++ * l'effetto -$8(a5) delle ricerche precedenti (qui lo stesso).
++ */
++void check_cloud(Character *c, u8 in_cloud)
++{
++    u16 blocker;                        /* -$4(a5) */
++    u16 tile;                           /* -$2(a5) */
++    u8 cloud;                           /* -$E(a5) */
++    u8 acid;                            /* -$F(a5) */
++    CokEffect *e8 = NULL;               /* -$8(a5) */
++    CokEffect *ec;                      /* -$C(a5) */
++    u8 saved;                           /* -$D(a5) */
++    Character *save;                    /* -$14(a5) */
++
++    if (!c->b[0x198]) {
++        return;
++    }
++    probe_move(c, 8, &blocker, &tile, &cloud, &acid);
++    if (cloud && in_cloud && !find_effect(c, 0x1F, &e8) &&
++        !find_effect(c, 0x63, &e8) && !find_effect(c, 0x3F, &e8)) {
++        saved = saving_throw_roll(c, 0, 0);
++        save = g_current_char;
++        g_current_char = cloud_owner_at((s16)combatant_x(c),
++                                        (s16)combatant_y(c), g_clouds, 4, 3,
++                                        &H005_B(0x5022));
++        if (saved) {
++            apply_spell_effect_on(c, 0x1E, (u16)(roll_dice(1, 4) + 1), 0xFF,
++                                  0, 0, saved, 0x0F, "starts to cough");
++            ec = NULL;
++            if (find_effect(c, 0x1E, &ec)) {
++                call_effect_handler(0x1E, &c, e8, 0);
++            }
++        } else {
++            apply_spell_effect_on(c, 0x1F, (u16)(roll_dice(1, 4) + 1), 0xFF,
++                                  0, 0, saved, 0x1B,
++                                  "chokes and gags from nausea");
++            if (find_effect(c, 0x1F, &e8)) {
++                call_effect_handler(0x1F, &c, e8, 0);
++            }
++        }
++        g_current_char = save;
++    }
++    if (acid) {
++        apply_damage(c, roll_damage_dice(1, 6), 0, 0);
++    }
++}
++
++/*
++ * PORT H062+$1694: c cade nello stato status col messaggio text (per
++ * valore): esce dalla mappa e, se il turno finisce, perde gli effetti
++ * legati.  Con stato diverso da 3 i punti ferita vanno a 0.
++ */
++void fall_down(Character *c, u8 status, u16 len, const char *text)
++{
++    char copy[0x52];
++    u16 n;                              /* -$2(a5) */
++
++    h026_copy(0x50, copy, len, text);
++    if (!c->b[0x198]) {
++        return;
++    }
++    n = combatant_index(c);
++    show_combatant_cursor(c, 3, 0);
++    show_char_message(c, len, copy, 0x0A, 1);
++    c->b[0x198] = 0;
++    c->b[0x197] = status;
++    if (c->b[0x197] != 3) {
++        c->b[0x1A8] = 0;
++    }
++    redraw_ground(0, 0, n);
++    H005_B(0x3154 + (n - 1) * 6 + 5) = 0;
++    rebuild_occupancy();
++    if (end_combat_turn(c)) {
++        drop_effects(c);
++    }
++}
++
++/* PORT H062+$1898: link/unlk, nessun effetto. */
++void h062_nop_1898(void)
++{
++}
+diff --git a/src_c/readable/h062.h b/src_c/readable/h062.h
+index 8351cbd..68a8fb0 100644
+--- a/src_c/readable/h062.h
++++ b/src_c/readable/h062.h
+@@ -37,5 +37,11 @@ void knock_out(Character *c, u8 status, u16 len, const char *text);
+                                                 /* H062+$02FA */
+ u8   revive(Character *c, u16 hp, u16 len, const char *text); /* H062+$2650 */
+ void explode_fallen(void);                      /* H062+$2734 */
++void drop_effects(Character *c);                /* H062+$17C0 */
++void yell_challenge(Character *c);              /* H062+$021E */
++void check_cloud(Character *c, u8 in_cloud);    /* H062+$1038 */
++void fall_down(Character *c, u8 status, u16 len, const char *text);
++                                                /* H062+$1694 */
++void h062_nop_1898(void);                       /* H062+$1898 */
+ 
+ #endif
+diff --git a/src_c/readable/h063.c b/src_c/readable/h063.c
+index 5e0ff54..df2c51a 100644
+--- a/src_c/readable/h063.c
++++ b/src_c/readable/h063.c
+@@ -1706,3 +1706,78 @@ u16 direction_toward(Character *a, Character *b)
+     }
+     return d;
+ }
++
++/* PORT H063+$3698: l'arma in mano tira a distanza (tabella $336C +$E > 1)? */
++u8 has_ranged_weapon(Character *c)
++{
++    if (c->readied[0] != NULL &&
++        H005_B(0x336C + c->readied[0]->b[0x30] * 0x12 + 0x0E) > 1) {
++        return 1;
++    }
++    return 0;
++}
++
++/* PORT H063+$36EE: l'arma in mano e' del tipo $43? */
++u8 weapon_is_43(Character *c)
++{
++    if (c->readied[0] != NULL && c->readied[0]->b[0x30] == 0x43) {
++        return 1;
++    }
++    return 0;
++}
++
++/*
++ * PORT H063+$3734: l'arma in mano colpisce anche da vicino: a distanza
++ * con i bit $14 della tabella $336C (+$10), o del tipo $43.  Senza arma
++ * l'originale legge +$30 da NULL (memoria bassa); qui no.
++ */
++u8 weapon_melee_ok(Character *c)
++{
++    if (has_ranged_weapon(c) &&
++        mask_byte(H005_B(0x336C + c->readied[0]->b[0x30] * 0x12 + 0x10),
++                  0x14) == 0x14) {
++        return 1;
++    }
++    if (c->readied[0] != NULL && c->readied[0]->b[0x30] == 0x43) {
++        return 1;
++    }
++    return 0;
++}
++
++/*
++ * PORT H063+$3980: c'e' un compagno del party (lato 0, in combattimento)
++ * che sta morendo (+$197 = 5)?  Con bandage il primo trovato viene
++ * fasciato (stato 4, "is bandaged").
++ */
++u8 bandage_dying(u8 bandage)
++{
++    u8 found = 0;                       /* -$5(a5) */
++    Character *p;                       /* -$4(a5) */
++
++    for (p = g_party_head; p != NULL; p = p->next) {
++        if (p->block_192->b[0x15] == 0 && p->b[0x199] == 0 &&
++            p->b[0x197] == 5) {
++            found = 1;
++            if (bandage) {
++                p->b[0x197] = 4;
++                p->block_192->b[0x10] = 0;
++                show_char_message(p, 0x0B, "is bandaged", 0x0A, 1);
++                bandage = 0;
++            }
++        }
++    }
++    return found;
++}
++
++/* PORT H063+$2F5A (Guard): fine del turno; se puo', c resta in guardia. */
++u8 guard_turn(Character *c)
++{
++    u8 r;                               /* -$1(a5) */
++
++    r = end_combat_turn(c);
++    if (c->block_192->b[0x12] == 0) {
++        c->block_192->b[9] = 1;
++        show_message_line(8, "Guarding");
++    }
++    return r;
++}
+diff --git a/src_c/readable/h063.h b/src_c/readable/h063.h
+index fce76ee..1ad76c7 100644
+--- a/src_c/readable/h063.h
++++ b/src_c/readable/h063.h
+@@ -58,5 +58,10 @@ u16  count_enemies_near(Character *c, u16 radius);      /* H063+$2BDE */
+ void draw_status_line(void);                            /* H063+$33A0 */
+ void redraw_combat_screen(void);                        /* H063+$3658 */
+ u16  direction_toward(Character *a, Character *b);      /* H063+$3CA0 */
++u8   has_ranged_weapon(Character *c);                   /* H063+$3698 */
++u8   weapon_is_43(Character *c);                        /* H063+$36EE */
++u8   weapon_melee_ok(Character *c);                     /* H063+$3734 */
++u8   bandage_dying(u8 bandage);                         /* H063+$3980 */
++u8   guard_turn(Character *c);                          /* H063+$2F5A */
+ 
+ #endif
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index 3cd28cc..62dae7e 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -97,3 +97,19 @@ void h042_1006(u16 picture) { (void)picture; cok_unported_skip(s_h042_1006); }
+ 
+ 
+ void h010_0360(u16 len, const char *text) { (void)len; (void)text; cok_unported("H010+$0360"); }
++
++u8 h096_38dc(Character *a, Character *t) { (void)a; (void)t; cok_unported("H096+$38DC"); return 0; }
++u8 h096_1340(Character *a, Character *t) { (void)a; (void)t; cok_unported("H096+$1340"); return 0; }
++void h096_20e6(Character *a, Character *t) { (void)a; (void)t; cok_unported("H096+$20E6"); }
++void h096_2182(Character *a, Character *t, u8 x, void *b, u8 *done) { (void)a; (void)t; (void)x; (void)b; (void)done; cok_unported("H096+$2182"); }
++u8 h096_10fa(Character *c) { (void)c; cok_unported("H096+$10FA"); return 0; }
++void h096_0c3c(Character *c, u16 dir) { (void)c; (void)dir; cok_unported("H096+$0C3C"); }
++void h096_099c(Character *c, u16 dir) { (void)c; (void)dir; cok_unported("H096+$099C"); }
++void h096_11d4(Character *c) { (void)c; cok_unported("H096+$11D4"); }
++void h096_4448(Character *c, u16 a, u16 b, u8 d, u8 e, u8 *done, void *area) { (void)c; (void)a; (void)b; (void)d; (void)e; (void)done; (void)area; cok_unported("H096+$4448"); }
++void h096_3100(u16 a, u8 b, u8 *done) { (void)a; (void)b; (void)done; cok_unported("H096+$3100"); }
++void h096_160a(Character *c) { (void)c; cok_unported("H096+$160A"); }
++u8 h096_4de8(void) { cok_unported("H096+$4DE8"); return 0; }
++void h096_02ce(Character *c) { (void)c; cok_unported("H096+$02CE"); }
++void h096_2a6c(u8 spell, u8 unused, u8 *ok) { (void)spell; (void)unused; (void)ok; cok_unported("H096+$2A6C"); }
++void h097_1d68(Character *c) { (void)c; cok_unported("H097+$1D68"); }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index a8b4b22..fc13d5e 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -72,3 +72,20 @@ void h042_1006(u16 picture);             /* immagine grande */
+ #endif
+ 
+ void h010_0360(u16 len, const char *text);  /* messaggio sulla console (writeln) */
++
++/* H096/H097: azioni e IA del combattimento (non ancora portate). */
++u8   h096_38dc(Character *actor, Character *target);
++u8   h096_1340(Character *actor, Character *target);
++void h096_20e6(Character *actor, Character *target);
++void h096_2182(Character *actor, Character *target, u8 a, void *b, u8 *done);
++u8   h096_10fa(Character *c);           /* fuga */
++void h096_0c3c(Character *c, u16 dir);  /* passo */
++void h096_099c(Character *c, u16 dir);
++void h096_11d4(Character *c);
++void h096_4448(Character *c, u16 a, u16 b, u8 d, u8 e, u8 *done, void *area);
++void h096_3100(u16 a, u8 b, u8 *done);  /* Cast */
++void h096_160a(Character *c);           /* Turn undead */
++u8   h096_4de8(void);
++void h096_02ce(Character *c);           /* inizio round */
++void h096_2a6c(u8 spell, u8 unused, u8 *ok); /* bersaglio in combattimento */
++void h097_1d68(Character *c);           /* turno automatico (IA) */
+-- 
+2.43.0
+

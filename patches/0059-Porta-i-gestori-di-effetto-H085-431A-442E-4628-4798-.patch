@@ -1,0 +1,395 @@
+From 51a8086ba597fc22d791b01d70457a37a6035be2 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 11 Nov 2026 11:48:02 +0000
+Subject: [PATCH 59/65] Porta i gestori di effetto H085 $431A, $442E, $4628,
+ $4798, $4A02
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/backlog.md |  23 ++++
+ src_c/readable/h033.c     |  10 +-
+ src_c/readable/h085.c     | 265 ++++++++++++++++++++++++++++++++++++++
+ src_c/readable/h085.h     |   5 +
+ src_c/readable/unported.c |   5 -
+ src_c/readable/unported.h |   5 -
+ 6 files changed, 298 insertions(+), 15 deletions(-)
+
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index 8a0cda2..9e31a1f 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -2624,3 +2624,26 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
+ - **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
+ 
+ ---
++
++## v51: gestori di effetto di H085 ($431A, $442E, $4628, $4798, $4A02)
++
++**Portato** (tratto $431A..$4D1A, non classificato nel sorgente: disassemblato dai byte grezzi con objdump m68k)
++- **$431A `effect_fireball` (effetto $4E):** "throws a fireball", palla di fuoco $2F da 15d6 sul bersaglio scelto; poi l'effetto si toglie.
++- **$442E `effect_poison_breath` (effetto $54):** "breathes poison", nell'area di raggio 3 attorno al punto (tipo $20).
++- **$4628 `effect_lightning_breath` (effetto $55):** "Breathes!", fulmine di 10 caselle senza rimbalzo (tipo $24).
++- **$4798 `effect_acid_breath` (effetto $5A):** "breathes acid", cono stretto (larghezza 1, lunghezza 6; tipo $30), solo se colpisce soltanto avversari.
++- **$4A02 `effect_eye_attack` (effetto $04):** agisce nel 75% dei turni.
++  - Con le cariche e il 25%: soffio accecante su un avversario adiacente ("Breathes!", 10 o 20 di danno e "is blinded").
++  - Altrimenti fino a due "Fires An Energy Bolt!" (1d8+2).
++- **Comune ai soffi:** danno pari ai punti ferita massimi del mostro, tiro salvezza 3, cariche in +$4 (3 senza $247C).
++- **Stato:** in H085 non restano stub.
++
++**Dove mi discosto dall'asm**
++- **$4628:** il flag del primo colpo -$1(a5) non e' inizializzato nell'originale; qui 0.
++
++**Prove**
++- **Battaglia della carovana** (ASan): nessun errore.
++- **Non provato:** questi mostri, che non compaiono nella prima battaglia.
++- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
++
++---
+diff --git a/src_c/readable/h033.c b/src_c/readable/h033.c
+index cd6b7d2..bed0d11 100644
+--- a/src_c/readable/h033.c
++++ b/src_c/readable/h033.c
+@@ -604,14 +604,14 @@ void install_action_handlers(void)
+     g_handlers_25c0[104] = spell_bless;   /* $2760 */
+     g_handlers_25c0[105] = spell_charm_person;   /* $2764 */
+     g_handlers_25c0[106] = spell_burning_hands;   /* $2768 */
+-    g_handlers_2832[3] = h085_4a02;   /* $283E */
++    g_handlers_2832[3] = (CokHandler)effect_eye_attack;   /* $283E */
+     g_handlers_2832[5] = (CokHandler)effect_breath;   /* $2846 */
+     g_handlers_2832[103] = (CokHandler)effect_breath;   /* $29CE */
+     g_handlers_2832[82] = (CokHandler)effect_breath;   /* $297A */
+-    g_handlers_2832[83] = h085_442e;   /* $297E */
+-    g_handlers_2832[84] = h085_4628;   /* $2982 */
+-    g_handlers_2832[89] = h085_4798;   /* $2996 */
+-    g_handlers_2832[77] = h085_431a;   /* $2966 */
++    g_handlers_2832[83] = (CokHandler)effect_poison_breath;   /* $297E */
++    g_handlers_2832[84] = (CokHandler)effect_lightning_breath;   /* $2982 */
++    g_handlers_2832[89] = (CokHandler)effect_acid_breath;   /* $2996 */
++    g_handlers_2832[77] = (CokHandler)effect_fireball;   /* $2966 */
+ }
+ 
+ /* PORT H033+$1A40: azione degli incantesimi senza effetto (link/unlk). */
+diff --git a/src_c/readable/h085.c b/src_c/readable/h085.c
+index 528f140..eaf65c1 100644
+--- a/src_c/readable/h085.c
++++ b/src_c/readable/h085.c
+@@ -1743,3 +1743,268 @@ void spell_bolt_20(void)
+              (u16)(roll_dice(1, 6) + 0x14), 4, 0, &bounce);
+     bolt(3, 0x14, 4, 0);
+ }
++
++/* Selezione del bersaglio (azione $276C) per lo spell spell. */
++static void select_target_for(u8 spell, u8 *ok)
++{
++    ((void (*)(u8, u8, u8 *))g_handlers_25c0[107])(spell, 1, ok);
++}
++
++/* Animazione del proiettile dal combattente c al primo bersaglio. */
++static void missile_to_first(Character *c)
++{
++    animate_missile((s16)combatant_x(c), (s16)combatant_y(c),
++                    (s16)combatant_x(g_spell_targets[0]),
++                    (s16)combatant_y(g_spell_targets[0]), 1, 1);
++}
++
++/* Messaggio, direzione verso il primo bersaglio e posa del lanciatore. */
++static void breath_pose(Character *c, u16 len, const char *text,
++                        u16 missile)
++{
++    u16 dir;
++
++    show_char_message(c, len, text, 0x0A, 1);
++    dir = direction_toward(c, g_spell_targets[0]);
++    draw_combat_status(c);
++    set_combatant_frame(c, (u8)dir, 1, 0);
++    load_missile_frames(missile);
++}
++
++/* Danno pari ai punti ferita massimi di c a ogni bersaglio (salvezza 3). */
++static void breath_damage(Character *c)
++{
++    u16 k;
++    Character *t;
++    u8 saved;
++
++    for (k = 1; k <= H005_B(0x246C); ++k) {
++        if (g_spell_targets[k - 1] != NULL) {
++            t = g_spell_targets[k - 1];
++            saved = saving_throw_roll(t, 3, 0);
++            apply_damage(t, c->b[0x64], 2, saved);
++        }
++    }
++}
++
++/*
++ * PORT H085+$431A (effetto $4E): una palla di fuoco ($2F, 15d6) sul
++ * bersaglio scelto: "throws a fireball", poi l'effetto si toglie.
++ */
++void effect_fireball(Character **cp, void *obj, u8 flag)
++{
++    u8 ok;                              /* -$3(a5) */
++
++    (void)obj; (void)flag;
++    H005_B(0x24A9) = 1;
++    select_target_for(0x2F, &ok);
++    if (!ok) {
++        return;
++    }
++    H005_B(0x2471) = 0x2F;
++    center_view((s16)combatant_x(*cp), (s16)combatant_y(*cp), 0, 8);
++    show_char_message(*cp, 0x11, "throws a fireball", 0x0A, 1);
++    load_missile_frames(0x12);
++    missile_to_first(*cp);
++    apply_spell_effect(H005_B(0x2471), 0, 0, roll_damage_dice(0x0F, 6), 9,
++                       0, "");
++    remove_effect(*cp, 0x4E, NULL);
++}
++
++/*
++ * PORT H085+$442E (effetto $54): soffio velenoso nell'area di raggio 3
++ * attorno al punto scelto (danno di tipo $20).  Le cariche (+$4) tornano
++ * a 3 senza $247C e calano solo se ha colpito qualcuno.
++ */
++void effect_poison_breath(Character **cp, void *obj, u8 flag)
++{
++    CokEffect *e = (CokEffect *)obj;
++    s16 ax;                             /* -$2(a5) */
++    s16 ay;                             /* -$4(a5) */
++    u8 ok;                              /* -$9(a5) */
++    u8 r;                               /* -$B(a5) */
++
++    (void)flag;
++    if (H005_B(0x247C) == 0) {
++        e->b[4] = 3;
++    }
++    if (e->b[4] == 0) {
++        return;
++    }
++    ax = (s16)combatant_x(*cp);
++    ay = (s16)combatant_y(*cp);
++    select_target_for(0x24, &ok);
++    if (!ok) {
++        return;
++    }
++    breath_area(ax, ay, (s16)H005_W(0x251A), (s16)H005_W(0x2518), 0xFF, 3);
++    if (H005_B(0x246C) == 0) {
++        return;
++    }
++    H005_B(0x2473) = 0x20;
++    breath_pose(*cp, 0x0F, "breathes poison", 0x12);
++    missile_to_first(*cp);
++    breath_damage(*cp);
++    e->b[4] = (u8)(e->b[4] - 1);
++    r = end_combat_turn(*cp);
++    (void)r;
++}
++
++/*
++ * PORT H085+$4628 (effetto $55): soffio fulmine (tipo $24): "Breathes!",
++ * colpo sul punto scelto e fulmine di 10 caselle senza rimbalzo, con
++ * danno pari ai punti ferita massimi (salvezza 3).  Il flag -$1(a5) del
++ * primo colpo non e' inizializzato nell'originale: qui 0.
++ */
++void effect_lightning_breath(Character **cp, void *obj, u8 flag)
++{
++    CokEffect *e = (CokEffect *)obj;
++    u8 bounce = 0;                      /* -$1(a5) */
++    s16 ax;                             /* -$4(a5) */
++    s16 ay;                             /* -$6(a5) */
++    u8 r;
++
++    (void)flag;
++    if (H005_B(0x247C) == 0) {
++        e->b[4] = 3;
++    }
++    if (e->b[4] == 0) {
++        return;
++    }
++    H005_B(0x2473) = 0x24;
++    ax = (s16)combatant_x(*cp);
++    ay = (s16)combatant_y(*cp);
++    select_target_for(0x33, &H005_B(0x24C5));
++    if (!H005_B(0x24C5)) {
++        return;
++    }
++    breath_pose(*cp, 9, "Breathes!", 0x13);
++    animate_missile(ax, ay, (s16)H005_W(0x251A), (s16)H005_W(0x2518), 4, 2);
++    bolt_hit((s16)H005_W(0x251A), (s16)H005_W(0x2518), (*cp)->b[0x64], 3, 0,
++             &bounce);
++    bolt(0x0A, (*cp)->b[0x64], 3, 0);
++    e->b[4] = (u8)(e->b[4] - 1);
++    r = end_combat_turn(*cp);
++    (void)r;
++}
++
++/*
++ * PORT H085+$4798 (effetto $5A): soffio acido (tipo $30) a cono stretto
++ * (larghezza 1, lunghezza 6), solo se colpisce soltanto avversari.  Il
++ * controllo dei lati gira anche se la scelta del bersaglio e' annullata,
++ * sui bersagli precedenti, come nell'originale.
++ */
++void effect_acid_breath(Character **cp, void *obj, u8 flag)
++{
++    CokEffect *e = (CokEffect *)obj;
++    s16 ax;                             /* -$4(a5) */
++    s16 ay;                             /* -$6(a5) */
++    u16 k;                              /* -$8(a5) */
++    u8 r;
++
++    (void)flag;
++    H005_B(0x24C5) = 0;
++    if (H005_B(0x247C) == 0) {
++        e->b[4] = 3;
++    }
++    if (e->b[4] == 0) {
++        return;
++    }
++    H005_B(0x2473) = 0x30;
++    ax = (s16)combatant_x(*cp);
++    ay = (s16)combatant_y(*cp);
++    select_target_for(0x3D, &H005_B(0x24C5));
++    if (H005_B(0x24C5)) {
++        breath_area(ax, ay, (s16)H005_W(0x251A), (s16)H005_W(0x2518), 1, 6);
++    }
++    for (k = 1; k <= H005_B(0x246C); ++k) {
++        if (g_spell_targets[k - 1]->b[0x199] != other_side(*cp)) {
++            H005_B(0x24C5) = 0;
++        }
++    }
++    if (!H005_B(0x24C5) || H005_B(0x246C) == 0) {
++        return;
++    }
++    breath_pose(*cp, 0x0D, "breathes acid", 0x12);
++    missile_to_first(*cp);
++    breath_damage(*cp);
++    e->b[4] = (u8)(e->b[4] - 1);
++    r = end_combat_turn(*cp);
++    (void)r;
++}
++
++/*
++ * PORT H085+$4A02 (effetto $04): nel 75% dei turni.  Con le cariche e il
++ * 25%, soffio accecante su un avversario adiacente (l'ultimo trovato):
++ * "Breathes!", salvezza 3: 10 di danno, altrimenti 20 e cecita' ($21) e
++ * fine del turno.  Se non ha soffiato, fino a due dardi di energia
++ * (1d8+2) sul bersaglio scelto: il secondo solo se resta in piedi.
++ */
++void effect_eye_attack(Character **cp, void *obj, u8 flag)
++{
++    CokEffect *e = (CokEffect *)obj;
++    u8 r = 0;                           /* -$1(a5) */
++    u8 breathed = 0;                    /* -$2(a5) */
++    Character *t = NULL;                /* -$6(a5) */
++    u16 k;                              /* -$8(a5) */
++    Character *c;
++
++    (void)flag;
++    if (H005_B(0x247C) == 0) {
++        e->b[4] = 3;
++    }
++    if (roll_dice(1, 0x64) > 0x4B) {
++        return;
++    }
++    if (e->b[4] != 0 && roll_dice(1, 0x64) <= 0x19) {
++        t = NULL;
++        find_in_area((s16)combatant_x(*cp), (s16)combatant_y(*cp), 1, 0xFF, 1,
++                     g_combat_area);
++        for (k = 2; k <= H005_B(0x2479); ++k) {
++            c = g_combatants[H005_B(0x2A3E + (k - 1) * 4) - 1];
++            if (c->b[0x199] != (*cp)->b[0x199]) {
++                t = c;
++            }
++        }
++        if (t != NULL) {
++            show_char_message(*cp, 9, "Breathes!", 0x0A, 1);
++            breathed = 1;
++            if (saving_throw_roll(t, 3, 0)) {
++                apply_damage(t, 0x0A, 0, 1);
++            } else {
++                apply_damage(t, 0x14, 0, 0);
++                apply_spell_effect_on(t, 0x21, 0, 0, 0, 0, 0, 0x0A,
++                                      "is blinded");
++                r = end_combat_turn(*cp);
++            }
++            e->b[4] = (u8)(e->b[4] - 1);
++        }
++    }
++    if (breathed) {
++        return;
++    }
++    r = 0;
++    k = 0;
++    do {
++        select_target_for(0x3D, &H005_B(0x24C5));
++        if (g_spell_targets[0] != NULL && H005_B(0x24C5)) {
++            ++k;
++            show_char_message(*cp, 0x15, "Fires An Energy Bolt!", 0x0A, 1);
++            load_missile_frames(0x12);
++            missile_to_first(*cp);
++            apply_damage(g_spell_targets[0],
++                         (u16)(roll_damage_dice(1, 8) + 2), 0, 0);
++            if (g_spell_targets[0]->b[0x198] && k == 1) {
++                apply_damage(g_spell_targets[0],
++                             (u16)(roll_damage_dice(1, 8) + 2), 0, 0);
++                ++k;
++            }
++            r = 1;
++        } else {
++            k = 2;
++        }
++    } while (k < 2);
++    if (r) {
++        r = end_combat_turn(*cp);
++    }
++}
+diff --git a/src_c/readable/h085.h b/src_c/readable/h085.h
+index 1d589ce..4c02020 100644
+--- a/src_c/readable/h085.h
++++ b/src_c/readable/h085.h
+@@ -91,5 +91,10 @@ void spell_charm_monster(void);              /* H085+$3758 */
+ void spell_fear(void);                       /* H085+$3936 */
+ void spell_lightning_bolt(void);             /* H085+$31B4 */
+ void spell_bolt_20(void);                    /* H085+$33A8 */
++void effect_fireball(Character **cp, void *obj, u8 flag);        /* H085+$431A */
++void effect_poison_breath(Character **cp, void *obj, u8 flag);   /* H085+$442E */
++void effect_lightning_breath(Character **cp, void *obj, u8 flag);/* H085+$4628 */
++void effect_acid_breath(Character **cp, void *obj, u8 flag);     /* H085+$4798 */
++void effect_eye_attack(Character **cp, void *obj, u8 flag);      /* H085+$4A02 */
+ void spell_teleport(void);                   /* H085+$38AA */
+ #endif
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index 82f88e8..cab097d 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -36,11 +36,6 @@ void cok_unported(const char *where)
+ /* Chiamate da H006+$01AE. */
+ 
+ /* Gestori delle tabelle H005+$25C0 e H005+$2832 (H027+$4276, H033+$1A50). */
+-void h085_431a(void) { cok_unported("H085+$431A"); }
+-void h085_442e(void) { cok_unported("H085+$442E"); }
+-void h085_4628(void) { cok_unported("H085+$4628"); }
+-void h085_4798(void) { cok_unported("H085+$4798"); }
+-void h085_4a02(void) { cok_unported("H085+$4A02"); }
+ void h010_03aa(void) { cok_unported("H010+$03AA"); }
+ /* Audio (H043): non ancora portato; saltato per far proseguire il gioco. */
+ static const char s_h043_0584[] = "H043+$0584";
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index 54fb79b..9aa30c5 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -15,11 +15,6 @@ void h043_190e(u16 command);
+ void h010_03aa(void);
+ 
+ /* Gestori delle tabelle H005+$25C0 e H005+$2832. */
+-void h085_431a(void);
+-void h085_442e(void);
+-void h085_4628(void);
+-void h085_4798(void);
+-void h085_4a02(void);
+ 
+ /* Funzioni del menu principale (H013+$4BFC). */
+ void h043_0840(void);
+-- 
+2.43.0
+

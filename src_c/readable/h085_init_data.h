@@ -1,0 +1,22 @@
+/*
+ * Generato da scripts/gen_init_data.py 85 4D1A 4DBA: costanti
+ * dell'inizializzazione H085 nell'ordine dell'originale.  Non modificare a mano.
+ */
+#ifndef COK_H085_INIT_DATA_H_H
+#define COK_H085_INIT_DATA_H_H
+
+/* H085+$4D1A */
+static const InitOp s_init_4d1a[] = {
+    { INIT_STR, INIT_BSS, 0x00DC, 21, "Special" },
+    { INIT_STR, INIT_BSS, 0x00C6, 21, "1st Level" },
+    { INIT_STR, INIT_BSS, 0x00B0, 21, "2nd Level" },
+    { INIT_STR, INIT_BSS, 0x009A, 21, "3rd Level" },
+    { INIT_STR, INIT_BSS, 0x0084, 21, "4th Level" },
+    { INIT_STR, INIT_BSS, 0x006E, 21, "5th Level" },
+    { INIT_STR, INIT_BSS, 0x0058, 21, "6th Level" },
+    { INIT_STR, INIT_BSS, 0x0042, 21, "7th Level" },
+    { INIT_STR, INIT_BSS, 0x002C, 21, "8th Level" },
+    { INIT_STR, INIT_BSS, 0x0016, 21, "9th Level" },
+};
+
+#endif

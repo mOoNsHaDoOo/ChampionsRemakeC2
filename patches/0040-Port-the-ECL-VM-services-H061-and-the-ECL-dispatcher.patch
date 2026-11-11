@@ -1,0 +1,1738 @@
+From 826aadd5e9095d96e48066532c98dd51b7c96bc1 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 22:49:35 +0000
+Subject: [PATCH 40/65] Port the ECL VM services (H061) and the ECL dispatcher
+ (H012), fix Begin adventuring stub
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md |   66 +-
+ src_c/readable/backlog.md     |   72 +++
+ src_c/readable/h012.c         |   92 ++-
+ src_c/readable/h012.h         |    6 +
+ src_c/readable/h013.c         |    2 +-
+ src_c/readable/h061.c         | 1137 ++++++++++++++++++++++++++++++++-
+ src_c/readable/h061.h         |   47 ++
+ src_c/readable/h064.c         |   12 +-
+ src_c/readable/h064.h         |    8 +
+ src_c/readable/h065.c         |    2 +-
+ src_c/readable/h065.h         |    1 +
+ src_c/readable/unported.c     |   59 +-
+ src_c/readable/unported.h     |   60 +-
+ 13 files changed, 1521 insertions(+), 43 deletions(-)
+ create mode 100644 src_c/readable/h012.h
+ create mode 100644 src_c/readable/h061.h
+ create mode 100644 src_c/readable/h064.h
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index 8e96b44..3d00b57 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **760 / 1066**.
++Routine portate: **790 / 1066**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -67,7 +67,7 @@ Routine portate: **760 / 1066**.
+ | H058 | 4720 | 16 | 6 |
+ | H059 | 6340 | 14 | 14 |
+ | H060 | 396 | 2 | 1 |
+-| H061 | 16936 | 35 | 1 |
++| H061 | 16936 | 35 | 31 |
+ | H062 | 10496 | 32 | 31 |
+ | H063 | 16496 | 52 | 52 |
+ | H064 | 6460 | 7 | 1 |
+@@ -1009,41 +1009,41 @@ Routine portate: **760 / 1066**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$15C2` | `module_init_H061` | parziale | h061.c:4 |
++| `$15C2` | `module_init_H061` | parziale | h061.c:33 |
+ | `$162A` | `trampoline_H061_1F12` | parziale |  |
+-| `$162E` | `sub_H061_0000162E` | parziale |  |
+-| `$1670` | `ECL_ReadOperands` | verificato |  |
+-| `$184E` | `ECL_EvaluateOperand` | parziale |  |
+-| `$1928` | `ECL_ResetExecution` | verificato |  |
+-| `$1ACC` | `ECL_LoadProgram` | verificato |  |
+-| `$1BD6` | `sub_H061_00001BD6` | parziale |  |
+-| `$1C42` | `sub_H061_00001C42` | parziale |  |
+-| `$1D20` | `sub_H061_00001D20` | parziale |  |
+-| `$1D6E` | `sub_H061_00001D6E` | parziale |  |
+-| `$1F12` | `sub_H061_00001F12` | parziale |  |
+-| `$1F3C` | `ECL_DecodeAddress` | verificato |  |
+-| `$1F6A` | `trampoline_H061_1F9A` | parziale |  |
+-| `$1FA4` | `sub_H061_00001FA4` | parziale |  |
+-| `$202C` | `sub_H061_0000202C` | parziale |  |
+-| `$208E` | `sub_H061_0000208E` | parziale |  |
+-| `$27E2` | `sub_H061_000027E2` | parziale |  |
+-| `$2BAA` | `sub_H061_00002BAA` | parziale |  |
+-| `$2E04` | `sub_H061_00002E04` | parziale |  |
++| `$162E` | `sub_H061_0000162E` | parziale | h061.c:44 |
++| `$1670` | `ECL_ReadOperands` | verificato | h061.c:446 |
++| `$184E` | `ECL_EvaluateOperand` | parziale | h061.c:498 |
++| `$1928` | `ECL_ResetExecution` | verificato | h061.c:634 |
++| `$1ACC` | `ECL_LoadProgram` | verificato | h061.c:684 |
++| `$1BD6` | `sub_H061_00001BD6` | parziale | h061.c:711 |
++| `$1C42` | `sub_H061_00001C42` | parziale | h061.c:725 |
++| `$1D20` | `sub_H061_00001D20` | parziale | h061.c:757 |
++| `$1D6E` | `sub_H061_00001D6E` | parziale | h061.c:768 |
++| `$1F12` | `sub_H061_00001F12` | parziale | h061.c:54 |
++| `$1F3C` | `ECL_DecodeAddress` | verificato | h061.c:60 |
++| `$1F6A` | `trampoline_H061_1F9A` | parziale | h061.c:66 |
++| `$1FA4` | `sub_H061_00001FA4` | parziale | h061.c:76 |
++| `$202C` | `sub_H061_0000202C` | parziale | h061.c:99 |
++| `$208E` | `sub_H061_0000208E` | parziale | h061.c:119 |
++| `$27E2` | `sub_H061_000027E2` | parziale | h061.c:280 |
++| `$2BAA` | `sub_H061_00002BAA` | parziale | h061.c:366 |
++| `$2E04` | `sub_H061_00002E04` | parziale | h061.c:230 |
+ | `$3012` | `sub_H061_00003012` | parziale |  |
+-| `$3244` | `sub_H061_00003244` | parziale |  |
+-| `$33F0` | `sub_H061_000033F0` | parziale |  |
+-| `$35E2` | `sub_H061_000035E2` | parziale |  |
+-| `$36E6` | `sub_H061_000036E6` | parziale |  |
++| `$3244` | `sub_H061_00003244` | parziale | h061.c:528 |
++| `$33F0` | `sub_H061_000033F0` | parziale | h061.c:580 |
++| `$35E2` | `sub_H061_000035E2` | parziale | h061.c:821 |
++| `$36E6` | `sub_H061_000036E6` | parziale | h061.c:848 |
+ | `$3860` | `sub_H061_00003860` | parziale |  |
+-| `$3904` | `sub_H061_00003904` | parziale |  |
+-| `$3A0A` | `sub_H061_00003A0A` | parziale |  |
+-| `$3AAC` | `sub_H061_00003AAC` | parziale |  |
+-| `$3B4E` | `trampoline_H061_3BEE` | parziale |  |
++| `$3904` | `sub_H061_00003904` | parziale | h061.c:894 |
++| `$3A0A` | `sub_H061_00003A0A` | parziale | h061.c:927 |
++| `$3AAC` | `sub_H061_00003AAC` | parziale | h061.c:952 |
++| `$3B4E` | `trampoline_H061_3BEE` | parziale | h061.c:972 |
+ | `$3C4C` | `sub_H061_00003C4C` | parziale |  |
+-| `$3DBE` | `sub_H061_00003DBE` | parziale |  |
+-| `$3E80` | `ECL_SkipInstruction` | verificato |  |
+-| `$3FA8` | `sub_H061_00003FA8` | parziale |  |
+-| `$4092` | `sub_H061_00004092` | parziale |  |
++| `$3DBE` | `sub_H061_00003DBE` | parziale | h061.c:1017 |
++| `$3E80` | `ECL_SkipInstruction` | verificato | h061.c:1044 |
++| `$3FA8` | `sub_H061_00003FA8` | parziale | h061.c:1068 |
++| `$4092` | `sub_H061_00004092` | parziale | h061.c:1102 |
+ 
+ ### H062
+ 
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index 130c22d..01077c3 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -1843,3 +1843,75 @@ La richiesta ripeteva "procedi con l'avvio del combattimento", che era già cons
+ - **Audio.**
+ 
+ ---
++
++## 2026-11-10 (cok-port-33)
++
++Primo passo di "Begin adventuring e la mappa del gioco": il cuore dell'interprete degli script ECL. Routine portate: 790 su 1066 (prima 760).
++
++**Il piano, perché è un pezzo grande**
++- **Mole:** dopo il menu principale il gioco entra in H012+$3150, il ciclo dell'esplorazione. Con l'interprete ECL e i suoi ~60 comandi (H064, H012), il menu e il movimento (H068), le aree (H061) e la vista 3D (H057, H011, H049, H042) fanno circa 22.700 istruzioni in 225 routine.
++- **Consegne:**
++  1. interprete (questa);
++  2. comandi ECL di H064;
++  3. comandi ECL di H012 e il ciclo $3150;
++  4. menu, movimento e vista 3D.
++
++**Correzione**
++- **Begin adventuring:** il menu principale chiamava ancora lo stub `h028_0d74`, che fermava il programma, anche se H028+$0D74 era già portata come `free_char_screens`. Ora chiama quella.
++
++**H061: servizi della VM ECL (33 routine su 34)**
++- **Operandi:**
++  - $1670 (lettura con descrittori; stringhe immediate e da variabile);
++  - $184E (valore: byte, word, variabile, indirizzo);
++  - $1F12 e $1F3C (indirizzi, base $4B00);
++  - $1F6A (caratteri).
++- **Stringhe:**
++  - $3244 (testo compresso a 6 bit, quattro caratteri ogni tre byte);
++  - $33F0 (stringa dalle variabili);
++  - $162E (accoda un carattere).
++- **Variabili:**
++  - $1FA4 (zona: stato A $000.., stato B $3100.., stato C $2F00.., programma $3500.., registri speciali $754B..);
++  - $2E04 e $2BAA (lettura e scrittura);
++  - $208E e $27E2 (variabili dello stato B che leggono e scrivono il personaggio corrente: incantesimi, IA, valori, denaro, stato, lato, punti ferita, muri del dungeon);
++  - $202C (posizione nel party).
++- **Area:**
++  - $1928 (inizio del programma: flag, PC $3500, pila vuota, i cinque ingressi $3DF4..$3DEC, azzeramento delle variabili dell'area);
++  - $1ACC (carica il blocco ECLn.dax, "Loading...Please Wait").
++- **Comandi di supporto:**
++  - $3AAC (GOSUB, con la pila $2388);
++  - $3E80 (salta un comando);
++  - $3904 e $3A0A (confronti, risultati in $237E..$2383);
++  - $3B4E (passo avanti nella mappa 16x16);
++  - $1C42 (caselle libere davanti);
++  - $36E6 e $35E2 (menu ECL con le scorciatoie '~').
++- **Altro:**
++  - $1BD6 (carica un mostro);
++  - $1D20 e $1D6E (immagini dell'evento: sprite, PIC, testa+corpo);
++  - $3DBE (oggetti distrutti);
++  - $3FA8 (velocità minima e massima del party);
++  - $4092 (messaggio del danno, "is hit for", "dies.").
++- **Non ancora portata:** $3C4C, che scala il denaro con l'aritmetica reale del runtime H015.
++
++**H012**
++- **$018A `run_ecl`:** esegue il programma da un indirizzo finché un comando non lo ferma o non si lascia l'area.
++- **$2DF2:** dispatcher dei 66 codici. I gestori di H064 (27) e di H012 (26) sono stub con nome, per le prossime consegne.
++
++**H064:** i dati del modulo (personaggio salvato, flag della VM, testo) sono globali C.
++
++**Dove mi discosto dall'asm (tutto documentato nel codice)**
++- **Valori non inizializzati, qui messi a 0:**
++  - i casi senza valore delle variabili speciali e dei registri;
++  - i primi byte del testo a 6 bit.
++- **$3FA8:** con il party vuoto l'originale legge un NULL; qui esce senza cambiare nulla.
++- **Codice morto mantenuto:** i casi dei registri speciali con indirizzo basso non sono mai raggiungibili (quegli indirizzi cadono nello stato A).
++
++**Prove**
++- **Test temporaneo (non committato) con i dati veri:**
++  - carica il programma dell'area iniziale ($24) da ECL1.DAX ed esegue $1928: i cinque ingressi ($365A, $365B, $3658, $3659, $3514) cadono nel programma;
++  - da $3514 dodici comandi saltati con $3E80 si susseguono con lunghezze coerenti (LOAD_FILES $21 di 7 byte, poi le PRINT $11/$12 con testo a 6 bit);
++  - ASan pulito.
++- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
++
++**Prossimo passo:** i gestori dei comandi ECL di H064.
++
++---
+diff --git a/src_c/readable/h012.c b/src_c/readable/h012.c
+index 9746856..351024b 100644
+--- a/src_c/readable/h012.c
++++ b/src_c/readable/h012.c
+@@ -1,7 +1,95 @@
+-/* H012: Dispatcher ECL, incontri e ciclo nativo dello scenario. */
+-#include "cok.h"
++/* H012: ciclo dell'esplorazione e interprete ECL. */
++#include "h012.h"
++#include "globals.h"
++#include "unported.h"
++#include "h061.h"
++#include "h064.h"
+ 
+ /* PORT H012+$0178: link/unlk, nessun effetto. */
+ void h012_init(void)
+ {
+ }
++
++/*
++ * PORT H012+$2DF2 (raggiunta da H012+$0186): esegue il comando ECL
++ * $2493 col suo gestore (H064 o H012); i codici fuori tabella non fanno
++ * nulla.
++ */
++static void ecl_execute(void)
++{
++    switch (H005_B(0x2493)) {
++    case 0x00: h064_0156(); break;
++    case 0x01: h064_0202(); break;
++    case 0x02: h064_0234(); break;
++    case 0x03: h064_0258(); break;
++    case 0x04: case 0x05: case 0x06: case 0x07: h064_0306(); break;
++    case 0x08: h064_03fc(); break;
++    case 0x09: h064_0468(); break;
++    case 0x0A: h064_04dc(); break;
++    case 0x0B: h064_06a0(); break;
++    case 0x0C: h064_05e2(); break;
++    case 0x0D: h064_0abe(); break;
++    case 0x0E: h064_0b10(); break;
++    case 0x0F: h064_0c62(); break;
++    case 0x10: h064_0cc4(); break;
++    case 0x11: case 0x12: h064_0d4a(); break;
++    case 0x13: h064_0e40(); break;
++    case 0x14: h064_0e9c(); break;
++    case 0x15: h064_13ac(); break;
++    case 0x16: case 0x17: case 0x18: case 0x19: case 0x1A: case 0x1B:
++        h064_0f30(); break;
++    case 0x1C: h064_1748(); break;
++    case 0x1D: h064_17bc(); break;
++    case 0x1E: h012_01fa(); break;
++    case 0x20: h064_0f90(); break;
++    case 0x21: case 0x37: h064_1004(); break;
++    case 0x22: h012_05d6(); break;
++    case 0x23: h012_0688(); break;
++    case 0x24: h012_0766(); break;
++    case 0x25: case 0x26: h012_0b18(); break;
++    case 0x27: h012_0bea(); break;
++    case 0x28: h012_14c8(); break;
++    case 0x29: h012_15ae(); break;
++    case 0x2A: h064_12ca(); break;
++    case 0x2B: h064_1544(); break;
++    case 0x2C: h012_1dde(); break;
++    case 0x2D: h012_26d6(); break;
++    case 0x2E: h012_1f68(); break;
++    case 0x2F: case 0x30: h064_121c(); break;
++    case 0x31: h012_2358(); break;
++    case 0x32: h012_1e90(); break;
++    case 0x33: h012_23d6(); break;
++    case 0x34: h012_2392(); break;
++    case 0x35: h064_1346(); break;
++    case 0x36: h012_2502(); break;
++    case 0x38: h012_29a6(); break;
++    case 0x39: h012_2486(); break;
++    case 0x3A: h012_1f4c(); break;
++    case 0x3B: h012_2596(); break;
++    case 0x3C: h012_2aae(); break;
++    case 0x3D: h012_241c(); break;
++    case 0x3E: h012_2abe(); break;
++    case 0x3F: h012_2af6(); break;
++    case 0x40: h012_2b64(); break;
++    case 0x41: h012_2c28(); break;
++    default: break;
++    }
++}
++
++/*
++ * PORT H012+$018A: esegue il programma ECL da addr ($3DE8/$3DEA) finche'
++ * un comando non lo ferma (H064+$B) o non si esce dall'area ($24D0);
++ * $2494 tiene il comando precedente.
++ */
++void run_ecl(u16 addr)
++{
++    H005_SET_W(0x3DE8, addr);
++    H005_SET_W(0x3DEA, addr);
++    H064_B(0x0B) = 0;
++    while (!H064_B(0x0B) && !H005_B(0x24D0)) {
++        H005_B(0x2494) = H005_B(0x2493);
++        H005_B(0x2493) = g_ecl_buffer[(u16)(H005_W(0x3DEA) - 0x3500)];
++        ecl_execute();
++    }
++    H064_B(0x0B) = 0;
++}
+diff --git a/src_c/readable/h012.h b/src_c/readable/h012.h
+new file mode 100644
+index 0000000..479338b
+--- /dev/null
++++ b/src_c/readable/h012.h
+@@ -0,0 +1,6 @@
++/* H012: ciclo dell'esplorazione e interprete ECL. */
++#ifndef COK_H012_H
++#define COK_H012_H
++#include "cok.h"
++void run_ecl(u16 addr);                 /* H012+$018A */
++#endif
+diff --git a/src_c/readable/h013.c b/src_c/readable/h013.c
+index 39c7443..c829d20 100644
+--- a/src_c/readable/h013.c
++++ b/src_c/readable/h013.c
+@@ -990,7 +990,7 @@ void main_menu(void)
+                     }
+                     clear_message_line();
+                     COK_PUT16(g_state_b + 0x550, 0);
+-                    h028_0d74();
++                    free_char_screens();
+                     return;
+                 }
+             }
+diff --git a/src_c/readable/h061.c b/src_c/readable/h061.c
+index 603f601..c1d1d32 100644
+--- a/src_c/readable/h061.c
++++ b/src_c/readable/h061.c
+@@ -1,7 +1,1140 @@
+-/* H061: Servizi della VM ECL: caricamento, operandi, variabili e controllo del flusso. */
+-#include "cok.h"
++/* H061: servizi della VM ECL: operandi, variabili, stringhe e aree. */
++#include "h061.h"
++#include "globals.h"
++#include "unported.h"
++#include "h026_string.h"
++#include "h029_gfx.h"
++#include "h073.h"
++#include "h003_exec.h"
++#include "h008.h"
++#include "h011.h"
++#include "h028_files.h"
++#include "h030.h"
++#include "h045.h"
++#include "h062.h"
++#include "h063.h"
++#include "h065.h"
++#include <string.h>
++
++/*
++ * Dati del modulo sotto a4 (g_h061_bss[0x1512 - off] e' -off(a4)):
++ * -$40 descrittori, -$80 secondo byte e -$C0 primo byte degli operandi
++ * letti, -$14C0 venti stringhe da $100 byte.
++ */
++u8 g_h061_bss[0x1512];
++#define OP_DESC(i)  g_h061_bss[0x1512 - 0x40 + (i)]
++#define OP_HI(i)    g_h061_bss[0x1512 - 0x80 + (i)]
++#define OP_LO(i)    g_h061_bss[0x1512 - 0xC0 + (i)]
++#define ECL_STR(i)  ((char *)&g_h061_bss[0x1512 - 0x14C0 + (i) * 0x100])
++
++/* Programma ECL: indirizzi logici da $3500 in g_ecl_buffer. */
++#define ECL_BYTE(addr)  g_ecl_buffer[(u16)((addr) - 0x3500)]
+ 
+ /* PORT H061+$15C2: link/unlk, nessun effetto. */
+ void h061_init(void)
+ {
+ }
++
++/* Stringa n (1..20) letta da READ_OPERANDS. */
++char *ecl_string(u16 n)
++{
++    return ECL_STR(n - 1);
++}
++
++/* PORT H061+$162E: accoda il carattere ch alla stringa s. */
++void append_char(u16 len, char *s, u8 ch)
++{
++    u16 n;                              /* -$2(a5) */
++
++    n = h026_strlen(len, s);
++    s[n] = (char)ch;
++    s[n + 1] = '\0';
++}
++
++/* PORT H061+$1F12: word da due byte (alto, basso). */
++u16 make_word(u8 lo, u8 hi)
++{
++    return (u16)((hi << 8) + lo);
++}
++
++/* PORT H061+$1F3C (ECL_DecodeAddress): indirizzo di variabile ($4B00 di base). */
++u16 decode_address(u8 lo, u8 hi)
++{
++    return (u16)((hi << 8) + lo - 0x4B00);
++}
++
++/* PORT H061+$1F6A: codice di carattere ECL (sotto $20 + $40). */
++u8 ecl_char(u16 c)
++{
++    if (c > 0x1F) {
++        return (u8)c;
++    }
++    return (u8)(c + 0x40);
++}
++
++/*
++ * PORT H061+$1FA4: zona della variabile: 0 stato A ($000..$3FF), 1 stato
++ * B ($3100..$34FF), 2 stato C ($2F00..$30FF), 3 programma ($3500..$52FF),
++ * 4 registri speciali.
++ */
++u8 var_region(u16 addr)
++{
++    u16 r = 4;                          /* -$2(a5) */
++
++    if (addr <= 0x3FF) {
++        r = 0;
++    }
++    if (addr >= 0x3100 && addr <= 0x34FF) {
++        r = 1;
++    }
++    if (addr >= 0x2F00 && addr <= 0x30FF) {
++        r = 2;
++    }
++    if (addr >= 0x3500 && addr <= 0x52FF) {
++        r = 3;
++    }
++    return (u8)r;
++}
++
++/* PORT H061+$202C: posizione (da 0) di c nel party; il numero se manca. */
++u16 party_index(Character *c)
++{
++    Character *p;                       /* -$6(a5) */
++    u8 found = 0;                       /* -$7(a5) */
++    u16 i = 0;                          /* -$2(a5) */
++
++    p = g_party_head;
++    while (p != NULL && !found) {
++        if (p == c) {
++            found = 1;
++        } else {
++            ++i;
++            p = p->next;
++        }
++    }
++    return i;
++}
++
++/*
++ * PORT H061+$208E: le variabili $3100+ speciali dello stato B leggono il
++ * personaggio corrente (*handled = 1); le altre no.  L'indice del caso e'
++ * quello assegnato alle voci note o, per le altre, lo scarto stesso.
++ * Per i casi senza valore l'originale restituisce d0 non impostato: 0.
++ */
++static u16 read_state_b_special(u16 addr, u8 *handled)
++{
++    static const u16 map[][2] = {
++        { 0x15, 0 }, { 0x18, 1 }, { 0x19, 2 }, { 0x61, 3 }, { 0x72, 4 },
++        { 0x73, 5 }, { 0x76, 6 }, { 0x9B, 7 }, { 0xA0, 8 }, { 0xB8, 0x11 },
++        { 0xBB, 0x12 }, { 0xBD, 0x13 }, { 0xBF, 0x14 }, { 0xC1, 0x15 },
++        { 0xC3, 0x16 }, { 0xC9, 0x17 }, { 0xCC, 0x18 }, { 0xCD, 0x19 },
++        { 0xD0, 0x1A }, { 0xD6, 0x1B }, { 0xD8, 0x1C }, { 0xF7, 0x1D },
++        { 0xF9, 0x1E }, { 0x100, 0x1F }, { 0x10C, 0x20 }, { 0x10D, 0x21 },
++        { 0x119, 0x22 }, { 0x11B, 0x23 }, { 0x2B1, 0x24 }, { 0x2B4, 0x25 },
++        { 0x2CF, 0x26 }, { 0x312, 0x27 }, { 0x33E, 0x28 }
++    };
++    Character *c = g_current_char;
++    u16 idx;
++    u16 k;
++
++    *handled = 1;
++    idx = (u16)(addr - 0x3100);
++    if (idx >= 0xA5 && idx <= 0xAC) {
++        idx = (u16)(idx - 0x9C);
++    } else {
++        for (k = 0; k < sizeof map / sizeof map[0]; ++k) {
++            if (map[k][0] == idx) {
++                idx = map[k][1];
++                break;
++            }
++        }
++    }
++    switch (idx) {
++    case 0: return c->b[0x13];
++    case 1: return c->b[0x19];
++    case 2: return c->b[0x1B];
++    case 3: return c->b[0x5D];
++    case 4: return c->b[0x5B];
++    case 5: return c->b[0x5C];
++    case 6: return c->b[0x64];
++    case 7: return c->b[0xD5];
++    case 8: return c->b[0xDB];
++    case 9: case 0x0A: case 0x0B: case 0x0C:
++    case 0x0D: case 0x0E: case 0x0F: case 0x10:
++        return c->b[0xE0 + idx - 9];
++    case 0x11: return c->b[0xEC];
++    case 0x12: return COK_GET16(&c->b[0xF0]);
++    case 0x13: return COK_GET16(&c->b[0xF2]);
++    case 0x14: return COK_GET16(&c->b[0xF4]);
++    case 0x15: return COK_GET16(&c->b[0xF6]);
++    case 0x16: return COK_GET16(&c->b[0xF8]);
++    case 0x17:
++        return (u16)(c->b[0x103] + c->b[0x10B] * h073_130a(g_current_char));
++    case 0x18: return c->b[0x100];
++    case 0x19: return c->b[0x105];
++    case 0x1A: return c->b[0x102];
++    case 0x1B: return c->b[0x10E];
++    case 0x1C: return c->b[0x10F];
++    case 0x1D: return COK_GET16(&c->b[0x13C]);
++    case 0x1E: return c->b[0x13E];
++    case 0x1F:
++        if (H005_B(0x24B3)) {
++            return 0;
++        }
++        switch (c->b[0x197]) {
++        case 0: return 1;
++        case 3: return 6;
++        case 4: return 5;
++        case 5: return 4;
++        case 6: return 3;
++        case 7: return 7;
++        case 8: return 2;
++        default: return 0;
++        }
++    case 0x20:
++        if (c->b[0x199] == 0 && c->b[0x19A]) {
++            return 0x80;
++        }
++        return (u16)(c->b[0x199] == 1 ? 0x81 : 0);
++    case 0x21: return 0;
++    case 0x22: return c->b[0x1A8];
++    case 0x23: return c->b[0x1A9];
++    case 0x24: return party_index(g_current_char);
++    case 0x25: return party_index(g_current_char);
++    case 0x26:
++        switch (c->b[0x1B]) {
++        case 3: return 0;
++        case 4: return 5;
++        case 5: return 0x0A;
++        case 6: return 0x0F;
++        case 7: return 0x14;
++        case 8: case 9: case 0x0A: case 0x0B: case 0x0C: return 0x19;
++        case 0x0D: return 0x1E;
++        case 0x0E: return 0x23;
++        case 0x0F: return 0x28;
++        case 0x10: return 0x32;
++        case 0x11: return 0x37;
++        case 0x12: case 0x13: case 0x14: case 0x15:
++        case 0x16: case 0x17: case 0x18: case 0x19: return 0x3C;
++        default: return 0;
++        }
++    case 0x27: return H005_B(0x246E);
++    case 0x28: return COK_GET16(g_state_b + 0x67C);
++    default:
++        *handled = 0;
++        return 0;
++    }
++}
++
++/*
++ * PORT H061+$2E04: valore della variabile addr.  Per i registri speciali
++ * non previsti l'originale restituisce d0 non impostato: 0.
++ */
++u16 read_var(u16 addr)
++{
++    u16 v;                              /* -$2(a5) */
++    u8 handled = 0;                     /* -$5(a5) */
++
++    switch (var_region(addr)) {
++    case 0:
++        if (addr == 0xEA) {
++            return H005_B(0x2820);
++        }
++        return COK_GET16(g_state_a + addr * 2);
++    case 1:
++        v = read_state_b_special(addr, &handled);
++        if (!handled) {
++            v = COK_GET16(g_state_b + (u16)(addr - 0x3100) * 2);
++        }
++        return v;
++    case 2:
++        return COK_GET16(g_state_c + (u16)(addr - 0x2F00) * 2);
++    case 3:
++        return ECL_BYTE(addr);
++    case 4:
++        if (addr < 0x754B) {
++            if (addr == 0xB1) return H005_W(0x238C);
++            if (addr == 0xFB) return H005_W(0x2390);
++            if (addr == 0xFC) return H005_W(0x238E);
++            if (addr == 0x33D) return H005_B(0x2820);
++            return 0;
++        }
++        switch ((u16)(addr - 0x754B)) {
++        case 0: return H005_W(0x281C);
++        case 1: return H005_W(0x281E);
++        case 2:
++            if (COK_GET16(g_state_a + 0x1CC) == 0) {
++                return H005_B(0x2820);
++            }
++            return (u16)(H005_B(0x2820) >> 1);
++        case 3: return H005_B(0x2821);
++        case 4: return H005_B(0x2822);
++        default: return 0;
++        }
++    default:
++        return 0;
++    }
++}
++
++/*
++ * PORT H061+$27E2: scrivere certe variabili dello stato B cambia anche il
++ * personaggio corrente (incantesimi, IA, valori, stato, lato, punti
++ * ferita, muri del dungeon...).
++ */
++static void write_state_b_hook(u16 addr, u16 val)
++{
++    static const u16 map[][2] = {
++        { 0xB8, 2 }, { 0xBB, 3 }, { 0xBD, 4 }, { 0xBF, 5 }, { 0xC1, 6 },
++        { 0xC3, 7 }, { 0xF7, 8 }, { 0xF9, 9 }, { 0x100, 0x0A },
++        { 0x10C, 0x0B }, { 0x119, 0x0C }, { 0x312, 0x0D }, { 0x322, 0x0E },
++        { 0x324, 0x0F }, { 0x326, 0x10 }
++    };
++    Character *c = g_current_char;
++    u16 off;
++    u16 idx = 0xFF;                     /* -$4(a5) */
++    u16 k;
++
++    off = (u16)(addr - 0x3100);
++    if (off >= 0x20 && off <= 0x70) {
++        idx = 1;
++    } else {
++        for (k = 0; k < sizeof map / sizeof map[0]; ++k) {
++            if (map[k][0] == off) {
++                idx = map[k][1];
++                break;
++            }
++        }
++    }
++    switch (idx) {
++    case 0:
++        if (val == 0) {
++            H005_B(0x24C3) = 1;
++        }
++        break;
++    case 1:
++        c->b[0x1E + off - 0x20] = (u8)val;
++        break;
++    case 2:
++        if (val > 0xB2) {
++            val = (u16)(val - 0x32);
++        }
++        c->b[0xEC] = (u8)val;
++        break;
++    case 3: COK_PUT16(&c->b[0xF0], val); break;
++    case 4: COK_PUT16(&c->b[0xF2], val); break;
++    case 5: COK_PUT16(&c->b[0xF4], val); break;
++    case 6: COK_PUT16(&c->b[0xF6], val); break;
++    case 7: COK_PUT16(&c->b[0xF8], val); break;
++    case 8: COK_PUT16(&c->b[0x13C], val); break;
++    case 9: c->b[0x13E] = (u8)val; break;
++    case 0x0A:
++        if (val == 1) {
++            c->b[0x197] = 0;
++            c->b[0x198] = 1;
++        }
++        break;
++    case 0x0B:
++        if (val > 0x7F) {
++            val = (u16)(val - 0x7F);
++        }
++        switch (val) {
++        case 0: c->b[0x199] = 0; c->b[0x19A] = 0; break;
++        case 1: c->b[0x199] = 0; c->b[0x19A] = 1; break;
++        case 2: c->b[0x199] = 1; c->b[0x19A] = 1; break;
++        default: break;
++        }
++        break;
++    case 0x0C:
++        c->b[0x1A8] = (u8)val;
++        break;
++    case 0x0D:
++        h028_1098((u8)val);
++        break;
++    case 0x0E:
++    case 0x0F:
++    case 0x10:
++        if (val > 0x80) {
++            val = mask_byte((u8)val, 0x7F);
++            h011_14ea(val, (u16)(idx - 0x0D));
++        }
++        break;
++    default:
++        break;
++    }
++}
++
++/* PORT H061+$2BAA: scrive val nella variabile addr. */
++void write_var(u16 addr, u16 val)
++{
++    s16 a;
++    u8 ok;                              /* -$3(a5) */
++
++    switch (var_region(addr)) {
++    case 0:
++        if (addr == 0xFD || addr == 0xFE) {
++            H005_B(0x24B5) = 1;
++        } else if (addr == 0xE6 && COK_GET16(g_state_a + 0x1CC) != val) {
++            H005_B(0x3DE2) = H005_B(0x3DE3);
++            H005_B(0x3DE3) = (u8)(val == 0 ? 3 : 4);
++        }
++        COK_PUT16(g_state_a + addr * 2, val);
++        break;
++    case 1:
++        COK_PUT16(g_state_b + (u16)(addr - 0x3100) * 2, val);
++        write_state_b_hook(addr, val);
++        break;
++    case 2:
++        COK_PUT16(g_state_c + (u16)(addr - 0x2F00) * 2, val);
++        break;
++    case 3:
++        ECL_BYTE(addr) = (u8)val;
++        break;
++    case 4:
++        if (addr < 0x7468) {
++            if (addr == 0xB8) {
++                H005_SET_W(0x2374, val);
++            } else if (addr == 0xB9) {
++                H005_SET_W(0x2372, val);
++            }
++            break;
++        }
++        a = (s16)(addr - 0x754B);
++        if (a == 0x0E) {
++            a = 3;
++        } else if (a == 0x14) {
++            a = 4;
++        }
++        switch (a) {
++        case 0:
++            H005_B(0x24B7) = 1;
++            H005_SET_W(0x281C, val);
++            break;
++        case 1:
++            H005_SET_W(0x281E, val);
++            H005_B(0x24B7) = 1;
++            break;
++        case 2:
++            do {
++                ok = 1;
++                if (val < 4) {
++                    H005_B(0x2820) = (u8)(val * 2);
++                } else {
++                    ok = 0;
++                    val = (u16)(val - 4);
++                }
++            } while (ok != 1);
++            H005_B(0x24B7) = 1;
++            break;
++        case 3:
++            H005_B(0x247F) = (u8)val;
++            H005_B(0x24B8) = 1;
++            break;
++        case 4:
++            H005_B(0x247E) = (u8)val;
++            H005_B(0x24B8) = 1;
++            break;
++        default:
++            break;
++        }
++        break;
++    default:
++        break;
++    }
++}
++
++/*
++ * PORT H061+$1670 (ECL_ReadOperands): legge n operandi dopo il codice del
++ * comando: descrittore e un byte, piu' un altro byte per i tipi 1..3 e 5;
++ * le stringhe (tipo $80 immediata, $81 da variabile) vanno nelle stringhe
++ * del modulo in ordine.  Poi salta il codice del comando successivo.
++ */
++void read_operands(u16 n)
++{
++    u16 i;                              /* -$2(a5) */
++    u16 strings = 0;                    /* -$4(a5) */
++    u16 kind;                           /* -$A(a5) */
++    u16 len;                            /* -$8(a5) */
++
++    for (i = 1; i <= n; ++i) {
++        OP_DESC(i - 1) = ECL_BYTE(H005_W(0x3DEA) + 1);
++        OP_LO(i - 1) = ECL_BYTE(H005_W(0x3DEA) + 2);
++        H005_SET_W(0x3DEA, H005_W(0x3DEA) + 2);
++        if (OP_DESC(i - 1) > 0x7F) {
++            kind = (u16)(OP_DESC(i - 1) - 0x7C);
++        } else {
++            kind = OP_DESC(i - 1);
++        }
++        switch (kind) {
++        case 1:
++        case 2:
++        case 3:
++            H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1);
++            OP_HI(i - 1) = ECL_BYTE(H005_W(0x3DEA));
++            break;
++        case 4:
++            ++strings;
++            len = OP_LO(i - 1);
++            if (len > 0) {
++                read_string_operand(len, strings);
++            } else {
++                strcpy(ECL_STR(strings - 1), "");
++            }
++            break;
++        case 5:
++            ++strings;
++            H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1);
++            OP_HI(i - 1) = ECL_BYTE(H005_W(0x3DEA));
++            read_string_var(strings,
++                            decode_address(OP_LO(i - 1), OP_HI(i - 1)));
++            break;
++        default:
++            break;
++        }
++    }
++    H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1);
++}
++
++/*
++ * PORT H061+$184E (ECL_EvaluateOperand): valore dell'operando i: tipo 0
++ * byte, 2 word immediata, 1 e 3 variabile, 4 indirizzo ($81 -> 4).  Con
++ * un tipo diverso l'originale restituisce d0 non impostato: 0.
++ */
++u16 eval_operand(u16 i)
++{
++    u8 lo = OP_LO(i - 1);               /* -$9(a5) */
++    u8 hi = OP_HI(i - 1);               /* -$A(a5) */
++    u16 kind;                           /* -$2(a5) */
++
++    kind = OP_DESC(i - 1);
++    if (kind > 0x7F) {
++        kind = (u16)(kind - 0x7D);
++    }
++    switch (kind) {
++    case 0: return lo;
++    case 1:
++    case 3: return read_var((u16)((hi << 8) + lo - 0x4B00));
++    case 2: return make_word(lo, hi);
++    case 4: return decode_address(lo, hi);
++    default: return 0;
++    }
++}
++
++/* Byte grezzi dell'operando i (per chi li legge direttamente in H012/H064). */
++u8 operand_desc(u16 i) { return OP_DESC(i - 1); }
++u8 operand_lo(u16 i)   { return OP_LO(i - 1); }
++u8 operand_hi(u16 i)   { return OP_HI(i - 1); }
++
++/*
++ * PORT H061+$3244: stringa immediata di len caratteri da 6 bit (quattro
++ * caratteri ogni tre byte) nella stringa slot; i caratteri 0 si saltano.
++ * I primi byte "precedente" e "corrente" non sono inizializzati
++ * nell'originale: qui 0.
++ */
++void read_string_operand(u16 len, u16 slot)
++{
++    char *s = ECL_STR(slot - 1);
++    u16 count = 0;                      /* -$2(a5) */
++    u16 phase = 1;                      /* -$A(a5) */
++    u16 ch = 0;                         /* -$8(a5) */
++    u8 cur = 0;                         /* -$5(a5) */
++    u8 prev = 0;                        /* -$6(a5) */
++
++    strcpy(s, "");
++    while (count < len) {
++        if (phase < 4) {
++            H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1);
++            prev = cur;
++            cur = ECL_BYTE(H005_W(0x3DEA));
++            ++count;
++        }
++        switch (phase) {
++        case 1:
++            ch = (u8)(cur >> 2);
++            break;
++        case 2:
++            ch = (u16)(((u8)(prev << 6) + (u8)(cur >> 2)) >> 2);
++            break;
++        case 3:
++            ch = (u16)(((u8)(prev << 4) + (u8)(cur >> 4)) >> 2);
++            break;
++        case 4:
++            ch = mask_byte(cur, 0x3F);
++            break;
++        default:
++            break;
++        }
++        phase = (u16)(phase < 4 ? phase + 1 : 1);
++        if (ch != 0) {
++            append_char(0xFF, s, ecl_char(ch));
++        }
++    }
++    if (phase == 4) {
++        ch = mask_byte(cur, 0x3F);
++        if (ch != 0) {
++            append_char(0xFF, s, ecl_char(ch));
++        }
++    }
++}
++
++/*
++ * PORT H061+$33F0: stringa letta dalle variabili da addr (un carattere
++ * per word, fino a 0) nella stringa slot; $3100 e' il nome del
++ * personaggio corrente.
++ */
++void read_string_var(u16 slot, u16 addr)
++{
++    char *s = ECL_STR(slot - 1);
++    u16 k = 0;                          /* -$4(a5) */
++
++    strcpy(s, "");
++    switch (var_region(addr)) {
++    case 0:
++        while (COK_GET16(g_state_a + (u16)(addr + k) * 2) != 0) {
++            append_char(0xFF, s,
++                        (u8)COK_GET16(g_state_a + (u16)(addr + k) * 2));
++            ++k;
++        }
++        break;
++    case 1:
++        if (addr == 0x3100) {
++            h026_copy(0xFF, s, 0x0F, (const char *)g_current_char->b);
++        } else {
++            while (COK_GET16(g_state_b + (u16)(addr + k - 0x3100) * 2) != 0) {
++                append_char(0xFF, s,
++                            (u8)COK_GET16(g_state_b +
++                                          (u16)(addr + k - 0x3100) * 2));
++                ++k;
++            }
++        }
++        break;
++    case 2:
++        while (COK_GET16(g_state_c + (u16)(addr + k - 0x2F00) * 2) != 0) {
++            append_char(0xFF, s,
++                        (u8)COK_GET16(g_state_c +
++                                      (u16)(addr + k - 0x2F00) * 2));
++            ++k;
++        }
++        break;
++    case 3:
++        while (ECL_BYTE(addr + k) != 0) {
++            append_char(0xFF, s, ECL_BYTE(addr + k));
++            ++k;
++        }
++        break;
++    default:
++        break;
++    }
++}
++
++/* Pila delle chiamate ECL (GOSUB): $2388 cima, $2384 appoggio. */
++CokEclFrame *g_ecl_stack;               /* $2388 */
++CokEclFrame *g_ecl_stack_prev;          /* $2384 */
++
++/*
++ * PORT H061+$1928: inizio del programma ECL dell'area: azzera i flag del
++ * passo, PC a $3500, pila vuota, risultati dei confronti a 0; legge i
++ * cinque indirizzi d'ingresso ($3DF4, $3DF2, $3DF0, $3DEE, $3DEC) e, se
++ * l'area non e' ricaricata ($24D1), azzera le variabili $100..$11F dello
++ * stato A e $3479..$3482 dello stato B.
++ */
++void ecl_start_area(void)
++{
++    u16 i;                              /* -$4(a5) */
++
++    H005_B(0x24BD) = 0;
++    H005_B(0x24BB) = 0;
++    H005_B(0x24C4) = 0;
++    H005_B(0x24C3) = 0;
++    H005_B(0x247F) = 0x41;
++    H005_B(0x247E) = 9;
++    H005_B(0x24B8) = 1;
++    h029_fill_bytes(1, &H005_B(0x2378), 2, 0);
++    H005_B(0x248E) = 8;
++    H005_SET_W(0x3DEA, 0x3500);
++    H005_B(0x24C5) = 0;
++    g_ecl_stack = NULL;
++    g_ecl_stack_prev = NULL;
++    h029_fill_bytes(5, &H005_B(0x237E), 6, 0);
++    COK_PUT16(g_state_b + 0x5C2, 0xFF);
++    COK_PUT16(g_state_b + 0x5A4, 0);
++    COK_PUT16(g_state_b + 0x5A6, 0);
++    COK_PUT16(g_state_a + 0x1CA, 0);
++    read_operands(1);
++    H005_SET_W(0x3DF4, decode_address(OP_LO(0), OP_HI(0)));
++    read_operands(1);
++    H005_SET_W(0x3DF2, decode_address(OP_LO(0), OP_HI(0)));
++    read_operands(1);
++    H005_SET_W(0x3DF0, decode_address(OP_LO(0), OP_HI(0)));
++    read_operands(1);
++    H005_SET_W(0x3DEE, decode_address(OP_LO(0), OP_HI(0)));
++    read_operands(1);
++    H005_SET_W(0x3DEC, decode_address(OP_LO(0), OP_HI(0)));
++    if (H005_B(0x24D1)) {
++        return;
++    }
++    for (i = 1; i <= 0x20; ++i) {
++        COK_PUT16(g_state_a + (i + 0xFF) * 2, 0);
++    }
++    for (i = 0; i <= 9; ++i) {
++        COK_PUT16(g_state_b + (i + 0x3479 - 0x3100) * 2, 0);
++    }
++}
++
++/*
++ * PORT H061+$1ACC: carica il blocco id di ECLn.dax (n = disco $246E) nel
++ * programma ($1DFF byte azzerati), riprovando finche' il blocco non e'
++ * valido ($102 byte almeno); "Loading...Please Wait" intanto.
++ */
++void load_ecl_program(u8 id)
++{
++    char num[6];                        /* -$6(a5) */
++    u16 size = 0;                       /* -$8(a5) */
++    u8 *data = NULL;                    /* -$C(a5) */
++    char *name = (char *)&g_h061_bss[0];    /* -$1512(a4) */
++
++    h029_fill_bytes(0x1DFF, g_ecl_buffer, 0x1DFF, 0);
++    H005_B(0x24A4) = 0;
++    do {
++        clear_message_line();
++        ui_draw_text(0, 0x18, 0x0A, 0, 0x15, "Loading...Please Wait");
++        format_number(1, num, (s32)H005_B(0x246E), 0, 0x0A, 1, '0');
++        strcpy(name, "ECL");
++        h026_append(0x50, name, 1, num);
++        dax_load_block(0x50, name, 4, ".dax", id, &size, &data);
++    } while (size < 0x102);
++    exec_copy_mem(data + 2, g_ecl_buffer, (u32)(u16)(size - 0x102));
++    exec_free_mem(data, size);
++    clear_message_line();
++}
++
++/*
++ * PORT H061+$1BD6: alloca un personaggio e vi carica il mostro idx
++ * (H066+$1FDA); restituisce anche i suoi oggetti e i suoi effetti.
++ */
++void load_monster(u8 idx, Character **out, CokItem **items,
++                  CokEffect **effects)
++{
++    *out = NULL;
++    *out = (Character *)exec_alloc_mem(sizeof(Character), COK_MEMF_CLEAR);
++    h066_1fda(*out, idx);
++    *items = (*out)->items;
++    *effects = (*out)->effects;
++}
++
++/*
++ * PORT H061+$1C42: caselle libere (al massimo 2) da (x, y) in direzione
++ * dir prima di un muro; all'aperto sempre 2 (e $3E00+$582 = 2).
++ */
++u16 free_steps(s16 x, s16 y, u8 dir)
++{
++    u16 steps = 0;                      /* -$4(a5) */
++    u8 stop = 0;                        /* -$1(a5) */
++    u16 r = 0;                          /* -$6(a5) */
++
++    if (COK_GET16(g_state_a + 0x1CC) == 0) {
++        r = 2;
++        COK_PUT16(g_state_b + 0x582, 2);
++        return r;
++    }
++    while (steps < 2 && !stop) {
++        if (map_wall(x, y, dir) == 0) {
++            ++steps;
++            r = steps;
++            switch (dir) {
++            case 0: --y; break;
++            case 2: ++x; break;
++            case 4: ++y; break;
++            case 6: --x; break;
++            default: break;
++            }
++        } else {
++            stop = 1;
++        }
++    }
++    return r;
++}
++
++/* PORT H061+$1D20: ritratto testa+corpo (H042) nella finestra 3,3. */
++void show_head_body(u16 head, u16 body)
++{
++    H005_B(0x24BC) = 0;
++    H005_B(0x2488) = (u8)head;
++    H005_B(0x2487) = (u8)body;
++    h042_0d70(head, body);
++    h042_0ed2(3, 3, 1);
++}
++
++/*
++ * PORT H061+$1D6E: immagini dell'evento: al primo uso lo sfondo (nel
++ * dungeon lo sprite spr di SPRITn) e il fotogramma idx+1; poi, se
++ * $3E00+$5C2 e' cambiato, il ritratto: PIC pic ($FF) o testa+corpo.
++ * flags[0]/[1]: sprite e ritratto gia' mostrati.
++ */
++void show_event_picture(u8 spr, u8 pic, u8 idx, u8 *flags)
++{
++    u16 frame;                          /* -$A(a5) */
++
++    frame = (u16)(idx + 1);
++    if (!flags[1]) {
++        if (!flags[0]) {
++            if (H005_B(0x2825)) {
++                H005_B(0x2825) = 0;
++                H005_B(0x24E1) = 1;
++                h060_0018();
++            }
++            if (COK_GET16(g_state_a + 0x1CC)) {
++                h042_0406(5, "SPRIT", spr, 1, &g_h005[0x27BC]);
++                flags[0] = 1;
++                H005_B(0x24BA) = 1;
++            }
++        } else {
++            H005_B(0x24E1) = 1;
++            h060_0018();
++        }
++        if (H005_B(0x3DE3) == 4) {
++            h042_0f50(frame, &g_h005[0x27BC]);
++        }
++    }
++    if (flags[1] && H005_B(0x2496) == COK_GET16(g_state_b + 0x5C2)) {
++        return;
++    }
++    if (idx != 0 || H005_B(0x3DE3) != 4) {
++        return;
++    }
++    if (H005_B(0x24B4) && !H005_B(0x24D3)) {
++        return;
++    }
++    H005_B(0x2496) = (u8)COK_GET16(g_state_b + 0x5C2);
++    H005_B(0x24BD) = 1;
++    if (COK_GET16(g_state_b + 0x5C2) == 0xFF) {
++        h042_0406(3, "PIC", pic, 0, &g_h005[0x27BC]);
++        flags[1] = 1;
++        h042_0254(3, 3, 1, g_pic_rec_27c2);
++    } else {
++        show_head_body(COK_GET16(g_state_b + 0x5C2), pic);
++        flags[1] = 1;
++        H005_B(0x24BC) = 0;
++    }
++}
++
++/*
++ * PORT H061+$35E2: dst = lettere e cifre di src rese "minuscole" (+$20)
++ * e, dopo ogni '~', il carattere seguente in maiuscolo (le scorciatoie
++ * di un menu ECL).  src viene modificata.
++ */
++static void menu_hotkeys(char *dst, u16 dst_len, char *src, u16 src_len)
++{
++    u16 i;                              /* -$2(a5) */
++    u8 ch;
++
++    dst[0] = '\0';
++    for (i = 0; i <= (u16)(h026_strlen(src_len, src) - 1); ++i) {
++        ch = (u8)src[i];
++        if ((ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9')) {
++            src[i] = (char)(ch + 0x20);
++        }
++        if (src[i] == '~') {
++            h026_delete(src_len, src, i, 1);
++            ch = (u8)src[i];
++            if (ch >= 'a' && ch <= 'z') {
++                ch = (u8)(ch & 0x5F);
++            }
++            append_char(dst_len, dst, ch);
++        }
++    }
++}
++
++/*
++ * PORT H061+$36E6: menu ECL: opzioni con le scorciatoie marcate da '~';
++ * restituisce la posizione della scorciatoia scelta, 0 per Invio (se
++ * ammesso), $FF se non trovata.  I tasti speciali cambiano il
++ * personaggio corrente (H065+$3390).
++ */
++u16 ecl_menu(u16 title_len, const char *title, u16 opt_len,
++             const char *options, u16 pen1, u16 pen2, u16 pen3,
++             u8 allow_enter, u8 animate)
++{
++    char t[0x100];
++    char o[0x100];
++    char keys[0x2A];                    /* -$2A(a5) */
++    u8 special;                         /* -$2E(a5) */
++    u8 key;                             /* -$2D(a5) */
++    u16 k;                              /* -$2C(a5) */
++
++    h026_copy(0xFF, t, title_len, title);
++    h026_copy(0xFF, o, opt_len, options);
++    menu_hotkeys(keys, 0x28, o, opt_len);
++    for (;;) {
++        key = ui_request_choice(title_len, t, opt_len, o, pen1, pen2, pen3, 1,
++                                animate, &special);
++        if (special) {
++            select_party_member(key);
++            draw_party(g_current_char);
++            key = 0;
++        }
++        if ((key >= 'A' && key <= 'Z') || (key >= '0' && key <= '9') ||
++            (key == 0x0D && allow_enter)) {
++            break;
++        }
++    }
++    if (key == 0x0D) {
++        return 0;
++    }
++    k = 0;
++    while (k <= (u16)(h026_strlen(0x28, keys) - 1) && (u8)keys[k] != key) {
++        ++k;
++    }
++    if (k <= (u16)(h026_strlen(0x28, keys) - 1)) {
++        return k;
++    }
++    return 0xFF;
++}
++
++/*
++ * PORT H061+$3904: confronto di stringhe (H026+$0106, senza maiuscole):
++ * risultati in H005+$237E..$2383 (=, <>, <, >, <=, >=).
++ */
++void compare_strings(u16 len_a, const char *a, u16 len_b, const char *b)
++{
++    char ca[0x100];
++    char cb[0x100];
++    u8 r;                               /* -$1(a5) */
++
++    h026_copy(0xFF, ca, len_a, a);
++    h026_copy(0xFF, cb, len_b, b);
++    h029_fill_bytes(5, &H005_B(0x237E), 6, 0);
++    r = h026_compare_nocase(len_a, ca, len_b, cb);
++    if (r == 1) {
++        H005_B(0x237E) = 1;
++    }
++    if (r != 1) {
++        H005_B(0x237F) = 1;
++    }
++    if (r == 0) {
++        H005_B(0x2380) = 1;
++    }
++    if (r == 2) {
++        H005_B(0x2381) = 1;
++    }
++    if (r == 1 || r == 0) {
++        H005_B(0x2382) = 1;
++    }
++    if (r == 1 || r == 2) {
++        H005_B(0x2383) = 1;
++    }
++}
++
++/* PORT H061+$3A0A: confronto di word: risultati in H005+$237E..$2383. */
++void compare_words(u16 a, u16 b)
++{
++    h029_fill_bytes(5, &H005_B(0x237E), 6, 0);
++    if (a == b) {
++        H005_B(0x237E) = 1;
++    }
++    if (a != b) {
++        H005_B(0x237F) = 1;
++    }
++    if (a < b) {
++        H005_B(0x2380) = 1;
++    }
++    if (a > b) {
++        H005_B(0x2381) = 1;
++    }
++    if (a <= b) {
++        H005_B(0x2382) = 1;
++    }
++    if (a >= b) {
++        H005_B(0x2383) = 1;
++    }
++}
++
++/*
++ * PORT H061+$3AAC (GOSUB): salva il PC sulla pila ($2388, nodi di 6 byte
++ * nell'originale) e salta all'indirizzo dell'operando i.
++ */
++void ecl_gosub(u16 i)
++{
++    if (g_ecl_stack == NULL) {
++        g_ecl_stack = (CokEclFrame *)exec_alloc_mem(sizeof(CokEclFrame),
++                                                    COK_MEMF_CLEAR);
++        g_ecl_stack->next = NULL;
++    } else {
++        g_ecl_stack_prev = g_ecl_stack;
++        g_ecl_stack = (CokEclFrame *)exec_alloc_mem(sizeof(CokEclFrame),
++                                                    COK_MEMF_CLEAR);
++        g_ecl_stack->next = g_ecl_stack_prev;
++    }
++    g_ecl_stack->pc = H005_W(0x3DEA);
++    H005_SET_W(0x3DEA, decode_address(OP_LO(i - 1), OP_HI(i - 1)));
++}
++
++/*
++ * PORT H061+$3B4E: il party avanza di una casella nella direzione
++ * $2820 (0 nord, 2 est, 4 sud, 6 ovest; la mappa 16x16 fa il giro);
++ * aggiorna i flag della casella ($2822) e il muro davanti ($2821).
++ */
++void step_forward(void)
++{
++    switch (H005_B(0x2820)) {
++    case 0:
++        if ((s16)H005_W(0x281E) > 0) {
++            H005_SET_W(0x281E, H005_W(0x281E) - 1);
++        } else {
++            H005_SET_W(0x281E, 0x0F);
++        }
++        break;
++    case 2:
++        if ((s16)H005_W(0x281C) < 0x0F) {
++            H005_SET_W(0x281C, H005_W(0x281C) + 1);
++        } else {
++            H005_SET_W(0x281C, 0);
++        }
++        break;
++    case 4:
++        if ((s16)H005_W(0x281E) < 0x0F) {
++            H005_SET_W(0x281E, H005_W(0x281E) + 1);
++        } else {
++            H005_SET_W(0x281E, 0);
++        }
++        break;
++    case 6:
++        if ((s16)H005_W(0x281C) > 0) {
++            H005_SET_W(0x281C, H005_W(0x281C) - 1);
++        } else {
++            H005_SET_W(0x281C, 0x0F);
++        }
++        break;
++    default:
++        break;
++    }
++    H005_B(0x2822) = map_flags((s16)H005_W(0x281C), (s16)H005_W(0x281E));
++    H005_B(0x2821) = (u8)map_wall((s16)H005_W(0x281C), (s16)H005_W(0x281E),
++                                  H005_B(0x2820));
++    H005_B(0x24B7) = 1;
++}
++
++/*
++ * PORT H061+$3DBE: ogni oggetto di c ha chance% di andare distrutto; la
++ * probabilita' cala di $5A per gli oggetti di valore +$3E oltre $FF e di
++ * $32 oltre $18 (e resta calata per i seguenti).
++ */
++void destroy_items(u16 chance, Character *c)
++{
++    CokItem *it;                        /* -$6(a5) */
++    CokItem *next;                      /* -$A(a5) */
++    u16 r;                              /* -$2(a5) */
++
++    it = c->items;
++    while (it != NULL) {
++        if (COK_GET16(&it->b[0x3E]) > 0xFF) {
++            chance = (u16)(chance > 0x5A ? chance - 0x5A : 0);
++        } else if (COK_GET16(&it->b[0x3E]) > 0x18) {
++            chance = (u16)(chance > 0x32 ? chance - 0x32 : 0);
++        }
++        r = roll_dice(1, 0x64);
++        next = it->next;
++        if (r <= chance) {
++            delete_item(c, it);
++        }
++        it = next;
++    }
++}
++
++/*
++ * PORT H061+$3E80: salta il comando ECL corrente senza eseguirlo (legge
++ * i suoi operandi); i codici senza operandi avanzano di un byte.
++ */
++void ecl_skip_command(void)
++{
++    static const u8 nops[0x42] = {
++        /* 00 */ 0, 1, 1, 2, 3, 3, 3, 3, 2, 2, 1, 3, 3, 0, 1, 2,
++        /* 10 */ 2, 1, 1, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 1, 6, 2,
++        /* 20 */ 1, 3, 2, 4, 0, 0, 0, 8, 3, 0x0E, 3, 0, 6, 1, 5, 3,
++        /* 30 */ 3, 0, 1, 0, 1, 3, 1, 3, 1, 1, 0, 3, 1, 0, 0, 1,
++        /* 40 */ 1, 2
++    };
++    u8 op;
++
++    H005_B(0x2493) = ECL_BYTE(H005_W(0x3DEA));
++    op = H005_B(0x2493);
++    if (op >= 1 && op <= 0x41 && nops[op] != 0) {
++        read_operands(nops[op]);
++    } else {
++        H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1);
++    }
++}
++
++/*
++ * PORT H061+$3FA8: velocita' (+$1A9) piu' alta in *maxv e piu' bassa in
++ * *minv fra i personaggi (doppia con l'effetto $27, dimezzata con $2A).
++ * Partono dal primo personaggio, letto anche se il party e' vuoto:
++ * qui allora restano invariati.
++ */
++void party_speed_range(u16 *maxv, u16 *minv)
++{
++    Character *p;                       /* -$4(a5) */
++    CokEffect *e;                       /* -$8(a5) */
++    u8 v;                               /* -$9(a5) */
++
++    p = g_party_head;
++    if (p == NULL) {
++        return;
++    }
++    *maxv = p->b[0x1A9];
++    *minv = p->b[0x1A9];
++    for (; p != NULL; p = p->next) {
++        v = p->b[0x1A9];
++        if (find_effect(p, 0x27, &e)) {
++            v = (u8)(v << 1);
++        } else if (find_effect(p, 0x2A, &e)) {
++            v = (u8)(v >> 1);
++        }
++        if (v > *maxv) {
++            *maxv = v;
++        }
++        if (v < *minv) {
++            *minv = v;
++        }
++    }
++}
++
++/*
++ * PORT H061+$4092: messaggio del danno dmg a c nella finestra di testo
++ * ("<nome> is hit for nn points of Damage." o "<nome> dies. " se il
++ * danno supera i punti ferita di 10), poi il danno; a finestra piena
++ * "press <enter>/<return> to continue".  Non per chi e' gia' morto.
++ */
++void ecl_damage_message(Character *c, u16 dmg)
++{
++    char num[4];                        /* -$58(a5) */
++    char msg[0x51];                     /* -$54(a5) */
++    u8 clear;                           /* -$59(a5) */
++
++    if (c->b[0x197] == 6) {
++        return;
++    }
++    clear = 0;
++    format_number(3, num, (s32)dmg, 0, 0x0A, 2, '0');
++    strcpy(msg, "  ");
++    if (dmg > (u16)(c->b[0x1A8] + 0x0A)) {
++        h026_append(0x50, msg, 0x0F, (const char *)c->b);
++        h026_append(0x50, msg, 7, " dies. ");
++    } else {
++        h026_append(0x50, msg, 0x0F, (const char *)c->b);
++        h026_append(0x50, msg, 0x0C, " is hit for ");
++        h026_append(0x50, msg, 3, num);
++        h026_append(0x50, msg, 0x12, " points of Damage.");
++    }
++    if (H005_W(0x334C) > 0x16) {
++        H005_SET_W(0x334C, 0x11);
++        clear = 1;
++        show_message_wait(0x0F, 0, 0x22, "press <enter>/<return> to continue");
++    } else {
++        clear = 0;
++    }
++    H005_SET_W(0x334E, 0x26);
++    word_wrap_text(1, 0x11, 0x26, 0x16, 0x0F, 0, clear, 0x50, msg);
++    damage_hit_points(c, dmg);
++    clear_text_cells(0x11, 1, 0x26, 0x0F);
++    draw_party(g_current_char);
++}
+diff --git a/src_c/readable/h061.h b/src_c/readable/h061.h
+new file mode 100644
+index 0000000..8ce8bcd
+--- /dev/null
++++ b/src_c/readable/h061.h
+@@ -0,0 +1,47 @@
++/* H061: servizi della VM ECL. */
++#ifndef COK_H061_H
++#define COK_H061_H
++#include "character.h"
++char *ecl_string(u16 n);                        /* stringhe -$14C0(a4) */
++void append_char(u16 len, char *s, u8 ch);      /* H061+$162E */
++u16  make_word(u8 lo, u8 hi);                   /* H061+$1F12 */
++u16  decode_address(u8 lo, u8 hi);              /* H061+$1F3C */
++u8   ecl_char(u16 c);                           /* H061+$1F6A */
++u8   var_region(u16 addr);                      /* H061+$1FA4 */
++u16  party_index(Character *c);                 /* H061+$202C */
++u16  read_var(u16 addr);                        /* H061+$2E04 */
++void write_var(u16 addr, u16 val);              /* H061+$2BAA */
++void read_operands(u16 n);                      /* H061+$1670 */
++u16  eval_operand(u16 i);                       /* H061+$184E */
++void read_string_operand(u16 len, u16 slot);    /* H061+$3244 */
++void read_string_var(u16 slot, u16 addr);       /* H061+$33F0 */
++u8   operand_desc(u16 i);
++u8   operand_lo(u16 i);
++u8   operand_hi(u16 i);
++/* Nodo della pila GOSUB ($2388; 6 byte nell'originale). */
++typedef struct CokEclFrame {
++    u16 pc;                             /* +$00 */
++    struct CokEclFrame *next;           /* +$02 */
++} CokEclFrame;
++extern CokEclFrame *g_ecl_stack;        /* $2388 */
++extern CokEclFrame *g_ecl_stack_prev;   /* $2384 */
++void ecl_start_area(void);                      /* H061+$1928 */
++void load_ecl_program(u8 id);                   /* H061+$1ACC */
++void load_monster(u8 idx, Character **out, CokItem **items,
++                  CokEffect **effects);         /* H061+$1BD6 */
++u16  free_steps(s16 x, s16 y, u8 dir);          /* H061+$1C42 */
++void show_head_body(u16 head, u16 body);        /* H061+$1D20 */
++void show_event_picture(u8 spr, u8 pic, u8 idx, u8 *flags); /* H061+$1D6E */
++u16  ecl_menu(u16 title_len, const char *title, u16 opt_len,
++              const char *options, u16 pen1, u16 pen2, u16 pen3,
++              u8 allow_enter, u8 animate);      /* H061+$36E6 */
++void compare_strings(u16 len_a, const char *a, u16 len_b, const char *b);
++                                                /* H061+$3904 */
++void compare_words(u16 a, u16 b);               /* H061+$3A0A */
++void ecl_gosub(u16 i);                          /* H061+$3AAC */
++void step_forward(void);                        /* H061+$3B4E */
++void destroy_items(u16 chance, Character *c);   /* H061+$3DBE */
++void ecl_skip_command(void);                    /* H061+$3E80 */
++void party_speed_range(u16 *maxv, u16 *minv);   /* H061+$3FA8 */
++void ecl_damage_message(Character *c, u16 dmg); /* H061+$4092 */
++#endif
+diff --git a/src_c/readable/h064.c b/src_c/readable/h064.c
+index 395bb43..d4419ad 100644
+--- a/src_c/readable/h064.c
++++ b/src_c/readable/h064.c
+@@ -1,5 +1,13 @@
+-/* H064: Handler nativi dei comandi ECL. */
+-#include "cok.h"
++/* H064: gestori nativi dei comandi ECL. */
++#include "h064.h"
++
++/*
++ * Dati all'inizio del modulo (H064+$0000..$005D): +$0 personaggio
++ * corrente salvato, +$6..+$B flag della VM ECL (+$B: fine del
++ * programma), +$C testo.  g_h064_data[k] e' H064+k.
++ */
++Character *g_h064_saved_char;           /* H064+$0000 */
++u8 g_h064_data[0x5E];
+ 
+ /* PORT H064+$00EE: link/unlk, nessun effetto. */
+ void h064_init(void)
+diff --git a/src_c/readable/h064.h b/src_c/readable/h064.h
+new file mode 100644
+index 0000000..de05080
+--- /dev/null
++++ b/src_c/readable/h064.h
+@@ -0,0 +1,8 @@
++/* H064: gestori nativi dei comandi ECL. */
++#ifndef COK_H064_H
++#define COK_H064_H
++#include "character.h"
++extern Character *g_h064_saved_char;    /* H064+$0000 */
++extern u8 g_h064_data[0x5E];            /* H064+$0000..$005D */
++#define H064_B(off) g_h064_data[(off)]
++#endif
+diff --git a/src_c/readable/h065.c b/src_c/readable/h065.c
+index ff8f836..8b5c823 100644
+--- a/src_c/readable/h065.c
++++ b/src_c/readable/h065.c
+@@ -305,7 +305,7 @@ static u8 can_cure(Character *c)
+  * (dall'ultimo al primo); ogni altro tasto sceglie il primo.  Niente con
+  * un clic del mouse.
+  */
+-static void select_party_member(u8 key)
++void select_party_member(u8 key)
+ {
+     Character *m;                       /* -$4(a5) */
+ 
+diff --git a/src_c/readable/h065.h b/src_c/readable/h065.h
+index ba88c80..5ee032d 100644
+--- a/src_c/readable/h065.h
++++ b/src_c/readable/h065.h
+@@ -17,4 +17,5 @@ u16  choose_spell_of_kind(u16 kind, u16 mode, s16 *spell, u8 *found);
+ #include "character.h"
+ void ready_item(CokItem *it);           /* H065+$2C04 */
+ 
++void select_party_member(u8 key);       /* H065+$3390 */
+ #endif
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index 62dae7e..a56a43a 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -70,7 +70,6 @@ void *h042_0b80(u16 frame, void *set) { (void)frame; (void)set; cok_unported("H0
+ void h042_0254(u16 a, u16 b, u8 flag, void *picture) { (void)a; (void)b; (void)flag; (void)picture; cok_unported("H042+$0254"); }
+ void h044_0330(void) { cok_unported("H044+$0330"); }
+ void h044_0452(void) { cok_unported("H044+$0452"); }
+-void h028_0d74(void) { cok_unported("H028+$0D74"); }
+ void h043_0840(void) { cok_unported_skip("H043+$0840"); }
+ 
+ 
+@@ -113,3 +112,61 @@ u8 h096_4de8(void) { cok_unported("H096+$4DE8"); return 0; }
+ void h096_02ce(Character *c) { (void)c; cok_unported("H096+$02CE"); }
+ void h096_2a6c(u8 spell, u8 unused, u8 *ok) { (void)spell; (void)unused; (void)ok; cok_unported("H096+$2A6C"); }
+ void h097_1d68(Character *c) { (void)c; cok_unported("H097+$1D68"); }
++
++void h028_1098(u8 v) { (void)v; cok_unported("H028+$1098"); }
++void h066_1fda(Character *c, u16 idx) { (void)c; (void)idx; cok_unported("H066+$1FDA"); }
++void h042_0f50(u16 frame, void *set) { (void)frame; (void)set; cok_unported("H042+$0F50"); }
++
++void h064_0156(void) { cok_unported("H064+$0156"); }
++void h064_0202(void) { cok_unported("H064+$0202"); }
++void h064_0234(void) { cok_unported("H064+$0234"); }
++void h064_0258(void) { cok_unported("H064+$0258"); }
++void h064_0306(void) { cok_unported("H064+$0306"); }
++void h064_03fc(void) { cok_unported("H064+$03FC"); }
++void h064_0468(void) { cok_unported("H064+$0468"); }
++void h064_04dc(void) { cok_unported("H064+$04DC"); }
++void h064_06a0(void) { cok_unported("H064+$06A0"); }
++void h064_05e2(void) { cok_unported("H064+$05E2"); }
++void h064_0abe(void) { cok_unported("H064+$0ABE"); }
++void h064_0b10(void) { cok_unported("H064+$0B10"); }
++void h064_0c62(void) { cok_unported("H064+$0C62"); }
++void h064_0cc4(void) { cok_unported("H064+$0CC4"); }
++void h064_0d4a(void) { cok_unported("H064+$0D4A"); }
++void h064_0e40(void) { cok_unported("H064+$0E40"); }
++void h064_0e9c(void) { cok_unported("H064+$0E9C"); }
++void h064_13ac(void) { cok_unported("H064+$13AC"); }
++void h064_0f30(void) { cok_unported("H064+$0F30"); }
++void h064_1748(void) { cok_unported("H064+$1748"); }
++void h064_17bc(void) { cok_unported("H064+$17BC"); }
++void h064_0f90(void) { cok_unported("H064+$0F90"); }
++void h064_1004(void) { cok_unported("H064+$1004"); }
++void h064_12ca(void) { cok_unported("H064+$12CA"); }
++void h064_1544(void) { cok_unported("H064+$1544"); }
++void h064_121c(void) { cok_unported("H064+$121C"); }
++void h064_1346(void) { cok_unported("H064+$1346"); }
++void h012_01fa(void) { cok_unported("H012+$01FA"); }
++void h012_05d6(void) { cok_unported("H012+$05D6"); }
++void h012_0688(void) { cok_unported("H012+$0688"); }
++void h012_0766(void) { cok_unported("H012+$0766"); }
++void h012_0b18(void) { cok_unported("H012+$0B18"); }
++void h012_0bea(void) { cok_unported("H012+$0BEA"); }
++void h012_14c8(void) { cok_unported("H012+$14C8"); }
++void h012_15ae(void) { cok_unported("H012+$15AE"); }
++void h012_1dde(void) { cok_unported("H012+$1DDE"); }
++void h012_26d6(void) { cok_unported("H012+$26D6"); }
++void h012_1f68(void) { cok_unported("H012+$1F68"); }
++void h012_2358(void) { cok_unported("H012+$2358"); }
++void h012_1e90(void) { cok_unported("H012+$1E90"); }
++void h012_23d6(void) { cok_unported("H012+$23D6"); }
++void h012_2392(void) { cok_unported("H012+$2392"); }
++void h012_2502(void) { cok_unported("H012+$2502"); }
++void h012_29a6(void) { cok_unported("H012+$29A6"); }
++void h012_2486(void) { cok_unported("H012+$2486"); }
++void h012_1f4c(void) { cok_unported("H012+$1F4C"); }
++void h012_2596(void) { cok_unported("H012+$2596"); }
++void h012_2aae(void) { cok_unported("H012+$2AAE"); }
++void h012_241c(void) { cok_unported("H012+$241C"); }
++void h012_2abe(void) { cok_unported("H012+$2ABE"); }
++void h012_2af6(void) { cok_unported("H012+$2AF6"); }
++void h012_2b64(void) { cok_unported("H012+$2B64"); }
++void h012_2c28(void) { cok_unported("H012+$2C28"); }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index fc13d5e..ee0a5e6 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -41,7 +41,6 @@ void h085_4a02(void);
+ /* Funzioni del menu principale (H013+$4BFC). */
+ void h044_0330(void);
+ void h044_0452(void);
+-void h028_0d74(void);
+ void h043_0840(void);
+ 
+ 
+@@ -89,3 +88,62 @@ u8   h096_4de8(void);
+ void h096_02ce(Character *c);           /* inizio round */
+ void h096_2a6c(u8 spell, u8 unused, u8 *ok); /* bersaglio in combattimento */
+ void h097_1d68(Character *c);           /* turno automatico (IA) */
++
++void h028_1098(u8 v);                 /* stato B $312 */
++void h066_1fda(Character *c, u16 idx);   /* carica un mostro (MONnCHA) */
++void h042_0f50(u16 frame, void *set);    /* fotogramma dell'insieme $27BC */
++
++/* Gestori dei comandi ECL (H064, H012) non ancora portati. */
++void h064_0156(void);
++void h064_0202(void);
++void h064_0234(void);
++void h064_0258(void);
++void h064_0306(void);
++void h064_03fc(void);
++void h064_0468(void);
++void h064_04dc(void);
++void h064_06a0(void);
++void h064_05e2(void);
++void h064_0abe(void);
++void h064_0b10(void);
++void h064_0c62(void);
++void h064_0cc4(void);
++void h064_0d4a(void);
++void h064_0e40(void);
++void h064_0e9c(void);
++void h064_13ac(void);
++void h064_0f30(void);
++void h064_1748(void);
++void h064_17bc(void);
++void h064_0f90(void);
++void h064_1004(void);
++void h064_12ca(void);
++void h064_1544(void);
++void h064_121c(void);
++void h064_1346(void);
++void h012_01fa(void);
++void h012_05d6(void);
++void h012_0688(void);
++void h012_0766(void);
++void h012_0b18(void);
++void h012_0bea(void);
++void h012_14c8(void);
++void h012_15ae(void);
++void h012_1dde(void);
++void h012_26d6(void);
++void h012_1f68(void);
++void h012_2358(void);
++void h012_1e90(void);
++void h012_23d6(void);
++void h012_2392(void);
++void h012_2502(void);
++void h012_29a6(void);
++void h012_2486(void);
++void h012_1f4c(void);
++void h012_2596(void);
++void h012_2aae(void);
++void h012_241c(void);
++void h012_2abe(void);
++void h012_2af6(void);
++void h012_2b64(void);
++void h012_2c28(void);
+-- 
+2.43.0
+

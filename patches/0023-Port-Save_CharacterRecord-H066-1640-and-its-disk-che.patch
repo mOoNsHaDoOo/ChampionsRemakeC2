@@ -1,0 +1,864 @@
+From 70bf1a3f162c02c283fd2c38f3e4f6356163ab0e Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 19:15:37 +0000
+Subject: [PATCH 23/65] Port Save_CharacterRecord (H066+$1640) and its disk
+ checks
+
+Port H066+$1640 (body $16EC) with the nested path builder $164E: it
+writes name.who (or name.sav) with the $1AA-byte record, name.swg with
+the items and name.fx with the effects, after checking the save
+directory ($08E4 with $08F2), the free space ($142E) and that the
+directory is writable ($14DC with $14EA), and asks before overwriting.
+Also port H028+$033E, $07E0 and $08F0 (volume name, file name from the
+character name), H030+$028A (message until a key) and the dos.library
+wrappers CreateDir, DeleteFile and Examine with host versions; host
+Lock now also finds directories and Info reports free blocks.
+
+Pointer fields are written as zero; the original wrote the in-memory
+addresses. Create New Character now completes.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md |  90 +++++------
+ src_c/readable/h002_dos.c     |  49 +++++-
+ src_c/readable/h002_dos.h     |  11 ++
+ src_c/readable/h013.c         |   5 +-
+ src_c/readable/h028_files.c   |  83 +++++++++-
+ src_c/readable/h028_files.h   |   6 +
+ src_c/readable/h030.c         |  19 +++
+ src_c/readable/h030.h         |   4 +-
+ src_c/readable/h066.c         | 296 ++++++++++++++++++++++++++++++++++
+ src_c/readable/h066.h         |   4 +-
+ src_c/readable/unported.c     |   1 -
+ src_c/readable/unported.h     |   1 -
+ 12 files changed, 516 insertions(+), 53 deletions(-)
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index 8f70792..f5b80a1 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,13 +2,13 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **363 / 916**.
++Routine portate: **377 / 916**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+ | H000 | 600 | 1 | 1 |
+ | H001 | 664 | 2 | 2 |
+-| H002 | 572 | 15 | 10 |
++| H002 | 572 | 15 | 13 |
+ | H003 | 316 | 5 | 5 |
+ | H004 | 24284 | 2 | 2 |
+ | H005 | 21276 | 1 | 1 |
+@@ -34,9 +34,9 @@ Routine portate: **363 / 916**.
+ | H025 | 264 | 2 | 2 |
+ | H026 | 1452 | 11 | 11 |
+ | H027 | 18156 | 10 | 2 |
+-| H028 | 4488 | 16 | 12 |
++| H028 | 4488 | 16 | 15 |
+ | H029 | 6084 | 32 | 21 |
+-| H030 | 3240 | 18 | 12 |
++| H030 | 3240 | 18 | 13 |
+ | H031 | 212 | 4 | 3 |
+ | H032 | 9352 | 1 | 1 |
+ | H033 | 8140 | 15 | 2 |
+@@ -72,7 +72,7 @@ Routine portate: **363 / 916**.
+ | H063 | 16496 | 52 | 19 |
+ | H064 | 6460 | 7 | 1 |
+ | H065 | 14268 | 27 | 6 |
+-| H066 | 13840 | 27 | 6 |
++| H066 | 13840 | 27 | 13 |
+ | H067 | 9820 | 22 | 1 |
+ | H068 | 5788 | 14 | 1 |
+ | H069 | 232 | 3 | 1 |
+@@ -127,21 +127,21 @@ Routine portate: **363 / 916**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0008` | `sub_H002_00000008` | parziale | h002_dos.c:104 |
+-| `$0014` | `wrapper_Close` | parziale | h002_dos.c:178 |
+-| `$0026` | `wrapper_CreateDir` | parziale |  |
+-| `$004A` | `wrapper_DeleteFile` | parziale |  |
+-| `$0070` | `wrapper_Examine` | parziale |  |
++| `$0008` | `sub_H002_00000008` | parziale | h002_dos.c:108 |
++| `$0014` | `wrapper_Close` | parziale | h002_dos.c:187 |
++| `$0026` | `wrapper_CreateDir` | parziale | h002_dos.c:285 |
++| `$004A` | `wrapper_DeleteFile` | parziale | h002_dos.c:299 |
++| `$0070` | `wrapper_Examine` | parziale | h002_dos.c:310 |
+ | `$0088` | `wrapper_ExNext` | parziale |  |
+-| `$00A0` | `wrapper_Info` | parziale | h002_dos.c:147 |
++| `$00A0` | `wrapper_Info` | parziale | h002_dos.c:154 |
+ | `$00C0` | `wrapper_IoErr` | parziale |  |
+-| `$00DC` | `wrapper_Lock` | parziale | h002_dos.c:112 |
+-| `$00F2` | `wrapper_Open` | parziale | h002_dos.c:193 |
+-| `$0122` | `wrapper_Read` | parziale | h002_dos.c:217 |
+-| `$0156` | `wrapper_Seek` | parziale | h002_dos.c:241 |
+-| `$01A2` | `wrapper_UnLock` | parziale | h002_dos.c:137 |
+-| `$01CC` | `wrapper_Write` | parziale | h002_dos.c:229 |
+-| `$01E8` | `wrapper_Execute` | parziale | h002_dos.c:259 |
++| `$00DC` | `wrapper_Lock` | parziale | h002_dos.c:116 |
++| `$00F2` | `wrapper_Open` | parziale | h002_dos.c:202 |
++| `$0122` | `wrapper_Read` | parziale | h002_dos.c:226 |
++| `$0156` | `wrapper_Seek` | parziale | h002_dos.c:250 |
++| `$01A2` | `wrapper_UnLock` | parziale | h002_dos.c:144 |
++| `$01CC` | `wrapper_Write` | parziale | h002_dos.c:238 |
++| `$01E8` | `wrapper_Execute` | parziale | h002_dos.c:268 |
+ 
+ ### H003
+ 
+@@ -273,15 +273,15 @@ Routine portate: **363 / 916**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0506` | `module_init_H013` | parziale | h013.c:23 |
++| `$0506` | `module_init_H013` | parziale | h013.c:24 |
+ | `$0518` | `trampoline_H013_52E0` | parziale |  |
+ | `$051C` | `trampoline_H013_58DC` | parziale |  |
+ | `$0520` | `trampoline_H013_56CE` | parziale |  |
+-| `$0524` | `sub_H013_00000524` | parziale | h013.c:359 |
+-| `$07B2` | `sub_H013_000007B2` | parziale | h013.c:426 |
+-| `$08C2` | `trampoline_H013_097C` | parziale | h013.c:475 |
+-| `$0982` | `Create_Character` | parziale | h013.c:649 |
+-| `$0990` | `sub_H013_00000990` | parziale | h013.c:507 |
++| `$0524` | `sub_H013_00000524` | parziale | h013.c:360 |
++| `$07B2` | `sub_H013_000007B2` | parziale | h013.c:427 |
++| `$08C2` | `trampoline_H013_097C` | parziale | h013.c:476 |
++| `$0982` | `Create_Character` | parziale | h013.c:650 |
++| `$0990` | `sub_H013_00000990` | parziale | h013.c:508 |
+ | `$2B9A` | `trampoline_H013_2D70` | parziale |  |
+ | `$2D76` | `trampoline_H013_2E1A` | parziale |  |
+ | `$2E44` | `sub_H013_00002E44` | parziale |  |
+@@ -290,11 +290,11 @@ Routine portate: **363 / 916**.
+ | `$31EE` | `trampoline_H013_333C` | parziale |  |
+ | `$43E8` | `sub_H013_000043E8` | parziale |  |
+ | `$4508` | `sub_H013_00004508` | parziale |  |
+-| `$4BFC` | `Party_MainMenu` | verificato | h013.c:95 |
+-| `$4C0A` | `sub_H013_00004C0A` | parziale | h013.c:56 |
++| `$4BFC` | `Party_MainMenu` | verificato | h013.c:96 |
++| `$4C0A` | `sub_H013_00004C0A` | parziale | h013.c:57 |
+ | `$52E0` | `Add_CharacterToParty` | parziale |  |
+-| `$56CE` | `(senza scheda)` | - | h013.c:324 |
+-| `$58DC` | `(senza scheda)` | - | h013.c:1264 |
++| `$56CE` | `(senza scheda)` | - | h013.c:325 |
++| `$58DC` | `(senza scheda)` | - | h013.c:1265 |
+ 
+ ### H014
+ 
+@@ -453,12 +453,12 @@ Routine portate: **363 / 916**.
+ | `$01B8` | `module_init_H028` | parziale | h028_files.c:20 |
+ | `$01C6` | `Open_WithRetry` | parziale | h028_files.c:48 |
+ | `$02D0` | `sub_H028_000002D0` | parziale | h028_files.c:29 |
+-| `$033E` | `sub_H028_0000033E` | parziale |  |
++| `$033E` | `sub_H028_0000033E` | parziale | h028_files.c:447 |
+ | `$0408` | `sub_H028_00000408` | parziale | h028_files.c:88 |
+ | `$0576` | `sub_H028_00000576` | parziale | h028_files.c:130 |
+ | `$05FA` | `Open_ResourceFile` | parziale | h028_files.c:147 |
+-| `$07E0` | `sub_H028_000007E0` | parziale |  |
+-| `$08F0` | `sub_H028_000008F0` | parziale |  |
++| `$07E0` | `sub_H028_000007E0` | parziale | h028_files.c:469 |
++| `$08F0` | `sub_H028_000008F0` | parziale | h028_files.c:501 |
+ | `$09DC` | `DAX_DecompressRLE` | verificato | h028_files.c:196 |
+ | `$0B80` | `sub_H028_00000B80` | parziale | h028_files.c:267 |
+ | `$0C68` | `sub_H028_00000C68` | parziale | h028_files.c:398 |
+@@ -512,7 +512,7 @@ Routine portate: **363 / 916**.
+ | `$00B6` | `sub_H030_000000B6` | parziale | h030.c:62 |
+ | `$019A` | `sub_H030_0000019A` | parziale | h030.c:21 |
+ | `$0256` | `UI_DrawText` | parziale | h030.c:41 |
+-| `$028A` | `sub_H030_0000028A` | parziale |  |
++| `$028A` | `sub_H030_0000028A` | parziale | h030.c:212 |
+ | `$0302` | `trampoline_H030_0470` | parziale |  |
+ | `$0310` | `sub_H030_00000310` | parziale |  |
+ | `$03B8` | `sub_H030_000003B8` | parziale |  |
+@@ -1093,23 +1093,23 @@ Routine portate: **363 / 916**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$02F0` | `module_init_H066` | parziale | h066.c:11 |
++| `$02F0` | `module_init_H066` | parziale | h066.c:17 |
+ | `$03D0` | `trampoline_H066_0780` | parziale |  |
+ | `$03DE` | `sub_H066_000003DE` | parziale |  |
+ | `$0852` | `sub_H066_00000852` | parziale |  |
+-| `$08E4` | `trampoline_H066_0B88` | parziale |  |
+-| `$08F2` | `sub_H066_000008F2` | parziale |  |
+-| `$0BAC` | `sub_H066_00000BAC` | parziale | h066.c:22 |
+-| `$0C34` | `trampoline_H066_0E5A` | parziale | h066.c:92 |
+-| `$0C42` | `sub_H066_00000C42` | parziale | h066.c:34 |
+-| `$0D2A` | `sub_H066_00000D2A` | parziale | h066.c:61 |
+-| `$0DEA` | `sub_H066_00000DEA` | parziale | h066.c:80 |
++| `$08E4` | `trampoline_H066_0B88` | parziale | h066.c:228 |
++| `$08F2` | `sub_H066_000008F2` | parziale | h066.c:210 |
++| `$0BAC` | `sub_H066_00000BAC` | parziale | h066.c:28 |
++| `$0C34` | `trampoline_H066_0E5A` | parziale | h066.c:98 |
++| `$0C42` | `sub_H066_00000C42` | parziale | h066.c:40 |
++| `$0D2A` | `sub_H066_00000D2A` | parziale | h066.c:67 |
++| `$0DEA` | `sub_H066_00000DEA` | parziale | h066.c:86 |
+ | `$1312` | `Delete_CharacterSidecarFiles` | verificato |  |
+-| `$142E` | `Query_FreeDiskSpace` | parziale |  |
+-| `$14DC` | `Check_SaveWritable` | parziale |  |
+-| `$14EA` | `sub_H066_000014EA` | parziale |  |
+-| `$1640` | `Save_CharacterRecord` | verificato |  |
+-| `$164E` | `sub_H066_0000164E` | parziale |  |
++| `$142E` | `Query_FreeDiskSpace` | parziale | h066.c:276 |
++| `$14DC` | `Check_SaveWritable` | parziale | h066.c:306 |
++| `$14EA` | `sub_H066_000014EA` | parziale | h066.c:297 |
++| `$1640` | `Save_CharacterRecord` | verificato | h066.c:361 |
++| `$164E` | `sub_H066_0000164E` | parziale | h066.c:349 |
+ | `$1B0E` | `Load_CharacterRecord` | verificato |  |
+ | `$1FDA` | `Load_MonsterRecord` | verificato |  |
+ | `$1FE8` | `sub_H066_00001FE8` | parziale |  |
+diff --git a/src_c/readable/h002_dos.c b/src_c/readable/h002_dos.c
+index 24f5e2c..3a3ecb4 100644
+--- a/src_c/readable/h002_dos.c
++++ b/src_c/readable/h002_dos.c
+@@ -15,6 +15,10 @@
+ #if !COK_AMIGA
+ #include <stdio.h>
+ #include <stdlib.h>
++#include <sys/stat.h>
++#if defined(_WIN32)
++#include <direct.h>
++#endif
+ 
+ /*
+  * Host: i nomi AmigaDOS "volume:percorso" (df0:, Disk Two:, ...) diventano
+@@ -127,7 +131,10 @@ cok_bptr dos_lock(const char *name, s32 mode)
+     }
+     f = fopen(host_path(name), "rb");
+     if (f == NULL) {
+-        return 0;
++        struct stat st;
++
++        /* Le directory: fopen non le apre ovunque (Windows). */
++        return stat(host_path(name), &st) == 0 ? 1 : 0;
+     }
+     fclose(f);
+     return 1;
+@@ -156,6 +163,8 @@ u8 dos_info(cok_bptr lock, cok_info_data *info)
+      * scegliere a H001+$0066 il prefisso "" (directory corrente).
+      */
+     info->id_NumBlocks = 0x708;
++    info->id_NumBlocksUsed = 0;
++    info->id_BytesPerBlock = 0x200;
+     return 1;
+ #endif
+ }
+@@ -272,3 +281,41 @@ u8 dos_execute(const char *cmd, cok_bptr in, cok_bptr out)
+     return 1;
+ #endif
+ }
++
++/* PORT H002+$0026 */
++cok_bptr dos_create_dir(const char *name)
++{
++#if COK_AMIGA
++    return CreateDir((STRPTR)name);
++#else
++#if defined(_WIN32)
++    return _mkdir(host_path(name)) == 0 ? 1 : 0;
++#else
++    return mkdir(host_path(name), 0777) == 0 ? 1 : 0;
++#endif
++#endif
++}
++
++/* PORT H002+$004A: DeleteFile, poi neg.b d0. */
++u8 dos_delete_file(const char *name)
++{
++#if COK_AMIGA
++    return (u8)(-(s8)DeleteFile((STRPTR)name));
++#else
++    return (u8)(remove(host_path(name)) == 0 ? 1 : 0);
++#endif
++}
++
++/*
++ * PORT H002+$0070: Examine, poi neg.b d0.  Host: senza volumi ne' nomi
++ * associati ai lock il nome resta vuoto.
++ */
++u8 dos_examine(cok_bptr lock, cok_fib *fib)
++{
++#if COK_AMIGA
++    return (u8)(-(s8)Examine(lock, fib));
++#else
++    fib->fib_FileName[0] = 0;
++    return (u8)(lock != 0 ? 1 : 0);
++#endif
++}
+diff --git a/src_c/readable/h002_dos.h b/src_c/readable/h002_dos.h
+index 82b03ed..a9731ed 100644
+--- a/src_c/readable/h002_dos.h
++++ b/src_c/readable/h002_dos.h
+@@ -7,11 +7,19 @@
+ #if COK_AMIGA
+ typedef BPTR cok_bptr;
+ typedef struct InfoData cok_info_data;
++typedef struct FileInfoBlock cok_fib;
+ #else
+ typedef s32 cok_bptr;
+ typedef struct cok_info_data {
+     s32 id_NumBlocks;          /* $0C nell'InfoData di AmigaDOS */
++    s32 id_NumBlocksUsed;      /* $10 */
++    s32 id_BytesPerBlock;      /* $14 */
+ } cok_info_data;
++/* Solo il campo del FileInfoBlock letto dal gioco (offset 8). */
++typedef struct cok_fib {
++    char fib_FileName[108];
++} cok_fib;
++#define ACCESS_WRITE     (-1)
+ #define ACCESS_READ      (-2)
+ #define MODE_OLDFILE     1005
+ #define MODE_NEWFILE     1006
+@@ -30,5 +38,8 @@ s32      dos_read(cok_bptr file, void *buf, s32 len);   /* H002+$0122 */
+ s32      dos_write(cok_bptr file, const void *buf, s32 len);  /* H002+$01CC */
+ s32      dos_seek(cok_bptr file, s32 pos, s32 mode);    /* H002+$0156 */
+ u8       dos_execute(const char *cmd, cok_bptr in, cok_bptr out); /* H002+$01E8 */
++cok_bptr dos_create_dir(const char *name);        /* H002+$0026 */
++u8       dos_delete_file(const char *name);       /* H002+$004A */
++u8       dos_examine(cok_bptr lock, cok_fib *fib); /* H002+$0070 */
+ 
+ #endif
+diff --git a/src_c/readable/h013.c b/src_c/readable/h013.c
+index 310a23c..803b079 100644
+--- a/src_c/readable/h013.c
++++ b/src_c/readable/h013.c
+@@ -18,6 +18,7 @@
+ #include "h065.h"
+ #include "h028_files.h"
+ #include "h047.h"
++#include "h066.h"
+ #include "h063.h"
+ 
+ /* PORT H013+$0506: link/unlk, nessun effetto. */
+@@ -217,7 +218,7 @@ void main_menu(void)
+             if (items[MM_REMOVE].enabled && g_current_char != NULL &&
+                 h065_3702()) {
+                 if (g_current_char->b[0xEC] < 0x80) {
+-                    h066_1640(g_current_char, 0, "");
++                    save_character(g_current_char, 0, "");
+                     h053_00ca(0, 1);
+                 } else {
+                     h013_2b9a();
+@@ -1249,7 +1250,7 @@ void create_character(void)
+     if (ch->b[0x105] > 0) {
+         add_starting_items(ch);
+     }
+-    h066_1640(ch, 0, "");
++    save_character(ch, 0, "");
+     free_character(&ch);
+     g_current_char = saved;
+ }
+diff --git a/src_c/readable/h028_files.c b/src_c/readable/h028_files.c
+index 76a1a51..9afbc4c 100644
+--- a/src_c/readable/h028_files.c
++++ b/src_c/readable/h028_files.c
+@@ -50,7 +50,7 @@ u8 file_exists(u16 len, const char *name)
+  * copia prima il testo sullo stack; qui si usa direttamente.  I primi due
+  * argomenti non sono letti.
+  */
+-static void disk_request(u16 unused1, u16 unused2, u16 len, char *text)
++void disk_request(u16 unused1, u16 unused2, u16 len, char *text)
+ {
+     struct IntuiText body;
+     struct IntuiText retry;
+@@ -439,3 +439,84 @@ void load_char_screens(void)
+     load_char_screen(9, "charT.LBM", &g_char_screen_t);
+     g_h028_mf9 = 1;
+ }
++
++/* -$F8(a4): FileInfoBlock di H028+$033E. */
++static cok_fib *s_fib;
++
++/*
++ * PORT H028+$033E: in out il nome del volume dei primi 4 caratteri di path
++ * (parametro per valore): Lock e Examine del FileInfoBlock ($104 byte).
++ */
++void get_volume_name(char *out, u16 path_len, const char *path)
++{
++    char head[0x51];                    /* -$52(a5) */
++    cok_bptr lock;                      /* -$56(a5) */
++
++    s_fib = (cok_fib *)exec_alloc_mem(sizeof(cok_fib), COK_MEMF_CLEAR);
++    h026_substr(0x50, head, path_len, path, 0, 4);
++    lock = dos_lock(head, ACCESS_READ);
++    (void)dos_examine(lock, s_fib);
++    dos_unlock(lock);
++    /*
++     * L'originale libera il blocco e poi ne legge il nome (sull'Amiga resta
++     * intatto); qui il nome si copia prima di liberarlo.
++     */
++    h026_copy(0x50, out, 0x6B, s_fib->fib_FileName);
++    exec_free_mem(s_fib, sizeof(cok_fib));
++}
++
++/*
++ * PORT H028+$07E0: copia in out la stringa str (per valore) senza le
++ * occorrenze di pat (confronto senza maiuscole).  L'indice salta la
++ * lunghezza di pat dopo ogni cancellazione e la lunghezza non e'
++ * ricalcolata: come nell'originale l'ultima posizione non e' controllata.
++ */
++static void remove_substring(u16 str_len, const char *str, u16 pat_len,
++                             const char *pat, u16 out_max, char *out)
++{
++    char s[0x100];                      /* copia per valore */
++    char part[0x51];                    /* -$58(a5) */
++    u16 plen;                           /* -$4(a5) */
++    u16 diff;                           /* -$2(a5) */
++    u16 i;                              /* -$6(a5) */
++
++    memcpy(s, str, (size_t)str_len + 1 < sizeof(s) ? (size_t)str_len + 1 :
++                                                     sizeof(s));
++    plen = h026_strlen(pat_len, pat);
++    diff = (u16)(h026_strlen(str_len, s) - plen);
++    i = 0;
++    while (i < diff) {
++        h026_substr(0x50, part, str_len, s, i, plen);
++        if (h026_compare_nocase(0x50, part, pat_len, pat) == 1) {
++            h026_delete(str_len, s, i, plen);
++            i = (u16)(i + plen);
++        } else {
++            ++i;
++        }
++    }
++    h026_copy(out_max, out, str_len, s);
++}
++
++/*
++ * PORT H028+$08F0: nome di file dal nome del personaggio (per valore):
++ * tolti " .*,?/#:;|", al massimo 8 caratteri.
++ */
++void make_file_name(u16 name_len, const char *name, u16 out_max, char *out)
++{
++    static const char bad[10] = { ' ', '.', '*', ',', '?', '/', '#', ':',
++                                  ';', '|' };   /* -$a(a5) */
++    char copy[0x100];
++    char tmp[0x51];                     /* -$5e(a5) */
++    char one[2];                        /* -$b0(a5) */
++    u16 i;                              /* -$c(a5) */
++
++    memcpy(copy, name, (size_t)name_len + 1 < sizeof(copy) ?
++                       (size_t)name_len + 1 : sizeof(copy));
++    one[1] = 0;
++    for (i = 1; i <= 0x0A; ++i) {
++        one[0] = bad[i - 1];
++        remove_substring(name_len, copy, 0x50, one, 0x50, tmp);
++        h026_copy(name_len, copy, 0x50, tmp);
++    }
++    h026_substr(out_max, out, name_len, copy, 0, 8);
++}
+diff --git a/src_c/readable/h028_files.h b/src_c/readable/h028_files.h
+index b4cfdcc..6d72cab 100644
+--- a/src_c/readable/h028_files.h
++++ b/src_c/readable/h028_files.h
+@@ -12,6 +12,12 @@ u8 open_resource_file(u16 name_len, const char *name, u16 msg_len,
+                                                 /* H028+$05FA */
+ extern struct BitMap *g_char_screen_s;  /* -$AA(a4): "charS.LBM" */
+ extern struct BitMap *g_char_screen_t;  /* -$AE(a4): "charT.LBM" */
++void disk_request(u16 unused1, u16 unused2, u16 len, char *text);
++                                                /* H028+$01C6 */
++void get_volume_name(char *out, u16 path_len, const char *path);
++                                                /* H028+$033E */
++void make_file_name(u16 name_len, const char *name, u16 out_max, char *out);
++                                                /* H028+$08F0 */
+ void load_char_screens(void);            /* H028+$0D36 */
+ void free_char_screens(void);            /* H028+$0D74 */
+ void dax_load_block(u16 name_len, const char *name, u16 ext_len,
+diff --git a/src_c/readable/h030.c b/src_c/readable/h030.c
+index c92903c..6d53c84 100644
+--- a/src_c/readable/h030.c
++++ b/src_c/readable/h030.c
+@@ -207,3 +207,22 @@ void show_message(u16 len, const char *text, u16 fg, u16 bg)
+     message_delay();
+     fill_text_cells(0, 0x18, 0, 0x28);
+ }
++
++/*
++ * PORT H030+$028A: messaggio sulla riga $18 (testo per valore) finche' non
++ * si preme un tasto, poi riga cancellata.
++ */
++void show_message_wait(u16 fg, u16 bg, u16 len, const char *text)
++{
++    char copy[0x100];
++    u16 i;
++
++    for (i = 0; i <= len && i < sizeof(copy) - 1; ++i) {
++        copy[i] = text[i];
++    }
++    copy[i] = 0;
++    fill_text_cells(0, 0x18, 0, 0x28);
++    ui_draw_text(0, 0x18, fg, bg, len, copy);
++    wait_for_key();
++    fill_text_cells(0, 0x18, 0, 0x28);
++}
+diff --git a/src_c/readable/h030.h b/src_c/readable/h030.h
+index 5ab46b3..1b680c3 100644
+--- a/src_c/readable/h030.h
++++ b/src_c/readable/h030.h
+@@ -16,7 +16,9 @@ void input_line(u16 prompt_len, const char *prompt, u16 fg, u16 bg,
+                 u16 max_chars, u16 out_max, char *out); /* H030+$0718 */
+ void show_message(u16 len, const char *text, u16 fg, u16 bg);
+                                                         /* H030+$0AD2 */
+-void message_delay(void);               /* H030+$0B4A */
++void message_delay(void);
++void show_message_wait(u16 fg, u16 bg, u16 len, const char *text);
++                                                        /* H030+$028A */               /* H030+$0B4A */
+ void load_gothic_font(void);            /* H030+$0C10 */
+ void free_gothic_font(void);            /* H030+$0C84 */
+ 
+diff --git a/src_c/readable/h066.c b/src_c/readable/h066.c
+index 69f0cf4..13f624e 100644
+--- a/src_c/readable/h066.c
++++ b/src_c/readable/h066.c
+@@ -7,6 +7,12 @@
+ #include "h028_files.h"
+ #include "h029_gfx.h"
+ #include "h035.h"
++#include "h002_dos.h"
++#include "h003_exec.h"
++#include "h008.h"
++#include "h015_runtime.h"
++#include "h026_string.h"
++#include "h030.h"
+ 
+ /* PORT H066+$02F0: link/unlk, nessun effetto. */
+ void h066_init(void)
+@@ -172,3 +178,293 @@ void build_char_icon(u8 recolor)
+     }
+     free_sprite_set(0x0B);
+ }
++
++/* Copia con dbeq: al massimo max + 1 byte, NUL compreso. */
++static void copy_dbeq(char *dst, const char *src, u16 max)
++{
++    u16 i;
++
++    for (i = 0; i <= max; ++i) {
++        dst[i] = src[i];
++        if (src[i] == 0) {
++            break;
++        }
++    }
++}
++
++/* Percorso dei salvataggi (H005+$3CD4, $50 byte). */
++#define SAVE_PATH ((char *)&g_h005[0x3CD4])
++
++/* Lettera iniziale del percorso dei salvataggi in maiuscolo. */
++static u8 save_drive_letter(void)
++{
++    u8 d = (u8)SAVE_PATH[0];
++
++    if (d >= 'a' && d <= 'z') {
++        d = (u8)(d & 0x5F);
++    }
++    return d;
++}
++
++/*
++ * PORT H066+$08F2: procedura annidata: il volume (per valore) seguito da
++ * ":" e' uno dei dischi del gioco ("Disk One:", "Disk Two:", "Disk Three:")?
++ */
++static u8 is_game_disk(const char *volume)
++{
++    char v[0x52];                       /* $c(a5): copia per valore */
++
++    memcpy(v, volume, sizeof(v));
++    h026_append(0x50, v, 1, ":");
++    if (h026_compare_nocase(0x50, v, 9, "Disk One:") == 1 ||
++        h026_compare_nocase(0x50, v, 9, "Disk Two:") == 1 ||
++        h026_compare_nocase(0x50, v, 0x0B, "Disk Three:") == 1) {
++        return 1;
++    }
++    return 0;
++}
++
++/*
++ * PORT H066+$08E4 (corpo a $0982): se $24E9 = 0, si assicura che la
++ * directory dei salvataggi sia raggiungibile: chiede di togliere i dischi
++ * del gioco (con create), di inserire il disco dei salvataggi e la crea
++ * (con create) finche' Lock non riesce.  Restituisce sempre 1.
++ */
++static u8 ensure_save_dir(u8 create)
++{
++    char volume[0x52];                  /* -$ac(a5) */
++    char text[0x52];                    /* -$5a(a5) */
++    s32 mode;                           /* -$4(a5) */
++    cok_bptr lock;                      /* -$8(a5) */
++
++    mode = create ? -1 : -2;
++    if (H005_B(0x24E9) != 0) {
++        return 1;
++    }
++    do {
++        get_volume_name(volume, 0x50, SAVE_PATH);
++        while (create && is_game_disk(volume)) {
++            h026_copy(0x50, text, 0x11, "Put save disk in ");
++            h026_append(0x50, text, 0x50, SAVE_PATH);
++            h026_append(0x50, text, 1, ":");
++            disk_request(0x0E, 0, 0x50, text);
++            get_volume_name(volume, 0x50, SAVE_PATH);
++        }
++        lock = dos_lock(SAVE_PATH, mode);
++        if (lock == 0) {
++            if (save_drive_letter() == 'D') {
++                copy_dbeq(text, "Is your save disk in drive ", 0x50);
++                h026_substr(0x50, volume, 0x50, SAVE_PATH, 0, 4);
++                h026_append(0x50, text, 0x50, volume);
++                h026_append(0x50, text, 2, " ?");
++                if (ask_yes_no(0x50, text, 0x0D, 0x0A, 0x0F) != 'Y') {
++                    h026_copy(0x50, text, 0x11, "Put save disk in ");
++                    h026_append(0x50, text, 0x50, volume);
++                    disk_request(0x0E, 0, 0x50, text);
++                }
++            }
++            if (create) {
++                lock = dos_create_dir(SAVE_PATH);
++            }
++        }
++    } while (lock == 0);
++    dos_unlock(lock);
++    return 1;
++}
++
++/*
++ * PORT H066+$142E: byte liberi sul volume di path (per valore):
++ * (blocchi - blocchi usati) * byte per blocco, da Info.
++ */
++static u32 free_disk_space(u16 path_len, const char *path)
++{
++    cok_info_data *info;                /* -$8(a5) */
++    cok_bptr lock;                      /* -$4(a5) */
++    u32 bytes;                          /* -$e(a5) */
++
++    (void)path_len;
++    info = (cok_info_data *)exec_alloc_mem(sizeof(cok_info_data),
++                                           0x10001UL);
++    lock = dos_lock(path, ACCESS_READ);
++    (void)dos_info(lock, info);
++    bytes = h015_mulu32((u32)(info->id_NumBlocks - info->id_NumBlocksUsed),
++                        (u32)info->id_BytesPerBlock);
++    exec_free_mem(info, sizeof(cok_info_data));
++    dos_unlock(lock);
++    return bytes;
++}
++
++/* PORT H066+$14EA: procedura annidata: percorso del file di prova. */
++static void test_file_path(char *path)
++{
++    h026_copy(0x50, path, 0x50, SAVE_PATH);
++    h026_append(0x50, path, 1, "/");
++    h026_append(0x50, path, 0x0C, "testfilename");
++}
++
++/*
++ * PORT H066+$14DC (Check_SaveWritable): prova a creare un file nella
++ * directory dei salvataggi.  Sul dischetto ("D...") ripete chiedendo il
++ * disco; altrimenti messaggio d'errore e 1.  Se riesce lo cancella e 0.
++ */
++static u8 check_save_writable(void)
++{
++    char path[0x52];                    /* -$58(a5) */
++    char head[0x52];                    /* -$aa(a5) */
++    cok_bptr file;                      /* -$6(a5) */
++
++    for (;;) {
++        test_file_path(path);
++        file = dos_open(path, MODE_NEWFILE);
++        if (file == 0) {
++            if (save_drive_letter() == 'D') {
++                h026_copy(0x50, path, 0x11, "Put save disk in ");
++                h026_substr(0x50, head, 0x50, SAVE_PATH, 0, 4);
++                h026_append(0x50, path, 0x50, head);
++                show_message_wait(0x0E, 0, 0x50, path);
++            } else {
++                show_message_wait(0x0E, 0, 0x1D,
++                                  "Unexpected error during save!");
++                dos_close(file);
++                return 1;
++            }
++        }
++        if (file != 0) {
++            break;
++        }
++    }
++    dos_close(file);
++    test_file_path(path);
++    (void)dos_delete_file(path);
++    return 0;
++}
++
++/* Stato di H066+$1640 condiviso con la procedura annidata. */
++typedef struct SaveFrame {
++    char path[0x52];                    /* -$58(a5) */
++    char base[0x2A];                    /* -$82(a5) */
++} SaveFrame;
++
++/*
++ * PORT H066+$164E: procedura annidata: path = percorso dei salvataggi +
++ * "/" + nome di base + estensione ext (per valore).
++ */
++static void save_file_path(SaveFrame *f, u16 ext_len, const char *ext)
++{
++    h026_copy(0x28, f->path, 0x50, SAVE_PATH);
++    h026_append(0x28, f->path, 1, "/");
++    h026_append(0x28, f->path, 0x28, f->base);
++    h026_append(0x28, f->path, ext_len, ext);
++}
++
++/*
++ * PORT H066+$1640 (Save_CharacterRecord, corpo a $16EC): salva il
++ * personaggio c: nome.who (o name.sav se name non e' vuoto) con il record
++ * di $1AA byte, nome.swg con gli oggetti ($48 byte ciascuno) e nome.fx con
++ * gli effetti ($0A byte).  Prima controlla la directory, lo spazio libero
++ * ("Lose character?" se manca) e chiede se sovrascrivere un .who esistente
++ * o un nome nuovo, che diventa anche il nome del personaggio.
++ *
++ * I campi puntatore del record e dei nodi (+$E8, +$150.., successivi)
++ * nell'originale finiscono nel file con l'indirizzo in memoria; qui sono
++ * scritti a 0 (il caricamento ricostruisce le liste).
++ */
++void save_character(Character *c, u16 name_len, const char *name)
++{
++    SaveFrame f;
++    char ext[5];                        /* -$88(a5) */
++    char input[0x2A];                   /* -$2e(a5) */
++    char drive[0x2A];                   /* path, -$58(a5) */
++    char name_copy[0x100];              /* parametro per valore */
++    CokItem *it;                        /* -$8e(a5) */
++    CokEffect *ef;                      /* -$92(a5) */
++    cok_bptr file;                      /* -$4(a5) */
++    u32 size;                           /* -$b4(a5) */
++    u8 key;                             /* -$89(a5) */
++    u8 special;                         /* -$b9(a5) */
++
++    memcpy(name_copy, name, (size_t)name_len + 1);
++    H005_B(0x24E9) = 0;
++    do {
++        if (!ensure_save_dir(1)) {
++            return;
++        }
++        size = 0x1AA;
++        for (it = c->items; it != NULL; it = it->next) {
++            size += 0x48;
++        }
++        for (ef = c->effects; ef != NULL; ef = ef->next) {
++            size += 0x0A;
++        }
++        key = 'O';
++        if (save_drive_letter() == 'D') {
++            copy_dbeq(drive, "df0:", 0x28);
++        } else {
++            copy_dbeq(drive, "dh0:", 0x28);
++        }
++        if (free_disk_space(0x28, drive) < size) {
++            show_message_wait(0x0E, 0, 0x22,
++                              "Can't save.  No room on this disk.");
++            key = ui_request_choice(0x10, "Lose character? ", 0x14,
++                                    "Ok, try another disk", 0x0D, 0x0A,
++                                    0x0F, 0, 0, &special);
++        }
++    } while (key != 'O');
++
++    if (name_copy[0] == 0) {
++        h026_copy(4, ext, 4, ".who");
++        make_file_name(0x0F, (const char *)c->b, 0x28, f.base);
++    } else {
++        h026_copy(4, ext, 4, ".sav");
++        h026_copy(0x28, f.base, name_len, name_copy);
++    }
++    if (check_save_writable()) {
++        return;
++    }
++    key = 'N';
++    save_file_path(&f, 4, ext);
++    /*
++     * Dopo la richiesta del nome nuovo l'originale ricontrolla l'esistenza
++     * su f.path, che ora contiene la domanda "Overwrite ...": il controllo
++     * non trova il file e si esce dal ciclo.
++     */
++    while (key == 'N' && name_copy[0] == 0 &&
++           file_exists(0x28, f.path)) {
++        copy_dbeq(f.path, "Overwrite ", 0x28);
++        h026_append(0x28, f.path, 0x28, f.base);
++        h026_append(0x28, f.path, 2, "? ");
++        key = ask_yes_no(0x28, f.path, 0x0E, 0x0A, 0x0F);
++        if (key == 'N') {
++            f.base[0] = 0;
++            while (f.base[0] == 0) {
++                input_line(0x0F, "New file name: ", 0x0A, 0, 8, 0x28,
++                           input);
++                h026_copy(0x28, f.base, 0x28, input);
++                h026_copy(0x0F, (char *)c->b, 0x28, input);
++            }
++        }
++    }
++    save_file_path(&f, 4, ext);
++    file = dos_open(f.path, MODE_NEWFILE);
++    (void)dos_write(file, c->b, 0x1AA);
++    dos_close(file);
++
++    save_file_path(&f, 4, ".swg");
++    (void)dos_delete_file(f.path);
++    if (c->items != NULL) {
++        file = dos_open(f.path, MODE_NEWFILE);
++        for (it = c->items; it != NULL; it = it->next) {
++            (void)dos_write(file, it->b, 0x48);
++        }
++        dos_close(file);
++    }
++    save_file_path(&f, 3, ".fx");
++    (void)dos_delete_file(f.path);
++    if (c->effects != NULL) {
++        file = dos_open(f.path, MODE_NEWFILE);
++        for (ef = c->effects; ef != NULL; ef = ef->next) {
++            (void)dos_write(file, ef->b, 0x0A);
++        }
++        dos_close(file);
++    }
++}
+diff --git a/src_c/readable/h066.h b/src_c/readable/h066.h
+index 67d0849..6e026e5 100644
+--- a/src_c/readable/h066.h
++++ b/src_c/readable/h066.h
+@@ -2,8 +2,10 @@
+ #ifndef COK_H066_H
+ #define COK_H066_H
+ 
+-#include "cok.h"
++#include "character.h"
+ 
+ void build_char_icon(u8 recolor);       /* H066+$0C34 */
++void save_character(Character *c, u16 name_len, const char *name);
++                                        /* H066+$1640 */
+ 
+ #endif
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index 868349e..a8134aa 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -236,7 +236,6 @@ void h013_31e0(void) { cok_unported("H013+$31E0"); }
+ void h013_4508(void) { cok_unported("H013+$4508"); }
+ u8 h065_3702(void) { cok_unported("H065+$3702"); return 0; }
+ void h065_196e(u8 *redraw) { (void)redraw; cok_unported("H065+$196E"); }
+-void h066_1640(void *character, u16 a, const char *text) { (void)character; (void)a; (void)text; cok_unported("H066+$1640"); }
+ void h053_00ca(u8 a, u8 b) { (void)a; (void)b; cok_unported("H053+$00CA"); }
+ void h066_291e(void) { cok_unported("H066+$291E"); }
+ void h066_3000(void) { cok_unported("H066+$3000"); }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index d9bd7ec..85f5106 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -207,7 +207,6 @@ void h013_31e0(void);
+ void h013_4508(void);
+ u8   h065_3702(void);
+ void h065_196e(u8 *redraw);
+-void h066_1640(void *character, u16 a, const char *text);
+ void h053_00ca(u8 a, u8 b);
+ void h066_291e(void);
+ void h066_3000(void);
+-- 
+2.43.0
+

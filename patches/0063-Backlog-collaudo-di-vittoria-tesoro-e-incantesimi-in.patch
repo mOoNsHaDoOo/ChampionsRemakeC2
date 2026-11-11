@@ -1,0 +1,46 @@
+From f5bbc1a47b20e81c04810a726145f1960a015651 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 11 Nov 2026 13:11:07 +0000
+Subject: [PATCH 63/65] Backlog: collaudo di vittoria, tesoro e incantesimi in
+ combattimento; analisi dell'oggetto Plate Mail 3 Spells
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/backlog.md | 23 +++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
+
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index c823a81..86c44dc 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -2740,3 +2740,26 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
+   - ctest 8/8.
+ 
+ ---
++
++## v55: collaudo dei percorsi mai provati (nessuna modifica al codice)
++
++**Vittoria in battaglia** (battaglia della carovana; gancio di prova temporaneo, non committato: ogni colpo abbatte un mostro, il personaggio non subisce danni; L in Auto)
++- **Fine della battaglia:** "Continue Battle:" compare quando i nemici rimasti sono 0 ($2A1D, H059+$15EE); con No la battaglia finisce.
++- **Esperienza:** "The party has won. Each character receives 652 experience points."
++- **Tesoro:** schermata con l'immagine e "Steel 20". Take porta a "Select type of coin" e "How much steel will you take?"; poi Pool e Share; il menu diventa "View Pool Exit" quando non resta nulla; View e Items funzionano.
++- **ASan:** pulito.
++
++**Incantesimi in combattimento**
++- **Percorso:** al campo Memorize (3 incantesimi), Rest, poi la battaglia: il menu diventa "Move View Aim Use Cast Done".
++- **Lancio:** Cast, scelta di Resist Cold, mira (Target); "(Casting)", "L casts a spell", "Spell : Resist Cold", "L is cold-resistant".
++- **ASan:** pulito.
++
++**Da chiarire: l'oggetto "Plate Mail 3 Spells"**
++- **I file:** L.swg, BOB.swg e TAS.swg (dati di prova copiati il 10/11, non dai dischi originali) hanno ciascuno un solo oggetto, una Plate Mail (nome $2F/$24, peso 450, pronta) con sopra campi di pergamena: tipo $27, +$32 = $66 ("3 Spells"), incantesimi 01 03.
++- **KNT.swg** (salvato dal port il 10/11 alle 20:33) ha un solo oggetto, la Plate Mail di tipo $24 con incantesimi 02 23.
++- **Confronto:** i personaggi pronti CHRDATA1..6 hanno oggetti coerenti, e la creazione (H013+$07B2) da' tre oggetti (Plate Mail, spada, scudo) a chi ha livelli in +$105.
++- **Verifiche:** H013+$07B2, il salvataggio (H066+$1640) e il caricamento (H066+$1B0E) portati corrispondono all'asm. Nell'asm nessuna routine scrive tipo $27 o +$32 in un oggetto esistente: il tipo si scrive solo nella creazione degli oggetti iniziali, nella generazione casuale (H067+$1292, oggetto nuovo) e nella lettura del tesoro da file (H012).
++- **Ipotesi:** quei personaggi sono stati prodotti in sessioni di prova precedenti da una versione del port con un errore poi corretto, oppure da un gancio di prova.
++- **Da fare:** creare un personaggio nuovo con la build attuale (cavaliere, che riceve la Plate Mail), salvarlo e controllare il .swg; confronto con salvataggi creati dal gioco originale.
++
++---
+-- 
+2.43.0
+

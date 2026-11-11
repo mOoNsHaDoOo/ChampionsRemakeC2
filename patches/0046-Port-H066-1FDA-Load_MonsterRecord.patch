@@ -1,0 +1,428 @@
+From 0b5022a5e59210b3ae96beeef580db841c18e094 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 11 Nov 2026 07:59:29 +0000
+Subject: [PATCH 46/65] Port H066+$1FDA Load_MonsterRecord
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md | 120 ++++++++++++++--------------
+ src_c/readable/backlog.md     |  30 +++++++
+ src_c/readable/h061.c         |   3 +-
+ src_c/readable/h066.c         | 144 ++++++++++++++++++++++++++++++++++
+ src_c/readable/h066.h         |   1 +
+ src_c/readable/unported.c     |   1 -
+ src_c/readable/unported.h     |   1 -
+ 7 files changed, 237 insertions(+), 63 deletions(-)
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index e938b76..b05fb6e 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **897 / 1112**.
++Routine portate: **899 / 1112**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -72,7 +72,7 @@ Routine portate: **897 / 1112**.
+ | H063 | 16496 | 52 | 52 |
+ | H064 | 6460 | 28 | 28 |
+ | H065 | 14268 | 27 | 27 |
+-| H066 | 13840 | 27 | 23 |
++| H066 | 13840 | 27 | 25 |
+ | H067 | 9820 | 22 | 12 |
+ | H068 | 5788 | 14 | 14 |
+ | H069 | 232 | 3 | 3 |
+@@ -1034,41 +1034,41 @@ Routine portate: **897 / 1112**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$15C2` | `module_init_H061` | parziale | h061.c:35 |
++| `$15C2` | `module_init_H061` | parziale | h061.c:36 |
+ | `$162A` | `trampoline_H061_1F12` | parziale |  |
+-| `$162E` | `sub_H061_0000162E` | parziale | h061.c:46 |
+-| `$1670` | `ECL_ReadOperands` | verificato | h061.c:448 |
+-| `$184E` | `ECL_EvaluateOperand` | parziale | h061.c:500 |
+-| `$1928` | `ECL_ResetExecution` | verificato | h061.c:636 |
+-| `$1ACC` | `ECL_LoadProgram` | verificato | h061.c:686 |
+-| `$1BD6` | `sub_H061_00001BD6` | parziale | h061.c:713 |
+-| `$1C42` | `sub_H061_00001C42` | parziale | h061.c:727 |
+-| `$1D20` | `sub_H061_00001D20` | parziale | h061.c:759 |
+-| `$1D6E` | `sub_H061_00001D6E` | parziale | h061.c:770 |
+-| `$1F12` | `sub_H061_00001F12` | parziale | h061.c:56 |
+-| `$1F3C` | `ECL_DecodeAddress` | verificato | h061.c:62 |
+-| `$1F6A` | `trampoline_H061_1F9A` | parziale | h061.c:68 |
+-| `$1FA4` | `sub_H061_00001FA4` | parziale | h061.c:78 |
+-| `$202C` | `sub_H061_0000202C` | parziale | h061.c:101 |
+-| `$208E` | `sub_H061_0000208E` | parziale | h061.c:121 |
+-| `$27E2` | `sub_H061_000027E2` | parziale | h061.c:282 |
+-| `$2BAA` | `sub_H061_00002BAA` | parziale | h061.c:368 |
+-| `$2E04` | `sub_H061_00002E04` | parziale | h061.c:232 |
+-| `$3012` | `sub_H061_00003012` | parziale | h061.c:1145 |
+-| `$3244` | `sub_H061_00003244` | parziale | h061.c:530 |
+-| `$33F0` | `sub_H061_000033F0` | parziale | h061.c:582 |
+-| `$35E2` | `sub_H061_000035E2` | parziale | h061.c:823 |
+-| `$36E6` | `sub_H061_000036E6` | parziale | h061.c:850 |
+-| `$3860` | `sub_H061_00003860` | parziale | h061.c:1203 |
+-| `$3904` | `sub_H061_00003904` | parziale | h061.c:896 |
+-| `$3A0A` | `sub_H061_00003A0A` | parziale | h061.c:929 |
+-| `$3AAC` | `sub_H061_00003AAC` | parziale | h061.c:954 |
+-| `$3B4E` | `trampoline_H061_3BEE` | parziale | h061.c:974 |
++| `$162E` | `sub_H061_0000162E` | parziale | h061.c:47 |
++| `$1670` | `ECL_ReadOperands` | verificato | h061.c:449 |
++| `$184E` | `ECL_EvaluateOperand` | parziale | h061.c:501 |
++| `$1928` | `ECL_ResetExecution` | verificato | h061.c:637 |
++| `$1ACC` | `ECL_LoadProgram` | verificato | h061.c:687 |
++| `$1BD6` | `sub_H061_00001BD6` | parziale | h061.c:714 |
++| `$1C42` | `sub_H061_00001C42` | parziale | h061.c:728 |
++| `$1D20` | `sub_H061_00001D20` | parziale | h061.c:760 |
++| `$1D6E` | `sub_H061_00001D6E` | parziale | h061.c:771 |
++| `$1F12` | `sub_H061_00001F12` | parziale | h061.c:57 |
++| `$1F3C` | `ECL_DecodeAddress` | verificato | h061.c:63 |
++| `$1F6A` | `trampoline_H061_1F9A` | parziale | h061.c:69 |
++| `$1FA4` | `sub_H061_00001FA4` | parziale | h061.c:79 |
++| `$202C` | `sub_H061_0000202C` | parziale | h061.c:102 |
++| `$208E` | `sub_H061_0000208E` | parziale | h061.c:122 |
++| `$27E2` | `sub_H061_000027E2` | parziale | h061.c:283 |
++| `$2BAA` | `sub_H061_00002BAA` | parziale | h061.c:369 |
++| `$2E04` | `sub_H061_00002E04` | parziale | h061.c:233 |
++| `$3012` | `sub_H061_00003012` | parziale | h061.c:1146 |
++| `$3244` | `sub_H061_00003244` | parziale | h061.c:531 |
++| `$33F0` | `sub_H061_000033F0` | parziale | h061.c:583 |
++| `$35E2` | `sub_H061_000035E2` | parziale | h061.c:824 |
++| `$36E6` | `sub_H061_000036E6` | parziale | h061.c:851 |
++| `$3860` | `sub_H061_00003860` | parziale | h061.c:1204 |
++| `$3904` | `sub_H061_00003904` | parziale | h061.c:897 |
++| `$3A0A` | `sub_H061_00003A0A` | parziale | h061.c:930 |
++| `$3AAC` | `sub_H061_00003AAC` | parziale | h061.c:955 |
++| `$3B4E` | `trampoline_H061_3BEE` | parziale | h061.c:975 |
+ | `$3C4C` | `sub_H061_00003C4C` | parziale |  |
+-| `$3DBE` | `sub_H061_00003DBE` | parziale | h061.c:1019 |
+-| `$3E80` | `ECL_SkipInstruction` | verificato | h061.c:1046 |
+-| `$3FA8` | `sub_H061_00003FA8` | parziale | h061.c:1070 |
+-| `$4092` | `sub_H061_00004092` | parziale | h061.c:1104 |
++| `$3DBE` | `sub_H061_00003DBE` | parziale | h061.c:1020 |
++| `$3E80` | `ECL_SkipInstruction` | verificato | h061.c:1047 |
++| `$3FA8` | `sub_H061_00003FA8` | parziale | h061.c:1071 |
++| `$4092` | `sub_H061_00004092` | parziale | h061.c:1105 |
+ 
+ ### H062
+ 
+@@ -1233,33 +1233,33 @@ Routine portate: **897 / 1112**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$02F0` | `module_init_H066` | parziale | h066.c:25 |
+-| `$03D0` | `trampoline_H066_0780` | parziale | h066.c:598 |
+-| `$03DE` | `sub_H066_000003DE` | parziale | h066.c:503 |
+-| `$0852` | `sub_H066_00000852` | parziale | h066.c:487 |
+-| `$08E4` | `trampoline_H066_0B88` | parziale | h066.c:236 |
+-| `$08F2` | `sub_H066_000008F2` | parziale | h066.c:218 |
+-| `$0BAC` | `sub_H066_00000BAC` | parziale | h066.c:36 |
+-| `$0C34` | `trampoline_H066_0E5A` | parziale | h066.c:106 |
+-| `$0C42` | `sub_H066_00000C42` | parziale | h066.c:48 |
+-| `$0D2A` | `sub_H066_00000D2A` | parziale | h066.c:75 |
+-| `$0DEA` | `sub_H066_00000DEA` | parziale | h066.c:94 |
+-| `$1312` | `Delete_CharacterSidecarFiles` | verificato | h066.c:771 |
+-| `$142E` | `Query_FreeDiskSpace` | parziale | h066.c:284 |
+-| `$14DC` | `Check_SaveWritable` | parziale | h066.c:314 |
+-| `$14EA` | `sub_H066_000014EA` | parziale | h066.c:305 |
+-| `$1640` | `Save_CharacterRecord` | verificato | h066.c:369 |
+-| `$164E` | `sub_H066_0000164E` | parziale | h066.c:357 |
+-| `$1B0E` | `Load_CharacterRecord` | verificato | h066.c:621 |
+-| `$1FDA` | `Load_MonsterRecord` | verificato |  |
+-| `$1FE8` | `sub_H066_00001FE8` | parziale |  |
++| `$02F0` | `module_init_H066` | parziale | h066.c:27 |
++| `$03D0` | `trampoline_H066_0780` | parziale | h066.c:600 |
++| `$03DE` | `sub_H066_000003DE` | parziale | h066.c:505 |
++| `$0852` | `sub_H066_00000852` | parziale | h066.c:489 |
++| `$08E4` | `trampoline_H066_0B88` | parziale | h066.c:238 |
++| `$08F2` | `sub_H066_000008F2` | parziale | h066.c:220 |
++| `$0BAC` | `sub_H066_00000BAC` | parziale | h066.c:38 |
++| `$0C34` | `trampoline_H066_0E5A` | parziale | h066.c:108 |
++| `$0C42` | `sub_H066_00000C42` | parziale | h066.c:50 |
++| `$0D2A` | `sub_H066_00000D2A` | parziale | h066.c:77 |
++| `$0DEA` | `sub_H066_00000DEA` | parziale | h066.c:96 |
++| `$1312` | `Delete_CharacterSidecarFiles` | verificato | h066.c:773 |
++| `$142E` | `Query_FreeDiskSpace` | parziale | h066.c:286 |
++| `$14DC` | `Check_SaveWritable` | parziale | h066.c:316 |
++| `$14EA` | `sub_H066_000014EA` | parziale | h066.c:307 |
++| `$1640` | `Save_CharacterRecord` | verificato | h066.c:371 |
++| `$164E` | `sub_H066_0000164E` | parziale | h066.c:359 |
++| `$1B0E` | `Load_CharacterRecord` | verificato | h066.c:623 |
++| `$1FDA` | `Load_MonsterRecord` | verificato | h066.c:1109 |
++| `$1FE8` | `sub_H066_00001FE8` | parziale | h066.c:1097 |
+ | `$276E` | `trampoline_H066_27E4` | parziale |  |
+-| `$27EE` | `sub_H066_000027EE` | parziale | h066.c:732 |
+-| `$291E` | `Load_GameSlot` | verificato | h066.c:947 |
++| `$27EE` | `sub_H066_000027EE` | parziale | h066.c:734 |
++| `$291E` | `Load_GameSlot` | verificato | h066.c:949 |
+ | `$292C` | `sub_H066_0000292C` | parziale |  |
+-| `$3000` | `Save_GameSlot` | verificato | h066.c:849 |
+-| `$300E` | `sub_H066_0000300E` | parziale | h066.c:796 |
+-| `$30A8` | `sub_H066_000030A8` | parziale | h066.c:820 |
++| `$3000` | `Save_GameSlot` | verificato | h066.c:851 |
++| `$300E` | `sub_H066_0000300E` | parziale | h066.c:798 |
++| `$30A8` | `sub_H066_000030A8` | parziale | h066.c:822 |
+ 
+ ### H067
+ 
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index e270a47..29ac769 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -2202,3 +2202,33 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
+ **Prossimo passo:** H066+$1FDA (incontro all'aperto), poi Encamp (H057+$2F3A) e Cast (H057+$0C04).
+ 
+ ---
++
++## 2026-11-11 (cok-port-39)
++
++**Richiesta:** "ok compila su sasc, procedi con H066+$1FDA".
++
++**Portato: H066+$1FDA (Load_MonsterRecord)** — `load_monster_record(id, c)`, corpo a $206A, chiamato da LOAD MONSTER tramite `load_monster` di H061.
++- **Record del mostro (MONnCHA.dax), in formato PC:**
++  - nome (15 caratteri);
++  - 15 blocchi copiati in posizioni spostate;
++  - sei byte con segno allargati a word (+$58, +$116, +$118, +$18A, +$1A4, +$1A6);
++  - word e long girati (+$62, +$11E, +$13C, +$F0..+$FC, +$18C).
++- **Puntatori:** quelli del record (effetti, oggetti, successivo, blocco del turno) vengono azzerati.
++- **Errore:** se il record manca, "Unable to load monster" e uscita.
++- **Effetti (MONnSPC.dax):** voci da 9 byte.
++- **Oggetti (MONnITM.dax):** record da $3F byte, convertiti come nel comando TREASURE.
++- **$24A4:** vale 1 durante il caricamento di effetti e oggetti.
++- **Aiutante:** $1FE8, nome del file "MON" + disco + parte.
++
++**Dove mi discosto dall'asm (documentato nel codice)**
++- **Oggetti pronti (+$154..):** nell'originale restano i byte del file; qui sono vuoti.
++
++**Prove con i dati veri** (binario ASan di test, non committato)
++- **Mostro caricato:** dopo l'immagine della carovana, LOAD MONSTER carica il mostro 1, "BAAZ" (il draconico), con un effetto.
++- **Arresto:** il gioco arriva al combattimento e si ferma su H096+$02CE (IA del combattimento, non portata).
++- **ASan:** pulito.
++- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
++
++**Prossimo passo:** le routine di H096 usate dal combattimento (IA dei mostri), poi Encamp (H057+$2F3A) e Cast (H057+$0C04).
++
++---
+diff --git a/src_c/readable/h061.c b/src_c/readable/h061.c
+index 5bce4bd..3bbc9cc 100644
+--- a/src_c/readable/h061.c
++++ b/src_c/readable/h061.c
+@@ -2,6 +2,7 @@
+ #include "h061.h"
+ #include "globals.h"
+ #include "unported.h"
++#include "h066.h"
+ #include "h042_seq.h"
+ #include "h060.h"
+ #include "h026_string.h"
+@@ -718,7 +719,7 @@ void load_monster(u8 idx, Character **out, CokItem **items,
+ {
+     *out = NULL;
+     *out = (Character *)exec_alloc_mem(sizeof(Character), COK_MEMF_CLEAR);
+-    h066_1fda(*out, idx);
++    load_monster_record(idx, *out);
+     *items = (*out)->items;
+     *effects = (*out)->effects;
+ }
+diff --git a/src_c/readable/h066.c b/src_c/readable/h066.c
+index bd8c5fe..4ef2c5f 100644
+--- a/src_c/readable/h066.c
++++ b/src_c/readable/h066.c
+@@ -18,6 +18,8 @@
+ #include "h073.h"
+ #include "h045.h"
+ #include "h014.h"
++#include "h031.h"
++#include "h010_input.h"
+ #include "unported.h"
+ #include "h042_seq.h"
+ #include "h011.h"
+@@ -1075,3 +1077,145 @@ void load_game(void)
+     H005_B(0x3DE2) = H005_B(0x3DE3);
+     H005_B(0x3DE3) = 0;
+ }
++
++/* Copie del record PC del mostro: (sorgente, destinazione, byte). */
++static const u16 s_monster_copy[][3] = {
++    { 0x010, 0x010, 0x48 }, { 0x059, 0x05A, 0x07 }, { 0x060, 0x062, 0x03 },
++    { 0x063, 0x066, 0x6B }, { 0x0CE, 0x0D2, 0x07 }, { 0x0D5, 0x0DA, 0x3C },
++    { 0x113, 0x11A, 0x03 }, { 0x116, 0x11E, 0x0B }, { 0x121, 0x12A, 0x05 },
++    { 0x126, 0x130, 0x05 }, { 0x12B, 0x136, 0x05 }, { 0x130, 0x13C, 0x09 },
++    { 0x139, 0x146, 0x43 }, { 0x17D, 0x18C, 0x18 }, { 0x197, 0x1A8, 0x02 }
++};
++
++/* Byte con segno del record PC in una word del personaggio: (sorgente, destinazione). */
++static const u16 s_monster_signed[][2] = {
++    { 0x058, 0x058 }, { 0x111, 0x116 }, { 0x112, 0x118 }, { 0x17C, 0x18A },
++    { 0x195, 0x1A4 }, { 0x196, 0x1A6 }
++};
++
++/*
++ * PORT H066+$1FE8: procedura annidata: nome del file del mostro
++ * "MON" + disco + parte (CHA, SPC, ITM).
++ */
++static void monster_file_name(char *name, const char *num, u16 part_len,
++                              const char *part)
++{
++    h026_copy(0x50, name, 3, "MON");
++    h026_append(0x50, name, 1, num);
++    h026_append(0x50, name, part_len, part);
++}
++
++/*
++ * PORT H066+$1FDA (Load_MonsterRecord, corpo a $206A): carica in c il
++ * mostro id dai blocchi di MONnCHA.dax (record PC: campi spostati, byte
++ * con segno allargati a word, word e long girati), MONnSPC.dax (effetti
++ * da 9 byte) e MONnITM.dax (oggetti da $3F byte).  Senza il record:
++ * "Unable to load monster" e uscita.  I puntatori del record (effetti,
++ * oggetti, successivo, blocco del turno) vengono azzerati come
++ * nell'originale; gli oggetti pronti (+$154..), che nell'originale
++ * restano i byte del file, qui sono vuoti.
++ */
++void load_monster_record(u16 id, Character *c)
++{
++    char num[0x12];                     /* -$66(a5) */
++    char name[0x52];                    /* -$54(a5) */
++    u16 size = 0;                       /* -$56(a5) */
++    u8 *data = NULL;                    /* -$5A(a5) */
++    u16 pos;                            /* -$5C(a5) */
++    CokItem *it;                        /* -$60(a5) */
++    CokEffect *fx;                      /* -$64(a5) */
++    u8 i;                               /* -$1(a5) */
++
++    format_number(1, num, (s32)H005_B(0x246E), 0, 0x0A, 1, '0');
++    monster_file_name(name, num, 3, "CHA");
++    dax_load_block(0x50, name, 4, ".dax", id, &size, &data);
++    if (size == 0) {
++        error_message(5, "cdisk", H005_B(0x246E));
++        error_message(0x50, name, id);
++        show_message_wait(0x0F, 0, 0x16, "Unable to load monster");
++        quit_game();
++    }
++    exec_copy_mem(data + 1, c->b, 0x0F);
++    c->b[0x0F] = 0;
++    for (i = 0; i < sizeof(s_monster_copy) / sizeof(s_monster_copy[0]); ++i) {
++        exec_copy_mem(data + s_monster_copy[i][0], c->b + s_monster_copy[i][1],
++                      s_monster_copy[i][2]);
++    }
++    for (i = 0; i < sizeof(s_monster_signed) / sizeof(s_monster_signed[0]); ++i) {
++        CH_PUTW(c, s_monster_signed[i][1],
++                (u16)h031_signed_byte(data[s_monster_signed[i][0]]));
++    }
++    h031_swap_long(c->b + 0x11E);
++    h031_swap_word(c->b + 0x62);
++    h031_swap_word(c->b + 0x13C);
++    for (i = 0; i <= 6; ++i) {
++        h031_swap_word(c->b + 0xF0 + i * 2);
++    }
++    h031_swap_word(c->b + 0x18C);
++    memset(c->b + 0x150, 0, 4);
++    memset(c->b + 0xE8, 0, 4);
++    memset(c->b + 0x18E, 0, 4);
++    memset(c->b + 0x192, 0, 4);
++    c->items = NULL;
++    c->effects = NULL;
++    c->next = NULL;
++    c->block_192 = NULL;
++    memset(c->readied, 0, sizeof(c->readied));
++    exec_free_mem(data, size);
++
++    H005_B(0x24A4) = 1;
++    monster_file_name(name, num, 3, "SPC");
++    dax_load_block(0x50, name, 4, ".dax", id, &size, &data);
++    if (size != 0) {
++        pos = 0;
++        c->effects = (CokEffect *)exec_alloc_mem(sizeof(CokEffect),
++                                                 COK_MEMF_CLEAR);
++        fx = c->effects;
++        do {
++            exec_copy_mem(data + pos, fx->b, 1);
++            exec_copy_mem(data + pos + 1, fx->b + 2, 8);
++            h031_swap_word(fx->b + 2);
++            memset(fx->b + 6, 0, 4);
++            fx->next = NULL;
++            pos = (u16)(pos + 9);
++            if (pos < (u16)(size - 0x100)) {
++                fx->next = (CokEffect *)exec_alloc_mem(sizeof(CokEffect),
++                                                       COK_MEMF_CLEAR);
++                fx = fx->next;
++            }
++        } while (pos < (u16)(size - 0x100));
++        exec_free_mem(data, size);
++    }
++
++    monster_file_name(name, num, 3, "ITM");
++    dax_load_block(0x50, name, 4, ".dax", id, &size, &data);
++    if (size != 0) {
++        pos = 0;
++        c->items = (CokItem *)exec_alloc_mem(sizeof(CokItem), COK_MEMF_CLEAR);
++        it = c->items;
++        do {
++            exec_copy_mem(data + pos, it->b, 0x28);
++            it->b[0x28] = 0;
++            exec_copy_mem(data + pos + 0x29, it->b + 0x2A, 1);
++            exec_copy_mem(data + pos + 0x2A, it->b + 0x2C, 5);
++            exec_copy_mem(data + pos + 0x2F, it->b + 0x32, 3);
++            COK_PUT16(it->b + 0x36, (u16)h031_signed_byte(data[pos + 0x32]));
++            COK_PUT16(it->b + 0x38, (u16)h031_signed_byte(data[pos + 0x33]));
++            exec_copy_mem(data + pos + 0x34, it->b + 0x3A, 3);
++            exec_copy_mem(data + pos + 0x37, it->b + 0x3E, 3);
++            exec_copy_mem(data + pos + 0x3A, it->b + 0x42, 5);
++            h031_swap_word(it->b + 0x3E);
++            h031_swap_word(it->b + 0x42);
++            memset(it->b + 0x2C, 0, 4);
++            it->next = NULL;
++            pos = (u16)(pos + 0x3F);
++            if (pos < (u16)(size - 0x100)) {
++                it->next = (CokItem *)exec_alloc_mem(sizeof(CokItem),
++                                                     COK_MEMF_CLEAR);
++                it = it->next;
++            }
++        } while (pos < (u16)(size - 0x100));
++        exec_free_mem(data, size);
++    }
++    H005_B(0x24A4) = 0;
++}
+diff --git a/src_c/readable/h066.h b/src_c/readable/h066.h
+index 6b0e35c..8546f72 100644
+--- a/src_c/readable/h066.h
++++ b/src_c/readable/h066.h
+@@ -20,4 +20,5 @@ void save_game(void);                           /* H066+$3000 */
+ 
+ void load_game(void);                           /* H066+$291E */
+ 
++void load_monster_record(u16 id, Character *c); /* H066+$1FDA */
+ #endif
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index 58e2420..badce71 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -87,7 +87,6 @@ void h096_02ce(Character *c) { (void)c; cok_unported("H096+$02CE"); }
+ void h096_2a6c(u8 spell, u8 unused, u8 *ok) { (void)spell; (void)unused; (void)ok; cok_unported("H096+$2A6C"); }
+ void h097_1d68(Character *c) { (void)c; cok_unported("H097+$1D68"); }
+ 
+-void h066_1fda(Character *c, u16 idx) { (void)c; (void)idx; cok_unported("H066+$1FDA"); }
+ 
+ void h012_14c8(void) { cok_unported("H012+$14C8"); }
+ 
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index b1e3741..356269b 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -75,7 +75,6 @@ void h096_02ce(Character *c);           /* inizio round */
+ void h096_2a6c(u8 spell, u8 unused, u8 *ok); /* bersaglio in combattimento */
+ void h097_1d68(Character *c);           /* turno automatico (IA) */
+ 
+-void h066_1fda(Character *c, u16 idx);   /* carica un mostro (MONnCHA) */
+ 
+ /* Gestori dei comandi ECL (H064, H012) non ancora portati. */
+ void h012_14c8(void);
+-- 
+2.43.0
+

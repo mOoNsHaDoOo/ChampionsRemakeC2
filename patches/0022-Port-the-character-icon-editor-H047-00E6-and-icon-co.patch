@@ -1,0 +1,1400 @@
+From 85024c3870a071d4669f91c8d9eadc7eff421286 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 19:00:53 +0000
+Subject: [PATCH 22/65] Port the character icon editor (H047+$00E6) and icon
+ composition
+
+Port H047+$00E6 (body $08D6) with its nested procedures $00F4, $0162,
+$01EE, $02FE, $03EE and $0688: the six-state icon editor (parts,
+colours, size, grid of heads or bodies by keyboard, keypad or mouse).
+Also port H066+$0C34 (body $0E5A) with $0BAC, $0C42, $0D2A and
+$0DEA (compose the 24x24 icon from charS/charT), H035+$01DC/$0460
+(free and draw a 24x24 sprite set), H029+$10B8 (fill cells), the
+BltMaskBitMapRastPort wrapper H016+$00A0 and its host emulation.
+H049+$04AE and $09D6 stay stubs (combat drawing and scale > 3).
+
+Create New Character now runs to the save question; saving (H066+$1640)
+is still a stub.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md  | 112 +++----
+ src_c/readable/h013.c          |   3 +-
+ src_c/readable/h016_gfx.c      |  14 +
+ src_c/readable/h016_gfx.h      |   5 +
+ src_c/readable/h028_files.h    |   2 +
+ src_c/readable/h029_gfx.c      |  18 +-
+ src_c/readable/h029_gfx.h      |   9 +
+ src_c/readable/h035.c          | 105 +++++++
+ src_c/readable/h035.h          |   3 +
+ src_c/readable/h047.c          | 541 ++++++++++++++++++++++++++++++++-
+ src_c/readable/h047.h          |   9 +
+ src_c/readable/h066.c          | 169 +++++++++-
+ src_c/readable/h066.h          |   9 +
+ src_c/readable/host/graphics.c |  52 ++++
+ src_c/readable/host/ndk.h      |   4 +
+ src_c/readable/unported.c      |   3 +-
+ src_c/readable/unported.h      |   6 +-
+ 17 files changed, 1002 insertions(+), 62 deletions(-)
+ create mode 100644 src_c/readable/h047.h
+ create mode 100644 src_c/readable/h066.h
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index 0f12291..8f70792 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **347 / 916**.
++Routine portate: **363 / 916**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -22,7 +22,7 @@ Routine portate: **347 / 916**.
+ | H013 | 25244 | 22 | 10 |
+ | H014 | 224 | 2 | 1 |
+ | H015 | 1016 | 11 | 5 |
+-| H016 | 436 | 5 | 4 |
++| H016 | 436 | 5 | 5 |
+ | H017 | 56 | 1 | 1 |
+ | H018 | 192 | 3 | 3 |
+ | H019 | 240 | 1 | 1 |
+@@ -35,13 +35,13 @@ Routine portate: **347 / 916**.
+ | H026 | 1452 | 11 | 11 |
+ | H027 | 18156 | 10 | 2 |
+ | H028 | 4488 | 16 | 12 |
+-| H029 | 6084 | 32 | 20 |
++| H029 | 6084 | 32 | 21 |
+ | H030 | 3240 | 18 | 12 |
+ | H031 | 212 | 4 | 3 |
+ | H032 | 9352 | 1 | 1 |
+ | H033 | 8140 | 15 | 2 |
+ | H034 | 472 | 3 | 3 |
+-| H035 | 1760 | 6 | 2 |
++| H035 | 1760 | 6 | 4 |
+ | H036 | 144 | 2 | 2 |
+ | H037 | 52 | 2 | 2 |
+ | H038 | 504 | 5 | 5 |
+@@ -53,7 +53,7 @@ Routine portate: **347 / 916**.
+ | H044 | 2668 | 10 | 5 |
+ | H045 | 828 | 4 | 2 |
+ | H046 | 724 | 2 | 1 |
+-| H047 | 5224 | 8 | 1 |
++| H047 | 5224 | 8 | 8 |
+ | H048 | 6636 | 21 | 1 |
+ | H049 | 2992 | 13 | 7 |
+ | H050 | 136 | 4 | 4 |
+@@ -72,7 +72,7 @@ Routine portate: **347 / 916**.
+ | H063 | 16496 | 52 | 19 |
+ | H064 | 6460 | 7 | 1 |
+ | H065 | 14268 | 27 | 6 |
+-| H066 | 13840 | 27 | 1 |
++| H066 | 13840 | 27 | 6 |
+ | H067 | 9820 | 22 | 1 |
+ | H068 | 5788 | 14 | 1 |
+ | H069 | 232 | 3 | 1 |
+@@ -273,15 +273,15 @@ Routine portate: **347 / 916**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0506` | `module_init_H013` | parziale | h013.c:22 |
++| `$0506` | `module_init_H013` | parziale | h013.c:23 |
+ | `$0518` | `trampoline_H013_52E0` | parziale |  |
+ | `$051C` | `trampoline_H013_58DC` | parziale |  |
+ | `$0520` | `trampoline_H013_56CE` | parziale |  |
+-| `$0524` | `sub_H013_00000524` | parziale | h013.c:358 |
+-| `$07B2` | `sub_H013_000007B2` | parziale | h013.c:425 |
+-| `$08C2` | `trampoline_H013_097C` | parziale | h013.c:474 |
+-| `$0982` | `Create_Character` | parziale | h013.c:648 |
+-| `$0990` | `sub_H013_00000990` | parziale | h013.c:506 |
++| `$0524` | `sub_H013_00000524` | parziale | h013.c:359 |
++| `$07B2` | `sub_H013_000007B2` | parziale | h013.c:426 |
++| `$08C2` | `trampoline_H013_097C` | parziale | h013.c:475 |
++| `$0982` | `Create_Character` | parziale | h013.c:649 |
++| `$0990` | `sub_H013_00000990` | parziale | h013.c:507 |
+ | `$2B9A` | `trampoline_H013_2D70` | parziale |  |
+ | `$2D76` | `trampoline_H013_2E1A` | parziale |  |
+ | `$2E44` | `sub_H013_00002E44` | parziale |  |
+@@ -290,11 +290,11 @@ Routine portate: **347 / 916**.
+ | `$31EE` | `trampoline_H013_333C` | parziale |  |
+ | `$43E8` | `sub_H013_000043E8` | parziale |  |
+ | `$4508` | `sub_H013_00004508` | parziale |  |
+-| `$4BFC` | `Party_MainMenu` | verificato | h013.c:94 |
+-| `$4C0A` | `sub_H013_00004C0A` | parziale | h013.c:55 |
++| `$4BFC` | `Party_MainMenu` | verificato | h013.c:95 |
++| `$4C0A` | `sub_H013_00004C0A` | parziale | h013.c:56 |
+ | `$52E0` | `Add_CharacterToParty` | parziale |  |
+-| `$56CE` | `(senza scheda)` | - | h013.c:323 |
+-| `$58DC` | `(senza scheda)` | - | h013.c:1263 |
++| `$56CE` | `(senza scheda)` | - | h013.c:324 |
++| `$58DC` | `(senza scheda)` | - | h013.c:1264 |
+ 
+ ### H014
+ 
+@@ -326,7 +326,7 @@ Routine portate: **347 / 916**.
+ | `$0008` | `sub_H016_00000008` | parziale | h016_gfx.c:5 |
+ | `$0014` | `wrapper_BltBitMap` | parziale | h016_gfx.c:22 |
+ | `$0084` | `wrapper_BltClear` | parziale | h016_gfx.c:16 |
+-| `$00A0` | `wrapper_BltMaskBitMapRastPort` | parziale |  |
++| `$00A0` | `wrapper_BltMaskBitMapRastPort` | parziale | h016_gfx.c:39 |
+ | `$01AC` | `wrapper_WaitTOF` | parziale | h016_gfx.c:32 |
+ 
+ ### H017
+@@ -471,32 +471,32 @@ Routine portate: **347 / 916**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0118` | `module_init_H029` | parziale | h029_gfx.c:38 |
+-| `$0180` | `sub_H029_00000180` | parziale | h029_gfx.c:80 |
+-| `$01B6` | `sub_H029_000001B6` | parziale | h029_gfx.c:498 |
+-| `$0234` | `sub_H029_00000234` | parziale | h029_gfx.c:90 |
+-| `$0312` | `sub_H029_00000312` | parziale | h029_gfx.c:52 |
+-| `$0354` | `trampoline_H029_036C` | parziale | h029_gfx.c:319 |
++| `$0118` | `module_init_H029` | parziale | h029_gfx.c:39 |
++| `$0180` | `sub_H029_00000180` | parziale | h029_gfx.c:81 |
++| `$01B6` | `sub_H029_000001B6` | parziale | h029_gfx.c:499 |
++| `$0234` | `sub_H029_00000234` | parziale | h029_gfx.c:91 |
++| `$0312` | `sub_H029_00000312` | parziale | h029_gfx.c:53 |
++| `$0354` | `trampoline_H029_036C` | parziale | h029_gfx.c:320 |
+ | `$0376` | `trampoline_H029_0390` | parziale |  |
+-| `$039A` | `trampoline_H029_03B2` | parziale | h029_gfx.c:325 |
+-| `$03E2` | `sub_H029_000003E2` | parziale | h029_gfx.c:521 |
+-| `$0408` | `Allocate_GraphicRecord` | verificato | h029_gfx.c:168 |
+-| `$067A` | `Free_GraphicRecord` | parziale | h029_gfx.c:294 |
+-| `$0766` | `sub_H029_00000766` | parziale | h029_gfx.c:332 |
+-| `$091E` | `Populate_GraphicPlanes` | verificato | h029_gfx.c:369 |
+-| `$0A0E` | `Load_IndexedGraphicRecord` | verificato | h029_gfx.c:395 |
++| `$039A` | `trampoline_H029_03B2` | parziale | h029_gfx.c:326 |
++| `$03E2` | `sub_H029_000003E2` | parziale | h029_gfx.c:522 |
++| `$0408` | `Allocate_GraphicRecord` | verificato | h029_gfx.c:169 |
++| `$067A` | `Free_GraphicRecord` | parziale | h029_gfx.c:295 |
++| `$0766` | `sub_H029_00000766` | parziale | h029_gfx.c:333 |
++| `$091E` | `Populate_GraphicPlanes` | verificato | h029_gfx.c:370 |
++| `$0A0E` | `Load_IndexedGraphicRecord` | verificato | h029_gfx.c:396 |
+ | `$0B94` | `Draw_GraphicTile24` | verificato |  |
+ | `$0D58` | `sub_H029_00000D58` | parziale |  |
+ | `$0E26` | `trampoline_H029_0E88` | parziale |  |
+ | `$0E92` | `trampoline_H029_0EF4` | parziale |  |
+-| `$0EFE` | `trampoline_H029_10AC` | parziale | h029_gfx.c:443 |
+-| `$10B8` | `sub_H029_000010B8` | parziale |  |
+-| `$115C` | `sub_H029_0000115C` | parziale | h029_gfx.c:118 |
+-| `$1206` | `sub_H029_00001206` | parziale | h029_gfx.c:134 |
+-| `$12BC` | `sub_H029_000012BC` | parziale | h029_gfx.c:156 |
+-| `$1308` | `sub_H029_00001308` | parziale | h029_gfx.c:225 |
+-| `$1346` | `Prepare_DisplayResources` | parziale | h029_gfx.c:237 |
+-| `$148E` | `sub_H029_0000148E` | parziale | h029_gfx.c:528 |
++| `$0EFE` | `trampoline_H029_10AC` | parziale | h029_gfx.c:444 |
++| `$10B8` | `sub_H029_000010B8` | parziale | h029_gfx.c:552 |
++| `$115C` | `sub_H029_0000115C` | parziale | h029_gfx.c:119 |
++| `$1206` | `sub_H029_00001206` | parziale | h029_gfx.c:135 |
++| `$12BC` | `sub_H029_000012BC` | parziale | h029_gfx.c:157 |
++| `$1308` | `sub_H029_00001308` | parziale | h029_gfx.c:226 |
++| `$1346` | `Prepare_DisplayResources` | parziale | h029_gfx.c:238 |
++| `$148E` | `sub_H029_0000148E` | parziale | h029_gfx.c:529 |
+ | `$14F6` | `sub_H029_000014F6` | parziale |  |
+ | `$1520` | `sub_H029_00001520` | parziale |  |
+ | `$1576` | `sub_H029_00001576` | parziale |  |
+@@ -574,12 +574,12 @@ Routine portate: **347 / 916**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0032` | `module_init_H035` | parziale | h035.c:8 |
++| `$0032` | `module_init_H035` | parziale | h035.c:11 |
+ | `$0040` | `sub_H035_00000040` | parziale |  |
+ | `$019A` | `sub_H035_0000019A` | parziale |  |
+-| `$01DC` | `sub_H035_000001DC` | parziale |  |
+-| `$0246` | `sub_H035_00000246` | parziale | h035.c:14 |
+-| `$0460` | `sub_H035_00000460` | parziale |  |
++| `$01DC` | `sub_H035_000001DC` | parziale | h035.c:51 |
++| `$0246` | `sub_H035_00000246` | parziale | h035.c:17 |
++| `$0460` | `sub_H035_00000460` | parziale | h035.c:64 |
+ 
+ ### H036
+ 
+@@ -720,14 +720,14 @@ Routine portate: **347 / 916**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$00D8` | `module_init_H047` | parziale | h047.c:6 |
+-| `$00E6` | `trampoline_H047_08D6` | parziale |  |
+-| `$00F4` | `sub_H047_000000F4` | parziale |  |
+-| `$0162` | `sub_H047_00000162` | parziale |  |
+-| `$01EE` | `sub_H047_000001EE` | parziale |  |
+-| `$02FE` | `sub_H047_000002FE` | parziale |  |
+-| `$03EE` | `sub_H047_000003EE` | parziale |  |
+-| `$0688` | `sub_H047_00000688` | parziale |  |
++| `$00D8` | `module_init_H047` | parziale | h047.c:19 |
++| `$00E6` | `trampoline_H047_08D6` | parziale | h047.c:250 |
++| `$00F4` | `sub_H047_000000F4` | parziale | h047.c:33 |
++| `$0162` | `sub_H047_00000162` | parziale | h047.c:45 |
++| `$01EE` | `sub_H047_000001EE` | parziale | h047.c:62 |
++| `$02FE` | `sub_H047_000002FE` | parziale | h047.c:92 |
++| `$03EE` | `sub_H047_000003EE` | parziale | h047.c:121 |
++| `$0688` | `sub_H047_00000688` | parziale | h047.c:197 |
+ 
+ ### H048
+ 
+@@ -1093,17 +1093,17 @@ Routine portate: **347 / 916**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$02F0` | `module_init_H066` | parziale | h066.c:4 |
++| `$02F0` | `module_init_H066` | parziale | h066.c:11 |
+ | `$03D0` | `trampoline_H066_0780` | parziale |  |
+ | `$03DE` | `sub_H066_000003DE` | parziale |  |
+ | `$0852` | `sub_H066_00000852` | parziale |  |
+ | `$08E4` | `trampoline_H066_0B88` | parziale |  |
+ | `$08F2` | `sub_H066_000008F2` | parziale |  |
+-| `$0BAC` | `sub_H066_00000BAC` | parziale |  |
+-| `$0C34` | `trampoline_H066_0E5A` | parziale |  |
+-| `$0C42` | `sub_H066_00000C42` | parziale |  |
+-| `$0D2A` | `sub_H066_00000D2A` | parziale |  |
+-| `$0DEA` | `sub_H066_00000DEA` | parziale |  |
++| `$0BAC` | `sub_H066_00000BAC` | parziale | h066.c:22 |
++| `$0C34` | `trampoline_H066_0E5A` | parziale | h066.c:92 |
++| `$0C42` | `sub_H066_00000C42` | parziale | h066.c:34 |
++| `$0D2A` | `sub_H066_00000D2A` | parziale | h066.c:61 |
++| `$0DEA` | `sub_H066_00000DEA` | parziale | h066.c:80 |
+ | `$1312` | `Delete_CharacterSidecarFiles` | verificato |  |
+ | `$142E` | `Query_FreeDiskSpace` | parziale |  |
+ | `$14DC` | `Check_SaveWritable` | parziale |  |
+diff --git a/src_c/readable/h013.c b/src_c/readable/h013.c
+index c77c69f..310a23c 100644
+--- a/src_c/readable/h013.c
++++ b/src_c/readable/h013.c
+@@ -17,6 +17,7 @@
+ #include "h073.h"
+ #include "h065.h"
+ #include "h028_files.h"
++#include "h047.h"
+ #include "h063.h"
+ 
+ /* PORT H013+$0506: link/unlk, nessun effetto. */
+@@ -1231,7 +1232,7 @@ void create_character(void)
+     } while (ch->b[0] == 0);
+     load_char_screens();
+     set_default_figure();
+-    h047_00e6();
++    edit_character_icon();
+     for (s = 0; s <= 5; ++s) {
+         ch->b[0x10 + s * 2] = ch->b[0x11 + s * 2];
+     }
+diff --git a/src_c/readable/h016_gfx.c b/src_c/readable/h016_gfx.c
+index 9c99c1f..edc7881 100644
+--- a/src_c/readable/h016_gfx.c
++++ b/src_c/readable/h016_gfx.c
+@@ -34,3 +34,17 @@ void graphics_wait_tof(void)
+ {
+     WaitTOF();
+ }
++
++/*
++ * PORT H016+$00A0: BltMaskBitMapRastPort, coordinate a word e minterm a
++ * byte.
++ */
++void graphics_blt_mask_bitmap_rastport(struct BitMap *src, u16 src_x,
++                                       u16 src_y, struct RastPort *dst,
++                                       u16 dst_x, u16 dst_y, u16 width,
++                                       u16 height, u8 minterm, u8 *mask)
++{
++    BltMaskBitMapRastPort(src, (s16)src_x, (s16)src_y, dst, (s16)dst_x,
++                          (s16)dst_y, (s16)width, (s16)height, minterm,
++                          (PLANEPTR)mask);
++}
+diff --git a/src_c/readable/h016_gfx.h b/src_c/readable/h016_gfx.h
+index 7f0ad5d..c2dffc5 100644
+--- a/src_c/readable/h016_gfx.h
++++ b/src_c/readable/h016_gfx.h
+@@ -9,6 +9,11 @@ s32  graphics_blt_bitmap(struct BitMap *src, u16 src_x, u16 src_y,
+                          u16 width, u16 height, u8 minterm, u8 mask,
+                          u8 *temp);                     /* H016+$0014 */
+ void graphics_blt_clear(void *memory, u32 count, u32 flags);  /* H016+$0084 */
++void graphics_blt_mask_bitmap_rastport(struct BitMap *src, u16 src_x,
++                                       u16 src_y, struct RastPort *dst,
++                                       u16 dst_x, u16 dst_y, u16 width,
++                                       u16 height, u8 minterm, u8 *mask);
++                                                              /* H016+$00A0 */
+ void graphics_wait_tof(void);                                 /* H016+$01AC */
+ 
+ #endif
+diff --git a/src_c/readable/h028_files.h b/src_c/readable/h028_files.h
+index 461c489..b4cfdcc 100644
+--- a/src_c/readable/h028_files.h
++++ b/src_c/readable/h028_files.h
+@@ -10,6 +10,8 @@ u8 file_exists(u16 len, const char *name);      /* H028+$02D0 */
+ u8 open_resource_file(u16 name_len, const char *name, u16 msg_len,
+                       const char *msg, u8 unused, cok_bptr *file);
+                                                 /* H028+$05FA */
++extern struct BitMap *g_char_screen_s;  /* -$AA(a4): "charS.LBM" */
++extern struct BitMap *g_char_screen_t;  /* -$AE(a4): "charT.LBM" */
+ void load_char_screens(void);            /* H028+$0D36 */
+ void free_char_screens(void);            /* H028+$0D74 */
+ void dax_load_block(u16 name_len, const char *name, u16 ext_len,
+diff --git a/src_c/readable/h029_gfx.c b/src_c/readable/h029_gfx.c
+index bc70588..d02f76b 100644
+--- a/src_c/readable/h029_gfx.c
++++ b/src_c/readable/h029_gfx.c
+@@ -1,5 +1,6 @@
+ /* H029: record grafici, bitplane, maschere e disegno dei tile. */
+ #include "h029_gfx.h"
++#include "h038.h"
+ #include "h002_dos.h"
+ #include "h003_exec.h"
+ #include "h021_intuition.h"
+@@ -336,7 +337,7 @@ u8 or_byte(u8 value, u16 mask)
+  * unita' l'immagine viene poi ridotta alla maschera (AND, $80).  Senza
+  * colore (0): maschera = OR di tutti i piani.
+  */
+-static void build_gfx_mask(u8 color, struct GfxRecord *r)
++void build_gfx_mask(u8 color, struct GfxRecord *r)
+ {
+     u16 width = gfx_record_width(r);
+     u16 i;
+@@ -546,3 +547,18 @@ void release_display_resources(void)
+     }
+     free_gfx_record(&g_gfx_3d8e);
+ }
++
++/*
++ * PORT H029+$10B8: riempie con pen il rettangolo di celle 8x8 da (col, row)
++ * largo width e alto height nella RastPort della finestra.  Il record non
++ * e' usato.
++ */
++void fill_cells(u16 col, u16 row, u16 width, u16 height, u8 pen,
++                struct GfxRecord *unused)
++{
++    (void)unused;
++    graphics_set_apen(g_rastport, pen);
++    graphics_rect_fill(g_rastport, (u16)(col << 3), (u16)(row << 3),
++                       (u16)(((col + width) << 3) - 1),
++                       (u16)(((row + height) << 3) - 1));
++}
+diff --git a/src_c/readable/h029_gfx.h b/src_c/readable/h029_gfx.h
+index a530f11..a4d8618 100644
+--- a/src_c/readable/h029_gfx.h
++++ b/src_c/readable/h029_gfx.h
+@@ -13,6 +13,15 @@ void set_pointer_shape(s16 shape);      /* H029+$01B6 */
+ void add_to_byte(u8 *value, u16 delta); /* H029+$03E2 */
+ u8   mask_byte(u8 value, u16 mask);     /* H029+$0354 */
+ u8   or_byte(u8 value, u16 mask);       /* H029+$039A */
++void build_gfx_mask(u8 color, struct GfxRecord *r);     /* H029+$0766 */
++void fill_cells(u16 col, u16 row, u16 width, u16 height, u8 pen,
++                struct GfxRecord *unused);              /* H029+$10B8 */
++
++/* Dati del modulo usati altrove (-$4, -$5, -$6, -$9 sotto a4). */
++extern struct RastPort *g_offscreen_rp; /* H029+$66 */
++extern u8 g_h029_m5;                    /* H029+$65 */
++extern u8 g_h029_m6;                    /* H029+$64 */
++extern u8 g_h029_m9;                    /* H029+$61 */
+ void remap_gfx_colors(const u8 from[16], const u8 to[16], s16 frame,
+                       struct GfxRecord *rec);           /* H029+$0EFE */
+ void free_gfx_record(struct GfxRecord **rec);           /* H029+$067A */
+diff --git a/src_c/readable/h035.c b/src_c/readable/h035.c
+index 2fac4b7..32ab237 100644
+--- a/src_c/readable/h035.c
++++ b/src_c/readable/h035.c
+@@ -4,6 +4,9 @@
+ #include "h029_gfx.h"
+ #include "h045.h"
+ #include "globals.h"
++#include "gfx_record.h"
++#include "h016_gfx.h"
++#include "unported.h"
+ 
+ /* PORT H035+$0032: link/unlk, nessun effetto. */
+ void h035_init(void)
+@@ -44,3 +47,105 @@ void load_sprite_set(u16 name_len, const char *name, u16 id, u16 slot)
+     remap_gfx_colors(&g_h005[0x3DA2], &g_h005[0x3D92], 0,
+                      g_sprite_sets[slot][1]);
+ }
++
++/* PORT H035+$01DC: libera i due record del posto slot (se presenti). */
++void free_sprite_set(u8 slot)
++{
++    u16 i;
++
++    for (i = 0; i <= 1; ++i) {
++        if (g_sprite_sets[slot][i] != NULL) {
++            free_gfx_record(&g_sprite_sets[slot][i]);
++        }
++    }
++}
++
++/*
++ * PORT H035+$0460: disegna il set which (0/1) del posto slot alla cella
++ * 24x24 (col, row) attraverso la maschera.  In combattimento ($3DE3 != 0)
++ * l'origine e' spostata di 8 pixel e il disegno e' tagliato a $A8 pixel;
++ * con scale > 3 l'immagine passa da un record temporaneo (H049+$09D6).  La
++ * RastPort e' quella fuori schermo di H029 se attiva (-$5), altrimenti
++ * quella dello schermo (e H029 -$9 = 1); con H029 -$6 il disegno usa il
++ * blitter (H049+$04AE) invece di BltMaskBitMapRastPort.
++ */
++void draw_sprite_set(u16 col, u16 row, u16 scale, u16 which, u16 slot)
++{
++    struct GfxRecord *rec = g_sprite_sets[slot][which];
++    struct GfxRecord *temp = NULL;      /* -$14(a5) */
++    struct RastPort *rp;                /* -$1c(a5) */
++    struct BitMap *image;               /* -$18(a5) */
++    u8 *mask;                           /* -$20(a5) */
++    s16 x;
++    s16 y;
++    s16 width;                          /* -$4(a5) */
++    s16 height;                         /* -$6(a5) */
++    s16 src_x = 0;                      /* -$8(a5) */
++    s16 src_y = 0;                      /* -$a(a5) */
++    s16 offset;                         /* -$2(a5) */
++    s16 over;                           /* -$c(a5) */
++
++    if (rec == NULL) {
++        return;
++    }
++    x = (s16)(col * 0x18);
++    y = (s16)(row * 0x18);
++    width = (s16)(rec->count << 3);
++    height = (s16)rec->rows;
++    if (H005_B(0x3DE3) == 0) {
++        offset = 0;
++    } else {
++        offset = 8;
++        if (x < 0) {
++            width = (s16)(width + x);
++            src_x = (s16)(src_x - x);
++        }
++        over = (s16)(x + width - 0xA8);
++        if (over > 0) {
++            width = (s16)(width - over);
++        }
++        if (width <= 0) {
++            return;
++        }
++        if (y < 0) {
++            height = (s16)(height + y);
++            src_y = (s16)(src_y - y);
++        }
++        over = (s16)(y + height - 0xA8);
++        if (over > 0) {
++            height = (s16)(height - over);
++        }
++        if (height <= 0) {
++            return;
++        }
++    }
++    if (g_h029_m5) {
++        rp = g_offscreen_rp;
++    } else {
++        rp = &g_screen->RastPort;
++        g_h029_m9 = 1;
++    }
++    if (scale > 3) {
++        allocate_gfx_record(rec->rows, rec->count, 1, 1, &temp);
++        h049_09d6(temp, rec);
++        image = temp->image;
++        mask = temp->mask->Planes[0];
++    } else {
++        image = rec->image;
++        mask = rec->mask->Planes[0];
++    }
++    if (g_h029_m6) {
++        h049_04ae(image, (u16)src_x, (u16)src_y, rp,
++                  (u16)(x + offset + src_x), (u16)(y + offset + src_y),
++                  (u16)width, (u16)height, 0xCA, mask);
++    } else {
++        graphics_blt_mask_bitmap_rastport(image, (u16)src_x, (u16)src_y, rp,
++                                          (u16)(x + offset + src_x),
++                                          (u16)(y + offset + src_y),
++                                          (u16)width, (u16)height, 0xE0,
++                                          mask);
++    }
++    if (scale > 3) {
++        free_gfx_record(&temp);
++    }
++}
+diff --git a/src_c/readable/h035.h b/src_c/readable/h035.h
+index 9b1cdac..a98bbbd 100644
+--- a/src_c/readable/h035.h
++++ b/src_c/readable/h035.h
+@@ -6,4 +6,7 @@
+ 
+ void load_sprite_set(u16 name_len, const char *name, u16 id, u16 slot);
+                                                         /* H035+$0246 */
++void free_sprite_set(u8 slot);          /* H035+$01DC */
++void draw_sprite_set(u16 col, u16 row, u16 scale, u16 which, u16 slot);
++                                                        /* H035+$0460 */
+ #endif
+diff --git a/src_c/readable/h047.c b/src_c/readable/h047.c
+index 1ce3313..81ecb0d 100644
+--- a/src_c/readable/h047.c
++++ b/src_c/readable/h047.c
+@@ -1,5 +1,18 @@
+ /* H047: dati del modulo. */
+-#include "cok.h"
++#include "h047.h"
++#include "character.h"
++#include "gfx_record.h"
++#include "globals.h"
++#include "h008.h"
++#include "h016_gfx.h"
++#include "h022_view.h"
++#include "h026_string.h"
++#include "h028_files.h"
++#include "h029_gfx.h"
++#include "h030.h"
++#include "h035.h"
++#include "h044_tiles.h"
++#include "h066.h"
+ 
+ u8 g_h047_0001;                 /* -$1(a4) */
+ 
+@@ -8,3 +21,529 @@ void h047_init(void)
+ {
+     g_h047_0001 = 0;
+ }
++
++/* Stato di H047+$00E6 condiviso con le procedure annidate. */
++typedef struct IconEditor {
++    s16 cur;                            /* -$128(a5): parte attuale */
++    s16 count;                          /* -$126(a5): numero di parti */
++    u8 mode;                            /* -$25(a5): 'H' testa, altro corpo */
++} IconEditor;
++
++/*
++ * PORT H047+$00F4: procedura annidata: le due pose dell'icona (posto $0C)
++ * sopra lo sfondo (posto $19) alle celle (col, row) e (col + 3, row).
++ */
++static void draw_icon_pair(u16 col, u16 row)
++{
++    draw_sprite_set(col, row, 0, 0, 0x19);
++    draw_sprite_set((u16)(col + 3), row, 0, 0, 0x19);
++    draw_sprite_set(col, row, 0, 0, 0x0C);
++    draw_sprite_set((u16)(col + 3), row, 0, 1, 0x0C);
++}
++
++/*
++ * PORT H047+$0162: procedura annidata: parte attuale e numero di parti:
++ * teste (+$141, $0B o $0D secondo +$144) o corpi (+$142, $24 o $28).
++ */
++static void set_part_range(IconEditor *e)
++{
++    Character *c = g_current_char;
++
++    if (e->mode == 'H') {
++        e->cur = c->b[0x141];
++        e->count = (s16)(c->b[0x144] == 1 ? 0x0B : 0x0D);
++    } else {
++        e->count = (s16)(c->b[0x144] == 1 ? 0x24 : 0x28);
++        e->cur = c->b[0x142];
++    }
++}
++
++/*
++ * PORT H047+$01EE: procedura annidata: cella della griglia 7x7 (da
++ * colonna 6 e riga 1, celle 24x24) sotto il mouse, come spostamento
++ * rispetto alla parte attuale; *done se e' la parte attuale stessa.
++ */
++static void pick_by_mouse(IconEditor *e, s16 *x, s16 *y, u8 *done)
++{
++    s16 n;                              /* -$6(a5) */
++
++    *x = (s16)((s16)H005_W(0x2356) / 0x18 - 6);
++    *y = (s16)((s16)H005_W(0x2354) / 0x18 - 1);
++    set_part_range(e);
++    if (*x < 0 || *x > 6 || *y < 0 || *y > 6) {
++        *x = 0;
++        *y = 0;
++        *done = 0;
++        return;
++    }
++    n = (s16)(*y * 7 + *x + 1);
++    if (n > e->count) {
++        *x = 0;
++        *y = 0;
++        *done = 0;
++        return;
++    }
++    *x = (s16)(*x - (e->cur - 1) % 7);
++    *y = (s16)(*y - (e->cur - 1) / 7);
++    *done = (u8)(n == e->cur);
++}
++
++/*
++ * PORT H047+$02FE: procedura annidata: disegna nella griglia la cella n
++ * con l'icona composta da testa head e corpo body (posto $0C); con
++ * highlight sopra lo sfondo $19, altrimenti su un quadrato di colore 8.
++ */
++static void draw_part_cell(s16 n, s16 head, s16 body, u8 highlight)
++{
++    Character *c = g_current_char;
++    s16 cx = (s16)((n - 1) % 7 + 6);    /* -$6(a5) */
++    s16 cy = (s16)((n - 1) / 7 + 1);    /* -$8(a5) */
++    u8 old_143 = c->b[0x143];
++    u8 old_141 = c->b[0x141];
++    u8 old_142 = c->b[0x142];
++
++    c->b[0x143] = 0x0C;
++    c->b[0x141] = (u8)head;
++    c->b[0x142] = (u8)body;
++    if (highlight) {
++        draw_sprite_set((u16)cx, (u16)cy, 0, 0, 0x19);
++    } else {
++        fill_cells((u16)(cx * 3), (u16)(cy * 3), 3, 3, 8, g_gfx_3d8e);
++    }
++    build_char_icon(0);
++    draw_sprite_set((u16)cx, (u16)cy, 0, 0, 0x0C);
++    c->b[0x143] = old_143;
++    c->b[0x141] = old_141;
++    c->b[0x142] = old_142;
++}
++
++/*
++ * PORT H047+$03EE: procedura annidata: sposta la parte scelta di (dx, dy)
++ * nella griglia (con giro ai bordi e all'ultima riga incompleta), la
++ * memorizza in +$141 o +$142 e ridisegna le due celle cambiate o, con
++ * redraw_all, tutta la griglia.
++ */
++static void move_part_cursor(IconEditor *e, s16 dx, s16 dy, u8 redraw_all)
++{
++    Character *c = g_current_char;
++    s16 col;                            /* -$2(a5) */
++    s16 row;                            /* -$4(a5) */
++    s16 i;                              /* -$6(a5) */
++    s16 head;                           /* -$8(a5) */
++    s16 body;                           /* -$a(a5) */
++    s16 n;                              /* -$c(a5) */
++    s16 last_row;                       /* -$e(a5) */
++    s16 last_col;                       /* -$10(a5) */
++    u8 highlight;                       /* -$11(a5) */
++
++    set_part_range(e);
++    col = (s16)((e->cur - 1) % 7 + dx);
++    row = (s16)((e->cur - 1) / 7 + dy);
++    last_row = (s16)((e->count - 1) / 7);
++    last_col = (s16)((e->count - 1) % 7);
++    if (col < 0) {
++        col = 6;
++    }
++    if (col > 6) {
++        col = 0;
++    }
++    if (row < 0) {
++        row = last_row;
++    }
++    if (row > last_row) {
++        row = 0;
++    }
++    if (row == last_row && col > last_col) {
++        if (dy < 0) {
++            --row;
++        } else if (dy > 0) {
++            row = 0;
++        } else if (dx < 0) {
++            col = last_col;
++        } else if (dx > 0) {
++            col = 0;
++        }
++    }
++    n = (s16)(row * 7 + col + 1);
++    if (e->mode == 'H') {
++        c->b[0x141] = (u8)n;
++    } else {
++        c->b[0x142] = (u8)n;
++    }
++    body = c->b[0x142];
++    head = c->b[0x141];
++    if (redraw_all) {
++        fill_cells(0x12, 3, 0x15, 0x12, 0, g_gfx_3d8e);
++        for (i = 1; i <= e->count; ++i) {
++            if (e->mode == 'H') {
++                head = i;
++                highlight = (u8)(c->b[0x141] == i);
++            } else {
++                body = i;
++                highlight = (u8)(c->b[0x142] == i);
++            }
++            draw_part_cell(i, head, body, highlight);
++        }
++    } else if (e->mode == 'H') {
++        draw_part_cell(e->cur, e->cur, body, 0);
++        draw_part_cell(n, n, body, 1);
++    } else {
++        draw_part_cell(e->cur, head, e->cur, 0);
++        draw_part_cell(n, head, n, 1);
++    }
++}
++
++/*
++ * PORT H047+$0688: procedura annidata: copia immagini e maschere dei due
++ * set 24x24 del posto src nel posto dst; con recolor, se +$142 < 32,
++ * applica ai due set di dst i colori del personaggio (+$146.., nibble
++ * basso sul registro H005+$5228[i], alto sul registro + 8).
++ */
++static void copy_icon_set(u16 src, u16 dst, u8 recolor)
++{
++    Character *c;
++    u8 from[16];                        /* -$14(a5) */
++    u8 to[16];                          /* -$24(a5) */
++    u16 i;                              /* -$4(a5), -$2(a5) */
++
++    for (i = 0; i <= 1; ++i) {
++        (void)graphics_blt_bitmap(g_sprite_sets[src][i]->image, 0, 0,
++                                  g_sprite_sets[dst][i]->image, 0, 0, 0x18,
++                                  0x18, 0xC0, 0xFF, NULL);
++        (void)graphics_blt_bitmap(g_sprite_sets[src][i]->mask, 0, 0,
++                                  g_sprite_sets[dst][i]->mask, 0, 0, 0x18,
++                                  0x18, 0xC0, 0xFF, NULL);
++    }
++    if (!recolor) {
++        return;
++    }
++    c = g_current_char;
++    for (i = 0; i <= 0x0F; ++i) {
++        from[i] = (u8)i;
++        to[i] = (u8)i;
++    }
++    for (i = 1; i <= 6; ++i) {
++        to[H005_B(0x5228 + i - 1)] = mask_byte(c->b[0x146 + i - 1], 0x0F);
++        to[H005_B(0x5228 + i - 1) + 8] =
++            (u8)(mask_byte(c->b[0x146 + i - 1], 0xF0) >> 4);
++    }
++    if (c->b[0x142] < 0x20) {
++        remap_gfx_colors(from, to, 0, g_sprite_sets[dst][0]);
++        remap_gfx_colors(from, to, 0, g_sprite_sets[dst][1]);
++    }
++}
++
++/* Copia con dbeq $28: al massimo 41 byte, NUL compreso. */
++static void copy_menu(char *dst, const char *src)
++{
++    u16 i;
++
++    for (i = 0; i <= 0x28; ++i) {
++        dst[i] = src[i];
++        if (src[i] == 0) {
++            break;
++        }
++    }
++}
++
++/*
++ * PORT H047+$00E6 (corpo a $08D6): editor dell'icona del personaggio
++ * corrente.  Sei stati con il proprio menu: 1 parti/colori/dimensione,
++ * 2 testa o arma, 3 parte da colorare, 4 dimensione, 5 colore successivo
++ * o precedente, 6 scelta della parte nella griglia (tastiera, tastierino
++ * o mouse).  "Exit" dal primo stato conferma; poi "Is this icon ok?".
++ */
++void edit_character_icon(void)
++{
++    char menus[6][0x2A];                /* -$122(a5) .. -$50(a5) */
++    IconEditor e;
++    Character *c;
++    u8 saved_colors[6];                 /* -$1a(a5) */
++    u8 saved_3de3;                      /* -$1(a5) */
++    u8 key = 0;                         /* -$9(a5) */
++    u8 special = 0;                     /* -$a(a5) */
++    u8 done;                            /* -$129(a5) */
++    u8 in_grid;                         /* -$123(a5) */
++    u8 second = 0;                      /* -$1d(a5) */
++    s16 head;                           /* -$c(a5) */
++    s16 body;                           /* -$e(a5) */
++    s16 size;                           /* -$10(a5) */
++    s16 saved_143;                      /* -$12(a5) */
++    s16 state;                          /* -$14(a5) */
++    s16 color_part = 1;                 /* -$1c(a5) */
++    s16 lo;                             /* -$20(a5) */
++    s16 hi;                             /* -$22(a5) */
++    s16 back = 0;                       /* -$24(a5): nell'originale non
++                                         * inizializzata prima del primo
++                                         * stato; qui 0 */
++    s16 mx;                             /* -$6(a5) */
++    s16 my;                             /* -$8(a5) */
++
++    e.cur = 0;
++    e.count = 0;
++    e.mode = 0;
++    saved_3de3 = H005_B(0x3DE3);
++    H005_B(0x3DE3) = 0;
++    copy_menu(menus[1], "Head Weapon Exit");
++    copy_menu(menus[2], "Weapon Body xxxx Shield Arm Leg Exit");
++    copy_menu(menus[3], " Keep Exit");
++    copy_menu(menus[4], "Next Prev Keep Exit");
++    copy_menu(menus[5], "Done");
++    draw_screen_frame(1);
++    load_char_screens();
++    graphics_load_rgb4(&g_screen->ViewPort, &g_h005[0x522E], 0x20);
++    build_char_icon(0);
++
++    for (;;) {                          /* H047+$0960 */
++        c = g_current_char;
++        state = 1;
++        memcpy(saved_colors, &c->b[0x146], 6);
++        saved_143 = c->b[0x143];
++        c->b[0x143] = 0x0C;
++        build_char_icon(0);
++        c->b[0x143] = (u8)saved_143;
++        head = c->b[0x141];
++        body = c->b[0x142];
++        size = c->b[0x144];
++        copy_icon_set(c->b[0x143], 0x0C, 1);
++        draw_icon_pair(1, 2);
++        ui_draw_text(8, 6, 0x0F, 0, 3, "old");
++        ui_draw_text(3, 0x0A, 0x0F, 0, 0x0E, "ready   action");
++        ui_draw_text(8, 0x0C, 0x0F, 0, 3, "new");
++        ui_draw_text(3, 0x10, 0x0F, 0, 0x0E, "ready   action");
++        do {                            /* H047+$0A70 */
++            draw_icon_pair(1, 4);
++            in_grid = (u8)(state == 6);
++            if (c->b[0x142] >= 0x20) {
++                copy_menu(menus[0], "Body Size Exit");
++            } else {
++                copy_menu(menus[0], "Parts 1st-color 2nd-color Size Exit");
++            }
++            g_h047_0001 = (u8)(state == 6);
++            key = ui_request_choice(0, "", 0x28, menus[state - 1], 0x0D,
++                                    0x0A, 0x0F, in_grid, 0, &special);
++            if (in_grid || !special) {
++                switch (state) {
++                case 1:             /* H047+$0B28 */
++                    back = 1;
++                    switch (key) {
++                    case 'B':
++                        e.mode = 'W';
++                        move_part_cursor(&e, 0, 0, 1);
++                        state = 6;
++                        break;
++                    case 'P':
++                        state = 2;
++                        break;
++                    case '1':
++                    case '2':
++                        state = 3;
++                        second = (u8)(key == '2');
++                        h026_delete(0x28, menus[2], 0x0C, 4);
++                        h026_insert(0x28, menus[2], 4,
++                                    key == '1' ? "Hair" : "Face", 0x0C);
++                        break;
++                    case 'S':
++                        if (c->b[0x144] == 2) {
++                            c->b[0x144] = 1;
++                            if (c->b[0x142] >= 0x24) {
++                                c->b[0x142] = 0x24;
++                            }
++                            if (c->b[0x141] >= 0x0B) {
++                                c->b[0x141] = 0x0B;
++                            }
++                        } else {
++                            c->b[0x144] = 2;
++                        }
++                        build_char_icon(0);
++                        break;
++                    default:
++                        break;
++                    }
++                    break;
++                case 2:             /* H047+$0CA4 */
++                    back = 2;
++                    if (key == 'E' || key == 0) {
++                        state = 1;
++                    } else {
++                        e.mode = key;
++                        move_part_cursor(&e, 0, 0, 1);
++                        state = 6;
++                    }
++                    break;
++                case 3:             /* H047+$0CE6 */
++                    back = 3;
++                    switch (key) {
++                    case 'W':
++                        color_part = 6;
++                        break;
++                    case 'B':
++                        color_part = 1;
++                        break;
++                    case 'H': case 'F':
++                        color_part = 4;
++                        break;
++                    case 'S':
++                        color_part = 5;
++                        break;
++                    case 'A':
++                        color_part = 2;
++                        break;
++                    case 'L':
++                        color_part = 3;
++                        break;
++                    default:
++                        color_part = 1;
++                        break;
++                    }
++                    state = (s16)(key == 'E' || key == 0 ? 1 : 5);
++                    break;
++                case 4:             /* H047+$0DA4 */
++                    switch (key) {
++                    case 'L':
++                        c->b[0x144] = 2;
++                        build_char_icon(0);
++                        break;
++                    case 'S':
++                        c->b[0x144] = 1;
++                        build_char_icon(0);
++                        break;
++                    case 'K':
++                        size = c->b[0x144];
++                        state = 1;
++                        key = ' ';
++                        break;
++                    case 0: case 'E':
++                        c->b[0x144] = (u8)size;
++                        state = 1;
++                        key = ' ';
++                        break;
++                    default:
++                        break;
++                    }
++                    build_char_icon(0);
++                    break;
++                case 5:             /* H047+$0ED4 */
++                    lo = mask_byte(c->b[0x146 + color_part - 1], 0x0F);
++                    hi = (s16)(mask_byte(c->b[0x146 + color_part - 1],
++                                         0xF0) >> 4);
++                    switch (key) {
++                    case 'N':
++                        if (second) {
++                            hi = (s16)((hi + 1) & 0x0F);
++                        } else {
++                            lo = (s16)((lo + 1) & 0x0F);
++                        }
++                        c->b[0x146 + color_part - 1] = (u8)((hi << 4) + lo);
++                        break;
++                    case 'P':
++                        if (second) {
++                            hi = mask_byte((u8)(hi - 1), 0x0F);
++                        } else {
++                            lo = mask_byte((u8)(lo - 1), 0x0F);
++                        }
++                        c->b[0x146 + color_part - 1] = (u8)((hi << 4) + lo);
++                        break;
++                    case 'K':
++                        memcpy(saved_colors, &c->b[0x146], 6);
++                        state = back;
++                        key = ' ';
++                        break;
++                    case 0: case 'E':
++                        memcpy(&c->b[0x146], saved_colors, 6);
++                        state = back;
++                        key = ' ';
++                        break;
++                    default:
++                        break;
++                    }
++                    break;
++                case 6:             /* H047+$10D6 */
++                    switch (key) {
++                    case 0:         /* H047+$1220 */
++                        if (e.mode == 'H') {
++                            c->b[0x141] = (u8)head;
++                        } else {
++                            c->b[0x142] = (u8)body;
++                        }
++                        state = 0;
++                        break;
++                    case 0x0D: case 'D':        /* H047+$1188 */
++                        if (G_MOUSE_CLICK) {
++                            if ((s16)H005_W(0x2356) < 0x28 &&
++                                (s16)H005_W(0x2354) >= 0xC0) {
++                                done = 1;
++                            } else {
++                                pick_by_mouse(&e, &mx, &my, &done);
++                                if (!done) {
++                                    move_part_cursor(&e, mx, my, 0);
++                                }
++                            }
++                        } else {
++                            done = 1;
++                        }
++                        if (done) {
++                            if (e.mode == 'H') {
++                                head = c->b[0x141];
++                            } else {
++                                body = c->b[0x142];
++                            }
++                            state = 0;
++                        }
++                        break;
++                    case 'G':
++                        move_part_cursor(&e, -1, -1, 0);
++                        break;
++                    case 'H':
++                        move_part_cursor(&e, 0, -1, 0);
++                        break;
++                    case 'I':
++                        move_part_cursor(&e, 1, -1, 0);
++                        break;
++                    case 'K':
++                        move_part_cursor(&e, -1, 0, 0);
++                        break;
++                    case 'M':
++                        move_part_cursor(&e, 1, 0, 0);
++                        break;
++                    case 'O':
++                        move_part_cursor(&e, -1, 1, 0);
++                        break;
++                    case 'P':
++                        move_part_cursor(&e, 0, 1, 0);
++                        break;
++                    case 'Q':
++                        move_part_cursor(&e, 1, 1, 0);
++                        break;
++                    default:
++                        break;
++                    }
++                    build_char_icon(0);
++                    if (state == 0) {
++                        fill_cells(0x12, 3, 0x15, 0x12, 0, g_gfx_3d8e);
++                        state = (s16)(c->b[0x142] >= 0x20 ? 1 : 2);
++                        key = ' ';
++                    }
++                    break;
++                default:
++                    break;
++                }
++            }
++            copy_icon_set(c->b[0x143], 0x0C, 1);        /* H047+$1386 */
++        } while (!(back == 1 && (key == 'E' || key == 0)));
++
++        c->b[0x141] = (u8)head;
++        c->b[0x142] = (u8)body;
++        c->b[0x144] = (u8)size;
++        memcpy(&c->b[0x146], saved_colors, 6);
++        copy_icon_set(c->b[0x143], 0x0C, 1);
++        copy_icon_set(0x0C, c->b[0x143], 0);
++        clear_message_line();
++        free_sprite_set(0x0C);
++        if (ask_yes_no(0x11, "Is this icon ok? ", 0x0D, 0x0A, 0x0F) == 'Y') {
++            break;
++        }
++    }
++    H005_B(0x3DE3) = saved_3de3;
++    g_h047_0001 = 0;
++}
+diff --git a/src_c/readable/h047.h b/src_c/readable/h047.h
+new file mode 100644
+index 0000000..5b373ac
+--- /dev/null
++++ b/src_c/readable/h047.h
+@@ -0,0 +1,9 @@
++/* H047: editor dell'icona del personaggio. */
++#ifndef COK_H047_H
++#define COK_H047_H
++
++#include "cok.h"
++
++void edit_character_icon(void);         /* H047+$00E6 */
++
++#endif
+diff --git a/src_c/readable/h066.c b/src_c/readable/h066.c
+index 53fdba9..69f0cf4 100644
+--- a/src_c/readable/h066.c
++++ b/src_c/readable/h066.c
+@@ -1,7 +1,174 @@
+ /* H066: Salvataggi/caricamenti, personaggi, liste e record dei mostri. */
+-#include "cok.h"
++#include "h066.h"
++#include "character.h"
++#include "gfx_record.h"
++#include "globals.h"
++#include "h016_gfx.h"
++#include "h028_files.h"
++#include "h029_gfx.h"
++#include "h035.h"
+ 
+ /* PORT H066+$02F0: link/unlk, nessun effetto. */
+ void h066_init(void)
+ {
+ }
++
++/* Stato di H066+$0C34 condiviso con le sue procedure annidate. */
++typedef struct IconFrame {
++    struct BitMap *screen;              /* -$8(a5): charS o charT */
++} IconFrame;
++
++/*
++ * PORT H066+$0BAC: sovrappone la testa (src, larga 24 pixel, alta quanto
++ * src) a dst: immagine e maschera con minterm $E0.
++ */
++static void overlay_icon_part(struct GfxRecord *dst, struct GfxRecord *src)
++{
++    (void)graphics_blt_bitmap(src->image, 0, 0, dst->image, 0, 0, 0x18,
++                              src->rows, 0xE0, 0xFF, NULL);
++    (void)graphics_blt_bitmap(src->mask, 0, 0, dst->mask, 0, 0, 0x18,
++                              src->rows, 0xE0, 0xFF, NULL);
++}
++
++/*
++ * PORT H066+$0C42: procedura annidata: *rec diventa un record 24x24 di
++ * 3 unita' con maschera (H029+$0408); se c'e' gia' con quelle misure i suoi
++ * piani sono cancellati ($60 byte), altrimenti e' liberato e rifatto.
++ */
++static void ensure_icon_record(IconFrame *f, struct GfxRecord **rec)
++{
++    struct GfxRecord *r = *rec;
++    s16 i;                              /* -$2(a5) */
++
++    (void)f;
++    if (r == NULL) {
++        allocate_gfx_record(0x18, 3, 1, 1, rec);
++        return;
++    }
++    if (r->count == 3 && r->rows == 0x18 && r->image != NULL &&
++        r->mask != NULL && r->width8 == 1) {
++        for (i = 0; i <= 4; ++i) {
++            graphics_blt_clear(r->image->Planes[i], 0x60, 0);
++        }
++        graphics_blt_clear(r->mask->Planes[0], 0x60, 0);
++        return;
++    }
++    free_gfx_record(rec);
++    allocate_gfx_record(0x18, 3, 1, 1, rec);
++}
++
++/*
++ * PORT H066+$0D2A: procedura annidata: copia la parte n (griglia di 12
++ * per riga, celle 24x24) della schermata nei piani 0..3 dell'immagine e,
++ * invertito, il piano 4 nella maschera.
++ */
++static void copy_icon_part(IconFrame *f, u16 n, struct GfxRecord **rec)
++{
++    s16 sx;                             /* -$2(a5) */
++    s16 sy;                             /* -$4(a5) */
++
++    ensure_icon_record(f, rec);
++    sx = (s16)((((s16)n - 1) % 0x0C) * 0x18);
++    sy = (s16)((((s16)n - 1) / 0x0C) * 0x18);
++    (void)graphics_blt_bitmap(f->screen, (u16)sx, (u16)sy, (*rec)->image, 0,
++                              0, 0x18, 0x18, 0xC0, 0x0F, NULL);
++    (void)graphics_blt_bitmap(f->screen, (u16)sx, (u16)sy, (*rec)->mask, 0,
++                              0, 0x18, 0x18, 0x30, 0x10, NULL);
++}
++
++/*
++ * PORT H066+$0DEA: procedura annidata: copia la cella 24x24 (cx, cy)
++ * della schermata nell'immagine di *rec.
++ */
++static void copy_icon_cell(IconFrame *f, u16 cy, u16 cx, struct GfxRecord **rec)
++{
++    ensure_icon_record(f, rec);
++    (void)graphics_blt_bitmap(f->screen, (u16)(cx * 0x18), (u16)(cy * 0x18),
++                              (*rec)->image, 0, 0, 0x18, 0x18, 0xC0, 0xFF,
++                              NULL);
++}
++
++/*
++ * PORT H066+$0C34 (corpo a $0E5A): compone nel posto +$143 la coppia di
++ * immagini 24x24 dell'icona del personaggio corrente.  Con +$142 <= 31:
++ * testa (+$141, nel posto 11) e due pose del corpo (+$142) da charS
++ * (+$144 = 1) o charT, testa sovrapposta, e con recolor i colori +$146..
++ * (le coppie di nibble) sui registri H005+$5228.  Con +$142 > 31: icone
++ * intere da charT, maschera dal colore 0.  Il posto 11 e' poi liberato.
++ */
++void build_char_icon(u8 recolor)
++{
++    Character *c;
++    IconFrame f;
++    u8 from[16];                        /* -$1e(a5) */
++    u8 to[16];                          /* -$2e(a5) */
++    s16 i;                              /* -$a(a5) */
++    s16 cx;                             /* -$c(a5) */
++    s16 cy;                             /* -$e(a5) */
++    u8 slot;
++
++    load_char_screens();
++    c = g_current_char;
++    if (c->b[0x141] < 1) {
++        c->b[0x141] = 1;
++    }
++    if (c->b[0x142] < 1) {
++        c->b[0x142] = 1;
++    }
++    slot = c->b[0x143];
++    if (c->b[0x142] <= 0x1F) {
++        f.screen = c->b[0x144] == 1 ? g_char_screen_s : g_char_screen_t;
++        copy_icon_part(&f, (u16)(c->b[0x141] + 0x3E), &g_sprite_sets[11][0]);
++        copy_icon_part(&f, c->b[0x142], &g_sprite_sets[slot][0]);
++        copy_icon_part(&f, (u16)(c->b[0x142] + 0x1F),
++                       &g_sprite_sets[slot][1]);
++        overlay_icon_part(g_sprite_sets[slot][0], g_sprite_sets[11][0]);
++        overlay_icon_part(g_sprite_sets[slot][1], g_sprite_sets[11][0]);
++        if (recolor) {
++            for (i = 0; i <= 0x0F; ++i) {
++                from[i] = (u8)i;
++                to[i] = (u8)i;
++            }
++            for (i = 1; i <= 6; ++i) {
++                to[H005_B(0x5228 + i - 1)] =
++                    mask_byte(c->b[0x146 + i - 1], 0x0F);
++                to[H005_B(0x5228 + i - 1) + 8] =
++                    (u8)(mask_byte(c->b[0x146 + i - 1], 0xF0) >> 4);
++            }
++            remap_gfx_colors(from, to, 0, g_sprite_sets[slot][0]);
++            remap_gfx_colors(from, to, 0, g_sprite_sets[slot][1]);
++        }
++    } else {
++        f.screen = g_char_screen_t;
++        if (c->b[0x144] == 1) {
++            if (c->b[0x142] > 0x23) {
++                copy_icon_cell(&f, 6, 0x0B, &g_sprite_sets[slot][0]);
++                copy_icon_cell(&f, 7, 0x0B, &g_sprite_sets[slot][1]);
++            } else {
++                copy_icon_cell(&f, (u16)((c->b[0x142] - 0x20) * 2), 0x0C,
++                               &g_sprite_sets[slot][0]);
++                copy_icon_cell(&f, (u16)((c->b[0x142] - 0x20) * 2 + 1), 0x0C,
++                               &g_sprite_sets[slot][1]);
++            }
++        } else {
++            cx = (s16)((c->b[0x142] - 0x20) * 2 + 3);
++            cy = 6;
++            if (cx > 0x0A) {
++                cx = (s16)(cx - 0x0B);
++                ++cy;
++            }
++            copy_icon_cell(&f, (u16)cy, (u16)cx, &g_sprite_sets[slot][0]);
++            copy_icon_cell(&f, (u16)cy, (u16)(cx + 1),
++                           &g_sprite_sets[slot][1]);
++        }
++        build_gfx_mask(0, g_sprite_sets[slot][0]);
++        build_gfx_mask(0, g_sprite_sets[slot][1]);
++        for (i = 0; i <= 0x0F; ++i) {
++            from[i] = (u8)i;
++            to[i] = (u8)i;
++        }
++        remap_gfx_colors(from, to, 0, g_sprite_sets[slot][0]);
++        remap_gfx_colors(from, to, 0, g_sprite_sets[slot][1]);
++    }
++    free_sprite_set(0x0B);
++}
+diff --git a/src_c/readable/h066.h b/src_c/readable/h066.h
+new file mode 100644
+index 0000000..67d0849
+--- /dev/null
++++ b/src_c/readable/h066.h
+@@ -0,0 +1,9 @@
++/* H066: personaggi su disco e icona del personaggio. */
++#ifndef COK_H066_H
++#define COK_H066_H
++
++#include "cok.h"
++
++void build_char_icon(u8 recolor);       /* H066+$0C34 */
++
++#endif
+diff --git a/src_c/readable/host/graphics.c b/src_c/readable/host/graphics.c
+index ee3a69d..4de1897 100644
+--- a/src_c/readable/host/graphics.c
++++ b/src_c/readable/host/graphics.c
+@@ -254,6 +254,58 @@ LONG BltBitMap(struct BitMap *src, LONG src_x, LONG src_y,
+     return planes;
+ }
+ 
++/*
++ * Copia attraverso la maschera: dove il bit di mask (un piano largo come
++ * src) e' 1 il pixel di src, altrimenti la destinazione resta.  E' l'effetto
++ * dei minterm usati dal gioco ($E0, ABC|ABNC|ANBC, e $CA): la ROM ottiene
++ * lo stesso risultato con tre BltBitMap (XOR, maschera, XOR).  Tagliato ai
++ * bordi della bitmap della RastPort.
++ */
++void BltMaskBitMapRastPort(struct BitMap *src, LONG src_x, LONG src_y,
++                           struct RastPort *dst, LONG dst_x, LONG dst_y,
++                           LONG width, LONG height, ULONG minterm,
++                           PLANEPTR mask)
++{
++    struct BitMap *bm = dst->BitMap;
++    LONG x;
++    LONG y;
++    int p;
++
++    (void)minterm;
++    if (bm == NULL || mask == NULL || width <= 0 || height <= 0) {
++        return;
++    }
++    for (y = 0; y < height; ++y) {
++        LONG ty = dst_y + y;
++
++        if (ty < 0 || ty >= (LONG)bm->Rows) {
++            continue;
++        }
++        for (x = 0; x < width; ++x) {
++            LONG tx = dst_x + x;
++
++            if (tx < 0 || tx >= (LONG)bm->BytesPerRow * 8 ||
++                !get_pixel_bit(mask, src->BytesPerRow, src_x + x,
++                               src_y + y)) {
++                continue;
++            }
++            for (p = 0; p < bm->Depth; ++p) {
++                int v = 0;
++
++                if (bm->Planes[p] == NULL) {
++                    continue;
++                }
++                if (p < src->Depth && src->Planes[p] != NULL) {
++                    v = get_pixel_bit(src->Planes[p], src->BytesPerRow,
++                                      src_x + x, src_y + y);
++                }
++                put_pixel_bit(bm->Planes[p], bm->BytesPerRow, tx, ty, v);
++            }
++        }
++    }
++    host_display_changed();
++}
++
+ /* Senza liste Copper non c'e' nulla da liberare. */
+ void FreeVPortCopLists(struct ViewPort *vp)
+ {
+diff --git a/src_c/readable/host/ndk.h b/src_c/readable/host/ndk.h
+index 4466012..fd95194 100644
+--- a/src_c/readable/host/ndk.h
++++ b/src_c/readable/host/ndk.h
+@@ -158,6 +158,10 @@ void     BltClear(void *memory, ULONG count, ULONG flags);
+ LONG     BltBitMap(struct BitMap *src, LONG src_x, LONG src_y,
+                    struct BitMap *dst, LONG dst_x, LONG dst_y, LONG width,
+                    LONG height, ULONG minterm, ULONG mask, PLANEPTR temp);
++void     BltMaskBitMapRastPort(struct BitMap *src, LONG src_x, LONG src_y,
++                               struct RastPort *dst, LONG dst_x, LONG dst_y,
++                               LONG width, LONG height, ULONG minterm,
++                               PLANEPTR mask);
+ 
+ /* intuition */
+ struct TextAttr;
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index 0d764f6..868349e 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -247,6 +247,7 @@ void h063_1d44(u16 len, const char *text) { (void)len; (void)text; cok_unported(
+ void h028_0d74(void) { cok_unported("H028+$0D74"); }
+ void h043_0840(void) { cok_unported_skip("H043+$0840"); }
+ 
+-void h047_00e6(void) { cok_unported("H047+$00E6"); }
+ 
+ u16 h065_34fc(u16 a, u16 b, u16 *value, u8 *again) { (void)a; (void)b; (void)value; (void)again; cok_unported("H065+$34FC"); return 0; }
++void h049_09d6(struct GfxRecord *dst, struct GfxRecord *src) { (void)dst; (void)src; cok_unported("H049+$09D6"); }
++void h049_04ae(struct BitMap *src, u16 sx, u16 sy, struct RastPort *rp, u16 dx, u16 dy, u16 w, u16 h, u8 minterm, u8 *mask) { (void)src; (void)sx; (void)sy; (void)rp; (void)dx; (void)dy; (void)w; (void)h; (void)minterm; (void)mask; cok_unported("H049+$04AE"); }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index 6089599..d9bd7ec 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -219,6 +219,10 @@ void h028_0d74(void);
+ void h043_0840(void);
+ 
+ u16  h065_34fc(u16 a, u16 b, u16 *value, u8 *again); /* scelta di un incantesimo */
+-void h047_00e6(void);
++
++struct GfxRecord;
++void h049_09d6(struct GfxRecord *dst, struct GfxRecord *src); /* immagine ingrandita */
++void h049_04ae(struct BitMap *src, u16 sx, u16 sy, struct RastPort *rp, u16 dx, u16 dy,
++               u16 w, u16 h, u8 minterm, u8 *mask);  /* disegno con il blitter */
+ 
+ #endif
+-- 
+2.43.0
+

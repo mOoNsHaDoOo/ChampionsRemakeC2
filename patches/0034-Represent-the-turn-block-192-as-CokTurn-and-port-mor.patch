@@ -1,0 +1,1225 @@
+From 2a3f9dedfc395e644a8c9fab7911628e8fb56f4c Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 21:21:57 +0000
+Subject: [PATCH 34/65] Represent the turn block +$192 as CokTurn and port more
+ H027 handlers
+
+The +$192 block keeps its $18 bytes; its only longword, the target
+character at +$C, becomes a C pointer.  H005+$2A14, $2B32 (combatants)
+and $16 (fallen characters) become C globals.  New: H062+$02FA, $2650,
+H063+$2B7C, H027+$0214, $0338, $2182 and the handlers for effects $16,
+$17, $1A, $2B, $2C, $30, $31, $3A, $3D, $3E, $40-$42, $44, $45, $51,
+$56-$58, $72, $73, $75.  H048+$16D4 keeps only its non-combat return.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md | 178 ++++++++------
+ src_c/readable/character.h    |  13 +-
+ src_c/readable/globals.c      |   3 +
+ src_c/readable/globals.h      |   5 +-
+ src_c/readable/h027.c         | 445 ++++++++++++++++++++++++++++++++--
+ src_c/readable/h033.c         |   4 +-
+ src_c/readable/h053.c         |   2 +-
+ src_c/readable/h062.c         |  56 ++++-
+ src_c/readable/h062.h         |   4 +
+ src_c/readable/h063.c         |  20 +-
+ src_c/readable/h063.h         |   2 +
+ src_c/readable/h065.c         |   4 +-
+ src_c/readable/h065.h         |   3 +
+ src_c/readable/unported.c     |  34 +--
+ src_c/readable/unported.h     |  29 +--
+ 15 files changed, 643 insertions(+), 159 deletions(-)
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index b55af19..2c08b7d 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **598 / 1018**.
++Routine portate: **626 / 1040**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -33,7 +33,7 @@ Routine portate: **598 / 1018**.
+ | H024 | 268 | 2 | 2 |
+ | H025 | 264 | 2 | 2 |
+ | H026 | 1452 | 11 | 11 |
+-| H027 | 18156 | 55 | 50 |
++| H027 | 18156 | 77 | 75 |
+ | H028 | 4488 | 16 | 15 |
+ | H029 | 6084 | 32 | 21 |
+ | H030 | 3240 | 18 | 17 |
+@@ -68,8 +68,8 @@ Routine portate: **598 / 1018**.
+ | H059 | 6340 | 14 | 1 |
+ | H060 | 396 | 2 | 1 |
+ | H061 | 16936 | 35 | 1 |
+-| H062 | 10496 | 32 | 23 |
+-| H063 | 16496 | 52 | 34 |
++| H062 | 10496 | 32 | 25 |
++| H063 | 16496 | 52 | 35 |
+ | H064 | 6460 | 7 | 1 |
+ | H065 | 14268 | 27 | 27 |
+ | H066 | 13840 | 27 | 23 |
+@@ -435,61 +435,83 @@ Routine portate: **598 / 1018**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0206` | `module_init_H027` | parziale | h027.c:9 |
+-| `$0214` | `sub_H027_00000214` | parziale |  |
+-| `$0286` | `sub_H027_00000286` | parziale | h027.c:15 |
+-| `$02BE` | `trampoline_H027_0306` | parziale | h027.c:151 |
+-| `$0312` | `sub_H027_00000312` | parziale | h027.c:56 |
+-| `$0338` | `sub_H027_00000338` | parziale |  |
+-| `$0364` | `(senza scheda)` | - | h027.c:65 |
+-| `$0390` | `(senza scheda)` | - | h027.c:73 |
+-| `$03D6` | `(senza scheda)` | - | h027.c:86 |
+-| `$05C6` | `(senza scheda)` | - | h027.c:114 |
+-| `$0622` | `(senza scheda)` | - | h027.c:124 |
+-| `$067C` | `(senza scheda)` | - | h027.c:134 |
+-| `$07F4` | `(senza scheda)` | - | h027.c:144 |
+-| `$0912` | `(senza scheda)` | - | h027.c:163 |
+-| `$09A4` | `(senza scheda)` | - | h027.c:177 |
+-| `$0A00` | `(senza scheda)` | - | h027.c:26 |
+-| `$0A3E` | `(senza scheda)` | - | h027.c:190 |
+-| `$0A9E` | `(senza scheda)` | - | h027.c:200 |
+-| `$0D70` | `(senza scheda)` | - | h027.c:213 |
+-| `$0E18` | `(senza scheda)` | - | h027.c:226 |
+-| `$0EC6` | `(senza scheda)` | - | h027.c:243 |
+-| `$10CC` | `(senza scheda)` | - | h027.c:250 |
+-| `$1120` | `(senza scheda)` | - | h027.c:260 |
+-| `$1310` | `(senza scheda)` | - | h027.c:267 |
+-| `$133C` | `(senza scheda)` | - | h027.c:275 |
+-| `$1374` | `(senza scheda)` | - | h027.c:285 |
++| `$0206` | `module_init_H027` | parziale | h027.c:13 |
++| `$0214` | `sub_H027_00000214` | parziale | h027.c:532 |
++| `$0286` | `sub_H027_00000286` | parziale | h027.c:19 |
++| `$02BE` | `trampoline_H027_0306` | parziale | h027.c:156 |
++| `$0312` | `sub_H027_00000312` | parziale | h027.c:60 |
++| `$0338` | `sub_H027_00000338` | parziale | h027.c:544 |
++| `$0364` | `(senza scheda)` | - | h027.c:69 |
++| `$0390` | `(senza scheda)` | - | h027.c:77 |
++| `$03D6` | `(senza scheda)` | - | h027.c:90 |
++| `$05C6` | `(senza scheda)` | - | h027.c:118 |
++| `$0622` | `(senza scheda)` | - | h027.c:128 |
++| `$067C` | `(senza scheda)` | - | h027.c:138 |
++| `$07F4` | `(senza scheda)` | - | h027.c:148 |
++| `$0912` | `(senza scheda)` | - | h027.c:168 |
++| `$09A4` | `(senza scheda)` | - | h027.c:182 |
++| `$0A00` | `(senza scheda)` | - | h027.c:30 |
++| `$0A3E` | `(senza scheda)` | - | h027.c:195 |
++| `$0A9E` | `(senza scheda)` | - | h027.c:205 |
++| `$0AFE` | `(senza scheda)` | - | h027.c:727 |
++| `$0B7A` | `(senza scheda)` | - | h027.c:577 |
++| `$0D70` | `(senza scheda)` | - | h027.c:218 |
++| `$0DB8` | `(senza scheda)` | - | h027.c:742 |
++| `$0E18` | `(senza scheda)` | - | h027.c:231 |
++| `$0EC6` | `(senza scheda)` | - | h027.c:248 |
++| `$10CC` | `(senza scheda)` | - | h027.c:255 |
++| `$1120` | `(senza scheda)` | - | h027.c:265 |
++| `$1310` | `(senza scheda)` | - | h027.c:272 |
++| `$133C` | `(senza scheda)` | - | h027.c:280 |
++| `$1374` | `(senza scheda)` | - | h027.c:290 |
+ | `$174E` | `sub_H027_0000174E` | parziale |  |
+ | `$17DE` | `sub_H027_000017DE` | parziale |  |
+-| `$1878` | `(senza scheda)` | - | h027.c:297 |
+-| `$1A0A` | `(senza scheda)` | - | h027.c:304 |
+-| `$1BFE` | `(senza scheda)` | - | h027.c:313 |
+-| `$1C7A` | `(senza scheda)` | - | h027.c:324 |
+-| `$1D0C` | `(senza scheda)` | - | h027.c:335 |
+-| `$1D3C` | `(senza scheda)` | - | h027.c:342 |
+-| `$1E1A` | `(senza scheda)` | - | h027.c:351 |
+-| `$2138` | `(senza scheda)` | - | h027.c:359 |
+-| `$2182` | `sub_H027_00002182` | parziale |  |
+-| `$2CA6` | `(senza scheda)` | - | h027.c:369 |
+-| `$2CFA` | `(senza scheda)` | - | h027.c:379 |
+-| `$3842` | `(senza scheda)` | - | h027.c:389 |
+-| `$3A46` | `(senza scheda)` | - | h027.c:36 |
+-| `$3A84` | `(senza scheda)` | - | h027.c:408 |
+-| `$3AAA` | `(senza scheda)` | - | h027.c:416 |
+-| `$3AC8` | `(senza scheda)` | - | h027.c:423 |
+-| `$3AFC` | `(senza scheda)` | - | h027.c:432 |
+-| `$3BC0` | `(senza scheda)` | - | h027.c:443 |
+-| `$3D02` | `(senza scheda)` | - | h027.c:453 |
+-| `$3E6C` | `(senza scheda)` | - | h027.c:462 |
+-| `$3EB2` | `(senza scheda)` | - | h027.c:469 |
+-| `$3F1E` | `(senza scheda)` | - | h027.c:481 |
+-| `$418E` | `(senza scheda)` | - | h027.c:496 |
+-| `$41AA` | `(senza scheda)` | - | h027.c:503 |
+-| `$41F6` | `(senza scheda)` | - | h027.c:46 |
+-| `$420C` | `(senza scheda)` | - | h027.c:511 |
+-| `$4276` | `sub_H027_00004276` | parziale | h027.c:527 |
++| `$1878` | `(senza scheda)` | - | h027.c:302 |
++| `$18A4` | `(senza scheda)` | - | h027.c:631 |
++| `$1956` | `(senza scheda)` | - | h027.c:648 |
++| `$1A0A` | `(senza scheda)` | - | h027.c:309 |
++| `$1A42` | `(senza scheda)` | - | h027.c:669 |
++| `$1B88` | `(senza scheda)` | - | h027.c:698 |
++| `$1BFE` | `(senza scheda)` | - | h027.c:318 |
++| `$1C7A` | `(senza scheda)` | - | h027.c:329 |
++| `$1D0C` | `(senza scheda)` | - | h027.c:340 |
++| `$1D3C` | `(senza scheda)` | - | h027.c:347 |
++| `$1D80` | `(senza scheda)` | - | h027.c:712 |
++| `$1E1A` | `(senza scheda)` | - | h027.c:356 |
++| `$2028` | `(senza scheda)` | - | h027.c:753 |
++| `$20DA` | `(senza scheda)` | - | h027.c:776 |
++| `$2138` | `(senza scheda)` | - | h027.c:364 |
++| `$2182` | `sub_H027_00002182` | parziale | h027.c:553 |
++| `$224C` | `(senza scheda)` | - | h027.c:786 |
++| `$226C` | `(senza scheda)` | - | h027.c:789 |
++| `$228E` | `(senza scheda)` | - | h027.c:799 |
++| `$25BA` | `(senza scheda)` | - | h027.c:835 |
++| `$2646` | `(senza scheda)` | - | h027.c:855 |
++| `$2CA6` | `(senza scheda)` | - | h027.c:374 |
++| `$2CFA` | `(senza scheda)` | - | h027.c:384 |
++| `$3612` | `(senza scheda)` | - | h027.c:858 |
++| `$37C2` | `(senza scheda)` | - | h027.c:792 |
++| `$37E4` | `(senza scheda)` | - | h027.c:795 |
++| `$3806` | `(senza scheda)` | - | h027.c:861 |
++| `$3842` | `(senza scheda)` | - | h027.c:394 |
++| `$3A46` | `(senza scheda)` | - | h027.c:40 |
++| `$3A84` | `(senza scheda)` | - | h027.c:413 |
++| `$3AAA` | `(senza scheda)` | - | h027.c:421 |
++| `$3AC8` | `(senza scheda)` | - | h027.c:428 |
++| `$3AFC` | `(senza scheda)` | - | h027.c:437 |
++| `$3BC0` | `(senza scheda)` | - | h027.c:448 |
++| `$3D02` | `(senza scheda)` | - | h027.c:458 |
++| `$3E6C` | `(senza scheda)` | - | h027.c:467 |
++| `$3EB2` | `(senza scheda)` | - | h027.c:474 |
++| `$3F1E` | `(senza scheda)` | - | h027.c:486 |
++| `$4028` | `(senza scheda)` | - | h027.c:870 |
++| `$408A` | `(senza scheda)` | - | h027.c:885 |
++| `$4104` | `(senza scheda)` | - | h027.c:900 |
++| `$418E` | `(senza scheda)` | - | h027.c:501 |
++| `$41AA` | `(senza scheda)` | - | h027.c:508 |
++| `$41F6` | `(senza scheda)` | - | h027.c:50 |
++| `$420C` | `(senza scheda)` | - | h027.c:516 |
++| `$4276` | `sub_H027_00004276` | parziale | h027.c:920 |
+ 
+ ### H028
+ 
+@@ -1002,36 +1024,36 @@ Routine portate: **598 / 1018**.
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+ | `$0106` | `module_init_H062` | parziale | h062.c:15 |
+-| `$0114` | `sub_H062_00000114` | parziale | h062.c:551 |
++| `$0114` | `sub_H062_00000114` | parziale | h062.c:553 |
+ | `$021E` | `sub_H062_0000021E` | parziale |  |
+-| `$02FA` | `sub_H062_000002FA` | parziale |  |
+-| `$03F2` | `sub_H062_000003F2` | parziale | h062.c:108 |
+-| `$0452` | `sub_H062_00000452` | parziale | h062.c:121 |
+-| `$057C` | `sub_H062_0000057C` | parziale | h062.c:422 |
+-| `$0772` | `sub_H062_00000772` | parziale | h062.c:467 |
+-| `$083E` | `trampoline_H062_0F04` | parziale | h062.c:527 |
++| `$02FA` | `sub_H062_000002FA` | parziale | h062.c:775 |
++| `$03F2` | `sub_H062_000003F2` | parziale | h062.c:110 |
++| `$0452` | `sub_H062_00000452` | parziale | h062.c:123 |
++| `$057C` | `sub_H062_0000057C` | parziale | h062.c:424 |
++| `$0772` | `sub_H062_00000772` | parziale | h062.c:469 |
++| `$083E` | `trampoline_H062_0F04` | parziale | h062.c:529 |
+ | `$0F24` | `sub_H062_00000F24` | parziale |  |
+ | `$1038` | `trampoline_H062_1262` | parziale |  |
+ | `$126C` | `sub_H062_0000126C` | parziale |  |
+-| `$12F6` | `sub_H062_000012F6` | parziale | h062.c:577 |
+-| `$142C` | `sub_H062_0000142C` | parziale | h062.c:614 |
++| `$12F6` | `sub_H062_000012F6` | parziale | h062.c:579 |
++| `$142C` | `sub_H062_0000142C` | parziale | h062.c:616 |
+ | `$156C` | `sub_H062_0000156C` | parziale | h062.c:20 |
+-| `$15C6` | `sub_H062_000015C6` | parziale | h062.c:765 |
++| `$15C6` | `sub_H062_000015C6` | parziale | h062.c:767 |
+ | `$15F2` | `sub_H062_000015F2` | parziale | h062.c:38 |
+ | `$1694` | `sub_H062_00001694` | parziale |  |
+ | `$1780` | `sub_H062_00001780` | parziale | h062.c:63 |
+-| `$17C0` | `sub_H062_000017C0` | parziale | h062.c:652 |
++| `$17C0` | `sub_H062_000017C0` | parziale | h062.c:654 |
+ | `$1898` | `sub_H062_00001898` | parziale |  |
+-| `$18AC` | `sub_H062_000018AC` | parziale | h062.c:379 |
+-| `$1916` | `sub_H062_00001916` | parziale | h062.c:393 |
+-| `$1952` | `sub_H062_00001952` | parziale | h062.c:165 |
+-| `$19C2` | `sub_H062_000019C2` | parziale | h062.c:405 |
+-| `$1A32` | `trampoline_H062_1C04` | parziale | h062.c:235 |
+-| `$1A40` | `sub_H062_00001A40` | parziale | h062.c:191 |
+-| `$1A9E` | `sub_H062_00001A9E` | parziale | h062.c:200 |
+-| `$2188` | `sub_H062_00002188` | parziale | h062.c:671 |
++| `$18AC` | `sub_H062_000018AC` | parziale | h062.c:381 |
++| `$1916` | `sub_H062_00001916` | parziale | h062.c:395 |
++| `$1952` | `sub_H062_00001952` | parziale | h062.c:167 |
++| `$19C2` | `sub_H062_000019C2` | parziale | h062.c:407 |
++| `$1A32` | `trampoline_H062_1C04` | parziale | h062.c:237 |
++| `$1A40` | `sub_H062_00001A40` | parziale | h062.c:193 |
++| `$1A9E` | `sub_H062_00001A9E` | parziale | h062.c:202 |
++| `$2188` | `sub_H062_00002188` | parziale | h062.c:673 |
+ | `$253C` | `sub_H062_0000253C` | parziale | h062.c:74 |
+-| `$2650` | `sub_H062_00002650` | parziale |  |
++| `$2650` | `sub_H062_00002650` | parziale | h062.c:800 |
+ | `$2734` | `sub_H062_00002734` | parziale |  |
+ 
+ ### H063
+@@ -1073,7 +1095,7 @@ Routine portate: **598 / 1018**.
+ | `$2984` | `sub_H063_00002984` | parziale | h063.c:1143 |
+ | `$2ACC` | `sub_H063_00002ACC` | parziale | h063.c:1003 |
+ | `$2B4C` | `trampoline_H063_2B72` | parziale | h085.c:302 |
+-| `$2B7C` | `sub_H063_00002B7C` | parziale |  |
++| `$2B7C` | `sub_H063_00002B7C` | parziale | h063.c:1180 |
+ | `$2BDE` | `sub_H063_00002BDE` | parziale |  |
+ | `$2DC6` | `sub_H063_00002DC6` | parziale |  |
+ | `$2F12` | `sub_H063_00002F12` | parziale | h063.c:888 |
+diff --git a/src_c/readable/character.h b/src_c/readable/character.h
+index d42af20..034960c 100644
+--- a/src_c/readable/character.h
++++ b/src_c/readable/character.h
+@@ -24,13 +24,24 @@ typedef struct CokEffect {
+     struct CokEffect *next;     /* +$06 */
+ } CokEffect;
+ 
++/*
++ * Blocco del turno di combattimento (+$192, $18 byte allocati a parte).
++ * L'unico campo longword e' +$0C, un puntatore a personaggio (il
++ * bersaglio): sull'host sta in target; i 4 byte in b[$0C..$0F] restano
++ * inutilizzati.  Tutti gli altri campi sono byte o word in b.
++ */
++typedef struct CokTurn {
++    u8 b[0x18];
++    struct Character *target;   /* +$0C */
++} CokTurn;
++
+ typedef struct Character {
+     u8 b[0x1AA];
+     CokEffect *effects;         /* +$0E8 */
+     CokItem *items;             /* +$150 */
+     CokItem *readied[13];       /* +$154..+$184: oggetti pronti all'uso */
+     struct Character *next;     /* +$18E: personaggio seguente nel party */
+-    void *block_192;            /* +$192: blocco di $18 byte */
++    CokTurn *block_192;         /* +$192: blocco del turno ($18 byte) */
+ } Character;
+ 
+ #define CH_W(c, o)        COK_GET16((c)->b + (o))
+diff --git a/src_c/readable/globals.c b/src_c/readable/globals.c
+index 63e1ebe..3da9150 100644
+--- a/src_c/readable/globals.c
++++ b/src_c/readable/globals.c
+@@ -9,6 +9,9 @@ struct Character *g_spell_targets[40];
+ CokItem *g_scroll_item;
+ u8 *g_combat_area;
+ CokCloud *g_clouds;
++struct Character *g_h005_2a14;
++struct Character *g_combatants[40];
++struct Character *g_h005_0016[20];
+ 
+ u8 *g_state_a;
+ u8 *g_state_b;
+diff --git a/src_c/readable/globals.h b/src_c/readable/globals.h
+index 7da8126..a2070db 100644
+--- a/src_c/readable/globals.h
++++ b/src_c/readable/globals.h
+@@ -85,7 +85,10 @@ typedef struct CokCloud {
+     struct CokCloud *next;              /* +$04 */
+     u8 b[0x22];                         /* +$08..: posizioni, +$1C/+$1E, +$20, +$21 */
+ } CokCloud;
+-extern CokCloud *g_clouds;              /* $2514 */          /* $2770: pergamena in uso */
++extern CokCloud *g_clouds;              /* $2514 */
++extern struct Character *g_h005_2a14;
++extern struct Character *g_combatants[40];
++extern struct Character *g_h005_0016[20]; /* $16..$65: personaggi a terra ($14 = quanti) */ /* $2B32..$2BD1: combattenti per numero */   /* $2A14: bersaglio del turno in esame */          /* $2770: pergamena in uso */
+ 
+ /*
+  * Tabelle di gestori in H005 (puntatori a codice nell'originale).  Il tipo
+diff --git a/src_c/readable/h027.c b/src_c/readable/h027.c
+index b9e73bb..4d3ea8b 100644
+--- a/src_c/readable/h027.c
++++ b/src_c/readable/h027.c
+@@ -5,6 +5,10 @@
+ #include "h063.h"
+ #include "h029_gfx.h"
+ #include "h073.h"
++#include "h003_exec.h"
++#include "h065.h"
++#include "h030.h"
++#include <string.h>
+ 
+ /* PORT H027+$0206: link/unlk, nessun effetto. */
+ void h027_init(void)
+@@ -141,7 +145,8 @@ EH(effect_0a)
+     }
+ }
+ 
+-/* PORT H027+$07F4, $08FC, $098E, $1CF6, $2D30, $38E2, $3C14, $3E9C, $4012, $40EE: nulla. */
++/* PORT H027+$07F4: nulla (usato anche per $08FC, $098E, $1CF6, $2D30, $38E2,
++ * $3C14, $3E9C, $4012 e $40EE, identici). */
+ EH(effect_nothing)
+ {
+     UNUSED_ARGS;
+@@ -200,7 +205,7 @@ EH(effect_14)
+ /* PORT H027+$0A9E (effetto $15): "is silenced", annulla l'incantesimo. */
+ EH(effect_15)
+ {
+-    u8 *turn = (u8 *)(*cp)->block_192;
++    u8 *turn = (*cp)->block_192->b;
+ 
+     (void)obj; (void)flag;
+     if (turn[2]) {
+@@ -276,7 +281,7 @@ EH(effect_24)
+ EH(effect_25)
+ {
+     (void)obj; (void)flag;
+-    if (COK_GET16((u8 *)(*cp)->block_192 + 4) == 0) {
++    if (COK_GET16((*cp)->block_192->b + 4) == 0) {
+         H005_B(0x24AB) = 1;
+         H005_SET_W(0x2A1A, 0xFFFF);
+     }
+@@ -489,7 +494,7 @@ EH(effect_6f)
+             c->b[0xEC] = 0;
+             c->b[0x19A] = 0;
+         }
+-        ((u8 *)c->block_192)[0x12] = 0;
++        (c->block_192->b)[0x12] = 0;
+     }
+ }
+ 
+@@ -523,6 +528,394 @@ EH(effect_item)
+     }
+ }
+ 
++/*
++ * PORT H027+$0214: se il bersaglio del turno (blocco +$192, +$C) non
++ * salva (bonus) resta paralizzato ($34, durata dur).
++ */
++static void paralyze_turn_target(Character **cp, u16 dur, s16 bonus)
++{
++    g_h005_2a14 = (*cp)->block_192->target;
++    if (!saving_throw_roll(g_h005_2a14, 0, bonus)) {
++        show_effect_message(g_h005_2a14, 1, 0x0C, "is Paralyzed");
++        add_effect(g_h005_2a14, 0x34, dur, 0x0C, 0);
++    }
++}
++
++/* PORT H027+$0338: +1 al tiro salvezza e al tiro per colpire. */
++EH(effect_bonus_1)
++{
++    UNUSED_ARGS;
++    add_to_byte(&H005_B(0x2476), 1);
++    H005_SET_W(0x2A1A, (u16)(H005_W(0x2A1A) + 1));
++}
++
++/*
++ * PORT H027+$2182: veleno sul bersaglio del turno: se non salva (bonus,
++ * piu' l'effetto $74) muore avvelenato.
++ */
++static void poison_turn_target(Character **cp, s16 bonus)
++{
++    CokEffect *e;                       /* -$4(a5) */
++
++    g_h005_2a14 = (*cp)->block_192->target;
++    if (find_effect(g_h005_2a14, 0x74, &e)) {
++        if (bonus < 0) {
++            bonus = 0;
++        } else {
++            bonus = (s16)(bonus + e->b[4]);
++        }
++    }
++    if (!saving_throw_roll(g_h005_2a14, 0, bonus)) {
++        show_char_message(g_h005_2a14, 0x0B, "is Poisoned", 0x0A, 0);
++        message_delay();
++        add_effect(g_h005_2a14, 0x37, 0, 0xFF, 0);
++        knock_out(g_h005_2a14, 6, 9, "is killed");
++    }
++}
++
++/*
++ * PORT H027+$0B7A (effetto $17, Spiritual Hammer): da' (o toglie, alla
++ * rimozione) il martello magico (tipo 6, +$34 = $79).  Come nell'originale
++ * la ricerca dopo l'aggiunta lascia in it l'oggetto seguente al martello.
++ */
++EH(effect_17)
++{
++    Character *c = *cp;
++    Character *saved;                   /* -$a(a5) */
++    CokItem *it;                        /* -$4(a5) */
++    u8 found;                           /* -$5(a5) */
++
++    (void)obj;
++    it = c->items;
++    found = 0;
++    while (it != NULL && !found) {
++        if (it->b[0x30] == 6 && it->b[0x34] == 0x79) {
++            found = 1;
++        } else {
++            it = it->next;
++        }
++    }
++    if (flag && it != NULL) {
++        delete_item(*cp, it);
++    }
++    if (!flag && !found && (*cp)->b[0x14F] < 0x10) {
++        it = (CokItem *)exec_alloc_mem(sizeof(CokItem), COK_MEMF_CLEAR);
++        it->b[0x30] = 6;
++        it->b[0x33] = 6;
++        it->b[0x34] = 0x79;
++        COK_PUT16(&it->b[0x36], 1);
++        it->b[0x45] = 0x17;
++        it->b[0x46] = 0x80;
++        give_item_copy(*cp, it);
++        exec_free_mem(it, sizeof(CokItem));     /* FreeMem($48) */
++        it = (*cp)->items;
++        found = 0;
++        while (it != NULL && !found) {
++            found = (u8)(it->b[0x34] == 0x79 && it->b[0x30] == 6);
++            it = it->next;
++        }
++        saved = g_current_char;
++        g_current_char = *cp;
++        if (it != NULL && (*cp)->readied[0] == NULL) {
++            ready_item(it);
++            it->b[0x3A] = 1;
++        }
++        g_current_char = saved;
++        if ((*cp)->b[0x197] == 0) {
++            show_char_message(*cp, 0x0D, "Gains an item", 0x0A, 1);
++        }
++    }
++    recompute_stats(*cp);
++}
++
++/* PORT H027+$18A4 (effetto $2B, debolezza): -1 alla forza fino a 3. */
++EH(effect_2b)
++{
++    CokEffect *e;                       /* -$4(a5) */
++
++    (void)flag;
++    if (!add_effect_unless_quiet(cp, 0x2B, EFF->b[4], 0x3C)) {
++        return;
++    }
++    if ((*cp)->b[0x11] > 3) {
++        show_char_message(*cp, 0x0B, "is weakened", 0x0A, 1);
++        add_to_byte(&(*cp)->b[0x11], 0xFFFF);
++    } else if (!find_effect(*cp, 0x1F, &e)) {
++        add_effect(*cp, 0x1F, 0, 0xFF, 0);
++    }
++}
++
++/* PORT H027+$1956 (effetto $2C, malattia): 1 punto di danno. */
++EH(effect_2c)
++{
++    CokEffect *e;                       /* -$4(a5) */
++
++    (void)flag;
++    if (!add_effect_unless_quiet(cp, 0x2C, EFF->b[4], 0x0A)) {
++        return;
++    }
++    if ((*cp)->b[0x1A8] > 1) {
++        H005_B(0x2473) = 0;
++        apply_damage(*cp, 1, 0, 0);
++        if (H005_B(0x3DE3) != 5) {
++            draw_party(g_current_char);
++        }
++    } else if (!find_effect(*cp, 0x1F, &e)) {
++        add_effect(*cp, 0x1F, 0, 0xFF, 0);
++    }
++}
++
++/*
++ * PORT H027+$1A42 (effetto $30): "immolates": 1d6 di danno ai
++ * combattenti attivi dell'area attorno.
++ */
++EH(effect_30)
++{
++    u16 list[8];                        /* -$12(a5) */
++    u16 n;                              /* -$14(a5) */
++    u16 j;                              /* -$2(a5) */
++    u16 a;
++    u16 b;
++    Character *p;
++
++    (void)obj; (void)flag;
++    a = h048_0f88(*cp);
++    b = h048_0fba(*cp);
++    h077_08ac(h048_110c(a, b, 1, 0xFF, *cp), g_combat_area);
++    show_char_message(*cp, 9, "immolates", 0x0A, 1);
++    n = (u16)(H005_B(0x2479) - 1);
++    for (j = 2; j <= H005_B(0x2479); ++j) {
++        list[j - 2] = H005_B(0x2A3E + (j - 1) * 4);
++    }
++    for (j = 1; j <= n; ++j) {
++        p = g_combatants[list[j - 1] - 1];
++        if (p->b[0x198]) {
++            apply_damage(p, roll_damage_dice(1, 6), 0, 0);
++        }
++    }
++}
++
++/* PORT H027+$1B88 (effetto $31): +1 al proprio lato (+$4 bit 4), -1 agli altri. */
++EH(effect_31)
++{
++    u8 side;                            /* -$1(a5) */
++
++    side = (u8)(mask_byte(EFF->b[4], 0x10) >> 4);
++    if ((*cp)->b[0x199] == side) {
++        effect_bonus_1(cp, obj, flag);
++    } else {
++        H005_SET_W(0x2A1A, (u16)(H005_W(0x2A1A) - 1));
++        add_to_byte(&H005_B(0x2476), 0xFFFF);
++    }
++}
++
++/* PORT H027+$1D80 (effetto $3A): alla rimozione, effetti $3B/$3C e via 4, $20, $30, $39. */
++EH(effect_3a)
++{
++    (void)obj;
++    if (!flag) {
++        return;
++    }
++    add_effect(*cp, 0x3B, 0, 0xFF, 0);
++    add_effect(*cp, 0x3C, 3, 0xFF, 1);
++    remove_effect(*cp, 4, NULL);
++    remove_effect(*cp, 0x20, NULL);
++    remove_effect(*cp, 0x30, NULL);
++    remove_effect(*cp, 0x39, NULL);
++}
++
++/* PORT H027+$0AFE (effetto $16): l'avvelenato ($37) muore; via $F. */
++EH(effect_16)
++{
++    CokEffect *e;                       /* -$4(a5) */
++
++    (void)obj; (void)flag;
++    if (find_effect(*cp, 0x37, &e)) {
++        knock_out(*cp, 6, 0x10, "dies from poison");
++        remove_effect(*cp, 0x37, NULL);
++    }
++    H005_B(0x24AA) = 1;
++    remove_effect(*cp, 0x0F, NULL);
++    H005_B(0x24AA) = 0;
++}
++
++/* PORT H027+$0DB8 (effetto $1A): +1 a colpire un bersaglio col bit 7 di +$14C. */
++EH(effect_1a)
++{
++    (void)obj; (void)flag;
++    g_h005_2a14 = (*cp)->block_192->target;
++    if (mask_byte(g_h005_2a14->b[0x14C], 0x80)) {
++        H005_SET_W(0x2A1A, (u16)(H005_W(0x2A1A) + 1));
++    }
++}
++
++/*
++ * PORT H027+$2028 (effetto $3D): il fuoco perde 2 punti per dado (minimo
++ * un punto per dado, $2470), +4 al salvezza; senza magia annulla.
++ */
++EH(effect_3d)
++{
++    u16 j;                              /* -$2(a5) */
++
++    UNUSED_ARGS;
++    if (!mask_byte(H005_B(0x2473), 1)) {
++        return;
++    }
++    for (j = 1; j <= H005_B(0x2470); ++j) {
++        add_to_byte(&H005_B(0x2474), 0xFFFE);
++        if (H005_B(0x2474) < H005_B(0x2470)) {
++            H005_B(0x2474) = H005_B(0x2470);
++        }
++    }
++    add_to_byte(&H005_B(0x2476), 4);
++    if (mask_byte(H005_B(0x2473), 8) == 0) {
++        cancel_incoming(0);
++    }
++}
++
++/* PORT H027+$20DA (effetto $3E, rigenerazione): +1 PF. */
++EH(effect_3e)
++{
++    (void)flag;
++    if (add_effect_unless_quiet(cp, 0x3E, EFF->b[4], 0x3C) &&
++        heal_character(*cp, 1, 1)) {
++        heal_message(*cp);
++    }
++}
++
++/* PORT H027+$224C (effetto $40): veleno sul bersaglio del turno. */
++EH(effect_40) { (void)obj; (void)flag; poison_turn_target(cp, 0); }
++
++/* PORT H027+$226C (effetto $41): veleno, +4 al salvezza. */
++EH(effect_41) { (void)obj; (void)flag; poison_turn_target(cp, 4); }
++
++/* PORT H027+$37C2 (effetto $56): veleno, -2 al salvezza. */
++EH(effect_56) { (void)obj; (void)flag; poison_turn_target(cp, -2); }
++
++/* PORT H027+$37E4 (effetto $57): veleno, +1 al salvezza. */
++EH(effect_57) { (void)obj; (void)flag; poison_turn_target(cp, 1); }
++
++/*
++ * PORT H027+$228E (effetto $42): il primo combattente nemico dell'area
++ * "gets zapped!" (2d6); fine del turno.
++ */
++EH(effect_42)
++{
++    Character *target = NULL;           /* -$4(a5) */
++    Character *p;
++    u16 j;                              /* -$8(a5) */
++    u16 a;
++    u16 b;
++    u8 r;
++
++    (void)obj; (void)flag;
++    a = h048_0f88(*cp);
++    b = h048_0fba(*cp);
++    h077_08ac(h048_110c(a, b, 1, 0xFF, *cp), g_combat_area);
++    H005_B(0x24C5) = 0;
++    j = 2;
++    do {
++        if (j <= H005_B(0x2479)) {
++            p = g_combatants[H005_B(0x2A3E + (j - 1) * 4) - 1];
++            if (p != NULL && p->b[0x199] != (*cp)->b[0x199]) {
++                target = p;
++                H005_B(0x24C5) = 1;
++            }
++        }
++        ++j;
++    } while (!H005_B(0x24C5) && j <= H005_B(0x2479));
++    if (target != NULL) {
++        show_char_message(target, 0x0C, "gets zapped!", 0x0A, 1);
++        apply_damage(target, roll_damage_dice(2, 6), 0, 0);
++        r = end_combat_turn(*cp);
++        (void)r;
++    }
++}
++
++/* PORT H027+$25BA (effetto $44): a terra, entra nella lista H005+$16. */
++EH(effect_44)
++{
++    (void)obj; (void)flag;
++    if ((*cp)->b[0x198]) {
++        return;
++    }
++    (*cp)->b[0x197] = 0x0A;
++    H005_SET_W(0x14, (u16)(H005_W(0x14) + 1));
++    if (H005_W(0x14) < 1) {
++        H005_SET_W(0x14, 1);
++    }
++    if (H005_W(0x14) <= 0x14) {
++        g_h005_0016[H005_W(0x14) - 1] = *cp;
++    } else {
++        H005_SET_W(0x14, 0x14);
++    }
++    remove_effect(*cp, 0x44, NULL);
++}
++
++/* PORT H027+$2646 (effetto $45): paralisi del bersaglio. */
++EH(effect_45) { (void)obj; (void)flag; paralyze_turn_target(cp, 0x64, 0); }
++
++/* PORT H027+$3612 (effetto $51): paralisi del bersaglio. */
++EH(effect_51) { (void)obj; (void)flag; paralyze_turn_target(cp, 0x64, 0); }
++
++/* PORT H027+$3806 (effetto $58): paralisi se il bersaglio ha +$5B > 1. */
++EH(effect_58)
++{
++    (void)obj; (void)flag;
++    if ((*cp)->block_192->target->b[0x5B] > 1) {
++        paralyze_turn_target(cp, 0x64, 0);
++    }
++}
++
++/* PORT H027+$4028 (effetto $72): danno pari ai PF col bit 0 di +$14D. */
++EH(effect_72)
++{
++    Character *t;                       /* -$4(a5) */
++
++    (void)obj;
++    if (flag || H005_B(0x3DE3) != 5) {
++        return;
++    }
++    t = (*cp)->block_192->target;
++    if (mask_byte(t->b[0x14D], 1)) {
++        H005_B(0x2474) = (*cp)->b[0x1A8];
++    }
++}
++
++/* PORT H027+$408A (effetto $73): +3 danni col bit 5 di +$14C. */
++EH(effect_73)
++{
++    Character *t;                       /* -$4(a5) */
++
++    (void)obj;
++    if (flag || H005_B(0x3DE3) != 5) {
++        return;
++    }
++    t = (*cp)->block_192->target;
++    if (mask_byte(t->b[0x14C], 0x20)) {
++        add_to_byte(&H005_B(0x2474), 3);
++    }
++}
++
++/* PORT H027+$4104 (effetto $75): contro il bit 1 di +$14C distrugge o raddoppia. */
++EH(effect_75)
++{
++    Character *t;                       /* -$4(a5) */
++
++    (void)obj;
++    if (flag || H005_B(0x3DE3) != 5) {
++        return;
++    }
++    t = (*cp)->block_192->target;
++    if (mask_byte(t->b[0x14C], 2)) {
++        if (t->b[0xDF]) {
++            knock_out(t, 8, 0x0C, "is disrupted");
++        } else {
++            H005_B(0x2474) = (u8)(H005_B(0x2474) << 1);
++        }
++    }
++}
++
+ /*
+  * PORT H027+$4276: installa i gestori degli effetti di H027 nella tabella
+  * H005+$2832 (le altre voci le scrive H033+$1A50).
+@@ -548,11 +941,11 @@ void install_effect_handlers(void)
+     g_handlers_2832[18] = (CokHandler)effect_none;   /* $287A */
+     g_handlers_2832[19] = (CokHandler)effect_14;   /* $287E */
+     g_handlers_2832[20] = (CokHandler)effect_15;   /* $2882 */
+-    g_handlers_2832[21] = h027_0afe;   /* $2886 */
+-    g_handlers_2832[22] = h027_0b7a;   /* $288A */
++    g_handlers_2832[21] = (CokHandler)effect_16;   /* $2886 */
++    g_handlers_2832[22] = (CokHandler)effect_17;   /* $288A */
+     g_handlers_2832[23] = (CokHandler)effect_none;   /* $288E */
+     g_handlers_2832[24] = (CokHandler)effect_19;   /* $2892 */
+-    g_handlers_2832[25] = h027_0db8;   /* $2896 */
++    g_handlers_2832[25] = (CokHandler)effect_1a;   /* $2896 */
+     g_handlers_2832[26] = (CokHandler)effect_end_turn;   /* $289A */
+     g_handlers_2832[27] = (CokHandler)effect_1c;   /* $289E */
+     g_handlers_2832[28] = (CokHandler)effect_1d;   /* $28A2 */
+@@ -569,13 +962,13 @@ void install_effect_handlers(void)
+     g_handlers_2832[39] = h027_13f4;   /* $28CE */
+     g_handlers_2832[40] = h027_1836;   /* $28D2 */
+     g_handlers_2832[41] = (CokHandler)effect_2a;   /* $28D6 */
+-    g_handlers_2832[42] = h027_18a4;   /* $28DA */
+-    g_handlers_2832[43] = h027_1956;   /* $28DE */
++    g_handlers_2832[42] = (CokHandler)effect_2b;   /* $28DA */
++    g_handlers_2832[43] = (CokHandler)effect_2c;   /* $28DE */
+     g_handlers_2832[44] = (CokHandler)effect_08;   /* $28E2 */
+     g_handlers_2832[45] = (CokHandler)effect_09;   /* $28E6 */
+     g_handlers_2832[46] = (CokHandler)effect_2f;   /* $28EA */
+-    g_handlers_2832[47] = h027_1a42;   /* $28EE */
+-    g_handlers_2832[48] = h027_1b88;   /* $28F2 */
++    g_handlers_2832[47] = (CokHandler)effect_30;   /* $28EE */
++    g_handlers_2832[48] = (CokHandler)effect_31;   /* $28F2 */
+     g_handlers_2832[49] = (CokHandler)effect_32;   /* $28F6 */
+     g_handlers_2832[50] = (CokHandler)effect_end_turn;   /* $28FA */
+     g_handlers_2832[51] = (CokHandler)effect_end_turn;   /* $28FE */
+@@ -584,18 +977,18 @@ void install_effect_handlers(void)
+     g_handlers_2832[54] = (CokHandler)effect_nothing;   /* $290A */
+     g_handlers_2832[55] = (CokHandler)effect_38;   /* $290E */
+     g_handlers_2832[56] = (CokHandler)effect_39;   /* $2912 */
+-    g_handlers_2832[57] = h027_1d80;   /* $2916 */
++    g_handlers_2832[57] = (CokHandler)effect_3a;   /* $2916 */
+     g_handlers_2832[58] = (CokHandler)effect_3b;   /* $291A */
+     g_handlers_2832[59] = h027_1e3c;   /* $291E */
+-    g_handlers_2832[60] = h027_2028;   /* $2922 */
+-    g_handlers_2832[61] = h027_20da;   /* $2926 */
++    g_handlers_2832[60] = (CokHandler)effect_3d;   /* $2922 */
++    g_handlers_2832[61] = (CokHandler)effect_3e;   /* $2926 */
+     g_handlers_2832[62] = (CokHandler)effect_3f;   /* $292A */
+-    g_handlers_2832[63] = h027_224c;   /* $292E */
+-    g_handlers_2832[64] = h027_226c;   /* $2932 */
+-    g_handlers_2832[65] = h027_228e;   /* $2936 */
++    g_handlers_2832[63] = (CokHandler)effect_40;   /* $292E */
++    g_handlers_2832[64] = (CokHandler)effect_41;   /* $2932 */
++    g_handlers_2832[65] = (CokHandler)effect_42;   /* $2936 */
+     g_handlers_2832[66] = h027_2400;   /* $293A */
+-    g_handlers_2832[67] = h027_25ba;   /* $293E */
+-    g_handlers_2832[68] = h027_2646;   /* $2942 */
++    g_handlers_2832[67] = (CokHandler)effect_44;   /* $293E */
++    g_handlers_2832[68] = (CokHandler)effect_45;   /* $2942 */
+     g_handlers_2832[69] = h027_266a;   /* $2946 */
+     g_handlers_2832[70] = h027_29e2;   /* $294A */
+     g_handlers_2832[71] = h027_2b3e;   /* $294E */
+@@ -606,11 +999,11 @@ void install_effect_handlers(void)
+     g_handlers_2832[76] = h027_2fe2;   /* $2962 */
+     g_handlers_2832[78] = h027_3160;   /* $296A */
+     g_handlers_2832[79] = h027_3292;   /* $296E */
+-    g_handlers_2832[80] = h027_3612;   /* $2972 */
++    g_handlers_2832[80] = (CokHandler)effect_51;   /* $2972 */
+     g_handlers_2832[81] = h027_3636;   /* $2976 */
+-    g_handlers_2832[85] = h027_37c2;   /* $2986 */
+-    g_handlers_2832[86] = h027_37e4;   /* $298A */
+-    g_handlers_2832[87] = h027_3806;   /* $298E */
++    g_handlers_2832[85] = (CokHandler)effect_56;   /* $2986 */
++    g_handlers_2832[86] = (CokHandler)effect_57;   /* $298A */
++    g_handlers_2832[87] = (CokHandler)effect_58;   /* $298E */
+     g_handlers_2832[88] = (CokHandler)effect_59;   /* $2992 */
+     g_handlers_2832[90] = (CokHandler)effect_nothing;   /* $299A */
+     g_handlers_2832[91] = (CokHandler)effect_none;   /* $299E */
+@@ -634,10 +1027,10 @@ void install_effect_handlers(void)
+     g_handlers_2832[110] = (CokHandler)effect_6f;   /* $29EA */
+     g_handlers_2832[111] = h027_3f72;   /* $29EE */
+     g_handlers_2832[112] = (CokHandler)effect_nothing;   /* $29F2 */
+-    g_handlers_2832[113] = h027_4028;   /* $29F6 */
+-    g_handlers_2832[114] = h027_408a;   /* $29FA */
++    g_handlers_2832[113] = (CokHandler)effect_72;   /* $29F6 */
++    g_handlers_2832[114] = (CokHandler)effect_73;   /* $29FA */
+     g_handlers_2832[115] = (CokHandler)effect_nothing;   /* $29FE */
+-    g_handlers_2832[116] = h027_4104;   /* $2A02 */
++    g_handlers_2832[116] = (CokHandler)effect_75;   /* $2A02 */
+     g_handlers_2832[117] = (CokHandler)effect_76;   /* $2A06 */
+     g_handlers_2832[118] = (CokHandler)effect_77;   /* $2A0A */
+     g_handlers_2832[119] = (CokHandler)effect_item;   /* $2A0E */
+diff --git a/src_c/readable/h033.c b/src_c/readable/h033.c
+index 93e9ed2..ba2ef09 100644
+--- a/src_c/readable/h033.c
++++ b/src_c/readable/h033.c
+@@ -727,8 +727,8 @@ void cast_spell(u16 spell, u8 auto_abort, u8 announce, u8 *redraw)
+                 }
+                 h063_21d2(a, b, H005_W(0x251A), H005_W(0x2518), 4, 1);
+                 if (h048_0230(c, 0)) {
+-                    h048_0fec(c, ((u8 *)c->block_192)[0x0B], 1, 1);
+-                    h048_0fec(c, ((u8 *)c->block_192)[0x0B], 0, 0);
++                    h048_0fec(c, (c->block_192->b)[0x0B], 1, 1);
++                    h048_0fec(c, (c->block_192->b)[0x0B], 0, 0);
+                 }
+             }
+             remove_effects_19(c);
+diff --git a/src_c/readable/h053.c b/src_c/readable/h053.c
+index a3a692a..090b091 100644
+--- a/src_c/readable/h053.c
++++ b/src_c/readable/h053.c
+@@ -20,7 +20,7 @@ void free_character(Character **character)
+     CokEffect *effect;
+ 
+     if (c->block_192 != NULL) {
+-        exec_free_mem(c->block_192, 0x18);
++        exec_free_mem(c->block_192, sizeof(CokTurn));   /* FreeMem($18) */
+     }
+     item = c->items;
+     while (item != NULL) {
+diff --git a/src_c/readable/h062.c b/src_c/readable/h062.c
+index d370ea3..e67768c 100644
+--- a/src_c/readable/h062.c
++++ b/src_c/readable/h062.c
+@@ -101,6 +101,8 @@ u8 heal_character(Character *c, u16 amount, u8 full_only)
+     return ok;
+ }
+ 
++static void drop_effects(Character *c);
++
+ /* Gestore della tabella degli effetti H005+$2832 (argomenti come H062+$03F2). */
+ typedef void (*CokEffectHandler)(Character **c, void *obj, u8 flag);
+ 
+@@ -729,7 +731,7 @@ void apply_damage(Character *c, u16 dmg, u8 kind, u8 saved)
+     show_effect_message(c, 0, 0x50, text);
+     damage_hit_points(c, H005_B(0x2474));
+     if (H005_B(0x3DE3) == 5) {
+-        turn = (u8 *)c->block_192;
++        turn = c->block_192->b;
+         turn[1] = 0;
+         if (turn[0] > 0) {
+             show_char_message(c, 0x0C, "lost a spell", 0x0C, 1);
+@@ -768,3 +770,55 @@ u16 roll_damage_dice(u16 count, u16 sides)
+     H005_B(0x2470) = (u8)count;
+     return roll_dice(count, sides);
+ }
++
++/*
++ * PORT H062+$02FA: messaggio text e, se c non e' gia' morto (6-8), lo
++ * mette nello stato status a terra (eventi $D, H048+$12F4).
++ */
++void knock_out(Character *c, u8 status, u16 len, const char *text)
++{
++    show_char_message(c, len, text, 0x0A, 0);
++    if (c->b[0x197] == 7 || c->b[0x197] == 6 || c->b[0x197] == 8) {
++        return;
++    }
++    c->b[0x197] = status;
++    c->b[0x198] = 0;
++    c->b[0x1A8] = 0;
++    drop_effects(c);
++    trigger_event(&c, 0x0D);
++    if (!c->b[0x198] && c->b[0x197] != 0x0A) {
++        h048_12f4(c);
++    }
++    message_delay();
++    clear_message_area();
++    if (H005_B(0x3DE3) != 5) {
++        draw_party(g_current_char);
++    }
++}
++
++/*
++ * PORT H062+$2650: rimette in piedi c con hp punti ferita se trova posto
++ * (H048+$16D4), con il messaggio text; ricalcola i lati.
++ */
++u8 revive(Character *c, u16 hp, u16 len, const char *text)
++{
++    u8 saved;                           /* -$1(a5) */
++    u8 a = (u8)h048_0f88(c);
++    u8 b = (u8)h048_0fba(c);
++
++    if (!h048_16d4(c, a, b, 1)) {
++        return 0;
++    }
++    c->b[0x197] = 0;
++    c->b[0x198] = 1;
++    c->b[0x1A8] = (u8)hp;
++    if (H005_B(0x3DE3) == 5) {
++        saved = H005_B(0x24C6);
++        H005_B(0x24C6) = 1;
++        h048_195e(c, 3, 0);
++        H005_B(0x24C6) = saved;
++    }
++    show_effect_message(c, 1, len, text);
++    count_sides();
++    return 1;
++}
+diff --git a/src_c/readable/h062.h b/src_c/readable/h062.h
+index 56bbe9c..3d7e7b4 100644
+--- a/src_c/readable/h062.h
++++ b/src_c/readable/h062.h
+@@ -33,4 +33,8 @@ void apply_spell_effect_on(Character *t, u16 type, u16 dur, u16 lvl, u8 b5,
+ 
+ u16  roll_damage_dice(u16 count, u16 sides);     /* H062+$15C6 */
+ 
++void knock_out(Character *c, u8 status, u16 len, const char *text);
++                                                /* H062+$02FA */
++u8   revive(Character *c, u16 hp, u16 len, const char *text); /* H062+$2650 */
++
+ #endif
+diff --git a/src_c/readable/h063.c b/src_c/readable/h063.c
+index 98a7d54..16ee529 100644
+--- a/src_c/readable/h063.c
++++ b/src_c/readable/h063.c
+@@ -888,7 +888,7 @@ void clear_message_area(void)
+ /* PORT H063+$2F12: azzera il turno di combattimento (blocco +$192). */
+ u8 end_combat_turn(Character *c)
+ {
+-    u8 *turn = (u8 *)c->block_192;
++    u8 *turn = c->block_192->b;
+ 
+     COK_PUT16(&turn[4], 0);
+     turn[0] = 0;
+@@ -1159,7 +1159,7 @@ void damage_hit_points(Character *c, u16 dmg)
+     } else if (below > 0) {
+         c->b[0x197] = 5;
+         if (H005_B(0x3DE3) == 5) {
+-            ((u8 *)c->block_192)[0x10] = (u8)below;
++            (c->block_192->b)[0x10] = (u8)below;
+         }
+     } else if (left == 0) {
+         c->b[0x197] = 4;
+@@ -1170,9 +1170,23 @@ void damage_hit_points(Character *c, u16 dmg)
+         if (H005_B(0x3DE3) == 5) {
+             H005_B(0x2A1C + c->b[0x199]) =
+                 (u8)(H005_B(0x2A1C + c->b[0x199]) - 1);
+-            COK_PUT16((u8 *)c->block_192 + 4, 0);
++            COK_PUT16(c->block_192->b + 4, 0);
+         }
+     } else {
+         c->b[0x1A8] = (u8)left;
+     }
+ }
++
++/* PORT H063+$2B7C: conta i combattenti attivi per lato in $2A1C/$2A1D. */
++void count_sides(void)
++{
++    Character *p;                       /* -$4(a5) */
++
++    H005_B(0x2A1C) = 0;
++    H005_B(0x2A1D) = 0;
++    for (p = g_party_head; p != NULL; p = p->next) {
++        if (p->b[0x198]) {
++            add_to_byte(&H005_B(0x2A1C + p->b[0x199]), 1);
++        }
++    }
++}
+diff --git a/src_c/readable/h063.h b/src_c/readable/h063.h
+index 1c93bf7..47ce43d 100644
+--- a/src_c/readable/h063.h
++++ b/src_c/readable/h063.h
+@@ -40,4 +40,6 @@ void show_effect_message(Character *c, u8 flag, u16 len, const char *text);
+                                                         /* H063+$2760 */
+ void damage_hit_points(Character *c, u16 dmg);          /* H063+$2984 */
+ 
++void count_sides(void);                                 /* H063+$2B7C */
++
+ #endif
+diff --git a/src_c/readable/h065.c b/src_c/readable/h065.c
+index ae797c0..b2fa762 100644
+--- a/src_c/readable/h065.c
++++ b/src_c/readable/h065.c
+@@ -772,7 +772,7 @@ static void magic_item_ready(CokItem *it, u8 readying)
+  * Impedimenti: classe, slot gia' occupato ("already using ..."), mani
+  * piene, ordine magico delle pergamene ($27), solo kender ($43).
+  */
+-static void ready_item(CokItem *it)
++void ready_item(CokItem *it)
+ {
+     Character *c = g_current_char;      /* -$a(a5) */
+     u8 magic = (u8)(it->b[0x46] > 0x7F);        /* -$1(a5) */
+@@ -1109,7 +1109,7 @@ void show_items(u8 *redraw)
+                 (H005_B(0x3DE3) == 2 || H005_B(0x3DE3) == 3 ||
+                  H005_B(0x3DE3) == 4 ||
+                  (H005_B(0x3DE3) == 5 && c->block_192 != NULL &&
+-                  ((u8 *)c->block_192)[2] != 0))) {
++                  (c->block_192->b)[2] != 0))) {
+                 h026_append(0x28, menu, 4, " Use");
+             }
+             if (trade_ok && H005_B(0x3DE3) != 5) {
+diff --git a/src_c/readable/h065.h b/src_c/readable/h065.h
+index a6d295e..ba88c80 100644
+--- a/src_c/readable/h065.h
++++ b/src_c/readable/h065.h
+@@ -14,4 +14,7 @@ void show_items(u8 *redraw);            /* H065+$255A */
+ u16  choose_spell_of_kind(u16 kind, u16 mode, s16 *spell, u8 *found);
+                                         /* H065+$34FC */
+ 
++#include "character.h"
++void ready_item(CokItem *it);           /* H065+$2C04 */
++
+ #endif
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index c2482b2..6c8e509 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -6,6 +6,7 @@
+ #include <stdlib.h>
+ 
+ #include "unported.h"
++#include "globals.h"
+ 
+ void cok_unported_skip(const char *where)
+ {
+@@ -45,28 +46,13 @@ void h012_3150(void) { cok_unported("H012+$3150"); }
+ void h027_0492(void) { cok_unported("H027+$0492"); }
+ void h027_06d4(void) { cok_unported("H027+$06D4"); }
+ void h027_080a(void) { cok_unported("H027+$080A"); }
+-void h027_0afe(void) { cok_unported("H027+$0AFE"); }
+-void h027_0b7a(void) { cok_unported("H027+$0B7A"); }
+-void h027_0db8(void) { cok_unported("H027+$0DB8"); }
+ void h027_0efc(void) { cok_unported("H027+$0EFC"); }
+ void h027_0fce(void) { cok_unported("H027+$0FCE"); }
+ void h027_1162(void) { cok_unported("H027+$1162"); }
+ void h027_13f4(void) { cok_unported("H027+$13F4"); }
+ void h027_1836(void) { cok_unported("H027+$1836"); }
+-void h027_18a4(void) { cok_unported("H027+$18A4"); }
+-void h027_1956(void) { cok_unported("H027+$1956"); }
+-void h027_1a42(void) { cok_unported("H027+$1A42"); }
+-void h027_1b88(void) { cok_unported("H027+$1B88"); }
+-void h027_1d80(void) { cok_unported("H027+$1D80"); }
+ void h027_1e3c(void) { cok_unported("H027+$1E3C"); }
+-void h027_2028(void) { cok_unported("H027+$2028"); }
+-void h027_20da(void) { cok_unported("H027+$20DA"); }
+-void h027_224c(void) { cok_unported("H027+$224C"); }
+-void h027_226c(void) { cok_unported("H027+$226C"); }
+-void h027_228e(void) { cok_unported("H027+$228E"); }
+ void h027_2400(void) { cok_unported("H027+$2400"); }
+-void h027_25ba(void) { cok_unported("H027+$25BA"); }
+-void h027_2646(void) { cok_unported("H027+$2646"); }
+ void h027_266a(void) { cok_unported("H027+$266A"); }
+ void h027_29e2(void) { cok_unported("H027+$29E2"); }
+ void h027_2b3e(void) { cok_unported("H027+$2B3E"); }
+@@ -74,11 +60,7 @@ void h027_2d46(void) { cok_unported("H027+$2D46"); }
+ void h027_2fe2(void) { cok_unported("H027+$2FE2"); }
+ void h027_3160(void) { cok_unported("H027+$3160"); }
+ void h027_3292(void) { cok_unported("H027+$3292"); }
+-void h027_3612(void) { cok_unported("H027+$3612"); }
+ void h027_3636(void) { cok_unported("H027+$3636"); }
+-void h027_37c2(void) { cok_unported("H027+$37C2"); }
+-void h027_37e4(void) { cok_unported("H027+$37E4"); }
+-void h027_3806(void) { cok_unported("H027+$3806"); }
+ void h027_3916(void) { cok_unported("H027+$3916"); }
+ void h027_3982(void) { cok_unported("H027+$3982"); }
+ void h027_3b34(void) { cok_unported("H027+$3B34"); }
+@@ -86,9 +68,6 @@ void h027_3c2a(void) { cok_unported("H027+$3C2A"); }
+ void h027_3c88(void) { cok_unported("H027+$3C88"); }
+ void h027_3d28(void) { cok_unported("H027+$3D28"); }
+ void h027_3f72(void) { cok_unported("H027+$3F72"); }
+-void h027_4028(void) { cok_unported("H027+$4028"); }
+-void h027_408a(void) { cok_unported("H027+$408A"); }
+-void h027_4104(void) { cok_unported("H027+$4104"); }
+ void h033_1a40(void) { cok_unported("H033+$1A40"); }
+ void h085_15fe(void) { cok_unported("H085+$15FE"); }
+ void h085_172a(void) { cok_unported("H085+$172A"); }
+@@ -181,3 +160,14 @@ void h029_0d58(u16 x, u16 y, u8 frame, u8 mode, struct GfxRecord *src,
+     cok_unported("H029+$0D58");
+ }
+ u16 h063_2bde(Character *c, u16 a) { (void)c; (void)a; cok_unported("H063+$2BDE"); return 0; }
++
++u8 h048_16d4(Character *c, u8 a, u8 b, u8 d)
++{
++    (void)c; (void)a; (void)b; (void)d;
++    if (H005_B(0x3DE3) != 5) {
++        return 1;                       /* H048+$1944: fuori dal combattimento */
++    }
++    cok_unported("H048+$16D4");
++    return 0;
++}
++void h048_195e(Character *c, u16 a, u8 b) { (void)c; (void)a; (void)b; cok_unported("H048+$195E"); }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index 4c8d582..5bd5e94 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -25,28 +25,13 @@ void h012_3150(void);
+ void h027_0492(void);
+ void h027_06d4(void);
+ void h027_080a(void);
+-void h027_0afe(void);
+-void h027_0b7a(void);
+-void h027_0db8(void);
+ void h027_0efc(void);
+ void h027_0fce(void);
+ void h027_1162(void);
+ void h027_13f4(void);
+ void h027_1836(void);
+-void h027_18a4(void);
+-void h027_1956(void);
+-void h027_1a42(void);
+-void h027_1b88(void);
+-void h027_1d80(void);
+ void h027_1e3c(void);
+-void h027_2028(void);
+-void h027_20da(void);
+-void h027_224c(void);
+-void h027_226c(void);
+-void h027_228e(void);
+ void h027_2400(void);
+-void h027_25ba(void);
+-void h027_2646(void);
+ void h027_266a(void);
+ void h027_29e2(void);
+ void h027_2b3e(void);
+@@ -54,11 +39,7 @@ void h027_2d46(void);
+ void h027_2fe2(void);
+ void h027_3160(void);
+ void h027_3292(void);
+-void h027_3612(void);
+ void h027_3636(void);
+-void h027_37c2(void);
+-void h027_37e4(void);
+-void h027_3806(void);
+ void h027_3916(void);
+ void h027_3982(void);
+ void h027_3b34(void);
+@@ -66,9 +47,6 @@ void h027_3c2a(void);
+ void h027_3c88(void);
+ void h027_3d28(void);
+ void h027_3f72(void);
+-void h027_4028(void);
+-void h027_408a(void);
+-void h027_4104(void);
+ void h033_1a40(void);
+ void h085_15fe(void);
+ void h085_172a(void);
+@@ -131,4 +109,11 @@ void h029_0d58(u16 x, u16 y, u8 frame, u8 mode, struct GfxRecord *src,
+ 
+ u16  h063_2bde(Character *c, u16 a);        /* bersaglio in combattimento */
+ 
++/*
++ * H048+$16D4: posiziona c sulla mappa del combattimento; fuori dal
++ * combattimento restituisce 1 (portato quel ramo), il resto non e' portato.
++ */
++u8   h048_16d4(Character *c, u8 a, u8 b, u8 d);
++void h048_195e(Character *c, u16 a, u8 b);
++
+ #endif
+-- 
+2.43.0
+

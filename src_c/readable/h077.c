@@ -1,0 +1,309 @@
+/* H077: effetti visivi di combattimento e incantesimi. */
+#include "h077.h"
+#include "h048.h"
+#include "globals.h"
+#include <string.h>
+
+/* PORT H077+$0004: link/unlk, nessun effetto. */
+void h077_init(void)
+{
+}
+
+/* PORT H077+$0012: segno di v (-1, 0, 1). */
+static s16 sign_of(s16 v)
+{
+    if (v < 0) {
+        return -1;
+    }
+    if (v > 0) {
+        return 1;
+    }
+    return 0;
+}
+
+/* PORT H077+$01CC: prepara la linea da (x0, y0) a (x1, y1). */
+void line_init(CokLine *l)
+{
+    s16 d;
+
+    l->cx = l->x0;
+    l->cy = l->y0;
+    d = (s16)(l->x1 - l->x0);
+    l->dx = (s16)(d < 0 ? -d : d);
+    d = (s16)(l->y1 - l->y0);
+    l->dy = (s16)(d < 0 ? -d : d);
+    l->sx = sign_of((s16)(l->x1 - l->x0));
+    l->sy = sign_of((s16)(l->y1 - l->y0));
+    l->err = 0;
+    l->cost = 0;
+}
+
+/* PORT H077+$0242: un passo della linea; 0 se era gia' alla fine. */
+u8 line_step(CokLine *l)
+{
+    u8 moved = 0;                       /* -$5(a5) */
+    s16 ix = 1;                         /* -$2(a5) */
+    s16 iy = 1;                         /* -$4(a5) */
+
+    if (l->dx >= l->dy) {
+        if (l->cx != l->x1) {
+            l->cx = (s16)(l->cx + l->sx);
+            ix = (s16)(l->sx + 1);
+            l->err = (s16)(l->err + l->dy * 2);
+            l->cost = (u8)(l->cost + 2);
+            if (l->err >= l->dx) {
+                l->err = (s16)(l->err - l->dx * 2);
+                l->cy = (s16)(l->cy + l->sy);
+                iy = (s16)(l->sy + 1);
+                l->cost = (u8)(l->cost + 1);
+            }
+            moved = 1;
+        }
+    } else if (l->cy != l->y1) {
+        l->cy = (s16)(l->cy + l->sy);
+        iy = (s16)(l->sy + 1);
+        l->err = (s16)(l->err + l->dx * 2);
+        l->cost = (u8)(l->cost + 2);
+        if (l->err >= l->dy) {
+            l->err = (s16)(l->err - l->dy * 2);
+            l->cx = (s16)(l->cx + l->sx);
+            ix = (s16)(l->sx + 1);
+            l->cost = (u8)(l->cost + 1);
+        }
+        moved = 1;
+    }
+    l->dir = H005_B(0x3DD2 + iy * 4 + ix);
+    return moved;
+}
+
+/* Casella (x, y), parte sopra, della mappa area. */
+static u8 overlay_at(u8 *area, s16 x, s16 y)
+{
+    return area[0x0A + (s32)y * 0x64 + x * 2 + 1];
+}
+
+/*
+ * PORT H077+$0378: linea di vista da (ox, oy) verso (*tx, *ty) entro
+ * *dist caselle (costo <= 2 * *dist + 1): una seconda linea tiene
+ * l'altezza (H005+$3EF4 +1) dell'origine e le caselle piu' alte (+2)
+ * fermano la vista, se la mappa le controlla (+$8 = 0).  Se si ferma,
+ * *tx, *ty e *dist danno il punto raggiunto e restituisce 0; altrimenti
+ * *dist = costo e 1.
+ */
+u8 line_of_sight(s16 ox, s16 oy, s16 *tx, s16 *ty, u16 *dist, u8 *area)
+{
+    u16 limit;                          /* -$34(a5) */
+    CokLine l1;                         /* -$18(a5) */
+    CokLine l2;                         /* -$30(a5) */
+    u8 done;                            /* -$31(a5) */
+
+    limit = (u16)(*dist * 2 + 1);
+    l1.x0 = ox;
+    l1.y0 = oy;
+    l1.x1 = *tx;
+    l1.y1 = *ty;
+    line_init(&l1);
+    l2.x0 = 0;
+    l2.y0 = H005_B(0x3EF4 + (overlay_at(area, ox, oy) - 1) * 4 + 1);
+    l2.x1 = (l1.dx > l1.dy) ? l1.dx : l1.dy;
+    l2.y1 = H005_B(0x3EF4 + (overlay_at(area, ox, oy) - 1) * 4 + 1);
+    line_init(&l2);
+    do {
+        if ((area[8] == 0 &&
+             l2.cy < H005_B(0x3EF4 +
+                            (overlay_at(area, l1.cx, l1.cy) - 1) * 4 + 2)) ||
+            l1.cost > limit) {
+            *tx = l1.cx;
+            *ty = l1.cy;
+            *dist = l1.cost;
+            return 0;
+        }
+        (void)line_step(&l2);
+        done = (u8)(line_step(&l1) == 0);
+    } while (!done);
+    *dist = l1.cost;
+    return 1;
+}
+
+/*
+ * PORT H077+$0508: (x1, y1) e' nel settore della direzione dir (0..7,
+ * $FF = 8: tutte) visto da (x0, y0)?  Fuori mappa no; la stessa casella e
+ * quella adiacente in quella direzione si'.  Con dir oltre 8 l'originale
+ * restituisce un byte non inizializzato: qui 0.
+ */
+u8 in_direction(s16 x0, s16 y0, s16 x1, s16 y1, u16 dir)
+{
+    s16 px;                             /* -$2(a5) */
+    s16 py;                             /* -$4(a5) */
+    s16 x = x1;
+    s16 y = y1;
+
+    if (x0 < 0 || x0 > 0x31 || y0 < 0 || y0 > 0x18 ||
+        x1 < 0 || x1 > 0x31 || y1 < 0 || y1 > 0x18) {
+        return 0;
+    }
+    if (dir == 0xFF) {
+        dir = 8;
+    }
+    px = (s16)(x0 + H005_W(0x3EE2 + dir * 2));
+    py = (s16)(y0 + H005_W(0x3ED0 + dir * 2));
+    if ((x0 == x1 && y0 == y1) || (px == x1 && py == y1)) {
+        return 1;
+    }
+    switch (dir) {
+    case 0:
+        return (u8)((x >= px && y <= (s16)(px - x + py)) ||
+                    (x <= px && y <= (s16)(x - px + py)));
+    case 1:
+        return (u8)((x >= px && y <= (s16)(px - x + py)) ||
+                    (x >= (s16)(px + py - y) && y <= py));
+    case 2:
+        return (u8)((x >= (s16)(px + py - y) && y <= py) ||
+                    (x >= (s16)(px + y - py) && y >= py));
+    case 3:
+        return (u8)((x >= (s16)(px + y - py) && y >= py) ||
+                    (x >= px && y >= (s16)(x - px + py)));
+    case 4:
+        return (u8)((x >= px && y >= (s16)(x - px + py)) ||
+                    (x <= px && y >= (s16)(px - x + py)));
+    case 5:
+        return (u8)((x <= px && y >= (s16)(px - x + py)) ||
+                    (x <= (s16)(px + py - y) && y >= py));
+    case 6:
+        return (u8)((x <= (s16)(px + py - y) && y >= py) ||
+                    (x <= (s16)(px + y - py) && y <= py));
+    case 7:
+        return (u8)((x <= (s16)(px + y - py) && y <= py) ||
+                    (x <= px && y <= (s16)(x - px + py)));
+    case 8:
+        return 1;
+    default:
+        return 0;
+    }
+}
+
+/*
+ * PORT H077+$0056: ordina la lista dell'area H005+$2A3E ($2479 voci da 4
+ * byte: combattente, distanza, direzione) per distanza; a parita' la
+ * direzione minore se non e' diagonale quando l'altra e' dritta.
+ */
+static void sort_area_list(void)
+{
+    u16 i;                              /* -$2(a5) */
+    u16 j;                              /* -$4(a5) */
+    u16 dj;                             /* -$6(a5) */
+    u16 di;                             /* -$8(a5) */
+    u8 tmp[4];                          /* -$C(a5) */
+    u8 *ei;
+    u8 *ej;
+
+    if (H005_B(0x2479) <= 1) {
+        return;
+    }
+    for (i = 1; i <= (u16)(H005_B(0x2479) - 1); ++i) {
+        for (j = (u16)(i + 1); j <= H005_B(0x2479); ++j) {
+            ei = &H005_B(0x2A3E + (i - 1) * 4);
+            ej = &H005_B(0x2A3E + (j - 1) * 4);
+            di = ei[2];
+            dj = ej[2];
+            if (ej[1] < ei[1] ||
+                (ej[1] == ei[1] && dj < di && (dj & 1) <= (di & 1))) {
+                memcpy(tmp, ei, 4);
+                memcpy(ei, ej, 4);
+                memcpy(ej, tmp, 4);
+            }
+        }
+    }
+}
+
+/*
+ * PORT H077+$08AC: riempie la lista H005+$2A3E con i combattenti (con una
+ * forma) che una casella della forma size in (x, y) vede, nel settore dir
+ * ($FF tutti) ed entro radius: per ognuno numero, distanza minima e
+ * direzione (dir, o la prima da 0 che lo contiene); poi la ordina.
+ */
+void find_in_area(s16 x, s16 y, u16 radius, u16 dir, u16 size, u8 *area)
+{
+    u16 n;                              /* -$2(a5) */
+    u16 d;                              /* -$4(a5) */
+    u16 i;                              /* -$6(a5) */
+    u16 j;                              /* -$8(a5) */
+    u16 bi = 0;                         /* -$A(a5) */
+    u16 bj = 0;                         /* -$C(a5) */
+    u8 found;                           /* -$D(a5) */
+    s16 tx;                             /* -$10(a5) */
+    s16 ty;                             /* -$12(a5) */
+    s16 dx;                             /* -$14(a5) */
+    s16 dy;                             /* -$16(a5) */
+    s16 ox[4];                          /* -$1E(a5) */
+    s16 oy[4];                          /* -$26(a5) */
+    s16 kx[4];                          /* -$2E(a5) */
+    s16 ky[4];                          /* -$36(a5) */
+    u16 dist;                           /* -$38(a5) */
+    u16 best;                           /* -$3A(a5) */
+    u16 m;
+
+    for (i = 0; i <= 3; ++i) {
+        if (shape_cell(size, i, &dx, &dy)) {
+            ox[i] = (s16)(x + dx);
+            oy[i] = (s16)(y + dy);
+        } else {
+            ox[i] = -1;
+        }
+    }
+    H005_B(0x2479) = 0;
+    for (n = 1; n <= H005_B(0x247B); ++n) {
+        if (H005_B(0x3154 + (n - 1) * 6 + 5) == 0) {
+            continue;
+        }
+        found = 0;
+        best = 0xFF;
+        for (j = 0; j <= 3; ++j) {
+            if (shape_cell(H005_B(0x3154 + (n - 1) * 6 + 5), j, &dx, &dy)) {
+                kx[j] = (s16)(H005_W(0x3154 + (n - 1) * 6) + dx);
+                ky[j] = (s16)(H005_W(0x3154 + (n - 1) * 6 + 2) + dy);
+            } else {
+                kx[j] = -1;
+            }
+        }
+        for (j = 0; j <= 3; ++j) {
+            if (kx[j] < 0) {
+                continue;
+            }
+            for (i = 0; i <= 3; ++i) {
+                if (ox[i] < 0 ||
+                    !in_direction(ox[i], oy[i], kx[j], ky[j], dir)) {
+                    continue;
+                }
+                tx = kx[j];
+                ty = ky[j];
+                dist = radius;
+                if (line_of_sight(ox[i], oy[i], &tx, &ty, &dist, area)) {
+                    found = 1;
+                    if (dist < best) {
+                        best = dist;
+                        bi = i;
+                        bj = j;
+                    }
+                }
+            }
+        }
+        if (!found) {
+            continue;
+        }
+        ++H005_B(0x2479);
+        m = (u16)(H005_B(0x2479) - 1);
+        H005_B(0x2A3E + m * 4) = (u8)n;
+        H005_B(0x2A3E + m * 4 + 1) = (u8)best;
+        d = 0;
+        if (dir < 8) {
+            d = dir;
+        } else {
+            while (!in_direction(ox[bi], oy[bi], kx[bj], ky[bj], d)) {
+                ++d;
+            }
+        }
+        H005_B(0x2A3E + m * 4 + 2) = (u8)d;
+    }
+    sort_area_list();
+}

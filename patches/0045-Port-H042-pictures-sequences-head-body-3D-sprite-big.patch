@@ -1,0 +1,1460 @@
+From d6a5045bda1d1fa7144c3b5486aff188fa0fd65f Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 11 Nov 2026 07:16:25 +0000
+Subject: [PATCH 45/65] Port H042 pictures (sequences, head/body, 3D sprite,
+ big picture), H020 console write
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md | 372 +++++++++++++++---------------
+ src_c/readable/backlog.md     |  47 ++++
+ src_c/readable/h008.c         |   3 +-
+ src_c/readable/h010_input.c   |  18 +-
+ src_c/readable/h012.c         |   6 +-
+ src_c/readable/h020_io.c      |  25 +++
+ src_c/readable/h020_io.h      |   7 +
+ src_c/readable/h028_files.c   |   2 +-
+ src_c/readable/h028_files.h   |   3 +
+ src_c/readable/h029_gfx.c     |   2 +-
+ src_c/readable/h029_gfx.h     |   3 +
+ src_c/readable/h042_seq.c     | 410 ++++++++++++++++++++++++++++++++++
+ src_c/readable/h042_seq.h     |  14 +-
+ src_c/readable/h060.c         |   3 +-
+ src_c/readable/h061.c         |  13 +-
+ src_c/readable/h063.c         |  11 +-
+ src_c/readable/h064.c         |   9 +-
+ src_c/readable/h066.c         |   3 +-
+ src_c/readable/unported.c     |  15 --
+ src_c/readable/unported.h     |   8 -
+ 20 files changed, 728 insertions(+), 246 deletions(-)
+ create mode 100644 src_c/readable/h020_io.h
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index c3f9048..e938b76 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **883 / 1112**.
++Routine portate: **897 / 1112**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -26,7 +26,7 @@ Routine portate: **883 / 1112**.
+ | H017 | 56 | 1 | 1 |
+ | H018 | 192 | 3 | 3 |
+ | H019 | 240 | 1 | 1 |
+-| H020 | 2884 | 6 | 1 |
++| H020 | 2884 | 6 | 3 |
+ | H021 | 1632 | 14 | 14 |
+ | H022 | 328 | 10 | 10 |
+ | H023 | 140 | 2 | 2 |
+@@ -48,7 +48,7 @@ Routine portate: **883 / 1112**.
+ | H039 | 104 | 2 | 2 |
+ | H040 | 1632 | 5 | 5 |
+ | H041 | 240 | 4 | 4 |
+-| H042 | 4420 | 14 | 2 |
++| H042 | 4420 | 14 | 14 |
+ | H043 | 6680 | 30 | 1 |
+ | H044 | 2668 | 10 | 9 |
+ | H045 | 828 | 4 | 3 |
+@@ -195,27 +195,27 @@ Routine portate: **883 / 1112**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$009A` | `module_init_H008` | parziale | h008.c:15 |
+-| `$0102` | `sub_H008_00000102` | parziale | h008.c:564 |
+-| `$0162` | `sub_H008_00000162` | parziale | h008.c:577 |
+-| `$01A0` | `sub_H008_000001A0` | parziale | h008.c:26 |
+-| `$01FC` | `UI_RequestChoice` | parziale | h008.c:336 |
+-| `$020A` | `sub_H008_0000020A` | parziale | h008.c:59 |
+-| `$03C8` | `sub_H008_000003C8` | parziale | h008.c:108 |
+-| `$139E` | `sub_H008_0000139E` | parziale | h008.c:20 |
+-| `$13C0` | `trampoline_H008_1AF4` | parziale | h008.c:806 |
+-| `$13CE` | `sub_H008_000013CE` | parziale | h008.c:616 |
+-| `$1448` | `sub_H008_00001448` | parziale | h008.c:639 |
+-| `$15DC` | `sub_H008_000015DC` | parziale | h008.c:673 |
+-| `$164E` | `sub_H008_0000164E` | parziale | h008.c:686 |
+-| `$16BA` | `sub_H008_000016BA` | parziale | h008.c:710 |
+-| `$176A` | `sub_H008_0000176A` | parziale | h008.c:719 |
+-| `$188A` | `sub_H008_0000188A` | parziale | h008.c:731 |
+-| `$19A8` | `sub_H008_000019A8` | parziale | h008.c:765 |
+-| `$1A60` | `sub_H008_00001A60` | parziale | h008.c:788 |
+-| `$203C` | `sub_H008_0000203C` | parziale | h008.c:971 |
+-| `$20C2` | `sub_H008_000020C2` | parziale | h008.c:988 |
+-| `$2178` | `sub_H008_00002178` | parziale | h008.c:1009 |
++| `$009A` | `module_init_H008` | parziale | h008.c:16 |
++| `$0102` | `sub_H008_00000102` | parziale | h008.c:565 |
++| `$0162` | `sub_H008_00000162` | parziale | h008.c:578 |
++| `$01A0` | `sub_H008_000001A0` | parziale | h008.c:27 |
++| `$01FC` | `UI_RequestChoice` | parziale | h008.c:337 |
++| `$020A` | `sub_H008_0000020A` | parziale | h008.c:60 |
++| `$03C8` | `sub_H008_000003C8` | parziale | h008.c:109 |
++| `$139E` | `sub_H008_0000139E` | parziale | h008.c:21 |
++| `$13C0` | `trampoline_H008_1AF4` | parziale | h008.c:807 |
++| `$13CE` | `sub_H008_000013CE` | parziale | h008.c:617 |
++| `$1448` | `sub_H008_00001448` | parziale | h008.c:640 |
++| `$15DC` | `sub_H008_000015DC` | parziale | h008.c:674 |
++| `$164E` | `sub_H008_0000164E` | parziale | h008.c:687 |
++| `$16BA` | `sub_H008_000016BA` | parziale | h008.c:711 |
++| `$176A` | `sub_H008_0000176A` | parziale | h008.c:720 |
++| `$188A` | `sub_H008_0000188A` | parziale | h008.c:732 |
++| `$19A8` | `sub_H008_000019A8` | parziale | h008.c:766 |
++| `$1A60` | `sub_H008_00001A60` | parziale | h008.c:789 |
++| `$203C` | `sub_H008_0000203C` | parziale | h008.c:972 |
++| `$20C2` | `sub_H008_000020C2` | parziale | h008.c:989 |
++| `$2178` | `sub_H008_00002178` | parziale | h008.c:1010 |
+ 
+ ### H009
+ 
+@@ -229,15 +229,15 @@ Routine portate: **883 / 1112**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$00B6` | `module_init_H010` | parziale | h010_input.c:23 |
+-| `$00C4` | `sub_H010_000000C4` | parziale | h010_input.c:158 |
+-| `$0332` | `sub_H010_00000332` | parziale | h010_input.c:217 |
+-| `$0360` | `sub_H010_00000360` | parziale | h010_input.c:230 |
++| `$00B6` | `module_init_H010` | parziale | h010_input.c:24 |
++| `$00C4` | `sub_H010_000000C4` | parziale | h010_input.c:159 |
++| `$0332` | `sub_H010_00000332` | parziale | h010_input.c:218 |
++| `$0360` | `sub_H010_00000360` | parziale | h010_input.c:231 |
+ | `$03AA` | `sub_H010_000003AA` | parziale |  |
+-| `$042E` | `trampoline_H010_0882` | parziale | h010_input.c:112 |
+-| `$043C` | `sub_H010_0000043C` | parziale | h010_input.c:51 |
++| `$042E` | `trampoline_H010_0882` | parziale | h010_input.c:113 |
++| `$043C` | `sub_H010_0000043C` | parziale | h010_input.c:52 |
+ | `$0882` | `Poll_IntuitionEvents` | verificato |  |
+-| `$0974` | `sub_H010_00000974` | parziale | h010_input.c:148 |
++| `$0974` | `sub_H010_00000974` | parziale | h010_input.c:149 |
+ 
+ ### H011
+ 
+@@ -379,11 +379,11 @@ Routine portate: **883 / 1112**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$00BA` | `trampoline_H020_0B38` | parziale | h020_io.c:6 |
++| `$00BA` | `trampoline_H020_0B38` | parziale | h020_io.c:8 |
+ | `$00C2` | `sub_H020_000000C2` | parziale |  |
+ | `$00F0` | `sub_H020_000000F0` | parziale |  |
+-| `$082E` | `trampoline_H020_0856` | parziale |  |
+-| `$085A` | `sub_H020_0000085A` | parziale |  |
++| `$082E` | `trampoline_H020_0856` | parziale | h020_io.c:30 |
++| `$085A` | `sub_H020_0000085A` | parziale | h020_io.c:15 |
+ | `$08C2` | `sub_H020_000008C2` | parziale |  |
+ 
+ ### H021
+@@ -754,20 +754,20 @@ Routine portate: **883 / 1112**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0146` | `module_init_H042` | parziale | h042_seq.c:10 |
+-| `$01AE` | `sub_H042_000001AE` | parziale |  |
+-| `$0254` | `sub_H042_00000254` | parziale |  |
+-| `$02B2` | `sub_H042_000002B2` | parziale |  |
+-| `$02D6` | `sub_H042_000002D6` | parziale |  |
+-| `$0300` | `Free_Sequence` | verificato | h042_seq.c:18 |
+-| `$03BC` | `sub_H042_000003BC` | parziale |  |
+-| `$0406` | `Load_Sequence` | parziale |  |
+-| `$0B80` | `sub_H042_00000B80` | parziale |  |
+-| `$0D70` | `Load_HeadBody` | parziale |  |
+-| `$0ED2` | `sub_H042_00000ED2` | parziale |  |
+-| `$0F50` | `Show3DSprite` | parziale |  |
+-| `$1006` | `Load_BigPicture` | parziale |  |
+-| `$10DC` | `sub_H042_000010DC` | parziale |  |
++| `$0146` | `module_init_H042` | parziale | h042_seq.c:25 |
++| `$01AE` | `sub_H042_000001AE` | parziale | h042_seq.c:63 |
++| `$0254` | `sub_H042_00000254` | parziale | h042_seq.c:85 |
++| `$02B2` | `sub_H042_000002B2` | parziale | h042_seq.c:101 |
++| `$02D6` | `sub_H042_000002D6` | parziale | h042_seq.c:107 |
++| `$0300` | `Free_Sequence` | verificato | h042_seq.c:33 |
++| `$03BC` | `sub_H042_000003BC` | parziale | h042_seq.c:113 |
++| `$0406` | `Load_Sequence` | parziale | h042_seq.c:122 |
++| `$0B80` | `sub_H042_00000B80` | parziale | h042_seq.c:291 |
++| `$0D70` | `Load_HeadBody` | parziale | h042_seq.c:344 |
++| `$0ED2` | `sub_H042_00000ED2` | parziale | h042_seq.c:374 |
++| `$0F50` | `Show3DSprite` | parziale | h042_seq.c:392 |
++| `$1006` | `Load_BigPicture` | parziale | h042_seq.c:413 |
++| `$10DC` | `sub_H042_000010DC` | parziale | h042_seq.c:438 |
+ 
+ ### H043
+ 
+@@ -1027,48 +1027,48 @@ Routine portate: **883 / 1112**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$000A` | `module_init_H060` | parziale | h060.c:9 |
+-| `$0018` | `sub_H060_00000018` | parziale | h060.c:15 |
++| `$000A` | `module_init_H060` | parziale | h060.c:10 |
++| `$0018` | `sub_H060_00000018` | parziale | h060.c:16 |
+ 
+ ### H061
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$15C2` | `module_init_H061` | parziale | h061.c:34 |
++| `$15C2` | `module_init_H061` | parziale | h061.c:35 |
+ | `$162A` | `trampoline_H061_1F12` | parziale |  |
+-| `$162E` | `sub_H061_0000162E` | parziale | h061.c:45 |
+-| `$1670` | `ECL_ReadOperands` | verificato | h061.c:447 |
+-| `$184E` | `ECL_EvaluateOperand` | parziale | h061.c:499 |
+-| `$1928` | `ECL_ResetExecution` | verificato | h061.c:635 |
+-| `$1ACC` | `ECL_LoadProgram` | verificato | h061.c:685 |
+-| `$1BD6` | `sub_H061_00001BD6` | parziale | h061.c:712 |
+-| `$1C42` | `sub_H061_00001C42` | parziale | h061.c:726 |
+-| `$1D20` | `sub_H061_00001D20` | parziale | h061.c:758 |
+-| `$1D6E` | `sub_H061_00001D6E` | parziale | h061.c:769 |
+-| `$1F12` | `sub_H061_00001F12` | parziale | h061.c:55 |
+-| `$1F3C` | `ECL_DecodeAddress` | verificato | h061.c:61 |
+-| `$1F6A` | `trampoline_H061_1F9A` | parziale | h061.c:67 |
+-| `$1FA4` | `sub_H061_00001FA4` | parziale | h061.c:77 |
+-| `$202C` | `sub_H061_0000202C` | parziale | h061.c:100 |
+-| `$208E` | `sub_H061_0000208E` | parziale | h061.c:120 |
+-| `$27E2` | `sub_H061_000027E2` | parziale | h061.c:281 |
+-| `$2BAA` | `sub_H061_00002BAA` | parziale | h061.c:367 |
+-| `$2E04` | `sub_H061_00002E04` | parziale | h061.c:231 |
+-| `$3012` | `sub_H061_00003012` | parziale | h061.c:1144 |
+-| `$3244` | `sub_H061_00003244` | parziale | h061.c:529 |
+-| `$33F0` | `sub_H061_000033F0` | parziale | h061.c:581 |
+-| `$35E2` | `sub_H061_000035E2` | parziale | h061.c:822 |
+-| `$36E6` | `sub_H061_000036E6` | parziale | h061.c:849 |
+-| `$3860` | `sub_H061_00003860` | parziale | h061.c:1202 |
+-| `$3904` | `sub_H061_00003904` | parziale | h061.c:895 |
+-| `$3A0A` | `sub_H061_00003A0A` | parziale | h061.c:928 |
+-| `$3AAC` | `sub_H061_00003AAC` | parziale | h061.c:953 |
+-| `$3B4E` | `trampoline_H061_3BEE` | parziale | h061.c:973 |
++| `$162E` | `sub_H061_0000162E` | parziale | h061.c:46 |
++| `$1670` | `ECL_ReadOperands` | verificato | h061.c:448 |
++| `$184E` | `ECL_EvaluateOperand` | parziale | h061.c:500 |
++| `$1928` | `ECL_ResetExecution` | verificato | h061.c:636 |
++| `$1ACC` | `ECL_LoadProgram` | verificato | h061.c:686 |
++| `$1BD6` | `sub_H061_00001BD6` | parziale | h061.c:713 |
++| `$1C42` | `sub_H061_00001C42` | parziale | h061.c:727 |
++| `$1D20` | `sub_H061_00001D20` | parziale | h061.c:759 |
++| `$1D6E` | `sub_H061_00001D6E` | parziale | h061.c:770 |
++| `$1F12` | `sub_H061_00001F12` | parziale | h061.c:56 |
++| `$1F3C` | `ECL_DecodeAddress` | verificato | h061.c:62 |
++| `$1F6A` | `trampoline_H061_1F9A` | parziale | h061.c:68 |
++| `$1FA4` | `sub_H061_00001FA4` | parziale | h061.c:78 |
++| `$202C` | `sub_H061_0000202C` | parziale | h061.c:101 |
++| `$208E` | `sub_H061_0000208E` | parziale | h061.c:121 |
++| `$27E2` | `sub_H061_000027E2` | parziale | h061.c:282 |
++| `$2BAA` | `sub_H061_00002BAA` | parziale | h061.c:368 |
++| `$2E04` | `sub_H061_00002E04` | parziale | h061.c:232 |
++| `$3012` | `sub_H061_00003012` | parziale | h061.c:1145 |
++| `$3244` | `sub_H061_00003244` | parziale | h061.c:530 |
++| `$33F0` | `sub_H061_000033F0` | parziale | h061.c:582 |
++| `$35E2` | `sub_H061_000035E2` | parziale | h061.c:823 |
++| `$36E6` | `sub_H061_000036E6` | parziale | h061.c:850 |
++| `$3860` | `sub_H061_00003860` | parziale | h061.c:1203 |
++| `$3904` | `sub_H061_00003904` | parziale | h061.c:896 |
++| `$3A0A` | `sub_H061_00003A0A` | parziale | h061.c:929 |
++| `$3AAC` | `sub_H061_00003AAC` | parziale | h061.c:954 |
++| `$3B4E` | `trampoline_H061_3BEE` | parziale | h061.c:974 |
+ | `$3C4C` | `sub_H061_00003C4C` | parziale |  |
+-| `$3DBE` | `sub_H061_00003DBE` | parziale | h061.c:1018 |
+-| `$3E80` | `ECL_SkipInstruction` | verificato | h061.c:1045 |
+-| `$3FA8` | `sub_H061_00003FA8` | parziale | h061.c:1069 |
+-| `$4092` | `sub_H061_00004092` | parziale | h061.c:1103 |
++| `$3DBE` | `sub_H061_00003DBE` | parziale | h061.c:1019 |
++| `$3E80` | `ECL_SkipInstruction` | verificato | h061.c:1046 |
++| `$3FA8` | `sub_H061_00003FA8` | parziale | h061.c:1070 |
++| `$4092` | `sub_H061_00004092` | parziale | h061.c:1104 |
+ 
+ ### H062
+ 
+@@ -1111,91 +1111,91 @@ Routine portate: **883 / 1112**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0104` | `module_init_H063` | parziale | h063.c:23 |
+-| `$0112` | `sub_H063_00000112` | parziale | h063.c:48 |
+-| `$016A` | `sub_H063_0000016A` | parziale | h063.c:61 |
+-| `$0228` | `trampoline_H063_032C` | parziale | h063.c:85 |
+-| `$0354` | `sub_H063_00000354` | parziale | h063.c:120 |
+-| `$0432` | `sub_H063_00000432` | parziale | h063.c:250 |
+-| `$06AE` | `sub_H063_000006AE` | parziale | h063.c:296 |
+-| `$0758` | `sub_H063_00000758` | parziale | h063.c:315 |
+-| `$08A2` | `sub_H063_000008A2` | parziale | h063.c:347 |
+-| `$0946` | `sub_H063_00000946` | parziale | h063.c:370 |
+-| `$09B2` | `sub_H063_000009B2` | parziale | h063.c:387 |
+-| `$0D80` | `sub_H063_00000D80` | parziale | h063.c:710 |
+-| `$0FA0` | `sub_H063_00000FA0` | parziale | h063.c:462 |
+-| `$103A` | `sub_H063_0000103A` | parziale | h063.c:477 |
+-| `$1160` | `trampoline_H063_1350` | parziale | h063.c:1217 |
+-| `$135A` | `sub_H063_0000135A` | parziale | h063.c:1201 |
+-| `$13BE` | `sub_H063_000013BE` | parziale | h063.c:504 |
+-| `$18F8` | `sub_H063_000018F8` | parziale | h063.c:160 |
+-| `$19B6` | `sub_H063_000019B6` | parziale | h063.c:183 |
+-| `$1A8A` | `trampoline_H063_1B66` | parziale | h063.c:218 |
+-| `$1B90` | `sub_H063_00001B90` | parziale | h063.c:1081 |
+-| `$1BE8` | `sub_H063_00001BE8` | parziale | h063.c:822 |
+-| `$1CC0` | `sub_H063_00001CC0` | parziale | h063.c:988 |
+-| `$1D44` | `sub_H063_00001D44` | parziale | h063.c:691 |
+-| `$1DC2` | `sub_H063_00001DC2` | parziale | h063.c:853 |
+-| `$1EE8` | `sub_H063_00001EE8` | parziale | h063.c:883 |
+-| `$1F34` | `trampoline_H063_1F7E` | parziale | h063.c:621 |
+-| `$1FDC` | `sub_H063_00001FDC` | parziale | h063.c:1312 |
+-| `$2178` | `sub_H063_00002178` | parziale | h063.c:1342 |
+-| `$21D2` | `trampoline_H063_22B4` | parziale | h063.c:1383 |
+-| `$21E0` | `sub_H063_000021E0` | parziale | h063.c:1362 |
+-| `$2760` | `sub_H063_00002760` | parziale | h063.c:1095 |
+-| `$2984` | `sub_H063_00002984` | parziale | h063.c:1150 |
+-| `$2ACC` | `sub_H063_00002ACC` | parziale | h063.c:1008 |
+-| `$2B4C` | `trampoline_H063_2B72` | parziale | h063.c:1527 |
+-| `$2B7C` | `sub_H063_00002B7C` | parziale | h063.c:1187 |
+-| `$2BDE` | `sub_H063_00002BDE` | parziale | h063.c:1534 |
+-| `$2DC6` | `sub_H063_00002DC6` | parziale | h063.c:1256 |
+-| `$2F12` | `sub_H063_00002F12` | parziale | h063.c:893 |
+-| `$2F5A` | `sub_H063_00002F5A` | parziale | h063.c:1775 |
+-| `$2FAA` | `sub_H063_00002FAA` | parziale | h063.c:1025 |
+-| `$321A` | `trampoline_H063_3384` | parziale | h063.c:767 |
+-| `$33A0` | `trampoline_H063_3652` | parziale | h063.c:1582 |
+-| `$3658` | `sub_H063_00003658` | parziale | h063.c:1640 |
+-| `$3698` | `sub_H063_00003698` | parziale | h063.c:1713 |
+-| `$36EE` | `sub_H063_000036EE` | parziale | h063.c:1723 |
+-| `$3734` | `sub_H063_00003734` | parziale | h063.c:1733 |
+-| `$37B2` | `sub_H063_000037B2` | parziale | h063.c:1284 |
+-| `$3980` | `sub_H063_00003980` | parziale | h063.c:1751 |
+-| `$3A26` | `sub_H063_00003A26` | parziale | h063.c:906 |
+-| `$3CA0` | `sub_H063_00003CA0` | parziale | h063.c:1649 |
+-| `$3F72` | `trampoline_H063_4042` | parziale | h063.c:644 |
++| `$0104` | `module_init_H063` | parziale | h063.c:24 |
++| `$0112` | `sub_H063_00000112` | parziale | h063.c:49 |
++| `$016A` | `sub_H063_0000016A` | parziale | h063.c:62 |
++| `$0228` | `trampoline_H063_032C` | parziale | h063.c:86 |
++| `$0354` | `sub_H063_00000354` | parziale | h063.c:121 |
++| `$0432` | `sub_H063_00000432` | parziale | h063.c:251 |
++| `$06AE` | `sub_H063_000006AE` | parziale | h063.c:297 |
++| `$0758` | `sub_H063_00000758` | parziale | h063.c:316 |
++| `$08A2` | `sub_H063_000008A2` | parziale | h063.c:348 |
++| `$0946` | `sub_H063_00000946` | parziale | h063.c:371 |
++| `$09B2` | `sub_H063_000009B2` | parziale | h063.c:388 |
++| `$0D80` | `sub_H063_00000D80` | parziale | h063.c:711 |
++| `$0FA0` | `sub_H063_00000FA0` | parziale | h063.c:463 |
++| `$103A` | `sub_H063_0000103A` | parziale | h063.c:478 |
++| `$1160` | `trampoline_H063_1350` | parziale | h063.c:1218 |
++| `$135A` | `sub_H063_0000135A` | parziale | h063.c:1202 |
++| `$13BE` | `sub_H063_000013BE` | parziale | h063.c:505 |
++| `$18F8` | `sub_H063_000018F8` | parziale | h063.c:161 |
++| `$19B6` | `sub_H063_000019B6` | parziale | h063.c:184 |
++| `$1A8A` | `trampoline_H063_1B66` | parziale | h063.c:219 |
++| `$1B90` | `sub_H063_00001B90` | parziale | h063.c:1082 |
++| `$1BE8` | `sub_H063_00001BE8` | parziale | h063.c:823 |
++| `$1CC0` | `sub_H063_00001CC0` | parziale | h063.c:989 |
++| `$1D44` | `sub_H063_00001D44` | parziale | h063.c:692 |
++| `$1DC2` | `sub_H063_00001DC2` | parziale | h063.c:854 |
++| `$1EE8` | `sub_H063_00001EE8` | parziale | h063.c:884 |
++| `$1F34` | `trampoline_H063_1F7E` | parziale | h063.c:622 |
++| `$1FDC` | `sub_H063_00001FDC` | parziale | h063.c:1313 |
++| `$2178` | `sub_H063_00002178` | parziale | h063.c:1343 |
++| `$21D2` | `trampoline_H063_22B4` | parziale | h063.c:1384 |
++| `$21E0` | `sub_H063_000021E0` | parziale | h063.c:1363 |
++| `$2760` | `sub_H063_00002760` | parziale | h063.c:1096 |
++| `$2984` | `sub_H063_00002984` | parziale | h063.c:1151 |
++| `$2ACC` | `sub_H063_00002ACC` | parziale | h063.c:1009 |
++| `$2B4C` | `trampoline_H063_2B72` | parziale | h063.c:1528 |
++| `$2B7C` | `sub_H063_00002B7C` | parziale | h063.c:1188 |
++| `$2BDE` | `sub_H063_00002BDE` | parziale | h063.c:1535 |
++| `$2DC6` | `sub_H063_00002DC6` | parziale | h063.c:1257 |
++| `$2F12` | `sub_H063_00002F12` | parziale | h063.c:894 |
++| `$2F5A` | `sub_H063_00002F5A` | parziale | h063.c:1776 |
++| `$2FAA` | `sub_H063_00002FAA` | parziale | h063.c:1026 |
++| `$321A` | `trampoline_H063_3384` | parziale | h063.c:768 |
++| `$33A0` | `trampoline_H063_3652` | parziale | h063.c:1583 |
++| `$3658` | `sub_H063_00003658` | parziale | h063.c:1641 |
++| `$3698` | `sub_H063_00003698` | parziale | h063.c:1714 |
++| `$36EE` | `sub_H063_000036EE` | parziale | h063.c:1724 |
++| `$3734` | `sub_H063_00003734` | parziale | h063.c:1734 |
++| `$37B2` | `sub_H063_000037B2` | parziale | h063.c:1285 |
++| `$3980` | `sub_H063_00003980` | parziale | h063.c:1752 |
++| `$3A26` | `sub_H063_00003A26` | parziale | h063.c:907 |
++| `$3CA0` | `sub_H063_00003CA0` | parziale | h063.c:1650 |
++| `$3F72` | `trampoline_H063_4042` | parziale | h063.c:645 |
+ 
+ ### H064
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$00EE` | `module_init_H064` | parziale | h064.c:31 |
+-| `$0156` | `(senza scheda)` | - | h064.c:41 |
+-| `$0202` | `ECL_GOTO` | verificato | h064.c:69 |
+-| `$0234` | `ECL_GOSUB` | parziale | h064.c:76 |
+-| `$0258` | `(senza scheda)` | - | h064.c:83 |
+-| `$0306` | `ECL_Arithmetic` | verificato | h064.c:100 |
+-| `$03FC` | `(senza scheda)` | - | h064.c:139 |
+-| `$0468` | `ECL_SAVE_AssignVariable` | verificato | h064.c:154 |
+-| `$04DC` | `(senza scheda)` | - | h064.c:169 |
+-| `$05E2` | `(senza scheda)` | - | h064.c:308 |
+-| `$06A0` | `(senza scheda)` | - | h064.c:208 |
+-| `$0ABE` | `(senza scheda)` | - | h064.c:328 |
+-| `$0B10` | `(senza scheda)` | - | h064.c:340 |
+-| `$0C62` | `(senza scheda)` | - | h064.c:388 |
+-| `$0CC4` | `(senza scheda)` | - | h064.c:398 |
+-| `$0D4A` | `(senza scheda)` | - | h064.c:414 |
+-| `$0E40` | `ECL_RETURN` | verificato | h064.c:437 |
+-| `$0E9C` | `(senza scheda)` | - | h064.c:451 |
+-| `$0F30` | `(senza scheda)` | - | h064.c:470 |
+-| `$0F90` | `(senza scheda)` | - | h064.c:489 |
+-| `$1004` | `ECL_LOAD_FILES_or_PIECES` | verificato | h064.c:508 |
+-| `$121C` | `(senza scheda)` | - | h064.c:568 |
+-| `$12CA` | `(senza scheda)` | - | h064.c:589 |
+-| `$1346` | `(senza scheda)` | - | h064.c:603 |
+-| `$13AC` | `(senza scheda)` | - | h064.c:618 |
+-| `$1544` | `(senza scheda)` | - | h064.c:666 |
+-| `$1748` | `(senza scheda)` | - | h064.c:721 |
+-| `$17BC` | `(senza scheda)` | - | h064.c:742 |
++| `$00EE` | `module_init_H064` | parziale | h064.c:32 |
++| `$0156` | `(senza scheda)` | - | h064.c:42 |
++| `$0202` | `ECL_GOTO` | verificato | h064.c:70 |
++| `$0234` | `ECL_GOSUB` | parziale | h064.c:77 |
++| `$0258` | `(senza scheda)` | - | h064.c:84 |
++| `$0306` | `ECL_Arithmetic` | verificato | h064.c:101 |
++| `$03FC` | `(senza scheda)` | - | h064.c:140 |
++| `$0468` | `ECL_SAVE_AssignVariable` | verificato | h064.c:155 |
++| `$04DC` | `(senza scheda)` | - | h064.c:170 |
++| `$05E2` | `(senza scheda)` | - | h064.c:309 |
++| `$06A0` | `(senza scheda)` | - | h064.c:209 |
++| `$0ABE` | `(senza scheda)` | - | h064.c:329 |
++| `$0B10` | `(senza scheda)` | - | h064.c:341 |
++| `$0C62` | `(senza scheda)` | - | h064.c:389 |
++| `$0CC4` | `(senza scheda)` | - | h064.c:399 |
++| `$0D4A` | `(senza scheda)` | - | h064.c:415 |
++| `$0E40` | `ECL_RETURN` | verificato | h064.c:438 |
++| `$0E9C` | `(senza scheda)` | - | h064.c:452 |
++| `$0F30` | `(senza scheda)` | - | h064.c:471 |
++| `$0F90` | `(senza scheda)` | - | h064.c:490 |
++| `$1004` | `ECL_LOAD_FILES_or_PIECES` | verificato | h064.c:509 |
++| `$121C` | `(senza scheda)` | - | h064.c:569 |
++| `$12CA` | `(senza scheda)` | - | h064.c:590 |
++| `$1346` | `(senza scheda)` | - | h064.c:604 |
++| `$13AC` | `(senza scheda)` | - | h064.c:619 |
++| `$1544` | `(senza scheda)` | - | h064.c:667 |
++| `$1748` | `(senza scheda)` | - | h064.c:722 |
++| `$17BC` | `(senza scheda)` | - | h064.c:743 |
+ 
+ ### H065
+ 
+@@ -1233,33 +1233,33 @@ Routine portate: **883 / 1112**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$02F0` | `module_init_H066` | parziale | h066.c:24 |
+-| `$03D0` | `trampoline_H066_0780` | parziale | h066.c:597 |
+-| `$03DE` | `sub_H066_000003DE` | parziale | h066.c:502 |
+-| `$0852` | `sub_H066_00000852` | parziale | h066.c:486 |
+-| `$08E4` | `trampoline_H066_0B88` | parziale | h066.c:235 |
+-| `$08F2` | `sub_H066_000008F2` | parziale | h066.c:217 |
+-| `$0BAC` | `sub_H066_00000BAC` | parziale | h066.c:35 |
+-| `$0C34` | `trampoline_H066_0E5A` | parziale | h066.c:105 |
+-| `$0C42` | `sub_H066_00000C42` | parziale | h066.c:47 |
+-| `$0D2A` | `sub_H066_00000D2A` | parziale | h066.c:74 |
+-| `$0DEA` | `sub_H066_00000DEA` | parziale | h066.c:93 |
+-| `$1312` | `Delete_CharacterSidecarFiles` | verificato | h066.c:770 |
+-| `$142E` | `Query_FreeDiskSpace` | parziale | h066.c:283 |
+-| `$14DC` | `Check_SaveWritable` | parziale | h066.c:313 |
+-| `$14EA` | `sub_H066_000014EA` | parziale | h066.c:304 |
+-| `$1640` | `Save_CharacterRecord` | verificato | h066.c:368 |
+-| `$164E` | `sub_H066_0000164E` | parziale | h066.c:356 |
+-| `$1B0E` | `Load_CharacterRecord` | verificato | h066.c:620 |
++| `$02F0` | `module_init_H066` | parziale | h066.c:25 |
++| `$03D0` | `trampoline_H066_0780` | parziale | h066.c:598 |
++| `$03DE` | `sub_H066_000003DE` | parziale | h066.c:503 |
++| `$0852` | `sub_H066_00000852` | parziale | h066.c:487 |
++| `$08E4` | `trampoline_H066_0B88` | parziale | h066.c:236 |
++| `$08F2` | `sub_H066_000008F2` | parziale | h066.c:218 |
++| `$0BAC` | `sub_H066_00000BAC` | parziale | h066.c:36 |
++| `$0C34` | `trampoline_H066_0E5A` | parziale | h066.c:106 |
++| `$0C42` | `sub_H066_00000C42` | parziale | h066.c:48 |
++| `$0D2A` | `sub_H066_00000D2A` | parziale | h066.c:75 |
++| `$0DEA` | `sub_H066_00000DEA` | parziale | h066.c:94 |
++| `$1312` | `Delete_CharacterSidecarFiles` | verificato | h066.c:771 |
++| `$142E` | `Query_FreeDiskSpace` | parziale | h066.c:284 |
++| `$14DC` | `Check_SaveWritable` | parziale | h066.c:314 |
++| `$14EA` | `sub_H066_000014EA` | parziale | h066.c:305 |
++| `$1640` | `Save_CharacterRecord` | verificato | h066.c:369 |
++| `$164E` | `sub_H066_0000164E` | parziale | h066.c:357 |
++| `$1B0E` | `Load_CharacterRecord` | verificato | h066.c:621 |
+ | `$1FDA` | `Load_MonsterRecord` | verificato |  |
+ | `$1FE8` | `sub_H066_00001FE8` | parziale |  |
+ | `$276E` | `trampoline_H066_27E4` | parziale |  |
+-| `$27EE` | `sub_H066_000027EE` | parziale | h066.c:731 |
+-| `$291E` | `Load_GameSlot` | verificato | h066.c:946 |
++| `$27EE` | `sub_H066_000027EE` | parziale | h066.c:732 |
++| `$291E` | `Load_GameSlot` | verificato | h066.c:947 |
+ | `$292C` | `sub_H066_0000292C` | parziale |  |
+-| `$3000` | `Save_GameSlot` | verificato | h066.c:848 |
+-| `$300E` | `sub_H066_0000300E` | parziale | h066.c:795 |
+-| `$30A8` | `sub_H066_000030A8` | parziale | h066.c:819 |
++| `$3000` | `Save_GameSlot` | verificato | h066.c:849 |
++| `$300E` | `sub_H066_0000300E` | parziale | h066.c:796 |
++| `$30A8` | `sub_H066_000030A8` | parziale | h066.c:820 |
+ 
+ ### H067
+ 
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index e83381b..e270a47 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -2155,3 +2155,50 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
+ **Prossimo passo:** le immagini di H042 (eventi, ritratti, immagine grande e mappa all'aperto), poi Cast (H057+$0C04) ed Encamp (H057+$2F3A).
+ 
+ ---
++
++## 2026-11-11 (cok-port-38)
++
++**Richiesta:** "ok compila su sasc, procedi con le immagini di H042".
++
++**H042 portato per intero** (le routine rimaste)
++- **$0406 `load_sequence` (Load_Sequence):**
++  - carica una sequenza (PIC, FINAL, SPRIT e altre) da name+disco.daa nell'insieme $27BC;
++  - directory: word della dimensione, poi voci da 6 byte (id, un byte, offset long);
++  - intestazione compressa ByteRun1: righe, unità, w4, w6, fotogrammi, palette di 32 colori per $52AE, dimensioni compresse;
++  - il primo fotogramma va in `g_pic_rec_27c2`; con due fotogrammi il secondo è subito in `g_pic_rec_27c6`, salvato come XOR del primo; con più fotogrammi restano compressi in `g_pic_buffers`;
++  - PIC e FINAL non hanno trasparenza e, senza $24D4, un solo fotogramma;
++  - mostra "Loading...Please Wait" se $24D4.
++- **$0B80 `sequence_frame`:** restituisce il record del fotogramma. Il primo e l'ultimo decodificato vengono restituiti dopo una pausa di 11 tick; gli altri si decomprimono e si combinano in XOR col primo.
++- **Ritratti e sprite:**
++  - $0D70 `load_head_body`: HEAD/BODYn.daa, solo se cambiano;
++  - $0ED2 `draw_head_body`: testa, e il corpo 5 celle sotto ($02B2/$02D6);
++  - $0F50 `show_3d_sprite`: fotogramma 1..3 mascherato nella vista; fuori intervallo "Illegal range in Show3DSprite." e uscita.
++- **Immagine grande e mappa all'aperto:**
++  - $1006 `load_big_picture`: BIGPICn.daa in $2798, con la palette in $526E;
++  - $10DC `show_big_picture`: l'immagine nella cornice dell'aperto;
++  - $0254 `show_picture`: record nella cella (x, y) con la palette $52AE.
++- **Aiutanti statici:** $01AE copia specchiata del record; $03BC XOR fra bitmap.
++
++**Altri portati ed esportati**
++- **H020+$085A `console_write` e $082E `console_newline`:** write/writeln del runtime, qui con stdio. `console_writeln` (H010+$0360) ora li usa.
++- **Già portate, ora pubbliche:** `dax_open` (H028+$0B80) e `transfer_gfx_planes` (H029+$091E).
++
++**Dove mi discosto dall'asm (tutto documentato nel codice)**
++- **Più di 6 fotogrammi:** leggerebbero oltre l'intestazione di $56 byte; qui al massimo 6.
++- **Immagini specchiate a caso:** fedele all'originale. Il flag $-2 di H042 viene da H023+$0010 (numero casuale 0/1) e, se vale 1, i record vengono specchiati in orizzontale.
++
++**Prove con i dati veri** (binario ASan di test, non committato)
++- **Sequencer di prova:** ora invia un tasto per ogni nuovo menu.
++- **Immagini viste:**
++  - all'avvio, l'immagine grande della locanda di Solace col testo;
++  - la mappa di Krynn con le località (BIGPIC) e il segno del party;
++  - il ritratto di Sir Karl (PIC);
++  - la via di Solace sopra il menu della città;
++  - all'aperto, l'immagine della carovana attaccata dai draconici.
++- **Arresto:** subito dopo il gioco si ferma su H066+$1FDA (non grafica).
++- **ASan:** pulito.
++- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
++
++**Prossimo passo:** H066+$1FDA (incontro all'aperto), poi Encamp (H057+$2F3A) e Cast (H057+$0C04).
++
++---
+diff --git a/src_c/readable/h008.c b/src_c/readable/h008.c
+index 0b738bc..3872094 100644
+--- a/src_c/readable/h008.c
++++ b/src_c/readable/h008.c
+@@ -9,6 +9,7 @@
+ #include "globals.h"
+ #include "character.h"
+ #include "unported.h"
++#include "h042_seq.h"
+ #include "h077.h"
+ #include "h048.h"
+ 
+@@ -399,7 +400,7 @@ u8 ui_request_choice(u16 title_len, const char *title, u16 options_len,
+             if (COK_GET16(g_state_a + 0x3FE) != 0 ||
+                 !(now - last_time < (s32)wait)) {
+                 H005_SET_W(0x27BE, frame);
+-                h042_0254(3, 3, animate, h042_0b80(frame, &g_h005[0x27BC]));
++                show_picture(3, 3, animate, sequence_frame(frame));
+                 last_time = now;
+             }
+         }
+diff --git a/src_c/readable/h010_input.c b/src_c/readable/h010_input.c
+index 43e8c78..e777cd9 100644
+--- a/src_c/readable/h010_input.c
++++ b/src_c/readable/h010_input.c
+@@ -14,6 +14,7 @@
+ #include "h042_seq.h"
+ #include "globals.h"
+ #include "unported.h"
++#include "h020_io.h"
+ 
+ /* Modificatori tenuti premuti (H010+$043C). */
+ u8 g_input_alt;                 /* -$53(a4) */
+@@ -227,20 +228,11 @@ void quit_game(void)
+ }
+ 
+ /*
+- * PORT H010+$0360: scrive il testo (copiato, al piu' len caratteri, fino
+- * allo zero) e va a capo sulla console del processo: il writeln del
+- * runtime (H020+$085A e $082E).  Qui con stdio.
++ * PORT H010+$0360: scrive il testo (passato per valore) e va a capo sulla
++ * console del processo: H020+$085A e H020+$082E.
+  */
+ void console_writeln(u16 len, const char *text)
+ {
+-    char buf[0x102];
+-    u16 i;
+-
+-    for (i = 0; i < len && i < sizeof(buf) - 1 && text[i] != '\0'; ++i) {
+-        buf[i] = text[i];
+-    }
+-    buf[i] = '\0';
+-    fputs(buf, stdout);
+-    fputc('\n', stdout);
+-    fflush(stdout);
++    console_write(len, text);
++    console_newline();
+ }
+diff --git a/src_c/readable/h012.c b/src_c/readable/h012.c
+index 81b6eae..9573210 100644
+--- a/src_c/readable/h012.c
++++ b/src_c/readable/h012.c
+@@ -358,7 +358,7 @@ void ecl_combat(void)
+         }
+         if (COK_GET16(g_state_a + 0x1CC) == 0) {
+             scene_audio();
+-            h042_1006(0x79);
++            load_big_picture(0x79);
+         } else {
+             scene_audio();
+         }
+@@ -1003,7 +1003,7 @@ void ecl_redraw_screen(void)
+     draw_party(g_current_char);
+     draw_status_line();
+     if (!H005_B(0x24D7)) {
+-        h042_0254(3, 3, 1, g_pic_rec_27c2);
++        show_picture(3, 3, 1, g_pic_rec_27c2);
+     }
+     draw_status_line();
+     H005_B(0x24B2) = 0;
+@@ -1239,7 +1239,7 @@ void ecl_special(void)
+         }
+         break;
+     case 1:
+-        h042_0254(3, 3, 1, h042_0b80(COK_GET16(set + 2), set));
++        show_picture(3, 3, 1, sequence_frame(COK_GET16(set + 2)));
+         COK_PUT16(set + 2, COK_GET16(set + 2) + 1);
+         if (COK_GET16(set + 2) > COK_GET16(set)) {
+             COK_PUT16(set + 2, 1);
+diff --git a/src_c/readable/h020_io.c b/src_c/readable/h020_io.c
+index 7531c62..82be7fb 100644
+--- a/src_c/readable/h020_io.c
++++ b/src_c/readable/h020_io.c
+@@ -1,5 +1,7 @@
+ /* H020: servizi di I/O e diagnostica testuale. */
++#include <stdio.h>
+ #include "cok.h"
++#include "h020_io.h"
+ 
+ u8 g_h020_0055;                 /* H020+$0055 */
+ 
+@@ -8,3 +10,26 @@ void h020_init(void)
+ {
+     g_h020_0055 = 1;
+ }
++
++/*
++ * PORT H020+$085A: write del runtime su Output: al piu' len caratteri,
++ * fino allo zero.  Con la console interattiva (H020+$2) un carattere
++ * alla volta (H074+$0450), altrimenti in blocco (H075+$0132); qui stdio
++ * in entrambi i casi.
++ */
++void console_write(u16 len, const char *text)
++{
++    u16 i;
++
++    for (i = 0; i < len && text[i] != '\0'; ++i) {
++        fputc(text[i], stdout);
++    }
++    fflush(stdout);
++}
++
++/* PORT H020+$082E: writeln senza argomenti: a capo. */
++void console_newline(void)
++{
++    fputc('\n', stdout);
++    fflush(stdout);
++}
+diff --git a/src_c/readable/h020_io.h b/src_c/readable/h020_io.h
+new file mode 100644
+index 0000000..ad7a196
+--- /dev/null
++++ b/src_c/readable/h020_io.h
+@@ -0,0 +1,7 @@
++/* H020: scrittura sulla console del processo (runtime Pascal). */
++#ifndef COK_H020_IO_H
++#define COK_H020_IO_H
++#include "cok.h"
++void console_write(u16 len, const char *text);  /* H020+$085A */
++void console_newline(void);                     /* H020+$082E */
++#endif
+diff --git a/src_c/readable/h028_files.c b/src_c/readable/h028_files.c
+index e7d8cf8..9c3dfe0 100644
+--- a/src_c/readable/h028_files.c
++++ b/src_c/readable/h028_files.c
+@@ -269,7 +269,7 @@ static void dax_decompress_rle(const u8 *src, u8 *dst, u16 *comp_size,
+  * del gruppo di risorse corrente, H005+$3E08 + 30 * (gruppo - 1)) e legge
+  * la word della dimensione della directory (byte come nel file).
+  */
+-static u8 dax_open(u16 name_len, const char *name, u16 ext_len,
++u8 dax_open(u16 name_len, const char *name, u16 ext_len,
+                    const char *ext, u8 *dir_size, cok_bptr *file)
+ {
+     char path[0x52];
+diff --git a/src_c/readable/h028_files.h b/src_c/readable/h028_files.h
+index be2a10f..58b92cd 100644
+--- a/src_c/readable/h028_files.h
++++ b/src_c/readable/h028_files.h
+@@ -21,6 +21,9 @@ void make_file_name(u16 name_len, const char *name, u16 out_max, char *out);
+ void load_char_screens(void);            /* H028+$0D36 */
+ void free_char_screens(void);            /* H028+$0D74 */
+ void set_data_disk(u8 v);                /* H028+$1098 */
++u8   dax_open(u16 name_len, const char *name, u16 ext_len,
++                const char *ext, u8 *dir_size, cok_bptr *file);
++                                                /* H028+$0B80 */
+ void dax_load_block(u16 name_len, const char *name, u16 ext_len,
+                     const char *ext, u16 id, u16 *size, u8 **data);
+                                                 /* H028+$0DD8 */
+diff --git a/src_c/readable/h029_gfx.c b/src_c/readable/h029_gfx.c
+index 51259cc..cce60af 100644
+--- a/src_c/readable/h029_gfx.c
++++ b/src_c/readable/h029_gfx.c
+@@ -381,7 +381,7 @@ void build_gfx_mask(u8 color, struct GfxRecord *r)
+  * (a partire da offset, un piano dopo l'altro) nell'immagine, poi
+  * costruisce la maschera se il record ne ha una.
+  */
+-static void transfer_gfx_planes(const u8 *data, u16 offset, u16 last_plane,
++void transfer_gfx_planes(const u8 *data, u16 offset, u16 last_plane,
+                                 u8 mask_color, struct GfxRecord **rec)
+ {
+     struct GfxRecord *r = *rec;
+diff --git a/src_c/readable/h029_gfx.h b/src_c/readable/h029_gfx.h
+index ae18d5c..e80856b 100644
+--- a/src_c/readable/h029_gfx.h
++++ b/src_c/readable/h029_gfx.h
+@@ -26,6 +26,9 @@ extern u8 g_h029_m9;                    /* H029+$61 */
+ extern u16 g_h029_m8;                   /* H029+$62: View mostrata (H029+$1576) */
+ void remap_gfx_colors(const u8 from[16], const u8 to[16], s16 frame,
+                       struct GfxRecord *rec);           /* H029+$0EFE */
++void transfer_gfx_planes(const u8 *data, u16 offset, u16 last_plane,
++                         u8 mask_color, struct GfxRecord **rec);
++                                                        /* H029+$091E */
+ void free_gfx_record(struct GfxRecord **rec);           /* H029+$067A */
+ void load_indexed_gfx_record(u16 name_len, const char *name, u16 id,
+                              u16 with_mask, u8 mask_color,
+diff --git a/src_c/readable/h042_seq.c b/src_c/readable/h042_seq.c
+index c877d11..6a7dd29 100644
+--- a/src_c/readable/h042_seq.c
++++ b/src_c/readable/h042_seq.c
+@@ -3,6 +3,21 @@
+ #include "h003_exec.h"
+ #include "h029_gfx.h"
+ #include "globals.h"
++#include <string.h>
++#include "h002_dos.h"
++#include "h010_input.h"
++#include "h016_gfx.h"
++#include "h020_io.h"
++#include "h022_view.h"
++#include "h023_shared.h"
++#include "h026_string.h"
++#include "h028_files.h"
++#include "h030.h"
++#include "h036.h"
++#include "h044_tiles.h"
++#include "h045.h"
++#include "h049.h"
++#include "h087.h"
+ 
+ u8 g_h042_m1;                   /* -$1(a4) */
+ u8 g_h042_m2;                   /* -$2(a4) */
+@@ -37,3 +52,398 @@ void release_picture_set(void)
+     H005_B(0x27A6) = 0;                 /* stringa vuota (dbeq con $8) */
+     H005_B(0x2486) = 0xFF;
+ }
++
++#define SEQ_COUNT   0x27BC              /* +$0: fotogrammi */
++#define SEQ_CURRENT 0x27BE              /* +$2: fotogramma corrente */
++#define SEQ_LAST    0x27C0              /* +$4: fotogramma in g_pic_rec_27c6 */
++#define SEQ_EXTRA   0x27CA              /* +$E: due byte per fotogramma */
++#define SEQ_PSIZE   0x27DA              /* +$1E: dimensioni compresse 2.. */
++
++/*
++ * PORT H042+$01AE: sostituisce il record con la sua copia specchiata in
++ * orizzontale (H049+$09D6), con la maschera se c'era.
++ */
++static void mirror_record(struct GfxRecord **rec)
++{
++    struct GfxRecord *copy = NULL;      /* -$4(a5) */
++    u16 with_mask;                      /* -$6(a5) */
++
++    if (*rec == NULL) {
++        return;
++    }
++    with_mask = (u16)((*rec)->mask != NULL ? 1 : 0);
++    allocate_gfx_record((*rec)->rows, (*rec)->count, (*rec)->width8,
++                        with_mask, &copy);
++    copy->w4 = (*rec)->w4;
++    copy->w6 = (*rec)->w6;
++    mirror_gfx_record(*rec, copy);
++    free_gfx_record(rec);
++    *rec = copy;
++}
++
++/*
++ * PORT H042+$0254: mostra il record alla cella (x, y) con la palette di
++ * $52AE.  flag non e' usato.
++ */
++void show_picture(u16 x, u16 y, u8 flag, struct GfxRecord *rec)
++{
++    (void)flag;
++    if (rec == NULL) {
++        return;
++    }
++    copy_intuition_colors();
++    begin_screen_update();
++    graphics_load_rgb4(&g_screen->ViewPort, &g_h005[0x52AE], 0x20);
++    restore_screen_cell(x, y, rec);
++    end_screen_update();
++}
++
++/* PORT H042+$02B2: la testa alla cella (x, y). */
++static void show_head(struct GfxRecord *rec, u16 x, u16 y)
++{
++    show_picture(x, y, 0, rec);
++}
++
++/* PORT H042+$02D6: il corpo, 5 celle sotto la testa. */
++static void show_body(struct GfxRecord *rec, u16 x, u16 y)
++{
++    show_picture(x, (u16)(y + 5), 0, rec);
++}
++
++/* PORT H042+$03BC: dst = src XOR dst (fotogrammi salvati come differenza). */
++static void xor_bitmap(struct BitMap *src, struct BitMap *dst)
++{
++    (void)graphics_blt_bitmap(src, 0, 0, dst, 0, 0,
++                              (u16)(dst->BytesPerRow << 3), dst->Rows, 0x60,
++                              0xFF, NULL);
++}
++
++/*
++ * PORT H042+$0406 (Load_Sequence): carica la sequenza id di name+disco.daa
++ * nell'insieme $27BC (l'argomento dell'originale e' sempre quello), se
++ * diversa dalla attuale.  Directory: word della dimensione, voci di 6
++ * byte (id, un byte, offset long).  Blocco: intestazione compressa
++ * (righe, unita', w4, w6, fotogrammi, palette di 32 colori per $52AE,
++ * dimensioni compresse), poi ogni fotogramma ByteRun1 seguito da due
++ * byte.  Il primo diventa g_pic_rec_27c2; con due fotogrammi il secondo
++ * e' gia' decodificato in g_pic_rec_27c6 (salvato come XOR col primo),
++ * con piu' fotogrammi restano compressi in g_pic_buffers.  Le immagini
++ * PIC e FINAL non hanno trasparenza e, senza $24D4, un solo fotogramma.
++ * A caso (H023+$0010) le immagini vengono specchiate.  Piu' di 6
++ * fotogrammi leggerebbero oltre l'intestazione: qui al massimo 6.
++ */
++void load_sequence(u16 name_len, const char *name, u16 id, u16 with_mask)
++{
++    char local[0x52];                   /* -$52(a5) */
++    char num[2];                        /* -$62(a5) */
++    u8 dir_raw[2];                      /* -$72(a5) */
++    u16 dir_size;
++    cok_bptr file;                      /* -$70(a5) */
++    u8 entry[6];                        /* -$68(a5) */
++    u8 head_size_raw[2];                /* -$CC(a5) */
++    u16 head_size;
++    u8 head[0x56];                      /* -$CA(a5) */
++    u8 *packed;                         /* -$5A(a5) */
++    u8 *planes = NULL;                  /* -$56(a5) */
++    u8 *src;                            /* -$D6(a5) */
++    u8 *dst;                            /* -$DA(a5) */
++    struct BitMap *saved_mask;          /* -$DE(a5) */
++    u16 plane_bytes = 0;                /* -$5E(a5) */
++    u16 frames;                         /* -$C2(a5) */
++    u16 k;                              /* -$5C(a5) */
++    u8 color;                           /* -$D0(a5) */
++    u8 is_pic;                          /* -$5F(a5) */
++    s32 pos;
++
++    h026_copy(0x50, local, name_len, name);
++    if ((h026_compare_nocase(0x50, local, 8, (const char *)&g_h005[0x27A6]) == 1 &&
++         H005_B(0x2486) == id) || id == 0xFF) {
++        return;
++    }
++    g_h042_m2 = (u8)(random_below(2) == 1);
++    if (H005_B(0x24D4)) {
++        fill_text_cells(0, 0x18, 0, 0x28);
++        ui_draw_text(0, 0x18, 0x0A, 0, 0x15, "Loading...Please Wait");
++    }
++    h026_copy(8, (char *)&g_h005[0x27A6], 0x50, local);
++    H005_B(0x2486) = (u8)id;
++    is_pic = (u8)(h026_compare_nocase(0x50, local, 3, "PIC") == 1 ||
++                  h026_compare_nocase(0x50, local, 5, "FINAL") == 1);
++    format_number(1, num, (s32)H005_B(0x246E), 0, 0x0A, 1, '0');
++    h026_append(0x50, local, 1, num);
++    if (!dax_open(0x50, local, 4, ".daa", dir_raw, &file)) {
++        console_write(0x2D, "Could not open indexed file in loadsequence!\n");
++        return;
++    }
++    dir_size = COK_GET16(dir_raw);
++    do {
++        (void)dos_read(file, entry, 6);
++        if (entry[0] == id) {
++            break;
++        }
++        pos = dos_seek(file, 0, OFFSET_CURRENT);
++    } while (pos < (s32)dir_size);
++    if (entry[0] != id) {
++        dos_close(file);
++        return;
++    }
++    release_picture_set();
++    h026_copy(8, (char *)&g_h005[0x27A6], name_len, name);
++    H005_B(0x2486) = (u8)id;
++    (void)dos_seek(file, (s32)dir_size + (s32)COK_GET32(entry + 2),
++                   OFFSET_BEGINNING);
++
++    /* Intestazione. */
++    (void)dos_read(file, head_size_raw, 2);
++    head_size = COK_GET16(head_size_raw);
++    packed = (u8 *)exec_alloc_mem(head_size, 0);
++    (void)dos_read(file, packed, head_size);
++    src = packed;
++    dst = head;
++    if (ilbm_unpack_row(&src, &dst, (s16)head_size, 0x56)) {
++        console_write(0x25, "Error unpacking row in LoadSequence!\n");
++    }
++    exec_free_mem(packed, head_size);
++    exec_copy_mem(head + 0x0A, &g_h005[0x52AE], 0x40);
++    H005_SET_W(0x52AE, 0);
++
++    /* Primo fotogramma. */
++    packed = (u8 *)exec_alloc_mem(COK_GET16(head + 0x4A), 0);
++    (void)dos_read(file, packed, COK_GET16(head + 0x4A));
++    (void)dos_read(file, &g_h005[SEQ_EXTRA], 2);
++    g_pic_rec_27c6 = NULL;
++    allocate_gfx_record(COK_GET16(head), COK_GET16(head + 2), 1, with_mask,
++                        &g_pic_rec_27c2);
++    g_pic_rec_27c2->w4 = COK_GET16(head + 4);
++    g_pic_rec_27c2->w6 = COK_GET16(head + 6);
++    plane_bytes = g_pic_rec_27c2->plane_bytes;
++    planes = (u8 *)exec_alloc_mem(plane_bytes, 0);
++    src = packed;
++    dst = planes;
++    if (ilbm_unpack_row(&src, &dst, (s16)COK_GET16(head + 0x4A),
++                        (s16)plane_bytes)) {
++        console_write(0x29, "Error calling UnPackRow in LoadSequence!\n");
++    }
++    exec_free_mem(packed, COK_GET16(head + 0x4A));
++    color = (u8)(is_pic ? 0 : 0x0D);
++    transfer_gfx_planes(planes, 0, 4, color, &g_pic_rec_27c2);
++    g_h042_m1 = g_h042_m2;
++    if (g_h042_m2) {
++        mirror_record(&g_pic_rec_27c2);
++    }
++    frames = COK_GET16(head + 8);
++    if (!H005_B(0x24D4) && is_pic) {
++        frames = 1;
++    }
++    if (frames > 6) {
++        frames = 6;
++    }
++    H005_SET_W(SEQ_COUNT, frames);
++    H005_SET_W(SEQ_CURRENT, 1);
++    H005_SET_W(SEQ_LAST, 0);
++    if (frames >= 2) {
++        allocate_gfx_record(COK_GET16(head), COK_GET16(head + 2), 1,
++                            with_mask, &g_pic_rec_27c6);
++        g_pic_rec_27c6->w4 = COK_GET16(head + 4);
++        g_pic_rec_27c6->w6 = COK_GET16(head + 6);
++        if (frames == 2) {
++            packed = (u8 *)exec_alloc_mem(COK_GET16(head + 0x4C), 0);
++            (void)dos_read(file, packed, COK_GET16(head + 0x4C));
++            (void)dos_read(file, &g_h005[SEQ_EXTRA + 2], 2);
++            src = packed;
++            dst = planes;
++            (void)ilbm_unpack_row(&src, &dst, (s16)COK_GET16(head + 0x4C),
++                                  (s16)plane_bytes);
++            exec_free_mem(packed, COK_GET16(head + 0x4C));
++            saved_mask = g_pic_rec_27c6->mask;
++            g_pic_rec_27c6->mask = NULL;
++            transfer_gfx_planes(planes, 0, 4, color, &g_pic_rec_27c6);
++            if (g_h042_m2) {
++                mirror_record(&g_pic_rec_27c6);
++            }
++            xor_bitmap(g_pic_rec_27c2->image, g_pic_rec_27c6->image);
++            if (saved_mask != NULL) {
++                g_pic_rec_27c6->mask = saved_mask;
++                build_gfx_mask(color, g_pic_rec_27c6);
++            }
++            H005_SET_W(SEQ_LAST, 2);
++        } else {
++            for (k = 2; k <= frames; ++k) {
++                u16 size = COK_GET16(head + 0x4A + (k - 1) * 2);
++
++                g_pic_buffers[k - 2] = (u8 *)exec_alloc_mem(size, 0);
++                (void)dos_read(file, g_pic_buffers[k - 2], size);
++                (void)dos_read(file, &g_h005[SEQ_EXTRA + (k - 1) * 2], 2);
++                H005_SET_W(SEQ_PSIZE + (k - 2) * 2, size);
++            }
++        }
++    }
++    if (planes != NULL) {
++        exec_free_mem(planes, plane_bytes);
++    }
++    dos_close(file);
++    if (H005_B(0x24D4)) {
++        fill_text_cells(0, 0x18, 0, 0x28);
++    }
++}
++
++/*
++ * PORT H042+$0B80: il record del fotogramma frame (1..conteggio) della
++ * sequenza $27BC.  Il primo e quello gia' in g_pic_rec_27c6 con una pausa
++ * di 11 tick; gli altri si decomprimono in g_pic_rec_27c6 come XOR col
++ * primo.  Fuori dall'intervallo NULL.  La prima volta, se la sequenza va
++ * specchiata, specchia i record gia' pronti.
++ */
++struct GfxRecord *sequence_frame(u16 frame)
++{
++    u8 *buf;                            /* -$4(a5) */
++    u16 n;                              /* -$6(a5) */
++    u8 *src;                            /* -$C(a5) */
++    u8 *dst;                            /* -$10(a5) */
++    struct BitMap *saved_mask;          /* -$14(a5) */
++
++    if (g_h042_m2 && !g_h042_m1) {
++        g_h042_m1 = 1;
++        mirror_record(&g_pic_rec_27c2);
++        if (H005_W(SEQ_COUNT) == 2) {
++            mirror_record(&g_pic_rec_27c6);
++        }
++    }
++    if (frame < 1 || frame > H005_W(SEQ_COUNT)) {
++        return NULL;
++    }
++    if (frame == 1 || frame == H005_W(SEQ_LAST)) {
++        dos_delay(0x0B);
++        return frame == 1 ? g_pic_rec_27c2 : g_pic_rec_27c6;
++    }
++    n = g_pic_rec_27c6->plane_bytes;
++    buf = (u8 *)exec_alloc_mem(n, 0);
++    src = g_pic_buffers[frame - 2];
++    dst = buf;
++    if (ilbm_unpack_row(&src, &dst, (s16)H005_W(SEQ_PSIZE + (frame - 2) * 2),
++                        (s16)n)) {
++        console_write(0x24, "Error in UnPackRow in loadSequence!\n");
++    }
++    saved_mask = g_pic_rec_27c6->mask;
++    g_pic_rec_27c6->mask = NULL;
++    transfer_gfx_planes(buf, 0, 4, 0, &g_pic_rec_27c6);
++    if (g_h042_m1) {
++        mirror_record(&g_pic_rec_27c6);
++    }
++    xor_bitmap(g_pic_rec_27c2->image, g_pic_rec_27c6->image);
++    if (saved_mask != NULL) {
++        g_pic_rec_27c6->mask = saved_mask;
++        build_gfx_mask(0x0D, g_pic_rec_27c6);
++    }
++    H005_SET_W(SEQ_LAST, frame);
++    exec_free_mem(buf, n);
++    return g_pic_rec_27c6;
++}
++
++/*
++ * PORT H042+$0D70 (Load_HeadBody): carica testa e corpo (HEADn/BODYn.daa)
++ * se diversi da quelli gia' caricati ($27B0, $27B6); $FF li lascia.
++ */
++void load_head_body(u16 head, u16 body)
++{
++    char num[2];                        /* -$2(a5) */
++    char name[0x2A];                    /* -$2C(a5) */
++
++    format_number(1, num, (s32)H005_B(0x246E), 0, 0x0A, 1, '0');
++    if (head != 0xFF && (H005_B(0x27B0) == 0xFF || H005_B(0x27B0) != head)) {
++        strcpy(name, "HEAD");
++        h026_append(0x28, name, 1, num);
++        load_indexed_gfx_record(0x28, name, head, 0, 0, &g_gfx_27b0[0]);
++        if (g_gfx_27b0[0] == NULL) {
++            show_message_wait(0x0E, 0, 0x0E, "head NOT found");
++        }
++        H005_B(0x27B0) = (u8)head;
++    }
++    if (body != 0xFF && (H005_B(0x27B6) == 0xFF || H005_B(0x27B6) != body)) {
++        strcpy(name, "BODY");
++        h026_append(0x28, name, 1, num);
++        load_indexed_gfx_record(0x28, name, body, 0, 0, &g_gfx_27b0[1]);
++        if (g_gfx_27b0[1] == NULL) {
++            show_message_wait(0x0E, 0, 0x0E, "head not found");
++        }
++        H005_B(0x27B6) = (u8)body;
++    }
++}
++
++/*
++ * PORT H042+$0ED2: mostra testa (e con flag il corpo sotto) alla cella
++ * (x, y), con la palette caricata ($522E -> $52AE).
++ */
++void draw_head_body(u16 x, u16 y, u8 flag)
++{
++    exec_copy_mem(&g_h005[0x522E], &g_h005[0x52AE], 0x40);
++    copy_intuition_colors();
++    begin_screen_update();
++    if (flag) {
++        show_head(g_gfx_27b0[0], x, y);
++        show_body(g_gfx_27b0[1], x, y);
++    } else {
++        show_picture(x, y, 0, g_gfx_27b0[0]);
++    }
++    end_screen_update();
++}
++
++/*
++ * PORT H042+$0F50 (Show3DSprite): il fotogramma 1..3 della sequenza
++ * (sprite dell'incontro a distanza) mascherato nella vista.
++ */
++void show_3d_sprite(u16 frame)
++{
++    struct GfxRecord *rec;              /* -$6(a5) */
++
++    if (frame < 1 || frame > 3) {
++        console_writeln(0x1E, "Illegal range in Show3DSprite.");
++        quit_game();
++    }
++    rec = sequence_frame(frame);
++    if (rec != NULL) {
++        graphics_load_rgb4(&g_screen->ViewPort, &g_h005[0x52AE], 0x20);
++        (void)queue_bitplane_blit(rec->image, 0, 0, &g_screen->RastPort,
++                                  0x18, 0x18, 0x58, 0x58, 0xCA,
++                                  (u8 *)rec->mask->Planes[0]);
++    }
++}
++
++/*
++ * PORT H042+$1006 (Load_BigPicture): libera la sequenza e, se diversa da
++ * quella caricata ($2484), carica l'immagine grande id di BIGPICn.daa in
++ * $2798 con la sua palette ($522E -> $526E).
++ */
++void load_big_picture(u16 id)
++{
++    char name[0x2A];                    /* -$2C(a5) */
++    char num[2];                        /* -$2E(a5) */
++    u16 i;                              /* -$2(a5) */
++
++    release_picture_set();
++    if (H005_B(0x2484) == id) {
++        return;
++    }
++    strcpy(name, "BIGPIC");
++    format_number(1, num, (s32)H005_B(0x246E), 0, 0x0A, 1, '0');
++    h026_append(0x28, name, 1, num);
++    load_indexed_gfx_record(0x28, name, id, 0, 0, &g_gfx_2798);
++    for (i = 0; i <= 0x1F; ++i) {
++        H005_SET_W(0x526E + i * 2, H005_W(0x522E + i * 2));
++    }
++    H005_B(0x2484) = (u8)id;
++}
++
++/*
++ * PORT H042+$10DC: mostra l'immagine grande (mappa all'aperto) nella
++ * cornice dell'aperto, con la sua palette.
++ */
++void show_big_picture(void)
++{
++    copy_intuition_colors();
++    begin_screen_update();
++    draw_wild_frame();
++    graphics_load_rgb4(&g_screen->ViewPort, &g_h005[0x526E], 0x20);
++    restore_screen_cell(1, 1, g_gfx_2798);
++    end_screen_update();
++}
+diff --git a/src_c/readable/h042_seq.h b/src_c/readable/h042_seq.h
+index e5285fb..bc1d941 100644
+--- a/src_c/readable/h042_seq.h
++++ b/src_c/readable/h042_seq.h
+@@ -1,7 +1,19 @@
+-/* H042: sequenze di immagini. */
++/* H042: sequenze di immagini, testa e corpo, immagine grande. */
+ #ifndef COK_H042_SEQ_H
+ #define COK_H042_SEQ_H
++#include "cok.h"
++#include "gfx_record.h"
+ 
+ void release_picture_set(void);         /* H042+$0300 */
++void show_picture(u16 x, u16 y, u8 flag, struct GfxRecord *rec);
++                                        /* H042+$0254 */
++void load_sequence(u16 name_len, const char *name, u16 id, u16 with_mask);
++                                        /* H042+$0406 */
++struct GfxRecord *sequence_frame(u16 frame);    /* H042+$0B80 */
++void load_head_body(u16 head, u16 body);        /* H042+$0D70 */
++void draw_head_body(u16 x, u16 y, u8 flag);     /* H042+$0ED2 */
++void show_3d_sprite(u16 frame);                 /* H042+$0F50 */
++void load_big_picture(u16 id);                  /* H042+$1006 */
++void show_big_picture(void);                    /* H042+$10DC */
+ 
+ #endif
+diff --git a/src_c/readable/h060.c b/src_c/readable/h060.c
+index b60bd83..9736995 100644
+--- a/src_c/readable/h060.c
++++ b/src_c/readable/h060.c
+@@ -3,6 +3,7 @@
+ #include "h060.h"
+ #include "globals.h"
+ #include "unported.h"
++#include "h042_seq.h"
+ #include "h011.h"
+ #include "h056.h"
+ 
+@@ -48,7 +49,7 @@ void refresh_view(void)
+         }
+         draw_3d_view((s16)H005_W(0x281C), (s16)H005_W(0x281E), H005_B(0x2820));
+     } else if (H005_B(0x24E1)) {
+-        h042_10dc();
++        show_big_picture();
+     }
+     H005_B(0x24E1) = 0;
+ }
+diff --git a/src_c/readable/h061.c b/src_c/readable/h061.c
+index 33296f3..5bce4bd 100644
+--- a/src_c/readable/h061.c
++++ b/src_c/readable/h061.c
+@@ -2,6 +2,7 @@
+ #include "h061.h"
+ #include "globals.h"
+ #include "unported.h"
++#include "h042_seq.h"
+ #include "h060.h"
+ #include "h026_string.h"
+ #include "h029_gfx.h"
+@@ -761,8 +762,8 @@ void show_head_body(u16 head, u16 body)
+     H005_B(0x24BC) = 0;
+     H005_B(0x2488) = (u8)head;
+     H005_B(0x2487) = (u8)body;
+-    h042_0d70(head, body);
+-    h042_0ed2(3, 3, 1);
++    load_head_body(head, body);
++    draw_head_body(3, 3, 1);
+ }
+ 
+ /*
+@@ -784,7 +785,7 @@ void show_event_picture(u8 spr, u8 pic, u8 idx, u8 *flags)
+                 refresh_view();
+             }
+             if (COK_GET16(g_state_a + 0x1CC)) {
+-                h042_0406(5, "SPRIT", spr, 1, &g_h005[0x27BC]);
++                load_sequence(5, "SPRIT", spr, 1);
+                 flags[0] = 1;
+                 H005_B(0x24BA) = 1;
+             }
+@@ -793,7 +794,7 @@ void show_event_picture(u8 spr, u8 pic, u8 idx, u8 *flags)
+             refresh_view();
+         }
+         if (H005_B(0x3DE3) == 4) {
+-            h042_0f50(frame, &g_h005[0x27BC]);
++            show_3d_sprite(frame);
+         }
+     }
+     if (flags[1] && H005_B(0x2496) == COK_GET16(g_state_b + 0x5C2)) {
+@@ -808,9 +809,9 @@ void show_event_picture(u8 spr, u8 pic, u8 idx, u8 *flags)
+     H005_B(0x2496) = (u8)COK_GET16(g_state_b + 0x5C2);
+     H005_B(0x24BD) = 1;
+     if (COK_GET16(g_state_b + 0x5C2) == 0xFF) {
+-        h042_0406(3, "PIC", pic, 0, &g_h005[0x27BC]);
++        load_sequence(3, "PIC", pic, 0);
+         flags[1] = 1;
+-        h042_0254(3, 3, 1, g_pic_rec_27c2);
++        show_picture(3, 3, 1, g_pic_rec_27c2);
+     } else {
+         show_head_body(COK_GET16(g_state_b + 0x5C2), pic);
+         flags[1] = 1;
+diff --git a/src_c/readable/h063.c b/src_c/readable/h063.c
+index d7fe151..1f6f6d8 100644
+--- a/src_c/readable/h063.c
++++ b/src_c/readable/h063.c
+@@ -13,6 +13,7 @@
+ #include "globals.h"
+ #include "h044_tiles.h"
+ #include "unported.h"
++#include "h042_seq.h"
+ #include "h060.h"
+ #include "h016_gfx.h"
+ #include "h049.h"
+@@ -780,17 +781,17 @@ void redraw_game_screen(void)
+             draw_explore_frame();
+         }
+         if (COK_GET16(g_state_a + 0x1CC) == 0) {
+-            h042_0254(3, 3, 1, g_pic_rec_27c2);
++            show_picture(3, 3, 1, g_pic_rec_27c2);
+         } else {
+-            h042_0d70(H005_B(0x2488), H005_B(0x2487));
+-            h042_0ed2(3, 3, 1);
++            load_head_body(H005_B(0x2488), H005_B(0x2487));
++            draw_head_body(3, 3, 1);
+         }
+         draw_party(g_current_char);
+         draw_status_line();
+         break;
+     case 2:                             /* H063+$32BC */
+         draw_explore_frame();
+-        h042_0406(3, "PIC", 0x3B, 0, &g_h005[0x27BC]);
++        load_sequence(3, "PIC", 0x3B, 0);
+         draw_party(g_current_char);
+         draw_status_line();
+         break;
+@@ -810,7 +811,7 @@ void redraw_game_screen(void)
+         break;
+     case 6:                             /* H063+$3346 */
+         draw_explore_frame();
+-        h042_0406(3, "PIC", 0x3C, 0, &g_h005[0x27BC]);
++        load_sequence(3, "PIC", 0x3C, 0);
+         draw_party(g_current_char);
+         break;
+     default:
+diff --git a/src_c/readable/h064.c b/src_c/readable/h064.c
+index b1c1951..775cb80 100644
+--- a/src_c/readable/h064.c
++++ b/src_c/readable/h064.c
+@@ -2,6 +2,7 @@
+ #include "h064.h"
+ #include "globals.h"
+ #include "unported.h"
++#include "h042_seq.h"
+ #include "h060.h"
+ #include "h011.h"
+ #include "h069.h"
+@@ -355,8 +356,8 @@ void ecl_picture(void)
+         if (COK_GET16(g_state_b + 0x5C2) == 0xFF) {
+             H005_B(0x24BC) = 1;
+             if (n >= 0x70) {
+-                h042_1006(n);
+-                h042_10dc();
++                load_big_picture(n);
++                show_big_picture();
+                 if (n == 0x79) {
+                     h069_draw_marker();
+                 } else {
+@@ -365,8 +366,8 @@ void ecl_picture(void)
+                 H005_B(0x24E1) = 0;
+             } else {
+                 strcpy(name, "PIC");
+-                h042_0406(0x50, name, n, 0, &g_h005[0x27BC]);
+-                h042_0254(3, 3, 1, g_pic_rec_27c2);
++                load_sequence(0x50, name, n, 0);
++                show_picture(3, 3, 1, g_pic_rec_27c2);
+             }
+         } else {
+             show_head_body(COK_GET16(g_state_b + 0x5C2), n);
+diff --git a/src_c/readable/h066.c b/src_c/readable/h066.c
+index 42de767..bd8c5fe 100644
+--- a/src_c/readable/h066.c
++++ b/src_c/readable/h066.c
+@@ -19,6 +19,7 @@
+ #include "h045.h"
+ #include "h014.h"
+ #include "unported.h"
++#include "h042_seq.h"
+ #include "h011.h"
+ 
+ /* PORT H066+$02F0: link/unlk, nessun effetto. */
+@@ -1068,7 +1069,7 @@ void load_game(void)
+             }
+         }
+     } else {
+-        h042_1006(0x79);
++        load_big_picture(0x79);
+     }
+     clear_message_line();
+     H005_B(0x3DE2) = H005_B(0x3DE3);
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index 83716be..58e2420 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -60,26 +60,13 @@ static const char s_h043_190e[] = "H043+$190E";
+ void h043_0584(void) { cok_unported_skip(s_h043_0584); }
+ void h043_190e(u16 command) { (void)command; cok_unported_skip(s_h043_190e); }
+ u8 h046_0012(u16 dx, u16 dy, u16 col, u16 row) { (void)dx; (void)dy; (void)col; (void)row; cok_unported("H046+$0012"); return 0; }
+-/*
+- * Immagini (H042): non ancora portate; saltate (con un messaggio sulla
+- * console) per poter esplorare senza le immagini degli eventi.
+- */
+-void *h042_0b80(u16 frame, void *set) { (void)frame; (void)set; cok_unported_skip("H042+$0B80"); return NULL; }
+-void h042_0254(u16 a, u16 b, u8 flag, void *picture) { (void)a; (void)b; (void)flag; (void)picture; cok_unported_skip("H042+$0254"); }
+ void h043_0840(void) { cok_unported_skip("H043+$0840"); }
+ 
+ 
+-void h042_0d70(u16 a, u16 b) { (void)a; (void)b; cok_unported_skip("H042+$0D70"); }
+-void h042_0ed2(u16 a, u16 b, u8 flag) { (void)a; (void)b; (void)flag; cok_unported_skip("H042+$0ED2"); }
+-void h042_0406(u16 len, const char *name, u16 id, u16 x, void *set) { (void)len; (void)name; (void)id; (void)x; (void)set; cok_unported_skip("H042+$0406"); }
+ 
+ /* Dipendenze del lancio degli incantesimi (H033+$1426, H065+$2F82). */
+ void h044_0492(void) { cok_unported("H044+$0492"); }
+ 
+-/* Immagine grande (H042): saltata come le altre immagini. */
+-static const char s_h042_1006[] = "H042+$1006";
+-void h042_1006(u16 picture) { (void)picture; cok_unported_skip(s_h042_1006); }
+-
+ /* Parti solo da combattimento del motore degli effetti. */
+ 
+ 
+@@ -101,11 +88,9 @@ void h096_2a6c(u8 spell, u8 unused, u8 *ok) { (void)spell; (void)unused; (void)o
+ void h097_1d68(Character *c) { (void)c; cok_unported("H097+$1D68"); }
+ 
+ void h066_1fda(Character *c, u16 idx) { (void)c; (void)idx; cok_unported("H066+$1FDA"); }
+-void h042_0f50(u16 frame, void *set) { (void)frame; (void)set; cok_unported_skip("H042+$0F50"); }
+ 
+ void h012_14c8(void) { cok_unported("H012+$14C8"); }
+ 
+-void h042_10dc(void) { cok_unported_skip("H042+$10DC"); }
+ void h070_1958(void) { cok_unported("H070+$1958"); }
+ void h071_092c(void) { cok_unported("H071+$092C"); }
+ void h072_120c(void) { cok_unported("H072+$120C"); }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index 27e1285..b1e3741 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -12,8 +12,6 @@
+ 
+ void h006_0914(void);
+ u8   h046_0012(u16 dx, u16 dy, u16 col, u16 row);
+-void *h042_0b80(u16 frame, void *set);  /* fotogramma dell'insieme (H005+$27BC) */
+-void h042_0254(u16 a, u16 b, u8 flag, void *picture);
+ void h043_0584(void);
+ void h043_190e(u16 command);
+ void h010_03aa(void);
+@@ -41,9 +39,6 @@ void h043_0840(void);
+ 
+ 
+ 
+-void h042_0d70(u16 a, u16 b);           /* Load_HeadBody */
+-void h042_0ed2(u16 a, u16 b, u8 flag);
+-void h042_0406(u16 len, const char *name, u16 id, u16 x, void *set);
+                                         /* Load_Sequence */
+ 
+ 
+@@ -51,7 +46,6 @@ void h042_0406(u16 len, const char *name, u16 id, u16 x, void *set);
+ void h044_0492(void);
+ 
+ /* Caricamenti per l'avventura dopo Load Saved Game (H066+$291E). */
+-void h042_1006(u16 picture);             /* immagine grande */
+ 
+ /* Parti solo da combattimento del motore degli effetti. */
+ 
+@@ -82,12 +76,10 @@ void h096_2a6c(u8 spell, u8 unused, u8 *ok); /* bersaglio in combattimento */
+ void h097_1d68(Character *c);           /* turno automatico (IA) */
+ 
+ void h066_1fda(Character *c, u16 idx);   /* carica un mostro (MONnCHA) */
+-void h042_0f50(u16 frame, void *set);    /* fotogramma dell'insieme $27BC */
+ 
+ /* Gestori dei comandi ECL (H064, H012) non ancora portati. */
+ void h012_14c8(void);
+ 
+-void h042_10dc(void);                    /* dopo l'immagine grande */
+ /* Usati dai comandi ECL di H012. */
+ void h070_1958(void);                    /* scena dopo il combattimento */
+ void h071_092c(void);                    /* scena speciale ($6D8) */
+-- 
+2.43.0
+

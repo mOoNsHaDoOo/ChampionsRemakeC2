@@ -1,0 +1,123 @@
+From 464290b53195d02aadffaf3f5bf298b0976d92b6 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 11 Nov 2026 10:41:46 +0000
+Subject: [PATCH 51/65] Porta H066+$276E: aggiunge un PNG al party
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/backlog.md | 13 +++++++++++++
+ src_c/readable/h012.c     |  3 ++-
+ src_c/readable/h066.c     | 19 +++++++++++++++++++
+ src_c/readable/h066.h     |  1 +
+ src_c/readable/unported.c |  1 -
+ src_c/readable/unported.h |  1 -
+ 6 files changed, 35 insertions(+), 3 deletions(-)
+
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index cd0bd9f..d135c9f 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -2447,3 +2447,16 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
+ - **Non provato:** Fix con il party ferito, Drop e Order con piu' personaggi.
+ 
+ ---
++
++## v44: H066+$276E (aggiunge un PNG al party)
++
++**Portato**
++- **H066+$276E `add_npc`:** se il party non ha piu' di 7 membri (stato B +$67C), alloca il personaggio, carica il record dei mostri npc (H066+$1FDA), scrive il numero in +$11C, lo aggiunge al party (H066+$27EE) e carica le icone "CPIC" npc nel suo posto (+$143, H035+$0246).
++- **Chiamante:** il comando ECL $36 (`ecl_add_npc`, H012+$2502) chiama `add_npc`; tolto lo stub h066_276e.
++
++**Prove con i dati veri** (binario ASan di test con un aggancio temporaneo, non committato, che chiama `add_npc(1)` entrando al campo)
++- Il Baaz (record 1) entra nel party come secondo membro e diventa corrente; View mostra la sua scheda (Fighter livello 2, 9/9 punti ferita, Steel 5).
++- **ASan:** pulito.
++- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
++
++---
+diff --git a/src_c/readable/h012.c b/src_c/readable/h012.c
+index c5448bf..ae43f3a 100644
+--- a/src_c/readable/h012.c
++++ b/src_c/readable/h012.c
+@@ -26,6 +26,7 @@
+ #include "h053.h"
+ #include "h056.h"
+ #include "h057.h"
++#include "h066.h"
+ #include "h058.h"
+ #include "h059.h"
+ #include "h062.h"
+@@ -1034,7 +1035,7 @@ void ecl_add_npc(void)
+     u16 v;                              /* -$C(a5) */
+ 
+     read_operands(2);
+-    h066_276e(eval_operand(1));
++    add_npc(eval_operand(1));
+     v = (u16)(eval_operand(2) >> 1);
+     v = or_byte((u8)v, 0x80);
+     g_current_char->b[0xEC] = (u8)v;
+diff --git a/src_c/readable/h066.c b/src_c/readable/h066.c
+index 4ef2c5f..4405840 100644
+--- a/src_c/readable/h066.c
++++ b/src_c/readable/h066.c
+@@ -730,6 +730,25 @@ void load_character(u16 name_len, const char *name, Character *c,
+     level_derived_values(c);
+ }
+ 
++/*
++ * PORT H066+$276E: aggiunge al party il PNG npc (record dei mostri), se
++ * i membri (stato B +$67C) non sono piu' di 7: +$11C e' il suo numero e
++ * le icone 24x24 "CPIC" npc vanno nel suo posto (+$143).
++ */
++void add_npc(u16 npc)
++{
++    Character *c;                       /* -$8(a5) */
++
++    if (COK_GET16(g_state_b + 0x67C) > 7) {
++        return;
++    }
++    c = (Character *)exec_alloc_mem(sizeof(Character), COK_MEMF_CLEAR);
++    load_monster_record(npc, c);
++    c->b[0x11C] = (u8)npc;
++    add_to_party(c);
++    load_sprite_set(4, "CPIC", npc, c->b[0x143]);
++}
++
+ /*
+  * PORT H066+$27EE: aggiunge c in fondo al party e lo rende corrente; il
+  * suo posto delle icone (+$143) e' il primo libero tra 0 e 7; conta i
+diff --git a/src_c/readable/h066.h b/src_c/readable/h066.h
+index 8546f72..87eb59d 100644
+--- a/src_c/readable/h066.h
++++ b/src_c/readable/h066.h
+@@ -12,6 +12,7 @@ void list_saved_characters(CokMenuItem **names, CokMenuItem **files);
+                                         /* H066+$03D0 */
+ void load_character(u16 name_len, const char *name, Character *c,
+                     u8 unused, u8 save_disk);   /* H066+$1B0E */
++void add_npc(u16 npc);                  /* H066+$276E */
+ void add_to_party(Character *c);        /* H066+$27EE */
+ 
+ void delete_character_files(Character *c);     /* H066+$1312 */
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index 3585e9c..bfdfeca 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -74,5 +74,4 @@ void h012_14c8(void) { cok_unported("H012+$14C8"); }
+ 
+ void h071_092c(void) { cok_unported("H071+$092C"); }
+ void h072_120c(void) { cok_unported("H072+$120C"); }
+-void h066_276e(u16 npc) { (void)npc; cok_unported("H066+$276E"); }
+ void h067_1292(u16 type, CokItem *it) { (void)type; (void)it; cok_unported("H067+$1292"); }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index 7bd3f4c..9e6471e 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -63,5 +63,4 @@ void h012_14c8(void);
+ /* Usati dai comandi ECL di H012. */
+ void h071_092c(void);                    /* scena speciale ($6D8) */
+ void h072_120c(void);                    /* scena speciale ($5C4) */
+-void h066_276e(u16 npc);                 /* aggiunge un PNG */
+ void h067_1292(u16 type, CokItem *it);   /* oggetto casuale */
+-- 
+2.43.0
+

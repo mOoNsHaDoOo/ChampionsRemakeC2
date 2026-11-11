@@ -1,0 +1,1665 @@
+From 460c00a4b0179194b792a7e0ac3b3c5b47fa272b Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 22:20:05 +0000
+Subject: [PATCH 38/65] Port the combat start (H095), H011 map wall queries,
+ H029+$1718, H035+$0040, H096+$37C2
+
+The host Intuition View now has a copper list with the screen colors.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md   |  99 ++--
+ src_c/readable/backlog.md       |  72 +++
+ src_c/readable/h011.c           | 112 ++++
+ src_c/readable/h011.h           |   4 +
+ src_c/readable/h029_gfx.c       |  23 +
+ src_c/readable/h029_gfx.h       |   1 +
+ src_c/readable/h035.c           |  35 ++
+ src_c/readable/h035.h           |   2 +
+ src_c/readable/h048.c           |   7 +-
+ src_c/readable/h095.c           | 893 ++++++++++++++++++++++++++++++++
+ src_c/readable/h095.h           |   6 +
+ src_c/readable/h096.c           |  26 +-
+ src_c/readable/h096.h           |   6 +
+ src_c/readable/host/graphics.c  |  29 +-
+ src_c/readable/host/intuition.c |   6 +
+ src_c/readable/host/ndk.h       |   9 +-
+ src_c/readable/unported.c       |   2 +
+ src_c/readable/unported.h       |   2 +
+ 18 files changed, 1281 insertions(+), 53 deletions(-)
+ create mode 100644 src_c/readable/h095.h
+ create mode 100644 src_c/readable/h096.h
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index 5a83fb6..7a2b887 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **705 / 1065**.
++Routine portate: **732 / 1066**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -17,7 +17,7 @@ Routine portate: **705 / 1065**.
+ | H008 | 8660 | 21 | 21 |
+ | H009 | 988 | 3 | 3 |
+ | H010 | 2488 | 9 | 6 |
+-| H011 | 7004 | 12 | 2 |
++| H011 | 7004 | 13 | 6 |
+ | H012 | 13580 | 8 | 1 |
+ | H013 | 25244 | 22 | 19 |
+ | H014 | 224 | 2 | 2 |
+@@ -35,13 +35,13 @@ Routine portate: **705 / 1065**.
+ | H026 | 1452 | 11 | 11 |
+ | H027 | 18156 | 102 | 102 |
+ | H028 | 4488 | 16 | 15 |
+-| H029 | 6084 | 32 | 29 |
++| H029 | 6084 | 32 | 30 |
+ | H030 | 3240 | 18 | 17 |
+ | H031 | 212 | 4 | 3 |
+ | H032 | 9352 | 1 | 1 |
+ | H033 | 8140 | 16 | 15 |
+ | H034 | 472 | 3 | 3 |
+-| H035 | 1760 | 6 | 5 |
++| H035 | 1760 | 6 | 6 |
+ | H036 | 144 | 2 | 2 |
+ | H037 | 52 | 2 | 2 |
+ | H038 | 504 | 5 | 5 |
+@@ -101,8 +101,8 @@ Routine portate: **705 / 1065**.
+ | H092 | 200 | 2 | 1 |
+ | H093 | 56 | 1 | 1 |
+ | H094 | 1904 | 11 | 1 |
+-| H095 | 10484 | 21 | 1 |
+-| H096 | 19972 | 35 | 1 |
++| H095 | 10484 | 21 | 21 |
++| H096 | 19972 | 35 | 2 |
+ | H097 | 8296 | 15 | 1 |
+ | H098 | 844 | 4 | 4 |
+ | H099 | 932 | 2 | 2 |
+@@ -243,15 +243,16 @@ Routine portate: **705 / 1065**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$00FE` | `module_init_H011` | parziale | h011.c:13 |
+-| `$010C` | `sub_H011_0000010C` | parziale | h011.c:20 |
+-| `$0162` | `sub_H011_00000162` | parziale |  |
++| `$00FE` | `module_init_H011` | parziale | h011.c:14 |
++| `$010C` | `sub_H011_0000010C` | parziale | h011.c:21 |
++| `$0162` | `sub_H011_00000162` | parziale | h011.c:33 |
++| `$01AA` | `(senza scheda)` | - | h011.c:66 |
+ | `$0330` | `sub_H011_00000330` | parziale |  |
+ | `$04A6` | `sub_H011_000004A6` | parziale |  |
+-| `$04E2` | `sub_H011_000004E2` | parziale |  |
++| `$04E2` | `sub_H011_000004E2` | parziale | h011.c:101 |
+ | `$058E` | `sub_H011_0000058E` | parziale |  |
+ | `$0868` | `sub_H011_00000868` | parziale |  |
+-| `$09C8` | `sub_H011_000009C8` | parziale |  |
++| `$09C8` | `sub_H011_000009C8` | parziale | h011.c:111 |
+ | `$0B78` | `sub_H011_00000B78` | parziale |  |
+ | `$14EA` | `Load_WallDefinitions` | parziale |  |
+ | `$1876` | `Load3DMap_GEO` | verificato |  |
+@@ -594,7 +595,7 @@ Routine portate: **705 / 1065**.
+ | `$1576` | `sub_H029_00001576` | parziale | h029_gfx.c:604 |
+ | `$16A2` | `sub_H029_000016A2` | parziale | h029_gfx.c:624 |
+ | `$16DE` | `sub_H029_000016DE` | parziale | h029_gfx.c:642 |
+-| `$1718` | `sub_H029_00001718` | parziale |  |
++| `$1718` | `sub_H029_00001718` | parziale | h029_gfx.c:731 |
+ 
+ ### H030
+ 
+@@ -667,12 +668,12 @@ Routine portate: **705 / 1065**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0032` | `module_init_H035` | parziale | h035.c:12 |
+-| `$0040` | `sub_H035_00000040` | parziale |  |
+-| `$019A` | `sub_H035_0000019A` | parziale | h035.c:53 |
+-| `$01DC` | `sub_H035_000001DC` | parziale | h035.c:62 |
+-| `$0246` | `sub_H035_00000246` | parziale | h035.c:18 |
+-| `$0460` | `sub_H035_00000460` | parziale | h035.c:75 |
++| `$0032` | `module_init_H035` | parziale | h035.c:13 |
++| `$0040` | `sub_H035_00000040` | parziale | h035.c:54 |
++| `$019A` | `sub_H035_0000019A` | parziale | h035.c:88 |
++| `$01DC` | `sub_H035_000001DC` | parziale | h035.c:97 |
++| `$0246` | `sub_H035_00000246` | parziale | h035.c:19 |
++| `$0460` | `sub_H035_00000460` | parziale | h035.c:110 |
+ 
+ ### H036
+ 
+@@ -839,14 +840,14 @@ Routine portate: **705 / 1065**.
+ | `$0AA8` | `sub_H048_00000AA8` | parziale | h048.c:271 |
+ | `$0B1A` | `sub_H048_00000B1A` | parziale | h048.c:290 |
+ | `$0DF2` | `sub_H048_00000DF2` | parziale | h048.c:362 |
+-| `$0F88` | `sub_H048_00000F88` | parziale | h048.c:402 |
+-| `$0FBA` | `sub_H048_00000FBA` | parziale | h048.c:408 |
+-| `$0FEC` | `sub_H048_00000FEC` | parziale | h048.c:415 |
+-| `$110C` | `sub_H048_0000110C` | parziale | h048.c:441 |
+-| `$113E` | `sub_H048_0000113E` | parziale | h048.c:448 |
+-| `$12F4` | `sub_H048_000012F4` | parziale | h048.c:510 |
+-| `$16D4` | `sub_H048_000016D4` | parziale | h048.c:600 |
+-| `$195E` | `sub_H048_0000195E` | parziale | h048.c:660 |
++| `$0F88` | `sub_H048_00000F88` | parziale | h048.c:407 |
++| `$0FBA` | `sub_H048_00000FBA` | parziale | h048.c:413 |
++| `$0FEC` | `sub_H048_00000FEC` | parziale | h048.c:420 |
++| `$110C` | `sub_H048_0000110C` | parziale | h048.c:446 |
++| `$113E` | `sub_H048_0000113E` | parziale | h048.c:453 |
++| `$12F4` | `sub_H048_000012F4` | parziale | h048.c:515 |
++| `$16D4` | `sub_H048_000016D4` | parziale | h048.c:605 |
++| `$195E` | `sub_H048_0000195E` | parziale | h048.c:665 |
+ 
+ ### H049
+ 
+@@ -1576,33 +1577,33 @@ Routine portate: **705 / 1065**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0384` | `module_init_H095` | parziale | h095.c:9 |
+-| `$0392` | `sub_H095_00000392` | parziale |  |
+-| `$0422` | `sub_H095_00000422` | parziale |  |
+-| `$06F2` | `trampoline_H095_07B6` | parziale |  |
+-| `$0700` | `sub_H095_00000700` | parziale |  |
+-| `$083A` | `trampoline_H095_0F9C` | parziale |  |
+-| `$0848` | `sub_H095_00000848` | parziale |  |
+-| `$0912` | `sub_H095_00000912` | parziale |  |
+-| `$09A4` | `sub_H095_000009A4` | parziale |  |
+-| `$0CD4` | `sub_H095_00000CD4` | parziale |  |
+-| `$1076` | `sub_H095_00001076` | parziale |  |
+-| `$121A` | `trampoline_H095_13F0` | parziale |  |
+-| `$1228` | `sub_H095_00001228` | parziale |  |
+-| `$1576` | `sub_H095_00001576` | parziale |  |
+-| `$1630` | `sub_H095_00001630` | parziale |  |
+-| `$1790` | `sub_H095_00001790` | parziale |  |
+-| `$18CC` | `sub_H095_000018CC` | parziale |  |
+-| `$1914` | `sub_H095_00001914` | parziale |  |
+-| `$1A7A` | `sub_H095_00001A7A` | parziale |  |
+-| `$1FC2` | `sub_H095_00001FC2` | parziale |  |
+-| `$2496` | `sub_H095_00002496` | parziale |  |
++| `$0384` | `module_init_H095` | parziale | h095.c:23 |
++| `$0392` | `sub_H095_00000392` | parziale | h095.c:62 |
++| `$0422` | `sub_H095_00000422` | parziale | h095.c:78 |
++| `$06F2` | `trampoline_H095_07B6` | parziale | h095.c:151 |
++| `$0700` | `sub_H095_00000700` | parziale | h095.c:130 |
++| `$083A` | `trampoline_H095_0F9C` | parziale | h095.c:365 |
++| `$0848` | `sub_H095_00000848` | parziale | h095.c:165 |
++| `$0912` | `sub_H095_00000912` | parziale | h095.c:188 |
++| `$09A4` | `sub_H095_000009A4` | parziale | h095.c:201 |
++| `$0CD4` | `sub_H095_00000CD4` | parziale | h095.c:286 |
++| `$1076` | `sub_H095_00001076` | parziale | h095.c:397 |
++| `$121A` | `trampoline_H095_13F0` | parziale | h095.c:447 |
++| `$1228` | `sub_H095_00001228` | parziale | h095.c:425 |
++| `$1576` | `sub_H095_00001576` | parziale | h095.c:477 |
++| `$1630` | `sub_H095_00001630` | parziale | h095.c:490 |
++| `$1790` | `sub_H095_00001790` | parziale | h095.c:528 |
++| `$18CC` | `sub_H095_000018CC` | parziale | h095.c:560 |
++| `$1914` | `sub_H095_00001914` | parziale | h095.c:573 |
++| `$1A7A` | `sub_H095_00001A7A` | parziale | h095.c:604 |
++| `$1FC2` | `sub_H095_00001FC2` | parziale | h095.c:738 |
++| `$2496` | `sub_H095_00002496` | parziale | h095.c:850 |
+ 
+ ### H096
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$01F2` | `module_init_H096` | parziale | h096.c:4 |
++| `$01F2` | `module_init_H096` | parziale | h096.c:5 |
+ | `$0200` | `sub_H096_00000200` | parziale |  |
+ | `$023E` | `sub_H096_0000023E` | parziale |  |
+ | `$02CE` | `sub_H096_000002CE` | parziale |  |
+@@ -1626,7 +1627,7 @@ Routine portate: **705 / 1065**.
+ | `$3100` | `sub_H096_00003100` | parziale |  |
+ | `$3358` | `sub_H096_00003358` | parziale |  |
+ | `$3492` | `sub_H096_00003492` | parziale |  |
+-| `$37C2` | `sub_H096_000037C2` | parziale |  |
++| `$37C2` | `sub_H096_000037C2` | parziale | h096.c:11 |
+ | `$3852` | `sub_H096_00003852` | parziale |  |
+ | `$38DC` | `sub_H096_000038DC` | parziale |  |
+ | `$39D0` | `sub_H096_000039D0` | parziale |  |
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index 50f8b09..b1087f6 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -1697,3 +1697,75 @@ Ho portato la grafica del combattimento: mappa, vista 7x7, figure, cursore, cadu
+ - **Da portare:** chi carica $3304, $243A e $332C e chi prepara la mappa del combattimento, cioè l'avvio del combattimento in H095/H096/H097.
+ 
+ ---
++
++## 2026-11-10 (cok-port-31)
++
++Ho portato l'avvio del combattimento, H095+$2496, che lo script (H059) chiama a ogni battaglia. Routine portate: 732 su 1066 (prima 705).
++
++**H095: avvio del combattimento (tutte le 14 routine del modulo)**
++- **$2496 `start_combat`, l'avvio:**
++  - libera le immagini della mappa ($27B2, $27B8, $2798) e scrive "A battle begins...";
++  - azzera lo stato del combattimento: nubi, pozze, corpi, armi perse, $2432, $2510, $335C;
++  - costruisce la mappa, prepara i turni e schiera i combattenti;
++  - alloca le icone $243A, centra la vista sul primo e ridisegna;
++  - copia i colori nella View fuori schermo, lancia gli eventi 8 e $16 per tutti e calcola la forza dei nemici;
++  - passa al contesto 5.
++- **$1630 (mappa):** carica i set di tile (DungCom o WildCom, più RandCom) e alloca la mappa di $9CE byte.
++- **Mappa del dungeon:**
++  - $083A con le procedure annidate $0848, $0912, $09A4 e $0CD4: un blocco 7x5 per ogni casella attorno al party (colonne -6..6, righe -2..2), con pavimento, pareti e porte del dungeon;
++  - $06F2/$0700: pareti fra due caselle;
++  - $0392: casella del blocco;
++  - $0422: alberi e cespugli nei blocchi all'aperto.
++- **Mappa all'aperto:**
++  - $1576: mappa libera;
++  - $1076: alberi alti e oggetti;
++  - $121A/$1228: erba e terreno.
++- **Turni:** $1790, con il blocco del turno di ogni personaggio, la direzione iniziale e l'IA di chi è fuori combattimento.
++- **Schieramento:**
++  - $1FC2: punti di partenza dei due lati e griglie di schieramento;
++  - $1A7A: ricerca a spirale con cambio di griglia;
++  - $1914: prova una casella;
++  - $18CC: fuori dalla griglia.
++
++**Altre routine**
++- **H011:**
++  - $0162 (dentro la mappa 16x16);
++  - $01AA (parete di un lato);
++  - $04E2 (byte del piano GEO 2);
++  - $09C8 (porta di un lato).
++- **H029+$1718:** copia i 32 colori dello schermo nella View fuori schermo, leggendoli dalla lista Copper della View di Intuition.
++- **H035+$0040:** carica un set di tile 24x24 nel set $332C.
++- **H096+$37C2:** forza dei nemici in H005+$2481.
++
++**Host**
++- **View di Intuition:** `GfxBase->ActiView` all'avvio è una View senza ViewPort, quindi il display mostra lo schermo.
++- **Lista Copper:** quella View ha una lista Copper con le MOVE COLOR00..31 dello schermo in primo piano. La aggiornano OpenScreen e LoadRGB4. Così H029+$1718 è portata com'è.
++- **`struct cprlist`:** ora è definita nell'ndk dell'host.
++
++**Errore trovato col test reale e corretto**
++- **Problema:** dopo lo schieramento `$247B` vale numero di combattenti + 1 (come nell'originale), quindi H048+$0DF2 legge una voce vuota di $2B32.
++- **Originale:** legge +$198 dalla memoria bassa e scarta la voce perché la sua forma è 0.
++- **Qui:** la voce NULL si salta (deviazione documentata nel codice).
++
++**Dove mi discosto dall'asm (tutto documentato nel codice)**
++- **H010+$0360:** resta uno stub. È il messaggio "Start range error in Load24x24Set" sulla console, cioè il writeln del runtime Pascal (H020/H074/H075). Si raggiunge solo con un indice oltre $27, che le chiamate di H095 non usano.
++- **Valori non inizializzati, qui messi a 0:**
++  - le tile dei casi senza valore in $09A4 e $0CD4;
++  - in $1A7A, l'esito quando si esce dalla griglia senza cambiarla;
++  - in H011+$01AA, la parete di una direzione dispari.
++- **Schieramento:** oltre 8 corpi non si registrano.
++
++**Prove**
++- **Test temporaneo (non committato):** con `COK_TEST_COMBAT`, "Begin adventuring" carica il personaggio L e chiama `start_combat()`, con `$3DE3 = 1` come nell'esplorazione.
++  - All'aperto: mappa con alberi, cespugli e oggetti, il personaggio schierato, cornice del combattimento e "A battle begins...".
++  - Nel dungeon: solo pavimento, perché nel menu i piani GEO non sono caricati.
++  - ASan pulito in entrambi i casi.
++- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
++
++**Cosa resta**
++- **Script che chiama l'avvio:** H059.
++- **Ciclo del combattimento:** H096/H097 (turni, attacchi, IA, menu del combattimento).
++- **Fine del combattimento.**
++- **Audio:** H043+$190E.
++
++---
+diff --git a/src_c/readable/h011.c b/src_c/readable/h011.c
+index b636aae..bf8c96a 100644
+--- a/src_c/readable/h011.c
++++ b/src_c/readable/h011.c
+@@ -4,6 +4,7 @@
+ #include "h003_exec.h"
+ #include "h022_view.h"
+ #include "globals.h"
++#include "h029_gfx.h"
+ 
+ /* Dati del modulo sotto a4: g_h011_bss[0xAC - off] e' -off(a4). */
+ u8 g_h011_bss[0xAC];
+@@ -28,3 +29,114 @@ void load_game_palette(void)
+     COK_PUT16(&g_h011_bss[0xAC - 0x86], 0x0FFF);
+     graphics_load_rgb4(&g_screen->ViewPort, g_h011_bss, 0x14);
+ }
++
++/* PORT H011+$0162: (x, y) e' dentro la mappa 16x16? */
++static u8 map_inside(s16 x, s16 y)
++{
++    if (x > 0x0F || x < 0 || y > 0x0F || y < 0) {
++        return 0;
++    }
++    return 1;
++}
++
++/*
++ * Prologo comune di H011+$01AA/$04E2/$09C8: fuori dalla mappa, con
++ * $2498 = 0 o $A, 0; altrimenti le coordinate fanno il giro (16 -> 0,
++ * -1 -> 15).
++ */
++static u8 map_wrap(s16 *x, s16 *y)
++{
++    if (!map_inside(*x, *y) && (H005_B(0x2498) == 0 || H005_B(0x2498) == 0x0A)) {
++        return 0;
++    }
++    if (*x > 0x0F) {
++        *x = 0;
++    } else if (*x < 0) {
++        *x = 0x0F;
++    }
++    if (*y > 0x0F) {
++        *y = 0;
++    } else if (*y < 0) {
++        *y = 0x0F;
++    }
++    return 1;
++}
++
++/*
++ * PORT H011+$01AA (Map_QueryWall): parete del lato dir (0, 2, 4, 6) della
++ * casella (x, y): nibble dei piani GEO 0 e 1.  Con dir dispari
++ * l'originale restituisce una word non inizializzata: qui 0.
++ */
++u16 map_wall(s16 x, s16 y, u16 dir)
++{
++    u16 r = 0;                          /* -$2(a5) */
++    u8 b;
++
++    if (!map_wrap(&x, &y)) {
++        return 0;
++    }
++    switch (dir) {
++    case 0:
++        b = g_geo_planes[y * 16 + x];
++        r = (u8)(mask_byte(b, 0xF0) >> 4);
++        break;
++    case 2:
++        b = g_geo_planes[y * 16 + x];
++        r = mask_byte(b, 0x0F);
++        break;
++    case 4:
++        b = g_geo_planes[0x100 + y * 16 + x];
++        r = (u8)(mask_byte(b, 0xF0) >> 4);
++        break;
++    case 6:
++        b = g_geo_planes[0x100 + y * 16 + x];
++        r = mask_byte(b, 0x0F);
++        break;
++    default:
++        break;
++    }
++    return r;
++}
++
++/* PORT H011+$04E2: byte del piano GEO 2 della casella (x, y). */
++u8 map_flags(s16 x, s16 y)
++{
++    if (!map_wrap(&x, &y)) {
++        return 0;
++    }
++    return g_geo_planes[0x200 + y * 16 + x];
++}
++
++/*
++ * PORT H011+$09C8: porta del lato dir della casella (x, y): coppia di
++ * bit del piano GEO 3 se c'e' una parete, altrimenti 1.
++ */
++u16 map_door(s16 x, s16 y, u16 dir)
++{
++    u16 r = 1;                          /* -$2(a5) */
++    u8 b;
++
++    if (!map_wrap(&x, &y)) {
++        return 0;
++    }
++    if (map_wall(x, y, dir) > 0) {
++        b = g_geo_planes[0x300 + y * 16 + x];
++        switch (dir) {
++        case 0:
++            r = mask_byte(b, 3);
++            break;
++        case 2:
++            r = (u8)(mask_byte(b, 0x0C) >> 2);
++            break;
++        case 4:
++            r = (u8)(mask_byte(b, 0x30) >> 4);
++            break;
++        case 6:
++            r = (u8)(mask_byte(b, 0xC0) >> 6);
++            break;
++        default:
++            break;
++        }
++    }
++    return r;
++}
+diff --git a/src_c/readable/h011.h b/src_c/readable/h011.h
+index 69484d0..ba57d1e 100644
+--- a/src_c/readable/h011.h
++++ b/src_c/readable/h011.h
+@@ -2,6 +2,10 @@
+ #ifndef COK_H011_H
+ #define COK_H011_H
+ 
++#include "cok.h"
+ void load_game_palette(void);           /* H011+$010C */
++u16  map_wall(s16 x, s16 y, u16 dir);   /* H011+$01AA */
++u8   map_flags(s16 x, s16 y);           /* H011+$04E2 */
++u16  map_door(s16 x, s16 y, u16 dir);   /* H011+$09C8 */
+ 
+ #endif
+diff --git a/src_c/readable/h029_gfx.c b/src_c/readable/h029_gfx.c
+index e84fb82..3340d22 100644
+--- a/src_c/readable/h029_gfx.c
++++ b/src_c/readable/h029_gfx.c
+@@ -726,3 +726,26 @@ void draw_tile24_saving(u16 x, u16 y, u8 frame, u8 mode,
+         draw_tile24(x, y, frame, 0, src, unused);
+     }
+ }
++
++/*
++ * PORT H029+$1718: copia nella View fuori schermo i 32 colori dello
++ * schermo di Intuition, letti dalla sua lista Copper (View di avvio, -$24):
++ * dalla MOVE COLOR00 = 0 si prendono i valori di 32 MOVE consecutive.
++ */
++void copy_intuition_colors(void)
++{
++    UWORD *p;                           /* -$4(a5) */
++    UWORD *copper;                      /* -$8(a5) */
++    u8 colors[0x40];                    /* -$48(a5): word big-endian */
++    s16 i;                              /* -$4A(a5) */
++
++    p = g_saved_view->LOFCprList->start;
++    while (!(p[0] == 0x0180 && p[1] == 0x0000)) {
++        p += 2;
++    }
++    copper = p;
++    for (i = 0; i <= 0x1F; ++i) {
++        COK_PUT16(&colors[i * 2], copper[i * 2 + 1]);
++    }
++    graphics_load_rgb4(&g_offscreen_vp, colors, 0x20);
++}
+diff --git a/src_c/readable/h029_gfx.h b/src_c/readable/h029_gfx.h
+index 6a2a122..720cbdd 100644
+--- a/src_c/readable/h029_gfx.h
++++ b/src_c/readable/h029_gfx.h
+@@ -40,6 +40,7 @@ void copy_screen_to_offscreen(void);    /* H029+$1520 */
+ void swap_display_view(void);           /* H029+$1576 */
+ void begin_screen_update(void);         /* H029+$16A2 */
+ void end_screen_update(void);           /* H029+$16DE */
++void copy_intuition_colors(void);       /* H029+$1718 */
+ void draw_tile24(u16 x, u16 y, u8 frame, u8 masked, struct GfxRecord *src,
+                  struct GfxRecord *unused);             /* H029+$0B94 */
+ void draw_tile24_saving(u16 x, u16 y, u8 frame, u8 mode,
+diff --git a/src_c/readable/h035.c b/src_c/readable/h035.c
+index 2a66739..af2ca48 100644
+--- a/src_c/readable/h035.c
++++ b/src_c/readable/h035.c
+@@ -8,6 +8,7 @@
+ #include "h016_gfx.h"
+ #include "unported.h"
+ #include "h049.h"
++#include "h010_input.h"
+ 
+ /* PORT H035+$0032: link/unlk, nessun effetto. */
+ void h035_init(void)
+@@ -49,6 +50,40 @@ void load_sprite_set(u16 name_len, const char *name, u16 id, u16 slot)
+                      g_sprite_sets[slot][1]);
+ }
+ 
++/*
++ * PORT H035+$0040 (Load24x24Set): carica il record id del contenitore name
++ * (con maschera; colore trasparente 8 se first = $22) e ne copia count
++ * tile 24x24 nel set $332C dalla tile first; poi lo libera.  Con first
++ * oltre $27: "Start range error in Load24x24Set" e uscita (H010+$0360,
++ * H010+$0332).
++ */
++void load_24x24_set(u16 name_len, const char *name, u8 id, u8 first,
++                    u8 count)
++{
++    char copy[0x52];                    /* nome per valore */
++    struct GfxRecord *rec = NULL;       /* -$4(a5) */
++    u16 dst_x;                          /* -$C(a5) */
++    u16 color;                          /* -$10(a5) */
++
++    h026_copy(0x50, copy, name_len, name);
++    if (first > 0x27) {
++        h010_0360(0x21, "Start range error in Load24x24Set");
++        quit_game();
++    }
++    color = (first == 0x22) ? 8 : 0;
++    load_indexed_gfx_record(name_len, copy, id, 1, (u8)color, &rec);
++    dst_x = (u16)(first * 0x18);
++    if (g_gfx_332c != NULL) {
++        (void)graphics_blt_bitmap(rec->image, 0, 0, g_gfx_332c->image, dst_x,
++                                  0, (u16)(count * 0x18), 0x18, 0xC0, 0xFF,
++                                  NULL);
++        (void)graphics_blt_bitmap(rec->mask, 0, 0, g_gfx_332c->mask, dst_x, 0,
++                                  (u16)(count * 0x18), 0x18, 0xC0, 0xFF,
++                                  NULL);
++    }
++    free_gfx_record(&rec);
++}
++
+ /*
+  * PORT H035+$019A: disegna il fotogramma frame del set di tile $332C nella
+  * cella 24x24 (col, row), con la maschera se masked = 1 (H029+$0B94).
+diff --git a/src_c/readable/h035.h b/src_c/readable/h035.h
+index c1d83ec..d22cfe5 100644
+--- a/src_c/readable/h035.h
++++ b/src_c/readable/h035.h
+@@ -6,6 +6,8 @@
+ 
+ void load_sprite_set(u16 name_len, const char *name, u16 id, u16 slot);
+                                                         /* H035+$0246 */
++void load_24x24_set(u16 name_len, const char *name, u8 id, u8 first,
++                    u8 count);                          /* H035+$0040 */
+ void draw_map_tile(s16 col, s16 row, u8 frame, u8 masked); /* H035+$019A */
+ void free_sprite_set(u8 slot);          /* H035+$01DC */
+ void draw_sprite_set(u16 col, u16 row, u16 scale, u16 which, u16 slot);
+diff --git a/src_c/readable/h048.c b/src_c/readable/h048.c
+index 520beb8..ef93c58 100644
+--- a/src_c/readable/h048.c
++++ b/src_c/readable/h048.c
+@@ -377,7 +377,12 @@ void center_view(s16 x, s16 y, u16 margin, u16 dir)
+     if (scroll_view_to(nx, ny, (u8)margin)) {
+         for (n = 1; n <= H005_B(0x247B); ++n) {
+             c = g_combatants[n - 1];
+-            if (c->b[0x198] && POS_SIZE(n) > 0) {
++            /*
++             * L'ultima voce ($247B, dopo lo schieramento di H095) e' vuota:
++             * l'originale legge +$198 dalla memoria bassa e la scarta per
++             * la forma 0; qui la voce NULL si salta.
++             */
++            if (c != NULL && c->b[0x198] && POS_SIZE(n) > 0) {
+                 draw_combatant(n);
+             }
+         }
+diff --git a/src_c/readable/h095.c b/src_c/readable/h095.c
+index b5f23ed..bfd23c3 100644
+--- a/src_c/readable/h095.c
++++ b/src_c/readable/h095.c
+@@ -1,5 +1,19 @@
+ /* H095: dati del modulo (tabelle di word). */
+ #include "init_data.h"
++#include "h095.h"
++#include "globals.h"
++#include "h003_exec.h"
++#include "h008.h"
++#include "h011.h"
++#include "h029_gfx.h"
++#include "h030.h"
++#include "h035.h"
++#include "h048.h"
++#include "h053.h"
++#include "h062.h"
++#include "h063.h"
++#include "h096.h"
++#include <string.h>
+ 
+ /* Dati del modulo sotto a4: g_h095_bss[0x342 - off] e' -off(a4). */
+ u8 g_h095_bss[0x342];
+@@ -11,3 +25,882 @@ void h095_init(void)
+ {
+     INIT_APPLY(s_init_2670, g_h095_bss, sizeof(g_h095_bss));
+ }
++
++/*
++ * Dati del modulo: -$332/-$334 riga e colonna (in blocchi) della casella
++ * del dungeon in esame, -$335..-$338 le sue pareti (0 nord, 6 ovest, 2
++ * est, 4 sud: 0 aperto, 1 parete, 3 porta), -$341 casella all'aperto
++ * (bit 6 del piano GEO 2), -$342 bosco, -$339 lato, -$340 set caricato.
++ */
++#define H095_B(off)     g_h095_bss[0x342 - (off)]
++#define H095_W(off)     ((s16)COK_GET16(&g_h095_bss[0x342 - (off)]))
++#define H095_SETW(off, v) COK_PUT16(&g_h095_bss[0x342 - (off)], (u16)(v))
++#define PLACE_TABLE(side, set, r, c) \
++    g_h095_bss[0x342 - 0x320 + (side) * 0x120 + (set) * 0x48 + (r) * 0x0C + (c)]
++
++#define WALL_N  H095_B(0x335)
++#define WALL_W  H095_B(0x336)
++#define WALL_E  H095_B(0x337)
++#define WALL_S  H095_B(0x338)
++
++static u8 *map_cell(s16 x, s16 y)
++{
++    return g_combat_area + 0x0A + (s32)y * 0x64 + x * 2;
++}
++
++static u8 tile_frame(u8 t)
++{
++    return H005_B(0x3EF4 + (t - 1) * 4 + 3);
++}
++
++static u8 in_map(s16 x, s16 y)
++{
++    return (u8)(x >= 0 && x <= 0x31 && y >= 0 && y <= 0x18);
++}
++
++/*
++ * PORT H095+$0392: parte sopra della casella (dx, dy) del blocco 7x5 in
++ * esame (colonna $15 + 6*col + 5*riga, riga $A + 5*riga) = tile + 1.
++ */
++static void set_block_cell(s16 dx, s16 dy, u16 tile)
++{
++    s16 x;                              /* -$2(a5) */
++    s16 y;                              /* -$4(a5) */
++
++    x = (s16)(H095_W(0x332) * 6 + H095_W(0x334) * 5 + 0x15 + dx);
++    y = (s16)(H095_W(0x334) * 5 + 0x0A + dy);
++    if (in_map(x, y)) {
++        map_cell(x, y)[1] = (u8)(tile + 1);
++    }
++}
++
++/*
++ * PORT H095+$0422: bosco: in un blocco con pareti adatte (nessuna porta,
++ * non due lati opposti chiusi senza gli altri due) e all'aperto, le
++ * caselle libere ($16) diventano alberi ($1A, 50%) con cespugli ($1B,
++ * 90%) attorno.
++ */
++static void plant_trees(void)
++{
++    static const s16 dxs[4] = { 0, 1, 0, -1 };     /* -$8(a5) */
++    static const s16 dys[4] = { -1, 0, 1, 0 };     /* -$10(a5) */
++    s16 i;                              /* -$12(a5) */
++    s16 j;                              /* -$14(a5) */
++    s16 x;                              /* -$16(a5) */
++    s16 y;                              /* -$18(a5) */
++    s16 nx;                             /* -$1A(a5) */
++    s16 ny;                             /* -$1C(a5) */
++    u16 k;                              /* -$1E(a5) */
++    u8 ok = 0;
++
++    if (WALL_N == 1 || WALL_E == 1 || WALL_S == 1 || WALL_W == 1) {
++        ok = 1;
++        if (WALL_N == 1 && WALL_S == 1 && !(WALL_E == 1 && WALL_W == 1)) {
++            ok = 0;
++        } else if (WALL_E == 1 && WALL_W == 1 &&
++                   !(WALL_N == 1 && WALL_S == 1)) {
++            ok = 0;
++        } else if (WALL_N == 3 || WALL_E == 3 || WALL_S == 3 || WALL_W == 3) {
++            ok = 0;
++        }
++    }
++    H095_B(0x342) = ok;
++    for (i = 2; i <= 3; ++i) {
++        for (j = 2; j <= 4; ++j) {
++            x = (s16)(H095_W(0x332) * 6 + H095_W(0x334) * 5 + 0x15 + i + j);
++            y = (s16)(H095_W(0x334) * 5 + 0x0A + j);
++            if (!in_map(x, y) || tile_frame(map_cell(x, y)[1]) != 0x16 ||
++                !H095_B(0x341) || !H095_B(0x342) || roll_dice(1, 0x0A) > 5) {
++                continue;
++            }
++            map_cell(x, y)[1] = 0x1A;
++            for (k = 1; k <= 4; ++k) {
++                nx = (s16)(dxs[k - 1] + x);
++                ny = (s16)(dys[k - 1] + y);
++                if (in_map(nx, ny) && tile_frame(map_cell(nx, ny)[1]) == 0x16 &&
++                    roll_dice(1, 0x0A) <= 9) {
++                    map_cell(nx, ny)[1] = 0x1B;
++                }
++            }
++        }
++    }
++}
++
++/*
++ * PORT H095+$0700 (annidata in $06F2): lato dir della casella (x, y) del
++ * dungeon: dentro la mappa 1 senza parete, 0 parete, 3 porta; fuori 0
++ * per i lati est/ovest sulla riga del party, altrimenti 1.
++ */
++static u8 wall_side(s16 x, s16 y, u16 dir)
++{
++    if (x >= 0 && x <= 0x0F && y >= 0 && y <= 0x0F) {
++        if (map_door(x, y, dir) == 0) {
++            return 1;
++        }
++        if (map_wall(x, y, dir) == 0) {
++            return 0;
++        }
++        return 3;
++    }
++    if (y == (s16)H005_W(0x281E) && (dir == 2 || dir == 6)) {
++        return 0;
++    }
++    return 1;
++}
++
++/* PORT H095+$06F2: lato dir fra (x, y) e la casella vicina (OR dei due). */
++static u8 wall_between(s16 x, s16 y, u16 dir)
++{
++    u16 opposite;                       /* -$4(a5) */
++    u8 a;                               /* -$1(a5) */
++    u8 b;                               /* -$2(a5) */
++
++    opposite = (u16)((dir + 4) & 7);
++    a = wall_side(x, y, dir);
++    b = wall_side((s16)(x + H005_W(0x3EE2 + dir * 2)),
++                  (s16)(y + H005_W(0x3ED0 + dir * 2)), opposite);
++    return or_byte(a, b);
++}
++
++/* PORT H095+$0848 (annidata in $083A): pavimento e parete ovest del blocco. */
++static void block_floor_and_west(void)
++{
++    s16 i;                              /* -$2(a5) */
++    s16 j;                              /* -$4(a5) */
++
++    for (j = 2; j <= 4; ++j) {
++        for (i = 0; i <= 5; ++i) {
++            set_block_cell(i, j, 0x16);
++        }
++    }
++    if (WALL_W == 1) {
++        for (j = 2; j <= 4; ++j) {
++            set_block_cell((s16)(j - 1), j, 4);
++            set_block_cell(j, j, 3);
++            set_block_cell((s16)(j + 1), j, 0x0D);
++        }
++    } else if (WALL_W == 3) {
++        set_block_cell(1, 2, 8);
++        set_block_cell(5, 4, 0);
++    }
++}
++
++/* PORT H095+$0912 (annidata in $083A): lato nord al centro del blocco. */
++static void block_north_middle(void)
++{
++    u16 t = (WALL_N == 1) ? 5 : 0x16;
++    u16 b = (WALL_N == 1) ? 0x0A : 0x16;
++
++    set_block_cell(3, 0, t);
++    set_block_cell(4, 0, t);
++    set_block_cell(3, 1, b);
++    set_block_cell(4, 1, b);
++}
++
++/*
++ * PORT H095+$09A4 (annidata in $083A): angolo nord-ovest del blocco
++ * (caselle 1..2 x 0..1) secondo le pareti; corner = nessuna parete fra
++ * il blocco a nord e quello a ovest.  Nei casi senza valore l'originale
++ * usa word non inizializzate: qui 0.
++ */
++static void block_north_west(s16 x, s16 y)
++{
++    s16 t1 = 0;                         /* -$4(a5) */
++    s16 t3 = 0;                         /* -$6(a5) */
++    s16 t2 = 0;                         /* -$8(a5) */
++    s16 t4 = 0;                         /* -$A(a5) */
++    u8 corner;                          /* -$B(a5) */
++
++    corner = (u8)(!wall_between(x, (s16)(y - 1), 6) &&
++                  !wall_between((s16)(x - 1), y, 0));
++    /* k = 1 */
++    switch (WALL_N) {
++    case 0:
++        switch (WALL_W) {
++        case 0: t1 = 0x16; break;
++        case 1: t1 = corner ? 0 : 0x0D; break;
++        case 3: t1 = 0x0D; break;
++        default: break;
++        }
++        break;
++    case 1:
++    case 3:
++        if (WALL_W == 0) {
++            t1 = corner ? 0x0F : 5;
++        } else {
++            t1 = corner ? 0x12 : 2;
++        }
++        break;
++    default:
++        break;
++    }
++    /* k = 2 */
++    switch (WALL_N) {
++    case 0: t2 = 0x16; break;
++    case 1: t2 = 5; break;
++    case 3: t2 = 0x11; break;
++    default: break;
++    }
++    /* k = 3 */
++    switch (WALL_W) {
++    case 0:
++        if (WALL_N == 0) {
++            t3 = 0x16;
++        } else {
++            t3 = corner ? 0x10 : 0x0A;
++        }
++        break;
++    case 1: t3 = corner ? 1 : 3; break;
++    case 3: t3 = corner ? 0x14 : 7; break;
++    default: break;
++    }
++    /* k = 4 */
++    switch (WALL_W) {
++    case 0:
++    case 3:
++        switch (WALL_N) {
++        case 0: t4 = 0x16; break;
++        case 1: t4 = 0x0A; break;
++        case 3: t4 = 0x17; break;
++        default: break;
++        }
++        break;
++    case 1:
++        switch (WALL_N) {
++        case 0: t4 = 0x0D; break;
++        case 1: t4 = 6; break;
++        case 3: t4 = 0x15; break;
++        default: break;
++        }
++        break;
++    default:
++        break;
++    }
++    set_block_cell(1, 0, (u16)t1);
++    set_block_cell(2, 0, (u16)t2);
++    set_block_cell(1, 1, (u16)t3);
++    set_block_cell(2, 1, (u16)t4);
++}
++
++/*
++ * PORT H095+$0CD4 (annidata in $083A): angolo nord-est del blocco
++ * (caselle 5..6 x 0..1); ne = parete a nord del blocco a est, en =
++ * parete a est del blocco a nord.  Valori non inizializzati: 0.
++ */
++static void block_north_east(s16 x, s16 y)
++{
++    s16 t1 = 0;                         /* -$4(a5) */
++    s16 t3 = 0;                         /* -$6(a5) */
++    s16 t2 = 0;                         /* -$8(a5) */
++    s16 t4 = 0;                         /* -$A(a5) */
++    u8 corner;                          /* -$B(a5) */
++    u8 ne;                              /* -$C(a5) */
++    u8 en;                              /* -$D(a5) */
++
++    ne = wall_between(x, (s16)(y - 1), 2);
++    en = wall_between((s16)(x + 1), y, 0);
++    corner = (u8)(!ne && !en);
++    /* k = 1 */
++    switch (WALL_N) {
++    case 0: t1 = (ne == 1) ? 4 : 0x16; break;
++    case 1: t1 = 5; break;
++    case 3: t1 = 0x0F; break;
++    default: break;
++    }
++    /* k = 2 */
++    if (WALL_N == 0) {
++        switch (ne) {
++        case 0: t2 = 0x16; break;
++        case 1:
++            if (WALL_E != 0) {
++                t2 = 3;
++            } else {
++                t2 = en ? 0x0B : 7;
++            }
++            break;
++        case 3: t2 = (WALL_E == 0 && en) ? 0x18 : 1; break;
++        default: break;
++        }
++    } else if (WALL_E) {
++        t2 = 9;
++    } else if (en) {
++        t2 = 5;
++    } else if (corner) {
++        t2 = 0x11;
++    } else {
++        t2 = 0x13;
++    }
++    /* k = 3 */
++    switch (WALL_N) {
++    case 0: t3 = 0x16; break;
++    case 1: t3 = 0x0A; break;
++    case 3: t3 = 0x10; break;
++    default: break;
++    }
++    /* k = 4 */
++    if (WALL_N == 0) {
++        if (ne == 0) {
++            t4 = 0x16;
++        } else if (WALL_E) {
++            t4 = 4;
++        } else if (en == 0) {
++            t4 = 8;
++        } else {
++            t4 = 0x0C;
++        }
++    } else if (WALL_E) {
++        t4 = 0x0E;
++    } else if (en == 0) {
++        t4 = 0x17;
++    } else {
++        t4 = 0x0A;
++    }
++    set_block_cell(5, 0, (u16)t1);
++    set_block_cell(6, 0, (u16)t2);
++    set_block_cell(5, 1, (u16)t3);
++    set_block_cell(6, 1, (u16)t4);
++}
++
++/*
++ * PORT H095+$083A: mappa del combattimento nel dungeon: per ogni casella
++ * attorno al party (colonne -6..6, righe -2..2) un blocco con pavimento,
++ * pareti e porte del dungeon, e alberi se all'aperto.
++ */
++static void build_dungeon_map(void)
++{
++    s16 x;                              /* -$2(a5) */
++    s16 y;                              /* -$4(a5) */
++    s16 row;                            /* -$334(a4) */
++    s16 col;                            /* -$332(a4) */
++
++    for (row = -2; row <= 2; ++row) {
++        H095_SETW(0x334, row);
++        for (col = -6; col <= 6; ++col) {
++            H095_SETW(0x332, col);
++            x = (s16)(H005_W(0x281C) + H095_W(0x332));
++            y = (s16)(H005_W(0x281E) + H095_W(0x334));
++            WALL_W = wall_between(x, y, 6);
++            WALL_N = wall_between(x, y, 0);
++            WALL_E = wall_between(x, y, 2);
++            WALL_S = wall_between(x, y, 4);
++            block_floor_and_west();
++            block_north_middle();
++            block_north_west(x, y);
++            block_north_east(x, y);
++            H095_B(0x341) = mask_byte(map_flags(x, y), 0x40);
++            plant_trees();
++        }
++    }
++}
++
++/*
++ * PORT H095+$1076: all'aperto, sulle coppie di caselle libere una sopra
++ * l'altra, con probabilita' 8%: un oggetto ($2A..$2B) o, con un altro
++ * 8% mancato, un albero alto (cima $20..$25, tronco $26..$29).
++ */
++static void scatter_wild_objects(void)
++{
++    s16 x;                              /* -$4(a5) */
++    s16 y;                              /* -$6(a5) */
++    u16 p = 8;                          /* -$8(a5) */
++
++    for (x = 0; x <= 0x31; ++x) {
++        for (y = 1; y <= 0x18; ++y) {
++            if (tile_frame(map_cell(x, y)[1]) != 0x16 ||
++                tile_frame(map_cell(x, (s16)(y - 1))[1]) != 0x16 ||
++                roll_dice(1, 0x64) > p) {
++                continue;
++            }
++            if (roll_dice(1, 0x64) <= p) {
++                map_cell(x, y)[1] = (u8)(roll_dice(1, 2) + 0x29);
++            } else {
++                map_cell(x, (s16)(y - 1))[1] = (u8)(roll_dice(1, 6) + 0x1F);
++                map_cell(x, y)[1] = (u8)(roll_dice(1, 4) + 0x25);
++            }
++        }
++    }
++}
++
++/*
++ * PORT H095+$1228 (annidata in $121A): d100 sulle soglie a, a+b, ...:
++ * erba $3A..$3B, $30..$31, $2C..$2F, $37..$39 o $32..$35.
++ */
++static void place_ground(s16 x, s16 y, u16 a, u16 b, u16 c, u16 d, u16 e)
++{
++    u16 r;                              /* -$2(a5) */
++
++    r = roll_dice(1, 0x64);
++    if (r <= a) {
++        map_cell(x, y)[1] = (u8)(roll_dice(1, 2) + 0x39);
++    } else if (r <= (u16)(a + b)) {
++        map_cell(x, y)[1] = (u8)(roll_dice(1, 2) + 0x2F);
++    } else if (r <= (u16)(a + b + c)) {
++        map_cell(x, y)[1] = (u8)(roll_dice(1, 4) + 0x2B);
++    } else if (r <= (u16)(a + b + c + d)) {
++        map_cell(x, y)[1] = (u8)(roll_dice(1, 3) + 0x36);
++    } else if (r <= (u16)(a + b + c + d + e)) {
++        map_cell(x, y)[1] = (u8)(roll_dice(1, 4) + 0x31);
++    }
++}
++
++/*
++ * PORT H095+$121A: decora le caselle libere all'aperto; il terreno e'
++ * fisso a $28 nell'originale, quindi si usa sempre la terza tabella.
++ */
++static void decorate_wild_ground(void)
++{
++    s16 x;                              /* -$2(a5) */
++    s16 y;                              /* -$4(a5) */
++    s16 terrain = 0x28;                 /* -$6(a5) */
++
++    for (x = 0; x <= 0x31; ++x) {
++        for (y = 0; y <= 0x18; ++y) {
++            if (tile_frame(map_cell(x, y)[1]) != 0x16) {
++                continue;
++            }
++            if (terrain >= -0x1E && terrain <= 9) {
++                place_ground(x, y, 0, 0, 0, 0x1E, 0x0F);
++            } else if (terrain >= 0x0A && terrain <= 0x1D) {
++                place_ground(x, y, 0, 1, 5, 0x14, 0x0A);
++            } else if (terrain >= 0x1E && terrain <= 0x45) {
++                place_ground(x, y, 0, 2, 5, 0x0A, 5);
++            } else if (terrain >= 0x46 && terrain <= 0x59) {
++                place_ground(x, y, 0x0A, 2, 0x0A, 0x0A, 1);
++            } else if (terrain >= 0x5A && terrain <= 0x6E) {
++                place_ground(x, y, 0x0F, 5, 0x0F, 0x0A, 1);
++            }
++        }
++    }
++}
++
++/*
++ * PORT H095+$1576: mappa all'aperto: tutto libero ($17, $9C3 byte come
++ * l'originale), poi oggetti e terreno.  Le coordinate +$186/+$188 dello
++ * stato sono lette ma non usate.
++ */
++static void build_wild_map(void)
++{
++    h029_fill_bytes(0x9C3, g_combat_area + 0x0A, 0x9C3, 0x17);
++    H095_SETW(0x33E, 0x0F);
++    scatter_wild_objects();
++    decorate_wild_ground();
++}
++
++/*
++ * PORT H095+$1630: carica i set di tile (dungeon: DungCom, all'aperto:
++ * WildCom, piu' RandCom) se diversi da quelli gia' caricati (-$340),
++ * alloca la mappa ($9CE byte) e la costruisce; il fondo di ogni casella
++ * prende il valore della parte sopra.
++ */
++static void build_combat_map(void)
++{
++    u16 y;                              /* -$4(a5) */
++    u16 x;                              /* -$6(a5) */
++
++    if (COK_GET16(g_state_a + 0x1CC)) {
++        if (H095_W(0x340) != 1) {
++            load_24x24_set(7, "DungCom", 1, 0, 0x19);
++            load_24x24_set(7, "RandCom", 1, 0x22, 6);
++            H095_SETW(0x340, 1);
++        }
++    } else if (H095_W(0x340) != 2) {
++        load_24x24_set(7, "WildCom", 1, 0, 0x21);
++        load_24x24_set(7, "RandCom", 1, 0x22, 6);
++        H095_SETW(0x340, 2);
++    }
++    g_combat_area = (u8 *)exec_alloc_mem(0x9CE, COK_MEMF_CLEAR);
++    g_combat_area[6] = 0;
++    g_combat_area[7] = 1;
++    g_combat_area[8] = 0;
++    if (COK_GET16(g_state_a + 0x1CC)) {
++        build_dungeon_map();
++    } else {
++        build_wild_map();
++    }
++    for (y = 0; y <= 0x18; ++y) {
++        for (x = 0; x <= 0x31; ++x) {
++            map_cell((s16)x, (s16)y)[0] = map_cell((s16)x, (s16)y)[1];
++        }
++    }
++}
++
++/*
++ * PORT H095+$1790: per ogni personaggio: statistiche, blocco del turno
++ * ($18 byte), oltre il numero di $3E00+$67C fuori combattimento (+$15);
++ * direzione iniziale dalla tabella -$48 (opposta per il lato 1); i
++ * personaggi fuori combattimento del party senza un'IA valida prendono
++ * quella di $3E00+$58C + $80.
++ */
++static void prepare_turn_blocks(void)
++{
++    Character *p;                       /* -$4(a5) */
++    u16 n = 0;                          /* -$6(a5) */
++    u16 ai;                             /* -$8(a5) */
++
++    for (p = g_party_head; p != NULL; p = p->next) {
++        recompute_stats(p);
++        ++n;
++        p->block_192 = (CokTurn *)exec_alloc_mem(sizeof(CokTurn),
++                                                 COK_MEMF_CLEAR);
++        if (n > COK_GET16(g_state_b + 0x67C)) {
++            p->block_192->b[0x15] = 1;
++        }
++        p->block_192->b[0x0B] = (u8)H095_W(0x48 - (H005_B(0x2820) >> 1) * 2);
++        if (p->b[0x199] == 1) {
++            p->block_192->b[0x0B] = (u8)((p->block_192->b[0x0B] + 4) & 7);
++        }
++        ai = mask_byte(p->b[0xEC], 0x7F);
++        if (p->b[0x199] == 0 && p->block_192->b[0x15] == 1 &&
++            (ai == 0 || ai > 0x66)) {
++            p->b[0xEC] = (u8)(COK_GET16(g_state_b + 0x58C) + 0x80);
++        }
++    }
++}
++
++/* PORT H095+$18CC: (x, y) fuori dalla griglia 11x6 di schieramento? */
++static u8 outside_grid(s16 x, s16 y)
++{
++    if (x >= 0 && x < 0x0B) {
++        return 0;
++    }
++    if (y >= 0 && y < 6) {
++        return 0;
++    }
++    return 1;
++}
++
++/*
++ * PORT H095+$1914: prova a mettere il combattente n nella casella (cx,
++ * cy) della griglia del gruppo (gx, gy) dello schieramento set: se la
++ * griglia la permette e le caselle sono libere e praticabili, la occupa.
++ */
++static u8 try_place(u16 n, s16 cx, s16 cy, s16 gx, s16 gy, u16 set)
++{
++    u16 blocker;                        /* -$2(a5) */
++    u16 tile;                           /* -$4(a5) */
++    u8 in_cloud;                        /* -$5(a5) */
++    u8 in_acid;                         /* -$6(a5) */
++
++    if (cx < 0 || cy < 0 || cx > 0x0A || cy > 5 ||
++        !PLACE_TABLE(H095_B(0x339), set, cy, cx)) {
++        return 0;
++    }
++    H005_SET_W(0x3154 + (n - 1) * 6, (u16)(gx * 6 + cx + gy * 5 + 0x16));
++    H005_SET_W(0x3154 + (n - 1) * 6 + 2, (u16)(gy * 5 + cy + 0x0A));
++    probe_move(g_combatants[n - 1], 8, &blocker, &tile, &in_cloud, &in_acid);
++    if (blocker == 0 && tile > 0 && H005_B(0x3EF4 + (tile - 1) * 4) < 0xFF) {
++        PLACE_TABLE(H095_B(0x339), set, cy, cx) = 0;
++        return 1;
++    }
++    return 0;
++}
++
++/* Casella del dungeon del gruppo del lato in esame. */
++#define GROUP_X()   H095_W(0x324 - H095_B(0x339) * 2)
++#define GROUP_Y()   H095_W(0x328 - H095_B(0x339) * 2)
++#define GROUP_DIR() H095_W(0x330 - H095_B(0x339) * 2)
++
++/*
++ * PORT H095+$1A7A: cerca un posto per il combattente n a spirale attorno
++ * al punto di partenza del suo lato, anello dopo anello; quando esce
++ * dalla griglia passa al prossimo schieramento (fino a 3) verso una
++ * direzione senza parete.  0 se non trova posto.  Uscendo dalla griglia
++ * senza cambiarla l'originale controlla un byte non inizializzato: qui 0.
++ */
++static u8 place_in_spiral(u16 n)
++{
++    u8 placed = 0;                      /* -$1(a5) */
++    u8 first = 1;                       /* -$2(a5) */
++    u8 failed = 0;                      /* -$3(a5) */
++    u8 out;                             /* -$4(a5) */
++    u8 blocked;                         /* -$5(a5) */
++    u16 state = 1;                      /* -$8(a5) */
++    s16 d;                              /* -$A(a5) */
++    u16 dir;                            /* -$C(a5) */
++    u16 k;                              /* -$E(a5) */
++    s16 dx = 0;                         /* -$10(a5) */
++    s16 dy = 0;                         /* -$12(a5) */
++    s16 mx;                             /* -$14(a5) */
++    s16 my;                             /* -$16(a5) */
++    s16 ring = 0;                       /* -$18(a5) */
++    s16 step = 0;                       /* -$1A(a5) */
++    s16 gx;                             /* -$1C(a5) */
++    s16 gy;                             /* -$1E(a5) */
++    u16 side = 0;                       /* -$20(a5) */
++    u16 set = 0;                        /* -$22(a5) */
++    s16 bx = 0;                         /* -$24(a5) */
++    s16 by = 0;                         /* -$26(a5) */
++    s16 cx = 0;                         /* -$28(a5) */
++    s16 cy = 0;                         /* -$2A(a5) */
++    u16 sel;
++    u16 e;
++
++    gx = GROUP_X();
++    gy = GROUP_Y();
++    do {
++        dir = (u16)((u16)H095_W(0x40 - GROUP_DIR() * 8 - set * 2) >> 1);
++        switch (state) {
++        case 1:
++            e = (u16)H095_W(0x48 - ((dir + 2) & 3) * 2);
++            dx = (s16)H005_W(0x3EE2 + e * 2);
++            dy = (s16)H005_W(0x3ED0 + e * 2);
++            sel = set > 0 ? 1 : 0;
++            bx = (s16)(H095_W(0x58 - sel * 8 - dir * 2) + dx * ring);
++            by = (s16)(H095_W(0x68 - sel * 8 - dir * 2) + dy * ring);
++            cx = bx;
++            cy = by;
++            step = 1;
++            state = 2;
++            side = 1;
++            break;
++        case 2:
++            e = (u16)H095_W(0x48 - ((dir + 1) & 3) * 2);
++            dx = (s16)H005_W(0x3EE2 + e * 2);
++            dy = (s16)H005_W(0x3ED0 + e * 2);
++            cx = (s16)(dx * step + bx);
++            cy = (s16)(dy * step + by);
++            state = 3;
++            ++side;
++            break;
++        case 3:
++            e = (u16)H095_W(0x48 - ((dir + 3) & 3) * 2);
++            dx = (s16)H005_W(0x3EE2 + e * 2);
++            dy = (s16)H005_W(0x3ED0 + e * 2);
++            cx = (s16)(dx * step + bx);
++            cy = (s16)(dy * step + by);
++            state = 2;
++            ++step;
++            ++side;
++            break;
++        default:
++            break;
++        }
++        out = (u8)(cx < 0 || cy < 0 || cx > 0x0A || cy > 5);
++        if (state > 1) {
++            u8 next_ring;
++
++            if (out && !outside_grid(cx, cy)) {
++                next_ring = 1;
++            } else if (first) {
++                next_ring = (u8)(side >= (u16)H095_W(0x32C - H095_B(0x339) * 2));
++            } else {
++                next_ring = (u8)(side > 0x0B);
++            }
++            if (next_ring) {
++                ++ring;
++                if (H095_B(0x339) == 0 && (H095_W(0x330) & 1) && set == 0 &&
++                    ring == 1) {
++                    mx = (s16)(GROUP_X() + H005_W(0x281C));
++                    my = (s16)(GROUP_Y() + H005_W(0x281E));
++                    blocked = 0;
++                    for (k = 1; k <= 3; ++k) {
++                        d = H095_W(0x20 - GROUP_DIR() * 8 - k * 2);
++                        if (H005_B(0x3DE3) == 3 ||
++                            wall_between(mx, my, (u16)d) != 1) {
++                            blocked = 1;
++                        }
++                    }
++                    if (blocked) {
++                        ++ring;
++                    }
++                }
++                state = 1;
++                first = 0;
++            }
++        }
++        if (out && outside_grid(cx, cy)) {
++            placed = 0;
++            state = 0;
++            while (set < 3 && state != 1) {
++                ++set;
++                mx = (s16)(GROUP_X() + H005_W(0x281C));
++                my = (s16)(GROUP_Y() + H005_W(0x281E));
++                d = H095_W(0x20 - GROUP_DIR() * 8 - set * 2);
++                if (H005_B(0x3DE3) == 3 || wall_between(mx, my, (u16)d) != 1) {
++                    gx = (s16)(GROUP_X() + H005_W(0x3EE2 + d * 2));
++                    gy = (s16)(GROUP_Y() + H005_W(0x3ED0 + d * 2));
++                    ring = 0;
++                    state = 1;
++                }
++            }
++            if (state != 1) {
++                failed = 1;
++            }
++        }
++        if (!out) {
++            placed = try_place(n, cx, cy, gx, gy, set);
++        }
++    } while (!placed && !failed);
++    return failed ? 0 : 1;
++}
++
++/*
++ * PORT H095+$1FC2: schiera i combattenti: punti di partenza dei due lati
++ * (il party dove si trova, i nemici a $3E00+$582 caselle nella direzione
++ * del party), griglie di schieramento dalle tabelle -$E0, poi ogni
++ * personaggio a spirale.  I caduti lasciano un corpo ($2AE2); chi non
++ * trova posto ed e' fuori combattimento (+$15) lascia il party (H053).
++ * Oltre 8 corpi non si registrano (l'originale scriverebbe sui
++ * combattenti).
++ */
++static void deploy_combatants(void)
++{
++    u16 skipped = 0;                    /* -$16(a5) */
++    u16 placed = 0;                     /* -$14(a5) */
++    u16 i;                              /* -$E(a5) */
++    u16 set;                            /* -$10(a5) */
++    u16 shape;                          /* -$12(a5) */
++    s16 r;                              /* -$4(a5) */
++    s16 c;                              /* -$2(a5) */
++    s16 x;
++    s16 y;
++    Character *prev;                    /* -$8(a5) */
++    Character *p;                       /* -$C(a5) */
++    CokBody *b;
++
++    count_sides();
++    for (i = 1; i <= 0x28; ++i) {
++        H005_B(0x3154 + (i - 1) * 6 + 5) = 0;
++    }
++    rebuild_occupancy();
++    H095_SETW(0x324, 0);
++    H095_SETW(0x328, 0);
++    H095_SETW(0x330, H005_B(0x2820) >> 1);
++    H095_SETW(0x322, (s16)H005_W(0x3EE2 + H005_B(0x2820) * 2) *
++                     (s16)COK_GET16(g_state_b + 0x582) + H095_W(0x324));
++    H095_SETW(0x326, (s16)H005_W(0x3ED0 + H005_B(0x2820) * 2) *
++                     (s16)COK_GET16(g_state_b + 0x582) + H095_W(0x328));
++    H095_SETW(0x32E, ((H005_B(0x2820) + 4) & 7) >> 1);
++    for (H095_B(0x339) = 0; H095_B(0x339) <= 1; ++H095_B(0x339)) {
++        H095_SETW(0x32C - H095_B(0x339) * 2,
++                  (H005_B(0x2A1C + H095_B(0x339)) + 1) >> 1);
++    }
++    for (H095_B(0x339) = 0; H095_B(0x339) <= 1; ++H095_B(0x339)) {
++        for (set = 0; set <= 3; ++set) {
++            shape = (set == 1) ? 4 : (u16)GROUP_DIR();
++            for (r = 0; r <= 5; ++r) {
++                for (c = 0; c <= 0x0A; ++c) {
++                    if (c < H095_W(0xE0 - shape * 0x18 - r * 4) ||
++                        c > H095_W(0xE0 - shape * 0x18 - r * 4 - 2)) {
++                        PLACE_TABLE(H095_B(0x339), set, r, c) = 0;
++                    } else {
++                        PLACE_TABLE(H095_B(0x339), set, r, c) = 1;
++                    }
++                }
++            }
++        }
++    }
++    i = 1;
++    H005_B(0x247B) = 1;
++    prev = g_party_head;
++    p = g_party_head;
++    while (p != NULL) {
++        g_combatants[i - 1] = p;
++        H095_B(0x339) = p->b[0x199];
++        H005_B(0x3154 + (i - 1) * 6 + 4) = (u8)i;
++        H005_B(0x3154 + (i - 1) * 6 + 5) = mask_byte(p->b[0xD3], 7);
++        if (place_in_spiral(i)) {
++            prev = p;
++            if (p->b[0x198] == 0) {
++                H005_B(0x3154 + (i - 1) * 6 + 5) = 0;
++                if (!H005_B(0x24C1) && p->block_192->b[0x15] == 0) {
++                    x = (s16)H005_W(0x3154 + (i - 1) * 6);
++                    y = (s16)H005_W(0x3154 + (i - 1) * 6 + 2);
++                    if (H005_B(0x247A) < 8) {
++                        add_to_byte(&H005_B(0x247A), 1);
++                        b = &g_bodies[H005_B(0x247A) - 1];
++                        b->tile = map_cell(x, y)[1];
++                        map_cell(x, y)[1] = 0x1F;
++                        b->who = p;
++                        b->x = (u16)x;
++                        b->y = (u16)y;
++                    }
++                }
++            }
++            if (p->b[0x197] == 9) {
++                p->b[0x198] = 0;
++                H005_B(0x3154 + (i - 1) * 6 + 5) = 0;
++            }
++            rebuild_occupancy();
++            ++i;
++            add_to_byte(&H005_B(0x247B), 1);
++            ++placed;
++        } else {
++            H005_B(0x3154 + (i - 1) * 6 + 5) = 0;
++            if (p->block_192->b[0x15] == 1) {
++                ++skipped;
++                g_combatants[i - 1] = NULL;
++                g_current_char = p;
++                remove_from_party(1, 0);
++                p = prev;
++            } else {
++                prev = p;
++                ++i;
++                add_to_byte(&H005_B(0x247B), 1);
++            }
++        }
++        p = p->next;
++    }
++    prev->next = NULL;
++    (void)skipped;
++    (void)placed;
++}
++
++/*
++ * PORT H095+$2496: inizio del combattimento: libera le immagini della
++ * mappa, "A battle begins...", azzera lo stato del combattimento (nubi,
++ * pozze, corpi, armi perse), costruisce la mappa, prepara i turni,
++ * schiera i combattenti, alloca le icone ($243A, 4 fotogrammi 24x24),
++ * centra la vista sul primo, disegna, copia i colori nella View fuori
++ * schermo, eventi 8 e $16 per tutti e forza dei nemici; poi contesto 5.
++ */
++void start_combat(void)
++{
++    Character *p;                       /* -$10(a5) */
++
++    H005_B(0x24CE) = 0;
++    free_gfx_record(&g_gfx_27b0[0]);
++    free_gfx_record(&g_gfx_27b0[1]);
++    free_gfx_record(&g_gfx_2798);
++    H005_B(0x2484) = 0xFF;
++    H005_B(0x27B0) = 0xFF;
++    H005_B(0x27B6) = 0xFF;
++    clear_message_line();
++    message_delay();
++    ui_draw_text(0, 0x18, 0x0A, 0, 0x12, "A battle begins...");
++    H005_B(0x24A0) = 0;
++    H005_B(0x24AF) = 0;
++    H005_B(0x247C) = 0;
++    H005_B(0x2477) = 0x0F;
++    H005_SET_W(0x2A1A, 0);
++    H005_B(0x247A) = 0;
++    g_clouds = NULL;                    /* $2514 */
++    g_acid_pools = NULL;                /* $250C */
++    H005_SET_L(0x2510, 0);
++    g_h005_2432 = NULL;
++    H005_SET_L(0x335C, 0);
++    g_dropped_items = NULL;             /* $3360 */
++    memset(g_bodies, 0, sizeof g_bodies);   /* H029+$0312 su $50 byte */
++    COK_PUT16(g_state_b + 0x666, 0);
++    build_combat_map();
++    prepare_turn_blocks();
++    p = g_party_head;
++    deploy_combatants();
++    allocate_gfx_record(0x18, 3, 4, 1, &g_gfx_243a);
++    COK_PUT16(g_combat_area + 2, (u16)(combatant_x(g_party_head) - 3));
++    COK_PUT16(g_combat_area + 4, (u16)(combatant_y(g_party_head) - 3));
++    redraw_combat_screen();
++    copy_intuition_colors();
++    for (p = g_party_head; p != NULL; p = p->next) {
++        p->block_192->b[0x13] = 0;
++        trigger_event(&p, 8);
++        trigger_event(&p, 0x16);
++    }
++    enemy_strength();
++    H005_B(0x24CB) = 0;
++    H005_B(0x24CC) = 0;
++    H005_B(0x3DE3) = 5;
++    H005_B(0x24B0) = 0;
++    memset(g_h005_0016, 0, sizeof g_h005_0016); /* H029+$0312 su $50 byte */
++    H005_SET_W(0x14, 0);
++}
+diff --git a/src_c/readable/h095.h b/src_c/readable/h095.h
+new file mode 100644
+index 0000000..c318e75
+--- /dev/null
++++ b/src_c/readable/h095.h
+@@ -0,0 +1,6 @@
++/* H095: avvio del combattimento (mappa, turni, schieramento). */
++#ifndef COK_H095_H
++#define COK_H095_H
++#include "cok.h"
++void start_combat(void);                /* H095+$2496 */
++#endif
+diff --git a/src_c/readable/h096.c b/src_c/readable/h096.c
+index c8544f1..85b6d62 100644
+--- a/src_c/readable/h096.c
++++ b/src_c/readable/h096.c
+@@ -1,7 +1,31 @@
+ /* H096: Azioni/attacchi e calcoli del combattimento; dettaglio parziale. */
+-#include "cok.h"
++#include "h096.h"
++#include "globals.h"
+ 
+ /* PORT H096+$01F2: link/unlk, nessun effetto. */
+ void h096_init(void)
+ {
+ }
++
++/*
++ * PORT H096+$37C2: forza rimasta dei nemici (lato 1): punti ferita dei
++ * vivi sul totale massimo, in H005+$2481 come (vivi * 20 / totale) * 5.
++ */
++void enemy_strength(void)
++{
++    u16 total = 0;                      /* -$2(a5) */
++    u16 alive = 0;                      /* -$4(a5) */
++    Character *p;                       /* -$8(a5) */
++
++    for (p = g_party_head; p != NULL; p = p->next) {
++        if (p->b[0x199] == 1) {
++            if (p->b[0x198]) {
++                alive = (u16)(alive + p->b[0x1A8]);
++            }
++            total = (u16)(total + p->b[0x64]);
++        }
++    }
++    if (total > 0) {
++        H005_B(0x2481) = (u8)((u16)((u32)alive * 0x14 / total) * 5);
++    }
++}
+diff --git a/src_c/readable/h096.h b/src_c/readable/h096.h
+new file mode 100644
+index 0000000..5988104
+--- /dev/null
++++ b/src_c/readable/h096.h
+@@ -0,0 +1,6 @@
++/* H096: azioni, attacchi e calcoli del combattimento. */
++#ifndef COK_H096_H
++#define COK_H096_H
++#include "character.h"
++void enemy_strength(void);              /* H096+$37C2 */
++#endif
+diff --git a/src_c/readable/host/graphics.c b/src_c/readable/host/graphics.c
+index 4de1897..149c3ac 100644
+--- a/src_c/readable/host/graphics.c
++++ b/src_c/readable/host/graphics.c
+@@ -3,6 +3,32 @@
+ #include <string.h>
+ #include "ndk.h"
+ 
++/*
++ * View di Intuition (GfxBase->ActiView all'avvio): niente ViewPort (il
++ * display mostra lo schermo) e una lista Copper con le MOVE COLOR00..31
++ * dello schermo in primo piano, che il gioco legge (H029+$1718).
++ */
++static UWORD s_intui_copper[32 * 2 + 2];
++static struct cprlist s_intui_cpr = { NULL, s_intui_copper, 32 + 1 };
++static struct View s_intui_view = { NULL, &s_intui_cpr, 0, 0, 0 };
++
++void host_screen_colors_changed(struct ViewPort *vp)
++{
++    struct Screen *s = host_first_screen();
++    int i;
++
++    if (s == NULL || vp != &s->ViewPort || vp->ColorMap == NULL) {
++        return;
++    }
++    for (i = 0; i < 32; ++i) {
++        s_intui_copper[i * 2] = (UWORD)(0x0180 + i * 2);
++        s_intui_copper[i * 2 + 1] =
++            i < vp->ColorMap->Count ? vp->ColorMap->ColorTable[i] : 0;
++    }
++    s_intui_copper[64] = 0xFFFF;            /* WAIT finale */
++    s_intui_copper[65] = 0xFFFE;
++}
++
+ /*
+  * I colori arrivano dai dati del gioco (H005), quindi sono word
+  * big-endian: si leggono a byte.
+@@ -19,6 +45,7 @@ void LoadRGB4(struct ViewPort *vp, const UWORD *colors, LONG count)
+         vp->ColorMap->ColorTable[i] =
+             (UWORD)((p[i * 2] << 8 | p[i * 2 + 1]) & 0x0FFF);
+     }
++    host_screen_colors_changed(vp);
+     host_display_changed();
+ }
+ 
+@@ -57,7 +84,7 @@ void BltClear(void *memory, ULONG count, ULONG flags)
+     host_display_changed();
+ }
+ 
+-static struct GfxBase s_gfx = { { "graphics.library", 34 }, NULL };
++static struct GfxBase s_gfx = { { "graphics.library", 34 }, &s_intui_view };
+ 
+ struct Library *host_graphics_base(void)
+ {
+diff --git a/src_c/readable/host/intuition.c b/src_c/readable/host/intuition.c
+index cabcf27..ff519d8 100644
+--- a/src_c/readable/host/intuition.c
++++ b/src_c/readable/host/intuition.c
+@@ -13,6 +13,11 @@ static struct IntuitionBase s_intuition = { { "intuition.library", 34 }, NULL };
+ static struct Library s_dos = { "dos.library", 34 };
+ static struct Library s_exec = { "exec.library", 34 };
+ 
++struct Screen *host_first_screen(void)
++{
++    return s_intuition.FirstScreen;
++}
++
+ struct Library *OpenLibrary(STRPTR name, ULONG version)
+ {
+     const char *n = (const char *)name;
+@@ -95,6 +100,7 @@ struct Screen *OpenScreen(struct NewScreen *ns)
+     s->ShowTitle = TRUE;
+     host_display_attach(s);
+     s_intuition.FirstScreen = s;    /* il nuovo schermo va in primo piano */
++    host_screen_colors_changed(&s->ViewPort);
+     return s;
+ }
+ 
+diff --git a/src_c/readable/host/ndk.h b/src_c/readable/host/ndk.h
+index da94c7b..36daed8 100644
+--- a/src_c/readable/host/ndk.h
++++ b/src_c/readable/host/ndk.h
+@@ -112,7 +112,12 @@ struct ViewPort {
+     struct RasInfo *RasInfo;
+ };
+ 
+-struct cprlist;
++/* Lista Copper (graphics/copper.h): sull'host solo quella di Intuition. */
++struct cprlist {
++    struct cprlist *Next;
++    UWORD *start;               /* coppie di word: registro, valore */
++    WORD MaxCount;
++};
+ 
+ struct View {
+     struct ViewPort *ViewPort;
+@@ -296,6 +301,8 @@ void host_input_script(unsigned long now);   /* COK_KEYS */
+ void host_display_attach(struct Screen *screen);   /* schermo visibile */
+ void host_display_detach(struct Screen *screen);
+ void host_display_changed(void);   /* bitmap o colori modificati */
++struct Screen *host_first_screen(void);     /* IntuitionBase->FirstScreen */
++void host_screen_colors_changed(struct ViewPort *vp); /* Copper di Intuition */
+ void host_display_view(struct View *view);   /* LoadView */
+ void host_display_refresh(int force);
+ int  host_display_wait_key(void);
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index 1c7aafb..3cd28cc 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -95,3 +95,5 @@ void h042_1006(u16 picture) { (void)picture; cok_unported_skip(s_h042_1006); }
+ 
+ /* Parti solo da combattimento del motore degli effetti. */
+ 
++
++void h010_0360(u16 len, const char *text) { (void)len; (void)text; cok_unported("H010+$0360"); }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index 9c200fd..a8b4b22 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -70,3 +70,5 @@ void h042_1006(u16 picture);             /* immagine grande */
+  */
+ 
+ #endif
++
++void h010_0360(u16 len, const char *text);  /* messaggio sulla console (writeln) */
+-- 
+2.43.0
+

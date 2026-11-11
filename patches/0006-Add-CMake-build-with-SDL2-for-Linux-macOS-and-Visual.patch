@@ -1,0 +1,344 @@
+From bba64ad1b0e5bbca1d20c1aa615302b642424307 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 15:14:42 +0000
+Subject: [PATCH 06/65] Add CMake build with SDL2 for Linux, macOS and Visual
+ Studio 2022
+
+CMakeLists.txt builds the host port and the h015 test; CMakePresets.json
+has Visual Studio 2022 presets for x86 (Win32) and x64.
+windows/get-sdl2-nuget.ps1 (and a .cmd wrapper) downloads the
+sdl2.nuget and sdl2.nuget.redist packages from nuget.org into
+third_party/sdl2-nuget, which CMake imports for the matching
+architecture, copying SDL2.dll next to cok.exe. The SDL display no
+longer relies on SDL2main.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ .gitignore                                |   3 +
+ src_c/readable/CMakeLists.txt             | 104 ++++++++++++++++++++++
+ src_c/readable/CMakePresets.json          |  38 ++++++++
+ src_c/readable/README.md                  |  29 +++++-
+ src_c/readable/host/display.c             |   6 ++
+ src_c/readable/windows/get-sdl2-nuget.cmd |   4 +
+ src_c/readable/windows/get-sdl2-nuget.ps1 |  62 +++++++++++++
+ 7 files changed, 242 insertions(+), 4 deletions(-)
+ create mode 100644 src_c/readable/CMakeLists.txt
+ create mode 100644 src_c/readable/CMakePresets.json
+ create mode 100644 src_c/readable/windows/get-sdl2-nuget.cmd
+ create mode 100644 src_c/readable/windows/get-sdl2-nuget.ps1
+
+diff --git a/.gitignore b/.gitignore
+index 620a080..e3cde1d 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -107,3 +107,6 @@ $RECYCLE.BIN/
+ .vscode/
+ .idea/
+ .cache/
++
++# SDL2 scaricata da windows/get-sdl2-nuget.ps1
++/src_c/readable/third_party/
+diff --git a/src_c/readable/CMakeLists.txt b/src_c/readable/CMakeLists.txt
+new file mode 100644
+index 0000000..5151c8c
+--- /dev/null
++++ b/src_c/readable/CMakeLists.txt
+@@ -0,0 +1,104 @@
++# Champions of Krynn - port asm -> C, build host con CMake e SDL2.
++#
++# Linux / macOS:
++#   cmake -S . -B build-cmake -DCMAKE_BUILD_TYPE=Release
++#   cmake --build build-cmake
++#
++# Visual Studio 2022 (x86 o x64), con SDL2 scaricata da NuGet:
++#   windows\get-sdl2-nuget.cmd
++#   cmake --preset vs2022-x64      oppure   cmake --preset vs2022-x86
++#   cmake --build --preset vs2022-x64-release
++#
++# Il build Amiga (SAS/C) usa lo smakefile, non questo file.
++cmake_minimum_required(VERSION 3.16)
++project(ChampionsOfKrynn LANGUAGES C)
++
++option(COK_BUILD_TESTS "Compila i test delle singole routine" ON)
++
++# SDL2, in quest'ordine:
++#  1. Windows: la cartella preparata da windows/get-sdl2-nuget.ps1
++#     (pacchetti NuGet sdl2.nuget / sdl2.nuget.redist), x86 o x64;
++#  2. il pacchetto CMake (vcpkg, SDL2-devel-VC, Homebrew, distribuzioni);
++#  3. pkg-config.
++set(COK_SDL2_NUGET_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/sdl2-nuget"
++    CACHE PATH "SDL2 scaricata da NuGet (windows/get-sdl2-nuget.ps1)")
++if(WIN32 AND EXISTS "${COK_SDL2_NUGET_DIR}/include/SDL.h")
++    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
++        set(COK_SDL2_ARCH x64)
++    else()
++        set(COK_SDL2_ARCH Win32)
++    endif()
++    add_library(cok_sdl2 SHARED IMPORTED)
++    set_target_properties(cok_sdl2 PROPERTIES
++        IMPORTED_IMPLIB "${COK_SDL2_NUGET_DIR}/lib/${COK_SDL2_ARCH}/SDL2.lib"
++        IMPORTED_LOCATION "${COK_SDL2_NUGET_DIR}/bin/${COK_SDL2_ARCH}/SDL2.dll"
++        INTERFACE_INCLUDE_DIRECTORIES "${COK_SDL2_NUGET_DIR}/include")
++    set(COK_SDL2_TARGET cok_sdl2)
++    message(STATUS "SDL2 da NuGet: ${COK_SDL2_NUGET_DIR} (${COK_SDL2_ARCH})")
++endif()
++if(NOT COK_SDL2_TARGET)
++    find_package(SDL2 CONFIG QUIET)
++endif()
++if(COK_SDL2_TARGET)
++elseif(TARGET SDL2::SDL2)
++    set(COK_SDL2_TARGET SDL2::SDL2)
++elseif(TARGET SDL2::SDL2-static)
++    set(COK_SDL2_TARGET SDL2::SDL2-static)
++else()
++    find_package(PkgConfig QUIET)
++    if(PkgConfig_FOUND)
++        pkg_check_modules(SDL2 IMPORTED_TARGET sdl2)
++    endif()
++    if(TARGET PkgConfig::SDL2)
++        set(COK_SDL2_TARGET PkgConfig::SDL2)
++    else()
++        message(FATAL_ERROR
++            "SDL2 non trovata. Su Windows: windows\\get-sdl2-nuget.cmd. "
++            "Altrimenti installare SDL2 (libsdl2-dev, brew install sdl2, "
++            "vcpkg install sdl2) o indicare -DSDL2_DIR=<dir>/cmake del "
++            "pacchetto SDL2-devel.")
++    endif()
++endif()
++
++file(GLOB COK_GAME_SOURCES CONFIGURE_DEPENDS
++     ${CMAKE_CURRENT_SOURCE_DIR}/*.c)
++file(GLOB COK_HOST_SOURCES CONFIGURE_DEPENDS
++     ${CMAKE_CURRENT_SOURCE_DIR}/host/*.c)
++file(GLOB COK_HEADERS CONFIGURE_DEPENDS
++     ${CMAKE_CURRENT_SOURCE_DIR}/*.h
++     ${CMAKE_CURRENT_SOURCE_DIR}/host/*.h)
++
++add_executable(cok ${COK_GAME_SOURCES} ${COK_HOST_SOURCES} ${COK_HEADERS})
++target_include_directories(cok PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
++target_link_libraries(cok PRIVATE ${COK_SDL2_TARGET})
++set_target_properties(cok PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED ON
++                      C_EXTENSIONS OFF)
++
++if(MSVC)
++    target_compile_definitions(cok PRIVATE _CRT_SECURE_NO_WARNINGS)
++    target_compile_options(cok PRIVATE /W3 /utf-8)
++    set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
++                 PROPERTY VS_STARTUP_PROJECT cok)
++else()
++    target_compile_options(cok PRIVATE -Wall -Wextra -pedantic)
++endif()
++
++# Windows: copia SDL2.dll accanto all'eseguibile.
++if(WIN32)
++    get_target_property(COK_SDL2_TYPE ${COK_SDL2_TARGET} TYPE)
++    if(COK_SDL2_TYPE STREQUAL "SHARED_LIBRARY")
++        add_custom_command(TARGET cok POST_BUILD
++            COMMAND ${CMAKE_COMMAND} -E copy_if_different
++                    $<TARGET_FILE:${COK_SDL2_TARGET}> $<TARGET_FILE_DIR:cok>)
++    endif()
++endif()
++
++if(COK_BUILD_TESTS)
++    enable_testing()
++    add_executable(h015_test tests/h015_test.c h015_runtime.c)
++    target_include_directories(h015_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
++    if(MSVC)
++        target_compile_definitions(h015_test PRIVATE _CRT_SECURE_NO_WARNINGS)
++    endif()
++    add_test(NAME h015_runtime COMMAND h015_test)
++endif()
+diff --git a/src_c/readable/CMakePresets.json b/src_c/readable/CMakePresets.json
+new file mode 100644
+index 0000000..50e802e
+--- /dev/null
++++ b/src_c/readable/CMakePresets.json
+@@ -0,0 +1,38 @@
++{
++  "version": 3,
++  "cmakeMinimumRequired": { "major": 3, "minor": 21, "patch": 0 },
++  "configurePresets": [
++    {
++      "name": "default",
++      "displayName": "Host (generatore predefinito)",
++      "binaryDir": "${sourceDir}/build-cmake",
++      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
++    },
++    {
++      "name": "vs2022-x64",
++      "displayName": "Visual Studio 2022 - x64 (AMD64)",
++      "generator": "Visual Studio 17 2022",
++      "architecture": "x64",
++      "binaryDir": "${sourceDir}/build-vs2022-x64",
++      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
++    },
++    {
++      "name": "vs2022-x86",
++      "displayName": "Visual Studio 2022 - x86 (Win32)",
++      "generator": "Visual Studio 17 2022",
++      "architecture": "Win32",
++      "binaryDir": "${sourceDir}/build-vs2022-x86",
++      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
++    }
++  ],
++  "buildPresets": [
++    { "name": "default", "configurePreset": "default" },
++    { "name": "vs2022-x64-debug", "configurePreset": "vs2022-x64", "configuration": "Debug" },
++    { "name": "vs2022-x64-release", "configurePreset": "vs2022-x64", "configuration": "Release" },
++    { "name": "vs2022-x86-debug", "configurePreset": "vs2022-x86", "configuration": "Debug" },
++    { "name": "vs2022-x86-release", "configurePreset": "vs2022-x86", "configuration": "Release" }
++  ],
++  "testPresets": [
++    { "name": "default", "configurePreset": "default" }
++  ]
++}
+diff --git a/src_c/readable/README.md b/src_c/readable/README.md
+index 0f867f5..1a96c6a 100644
+--- a/src_c/readable/README.md
++++ b/src_c/readable/README.md
+@@ -38,14 +38,35 @@ programma avanza un modulo alla volta.
+ 
+ ## Build
+ 
+-Host (gcc o clang, con SDL2: `libsdl2-dev` su Debian/Ubuntu, `brew install
+-sdl2` su macOS, MSYS2 `mingw-w64-x86_64-SDL2` su Windows):
++Host con CMake e SDL2 (Linux, macOS, Windows):
+ 
+ ```sh
+-make
+-./build/cok
++cmake -S . -B build-cmake -DCMAKE_BUILD_TYPE=Release
++cmake --build build-cmake
++./build-cmake/cok
+ ```
+ 
++SDL2 si installa con `libsdl2-dev` (Debian/Ubuntu), `brew install sdl2`
++(macOS) o vcpkg; CMake la cerca come pacchetto CMake e poi con pkg-config.
++In alternativa resta il `Makefile` (`make`, `./build/cok`).
++
++Visual Studio 2022, x86 (Win32) e x64 (AMD64):
++
++```bat
++windows\get-sdl2-nuget.cmd
++cmake --preset vs2022-x64
++cmake --build --preset vs2022-x64-release
++```
++
++(per x86: `vs2022-x86` e `vs2022-x86-release`). `get-sdl2-nuget.cmd`
++scarica da nuget.org i pacchetti `sdl2.nuget` e `sdl2.nuget.redist`
++(pacchetti della comunità che ridistribuiscono le librerie ufficiali di
++libsdl.org) in `third_party/sdl2-nuget`, con librerie e DLL per Win32 e
++x64; CMake li usa da solo e copia `SDL2.dll` accanto a `cok.exe`.
++In Visual Studio si può anche aprire la cartella (File > Apri > Cartella):
++i preset compaiono nell'elenco delle configurazioni. La soluzione `.sln`
++generata è in `build-vs2022-x64` / `build-vs2022-x86`.
++
+ Sull'host le librerie di AmigaOS usate dal gioco sono emulate in `host/`
+ (`host/ndk.h` riproduce strutture e funzioni dell'NDK con gli stessi nomi,
+ così gli adattatori del gioco sono identici sui due target); lo schermo
+diff --git a/src_c/readable/host/display.c b/src_c/readable/host/display.c
+index ac03aee..c7bbbf2 100644
+--- a/src_c/readable/host/display.c
++++ b/src_c/readable/host/display.c
+@@ -13,6 +13,11 @@
+  */
+ #include <stdio.h>
+ #include <stdlib.h>
++/*
++ * Il main e' quello del gioco (h000_entry.c): niente SDL2main, che su
++ * Windows sostituirebbe il punto d'ingresso.
++ */
++#define SDL_MAIN_HANDLED
+ #include <SDL.h>
+ #include "ndk.h"
+ 
+@@ -115,6 +120,7 @@ static int open_sdl(int w, int h)
+         scale = 1;
+     }
+     if (!s_sdl_ready) {
++        SDL_SetMainReady();
+         if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+             fprintf(stderr, "SDL_Init: %s\n", SDL_GetError());
+             return 0;
+diff --git a/src_c/readable/windows/get-sdl2-nuget.cmd b/src_c/readable/windows/get-sdl2-nuget.cmd
+new file mode 100644
+index 0000000..21a4ce7
+--- /dev/null
++++ b/src_c/readable/windows/get-sdl2-nuget.cmd
+@@ -0,0 +1,4 @@
++@echo off
++rem Scarica SDL2 da nuget.org in third_party\sdl2-nuget (vedi get-sdl2-nuget.ps1).
++powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0get-sdl2-nuget.ps1" %*
++if errorlevel 1 pause
+diff --git a/src_c/readable/windows/get-sdl2-nuget.ps1 b/src_c/readable/windows/get-sdl2-nuget.ps1
+new file mode 100644
+index 0000000..cdfedf7
+--- /dev/null
++++ b/src_c/readable/windows/get-sdl2-nuget.ps1
+@@ -0,0 +1,62 @@
++<#
++  Scarica SDL2 da nuget.org (pacchetti sdl2.nuget e sdl2.nuget.redist) e la
++  prepara per CMake in third_party/sdl2-nuget:
++
++    third_party/sdl2-nuget/include/        header (SDL.h, ...)
++    third_party/sdl2-nuget/lib/Win32|x64/  SDL2.lib
++    third_party/sdl2-nuget/bin/Win32|x64/  SDL2.dll
++
++  CMake (CMakeLists.txt) usa questa cartella da solo se esiste, per x86
++  (Win32) e x64.  Non serve nuget.exe: i .nupkg sono archivi zip.
++
++  Uso (da PowerShell, nella cartella src_c/readable):
++    .\windows\get-sdl2-nuget.ps1
++    .\windows\get-sdl2-nuget.ps1 -Version 2.30.10
++  oppure doppio clic su windows\get-sdl2-nuget.cmd.
++
++  Nota: sdl2.nuget e' un pacchetto della comunita' (kosmotema/sdl2-nuget)
++  che ridistribuisce le librerie ufficiali di libsdl.org.
++#>
++param(
++    [string]$Version = "2.30.10",
++    [string]$Destination = (Join-Path $PSScriptRoot "..\third_party\sdl2-nuget")
++)
++
++$ErrorActionPreference = "Stop"
++[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
++
++$work = Join-Path ([IO.Path]::GetTempPath()) ("cok-sdl2-" + [Guid]::NewGuid())
++New-Item -ItemType Directory -Path $work | Out-Null
++
++try {
++    foreach ($id in @("sdl2.nuget", "sdl2.nuget.redist")) {
++        $url = "https://api.nuget.org/v3-flatcontainer/$id/$Version/$id.$Version.nupkg"
++        # Expand-Archive di Windows PowerShell 5.1 vuole l'estensione .zip.
++        $zip = Join-Path $work "$id.zip"
++        Write-Host "Scarico $url"
++        Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing
++        Expand-Archive -Path $zip -DestinationPath (Join-Path $work $id) -Force
++    }
++
++    $dev = Join-Path $work "sdl2.nuget\build\native"
++    $redist = Join-Path $work "sdl2.nuget.redist\build\native"
++
++    if (Test-Path $Destination) {
++        Remove-Item -Recurse -Force $Destination
++    }
++    New-Item -ItemType Directory -Path $Destination | Out-Null
++    Copy-Item -Recurse (Join-Path $dev "include") (Join-Path $Destination "include")
++    foreach ($arch in @("Win32", "x64")) {
++        $lib = Join-Path $Destination "lib\$arch"
++        $bin = Join-Path $Destination "bin\$arch"
++        New-Item -ItemType Directory -Path $lib, $bin | Out-Null
++        Copy-Item (Join-Path $dev "lib\$arch\SDL2.lib") $lib
++        Copy-Item (Join-Path $redist "bin\$arch\SDL2.dll") $bin
++    }
++    Copy-Item (Join-Path $dev "docs\LICENSE.txt") $Destination
++    Set-Content -Path (Join-Path $Destination "VERSION.txt") -Value $Version
++    Write-Host "SDL2 $Version pronta in $((Resolve-Path $Destination).Path)"
++}
++finally {
++    Remove-Item -Recurse -Force $work -ErrorAction SilentlyContinue
++}
+-- 
+2.43.0
+

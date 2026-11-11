@@ -1,0 +1,918 @@
+From 31176ecb7dad4ea9adadeaefa2233bc5488d7350 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 18:28:09 +0000
+Subject: [PATCH 19/65] Port training (H013+$58DC) and the level-dependent
+ values
+
+Port Train Character H013+$58DC (trampoline $051C), used by the main
+menu and, without prompts, by Create New Character to level up the
+classes the starting experience allows. Also port H073+$0012 (spell
+slots for every class) and $05AE (level-dependent values), H063+$3F72
+(experience table row), H029+$039A (or_byte) and H030+$0AD2/$0B4A
+(timed message).
+
+The interactive spell choice H065+$34FC stays a stub; creation now
+reaches the reroll question and the character name, then stops at
+H028+$0D36.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md |  77 ++++++------
+ src_c/readable/h013.c         | 221 ++++++++++++++++++++++++++++++++-
+ src_c/readable/h013.h         |   1 +
+ src_c/readable/h029_gfx.c     |   6 +
+ src_c/readable/h029_gfx.h     |   1 +
+ src_c/readable/h030.c         |  26 ++++
+ src_c/readable/h030.h         |   3 +
+ src_c/readable/h063.c         |  47 +++++++
+ src_c/readable/h063.h         |   1 +
+ src_c/readable/h073.c         | 225 ++++++++++++++++++++++++++++++++++
+ src_c/readable/h073.h         |   1 +
+ src_c/readable/unported.c     |   4 +-
+ src_c/readable/unported.h     |   3 +-
+ 13 files changed, 572 insertions(+), 44 deletions(-)
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index 97f88e3..c1e6dcc 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **335 / 914**.
++Routine portate: **342 / 915**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -19,7 +19,7 @@ Routine portate: **335 / 914**.
+ | H010 | 2488 | 9 | 6 |
+ | H011 | 7004 | 12 | 2 |
+ | H012 | 13580 | 8 | 1 |
+-| H013 | 25244 | 21 | 9 |
++| H013 | 25244 | 22 | 10 |
+ | H014 | 224 | 2 | 1 |
+ | H015 | 1016 | 11 | 5 |
+ | H016 | 436 | 5 | 4 |
+@@ -35,8 +35,8 @@ Routine portate: **335 / 914**.
+ | H026 | 1452 | 11 | 11 |
+ | H027 | 18156 | 10 | 2 |
+ | H028 | 4488 | 16 | 10 |
+-| H029 | 6084 | 32 | 19 |
+-| H030 | 3240 | 18 | 10 |
++| H029 | 6084 | 32 | 20 |
++| H030 | 3240 | 18 | 12 |
+ | H031 | 212 | 4 | 3 |
+ | H032 | 9352 | 1 | 1 |
+ | H033 | 8140 | 15 | 2 |
+@@ -69,7 +69,7 @@ Routine portate: **335 / 914**.
+ | H060 | 396 | 2 | 1 |
+ | H061 | 16936 | 35 | 1 |
+ | H062 | 10496 | 32 | 3 |
+-| H063 | 16496 | 52 | 18 |
++| H063 | 16496 | 52 | 19 |
+ | H064 | 6460 | 7 | 1 |
+ | H065 | 14268 | 27 | 6 |
+ | H066 | 13840 | 27 | 1 |
+@@ -79,7 +79,7 @@ Routine portate: **335 / 914**.
+ | H070 | 6940 | 13 | 1 |
+ | H071 | 3132 | 5 | 1 |
+ | H072 | 5404 | 12 | 1 |
+-| H073 | 4928 | 10 | 6 |
++| H073 | 4928 | 10 | 8 |
+ | H074 | 1216 | 4 | 1 |
+ | H075 | 392 | 4 | 1 |
+ | H076 | 8 | 1 | 1 |
+@@ -273,15 +273,15 @@ Routine portate: **335 / 914**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0506` | `module_init_H013` | parziale | h013.c:20 |
++| `$0506` | `module_init_H013` | parziale | h013.c:21 |
+ | `$0518` | `trampoline_H013_52E0` | parziale |  |
+ | `$051C` | `trampoline_H013_58DC` | parziale |  |
+ | `$0520` | `trampoline_H013_56CE` | parziale |  |
+-| `$0524` | `sub_H013_00000524` | parziale | h013.c:356 |
+-| `$07B2` | `sub_H013_000007B2` | parziale | h013.c:423 |
+-| `$08C2` | `trampoline_H013_097C` | parziale | h013.c:472 |
+-| `$0982` | `Create_Character` | parziale | h013.c:646 |
+-| `$0990` | `sub_H013_00000990` | parziale | h013.c:504 |
++| `$0524` | `sub_H013_00000524` | parziale | h013.c:357 |
++| `$07B2` | `sub_H013_000007B2` | parziale | h013.c:424 |
++| `$08C2` | `trampoline_H013_097C` | parziale | h013.c:473 |
++| `$0982` | `Create_Character` | parziale | h013.c:647 |
++| `$0990` | `sub_H013_00000990` | parziale | h013.c:505 |
+ | `$2B9A` | `trampoline_H013_2D70` | parziale |  |
+ | `$2D76` | `trampoline_H013_2E1A` | parziale |  |
+ | `$2E44` | `sub_H013_00002E44` | parziale |  |
+@@ -290,10 +290,11 @@ Routine portate: **335 / 914**.
+ | `$31EE` | `trampoline_H013_333C` | parziale |  |
+ | `$43E8` | `sub_H013_000043E8` | parziale |  |
+ | `$4508` | `sub_H013_00004508` | parziale |  |
+-| `$4BFC` | `Party_MainMenu` | verificato | h013.c:92 |
+-| `$4C0A` | `sub_H013_00004C0A` | parziale | h013.c:53 |
++| `$4BFC` | `Party_MainMenu` | verificato | h013.c:93 |
++| `$4C0A` | `sub_H013_00004C0A` | parziale | h013.c:54 |
+ | `$52E0` | `Add_CharacterToParty` | parziale |  |
+-| `$56CE` | `(senza scheda)` | - | h013.c:321 |
++| `$56CE` | `(senza scheda)` | - | h013.c:322 |
++| `$58DC` | `(senza scheda)` | - | h013.c:1262 |
+ 
+ ### H014
+ 
+@@ -472,30 +473,30 @@ Routine portate: **335 / 914**.
+ | --- | --- | --- | --- |
+ | `$0118` | `module_init_H029` | parziale | h029_gfx.c:38 |
+ | `$0180` | `sub_H029_00000180` | parziale | h029_gfx.c:80 |
+-| `$01B6` | `sub_H029_000001B6` | parziale | h029_gfx.c:492 |
++| `$01B6` | `sub_H029_000001B6` | parziale | h029_gfx.c:498 |
+ | `$0234` | `sub_H029_00000234` | parziale | h029_gfx.c:90 |
+ | `$0312` | `sub_H029_00000312` | parziale | h029_gfx.c:52 |
+ | `$0354` | `trampoline_H029_036C` | parziale | h029_gfx.c:319 |
+ | `$0376` | `trampoline_H029_0390` | parziale |  |
+-| `$039A` | `trampoline_H029_03B2` | parziale |  |
+-| `$03E2` | `sub_H029_000003E2` | parziale | h029_gfx.c:515 |
++| `$039A` | `trampoline_H029_03B2` | parziale | h029_gfx.c:325 |
++| `$03E2` | `sub_H029_000003E2` | parziale | h029_gfx.c:521 |
+ | `$0408` | `Allocate_GraphicRecord` | verificato | h029_gfx.c:168 |
+ | `$067A` | `Free_GraphicRecord` | parziale | h029_gfx.c:294 |
+-| `$0766` | `sub_H029_00000766` | parziale | h029_gfx.c:326 |
+-| `$091E` | `Populate_GraphicPlanes` | verificato | h029_gfx.c:363 |
+-| `$0A0E` | `Load_IndexedGraphicRecord` | verificato | h029_gfx.c:389 |
++| `$0766` | `sub_H029_00000766` | parziale | h029_gfx.c:332 |
++| `$091E` | `Populate_GraphicPlanes` | verificato | h029_gfx.c:369 |
++| `$0A0E` | `Load_IndexedGraphicRecord` | verificato | h029_gfx.c:395 |
+ | `$0B94` | `Draw_GraphicTile24` | verificato |  |
+ | `$0D58` | `sub_H029_00000D58` | parziale |  |
+ | `$0E26` | `trampoline_H029_0E88` | parziale |  |
+ | `$0E92` | `trampoline_H029_0EF4` | parziale |  |
+-| `$0EFE` | `trampoline_H029_10AC` | parziale | h029_gfx.c:437 |
++| `$0EFE` | `trampoline_H029_10AC` | parziale | h029_gfx.c:443 |
+ | `$10B8` | `sub_H029_000010B8` | parziale |  |
+ | `$115C` | `sub_H029_0000115C` | parziale | h029_gfx.c:118 |
+ | `$1206` | `sub_H029_00001206` | parziale | h029_gfx.c:134 |
+ | `$12BC` | `sub_H029_000012BC` | parziale | h029_gfx.c:156 |
+ | `$1308` | `sub_H029_00001308` | parziale | h029_gfx.c:225 |
+ | `$1346` | `Prepare_DisplayResources` | parziale | h029_gfx.c:237 |
+-| `$148E` | `sub_H029_0000148E` | parziale | h029_gfx.c:522 |
++| `$148E` | `sub_H029_0000148E` | parziale | h029_gfx.c:528 |
+ | `$14F6` | `sub_H029_000014F6` | parziale |  |
+ | `$1520` | `sub_H029_00001520` | parziale |  |
+ | `$1576` | `sub_H029_00001576` | parziale |  |
+@@ -507,24 +508,24 @@ Routine portate: **335 / 914**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0070` | `module_init_H030` | parziale | h030.c:14 |
+-| `$00B6` | `sub_H030_000000B6` | parziale | h030.c:61 |
+-| `$019A` | `sub_H030_0000019A` | parziale | h030.c:20 |
+-| `$0256` | `UI_DrawText` | parziale | h030.c:40 |
++| `$0070` | `module_init_H030` | parziale | h030.c:15 |
++| `$00B6` | `sub_H030_000000B6` | parziale | h030.c:62 |
++| `$019A` | `sub_H030_0000019A` | parziale | h030.c:21 |
++| `$0256` | `UI_DrawText` | parziale | h030.c:41 |
+ | `$028A` | `sub_H030_0000028A` | parziale |  |
+ | `$0302` | `trampoline_H030_0470` | parziale |  |
+ | `$0310` | `sub_H030_00000310` | parziale |  |
+ | `$03B8` | `sub_H030_000003B8` | parziale |  |
+ | `$03FC` | `sub_H030_000003FC` | parziale |  |
+-| `$0718` | `sub_H030_00000718` | parziale | h030.c:104 |
++| `$0718` | `sub_H030_00000718` | parziale | h030.c:105 |
+ | `$09A6` | `sub_H030_000009A6` | parziale |  |
+-| `$0A40` | `sub_H030_00000A40` | parziale | h030.c:90 |
+-| `$0AD2` | `sub_H030_00000AD2` | parziale |  |
+-| `$0B4A` | `sub_H030_00000B4A` | parziale |  |
+-| `$0B6C` | `sub_H030_00000B6C` | parziale | h030.c:48 |
+-| `$0BDA` | `(byte non classificati)` | - | h030.c:149 |
+-| `$0C10` | `sub_H030_00000C10` | parziale | h030.c:159 |
+-| `$0C84` | `sub_H030_00000C84` | parziale | h030.c:179 |
++| `$0A40` | `sub_H030_00000A40` | parziale | h030.c:91 |
++| `$0AD2` | `sub_H030_00000AD2` | parziale | h030.c:193 |
++| `$0B4A` | `sub_H030_00000B4A` | parziale | h030.c:186 |
++| `$0B6C` | `sub_H030_00000B6C` | parziale | h030.c:49 |
++| `$0BDA` | `(byte non classificati)` | - | h030.c:150 |
++| `$0C10` | `sub_H030_00000C10` | parziale | h030.c:160 |
++| `$0C84` | `sub_H030_00000C84` | parziale | h030.c:180 |
+ 
+ ### H031
+ 
+@@ -1041,7 +1042,7 @@ Routine portate: **335 / 914**.
+ | `$3980` | `sub_H063_00003980` | parziale |  |
+ | `$3A26` | `sub_H063_00003A26` | parziale |  |
+ | `$3CA0` | `sub_H063_00003CA0` | parziale |  |
+-| `$3F72` | `trampoline_H063_4042` | parziale |  |
++| `$3F72` | `trampoline_H063_4042` | parziale | h063.c:631 |
+ 
+ ### H064
+ 
+@@ -1223,8 +1224,8 @@ Routine portate: **335 / 914**.
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+ | `$0004` | `module_init_H073` | parziale | h073.c:6 |
+-| `$0012` | `sub_H073_00000012` | parziale |  |
+-| `$05AE` | `sub_H073_000005AE` | parziale |  |
++| `$0012` | `sub_H073_00000012` | parziale | h073.c:282 |
++| `$05AE` | `sub_H073_000005AE` | parziale | h073.c:397 |
+ | `$09BA` | `sub_H073_000009BA` | parziale | h073.c:12 |
+ | `$0BA8` | `sub_H073_00000BA8` | parziale | h073.c:70 |
+ | `$0FC8` | `sub_H073_00000FC8` | parziale | h073.c:164 |
+diff --git a/src_c/readable/h013.c b/src_c/readable/h013.c
+index 9e4d3f9..90e156e 100644
+--- a/src_c/readable/h013.c
++++ b/src_c/readable/h013.c
+@@ -16,6 +16,7 @@
+ #include "h062.h"
+ #include "h073.h"
+ #include "h065.h"
++#include "h063.h"
+ 
+ /* PORT H013+$0506: link/unlk, nessun effetto. */
+ void h013_init(void)
+@@ -192,7 +193,7 @@ void main_menu(void)
+             break;
+         case 'T':
+             if (items[MM_TRAIN].enabled) {
+-                h013_051c();
++                train_character();
+             }
+             break;
+         case 'K':
+@@ -1193,7 +1194,7 @@ void create_character(void)
+         H005_B(0x24DF) = 0;
+         H005_B(0x24CF) = 1;
+         do {
+-            h013_58dc();
++            train_character();
+         } while (!H005_B(0x24DF));
+         COK_PUT16(g_state_b + 0x550, saved_550);
+         H005_B(0x24CF) = 0;
+@@ -1250,3 +1251,219 @@ void create_character(void)
+     free_character(&ch);
+     g_current_char = saved;
+ }
++
++/* Esperienza (long) della tabella H005+$1946 per la riga row e l'indice i. */
++static s32 xp_table(u8 row, s16 i)
++{
++    return (s32)H005_L((u16)(0x1946 + row * 0x9A + i * 4));
++}
++
++/*
++ * PORT H013+$58DC (trampolino H013+$051C): Train Character.  Le classi
++ * con esperienza sufficiente (H005+$1946) e addestrabili qui (maschera
++ * dello stato B +$550) salgono di un livello dopo la conferma; poi valori
++ * derivati, nuovo incantesimo del mago e punti ferita.  Durante la
++ * creazione ($24CF) non ci sono messaggi ne' domande e, quando nessuna
++ * classe puo' salire, $24DF = 1.  Con l'addestramento gratuito ($24DE) non
++ * serve esperienza.
++ */
++void train_character(void)
++{
++    Character *c;                       /* a3 */
++    s32 next_xp;                        /* -$6(a5) */
++    s32 xp;                             /* -$a(a5) */
++    s32 best;                           /* -$2e(a5) */
++    u16 eligible = 0;                   /* -$c(a5) */
++    u16 classes = 0;                    /* -$e(a5) */
++    u16 train = 0;                      /* -$10(a5) */
++    u16 nclasses;                       /* -$12(a5) */
++    u16 row;                            /* -$1e(a5) */
++    u16 spell;                          /* -$24(a5) */
++    u16 spell_value;                    /* -$26(a5) */
++    u16 allowed;                        /* -$2a(a5) */
++    u8 again = 0;                       /* -$27(a5) */
++    u8 blocked;                         /* -$1(a5) */
++    u8 k;                               /* -$19(a5) */
++    u8 old_103;                         /* -$1f(a5) */
++    u8 old_102;                         /* -$20(a5) */
++    u8 lvl = 0;                         /* -$21(a5) */
++    u8 best_k = 0;                      /* -$2f(a5) */
++    u8 xp_row = 0;                      /* -$30(a5) */
++
++    if (!H005_B(0x24CF) && !h065_3702()) {
++        return;
++    }
++    if (g_current_char->b[0x197] != 0 && !H005_B(0x24DE)) {
++        show_message(0x1E, "we only train conscious people", 0x0E, 0);
++        return;
++    }
++    allowed = COK_GET16(g_state_b + 0x550);
++    c = g_current_char;
++    next_xp = 0;
++    for (k = 0; k <= 7; ++k) {
++        s32 need;
++
++        if (c->b[0xFE + k] == 0) {
++            continue;
++        }
++        classes = (u16)(classes + H005_B(0x5038 + k));
++        blocked = 0;
++        lvl = c->b[0xFE + k];
++        if (c->b[0x5B] == 5 && (k == 2 || k == 4)) {
++            if (lvl == 7 || (lvl == 6 && c->b[0x11] == 0x11) ||
++                (lvl == 5 && c->b[0x11] < 0x11)) {
++                blocked = 1;
++            }
++        }
++        xp_row = class_xp_row(g_current_char, k);
++        if (blocked) {
++            continue;
++        }
++        need = xp_table(xp_row, (s16)((u8)(lvl + 1) - 2));
++        if (!((s32)CH_L(c, 0x11E) >= need || H005_B(0x24DE)) || need <= 0) {
++            continue;
++        }
++        if (H005_B(0x24DE) && (u16)need != 0 && (s32)CH_L(c, 0x11E) < need) {
++            CH_PUTL(c, 0x11E, need);
++        }
++        eligible = (u16)(eligible + H005_B(0x5038 + k));
++        xp = xp_table(xp_row, (s16)((u8)(lvl + 2) - 2));
++        if (xp > 0 && (s32)CH_L(c, 0x11E) >= xp && xp > next_xp) {
++            next_xp = xp - 1;
++        }
++    }
++    if (!H005_B(0x24CF)) {
++        /*
++         * Come nell'originale la riga e il livello sono quelli rimasti
++         * dall'ultima classe del ciclo precedente.
++         */
++        best = 0;
++        for (k = 0; k <= 7; ++k) {
++            if (mask_byte((u8)eligible, H005_B(0x5038 + k)) &&
++                best < xp_table(xp_row, (s16)((u8)(lvl + 1) - 2))) {
++                best = xp_table(xp_row, (s16)((u8)(lvl + 1) - 2));
++                best_k = k;
++            }
++            if (best > 0) {
++                eligible = or_byte(H005_B(0x5038 + best_k), eligible);
++                xp = xp_table(xp_row, (s16)((u8)(lvl + 2) - 2));
++                if (xp > 0 && (s32)CH_L(c, 0x11E) >= xp && xp > next_xp) {
++                    next_xp = xp - 1;
++                }
++            }
++        }
++    }
++    if (next_xp > 0 && !H005_B(0x24CF)) {
++        CH_PUTL(c, 0x11E, next_xp);
++    }
++    if (!H005_B(0x24DE)) {
++        if (!mask_byte((u8)classes, allowed) && !H005_B(0x24CF)) {
++            show_message(0x1E, "We don't train that class here", 0x0E, 0);
++            return;
++        }
++        if (!mask_byte((u8)eligible, allowed)) {
++            H005_B(0x24DF) = 1;
++            if (!H005_B(0x24CF)) {
++                show_message(0x15, "Not Enough Experience", 0x0E, 0);
++            }
++            return;
++        }
++        train = mask_byte((u8)eligible, allowed);
++    } else {
++        train = eligible;
++    }
++    if (!H005_B(0x24CF)) {
++        clear_text_cells(1, 1, 0x26, 0x16);
++        row = 4;
++        draw_character_name(g_current_char, 4, row, 0);
++        ui_draw_text((u16)(h026_strlen(0x0F, (const char *)c->b) + 4), row,
++                     0x0A, 0, 0x0D, " will become:");
++        for (k = 0; k <= 7; ++k) {
++            if (c->b[0xFE + k] == 0 ||
++                !mask_byte(H005_B(0x5038 + k), train)) {
++                continue;
++            }
++            ++row;
++            format_number(0x50, s_message, (s32)(u16)(c->b[0xFE + k] + 1), 0,
++                          0x0A, 1, ' ');
++            if (row == 5) {
++                h026_insert(0x50, s_message, 0x0C, "    a level ", 0);
++            } else {
++                h026_insert(0x50, s_message, 0x0C, "and a level ", 0);
++            }
++            h026_append(0x50, s_message, 1, " ");
++            h026_append(0x50, s_message, 0x1A,
++                        (const char *)&g_h005[0x4D84 + k * 0x1C]);
++            ui_draw_text(6, row, 0x0A, 0, 0x50, s_message);
++        }
++        if (ask_yes_no(0x16, "Do you wish to train? ", 0x0D, 0x0A, 0x0F) !=
++            'Y') {
++            return;
++        }
++        h063_1d44(0x12, "Congratulations...");
++    }
++
++    nclasses = 0;
++    old_103 = c->b[0x103];
++    old_102 = c->b[0x102];
++    c->b[0x122] = 0;
++    for (k = 0; k <= 7; ++k) {
++        if (c->b[0xFE + k] == 0) {
++            continue;
++        }
++        ++nclasses;
++        if (mask_byte(H005_B(0x5038 + k), train)) {
++            ++c->b[0xFE + k];
++            if (c->b[0xDD] > 0) {
++                add_to_byte(&c->b[0xDE], (u16)-(s16)((s16)c->b[0xDE] /
++                                                     (s16)c->b[0xDD]));
++                add_to_byte(&c->b[0xDD], 0xFFFF);
++            }
++        }
++    }
++    level_derived_values(g_current_char);
++    if (!H005_B(0x24CF) && (c->b[0x103] > old_103 || c->b[0x102] > 8)) {
++        spell_value = 0xFFFF;
++        do {
++            spell = h065_34fc(4, 4, &spell_value, &again);
++        } while (spell == 0 && again);
++        if (spell > 0) {
++            c->b[0x66 + spell - 1] = 1;
++        }
++    }
++    (void)old_102;
++    if (H005_B(0x24CF)) {
++        switch (c->b[0x103]) {  /* incantesimi del mago per livello */
++        case 2:
++            c->b[0x74] = 1;
++            break;
++        case 3:
++            c->b[0x87] = 1;
++            c->b[0x6F] = 1;
++            break;
++        case 4:
++            c->b[0x84] = 1;
++            break;
++        case 5:
++            c->b[0x94] = 1;
++            break;
++        default:
++            break;
++        }
++    }
++    if (c->b[0xDB] > c->b[0xDC]) {
++        roll_hit_points(g_current_char, train, nclasses);
++    }
++    c = g_current_char;
++    for (k = 0; k <= 7; ++k) {
++        if (c->b[0xFE + k] > 1) {
++            s32 v;
++
++            xp_row = class_xp_row(g_current_char, k);
++            v = xp_table(xp_row, (s16)(c->b[0xFE + k] - 2));
++            if (v > (s32)CH_L(c, 0x11E)) {
++                CH_PUTL(c, 0x11E, v);
++            }
++        }
++    }
++}
+diff --git a/src_c/readable/h013.h b/src_c/readable/h013.h
+index a0649f8..d711d84 100644
+--- a/src_c/readable/h013.h
++++ b/src_c/readable/h013.h
+@@ -4,5 +4,6 @@
+ 
+ void main_menu(void);                   /* H013+$4BFC */
+ void create_character(void);            /* H013+$0982 */
++void train_character(void);             /* H013+$58DC */
+ 
+ #endif
+diff --git a/src_c/readable/h029_gfx.c b/src_c/readable/h029_gfx.c
+index 402e7cb..bc70588 100644
+--- a/src_c/readable/h029_gfx.c
++++ b/src_c/readable/h029_gfx.c
+@@ -322,6 +322,12 @@ u8 mask_byte(u8 value, u16 mask)
+     return (u8)(mask & value);
+ }
+ 
++/* PORT H029+$039A: value OR mask (byte). */
++u8 or_byte(u8 value, u16 mask)
++{
++    return (u8)(mask | value);
++}
++
+ /*
+  * PORT H029+$0766: costruisce la maschera (un solo raster ripetuto nei 5
+  * piani) dell'immagine.  Con un colore trasparente: per ogni piano OR
+diff --git a/src_c/readable/h029_gfx.h b/src_c/readable/h029_gfx.h
+index f57182b..a530f11 100644
+--- a/src_c/readable/h029_gfx.h
++++ b/src_c/readable/h029_gfx.h
+@@ -12,6 +12,7 @@ void free_pointer_data(void);           /* H029+$0180 */
+ void set_pointer_shape(s16 shape);      /* H029+$01B6 */
+ void add_to_byte(u8 *value, u16 delta); /* H029+$03E2 */
+ u8   mask_byte(u8 value, u16 mask);     /* H029+$0354 */
++u8   or_byte(u8 value, u16 mask);       /* H029+$039A */
+ void remap_gfx_colors(const u8 from[16], const u8 to[16], s16 frame,
+                       struct GfxRecord *rec);           /* H029+$0EFE */
+ void free_gfx_record(struct GfxRecord **rec);           /* H029+$067A */
+diff --git a/src_c/readable/h030.c b/src_c/readable/h030.c
+index 1bb99cc..c92903c 100644
+--- a/src_c/readable/h030.c
++++ b/src_c/readable/h030.c
+@@ -1,5 +1,6 @@
+ /* H030: Presentazione testo e interfaccia. */
+ #include "h030.h"
++#include "h036.h"
+ #include "h003_exec.h"
+ #include "h028_files.h"
+ #include "h040.h"
+@@ -181,3 +182,28 @@ void free_gothic_font(void)
+ {
+     exec_free_mem(g_gothic_bitmap.Planes[0], g_h030_alloc_size);
+ }
++
++/* PORT H030+$0B4A: pausa dei messaggi: H005+$3DF6 * 5 tick. */
++void message_delay(void)
++{
++    dos_delay((u32)H005_W(0x3DF6) * 5);
++}
++
++/*
++ * PORT H030+$0AD2: messaggio sulla riga $18 (testo copiato, parametro per
++ * valore), pausa, poi riga cancellata.
++ */
++void show_message(u16 len, const char *text, u16 fg, u16 bg)
++{
++    char copy[0x100];
++    u16 i;
++
++    for (i = 0; i <= len && i < sizeof(copy) - 1; ++i) {
++        copy[i] = text[i];
++    }
++    copy[i] = 0;
++    fill_text_cells(0, 0x18, 0, 0x28);
++    ui_draw_text(0, 0x18, fg, bg, len, copy);
++    message_delay();
++    fill_text_cells(0, 0x18, 0, 0x28);
++}
+diff --git a/src_c/readable/h030.h b/src_c/readable/h030.h
+index c7571a2..5ab46b3 100644
+--- a/src_c/readable/h030.h
++++ b/src_c/readable/h030.h
+@@ -14,6 +14,9 @@ void draw_char_run(u16 col, u16 row, u16 fg, u16 bg, u16 count, u8 ch,
+ s32  time_hundredths(void);                             /* H030+$0A40 */
+ void input_line(u16 prompt_len, const char *prompt, u16 fg, u16 bg,
+                 u16 max_chars, u16 out_max, char *out); /* H030+$0718 */
++void show_message(u16 len, const char *text, u16 fg, u16 bg);
++                                                        /* H030+$0AD2 */
++void message_delay(void);               /* H030+$0B4A */
+ void load_gothic_font(void);            /* H030+$0C10 */
+ void free_gothic_font(void);            /* H030+$0C84 */
+ 
+diff --git a/src_c/readable/h063.c b/src_c/readable/h063.c
+index d4e820d..def06bd 100644
+--- a/src_c/readable/h063.c
++++ b/src_c/readable/h063.c
+@@ -626,3 +626,50 @@ void draw_character_name(Character *c, u16 col, u16 row, u8 possessive)
+                      pen, 0, 2, "'s");
+     }
+ }
++
++/*
++ * PORT H063+$3F72: riga della tabella dell'esperienza H005+$1946 ($9A
++ * byte per riga) per la classe cls: secondo +$5E (chierico), +$5D (classe
++ * 7), +$5F (classe 5).  Per le classi 1 e 3, e per +$5D fuori da 1..3,
++ * l'originale restituisce un valore non inizializzato; qui 0.
++ */
++u8 class_xp_row(Character *c, u8 cls)
++{
++    u8 row = 0;                         /* -$1(a5) */
++
++    switch (cls) {
++    case 0:
++        row = (u8)(c->b[0x5E] > 4 ? 1 : 0);
++        break;
++    case 2:
++        row = 2;
++        break;
++    case 4:
++        row = 6;
++        break;
++    case 5:
++        row = (u8)(c->b[0x5F] == 1 ? 7 : 8);
++        break;
++    case 6:
++        row = 9;
++        break;
++    case 7:
++        switch (c->b[0x5D]) {
++        case 1:
++            row = 3;
++            break;
++        case 2:
++            row = 4;
++            break;
++        case 3:
++            row = 5;
++            break;
++        default:
++            break;
++        }
++        break;
++    default:
++        break;
++    }
++    return row;
++}
+diff --git a/src_c/readable/h063.h b/src_c/readable/h063.h
+index 5368f96..3d4d702 100644
+--- a/src_c/readable/h063.h
++++ b/src_c/readable/h063.h
+@@ -15,5 +15,6 @@ void draw_hit_points(Character *c, u16 col, u16 row, u8 highlight,
+ void recompute_stats(Character *c);                     /* H063+$13BE */
+ void draw_character_name(Character *c, u16 col, u16 row, u8 possessive);
+                                                         /* H063+$1F34 */
++u8   class_xp_row(Character *c, u8 cls);            /* H063+$3F72 */
+ 
+ #endif
+diff --git a/src_c/readable/h073.c b/src_c/readable/h073.c
+index 97af9dc..462211b 100644
+--- a/src_c/readable/h073.c
++++ b/src_c/readable/h073.c
+@@ -239,3 +239,228 @@ void thief_skills(Character *c)
+         level = saved_level;
+     }
+ }
++
++/* Somma alle 5 celle da slots la riga del livello l della tabella row. */
++static void add_spell_row(u8 *slots, u8 row, u8 l, u8 count)
++{
++    u8 i;
++
++    for (i = 1; i <= count; ++i) {
++        slots[i - 1] = (u8)(slots[i - 1] +
++            H005_W((u16)(0x1946 + row * 0x9A + 0x2C + ((s16)l - 2) * 0x0A +
++                         (i - 1) * 2)));
++    }
++}
++
++/*
++ * Incantesimi da chierico noti per i livelli di incantesimo con slot
++ * (H005+$1476: 10 word per livello, 0 = fine).
++ */
++static void learn_cleric_spells(Character *c)
++{
++    u8 sl;                              /* -$6(a5) */
++    u16 j;                              /* -$2(a5) */
++    u16 spell;                          /* -$a(a5) */
++
++    for (sl = 1; sl <= 4; ++sl) {
++        if (c->b[0x124 + sl - 1] == 0) {
++            continue;
++        }
++        j = 1;
++        spell = 0xFF;
++        while (j <= 0x0A && spell != 0) {
++            spell = H005_W(0x1476 + (sl - 1) * 0x14 + (j - 1) * 2);
++            if (spell != 0) {
++                c->b[0x66 + spell - 1] = 1;
++            }
++            ++j;
++        }
++    }
++}
++
++/*
++ * PORT H073+$0012: slot degli incantesimi di tutte le classi (+$124..+$13B
++ * azzerati, poi per classe: chierico 0, classe 7, mago 4 sopra il
++ * livello 7, classe 5) e incantesimi noti; gli oggetti di tipo $81 pronti
++ * raddoppiano gli slot +$136..+$138.
++ */
++static void spell_slots_all(Character *c)
++{
++    CokItem *it;                        /* -$e(a5) */
++    u8 k;                               /* -$3(a5) */
++    u8 lvl;                             /* -$5(a5) */
++    u8 row;                             /* -$4(a5) */
++    u8 l;                               /* -$6(a5) */
++    u8 i;                               /* -$8(a5) */
++    u16 s;                              /* -$a(a5) */
++
++    h029_fill_bytes(0x17, &c->b[0x124], 0x18, 0);
++    for (k = 0; k <= 7; ++k) {
++        lvl = c->b[0xFE + k];
++        if (lvl == 0) {
++            continue;
++        }
++        switch (k) {
++        case 0:                 /* H073+$0068 */
++            row = (u8)(c->b[0x5E] > 4 ? 1 : 0);
++            ++c->b[0x124];
++            for (l = 2; l <= lvl; ++l) {
++                add_spell_row(&c->b[0x124], row, l, 5);
++                if (l == 0xFF) {
++                    break;
++                }
++            }
++            cleric_spell_slots(c);
++            learn_cleric_spells(c);
++            break;
++        case 7:                 /* H073+$01B6 */
++            if (lvl > 5 && c->b[0x5D] != 1) {
++                row = (u8)(c->b[0x5D] == 2 ? 4 : 5);
++                for (l = 6; l <= lvl; ++l) {
++                    add_spell_row(&c->b[0x124], row, l, 5);
++                    if (l == 0xFF) {
++                        break;
++                    }
++                }
++                learn_cleric_spells(c);
++            }
++            break;
++        case 4:                 /* H073+$0304 */
++            if (lvl > 7) {
++                for (l = 8; l <= lvl; ++l) {
++                    for (i = 1; i <= 3; ++i) {
++                        c->b[0x12A + i - 1] = (u8)(c->b[0x12A + i - 1] +
++                            H005_W((u16)(0x1D0E + (l - 2) * 0x0A +
++                                         (i - 1) * 2)));
++                    }
++                    for (i = 4; i <= 5; ++i) {
++                        u8 m = (u8)(i - 3);     /* -$7(a5) */
++
++                        c->b[0x136 + m - 1] = (u8)(c->b[0x136 + m - 1] +
++                            H005_W((u16)(0x1D0E + (l - 2) * 0x0A +
++                                         (i - 1) * 2)));
++                    }
++                    if (l == 0xFF) {
++                        break;
++                    }
++                }
++                for (s = 1; s <= 0x64; ++s) {
++                    if (H005_B(0x66 + (s - 1) * 16) == 1) {
++                        c->b[0x66 + s - 1] = 1;
++                    }
++                }
++            }
++            break;
++        case 5:                 /* H073+$0430 */
++            row = (u8)(c->b[0x5F] == 0 ? 7 : 8);
++            ++c->b[0x136];
++            for (l = 2; l <= lvl; ++l) {
++                add_spell_row(&c->b[0x136], row, l, 5);
++                if (l == 0xFF) {
++                    break;
++                }
++            }
++            break;
++        default:
++            break;
++        }
++    }
++    for (it = c->items; it != NULL; it = it->next) {
++        if (it->b[0x46] == 0x81 && it->b[0x3A]) {
++            for (i = 1; i <= 3; ++i) {
++                c->b[0x136 + i - 1] = (u8)(c->b[0x136 + i - 1] * 2);
++            }
++        }
++    }
++}
++
++/* Classi oltre il livello 6 (2 e 7) o 7 (4): +$110 = 3. */
++static void check_level_limit(Character *c, u8 k, u8 lvl)
++{
++    switch (k) {
++    case 2: case 7:
++        if (lvl > 6) {
++            c->b[0x110] = 3;
++        }
++        break;
++    case 4:
++        if (lvl > 7) {
++            c->b[0x110] = 3;
++        }
++        break;
++    default:
++        break;
++    }
++}
++
++/*
++ * PORT H073+$05AE: valori che dipendono dal livello: +$5A (dalla tabella
++ * H005+$5158), livello massimo +$DB, +$110, bonus della divinita',
++ * incantesimi, tiri salvezza, abilita' da ladro, +$122 e oggetti pronti
++ * non piu' ammessi; con H073+$130A anche le classi precedenti.
++ */
++void level_derived_values(Character *c)
++{
++    u8 k;                               /* -$1(a5) */
++    u8 lvl;                             /* -$4(a5) */
++    u8 s;                               /* -$6(a5) */
++
++    c->b[0x5A] = 0;
++    for (k = 0; k <= 7; ++k) {
++        u16 t;
++
++        lvl = c->b[0xFE + k];
++        t = H005_W(0x5158 + k * 0x1A + lvl * 2);
++        if (c->b[0x5A] < t) {
++            c->b[0x5A] = (u8)t;
++        }
++        if (c->b[0xDB] < lvl) {
++            c->b[0xDB] = lvl;
++        }
++        check_level_limit(c, k, lvl);
++    }
++    if ((c->b[0x5E] == 6 && (c->b[0x5B] == 3 || c->b[0x5B] == 4)) ||
++        c->b[0x5E] == 3) {
++        ++c->b[0x5A];
++    }
++    spell_slots_all(c);
++    saving_throws(c);
++    if (c->b[0x104] > 0) {
++        thief_skills(c);
++    }
++    c->b[0x122] = 0;
++    for (k = 0; k <= 7; ++k) {
++        if (c->b[0xFE + k] > 0 ||
++            (c->b[0x106 + k] > 0 && c->b[0x106 + k] < c->b[0xDB])) {
++            c->b[0x122] = (u8)(c->b[0x122] + H005_B(0x5040 + k));
++        }
++    }
++    for (s = 0; s <= 0x0C; ++s) {
++        CokItem *it = c->readied[s];
++
++        if (it != NULL &&
++            !mask_byte(H005_B(0x336C + it->b[0x30] * 0x12 + 0x0F),
++                       c->b[0x122]) &&
++            !it->b[0x3C]) {
++            it->b[0x3A] = 0;
++        }
++    }
++    if (h073_130a(c)) {
++        for (k = 0; k <= 7; ++k) {
++            u16 t;
++
++            lvl = c->b[0x106 + k];
++            check_level_limit(c, k, lvl);
++            t = H005_W(0x5158 + k * 0x1A + lvl * 2);
++            if (c->b[0x5A] < t) {
++                c->b[0x5A] = (u8)t;
++            }
++        }
++        if (c->b[0x108] > 6 || c->b[0x10A] > 7 || c->b[0x10D] > 6) {
++            c->b[0x110] = 3;
++        }
++        if (c->b[0x10C] > 0) {
++            thief_skills(c);
++        }
++    }
++}
+diff --git a/src_c/readable/h073.h b/src_c/readable/h073.h
+index 2b6f799..789433b 100644
+--- a/src_c/readable/h073.h
++++ b/src_c/readable/h073.h
+@@ -9,5 +9,6 @@ void saving_throws(Character *c);       /* H073+$0BA8 */
+ void thief_skills(Character *c);        /* H073+$0FC8 */
+ u8   h073_12c8(Character *c);           /* H073+$12C8 */
+ u8   h073_130a(Character *c);           /* H073+$130A */
++void level_derived_values(Character *c); /* H073+$05AE */
+ 
+ #endif
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index 1f10c7b..2326507 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -231,7 +231,6 @@ void h042_0254(s32 handle) { (void)handle; cok_unported("H042+$0254"); }
+ const u8 *g_h005_2ade_area(void) { cok_unported("H005+$2ADE (area della mappa)"); return NULL; }
+ void *g_h005_2508;
+ void h013_0518(void) { cok_unported("H013+$0518"); }
+-void h013_051c(void) { cok_unported("H013+$051C"); }
+ void h013_2b9a(void) { cok_unported("H013+$2B9A"); }
+ void h013_31e0(void) { cok_unported("H013+$31E0"); }
+ void h013_4508(void) { cok_unported("H013+$4508"); }
+@@ -249,6 +248,7 @@ void h028_0d74(void) { cok_unported("H028+$0D74"); }
+ void h043_0840(void) { cok_unported_skip("H043+$0840"); }
+ void h041_00be(void *block) { (void)block; cok_unported("H041+$00BE"); }
+ 
+-void h013_58dc(void) { cok_unported("H013+$58DC"); }
+ void h028_0d36(void) { cok_unported("H028+$0D36"); }
+ void h047_00e6(void) { cok_unported("H047+$00E6"); }
++
++u16 h065_34fc(u16 a, u16 b, u16 *value, u8 *again) { (void)a; (void)b; (void)value; (void)again; cok_unported("H065+$34FC"); return 0; }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index b750d3d..23e767e 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -202,7 +202,6 @@ void h085_4a02(void);
+ 
+ /* Funzioni del menu principale (H013+$4BFC). */
+ void h013_0518(void);
+-void h013_051c(void);
+ void h013_2b9a(void);
+ void h013_31e0(void);
+ void h013_4508(void);
+@@ -220,7 +219,7 @@ void h028_0d74(void);
+ void h043_0840(void);
+ void h041_00be(void *block);
+ 
+-void h013_58dc(void);                  /* trampolino H013+$051C */
++u16  h065_34fc(u16 a, u16 b, u16 *value, u8 *again); /* scelta di un incantesimo */
+ void h028_0d36(void);
+ void h047_00e6(void);
+ 
+-- 
+2.43.0
+

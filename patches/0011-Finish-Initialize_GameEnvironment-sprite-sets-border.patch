@@ -1,0 +1,1112 @@
+From 47be7884fae6b66fb7ecd3c898345e713e2ff5c0 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 15:38:19 +0000
+Subject: [PATCH 11/65] Finish Initialize_GameEnvironment: sprite sets, border,
+ handler tables
+
+Ports H035+$0246 (24x24 sprite set pairs), H029+$0EFE (colour remap),
+H006+$00FA (border tiles into the 8x8 set) and the two routines that
+fill the H005 handler tables, H027+$4276 and H033+$1A50. The tables
+($25C0 and $2832) become C arrays of function pointers; their 175
+targets are stubs until ported. H005 $3244 becomes g_sprite_sets.
+The program now runs the whole environment setup and reaches the intro
+(H007+$09D8).
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md |  32 +++---
+ src_c/readable/globals.c      |   4 +
+ src_c/readable/globals.h      |   9 ++
+ src_c/readable/h006.c         |  37 +++++--
+ src_c/readable/h027.c         | 123 ++++++++++++++++++++++-
+ src_c/readable/h027.h         |   7 ++
+ src_c/readable/h029_gfx.c     |  55 +++++++++++
+ src_c/readable/h029_gfx.h     |   2 +
+ src_c/readable/h033.c         | 132 ++++++++++++++++++++++++-
+ src_c/readable/h033.h         |   7 ++
+ src_c/readable/h035.c         |  41 +++++++-
+ src_c/readable/h035.h         |   9 ++
+ src_c/readable/unported.c     | 181 +++++++++++++++++++++++++++++++++-
+ src_c/readable/unported.h     | 181 +++++++++++++++++++++++++++++++++-
+ 14 files changed, 785 insertions(+), 35 deletions(-)
+ create mode 100644 src_c/readable/h027.h
+ create mode 100644 src_c/readable/h033.h
+ create mode 100644 src_c/readable/h035.h
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index e3dc655..3dcbe5a 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **225 / 912**.
++Routine portate: **230 / 912**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -12,7 +12,7 @@ Routine portate: **225 / 912**.
+ | H003 | 316 | 5 | 4 |
+ | H004 | 24284 | 2 | 2 |
+ | H005 | 21276 | 1 | 1 |
+-| H006 | 3020 | 4 | 2 |
++| H006 | 3020 | 4 | 3 |
+ | H007 | 3036 | 10 | 1 |
+ | H008 | 8660 | 21 | 2 |
+ | H009 | 988 | 3 | 1 |
+@@ -33,15 +33,15 @@ Routine portate: **225 / 912**.
+ | H024 | 268 | 2 | 2 |
+ | H025 | 264 | 2 | 2 |
+ | H026 | 1452 | 11 | 10 |
+-| H027 | 18156 | 10 | 1 |
++| H027 | 18156 | 10 | 2 |
+ | H028 | 4488 | 16 | 9 |
+-| H029 | 6084 | 32 | 15 |
++| H029 | 6084 | 32 | 16 |
+ | H030 | 3240 | 18 | 5 |
+ | H031 | 212 | 4 | 3 |
+ | H032 | 9352 | 1 | 1 |
+-| H033 | 8140 | 15 | 1 |
++| H033 | 8140 | 15 | 2 |
+ | H034 | 472 | 3 | 2 |
+-| H035 | 1760 | 6 | 1 |
++| H035 | 1760 | 6 | 2 |
+ | H036 | 144 | 2 | 1 |
+ | H037 | 52 | 2 | 2 |
+ | H038 | 504 | 5 | 5 |
+@@ -170,9 +170,9 @@ Routine portate: **225 / 912**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$00EC` | `module_init_H006` | parziale | h006.c:31 |
+-| `$00FA` | `sub_H006_000000FA` | parziale |  |
+-| `$01AE` | `Initialize_GameEnvironment` | verificato | h006.c:72 |
++| `$00EC` | `module_init_H006` | parziale | h006.c:35 |
++| `$00FA` | `sub_H006_000000FA` | parziale | h006.c:54 |
++| `$01AE` | `Initialize_GameEnvironment` | verificato | h006.c:93 |
+ | `$0914` | `sub_H006_00000914` | parziale |  |
+ 
+ ### H007
+@@ -432,7 +432,7 @@ Routine portate: **225 / 912**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0206` | `module_init_H027` | parziale | h027.c:4 |
++| `$0206` | `module_init_H027` | parziale | h027.c:5 |
+ | `$0214` | `sub_H027_00000214` | parziale |  |
+ | `$0286` | `sub_H027_00000286` | parziale |  |
+ | `$02BE` | `trampoline_H027_0306` | parziale |  |
+@@ -441,7 +441,7 @@ Routine portate: **225 / 912**.
+ | `$174E` | `sub_H027_0000174E` | parziale |  |
+ | `$17DE` | `sub_H027_000017DE` | parziale |  |
+ | `$2182` | `sub_H027_00002182` | parziale |  |
+-| `$4276` | `sub_H027_00004276` | parziale |  |
++| `$4276` | `sub_H027_00004276` | parziale | h027.c:11 |
+ 
+ ### H028
+ 
+@@ -486,7 +486,7 @@ Routine portate: **225 / 912**.
+ | `$0D58` | `sub_H029_00000D58` | parziale |  |
+ | `$0E26` | `trampoline_H029_0E88` | parziale |  |
+ | `$0E92` | `trampoline_H029_0EF4` | parziale |  |
+-| `$0EFE` | `trampoline_H029_10AC` | parziale |  |
++| `$0EFE` | `trampoline_H029_10AC` | parziale | h029_gfx.c:436 |
+ | `$10B8` | `sub_H029_000010B8` | parziale |  |
+ | `$115C` | `sub_H029_0000115C` | parziale | h029_gfx.c:117 |
+ | `$1206` | `sub_H029_00001206` | parziale | h029_gfx.c:133 |
+@@ -543,7 +543,7 @@ Routine portate: **225 / 912**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$00E0` | `module_init_H033` | parziale | h033.c:4 |
++| `$00E0` | `module_init_H033` | parziale | h033.c:5 |
+ | `$00EE` | `trampoline_H033_0164` | parziale |  |
+ | `$0366` | `sub_H033_00000366` | parziale |  |
+ | `$056E` | `sub_H033_0000056E` | parziale |  |
+@@ -557,7 +557,7 @@ Routine portate: **225 / 912**.
+ | `$17E6` | `sub_H033_000017E6` | parziale |  |
+ | `$1836` | `sub_H033_00001836` | parziale |  |
+ | `$18EE` | `sub_H033_000018EE` | parziale |  |
+-| `$1A50` | `sub_H033_00001A50` | parziale |  |
++| `$1A50` | `sub_H033_00001A50` | parziale | h033.c:11 |
+ 
+ ### H034
+ 
+@@ -571,11 +571,11 @@ Routine portate: **225 / 912**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0032` | `module_init_H035` | parziale | h035.c:4 |
++| `$0032` | `module_init_H035` | parziale | h035.c:8 |
+ | `$0040` | `sub_H035_00000040` | parziale |  |
+ | `$019A` | `sub_H035_0000019A` | parziale |  |
+ | `$01DC` | `sub_H035_000001DC` | parziale |  |
+-| `$0246` | `sub_H035_00000246` | parziale |  |
++| `$0246` | `sub_H035_00000246` | parziale | h035.c:14 |
+ | `$0460` | `sub_H035_00000460` | parziale |  |
+ 
+ ### H036
+diff --git a/src_c/readable/globals.c b/src_c/readable/globals.c
+index 5798ee4..56435b6 100644
+--- a/src_c/readable/globals.c
++++ b/src_c/readable/globals.c
+@@ -23,5 +23,9 @@ struct Window *g_window;
+ struct RastPort *g_rastport;
+ u8 *g_dax_buffer;
+ struct GfxRecord *g_8x8_sets[5];
++struct GfxRecord *g_sprite_sets[29][2];
+ void *g_party_head;
+ void *g_current_char;
++
++CokHandler g_handlers_25c0[108];
++CokHandler g_handlers_2832[120];
+diff --git a/src_c/readable/globals.h b/src_c/readable/globals.h
+index 6c22827..0ab476f 100644
+--- a/src_c/readable/globals.h
++++ b/src_c/readable/globals.h
+@@ -60,9 +60,18 @@ extern struct Window *g_window;         /* $52F6: finestra del gioco */
+ extern struct RastPort *g_rastport;     /* $52EE: RastPort della finestra */
+ extern u8 *g_dax_buffer;                /* $3C7E: blocco DAX compresso */
+ extern struct GfxRecord *g_8x8_sets[5]; /* $3338: set 8x8 caricati da H034 */
++extern struct GfxRecord *g_sprite_sets[29][2]; /* $3244: coppie di set 24x24 */
+ extern void *g_party_head;              /* $3364: testa della lista del party */
+ extern void *g_current_char;            /* $3368: personaggio corrente */
+ 
++/*
++ * Tabelle di gestori in H005 (puntatori a codice nell'originale).  Il tipo
++ * e' generico finche' non si porta chi le chiama.
++ */
++typedef void (*CokHandler)(void);
++extern CokHandler g_handlers_25c0[108]; /* $25C0..$276C: azioni (H033) */
++extern CokHandler g_handlers_2832[120]; /* $2832..$2A0E: effetti (H027/H033) */
++
+ /* Dati di altri moduli. */
+ extern u16 g_distribution_check;   /* H009+$0000: $3F8F dopo la verifica */
+ 
+diff --git a/src_c/readable/h006.c b/src_c/readable/h006.c
+index 8bfcb1c..52ceb2d 100644
+--- a/src_c/readable/h006.c
++++ b/src_c/readable/h006.c
+@@ -10,6 +10,8 @@
+  *   -$40 long, secondi di CurrentTime
+  */
+ #include "h006.h"
++#include "h027.h"
++#include "h033.h"
+ #include "h008.h"
+ #include "h002_dos.h"
+ #include "h003_exec.h"
+@@ -18,8 +20,10 @@
+ #include "h028_files.h"
+ #include "h029_gfx.h"
+ #include "h030.h"
++#include "h016_gfx.h"
+ #include "h031.h"
+ #include "h034.h"
++#include "h035.h"
+ #include "globals.h"
+ #include "unported.h"
+ 
+@@ -46,6 +50,23 @@ static void copy_dbeq(char *dst, const char *src, unsigned limit)
+     }
+ }
+ 
++/*
++ * PORT H006+$00FA: carica il record 99 di "border" (con maschera, colore
++ * 13) e ne copia i primi 24x8 pixel, immagine e maschera, alla x 160 del
++ * set 8x8 del posto 4 (H005+$3348); poi lo libera.
++ */
++static void merge_border_tiles(void)
++{
++    struct GfxRecord *border = NULL;    /* -$4(a5) */
++
++    load_indexed_gfx_record(6, "border", 0x63, 1, 0x0D, &border);
++    (void)graphics_blt_bitmap(border->image, 0, 0, g_8x8_sets[4]->image,
++                              0xA0, 0, 0x18, 8, 0xC0, 0xFF, NULL);
++    (void)graphics_blt_bitmap(border->mask, 0, 0, g_8x8_sets[4]->mask,
++                              0xA0, 0, 0x18, 8, 0xC0, 0xFF, NULL);
++    free_gfx_record(&border);
++}
++
+ /* Legge i 129 record da $12 byte del file ITEMS in H005+$336C. */
+ static void load_items_table(void)
+ {
+@@ -119,10 +140,10 @@ void init_game_environment(void)
+     COK_PUT16(g_state_a + 0x3F4, 2);
+     COK_PUT16(g_state_a + 0x3F6, 2);
+ 
+-    /* H006+$03E8: 29 coppie di long a $3244. */
++    /* H006+$03E8: 29 coppie di set 24x24 a $3244. */
+     for (s_i = 0; s_i <= 0x1C; ++s_i) {
+-        H005_SET_L(0x3244 + s_i * 8, 0);
+-        H005_SET_L(0x3244 + s_i * 8 + 4, 0);
++        g_sprite_sets[s_i][0] = NULL;
++        g_sprite_sets[s_i][1] = NULL;
+     }
+     /* H006+$041C: due voci da 6 byte a $27B0. */
+     for (s_i = 1; s_i <= 2; ++s_i) {
+@@ -220,19 +241,19 @@ void init_game_environment(void)
+     }
+     load_8x8_set(0xCA, 4);
+     load_8x8_set(0xCB, 0);
+-    h006_00fa();
++    merge_border_tiles();
+ 
+     for (s_i = 0; s_i <= 0x0B; ++s_i) {
+-        h035_0246(6, "COMSPR", s_i, (u16)(s_i + 0x0D));
++        load_sprite_set(6, "COMSPR", s_i, (u16)(s_i + 0x0D));
+     }
+     for (s_i = 0x19; s_i <= 0x1C; ++s_i) {
+-        h035_0246(6, "COMSPR", s_i, s_i);
++        load_sprite_set(6, "COMSPR", s_i, s_i);
+     }
+     load_indexed_gfx_record(3, "sky", 0xFA, 1, 0, &g_gfx_sky_280c);
+     load_indexed_gfx_record(3, "sky", 0xFB, 1, 0, &g_gfx_sky_2808);
+     load_indexed_gfx_record(3, "sky", 0xFC, 1, 0x0D, &g_gfx_sky_2804);
+ 
+     load_items_table();
+-    h027_4276();
+-    h033_1a50();
++    install_effect_handlers();
++    install_action_handlers();
+ }
+diff --git a/src_c/readable/h027.c b/src_c/readable/h027.c
+index e3aa718..7b011e4 100644
+--- a/src_c/readable/h027.c
++++ b/src_c/readable/h027.c
+@@ -1,7 +1,128 @@
+ /* H027: Handler di effetti/abilità del gioco; la mappa completa resta parziale. */
+-#include "cok.h"
++#include "globals.h"
++#include "unported.h"
+ 
+ /* PORT H027+$0206: link/unlk, nessun effetto. */
+ void h027_init(void)
+ {
+ }
++
++/*
++ * PORT H027+$4276: installa i gestori degli effetti di H027 nella tabella
++ * H005+$2832 (le altre voci le scrive H033+$1A50).
++ */
++void install_effect_handlers(void)
++{
++    g_handlers_2832[0] = h027_0364;   /* $2832 */
++    g_handlers_2832[1] = h027_0390;   /* $2836 */
++    g_handlers_2832[2] = h027_03d6;   /* $283A */
++    g_handlers_2832[4] = h027_41f6;   /* $2842 */
++    g_handlers_2832[6] = h027_0492;   /* $284A */
++    g_handlers_2832[7] = h027_05c6;   /* $284E */
++    g_handlers_2832[8] = h027_0622;   /* $2852 */
++    g_handlers_2832[9] = h027_067c;   /* $2856 */
++    g_handlers_2832[10] = h027_06d4;   /* $285A */
++    g_handlers_2832[11] = h027_07f4;   /* $285E */
++    g_handlers_2832[12] = h027_080a;   /* $2862 */
++    g_handlers_2832[13] = h027_08fc;   /* $2866 */
++    g_handlers_2832[14] = h027_0912;   /* $286A */
++    g_handlers_2832[15] = h027_098e;   /* $286E */
++    g_handlers_2832[16] = h027_09a4;   /* $2872 */
++    g_handlers_2832[17] = h027_0a00;   /* $2876 */
++    g_handlers_2832[18] = h027_41f6;   /* $287A */
++    g_handlers_2832[19] = h027_0a3e;   /* $287E */
++    g_handlers_2832[20] = h027_0a9e;   /* $2882 */
++    g_handlers_2832[21] = h027_0afe;   /* $2886 */
++    g_handlers_2832[22] = h027_0b7a;   /* $288A */
++    g_handlers_2832[23] = h027_41f6;   /* $288E */
++    g_handlers_2832[24] = h027_0d70;   /* $2892 */
++    g_handlers_2832[25] = h027_0db8;   /* $2896 */
++    g_handlers_2832[26] = h027_0312;   /* $289A */
++    g_handlers_2832[27] = h027_0e18;   /* $289E */
++    g_handlers_2832[28] = h027_0ec6;   /* $28A2 */
++    g_handlers_2832[29] = h027_0efc;   /* $28A6 */
++    g_handlers_2832[30] = h027_0312;   /* $28AA */
++    g_handlers_2832[31] = h027_0fce;   /* $28AE */
++    g_handlers_2832[32] = h027_10cc;   /* $28B2 */
++    g_handlers_2832[33] = h027_1120;   /* $28B6 */
++    g_handlers_2832[34] = h027_1162;   /* $28BA */
++    g_handlers_2832[35] = h027_1310;   /* $28BE */
++    g_handlers_2832[36] = h027_133c;   /* $28C2 */
++    g_handlers_2832[37] = h027_07f4;   /* $28C6 */
++    g_handlers_2832[38] = h027_1374;   /* $28CA */
++    g_handlers_2832[39] = h027_13f4;   /* $28CE */
++    g_handlers_2832[40] = h027_1836;   /* $28D2 */
++    g_handlers_2832[41] = h027_1878;   /* $28D6 */
++    g_handlers_2832[42] = h027_18a4;   /* $28DA */
++    g_handlers_2832[43] = h027_1956;   /* $28DE */
++    g_handlers_2832[44] = h027_05c6;   /* $28E2 */
++    g_handlers_2832[45] = h027_0622;   /* $28E6 */
++    g_handlers_2832[46] = h027_1a0a;   /* $28EA */
++    g_handlers_2832[47] = h027_1a42;   /* $28EE */
++    g_handlers_2832[48] = h027_1b88;   /* $28F2 */
++    g_handlers_2832[49] = h027_1bfe;   /* $28F6 */
++    g_handlers_2832[50] = h027_0312;   /* $28FA */
++    g_handlers_2832[51] = h027_0312;   /* $28FE */
++    g_handlers_2832[52] = h027_0312;   /* $2902 */
++    g_handlers_2832[53] = h027_1c7a;   /* $2906 */
++    g_handlers_2832[54] = h027_1cf6;   /* $290A */
++    g_handlers_2832[55] = h027_1d0c;   /* $290E */
++    g_handlers_2832[56] = h027_1d3c;   /* $2912 */
++    g_handlers_2832[57] = h027_1d80;   /* $2916 */
++    g_handlers_2832[58] = h027_1e1a;   /* $291A */
++    g_handlers_2832[59] = h027_1e3c;   /* $291E */
++    g_handlers_2832[60] = h027_2028;   /* $2922 */
++    g_handlers_2832[61] = h027_20da;   /* $2926 */
++    g_handlers_2832[62] = h027_2138;   /* $292A */
++    g_handlers_2832[63] = h027_224c;   /* $292E */
++    g_handlers_2832[64] = h027_226c;   /* $2932 */
++    g_handlers_2832[65] = h027_228e;   /* $2936 */
++    g_handlers_2832[66] = h027_2400;   /* $293A */
++    g_handlers_2832[67] = h027_25ba;   /* $293E */
++    g_handlers_2832[68] = h027_2646;   /* $2942 */
++    g_handlers_2832[69] = h027_266a;   /* $2946 */
++    g_handlers_2832[70] = h027_29e2;   /* $294A */
++    g_handlers_2832[71] = h027_2b3e;   /* $294E */
++    g_handlers_2832[72] = h027_2ca6;   /* $2952 */
++    g_handlers_2832[73] = h027_2cfa;   /* $2956 */
++    g_handlers_2832[74] = h027_2d30;   /* $295A */
++    g_handlers_2832[75] = h027_2d46;   /* $295E */
++    g_handlers_2832[76] = h027_2fe2;   /* $2962 */
++    g_handlers_2832[78] = h027_3160;   /* $296A */
++    g_handlers_2832[79] = h027_3292;   /* $296E */
++    g_handlers_2832[80] = h027_3612;   /* $2972 */
++    g_handlers_2832[81] = h027_3636;   /* $2976 */
++    g_handlers_2832[85] = h027_37c2;   /* $2986 */
++    g_handlers_2832[86] = h027_37e4;   /* $298A */
++    g_handlers_2832[87] = h027_3806;   /* $298E */
++    g_handlers_2832[88] = h027_3842;   /* $2992 */
++    g_handlers_2832[90] = h027_38e2;   /* $299A */
++    g_handlers_2832[91] = h027_41f6;   /* $299E */
++    g_handlers_2832[92] = h027_3916;   /* $29A2 */
++    g_handlers_2832[93] = h027_3982;   /* $29A6 */
++    g_handlers_2832[94] = h027_3a46;   /* $29AA */
++    g_handlers_2832[95] = h027_3a84;   /* $29AE */
++    g_handlers_2832[96] = h027_3aaa;   /* $29B2 */
++    g_handlers_2832[97] = h027_3ac8;   /* $29B6 */
++    g_handlers_2832[98] = h027_3afc;   /* $29BA */
++    g_handlers_2832[99] = h027_3b34;   /* $29BE */
++    g_handlers_2832[100] = h027_3bc0;   /* $29C2 */
++    g_handlers_2832[101] = h027_3c14;   /* $29C6 */
++    g_handlers_2832[102] = h027_3c2a;   /* $29CA */
++    g_handlers_2832[104] = h027_3c88;   /* $29D2 */
++    g_handlers_2832[105] = h027_3d02;   /* $29D6 */
++    g_handlers_2832[106] = h027_3d28;   /* $29DA */
++    g_handlers_2832[107] = h027_3e6c;   /* $29DE */
++    g_handlers_2832[108] = h027_3e9c;   /* $29E2 */
++    g_handlers_2832[109] = h027_3eb2;   /* $29E6 */
++    g_handlers_2832[110] = h027_3f1e;   /* $29EA */
++    g_handlers_2832[111] = h027_3f72;   /* $29EE */
++    g_handlers_2832[112] = h027_4012;   /* $29F2 */
++    g_handlers_2832[113] = h027_4028;   /* $29F6 */
++    g_handlers_2832[114] = h027_408a;   /* $29FA */
++    g_handlers_2832[115] = h027_40ee;   /* $29FE */
++    g_handlers_2832[116] = h027_4104;   /* $2A02 */
++    g_handlers_2832[117] = h027_418e;   /* $2A06 */
++    g_handlers_2832[118] = h027_41aa;   /* $2A0A */
++    g_handlers_2832[119] = h027_420c;   /* $2A0E */
++}
+diff --git a/src_c/readable/h027.h b/src_c/readable/h027.h
+new file mode 100644
+index 0000000..16ef46f
+--- /dev/null
++++ b/src_c/readable/h027.h
+@@ -0,0 +1,7 @@
++/* H027: gestori di effetti/abilita' del gioco. */
++#ifndef COK_H027_H
++#define COK_H027_H
++
++void install_effect_handlers(void);     /* H027+$4276 */
++
++#endif
+diff --git a/src_c/readable/h029_gfx.c b/src_c/readable/h029_gfx.c
+index 653735a..591cecb 100644
+--- a/src_c/readable/h029_gfx.c
++++ b/src_c/readable/h029_gfx.c
+@@ -431,3 +431,58 @@ void load_indexed_gfx_record(u16 name_len, const char *name, u16 id,
+     transfer_gfx_planes(data, offset, last_plane, mask_color, rec);
+     exec_free_mem(data, size);
+ }
++
++/*
++ * PORT H029+$0EFE: ricolora il record: ogni colore from[i] diverso da
++ * to[i] diventa to[i].  frame < 0: tutto il record; altrimenti la colonna
++ * di unita' frame (larghezza count*8 + 1, come nell'originale).  Lavora su
++ * una copia temporanea con maschera: per ogni colore, maschera dei pixel
++ * di quel colore (H029+$0766) e inversione ($90) dei piani in cui from e
++ * to differiscono.  Le due tabelle sono passate per valore (16 byte sullo
++ * stack ciascuna); qui si copiano.
++ */
++void remap_gfx_colors(const u8 from[16], const u8 to[16], s16 frame,
++                      struct GfxRecord *rec)
++{
++    u8 from_copy[16];           /* $22(a5) */
++    u8 to_copy[16];             /* $12(a5) */
++    struct GfxRecord *temp = NULL;      /* -$14 */
++    u16 x0;                     /* -$A */
++    u16 x1;                     /* -$C */
++    u16 width;                  /* -$E */
++    u16 i;                      /* -$10 */
++    s16 p;                      /* -$8 */
++    u8 bit;                     /* -$15 */
++
++    if (rec == NULL) {
++        return;
++    }
++    memcpy(from_copy, from, 16);
++    memcpy(to_copy, to, 16);
++    if (frame < 0) {
++        x0 = 0;
++        x1 = (u16)((u16)(rec->count << 3) * rec->width8 - 1);
++    } else {
++        x0 = (u16)((u16)(rec->count << 3) * (u16)frame);
++        x1 = (u16)((rec->count << 3) + x0);
++    }
++    width = (u16)(x1 - x0 + 1);
++    allocate_gfx_record(rec->rows, (u16)(width >> 3), 1, 1, &temp);
++    (void)graphics_blt_bitmap(rec->image, x0, 0, temp->image, 0, 0, width,
++                              rec->rows, 0xC0, 0xFF, NULL);
++    for (i = 0; i <= 0x0F; ++i) {
++        if (from_copy[i] == to_copy[i]) {
++            continue;
++        }
++        build_gfx_mask(from_copy[i], temp);
++        for (p = 0; p <= 4; ++p) {
++            bit = (u8)(1u << p);
++            if ((from_copy[i] & bit) != (to_copy[i] & bit)) {
++                (void)graphics_blt_bitmap(temp->mask, 0, 0, rec->image, x0,
++                                          0, width, rec->rows, 0x90, bit,
++                                          NULL);
++            }
++        }
++    }
++    free_gfx_record(&temp);
++}
+diff --git a/src_c/readable/h029_gfx.h b/src_c/readable/h029_gfx.h
+index e968ee2..1f90fa8 100644
+--- a/src_c/readable/h029_gfx.h
++++ b/src_c/readable/h029_gfx.h
+@@ -9,6 +9,8 @@
+ void allocate_gfx_record(u16 rows, u16 count, u16 width8, u16 with_mask,
+                          struct GfxRecord **rec);       /* H029+$0408 */
+ void free_pointer_data(void);           /* H029+$0180 */
++void remap_gfx_colors(const u8 from[16], const u8 to[16], s16 frame,
++                      struct GfxRecord *rec);           /* H029+$0EFE */
+ void free_gfx_record(struct GfxRecord **rec);           /* H029+$067A */
+ void load_indexed_gfx_record(u16 name_len, const char *name, u16 id,
+                              u16 with_mask, u8 mask_color,
+diff --git a/src_c/readable/h033.c b/src_c/readable/h033.c
+index 5a43d46..e72d68c 100644
+--- a/src_c/readable/h033.c
++++ b/src_c/readable/h033.c
+@@ -1,7 +1,137 @@
+ /* H033: Vettori e servizi condivisi di azioni/oggetti; dettaglio parziale. */
+-#include "cok.h"
++#include "globals.h"
++#include "unported.h"
+ 
+ /* PORT H033+$00E0: link/unlk, nessun effetto. */
+ void h033_init(void)
+ {
+ }
++
++/*
++ * PORT H033+$1A50: installa i gestori delle azioni (tabella H005+$25C0) e
++ * le voci di H033/H085 della tabella degli effetti (H005+$2832); azzera
++ * alcuni stati.
++ */
++void install_action_handlers(void)
++{
++    g_handlers_25c0[107] = h033_12d4;   /* $276C */
++    H005_B(0x24AA) = 0;
++    H005_B(0x24D9) = 0;
++    H005_SET_L(0x251C, 0);
++    H005_B(0x24A8) = 1;
++    g_handlers_25c0[0] = h085_1c60;   /* $25C0 */
++    g_handlers_25c0[1] = h085_1c86;   /* $25C4 */
++    g_handlers_25c0[2] = h085_1cb8;   /* $25C8 */
++    g_handlers_25c0[3] = h085_1d3c;   /* $25CC */
++    g_handlers_25c0[4] = h085_3e4a;   /* $25D0 */
++    g_handlers_25c0[5] = h085_3e78;   /* $25D4 */
++    g_handlers_25c0[6] = h085_3e78;   /* $25D8 */
++    g_handlers_25c0[7] = h085_1d78;   /* $25DC */
++    g_handlers_25c0[8] = h085_1da6;   /* $25E0 */
++    g_handlers_25c0[9] = h085_1de4;   /* $25E4 */
++    g_handlers_25c0[10] = h085_3e4a;   /* $25E8 */
++    g_handlers_25c0[11] = h085_1eba;   /* $25EC */
++    g_handlers_25c0[12] = h085_1ffa;   /* $25F0 */
++    g_handlers_25c0[13] = h085_2090;   /* $25F4 */
++    g_handlers_25c0[14] = h085_20de;   /* $25F8 */
++    g_handlers_25c0[15] = h085_3e78;   /* $25FC */
++    g_handlers_25c0[16] = h085_3e78;   /* $2600 */
++    g_handlers_25c0[17] = h085_3e4a;   /* $2604 */
++    g_handlers_25c0[18] = h085_2144;   /* $2608 */
++    g_handlers_25c0[19] = h085_2172;   /* $260C */
++    g_handlers_25c0[20] = h085_21c8;   /* $2610 */
++    g_handlers_25c0[21] = h085_3e4a;   /* $2614 */
++    g_handlers_25c0[22] = h085_2338;   /* $2618 */
++    g_handlers_25c0[23] = h085_23b8;   /* $261C */
++    g_handlers_25c0[24] = h085_23e6;   /* $2620 */
++    g_handlers_25c0[25] = h085_2414;   /* $2624 */
++    g_handlers_25c0[26] = h085_24c6;   /* $2628 */
++    g_handlers_25c0[27] = h085_25b8;   /* $262C */
++    g_handlers_25c0[28] = h085_3e4a;   /* $2630 */
++    g_handlers_25c0[29] = h085_3ea6;   /* $2634 */
++    g_handlers_25c0[30] = h085_25fa;   /* $2638 */
++    g_handlers_25c0[31] = h085_2628;   /* $263C */
++    g_handlers_25c0[32] = h085_2692;   /* $2640 */
++    g_handlers_25c0[33] = h085_26c0;   /* $2644 */
++    g_handlers_25c0[34] = h085_2bd4;   /* $2648 */
++    g_handlers_25c0[35] = h033_1a40;   /* $264C */
++    g_handlers_25c0[36] = h085_2dba;   /* $2650 */
++    g_handlers_25c0[37] = h085_2dfa;   /* $2654 */
++    g_handlers_25c0[38] = h085_2e28;   /* $2658 */
++    g_handlers_25c0[39] = h085_2e40;   /* $265C */
++    g_handlers_25c0[40] = h085_3ed4;   /* $2660 */
++    g_handlers_25c0[41] = h085_2e70;   /* $2664 */
++    g_handlers_25c0[42] = h085_2ec4;   /* $2668 */
++    g_handlers_25c0[43] = h085_2fce;   /* $266C */
++    g_handlers_25c0[44] = h085_2ffc;   /* $2670 */
++    g_handlers_25c0[45] = h085_3ed4;   /* $2674 */
++    g_handlers_25c0[46] = h085_15fe;   /* $2678 */
++    g_handlers_25c0[47] = h085_318a;   /* $267C */
++    g_handlers_25c0[48] = h085_2338;   /* $2680 */
++    g_handlers_25c0[49] = h085_3ea6;   /* $2684 */
++    g_handlers_25c0[50] = h085_31b4;   /* $2688 */
++    g_handlers_25c0[51] = h085_3e78;   /* $268C */
++    g_handlers_25c0[52] = h085_3e78;   /* $2690 */
++    g_handlers_25c0[53] = h085_3e78;   /* $2694 */
++    g_handlers_25c0[54] = h085_3224;   /* $2698 */
++    g_handlers_25c0[55] = h033_1a40;   /* $269C */
++    g_handlers_25c0[56] = h085_3252;   /* $26A0 */
++    g_handlers_25c0[57] = h085_3298;   /* $26A4 */
++    g_handlers_25c0[58] = h085_331e;   /* $26A8 */
++    g_handlers_25c0[59] = h085_33a8;   /* $26AC */
++    g_handlers_25c0[60] = h085_3402;   /* $26B0 */
++    g_handlers_25c0[61] = h085_3430;   /* $26B4 */
++    g_handlers_25c0[62] = h085_3482;   /* $26B8 */
++    g_handlers_25c0[63] = h085_15fe;   /* $26BC */
++    g_handlers_25c0[64] = h085_34b0;   /* $26C0 */
++    g_handlers_25c0[65] = h085_34f0;   /* $26C4 */
++    g_handlers_25c0[66] = h085_3552;   /* $26C8 */
++    g_handlers_25c0[67] = h085_363e;   /* $26CC */
++    g_handlers_25c0[68] = h085_3e78;   /* $26D0 */
++    g_handlers_25c0[69] = h085_36b8;   /* $26D4 */
++    g_handlers_25c0[70] = h033_1a40;   /* $26D8 */
++    g_handlers_25c0[71] = h033_1a40;   /* $26DC */
++    g_handlers_25c0[72] = h033_1a40;   /* $26E0 */
++    g_handlers_25c0[73] = h033_1a40;   /* $26E4 */
++    g_handlers_25c0[74] = h033_1a40;   /* $26E8 */
++    g_handlers_25c0[75] = h033_1a40;   /* $26EC */
++    g_handlers_25c0[76] = h033_1a40;   /* $26F0 */
++    g_handlers_25c0[77] = h033_1a40;   /* $26F4 */
++    g_handlers_25c0[78] = h033_1a40;   /* $26F8 */
++    g_handlers_25c0[79] = h033_1a40;   /* $26FC */
++    g_handlers_25c0[80] = h085_3758;   /* $2700 */
++    g_handlers_25c0[81] = h085_37e2;   /* $2704 */
++    g_handlers_25c0[82] = h085_38aa;   /* $2708 */
++    g_handlers_25c0[83] = h085_3936;   /* $270C */
++    g_handlers_25c0[84] = h085_3a5e;   /* $2710 */
++    g_handlers_25c0[85] = h085_3c06;   /* $2714 */
++    g_handlers_25c0[86] = h085_3d0a;   /* $2718 */
++    g_handlers_25c0[87] = h085_3d46;   /* $271C */
++    g_handlers_25c0[88] = h085_2ec4;   /* $2720 */
++    g_handlers_25c0[89] = h033_1a40;   /* $2724 */
++    g_handlers_25c0[90] = h033_1a40;   /* $2728 */
++    g_handlers_25c0[91] = h033_1a40;   /* $272C */
++    g_handlers_25c0[92] = h033_1a40;   /* $2730 */
++    g_handlers_25c0[93] = h033_1a40;   /* $2734 */
++    g_handlers_25c0[94] = h085_3d74;   /* $2738 */
++    g_handlers_25c0[95] = h085_3da0;   /* $273C */
++    g_handlers_25c0[96] = h085_3dcc;   /* $2740 */
++    g_handlers_25c0[97] = h033_1a40;   /* $2744 */
++    g_handlers_25c0[98] = h085_3df8;   /* $2748 */
++    g_handlers_25c0[99] = h085_2fce;   /* $274C */
++    g_handlers_25c0[100] = h085_3e78;   /* $2750 */
++    g_handlers_25c0[101] = h085_23e6;   /* $2754 */
++    g_handlers_25c0[102] = h085_3e4a;   /* $2758 */
++    g_handlers_25c0[103] = h085_2ec4;   /* $275C */
++    g_handlers_25c0[104] = h085_1c60;   /* $2760 */
++    g_handlers_25c0[105] = h085_1de4;   /* $2764 */
++    g_handlers_25c0[106] = h085_1da6;   /* $2768 */
++    g_handlers_2832[3] = h085_4a02;   /* $283E */
++    g_handlers_2832[5] = h085_172a;   /* $2846 */
++    g_handlers_2832[103] = h085_172a;   /* $29CE */
++    g_handlers_2832[82] = h085_172a;   /* $297A */
++    g_handlers_2832[83] = h085_442e;   /* $297E */
++    g_handlers_2832[84] = h085_4628;   /* $2982 */
++    g_handlers_2832[89] = h085_4798;   /* $2996 */
++    g_handlers_2832[77] = h085_431a;   /* $2966 */
++}
+diff --git a/src_c/readable/h033.h b/src_c/readable/h033.h
+new file mode 100644
+index 0000000..bef12ed
+--- /dev/null
++++ b/src_c/readable/h033.h
+@@ -0,0 +1,7 @@
++/* H033: vettori e servizi condivisi di azioni/oggetti. */
++#ifndef COK_H033_H
++#define COK_H033_H
++
++void install_action_handlers(void);     /* H033+$1A50 */
++
++#endif
+diff --git a/src_c/readable/h035.c b/src_c/readable/h035.c
+index 1d02fa6..2fac4b7 100644
+--- a/src_c/readable/h035.c
++++ b/src_c/readable/h035.c
+@@ -1,7 +1,46 @@
+ /* H035: caricamento set 24x24 e risorse COMSPR. */
+-#include "cok.h"
++#include "h035.h"
++#include "h026_string.h"
++#include "h029_gfx.h"
++#include "h045.h"
++#include "globals.h"
+ 
+ /* PORT H035+$0032: link/unlk, nessun effetto. */
+ void h035_init(void)
+ {
+ }
++
++/*
++ * PORT H035+$0246: carica la coppia di set 24x24 del posto slot: record
++ * id e id+$80.  I contenitori "COMSPR" e "ICON" (nome intero, senza
++ * distinzione di maiuscole) hanno la maschera (colore trasparente 8); gli
++ * altri hanno il gruppo di risorse in coda al nome e vengono ricolorati
++ * con le tabelle H005+$3DA2 (da) e H005+$3D92 (a).  Il prefisso di 5
++ * caratteri e' calcolato ma non usato, come nell'originale.
++ */
++void load_sprite_set(u16 name_len, const char *name, u16 id, u16 slot)
++{
++    char full[0x52];            /* -$62 */
++    char prefix[6];             /* -$10 */
++    char group[2];              /* -$6 */
++
++    h026_copy(0x50, full, name_len, name);
++    h026_substr(6, prefix, 0x50, full, 0, 5);
++    if (h026_compare_nocase(0x50, full, 6, "COMSPR") == 1 ||
++        h026_compare_nocase(0x50, full, 4, "ICON") == 1) {
++        load_indexed_gfx_record(0x50, full, id, 1, 8,
++                                &g_sprite_sets[slot][0]);
++        load_indexed_gfx_record(0x50, full, (u16)(id + 0x80), 1, 8,
++                                &g_sprite_sets[slot][1]);
++        return;
++    }
++    format_number(1, group, (s32)G_RESOURCE_GROUP, 0, 0x0A, 1, '0');
++    h026_append(0x50, full, 1, group);
++    load_indexed_gfx_record(0x50, full, id, 1, 0, &g_sprite_sets[slot][0]);
++    remap_gfx_colors(&g_h005[0x3DA2], &g_h005[0x3D92], 0,
++                     g_sprite_sets[slot][0]);
++    load_indexed_gfx_record(0x50, full, (u16)(id + 0x80), 1, 0,
++                            &g_sprite_sets[slot][1]);
++    remap_gfx_colors(&g_h005[0x3DA2], &g_h005[0x3D92], 0,
++                     g_sprite_sets[slot][1]);
++}
+diff --git a/src_c/readable/h035.h b/src_c/readable/h035.h
+new file mode 100644
+index 0000000..9b1cdac
+--- /dev/null
++++ b/src_c/readable/h035.h
+@@ -0,0 +1,9 @@
++/* H035: caricamento set 24x24 e risorse COMSPR. */
++#ifndef COK_H035_H
++#define COK_H035_H
++
++#include "cok.h"
++
++void load_sprite_set(u16 name_len, const char *name, u16 id, u16 slot);
++                                                        /* H035+$0246 */
++#endif
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index 3cb5e8b..207f541 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -37,9 +37,182 @@ void h012_3150(void) { cok_unported("H012+$3150"); }
+ void h013_4bfc(void) { cok_unported("H013+$4BFC"); }
+ 
+ /* Chiamate da H006+$01AE. */
+-void h006_00fa(void) { cok_unported("H006+$00FA"); }
+-void h027_4276(void) { cok_unported("H027+$4276"); }
+ void h014_0018(u16 len, const char *msg, u16 value) { (void)len; (void)msg; (void)value; cok_unported("H014+$0018"); }
+-void h033_1a50(void) { cok_unported("H033+$1A50"); }
+-void h035_0246(u16 a, const char *name, u16 b, u16 c) { (void)a; (void)name; (void)b; (void)c; cok_unported("H035+$0246"); }
+ void h010_0974(void) { cok_unported("H010+$0974"); }
++
++/* Gestori delle tabelle H005+$25C0 e H005+$2832 (H027+$4276, H033+$1A50). */
++void h027_0312(void) { cok_unported("H027+$0312"); }
++void h027_0364(void) { cok_unported("H027+$0364"); }
++void h027_0390(void) { cok_unported("H027+$0390"); }
++void h027_03d6(void) { cok_unported("H027+$03D6"); }
++void h027_0492(void) { cok_unported("H027+$0492"); }
++void h027_05c6(void) { cok_unported("H027+$05C6"); }
++void h027_0622(void) { cok_unported("H027+$0622"); }
++void h027_067c(void) { cok_unported("H027+$067C"); }
++void h027_06d4(void) { cok_unported("H027+$06D4"); }
++void h027_07f4(void) { cok_unported("H027+$07F4"); }
++void h027_080a(void) { cok_unported("H027+$080A"); }
++void h027_08fc(void) { cok_unported("H027+$08FC"); }
++void h027_0912(void) { cok_unported("H027+$0912"); }
++void h027_098e(void) { cok_unported("H027+$098E"); }
++void h027_09a4(void) { cok_unported("H027+$09A4"); }
++void h027_0a00(void) { cok_unported("H027+$0A00"); }
++void h027_0a3e(void) { cok_unported("H027+$0A3E"); }
++void h027_0a9e(void) { cok_unported("H027+$0A9E"); }
++void h027_0afe(void) { cok_unported("H027+$0AFE"); }
++void h027_0b7a(void) { cok_unported("H027+$0B7A"); }
++void h027_0d70(void) { cok_unported("H027+$0D70"); }
++void h027_0db8(void) { cok_unported("H027+$0DB8"); }
++void h027_0e18(void) { cok_unported("H027+$0E18"); }
++void h027_0ec6(void) { cok_unported("H027+$0EC6"); }
++void h027_0efc(void) { cok_unported("H027+$0EFC"); }
++void h027_0fce(void) { cok_unported("H027+$0FCE"); }
++void h027_10cc(void) { cok_unported("H027+$10CC"); }
++void h027_1120(void) { cok_unported("H027+$1120"); }
++void h027_1162(void) { cok_unported("H027+$1162"); }
++void h027_1310(void) { cok_unported("H027+$1310"); }
++void h027_133c(void) { cok_unported("H027+$133C"); }
++void h027_1374(void) { cok_unported("H027+$1374"); }
++void h027_13f4(void) { cok_unported("H027+$13F4"); }
++void h027_1836(void) { cok_unported("H027+$1836"); }
++void h027_1878(void) { cok_unported("H027+$1878"); }
++void h027_18a4(void) { cok_unported("H027+$18A4"); }
++void h027_1956(void) { cok_unported("H027+$1956"); }
++void h027_1a0a(void) { cok_unported("H027+$1A0A"); }
++void h027_1a42(void) { cok_unported("H027+$1A42"); }
++void h027_1b88(void) { cok_unported("H027+$1B88"); }
++void h027_1bfe(void) { cok_unported("H027+$1BFE"); }
++void h027_1c7a(void) { cok_unported("H027+$1C7A"); }
++void h027_1cf6(void) { cok_unported("H027+$1CF6"); }
++void h027_1d0c(void) { cok_unported("H027+$1D0C"); }
++void h027_1d3c(void) { cok_unported("H027+$1D3C"); }
++void h027_1d80(void) { cok_unported("H027+$1D80"); }
++void h027_1e1a(void) { cok_unported("H027+$1E1A"); }
++void h027_1e3c(void) { cok_unported("H027+$1E3C"); }
++void h027_2028(void) { cok_unported("H027+$2028"); }
++void h027_20da(void) { cok_unported("H027+$20DA"); }
++void h027_2138(void) { cok_unported("H027+$2138"); }
++void h027_224c(void) { cok_unported("H027+$224C"); }
++void h027_226c(void) { cok_unported("H027+$226C"); }
++void h027_228e(void) { cok_unported("H027+$228E"); }
++void h027_2400(void) { cok_unported("H027+$2400"); }
++void h027_25ba(void) { cok_unported("H027+$25BA"); }
++void h027_2646(void) { cok_unported("H027+$2646"); }
++void h027_266a(void) { cok_unported("H027+$266A"); }
++void h027_29e2(void) { cok_unported("H027+$29E2"); }
++void h027_2b3e(void) { cok_unported("H027+$2B3E"); }
++void h027_2ca6(void) { cok_unported("H027+$2CA6"); }
++void h027_2cfa(void) { cok_unported("H027+$2CFA"); }
++void h027_2d30(void) { cok_unported("H027+$2D30"); }
++void h027_2d46(void) { cok_unported("H027+$2D46"); }
++void h027_2fe2(void) { cok_unported("H027+$2FE2"); }
++void h027_3160(void) { cok_unported("H027+$3160"); }
++void h027_3292(void) { cok_unported("H027+$3292"); }
++void h027_3612(void) { cok_unported("H027+$3612"); }
++void h027_3636(void) { cok_unported("H027+$3636"); }
++void h027_37c2(void) { cok_unported("H027+$37C2"); }
++void h027_37e4(void) { cok_unported("H027+$37E4"); }
++void h027_3806(void) { cok_unported("H027+$3806"); }
++void h027_3842(void) { cok_unported("H027+$3842"); }
++void h027_38e2(void) { cok_unported("H027+$38E2"); }
++void h027_3916(void) { cok_unported("H027+$3916"); }
++void h027_3982(void) { cok_unported("H027+$3982"); }
++void h027_3a46(void) { cok_unported("H027+$3A46"); }
++void h027_3a84(void) { cok_unported("H027+$3A84"); }
++void h027_3aaa(void) { cok_unported("H027+$3AAA"); }
++void h027_3ac8(void) { cok_unported("H027+$3AC8"); }
++void h027_3afc(void) { cok_unported("H027+$3AFC"); }
++void h027_3b34(void) { cok_unported("H027+$3B34"); }
++void h027_3bc0(void) { cok_unported("H027+$3BC0"); }
++void h027_3c14(void) { cok_unported("H027+$3C14"); }
++void h027_3c2a(void) { cok_unported("H027+$3C2A"); }
++void h027_3c88(void) { cok_unported("H027+$3C88"); }
++void h027_3d02(void) { cok_unported("H027+$3D02"); }
++void h027_3d28(void) { cok_unported("H027+$3D28"); }
++void h027_3e6c(void) { cok_unported("H027+$3E6C"); }
++void h027_3e9c(void) { cok_unported("H027+$3E9C"); }
++void h027_3eb2(void) { cok_unported("H027+$3EB2"); }
++void h027_3f1e(void) { cok_unported("H027+$3F1E"); }
++void h027_3f72(void) { cok_unported("H027+$3F72"); }
++void h027_4012(void) { cok_unported("H027+$4012"); }
++void h027_4028(void) { cok_unported("H027+$4028"); }
++void h027_408a(void) { cok_unported("H027+$408A"); }
++void h027_40ee(void) { cok_unported("H027+$40EE"); }
++void h027_4104(void) { cok_unported("H027+$4104"); }
++void h027_418e(void) { cok_unported("H027+$418E"); }
++void h027_41aa(void) { cok_unported("H027+$41AA"); }
++void h027_41f6(void) { cok_unported("H027+$41F6"); }
++void h027_420c(void) { cok_unported("H027+$420C"); }
++void h033_12d4(void) { cok_unported("H033+$12D4"); }
++void h033_1a40(void) { cok_unported("H033+$1A40"); }
++void h085_15fe(void) { cok_unported("H085+$15FE"); }
++void h085_172a(void) { cok_unported("H085+$172A"); }
++void h085_1c60(void) { cok_unported("H085+$1C60"); }
++void h085_1c86(void) { cok_unported("H085+$1C86"); }
++void h085_1cb8(void) { cok_unported("H085+$1CB8"); }
++void h085_1d3c(void) { cok_unported("H085+$1D3C"); }
++void h085_1d78(void) { cok_unported("H085+$1D78"); }
++void h085_1da6(void) { cok_unported("H085+$1DA6"); }
++void h085_1de4(void) { cok_unported("H085+$1DE4"); }
++void h085_1eba(void) { cok_unported("H085+$1EBA"); }
++void h085_1ffa(void) { cok_unported("H085+$1FFA"); }
++void h085_2090(void) { cok_unported("H085+$2090"); }
++void h085_20de(void) { cok_unported("H085+$20DE"); }
++void h085_2144(void) { cok_unported("H085+$2144"); }
++void h085_2172(void) { cok_unported("H085+$2172"); }
++void h085_21c8(void) { cok_unported("H085+$21C8"); }
++void h085_2338(void) { cok_unported("H085+$2338"); }
++void h085_23b8(void) { cok_unported("H085+$23B8"); }
++void h085_23e6(void) { cok_unported("H085+$23E6"); }
++void h085_2414(void) { cok_unported("H085+$2414"); }
++void h085_24c6(void) { cok_unported("H085+$24C6"); }
++void h085_25b8(void) { cok_unported("H085+$25B8"); }
++void h085_25fa(void) { cok_unported("H085+$25FA"); }
++void h085_2628(void) { cok_unported("H085+$2628"); }
++void h085_2692(void) { cok_unported("H085+$2692"); }
++void h085_26c0(void) { cok_unported("H085+$26C0"); }
++void h085_2bd4(void) { cok_unported("H085+$2BD4"); }
++void h085_2dba(void) { cok_unported("H085+$2DBA"); }
++void h085_2dfa(void) { cok_unported("H085+$2DFA"); }
++void h085_2e28(void) { cok_unported("H085+$2E28"); }
++void h085_2e40(void) { cok_unported("H085+$2E40"); }
++void h085_2e70(void) { cok_unported("H085+$2E70"); }
++void h085_2ec4(void) { cok_unported("H085+$2EC4"); }
++void h085_2fce(void) { cok_unported("H085+$2FCE"); }
++void h085_2ffc(void) { cok_unported("H085+$2FFC"); }
++void h085_318a(void) { cok_unported("H085+$318A"); }
++void h085_31b4(void) { cok_unported("H085+$31B4"); }
++void h085_3224(void) { cok_unported("H085+$3224"); }
++void h085_3252(void) { cok_unported("H085+$3252"); }
++void h085_3298(void) { cok_unported("H085+$3298"); }
++void h085_331e(void) { cok_unported("H085+$331E"); }
++void h085_33a8(void) { cok_unported("H085+$33A8"); }
++void h085_3402(void) { cok_unported("H085+$3402"); }
++void h085_3430(void) { cok_unported("H085+$3430"); }
++void h085_3482(void) { cok_unported("H085+$3482"); }
++void h085_34b0(void) { cok_unported("H085+$34B0"); }
++void h085_34f0(void) { cok_unported("H085+$34F0"); }
++void h085_3552(void) { cok_unported("H085+$3552"); }
++void h085_363e(void) { cok_unported("H085+$363E"); }
++void h085_36b8(void) { cok_unported("H085+$36B8"); }
++void h085_3758(void) { cok_unported("H085+$3758"); }
++void h085_37e2(void) { cok_unported("H085+$37E2"); }
++void h085_38aa(void) { cok_unported("H085+$38AA"); }
++void h085_3936(void) { cok_unported("H085+$3936"); }
++void h085_3a5e(void) { cok_unported("H085+$3A5E"); }
++void h085_3c06(void) { cok_unported("H085+$3C06"); }
++void h085_3d0a(void) { cok_unported("H085+$3D0A"); }
++void h085_3d46(void) { cok_unported("H085+$3D46"); }
++void h085_3d74(void) { cok_unported("H085+$3D74"); }
++void h085_3da0(void) { cok_unported("H085+$3DA0"); }
++void h085_3dcc(void) { cok_unported("H085+$3DCC"); }
++void h085_3df8(void) { cok_unported("H085+$3DF8"); }
++void h085_3e4a(void) { cok_unported("H085+$3E4A"); }
++void h085_3e78(void) { cok_unported("H085+$3E78"); }
++void h085_3ea6(void) { cok_unported("H085+$3EA6"); }
++void h085_3ed4(void) { cok_unported("H085+$3ED4"); }
++void h085_431a(void) { cok_unported("H085+$431A"); }
++void h085_442e(void) { cok_unported("H085+$442E"); }
++void h085_4628(void) { cok_unported("H085+$4628"); }
++void h085_4798(void) { cok_unported("H085+$4798"); }
++void h085_4a02(void) { cok_unported("H085+$4A02"); }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index 84d36bd..711a293 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -11,11 +11,7 @@
+ 
+ void h006_0914(void);
+ void h010_0974(void);
+-void h006_00fa(void);
+-void h027_4276(void);
+ void h014_0018(u16 len, const char *msg, u16 value);
+-void h033_1a50(void);
+-void h035_0246(u16 a, const char *name, u16 b, u16 c);
+ void h007_09d8(void);
+ u8   h008_01fc(u8 *special, u8 cycle, u8 numeric, u16 sel_pen,
+                u16 normal_pen, u16 title_pen, const char *option,
+@@ -26,4 +22,181 @@ void h011_04a6(u16 a, u16 b, u16 c, u16 d);
+ void h012_3150(void);
+ void h013_4bfc(void);
+ 
++/* Gestori delle tabelle H005+$25C0 e H005+$2832. */
++void h027_0312(void);
++void h027_0364(void);
++void h027_0390(void);
++void h027_03d6(void);
++void h027_0492(void);
++void h027_05c6(void);
++void h027_0622(void);
++void h027_067c(void);
++void h027_06d4(void);
++void h027_07f4(void);
++void h027_080a(void);
++void h027_08fc(void);
++void h027_0912(void);
++void h027_098e(void);
++void h027_09a4(void);
++void h027_0a00(void);
++void h027_0a3e(void);
++void h027_0a9e(void);
++void h027_0afe(void);
++void h027_0b7a(void);
++void h027_0d70(void);
++void h027_0db8(void);
++void h027_0e18(void);
++void h027_0ec6(void);
++void h027_0efc(void);
++void h027_0fce(void);
++void h027_10cc(void);
++void h027_1120(void);
++void h027_1162(void);
++void h027_1310(void);
++void h027_133c(void);
++void h027_1374(void);
++void h027_13f4(void);
++void h027_1836(void);
++void h027_1878(void);
++void h027_18a4(void);
++void h027_1956(void);
++void h027_1a0a(void);
++void h027_1a42(void);
++void h027_1b88(void);
++void h027_1bfe(void);
++void h027_1c7a(void);
++void h027_1cf6(void);
++void h027_1d0c(void);
++void h027_1d3c(void);
++void h027_1d80(void);
++void h027_1e1a(void);
++void h027_1e3c(void);
++void h027_2028(void);
++void h027_20da(void);
++void h027_2138(void);
++void h027_224c(void);
++void h027_226c(void);
++void h027_228e(void);
++void h027_2400(void);
++void h027_25ba(void);
++void h027_2646(void);
++void h027_266a(void);
++void h027_29e2(void);
++void h027_2b3e(void);
++void h027_2ca6(void);
++void h027_2cfa(void);
++void h027_2d30(void);
++void h027_2d46(void);
++void h027_2fe2(void);
++void h027_3160(void);
++void h027_3292(void);
++void h027_3612(void);
++void h027_3636(void);
++void h027_37c2(void);
++void h027_37e4(void);
++void h027_3806(void);
++void h027_3842(void);
++void h027_38e2(void);
++void h027_3916(void);
++void h027_3982(void);
++void h027_3a46(void);
++void h027_3a84(void);
++void h027_3aaa(void);
++void h027_3ac8(void);
++void h027_3afc(void);
++void h027_3b34(void);
++void h027_3bc0(void);
++void h027_3c14(void);
++void h027_3c2a(void);
++void h027_3c88(void);
++void h027_3d02(void);
++void h027_3d28(void);
++void h027_3e6c(void);
++void h027_3e9c(void);
++void h027_3eb2(void);
++void h027_3f1e(void);
++void h027_3f72(void);
++void h027_4012(void);
++void h027_4028(void);
++void h027_408a(void);
++void h027_40ee(void);
++void h027_4104(void);
++void h027_418e(void);
++void h027_41aa(void);
++void h027_41f6(void);
++void h027_420c(void);
++void h033_12d4(void);
++void h033_1a40(void);
++void h085_15fe(void);
++void h085_172a(void);
++void h085_1c60(void);
++void h085_1c86(void);
++void h085_1cb8(void);
++void h085_1d3c(void);
++void h085_1d78(void);
++void h085_1da6(void);
++void h085_1de4(void);
++void h085_1eba(void);
++void h085_1ffa(void);
++void h085_2090(void);
++void h085_20de(void);
++void h085_2144(void);
++void h085_2172(void);
++void h085_21c8(void);
++void h085_2338(void);
++void h085_23b8(void);
++void h085_23e6(void);
++void h085_2414(void);
++void h085_24c6(void);
++void h085_25b8(void);
++void h085_25fa(void);
++void h085_2628(void);
++void h085_2692(void);
++void h085_26c0(void);
++void h085_2bd4(void);
++void h085_2dba(void);
++void h085_2dfa(void);
++void h085_2e28(void);
++void h085_2e40(void);
++void h085_2e70(void);
++void h085_2ec4(void);
++void h085_2fce(void);
++void h085_2ffc(void);
++void h085_318a(void);
++void h085_31b4(void);
++void h085_3224(void);
++void h085_3252(void);
++void h085_3298(void);
++void h085_331e(void);
++void h085_33a8(void);
++void h085_3402(void);
++void h085_3430(void);
++void h085_3482(void);
++void h085_34b0(void);
++void h085_34f0(void);
++void h085_3552(void);
++void h085_363e(void);
++void h085_36b8(void);
++void h085_3758(void);
++void h085_37e2(void);
++void h085_38aa(void);
++void h085_3936(void);
++void h085_3a5e(void);
++void h085_3c06(void);
++void h085_3d0a(void);
++void h085_3d46(void);
++void h085_3d74(void);
++void h085_3da0(void);
++void h085_3dcc(void);
++void h085_3df8(void);
++void h085_3e4a(void);
++void h085_3e78(void);
++void h085_3ea6(void);
++void h085_3ed4(void);
++void h085_431a(void);
++void h085_442e(void);
++void h085_4628(void);
++void h085_4798(void);
++void h085_4a02(void);
++
+ #endif
+-- 
+2.43.0
+

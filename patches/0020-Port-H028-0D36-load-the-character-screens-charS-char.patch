@@ -1,0 +1,392 @@
+From 1491b6b860f1fe55ccc3c0d5e494762a49e49f42 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 18:37:41 +0000
+Subject: [PATCH 20/65] Port H028+$0D36: load the character screens charS/charT
+
+Port H028+$0D36 and $0C68 (load charS.LBM and charT.LBM once, copy
+their palette to H005+$522E) and the H041 sized allocator ($000C,
+$004A, $00BE) used for their planes. dax_test now links h041.c and
+stubs the ILBM reader.
+
+Create New Character now continues after the name and stops at the
+unported H047+$00E6.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/CMakeLists.txt   |  2 +-
+ src_c/readable/PORT_STATUS.md   | 57 +++++++++++++++++----------------
+ src_c/readable/h013.c           |  3 +-
+ src_c/readable/h028_files.c     | 52 ++++++++++++++++++++++++++++--
+ src_c/readable/h028_files.h     |  1 +
+ src_c/readable/h041.c           | 36 ++++++++++++++++++++-
+ src_c/readable/h041.h           | 11 +++++++
+ src_c/readable/tests/dax_test.c | 11 +++++--
+ src_c/readable/unported.c       |  2 --
+ src_c/readable/unported.h       |  2 --
+ 10 files changed, 138 insertions(+), 39 deletions(-)
+ create mode 100644 src_c/readable/h041.h
+
+diff --git a/src_c/readable/CMakeLists.txt b/src_c/readable/CMakeLists.txt
+index 07c3d9b..470c649 100644
+--- a/src_c/readable/CMakeLists.txt
++++ b/src_c/readable/CMakeLists.txt
+@@ -114,7 +114,7 @@ if(COK_BUILD_TESTS)
+     endif()
+     # DAX_LoadBlock (H028): dax_test nome .ext id out.bin, poi
+     # scripts/check_dax.py file id out.bin (lettore indipendente).
+-    add_executable(dax_test tests/dax_test.c h028_files.c h026_string.c
++    add_executable(dax_test tests/dax_test.c h028_files.c h026_string.c h041.c
+                    h031.c h021_intuition.c h002_dos.c h003_exec.c globals.c
+                    ${COK_HOST_SOURCES})
+     target_include_directories(dax_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index c1e6dcc..0f12291 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **342 / 915**.
++Routine portate: **347 / 916**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -34,7 +34,7 @@ Routine portate: **342 / 915**.
+ | H025 | 264 | 2 | 2 |
+ | H026 | 1452 | 11 | 11 |
+ | H027 | 18156 | 10 | 2 |
+-| H028 | 4488 | 16 | 10 |
++| H028 | 4488 | 16 | 12 |
+ | H029 | 6084 | 32 | 20 |
+ | H030 | 3240 | 18 | 12 |
+ | H031 | 212 | 4 | 3 |
+@@ -47,7 +47,7 @@ Routine portate: **342 / 915**.
+ | H038 | 504 | 5 | 5 |
+ | H039 | 104 | 2 | 2 |
+ | H040 | 1632 | 5 | 5 |
+-| H041 | 240 | 3 | 1 |
++| H041 | 240 | 4 | 4 |
+ | H042 | 4420 | 14 | 2 |
+ | H043 | 6680 | 30 | 1 |
+ | H044 | 2668 | 10 | 5 |
+@@ -273,15 +273,15 @@ Routine portate: **342 / 915**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0506` | `module_init_H013` | parziale | h013.c:21 |
++| `$0506` | `module_init_H013` | parziale | h013.c:22 |
+ | `$0518` | `trampoline_H013_52E0` | parziale |  |
+ | `$051C` | `trampoline_H013_58DC` | parziale |  |
+ | `$0520` | `trampoline_H013_56CE` | parziale |  |
+-| `$0524` | `sub_H013_00000524` | parziale | h013.c:357 |
+-| `$07B2` | `sub_H013_000007B2` | parziale | h013.c:424 |
+-| `$08C2` | `trampoline_H013_097C` | parziale | h013.c:473 |
+-| `$0982` | `Create_Character` | parziale | h013.c:647 |
+-| `$0990` | `sub_H013_00000990` | parziale | h013.c:505 |
++| `$0524` | `sub_H013_00000524` | parziale | h013.c:358 |
++| `$07B2` | `sub_H013_000007B2` | parziale | h013.c:425 |
++| `$08C2` | `trampoline_H013_097C` | parziale | h013.c:474 |
++| `$0982` | `Create_Character` | parziale | h013.c:648 |
++| `$0990` | `sub_H013_00000990` | parziale | h013.c:506 |
+ | `$2B9A` | `trampoline_H013_2D70` | parziale |  |
+ | `$2D76` | `trampoline_H013_2E1A` | parziale |  |
+ | `$2E44` | `sub_H013_00002E44` | parziale |  |
+@@ -290,11 +290,11 @@ Routine portate: **342 / 915**.
+ | `$31EE` | `trampoline_H013_333C` | parziale |  |
+ | `$43E8` | `sub_H013_000043E8` | parziale |  |
+ | `$4508` | `sub_H013_00004508` | parziale |  |
+-| `$4BFC` | `Party_MainMenu` | verificato | h013.c:93 |
+-| `$4C0A` | `sub_H013_00004C0A` | parziale | h013.c:54 |
++| `$4BFC` | `Party_MainMenu` | verificato | h013.c:94 |
++| `$4C0A` | `sub_H013_00004C0A` | parziale | h013.c:55 |
+ | `$52E0` | `Add_CharacterToParty` | parziale |  |
+-| `$56CE` | `(senza scheda)` | - | h013.c:322 |
+-| `$58DC` | `(senza scheda)` | - | h013.c:1262 |
++| `$56CE` | `(senza scheda)` | - | h013.c:323 |
++| `$58DC` | `(senza scheda)` | - | h013.c:1263 |
+ 
+ ### H014
+ 
+@@ -450,21 +450,21 @@ Routine portate: **342 / 915**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$01B8` | `module_init_H028` | parziale | h028_files.c:18 |
+-| `$01C6` | `Open_WithRetry` | parziale | h028_files.c:46 |
+-| `$02D0` | `sub_H028_000002D0` | parziale | h028_files.c:27 |
++| `$01B8` | `module_init_H028` | parziale | h028_files.c:20 |
++| `$01C6` | `Open_WithRetry` | parziale | h028_files.c:48 |
++| `$02D0` | `sub_H028_000002D0` | parziale | h028_files.c:29 |
+ | `$033E` | `sub_H028_0000033E` | parziale |  |
+-| `$0408` | `sub_H028_00000408` | parziale | h028_files.c:86 |
+-| `$0576` | `sub_H028_00000576` | parziale | h028_files.c:128 |
+-| `$05FA` | `Open_ResourceFile` | parziale | h028_files.c:145 |
++| `$0408` | `sub_H028_00000408` | parziale | h028_files.c:88 |
++| `$0576` | `sub_H028_00000576` | parziale | h028_files.c:130 |
++| `$05FA` | `Open_ResourceFile` | parziale | h028_files.c:147 |
+ | `$07E0` | `sub_H028_000007E0` | parziale |  |
+ | `$08F0` | `sub_H028_000008F0` | parziale |  |
+-| `$09DC` | `DAX_DecompressRLE` | verificato | h028_files.c:194 |
+-| `$0B80` | `sub_H028_00000B80` | parziale | h028_files.c:265 |
+-| `$0C68` | `sub_H028_00000C68` | parziale |  |
+-| `$0D36` | `sub_H028_00000D36` | parziale |  |
+-| `$0D74` | `sub_H028_00000D74` | parziale | h028_files.c:376 |
+-| `$0DD8` | `DAX_LoadBlock` | verificato | h028_files.c:287 |
++| `$09DC` | `DAX_DecompressRLE` | verificato | h028_files.c:196 |
++| `$0B80` | `sub_H028_00000B80` | parziale | h028_files.c:267 |
++| `$0C68` | `sub_H028_00000C68` | parziale | h028_files.c:398 |
++| `$0D36` | `sub_H028_00000D36` | parziale | h028_files.c:430 |
++| `$0D74` | `sub_H028_00000D74` | parziale | h028_files.c:378 |
++| `$0DD8` | `DAX_LoadBlock` | verificato | h028_files.c:289 |
+ | `$1098` | `sub_H028_00001098` | parziale |  |
+ 
+ ### H029
+@@ -626,9 +626,10 @@ Routine portate: **342 / 915**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0004` | `trampoline_H041_00EC` | parziale | h041.c:4 |
+-| `$000C` | `sub_H041_0000000C` | parziale |  |
+-| `$00BE` | `sub_H041_000000BE` | parziale |  |
++| `$0004` | `trampoline_H041_00EC` | parziale | h041.c:5 |
++| `$000C` | `sub_H041_0000000C` | parziale | h041.c:11 |
++| `$004A` | `(senza scheda)` | - | h041.c:27 |
++| `$00BE` | `sub_H041_000000BE` | parziale | h041.c:33 |
+ 
+ ### H042
+ 
+diff --git a/src_c/readable/h013.c b/src_c/readable/h013.c
+index 90e156e..c77c69f 100644
+--- a/src_c/readable/h013.c
++++ b/src_c/readable/h013.c
+@@ -16,6 +16,7 @@
+ #include "h062.h"
+ #include "h073.h"
+ #include "h065.h"
++#include "h028_files.h"
+ #include "h063.h"
+ 
+ /* PORT H013+$0506: link/unlk, nessun effetto. */
+@@ -1228,7 +1229,7 @@ void create_character(void)
+         input_line(0x10, "Character name: ", 0x0D, 0, 0x0F, 0x0F,
+                    (char *)ch->b);
+     } while (ch->b[0] == 0);
+-    h028_0d36();
++    load_char_screens();
+     set_default_figure();
+     h047_00e6();
+     for (s = 0; s <= 5; ++s) {
+diff --git a/src_c/readable/h028_files.c b/src_c/readable/h028_files.c
+index da2208b..76a1a51 100644
+--- a/src_c/readable/h028_files.c
++++ b/src_c/readable/h028_files.c
+@@ -5,6 +5,8 @@
+ #include "h026_string.h"
+ #include "h003_exec.h"
+ #include "h031.h"
++#include "h040.h"
++#include "h041.h"
+ #include "unported.h"
+ #include "globals.h"
+ #include "h010_input.h"
+@@ -382,12 +384,58 @@ void free_char_screens(void)
+         return;
+     }
+     if (g_char_screen_s != NULL) {
+-        h041_00be(g_char_screen_s->Planes[0]);
++        sized_free(g_char_screen_s->Planes[0]);
+         exec_free_mem(g_char_screen_s, sizeof(struct BitMap));
+     }
+     if (g_char_screen_t != NULL) {
+-        h041_00be(g_char_screen_t->Planes[0]);
++        sized_free(g_char_screen_t->Planes[0]);
+         exec_free_mem(g_char_screen_t, sizeof(struct BitMap));
+     }
+     g_h028_mf9 = 0;
+ }
++
++/*
++ * PORT H028+$0C68: carica l'immagine ILBM name (parametro per valore) in
++ * una BitMap nuova (*bitmap, $28 byte) con i piani di H041+$004A; i suoi
++ * 32 colori vanno in H005+$522E ($40 byte), poi H005+$523E = colore 0 e
++ * colore 0 = nero.  Messaggio del disco H005+$3E08.
++ */
++static void load_char_screen(u16 name_len, const char *name,
++                             struct BitMap **bitmap)
++{
++    ILBMFrame frame;                    /* -$6e(a5) */
++    cok_bptr file = 0;                  /* -$4(a5) */
++    u16 i;
++
++    *bitmap = (struct BitMap *)exec_alloc_mem(sizeof(struct BitMap),
++                                              COK_MEMF_CLEAR);
++    if (open_resource_file(name_len, name, 0x1D,
++                           (const char *)&g_h005[0x3E08], 0, &file) &&
++        file != 0) {
++        (void)read_ilbm(file, *bitmap, &frame, sized_alloc_chip);
++        /*
++         * CopyMem dei colori: nel frame sono word native, in H005
++         * big-endian (sull'Amiga e' la stessa copia di $40 byte).
++         */
++        for (i = 0; i < 0x20; ++i) {
++            H005_SET_W(0x522E + i * 2, frame.color_map[i]);
++        }
++        H005_SET_W(0x523E, H005_W(0x522E));
++        H005_SET_W(0x522E, 0);
++        dos_close(file);
++    }
++}
++
++/*
++ * PORT H028+$0D36: carica una sola volta (flag -$F9) le schermate dei
++ * personaggi "charS.LBM" e "charT.LBM".
++ */
++void load_char_screens(void)
++{
++    if (g_h028_mf9) {
++        return;
++    }
++    load_char_screen(9, "charS.LBM", &g_char_screen_s);
++    load_char_screen(9, "charT.LBM", &g_char_screen_t);
++    g_h028_mf9 = 1;
++}
+diff --git a/src_c/readable/h028_files.h b/src_c/readable/h028_files.h
+index 72c1253..461c489 100644
+--- a/src_c/readable/h028_files.h
++++ b/src_c/readable/h028_files.h
+@@ -10,6 +10,7 @@ u8 file_exists(u16 len, const char *name);      /* H028+$02D0 */
+ u8 open_resource_file(u16 name_len, const char *name, u16 msg_len,
+                       const char *msg, u8 unused, cok_bptr *file);
+                                                 /* H028+$05FA */
++void load_char_screens(void);            /* H028+$0D36 */
+ void free_char_screens(void);            /* H028+$0D74 */
+ void dax_load_block(u16 name_len, const char *name, u16 ext_len,
+                     const char *ext, u16 id, u16 *size, u8 **data);
+diff --git a/src_c/readable/h041.c b/src_c/readable/h041.c
+index 9407a5d..4244dfb 100644
+--- a/src_c/readable/h041.c
++++ b/src_c/readable/h041.c
+@@ -1,7 +1,41 @@
+ /* H041: Memoria per le immagini: blocco preceduto dalla dimensione di allocazione. */
+-#include "cok.h"
++#include "h041.h"
++#include "h003_exec.h"
+ 
+ /* PORT H041+$0004: link/unlk, nessun effetto. */
+ void h041_init(void)
+ {
+ }
++
++/*
++ * PORT H041+$000C: AllocMem di size + 4 byte; la dimensione totale va nella
++ * prima long, il chiamante riceve l'indirizzo dopo (0 se manca memoria).
++ */
++u8 *sized_alloc(u32 flags, u32 size)
++{
++    u8 *p;
++
++    size += 4;
++    p = (u8 *)exec_alloc_mem(size, flags);
++    if (p != NULL) {
++        *(u32 *)p = size;
++        p += 4;
++    }
++    return p;
++}
++
++/* PORT H041+$004A: sized_alloc in memoria chip azzerata ($10003). */
++u8 *sized_alloc_chip(u32 size)
++{
++    return sized_alloc(0x10003UL, size);
++}
++
++/* PORT H041+$00BE: libera un blocco di sized_alloc (NULL ignorato). */
++void sized_free(void *block)
++{
++    if (block != NULL) {
++        u8 *p = (u8 *)block - 4;
++
++        exec_free_mem(p, *(u32 *)p);
++    }
++}
+diff --git a/src_c/readable/h041.h b/src_c/readable/h041.h
+new file mode 100644
+index 0000000..a41c572
+--- /dev/null
++++ b/src_c/readable/h041.h
+@@ -0,0 +1,11 @@
++/* H041: memoria preceduta dalla dimensione dell'allocazione. */
++#ifndef COK_H041_H
++#define COK_H041_H
++
++#include "cok.h"
++
++u8  *sized_alloc(u32 flags, u32 size);  /* H041+$000C */
++u8  *sized_alloc_chip(u32 size);        /* H041+$004A */
++void sized_free(void *block);           /* H041+$00BE */
++
++#endif
+diff --git a/src_c/readable/tests/dax_test.c b/src_c/readable/tests/dax_test.c
+index 37aa98d..61d9223 100644
+--- a/src_c/readable/tests/dax_test.c
++++ b/src_c/readable/tests/dax_test.c
+@@ -8,6 +8,7 @@
+ #include <stdlib.h>
+ #include "../h028_files.h"
+ #include "../globals.h"
++#include "../h040.h"
+ 
+ /* Le routine di errore e uscita non portate: qui segnalano e proseguono. */
+ void h014_0018(u16 len, const char *msg, u16 value)
+@@ -22,9 +23,15 @@ void quit_game(void)
+     exit(3);
+ }
+ 
+-void h041_00be(void *block)
++/* Il lettore ILBM (H040) non serve al test dei DAX. */
++s32 read_ilbm(cok_bptr file, struct BitMap *bitmap, ILBMFrame *frame,
++              IlbmAllocFn alloc)
+ {
+-    (void)block;
++    (void)file;
++    (void)bitmap;
++    (void)frame;
++    (void)alloc;
++    return 0;
+ }
+ 
+ int main(int argc, char **argv)
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index 2326507..0d764f6 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -246,9 +246,7 @@ void h063_0d80(void *character) { (void)character; cok_unported("H063+$0D80"); }
+ void h063_1d44(u16 len, const char *text) { (void)len; (void)text; cok_unported("H063+$1D44"); }
+ void h028_0d74(void) { cok_unported("H028+$0D74"); }
+ void h043_0840(void) { cok_unported_skip("H043+$0840"); }
+-void h041_00be(void *block) { (void)block; cok_unported("H041+$00BE"); }
+ 
+-void h028_0d36(void) { cok_unported("H028+$0D36"); }
+ void h047_00e6(void) { cok_unported("H047+$00E6"); }
+ 
+ u16 h065_34fc(u16 a, u16 b, u16 *value, u8 *again) { (void)a; (void)b; (void)value; (void)again; cok_unported("H065+$34FC"); return 0; }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index 23e767e..6089599 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -217,10 +217,8 @@ void h063_0d80(void *character);
+ void h063_1d44(u16 len, const char *text);
+ void h028_0d74(void);
+ void h043_0840(void);
+-void h041_00be(void *block);
+ 
+ u16  h065_34fc(u16 a, u16 b, u16 *value, u8 *again); /* scelta di un incantesimo */
+-void h028_0d36(void);
+ void h047_00e6(void);
+ 
+ #endif
+-- 
+2.43.0
+

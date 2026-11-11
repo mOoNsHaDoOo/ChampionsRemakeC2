@@ -1,0 +1,51 @@
+From 726651553f31b66f5f47fd7cf7f26f6ad3ce28fd Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 11 Nov 2026 14:18:57 +0000
+Subject: [PATCH 65/65] Backlog: collaudo di Fix con il chierico nuovo CLR e
+ sconfitta del party
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/backlog.md | 28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index b72963a..5392a69 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -2777,3 +2777,31 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
+ - **Dati di prova corretti** (fuori dal repository): in L, BOB e TAS l'oggetto ora e' una pergamena da chierico coerente (tipo $28, nome $66/$27/$26, peso 25, incantesimi 1 e 3, pronta). Nella scheda di L appare "Cler Scroll 3 Spells", con Use disponibile.
+ 
+ ---
++
++## v57: collaudo di Fix con un chierico nuovo (nessuna modifica al codice)
++
++**Personaggio nuovo:** su consiglio dell'utente non si usa piu' L. CLR e' un chierico umano creato con la build attuale (AC 10, HP 13). Party: il solo CLR.
++
++**Percorso** (ASan, gancio di prova che limita i danni a CLR perche' resti ad almeno 1 HP)
++- Leave dalla citta', battaglia della carovana in Auto, "Continue Battle" No, tesoro Exit.
++- "Do you want to go back and claim your treasure?" No; "Will you help us reach the outpost?" No.
++- Encamp; View, Fix, di nuovo View.
++
++**Risultato**
++- **HP:** CLR scende a 1/13 in battaglia; dopo Fix la scheda mostra 11/13.
++- **Calcolo:** nessuna cura memorizzata; 3 posti di livello 1 (+$124), quindi pool 3d8 = 10 e danno residuo 2.
++- **Orologio di gioco:** passa da 12:11 a 16:41, cioe' 4:30 di riposo, come nell'asm (H057+$2C08).
++  - Il tempo vale $F0 + 3*$F = 285 minuti; il danno 12 e' minore di extra $1B, quindi il tempo si divide per 27/12 = 2, con minimo $10E = 270 minuti.
++- **Timer del riposo:** $24F4..$2501 viene salvato e ripristinato, come nell'asm.
++- **ASan:** pulito.
++
++**Sconfitta del party** (verificata per caso, senza il limite ai danni)
++- CLR, da solo, viene abbattuto.
++- Appare "The monsters rejoice for the party has been destroyed" e il gioco aspetta un tasto qualsiasi, senza menu. E' il comportamento atteso, non un blocco.
++
++**Harness di prova** (fuori dal repository)
++- **Passi condizionali:** `?testo:TASTO` aspetta un menu con quel testo; `*testo:TASTO` preme il tasto finche' i menu nuovi lo contengono.
++- **Shot:** salva uno screenshot del menu corrente.
++- Con questi passi le sequenze non perdono piu' la sincronia sulle pagine di testo di lunghezza variabile.
++
++---
+-- 
+2.43.0
+

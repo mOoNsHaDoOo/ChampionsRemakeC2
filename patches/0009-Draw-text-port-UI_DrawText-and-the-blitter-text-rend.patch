@@ -1,0 +1,925 @@
+From 81a4102839b0dc2bf4ca804359560a296e97a9af Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 15:28:34 +0000
+Subject: [PATCH 09/65] Draw text: port UI_DrawText and the blitter text
+ renderer
+
+Ports H030+$0256 UI_DrawText, H030+$019A (fill text cells), H008+$139E,
+the H038 RectFill/pen adapters and H049+$0224 Draw_TextWithBlitter with
+Draw_GlyphRowsCPU. The renderer programs the blitter registers directly,
+as the original does: custom.h writes $DFF000 on the Amiga, and on the
+host host/blitter.c emulates area-mode blits (minterms, A/B shifts,
+first/last word masks, modulos, descending mode). The loading message
+now appears in the gothic font.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md  |  46 ++++-----
+ src_c/readable/custom.h        |  44 +++++++++
+ src_c/readable/h006.c          |   5 +-
+ src_c/readable/h008.c          |   9 +-
+ src_c/readable/h008.h          |   9 ++
+ src_c/readable/h030.c          |  29 ++++++
+ src_c/readable/h030.h          |   3 +
+ src_c/readable/h038.c          |  35 ++++++-
+ src_c/readable/h038.h          |  13 +++
+ src_c/readable/h049.c          | 167 ++++++++++++++++++++++++++++++--
+ src_c/readable/h049.h          |   2 +
+ src_c/readable/host/blitter.c  | 169 +++++++++++++++++++++++++++++++++
+ src_c/readable/host/graphics.c |  63 ++++++++++++
+ src_c/readable/host/ndk.h      |  11 +++
+ src_c/readable/unported.c      |   2 -
+ src_c/readable/unported.h      |   2 -
+ 16 files changed, 572 insertions(+), 37 deletions(-)
+ create mode 100644 src_c/readable/custom.h
+ create mode 100644 src_c/readable/h008.h
+ create mode 100644 src_c/readable/h038.h
+ create mode 100644 src_c/readable/host/blitter.c
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index 0b9edda..32d74fb 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **202 / 912**.
++Routine portate: **212 / 912**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -14,7 +14,7 @@ Routine portate: **202 / 912**.
+ | H005 | 21276 | 1 | 1 |
+ | H006 | 3020 | 4 | 2 |
+ | H007 | 3036 | 10 | 1 |
+-| H008 | 8660 | 21 | 1 |
++| H008 | 8660 | 21 | 2 |
+ | H009 | 988 | 3 | 1 |
+ | H010 | 2488 | 9 | 1 |
+ | H011 | 7004 | 12 | 1 |
+@@ -36,7 +36,7 @@ Routine portate: **202 / 912**.
+ | H027 | 18156 | 10 | 1 |
+ | H028 | 4488 | 16 | 6 |
+ | H029 | 6084 | 32 | 10 |
+-| H030 | 3240 | 18 | 3 |
++| H030 | 3240 | 18 | 5 |
+ | H031 | 212 | 4 | 2 |
+ | H032 | 9352 | 1 | 1 |
+ | H033 | 8140 | 15 | 1 |
+@@ -44,7 +44,7 @@ Routine portate: **202 / 912**.
+ | H035 | 1760 | 6 | 1 |
+ | H036 | 144 | 2 | 1 |
+ | H037 | 52 | 2 | 2 |
+-| H038 | 504 | 5 | 1 |
++| H038 | 504 | 5 | 5 |
+ | H039 | 104 | 2 | 2 |
+ | H040 | 1632 | 5 | 5 |
+ | H041 | 240 | 3 | 1 |
+@@ -55,7 +55,7 @@ Routine portate: **202 / 912**.
+ | H046 | 724 | 2 | 1 |
+ | H047 | 5224 | 8 | 1 |
+ | H048 | 6636 | 21 | 1 |
+-| H049 | 2992 | 13 | 2 |
++| H049 | 2992 | 13 | 5 |
+ | H050 | 136 | 4 | 1 |
+ | H051 | 256 | 2 | 2 |
+ | H052 | 316 | 1 | 1 |
+@@ -170,9 +170,9 @@ Routine portate: **202 / 912**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$00EC` | `module_init_H006` | parziale | h006.c:29 |
++| `$00EC` | `module_init_H006` | parziale | h006.c:30 |
+ | `$00FA` | `sub_H006_000000FA` | parziale |  |
+-| `$01AE` | `Initialize_GameEnvironment` | verificato | h006.c:70 |
++| `$01AE` | `Initialize_GameEnvironment` | verificato | h006.c:71 |
+ | `$0914` | `sub_H006_00000914` | parziale |  |
+ 
+ ### H007
+@@ -194,14 +194,14 @@ Routine portate: **202 / 912**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$009A` | `module_init_H008` | parziale | h008.c:4 |
++| `$009A` | `module_init_H008` | parziale | h008.c:5 |
+ | `$0102` | `sub_H008_00000102` | parziale |  |
+ | `$0162` | `sub_H008_00000162` | parziale |  |
+ | `$01A0` | `sub_H008_000001A0` | parziale |  |
+ | `$01FC` | `UI_RequestChoice` | parziale |  |
+ | `$020A` | `sub_H008_0000020A` | parziale |  |
+ | `$03C8` | `sub_H008_000003C8` | parziale |  |
+-| `$139E` | `sub_H008_0000139E` | parziale |  |
++| `$139E` | `sub_H008_0000139E` | parziale | h008.c:10 |
+ | `$13C0` | `trampoline_H008_1AF4` | parziale |  |
+ | `$13CE` | `sub_H008_000013CE` | parziale |  |
+ | `$1448` | `sub_H008_00001448` | parziale |  |
+@@ -505,10 +505,10 @@ Routine portate: **202 / 912**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0070` | `module_init_H030` | parziale | h030.c:9 |
++| `$0070` | `module_init_H030` | parziale | h030.c:10 |
+ | `$00B6` | `sub_H030_000000B6` | parziale |  |
+-| `$019A` | `sub_H030_0000019A` | parziale |  |
+-| `$0256` | `UI_DrawText` | parziale |  |
++| `$019A` | `sub_H030_0000019A` | parziale | h030.c:16 |
++| `$0256` | `UI_DrawText` | parziale | h030.c:36 |
+ | `$028A` | `sub_H030_0000028A` | parziale |  |
+ | `$0302` | `trampoline_H030_0470` | parziale |  |
+ | `$0310` | `sub_H030_00000310` | parziale |  |
+@@ -520,8 +520,8 @@ Routine portate: **202 / 912**.
+ | `$0AD2` | `sub_H030_00000AD2` | parziale |  |
+ | `$0B4A` | `sub_H030_00000B4A` | parziale |  |
+ | `$0B6C` | `sub_H030_00000B6C` | parziale |  |
+-| `$0BDA` | `(byte non classificati)` | - | h030.c:19 |
+-| `$0C10` | `sub_H030_00000C10` | parziale | h030.c:29 |
++| `$0BDA` | `(byte non classificati)` | - | h030.c:48 |
++| `$0C10` | `sub_H030_00000C10` | parziale | h030.c:58 |
+ | `$0C84` | `sub_H030_00000C84` | parziale |  |
+ 
+ ### H031
+@@ -597,10 +597,10 @@ Routine portate: **202 / 912**.
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+ | `$0008` | `sub_H038_00000008` | parziale | h038.c:5 |
+-| `$0118` | `wrapper_RectFill` | parziale |  |
+-| `$013C` | `wrapper_SetAPen` | parziale |  |
+-| `$016C` | `wrapper_SetBPen` | parziale |  |
+-| `$01B4` | `sub_H038_000001B4` | parziale |  |
++| `$0118` | `wrapper_RectFill` | parziale | h038.c:16 |
++| `$013C` | `wrapper_SetAPen` | parziale | h038.c:23 |
++| `$016C` | `wrapper_SetBPen` | parziale | h038.c:29 |
++| `$01B4` | `sub_H038_000001B4` | parziale | h038.c:36 |
+ 
+ ### H039
+ 
+@@ -755,13 +755,13 @@ Routine portate: **202 / 912**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0008` | `sub_H049_00000008` | parziale | h049.c:5 |
++| `$0008` | `sub_H049_00000008` | parziale | h049.c:10 |
+ | `$0014` | `trampoline_H049_0082` | parziale |  |
+ | `$012A` | `trampoline_H049_0198` | parziale |  |
+-| `$0224` | `Draw_TextWithBlitter` | verificato |  |
+-| `$0438` | `sub_H049_00000438` | parziale | h049.c:20 |
+-| `$044E` | `trampoline_H049_0450` | parziale |  |
+-| `$045A` | `Draw_GlyphRowsCPU` | verificato |  |
++| `$0224` | `Draw_TextWithBlitter` | verificato | h049.c:95 |
++| `$0438` | `sub_H049_00000438` | parziale | h049.c:35 |
++| `$044E` | `trampoline_H049_0450` | parziale | h049.c:45 |
++| `$045A` | `Draw_GlyphRowsCPU` | verificato | h049.c:57 |
+ | `$04AE` | `Queue_BitplaneBlit` | verificato |  |
+ | `$06EC` | `QueuedBlit_Callback` | verificato |  |
+ | `$0782` | `QueuedBlit_Cleanup` | verificato |  |
+diff --git a/src_c/readable/custom.h b/src_c/readable/custom.h
+new file mode 100644
+index 0000000..02a484b
+--- /dev/null
++++ b/src_c/readable/custom.h
+@@ -0,0 +1,44 @@
++/*
++ * Accesso ai registri dei chip custom ($DFF000) scritti direttamente dal
++ * gioco (blitter).  Sull'Amiga sono scritture in memoria; sull'host vanno
++ * all'emulatore del blitter di host/blitter.c.  I registri puntatore
++ * (BLTxPT) prendono un puntatore C.
++ */
++#ifndef COK_CUSTOM_H
++#define COK_CUSTOM_H
++
++#include "cok.h"
++
++/* Offset dei registri del blitter. */
++#define BLTCON0  0x040
++#define BLTCON1  0x042
++#define BLTAFWM  0x044
++#define BLTALWM  0x046
++#define BLTCPT   0x048
++#define BLTBPT   0x04C
++#define BLTAPT   0x050
++#define BLTDPT   0x054
++#define BLTSIZE  0x058
++#define BLTCMOD  0x060
++#define BLTBMOD  0x062
++#define BLTAMOD  0x064
++#define BLTDMOD  0x066
++#define BLTCDAT  0x070
++#define BLTBDAT  0x072
++#define BLTADAT  0x074
++
++extern volatile u8 *g_custom;           /* H100+$0000 */
++
++#if COK_AMIGA
++#define CUSTOM_W(reg, v) \
++    (*(volatile u16 *)(g_custom + (reg)) = (u16)(v))
++#define CUSTOM_P(reg, p) \
++    (*(volatile u32 *)(g_custom + (reg)) = (u32)(p))
++#else
++void host_custom_write(unsigned reg, u16 value);
++void host_custom_pointer(unsigned reg, void *p);
++#define CUSTOM_W(reg, v) host_custom_write((reg), (u16)(v))
++#define CUSTOM_P(reg, p) host_custom_pointer((reg), (void *)(p))
++#endif
++
++#endif
+diff --git a/src_c/readable/h006.c b/src_c/readable/h006.c
+index 28c85fa..bb7cb2c 100644
+--- a/src_c/readable/h006.c
++++ b/src_c/readable/h006.c
+@@ -10,6 +10,7 @@
+  *   -$40 long, secondi di CurrentTime
+  */
+ #include "h006.h"
++#include "h008.h"
+ #include "h002_dos.h"
+ #include "h003_exec.h"
+ #include "h021_intuition.h"
+@@ -210,8 +211,8 @@ void init_game_environment(void)
+     h029_fill_bytes(0x4F, &g_h005[0x16], 0x50, 0);
+     H005_SET_W(0x14, 0);
+     load_gothic_font();
+-    h008_139e();
+-    h030_0256(0, 0x18, 0x0A, 0, 0x15, "Loading...Please Wait");
++    clear_message_line();
++    ui_draw_text(0, 0x18, 0x0A, 0, 0x15, "Loading...Please Wait");
+ 
+     for (s_i = 0; s_i <= 4; ++s_i) {
+         H005_SET_L(0x3338 + s_i * 4, 0);
+diff --git a/src_c/readable/h008.c b/src_c/readable/h008.c
+index 813e601..67e99d3 100644
+--- a/src_c/readable/h008.c
++++ b/src_c/readable/h008.c
+@@ -1,7 +1,14 @@
+ /* H008: Interazioni UI, richieste di scelta e menu. */
+-#include "cok.h"
++#include "h008.h"
++#include "h030.h"
+ 
+ /* PORT H008+$009A: link/unlk, nessun effetto. */
+ void h008_init(void)
+ {
+ }
++
++/* PORT H008+$139E: cancella (penna 0) l'ultima riga di testo, la 24. */
++void clear_message_line(void)
++{
++    fill_text_cells(0, 0x18, 0, 0x28);
++}
+diff --git a/src_c/readable/h008.h b/src_c/readable/h008.h
+new file mode 100644
+index 0000000..fe0562d
+--- /dev/null
++++ b/src_c/readable/h008.h
+@@ -0,0 +1,9 @@
++/* H008: interazioni UI, richieste di scelta e menu. */
++#ifndef COK_H008_H
++#define COK_H008_H
++
++#include "cok.h"
++
++void clear_message_line(void);          /* H008+$139E */
++
++#endif
+diff --git a/src_c/readable/h030.c b/src_c/readable/h030.c
+index 6bcd80d..7661dfb 100644
+--- a/src_c/readable/h030.c
++++ b/src_c/readable/h030.c
+@@ -3,6 +3,7 @@
+ #include "h003_exec.h"
+ #include "h028_files.h"
+ #include "h040.h"
++#include "h038.h"
+ #include "h049.h"
+ #include "globals.h"
+ 
+@@ -11,6 +12,34 @@ void h030_init(void)
+ {
+ }
+ 
++/*
++ * PORT H030+$019A: riempie con pen width celle di testo (8x8) dalla
++ * colonna col della riga row (griglia 40x25), tagliando a destra alla
++ * colonna 40.  Fuori griglia o con width 0 non fa nulla.  I controlli
++ * "col < 0" e "row < 0" dell'originale (tst.w / bcc) non scattano mai.
++ */
++void fill_text_cells(u16 col, u16 row, u16 pen, u16 width)
++{
++    if (col > 0x27 || row > 0x18 || width < 1) {
++        return;
++    }
++    if ((u16)(col + width) > 0x28) {
++        width = (u16)(0x28 - col);
++    }
++    graphics_set_apen(g_rastport, pen);
++    graphics_set_open(g_rastport, pen);
++    graphics_rect_fill(g_rastport, (u16)(col << 3), (u16)(row << 3),
++                       (u16)(((u16)(col + width) << 3) - 1),
++                       (u16)((row << 3) + 7));
++}
++
++/* PORT H030+$0256 (UI_DrawText): testo nella griglia 40x25 (H049+$0224). */
++void ui_draw_text(u16 col, u16 row, u16 fg, u16 bg, u16 len,
++                  const char *text)
++{
++    draw_text_blitter(col, row, fg, bg, len, text);
++}
++
+ /* Dati del modulo (sotto a4). */
+ struct BitMap g_gothic_bitmap;          /* -$2C: font "gothic.lbm" */
+ u32 g_h030_alloc_size;                  /* -$4: ultima allocazione */
+diff --git a/src_c/readable/h030.h b/src_c/readable/h030.h
+index c48bc83..6217880 100644
+--- a/src_c/readable/h030.h
++++ b/src_c/readable/h030.h
+@@ -4,6 +4,9 @@
+ 
+ #include "cok.h"
+ 
++void fill_text_cells(u16 col, u16 row, u16 pen, u16 width); /* H030+$019A */
++void ui_draw_text(u16 col, u16 row, u16 fg, u16 bg, u16 len,
++                  const char *text);                    /* H030+$0256 */
+ void load_gothic_font(void);            /* H030+$0C10 */
+ 
+ #endif
+diff --git a/src_c/readable/h038.c b/src_c/readable/h038.c
+index cba3372..f1c0b80 100644
+--- a/src_c/readable/h038.c
++++ b/src_c/readable/h038.c
+@@ -1,5 +1,5 @@
+ /* H038: Adattatori RectFill e selezione delle penne. */
+-#include "cok.h"
++#include "h038.h"
+ 
+ /*
+  * PORT H038+$0008: copia GfxBase del runtime H015 nella cella del modulo.
+@@ -8,3 +8,36 @@
+ void h038_init(void)
+ {
+ }
++
++#if COK_AMIGA
++#include <proto/graphics.h>
++#endif
++
++/* PORT H038+$0118: le coordinate sono word (move.w), estese da RectFill. */
++void graphics_rect_fill(struct RastPort *rp, u16 xmin, u16 ymin, u16 xmax,
++                        u16 ymax)
++{
++    RectFill(rp, (s16)xmin, (s16)ymin, (s16)xmax, (s16)ymax);
++}
++
++/* PORT H038+$013C */
++void graphics_set_apen(struct RastPort *rp, u16 pen)
++{
++    SetAPen(rp, pen);
++}
++
++/* PORT H038+$016C */
++void graphics_set_bpen(struct RastPort *rp, u16 pen)
++{
++    SetBPen(rp, pen);
++}
++
++/*
++ * PORT H038+$01B4: la macro SetOPen in linea: AOlPen = pen (byte) e
++ * flag AREAOUTLINE nel RastPort.
++ */
++void graphics_set_open(struct RastPort *rp, u16 pen)
++{
++    rp->AOlPen = (BYTE)pen;
++    rp->Flags |= AREAOUTLINE;
++}
+diff --git a/src_c/readable/h038.h b/src_c/readable/h038.h
+new file mode 100644
+index 0000000..cda0ea4
+--- /dev/null
++++ b/src_c/readable/h038.h
+@@ -0,0 +1,13 @@
++/* H038: adattatori RectFill e selezione delle penne. */
++#ifndef COK_H038_H
++#define COK_H038_H
++
++#include "cok.h"
++
++void graphics_rect_fill(struct RastPort *rp, u16 xmin, u16 ymin, u16 xmax,
++                        u16 ymax);                      /* H038+$0118 */
++void graphics_set_apen(struct RastPort *rp, u16 pen);   /* H038+$013C */
++void graphics_set_bpen(struct RastPort *rp, u16 pen);   /* H038+$016C */
++void graphics_set_open(struct RastPort *rp, u16 pen);   /* H038+$01B4 */
++
++#endif
+diff --git a/src_c/readable/h049.c b/src_c/readable/h049.c
+index d11958f..b45b330 100644
+--- a/src_c/readable/h049.c
++++ b/src_c/readable/h049.c
+@@ -1,5 +1,10 @@
+ /* H049: Disegno di testo/glifi, blitter diretto e nodi QBSBlit. */
+ #include "h049.h"
++#include "custom.h"
++
++#if COK_AMIGA
++#include <proto/graphics.h>
++#endif
+ 
+ /*
+  * PORT H049+$0008: copia GfxBase del runtime H015 nella cella del modulo.
+@@ -10,11 +15,21 @@ void h049_init(void)
+ }
+ 
+ /*
+- * Stato del disegno dei glifi (struttura nel codice a H049+$09BC):
+- *   +$0C piano dei glifi (immagine del font), +$10 BitMap di destinazione.
++ * Stato del disegno del testo (struttura nel codice a H049+$09BC).
+  */
+-u8 *g_h049_glyphs;              /* H049+$09BC+$0C */
+-struct BitMap *g_h049_dest;     /* H049+$09BC+$10 */
++static struct {
++    u16 first_mask;             /* +$00: BLTAFWM */
++    u16 last_mask;              /* +$02: BLTALWM */
++    u16 offset;                 /* +$04: byte dell'area nel piano */
++    u16 width;                  /* +$06: larghezza in byte (pari) */
++    u16 size;                   /* +$08: BLTSIZE (8 righe) */
++    u16 count;                  /* +$0A: caratteri da disegnare */
++    u8 *glyphs;                 /* +$0C: piano del font (128x32) */
++    struct BitMap *dest;        /* +$10: bitmap di destinazione */
++    u16 rendered;               /* +$14: glifi gia' disegnati in un piano */
++    u16 rendered_plane;         /* +$16: quel piano */
++    u16 rendered_xor;           /* +$18: e la sua inversione (0/$FFFF) */
++} s_text;
+ 
+ /*
+  * PORT H049+$0438: registra la sorgente dei glifi e la bitmap di
+@@ -23,6 +38,146 @@ struct BitMap *g_h049_dest;     /* H049+$09BC+$10 */
+  */
+ void h049_set_glyph_planes(u8 *glyphs, struct BitMap *dest)
+ {
+-    g_h049_dest = dest;
+-    g_h049_glyphs = glyphs;
++    s_text.glyphs = glyphs;
++    s_text.dest = dest;
++}
++
++/* PORT H049+$044E: lunghezza della stringa fino al NUL (long). */
++static u32 text_length(const char *text)
++{
++    u32 n = 0;
++
++    while (*text++ != 0) {
++        ++n;
++    }
++    return n;
++}
++
++/*
++ * PORT H049+$045A (Draw_GlyphRowsCPU): count caratteri 8x8 dal font
++ * (16 caratteri per riga di 16 byte, codici da $20; da $60 in su si toglie
++ * altri $20) in dest, una riga ogni modulo byte, ogni byte in xor con
++ * invert (0 o $FF).  Il confronto con $60 e' con segno: i codici da $80 in
++ * su non sono ridotti.
++ */
++static void draw_glyph_rows(s16 count, const char *text, u8 *dest,
++                            u16 modulo, u8 invert)
++{
++    const u8 *font = s_text.glyphs;
++
++    while (--count >= 0) {
++        s8 c = (s8)*text++;
++        u16 index;
++        u16 row;
++        u16 at = 0;
++
++        if (c >= 0x60) {
++            c = (s8)(c - 0x20);
++        }
++        c = (s8)(c - 0x20);
++        index = (u16)(((u8)c & 0x0F) + (((u8)c & 0x30) << 3));
++        for (row = 0; row < 8; ++row) {
++            dest[at] = (u8)(font[index] ^ invert);
++            index = (u16)(index + 0x10);
++            at = (u16)(at + modulo);
++        }
++        ++dest;
++    }
++}
++
++/* Indirizzo dell'area di testo nel piano plane della destinazione. */
++static u8 *text_area(u16 plane)
++{
++    return (u8 *)s_text.dest->Planes[plane] + s_text.offset;
++}
++
++/*
++ * PORT H049+$0224 (Draw_TextWithBlitter): scrive text (al massimo fino
++ * alla colonna 40) nella griglia 40x25 di celle 8x8 della destinazione,
++ * con penna fg su sfondo bg.  Per ogni piano (dal 4 allo 0): se i bit di
++ * fg e bg coincidono riempie l'area con 0 o 1 (blitter, minterm $CA con
++ * A costante e maschere sulle colonne dispari); altrimenti il primo di
++ * questi piani riceve i glifi dalla CPU (invertiti se il bit e' di bg) e
++ * gli altri li copiano col blitter (dritti o invertiti, minterm $CA/$3A).
++ * len non e' usato: conta il NUL.
++ */
++void draw_text_blitter(u16 col, u16 row, u16 fg, u16 bg, u16 len,
++                       const char *text)
++{
++    s16 count;
++    s16 limit;
++    u16 bytes;
++    u16 first;
++    s16 plane;
++    u16 invert;
++
++    (void)len;
++    s_text.rendered = 0;
++    count = (s16)text_length(text);
++    if ((u8)count == 0) {
++        return;
++    }
++    limit = (s16)(0x28 - col);
++    if (!(count < limit)) {
++        count = limit;
++    }
++    s_text.count = (u16)count;
++    s_text.first_mask = (col & 1) ? 0x00FF : 0xFFFF;
++    bytes = (u16)(col + s_text.count);
++    s_text.last_mask = (bytes & 1) ? 0xFF00 : 0xFFFF;
++    first = (u16)(col & ~1u);
++    bytes = (u16)(((u16)(bytes + 1) & ~1u) - first);
++    s_text.width = bytes;
++    s_text.size = (u16)(((s16)bytes >> 1) + 0x200);
++    s_text.offset = (u16)((u16)((row << 3) * 0x28) + first);
++
++    OwnBlitter();            /* chiamate dirette a graphics.library */
++    for (plane = 4; plane >= 0; --plane) {
++        int fg_bit = (fg >> plane) & 1;
++        int bg_bit = (bg >> plane) & 1;
++
++        invert = (fg_bit == bg_bit) ? (fg_bit ? 0xFFFF : 0) :
++                 (bg_bit ? 0xFFFF : 0);
++        if (fg_bit == bg_bit) {
++            /* Area piena: D = B (costante) dentro le maschere, C fuori. */
++            WaitBlit();
++            CUSTOM_W(BLTCMOD, 0x28 - s_text.width);
++            CUSTOM_W(BLTDMOD, 0x28 - s_text.width);
++            CUSTOM_W(BLTAFWM, s_text.first_mask);
++            CUSTOM_W(BLTALWM, s_text.last_mask);
++            CUSTOM_W(BLTCON0, 0x03CA);
++            CUSTOM_W(BLTCON1, 0);
++            CUSTOM_W(BLTADAT, 0xFFFF);
++            CUSTOM_W(BLTBDAT, invert);
++            CUSTOM_P(BLTCPT, text_area((u16)plane));
++            CUSTOM_P(BLTDPT, text_area((u16)plane));
++            CUSTOM_W(BLTSIZE, s_text.size);
++        } else if (s_text.rendered) {
++            /* Copia dal piano gia' disegnato, invertita se serve. */
++            WaitBlit();
++            CUSTOM_W(BLTBMOD, 0x28 - s_text.width);
++            CUSTOM_W(BLTCMOD, 0x28 - s_text.width);
++            CUSTOM_W(BLTDMOD, 0x28 - s_text.width);
++            CUSTOM_W(BLTAFWM, s_text.first_mask);
++            CUSTOM_W(BLTALWM, s_text.last_mask);
++            CUSTOM_W(BLTCON0, (invert ^ s_text.rendered_xor) ? 0x073A : 0x07CA);
++            CUSTOM_W(BLTCON1, 0);
++            CUSTOM_W(BLTADAT, 0xFFFF);
++            CUSTOM_P(BLTCPT, text_area((u16)plane));
++            CUSTOM_P(BLTDPT, text_area((u16)plane));
++            CUSTOM_P(BLTBPT, text_area(s_text.rendered_plane));
++            CUSTOM_W(BLTSIZE, s_text.size);
++        } else {
++            u8 *dest = text_area((u16)plane);
++
++            s_text.rendered_plane = (u16)plane;
++            s_text.rendered = 1;
++            s_text.rendered_xor = invert;
++            if (col & 1) {
++                ++dest;
++            }
++            draw_glyph_rows((s16)s_text.count, text, dest, 0x28, (u8)invert);
++        }
++    }
++    DisownBlitter();
+ }
+diff --git a/src_c/readable/h049.h b/src_c/readable/h049.h
+index 8e9f750..469403f 100644
+--- a/src_c/readable/h049.h
++++ b/src_c/readable/h049.h
+@@ -4,6 +4,8 @@
+ 
+ #include "cok.h"
+ 
++void draw_text_blitter(u16 col, u16 row, u16 fg, u16 bg, u16 len,
++                       const char *text);               /* H049+$0224 */
+ void h049_set_glyph_planes(u8 *glyphs, struct BitMap *dest); /* H049+$0438 */
+ 
+ #endif
+diff --git a/src_c/readable/host/blitter.c b/src_c/readable/host/blitter.c
+new file mode 100644
+index 0000000..074a465
+--- /dev/null
++++ b/src_c/readable/host/blitter.c
+@@ -0,0 +1,169 @@
++/*
++ * Build host: emulatore del blitter dell'Amiga (registri $DFF040..$DFF074),
++ * per il codice del gioco che lo programma direttamente.
++ *
++ * Emula la modalita' area: canali A, B, C, D, minterm (BLTCON0), shift di A
++ * e B, maschere di prima/ultima word su A, modulo, modo discendente.  La
++ * scrittura di BLTSIZE esegue subito il blit (sull'host non c'e'
++ * parallelismo: WaitBlit non deve aspettare).  Modalita' linea e
++ * riempimento non sono emulate: se richieste il programma si ferma.
++ */
++#include <stdio.h>
++#include <stdlib.h>
++#include "../custom.h"
++
++static u16 s_reg[0x100];                /* registri a word, per offset/2 */
++static u8 *s_ptr[4];                    /* A, B, C, D */
++
++static int ptr_index(unsigned reg)
++{
++    switch (reg) {
++    case BLTAPT: return 0;
++    case BLTBPT: return 1;
++    case BLTCPT: return 2;
++    case BLTDPT: return 3;
++    default: return -1;
++    }
++}
++
++void host_custom_pointer(unsigned reg, void *p)
++{
++    int i = ptr_index(reg);
++
++    if (i < 0) {
++        fprintf(stderr, "blitter: registro puntatore $%03X non gestito\n", reg);
++        exit(20);
++    }
++    s_ptr[i] = (u8 *)p;
++}
++
++static u16 get_word(const u8 *p)
++{
++    return (u16)(p[0] << 8 | p[1]);
++}
++
++static void blit(u16 size)
++{
++    u16 con0 = s_reg[BLTCON0 / 2];
++    u16 con1 = s_reg[BLTCON1 / 2];
++    unsigned height = (unsigned)(size >> 6) ? (unsigned)(size >> 6) : 1024;
++    unsigned width = (size & 0x3F) ? (unsigned)(size & 0x3F) : 64;
++    int desc = (con1 & 0x0002) != 0;
++    int step = desc ? -2 : 2;
++    unsigned ash = con0 >> 12;
++    unsigned bsh = con1 >> 12;
++    u8 minterm = (u8)con0;
++    int use_a = (con0 & 0x0800) != 0;
++    int use_b = (con0 & 0x0400) != 0;
++    int use_c = (con0 & 0x0200) != 0;
++    int use_d = (con0 & 0x0100) != 0;
++    s16 mod_a = (s16)s_reg[BLTAMOD / 2];
++    s16 mod_b = (s16)s_reg[BLTBMOD / 2];
++    s16 mod_c = (s16)s_reg[BLTCMOD / 2];
++    s16 mod_d = (s16)s_reg[BLTDMOD / 2];
++    u16 prev_a = 0;
++    u16 prev_b = 0;
++    unsigned x;
++    unsigned y;
++
++    if (con1 & 0x0001) {
++        fprintf(stderr, "blitter: modalita' linea non emulata\n");
++        exit(20);
++    }
++    if (con1 & 0x0018) {
++        fprintf(stderr, "blitter: modalita' riempimento non emulata\n");
++        exit(20);
++    }
++    for (y = 0; y < height; ++y) {
++        for (x = 0; x < width; ++x) {
++            u16 a = use_a ? get_word(s_ptr[0]) : s_reg[BLTADAT / 2];
++            u16 b = use_b ? get_word(s_ptr[1]) : s_reg[BLTBDAT / 2];
++            u16 c = use_c ? get_word(s_ptr[2]) : s_reg[BLTCDAT / 2];
++            u16 am = a;
++            u16 as;
++            u16 bs;
++            u16 d = 0;
++            int bit;
++
++            if (x == 0) {
++                am &= s_reg[BLTAFWM / 2];
++            }
++            if (x == width - 1) {
++                am &= s_reg[BLTALWM / 2];
++            }
++            /* Shift: in discesa verso sinistra, altrimenti verso destra. */
++            if (desc) {
++                as = (u16)(((u32)am << 16 | prev_a) >> (16 - ash));
++                bs = (u16)(((u32)b << 16 | prev_b) >> (16 - bsh));
++            } else {
++                as = (u16)(((u32)prev_a << 16 | am) >> ash);
++                bs = (u16)(((u32)prev_b << 16 | b) >> bsh);
++            }
++            prev_a = am;
++            prev_b = b;
++            for (bit = 0; bit < 8; ++bit) {
++                if (minterm & (1 << bit)) {
++                    u16 ta = (bit & 4) ? as : (u16)~as;
++                    u16 tb = (bit & 2) ? bs : (u16)~bs;
++                    u16 tc = (bit & 1) ? c : (u16)~c;
++
++                    d |= (u16)(ta & tb & tc);
++                }
++            }
++            if (use_d) {
++                s_ptr[3][0] = (u8)(d >> 8);
++                s_ptr[3][1] = (u8)d;
++            }
++            if (use_a) {
++                s_ptr[0] += step;
++            }
++            if (use_b) {
++                s_ptr[1] += step;
++            }
++            if (use_c) {
++                s_ptr[2] += step;
++            }
++            if (use_d) {
++                s_ptr[3] += step;
++            }
++        }
++        if (use_a) {
++            s_ptr[0] += desc ? -mod_a : mod_a;
++        }
++        if (use_b) {
++            s_ptr[1] += desc ? -mod_b : mod_b;
++        }
++        if (use_c) {
++            s_ptr[2] += desc ? -mod_c : mod_c;
++        }
++        if (use_d) {
++            s_ptr[3] += desc ? -mod_d : mod_d;
++        }
++    }
++    host_display_changed();
++}
++
++void host_custom_write(unsigned reg, u16 value)
++{
++    if (reg >= 0x200 || (reg & 1) != 0) {
++        fprintf(stderr, "custom: registro $%03X non valido\n", reg);
++        exit(20);
++    }
++    s_reg[reg / 2] = value;
++    if (reg == BLTSIZE) {
++        blit(value);
++    }
++}
++
++/* graphics.library: con il blitter emulato in modo sincrono non c'e' attesa. */
++void OwnBlitter(void)
++{
++}
++
++void DisownBlitter(void)
++{
++}
++
++void WaitBlit(void)
++{
++}
+diff --git a/src_c/readable/host/graphics.c b/src_c/readable/host/graphics.c
+index ff330ac..ff66710 100644
+--- a/src_c/readable/host/graphics.c
++++ b/src_c/readable/host/graphics.c
+@@ -123,3 +123,66 @@ void InitRastPort(struct RastPort *rp)
+     rp->AOlPen = -1;            /* AOlPen a -1, DrawMode JAM2 */
+     rp->DrawMode = 1;
+ }
++
++void SetAPen(struct RastPort *rp, ULONG pen)
++{
++    rp->FgPen = (BYTE)pen;
++}
++
++void SetBPen(struct RastPort *rp, ULONG pen)
++{
++    rp->BgPen = (BYTE)pen;
++}
++
++/*
++ * Riempie il rettangolo (estremi compresi) con FgPen, tagliato ai bordi
++ * della bitmap; in COMPLEMENT inverte i bit dei piani.  Il contorno con
++ * AOlPen (AREAOUTLINE) non e' emulato: il gioco lo usa con AOlPen uguale a
++ * FgPen, che da' lo stesso risultato.
++ */
++void RectFill(struct RastPort *rp, LONG xmin, LONG ymin, LONG xmax, LONG ymax)
++{
++    struct BitMap *bm = rp->BitMap;
++    LONG x;
++    LONG y;
++    int i;
++
++    if (bm == NULL) {
++        return;
++    }
++    if (xmin < 0) {
++        xmin = 0;
++    }
++    if (ymin < 0) {
++        ymin = 0;
++    }
++    if (xmax >= (LONG)bm->BytesPerRow * 8) {
++        xmax = (LONG)bm->BytesPerRow * 8 - 1;
++    }
++    if (ymax >= (LONG)bm->Rows) {
++        ymax = (LONG)bm->Rows - 1;
++    }
++    for (i = 0; i < bm->Depth; ++i) {
++        UBYTE *plane = bm->Planes[i];
++        int set = ((UBYTE)rp->FgPen >> i) & 1;
++
++        if (plane == NULL) {
++            continue;
++        }
++        for (y = ymin; y <= ymax; ++y) {
++            for (x = xmin; x <= xmax; ++x) {
++                UBYTE *p = plane + (size_t)y * bm->BytesPerRow + (x >> 3);
++                UBYTE mask = (UBYTE)(0x80 >> (x & 7));
++
++                if (rp->DrawMode & COMPLEMENT) {
++                    *p ^= mask;
++                } else if (set) {
++                    *p |= mask;
++                } else {
++                    *p &= (UBYTE)~mask;
++                }
++            }
++        }
++    }
++    host_display_changed();
++}
+diff --git a/src_c/readable/host/ndk.h b/src_c/readable/host/ndk.h
+index 8b24015..74a1e89 100644
+--- a/src_c/readable/host/ndk.h
++++ b/src_c/readable/host/ndk.h
+@@ -70,6 +70,7 @@ struct RastPort {
+     BYTE BgPen;
+     BYTE AOlPen;
+     BYTE DrawMode;
++    UWORD Flags;                /* AREAOUTLINE = 8 */
+     WORD cp_x;
+     WORD cp_y;
+ };
+@@ -122,6 +123,16 @@ void     MakeVPort(struct View *view, struct ViewPort *vp);
+ void     MrgCop(struct View *view);
+ void     LoadView(struct View *view);
+ void     InitRastPort(struct RastPort *rp);
++void     OwnBlitter(void);
++void     DisownBlitter(void);
++void     WaitBlit(void);
++void     SetAPen(struct RastPort *rp, ULONG pen);
++void     SetBPen(struct RastPort *rp, ULONG pen);
++void     RectFill(struct RastPort *rp, LONG xmin, LONG ymin, LONG xmax,
++                  LONG ymax);
++
++#define AREAOUTLINE 0x0008
++#define COMPLEMENT  2
+ void     InitBitMap(struct BitMap *bm, LONG depth, LONG width, LONG height);
+ PLANEPTR AllocRaster(ULONG width, ULONG height);
+ void     FreeRaster(PLANEPTR p, ULONG width, ULONG height);
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index 9f0a32d..67c10b7 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -38,11 +38,9 @@ void h013_4bfc(void) { cok_unported("H013+$4BFC"); }
+ 
+ /* Chiamate da H006+$01AE. */
+ void h006_00fa(void) { cok_unported("H006+$00FA"); }
+-void h008_139e(void) { cok_unported("H008+$139E"); }
+ void h027_4276(void) { cok_unported("H027+$4276"); }
+ void h014_0018(u16 len, const char *msg, u16 value) { (void)len; (void)msg; (void)value; cok_unported("H014+$0018"); }
+ void h029_0a0e(u16 a, const char *name, u16 id, u16 b, u8 c, struct GfxRecord **rec) { (void)a; (void)name; (void)id; (void)b; (void)c; (void)rec; cok_unported("H029+$0A0E"); }
+-void h030_0256(u16 a, u16 b, u16 c, u16 d, u16 len, const char *text) { (void)a; (void)b; (void)c; (void)d; (void)len; (void)text; cok_unported("H030+$0256"); }
+ void h033_1a50(void) { cok_unported("H033+$1A50"); }
+ void h034_0032(u8 a, u8 b) { (void)a; (void)b; cok_unported("H034+$0032"); }
+ void h035_0246(u16 a, const char *name, u16 b, u16 c) { (void)a; (void)name; (void)b; (void)c; cok_unported("H035+$0246"); }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index 67a9d68..f5d71a4 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -11,11 +11,9 @@
+ 
+ void h006_0914(void);
+ void h006_00fa(void);
+-void h008_139e(void);
+ void h027_4276(void);
+ void h014_0018(u16 len, const char *msg, u16 value);
+ void h029_0a0e(u16 a, const char *name, u16 id, u16 b, u8 c, struct GfxRecord **rec);
+-void h030_0256(u16 a, u16 b, u16 c, u16 d, u16 len, const char *text);
+ void h033_1a50(void);
+ void h034_0032(u8 a, u8 b);
+ void h035_0246(u16 a, const char *name, u16 b, u16 c);
+-- 
+2.43.0
+

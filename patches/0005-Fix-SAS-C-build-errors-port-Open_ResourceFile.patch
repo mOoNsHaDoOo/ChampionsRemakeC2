@@ -1,0 +1,913 @@
+From 0c6d1f16f82d553ee5c88a2ec95a8a0e38676f30 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 15:07:44 +0000
+Subject: [PATCH 05/65] Fix SAS/C build errors; port Open_ResourceFile
+
+SAS/C 6.58 reported a redeclared struct GfxRecord, an int return in
+H029+$1308 and an undefined GfxBase. GfxRecord now lives in
+gfx_record.h, the return is computed in an s16, and cok.h includes the
+graphics/gfxbase.h, graphics/view.h and intuition/preferences.h headers.
+
+Also ports H028+$05FA Open_ResourceFile with its helpers ($01C6 disk
+request, $0408 name split, $0576 open attempt), the H026 string
+routines it uses and the H021 AutoRequest adapter. On the host, AmigaDOS
+names are resolved case-insensitively below COK_DATA, and AutoRequest
+waits for Retry/Cancel in the SDL window.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md   |  54 +++++------
+ src_c/readable/README.md        |   7 +-
+ src_c/readable/cok.h            |   3 +
+ src_c/readable/gfx_record.h     |  23 +++++
+ src_c/readable/globals.h        |   2 +-
+ src_c/readable/h002_dos.c       |  88 +++++++++++++++++-
+ src_c/readable/h021_intuition.c |  10 +++
+ src_c/readable/h021_intuition.h |   4 +
+ src_c/readable/h026_string.c    | 109 ++++++++++++++++++++++-
+ src_c/readable/h026_string.h    |  10 +++
+ src_c/readable/h028_files.c     | 153 ++++++++++++++++++++++++++++++++
+ src_c/readable/h028_files.h     |   5 ++
+ src_c/readable/h029_gfx.c       |   7 +-
+ src_c/readable/h029_gfx.h       |  16 +---
+ src_c/readable/host/display.c   |  22 +++++
+ src_c/readable/host/intuition.c |  46 ++++++++++
+ src_c/readable/host/ndk.h       |  14 +++
+ src_c/readable/unported.h       |   3 +-
+ 18 files changed, 524 insertions(+), 52 deletions(-)
+ create mode 100644 src_c/readable/gfx_record.h
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index b632827..3674ce4 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **159 / 910**.
++Routine portate: **170 / 910**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -27,14 +27,14 @@ Routine portate: **159 / 910**.
+ | H018 | 192 | 3 | 3 |
+ | H019 | 240 | 1 | 1 |
+ | H020 | 2884 | 6 | 1 |
+-| H021 | 1632 | 14 | 11 |
++| H021 | 1632 | 14 | 12 |
+ | H022 | 328 | 10 | 8 |
+ | H023 | 140 | 2 | 1 |
+ | H024 | 268 | 2 | 2 |
+ | H025 | 264 | 2 | 2 |
+-| H026 | 1452 | 11 | 4 |
++| H026 | 1452 | 11 | 10 |
+ | H027 | 18156 | 10 | 1 |
+-| H028 | 4488 | 16 | 2 |
++| H028 | 4488 | 16 | 6 |
+ | H029 | 6084 | 32 | 10 |
+ | H030 | 3240 | 17 | 1 |
+ | H031 | 212 | 4 | 2 |
+@@ -127,21 +127,21 @@ Routine portate: **159 / 910**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0008` | `sub_H002_00000008` | parziale | h002_dos.c:16 |
+-| `$0014` | `wrapper_Close` | parziale | h002_dos.c:87 |
++| `$0008` | `sub_H002_00000008` | parziale | h002_dos.c:94 |
++| `$0014` | `wrapper_Close` | parziale | h002_dos.c:168 |
+ | `$0026` | `wrapper_CreateDir` | parziale |  |
+ | `$004A` | `wrapper_DeleteFile` | parziale |  |
+ | `$0070` | `wrapper_Examine` | parziale |  |
+ | `$0088` | `wrapper_ExNext` | parziale |  |
+-| `$00A0` | `wrapper_Info` | parziale | h002_dos.c:56 |
++| `$00A0` | `wrapper_Info` | parziale | h002_dos.c:137 |
+ | `$00C0` | `wrapper_IoErr` | parziale |  |
+-| `$00DC` | `wrapper_Lock` | parziale | h002_dos.c:24 |
+-| `$00F2` | `wrapper_Open` | parziale | h002_dos.c:102 |
+-| `$0122` | `wrapper_Read` | parziale | h002_dos.c:125 |
+-| `$0156` | `wrapper_Seek` | parziale | h002_dos.c:137 |
+-| `$01A2` | `wrapper_UnLock` | parziale | h002_dos.c:46 |
++| `$00DC` | `wrapper_Lock` | parziale | h002_dos.c:102 |
++| `$00F2` | `wrapper_Open` | parziale | h002_dos.c:183 |
++| `$0122` | `wrapper_Read` | parziale | h002_dos.c:207 |
++| `$0156` | `wrapper_Seek` | parziale | h002_dos.c:219 |
++| `$01A2` | `wrapper_UnLock` | parziale | h002_dos.c:127 |
+ | `$01CC` | `wrapper_Write` | parziale |  |
+-| `$01E8` | `wrapper_Execute` | parziale | h002_dos.c:155 |
++| `$01E8` | `wrapper_Execute` | parziale | h002_dos.c:237 |
+ 
+ ### H003
+ 
+@@ -374,7 +374,7 @@ Routine portate: **159 / 910**.
+ | `$026C` | `wrapper_ModifyIDCMP` | parziale |  |
+ | `$029C` | `wrapper_OpenWindow` | parziale | h021_intuition.c:80 |
+ | `$02EE` | `wrapper_SetPointer` | parziale |  |
+-| `$03AE` | `wrapper_AutoRequest` | parziale |  |
++| `$03AE` | `wrapper_AutoRequest` | parziale | h021_intuition.c:86 |
+ 
+ ### H022
+ 
+@@ -417,16 +417,16 @@ Routine portate: **159 / 910**.
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+ | `$0004` | `trampoline_H026_05A6` | parziale | h026_string.c:5 |
+-| `$000C` | `trampoline_H026_0014` | parziale |  |
++| `$000C` | `trampoline_H026_0014` | parziale | h026_string.c:103 |
+ | `$003A` | `sub_H026_0000003A` | parziale | h026_string.c:11 |
+ | `$0088` | `sub_H026_00000088` | parziale | h026_string.c:30 |
+ | `$0106` | `sub_H026_00000106` | parziale | h026_string.c:77 |
+-| `$0188` | `sub_H026_00000188` | parziale |  |
+-| `$01E0` | `sub_H026_000001E0` | parziale |  |
++| `$0188` | `sub_H026_00000188` | parziale | h026_string.c:115 |
++| `$01E0` | `sub_H026_000001E0` | parziale | h026_string.c:129 |
+ | `$0254` | `sub_H026_00000254` | parziale |  |
+-| `$03F6` | `sub_H026_000003F6` | parziale |  |
+-| `$0452` | `sub_H026_00000452` | parziale |  |
+-| `$054E` | `sub_H026_0000054E` | parziale |  |
++| `$03F6` | `sub_H026_000003F6` | parziale | h026_string.c:149 |
++| `$0452` | `sub_H026_00000452` | parziale | h026_string.c:165 |
++| `$054E` | `sub_H026_0000054E` | parziale | h026_string.c:185 |
+ 
+ ### H027
+ 
+@@ -447,13 +447,13 @@ Routine portate: **159 / 910**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$01B8` | `module_init_H028` | parziale | h028_files.c:9 |
+-| `$01C6` | `Open_WithRetry` | parziale |  |
+-| `$02D0` | `sub_H028_000002D0` | parziale | h028_files.c:18 |
++| `$01B8` | `module_init_H028` | parziale | h028_files.c:14 |
++| `$01C6` | `Open_WithRetry` | parziale | h028_files.c:42 |
++| `$02D0` | `sub_H028_000002D0` | parziale | h028_files.c:23 |
+ | `$033E` | `sub_H028_0000033E` | parziale |  |
+-| `$0408` | `sub_H028_00000408` | parziale |  |
+-| `$0576` | `sub_H028_00000576` | parziale |  |
+-| `$05FA` | `Open_ResourceFile` | parziale |  |
++| `$0408` | `sub_H028_00000408` | parziale | h028_files.c:82 |
++| `$0576` | `sub_H028_00000576` | parziale | h028_files.c:124 |
++| `$05FA` | `Open_ResourceFile` | parziale | h028_files.c:141 |
+ | `$07E0` | `sub_H028_000007E0` | parziale |  |
+ | `$08F0` | `sub_H028_000008F0` | parziale |  |
+ | `$09DC` | `DAX_DecompressRLE` | verificato |  |
+@@ -492,7 +492,7 @@ Routine portate: **159 / 910**.
+ | `$1206` | `sub_H029_00001206` | parziale | h029_gfx.c:131 |
+ | `$12BC` | `sub_H029_000012BC` | parziale | h029_gfx.c:153 |
+ | `$1308` | `sub_H029_00001308` | parziale | h029_gfx.c:222 |
+-| `$1346` | `Prepare_DisplayResources` | parziale | h029_gfx.c:229 |
++| `$1346` | `Prepare_DisplayResources` | parziale | h029_gfx.c:234 |
+ | `$148E` | `sub_H029_0000148E` | parziale |  |
+ | `$14F6` | `sub_H029_000014F6` | parziale |  |
+ | `$1520` | `sub_H029_00001520` | parziale |  |
+diff --git a/src_c/readable/README.md b/src_c/readable/README.md
+index 319b9df..0f867f5 100644
+--- a/src_c/readable/README.md
++++ b/src_c/readable/README.md
+@@ -51,8 +51,11 @@ Sull'host le librerie di AmigaOS usate dal gioco sono emulate in `host/`
+ così gli adattatori del gioco sono identici sui due target); lo schermo
+ è mostrato con SDL2. Variabili utili: `COK_SCALE=n` (ingrandimento),
+ `COK_SCREENSHOT=file.bmp` (salva l'ultimo fotogramma all'uscita),
+-`SDL_VIDEODRIVER=dummy` (senza finestra). I file dati del gioco vanno
+-nella directory corrente.
++`SDL_VIDEODRIVER=dummy` (senza finestra), `COK_DATA=dir` (directory dei
++file del gioco, altrimenti quella corrente). Come su AmigaDOS i nomi dei file
++non distinguono maiuscole e minuscole e il volume ("df0:", "Disk Two:") è
++ignorato. Le richieste di sistema (es. "inserisci il disco") si chiudono con
++Invio/R (Retry) o Esc/C (Cancel); senza finestra il programma termina.
+ 
+ AmigaOS con SAS/C 6.x: `smake` (ogni nuovo file va aggiunto a `OBJS` nello
+ `smakefile`).
+diff --git a/src_c/readable/cok.h b/src_c/readable/cok.h
+index 2b0f3eb..de346b7 100644
+--- a/src_c/readable/cok.h
++++ b/src_c/readable/cok.h
+@@ -34,6 +34,9 @@
+ #include <proto/dos.h>
+ #include <intuition/intuition.h>
+ #include <graphics/gfx.h>
++#include <graphics/gfxbase.h>
++#include <graphics/view.h>
++#include <intuition/preferences.h>
+ #include <dos/dosextens.h>
+ typedef unsigned char  u8;
+ typedef signed char    s8;
+diff --git a/src_c/readable/gfx_record.h b/src_c/readable/gfx_record.h
+new file mode 100644
+index 0000000..7bf629d
+--- /dev/null
++++ b/src_c/readable/gfx_record.h
+@@ -0,0 +1,23 @@
++/* Record grafico di H029 (struct GfxRecord), usato da piu' moduli. */
++#ifndef COK_GFX_RECORD_H
++#define COK_GFX_RECORD_H
++
++#include "cok.h"
++
++/*
++ * Record grafico (20 byte nell'originale, MEMF_CLEAR): un'immagine a 5
++ * piani e la sua eventuale maschera.  Sull'host i puntatori sono a 64 bit,
++ * quindi la struttura e' piu' grande, con gli stessi campi.
++ */
++struct GfxRecord {
++    u16 rows;                   /* +$00: righe */
++    u16 count;                  /* +$02: unita' in larghezza (2o argomento) */
++    u16 w4;                     /* +$04 */
++    u16 w6;                     /* +$06 */
++    u16 width8;                 /* +$08: larghezza unitaria in byte (8 px) */
++    u16 plane_bytes;            /* +$0A: byte dei 5 piani (word) */
++    struct BitMap *mask;        /* +$0C: maschera, un piano ripetuto 5 volte */
++    struct BitMap *image;       /* +$10: immagine a 5 piani */
++};
++
++#endif
+diff --git a/src_c/readable/globals.h b/src_c/readable/globals.h
+index 8296a95..2cf8804 100644
+--- a/src_c/readable/globals.h
++++ b/src_c/readable/globals.h
+@@ -12,6 +12,7 @@
+ #define COK_GLOBALS_H
+ 
+ #include "cok.h"
++#include "gfx_record.h"
+ 
+ #define H005_SIZE 0x531Cu
+ 
+@@ -39,7 +40,6 @@ extern u8 g_h005[H005_SIZE];
+  * host un puntatore non sta in 32 bit.  Le celle corrispondenti di g_h005
+  * restano inutilizzate.
+  */
+-struct GfxRecord;                       /* record grafico di H029 (20 byte) */
+ 
+ extern u8 *g_state_a;                   /* $3E04: stato persistente A, $800 */
+ extern u8 *g_state_b;                   /* $3E00: stato persistente B, $800 */
+diff --git a/src_c/readable/h002_dos.c b/src_c/readable/h002_dos.c
+index 87fae7d..f4e1166 100644
+--- a/src_c/readable/h002_dos.c
++++ b/src_c/readable/h002_dos.c
+@@ -6,10 +6,88 @@
+  * un booleano 1.  Sull'host non esiste dos.library: le implementazioni
+  * #else sono l'ambiente minimo per far girare il port.
+  */
++/* Host: opendir/strncasecmp di POSIX (prima di ogni header di sistema). */
++#if !defined(__SASC) && !defined(__AMIGA__) && !defined(AMIGA) && !defined(_WIN32)
++#define _POSIX_C_SOURCE 200809L
++#endif
+ #include "h002_dos.h"
+ 
+ #if !COK_AMIGA
+ #include <stdio.h>
++#include <stdlib.h>
++
++/*
++ * Host: i nomi AmigaDOS "volume:percorso" (df0:, Disk Two:, ...) diventano
++ * percorsi relativi alla directory dei dati (COK_DATA, altrimenti quella
++ * corrente): si toglie tutto fino ai due punti.  Come AmigaDOS, i nomi non
++ * distinguono maiuscole e minuscole: ogni componente del percorso che non
++ * esiste cosi' com'e' viene cercato nella sua directory ignorando le
++ * maiuscole.
++ */
++#if defined(_WIN32)
++static const char *host_path(const char *name)
++{
++    static char path[1024];
++    const char *colon = strchr(name, ':');
++    const char *dir = getenv("COK_DATA");
++
++    sprintf(path, "%.500s%s%.500s", dir != NULL ? dir : "",
++            dir != NULL ? "/" : "", colon != NULL ? colon + 1 : name);
++    return path;
++}
++#else
++#include <dirent.h>
++#include <strings.h>
++#include <sys/stat.h>
++
++static const char *host_path(const char *name)
++{
++    static char path[1024];
++    const char *colon = strchr(name, ':');
++    const char *dir = getenv("COK_DATA");
++    const char *rest = colon != NULL ? colon + 1 : name;
++    size_t base;
++    struct stat st;
++
++    sprintf(path, "%.500s", dir != NULL && dir[0] != 0 ? dir : ".");
++    while (*rest != 0) {
++        const char *end = strchr(rest, '/');
++        size_t n = end != NULL ? (size_t)(end - rest) : strlen(rest);
++        DIR *d;
++
++        if (n == 0) {
++            ++rest;
++            continue;
++        }
++        base = strlen(path);
++        if (base + n + 2 >= sizeof(path)) {
++            break;
++        }
++        path[base] = '/';
++        memcpy(path + base + 1, rest, n);
++        path[base + 1 + n] = 0;
++        if (stat(path, &st) != 0) {
++            path[base] = 0;
++            d = opendir(path[0] != 0 ? path : "/");
++            path[base] = '/';
++            if (d != NULL) {
++                struct dirent *e;
++
++                while ((e = readdir(d)) != NULL) {
++                    if (strlen(e->d_name) == n &&
++                        strncasecmp(e->d_name, rest, n) == 0) {
++                        memcpy(path + base + 1, e->d_name, n);
++                        break;
++                    }
++                }
++                closedir(d);
++            }
++        }
++        rest += n;
++    }
++    return path;
++}
++#endif
+ #endif
+ 
+ /*
+@@ -34,7 +112,10 @@ cok_bptr dos_lock(const char *name, s32 mode)
+     if (name[0] == 0) {
+         return 1;
+     }
+-    f = fopen(name, "rb");
++    if (strchr(name, ':') != NULL && strchr(name, ':')[1] == 0) {
++        return 1;               /* solo il volume: la directory dei dati */
++    }
++    f = fopen(host_path(name), "rb");
+     if (f == NULL) {
+         return 0;
+     }
+@@ -111,9 +192,10 @@ cok_bptr dos_open(const char *name, s32 mode)
+ 
+     for (i = 0; i < HOST_FILES; ++i) {
+         if (s_files[i] == NULL) {
+-            s_files[i] = fopen(name, how);
++            s_files[i] = fopen(host_path(name), how);
+             if (s_files[i] == NULL && mode == MODE_READWRITE) {
+-                s_files[i] = fopen(name, "w+b");  /* MODE_READWRITE crea */
++                /* MODE_READWRITE crea il file */
++                s_files[i] = fopen(host_path(name), "w+b");
+             }
+             return s_files[i] != NULL ? i + 1 : 0;
+         }
+diff --git a/src_c/readable/h021_intuition.c b/src_c/readable/h021_intuition.c
+index 847bceb..68e086e 100644
+--- a/src_c/readable/h021_intuition.c
++++ b/src_c/readable/h021_intuition.c
+@@ -82,3 +82,13 @@ struct Window *intuition_open_window(struct NewWindow *nw)
+ {
+     return OpenWindow(nw);
+ }
++
++/* PORT H021+$03AE */
++u32 intuition_auto_request(struct Window *window, struct IntuiText *body,
++                           struct IntuiText *pos, struct IntuiText *neg,
++                           u32 pos_flags, u32 neg_flags, u16 width,
++                           u16 height)
++{
++    return (u32)AutoRequest(window, body, pos, neg, pos_flags, neg_flags,
++                            (LONG)width, (LONG)height);
++}
+diff --git a/src_c/readable/h021_intuition.h b/src_c/readable/h021_intuition.h
+index 0e3b839..90c863e 100644
+--- a/src_c/readable/h021_intuition.h
++++ b/src_c/readable/h021_intuition.h
+@@ -14,5 +14,9 @@ void intuition_activate_window(struct Window *window);    /* H021+$01FA */
+ void intuition_clear_pointer(struct Window *window);      /* H021+$0230 */
+ void intuition_close_window(struct Window *window);       /* H021+$0242 */
+ struct Window *intuition_open_window(struct NewWindow *nw); /* H021+$029C */
++u32  intuition_auto_request(struct Window *window, struct IntuiText *body,
++                            struct IntuiText *pos, struct IntuiText *neg,
++                            u32 pos_flags, u32 neg_flags, u16 width,
++                            u16 height);                  /* H021+$03AE */
+ 
+ #endif
+diff --git a/src_c/readable/h026_string.c b/src_c/readable/h026_string.c
+index 588a6f5..d3dabbd 100644
+--- a/src_c/readable/h026_string.c
++++ b/src_c/readable/h026_string.c
+@@ -38,7 +38,7 @@ u8 h026_compare(u16 len_a, const char *a, u16 len_b, const char *b)
+     (void)len_b;
+     for (i = 0;; ++i) {
+         if (a[i] != b[i]) {
+-            return (u8)a[i] > (u8)b[i] ? 2 : 0;
++            return (u8)((u8)a[i] > (u8)b[i] ? 2 : 0);
+         }
+         if (a[i] == 0) {
+             return 1;
+@@ -93,3 +93,110 @@ u8 h026_compare_nocase(u16 len_a, const char *a, u16 len_b, const char *b)
+     exec_free_mem(ca, size_a);
+     return result;
+ }
++
++/*
++ * Nelle funzioni seguenti gli argomenti "len" sono i limiti che i chiamanti
++ * passano per la stringa sorgente: l'originale non li usa (salvo dove
++ * detto), si ferma al NUL.
++ */
++
++/* PORT H026+$000C: lunghezza fino al NUL (word). */
++u16 h026_strlen(u16 len, const char *s)
++{
++    u16 i = 0;
++
++    (void)len;
++    while (s[i] != 0) {
++        ++i;
++    }
++    return i;
++}
++
++/* PORT H026+$0188: copia al massimo dst_max byte, poi il NUL. */
++void h026_copy(u16 dst_max, char *dst, u16 src_len, const char *src)
++{
++    u16 i = 0;
++
++    (void)src_len;
++    while (src[i] != 0 && i < dst_max) {
++        dst[i] = src[i];
++        ++i;
++    }
++    dst[i] = 0;
++}
++
++/*
++ * PORT H026+$01E0: accoda src a dst finche' la lunghezza di dst resta
++ * minore di dst_max, poi il NUL.
++ */
++void h026_append(u16 dst_max, char *dst, u16 src_len, const char *src)
++{
++    u16 d = h026_strlen(dst_max, dst);
++    u16 i = 0;
++
++    (void)src_len;
++    while (src[i] != 0) {
++        if (!(dst_max > d)) {
++            break;
++        }
++        dst[d] = src[i];
++        ++d;
++        ++i;
++    }
++    dst[d] = 0;
++}
++
++/* PORT H026+$03F6: toglie count caratteri da start (sul posto). */
++void h026_delete(u16 len, char *s, u16 start, u16 count)
++{
++    u16 from = (u16)(start + count);
++    u16 to = start;
++
++    (void)len;
++    while (s[from] != 0) {
++        s[to] = s[from];
++        ++from;
++        ++to;
++    }
++    s[to] = 0;
++}
++
++/*
++ * PORT H026+$0452: al massimo count caratteri di src da start, non oltre il
++ * NUL di src ne' dst_max byte, poi il NUL.
++ */
++void h026_substr(u16 dst_max, char *dst, u16 src_len, const char *src,
++                 u16 start, u16 count)
++{
++    u16 i = start;
++    u16 j = 0;
++
++    (void)src_len;
++    while (count != 0 && src[i] != 0 && j < dst_max) {
++        dst[j] = src[i];
++        ++i;
++        ++j;
++        --count;
++    }
++    dst[j] = 0;
++}
++
++/*
++ * PORT H026+$054E: indice del primo ch tra start e last (compreso) prima del
++ * NUL, altrimenti -1.
++ */
++s16 h026_find_char(u16 len, const char *s, u8 ch, u16 start, u16 last)
++{
++    u16 i;
++
++    (void)len;
++    for (i = start; i <= last && s[i] != 0; ++i) {
++        if ((u8)s[i] == ch) {
++            return (s16)i;
++        }
++        if (i == 0xFFFF) {
++            break;
++        }
++    }
++    return -1;
++}
+diff --git a/src_c/readable/h026_string.h b/src_c/readable/h026_string.h
+index 812833c..58bfb9e 100644
+--- a/src_c/readable/h026_string.h
++++ b/src_c/readable/h026_string.h
+@@ -4,7 +4,17 @@
+ 
+ #include "cok.h"
+ 
++u16  h026_strlen(u16 len, const char *s);                   /* H026+$000C */
+ void h026_upcase(u16 len, char *s);                         /* H026+$003A */
++void h026_copy(u16 dst_max, char *dst, u16 src_len, const char *src);
++                                                            /* H026+$0188 */
++void h026_append(u16 dst_max, char *dst, u16 src_len, const char *src);
++                                                            /* H026+$01E0 */
++void h026_delete(u16 len, char *s, u16 start, u16 count);   /* H026+$03F6 */
++void h026_substr(u16 dst_max, char *dst, u16 src_len, const char *src,
++                 u16 start, u16 count);                     /* H026+$0452 */
++s16  h026_find_char(u16 len, const char *s, u8 ch, u16 start, u16 last);
++                                                            /* H026+$054E */
+ u8   h026_compare(u16 len_a, const char *a, u16 len_b, const char *b);
+                                                             /* H026+$0088 */
+ u8   h026_compare_nocase(u16 len_a, const char *a, u16 len_b,
+diff --git a/src_c/readable/h028_files.c b/src_c/readable/h028_files.c
+index b6b53a6..a54170d 100644
+--- a/src_c/readable/h028_files.c
++++ b/src_c/readable/h028_files.c
+@@ -1,10 +1,15 @@
+ /* H028: file, richieste disco, caricamento per ID e RLE dei DAX. */
+ #include "h028_files.h"
+ #include "h002_dos.h"
++#include "h021_intuition.h"
++#include "h026_string.h"
++#include "globals.h"
+ 
+ u8  g_h028_mf9;                 /* -$F9(a4) */
+ u32 g_h028_maa;                 /* -$AA(a4) */
+ u32 g_h028_mae;                 /* -$AE(a4) */
++char g_h028_m52[0x52];          /* -$52(a4): directory alternativa, mai
++                                   scritta nell'asm, quindi sempre "" */
+ 
+ /* PORT H028+$01B8 */
+ void h028_init(void)
+@@ -32,3 +37,151 @@ u8 file_exists(u16 len, const char *name)
+     dos_unlock(lock);
+     return 1;
+ }
++
++/*
++ * PORT H028+$01C6: richiesta "Retry"/"CANCEL" con il testo dato sulla
++ * finestra del gioco (320x70).  Il risultato non e' usato.  L'originale
++ * copia prima il testo sullo stack; qui si usa direttamente.  I primi due
++ * argomenti non sono letti.
++ */
++static void disk_request(u16 unused1, u16 unused2, u16 len, char *text)
++{
++    struct IntuiText body;
++    struct IntuiText retry;
++    struct IntuiText cancel;
++
++    (void)len;
++    (void)unused1;
++    (void)unused2;
++    body.FrontPen = 3;
++    body.BackPen = 1;
++    body.DrawMode = 1;
++    body.LeftEdge = 0x0A;
++    body.TopEdge = 0x0A;
++    body.ITextFont = NULL;
++    body.IText = (UBYTE *)text;
++    body.NextText = NULL;
++
++    retry.FrontPen = 2;
++    retry.BackPen = 1;
++    retry.DrawMode = 1;
++    retry.LeftEdge = 3;
++    retry.TopEdge = 3;
++    retry.ITextFont = NULL;
++    retry.IText = (UBYTE *)"Retry";
++    retry.NextText = NULL;
++
++    cancel = retry;
++    cancel.IText = (UBYTE *)"CANCEL";
++
++    (void)intuition_auto_request(g_window, &body, &retry, &cancel, 0x8000, 0,
++                                 0x140, 0x46);
++}
++
++/*
++ * PORT H028+$0408: divide name in volume/percorso fino ai primi ':' (dir),
++ * nome (base) ed estensione dal primo '.' entro $4F caratteri (ext).  Senza
++ * ':' base non viene scritta (come nell'originale: il ramo e' saltato).
++ * L'originale lavora su una copia di name sullo stack; qui una copia locale
++ * di $52 byte, che basta per i nomi passati dal gioco.
++ */
++static void split_resource_name(u16 name_len, const char *name,
++                                u16 dir_max, char *dir, u16 base_max,
++                                char *base, u16 ext_max, char *ext)
++{
++    char copy[0x52];
++    s16 dot;
++    s16 colon;
++    s16 len;
++    s16 i;
++
++    h026_copy(sizeof(copy) - 1, copy, name_len, name);
++    dot = h026_find_char(name_len, copy, '.', 0, 0x4F);
++    len = (s16)h026_strlen(name_len, copy);
++    if (dot >= 0) {
++        h026_substr(ext_max, ext, name_len, copy, (u16)dot, (u16)(len - dot));
++        h026_delete(name_len, copy, (u16)dot, (u16)(len - dot));
++    } else {
++        h026_copy(ext_max, ext, 0, "");
++    }
++
++    len = (s16)h026_strlen(name_len, copy);
++    colon = 0;
++    if (len > 0) {
++        for (i = (s16)(len - 1); i >= 0; --i) {
++            if (copy[i] == ':') {
++                colon = (s16)(i + 1);
++            }
++        }
++        h026_substr(base_max, base, name_len, copy, (u16)colon,
++                    (u16)(len - colon));
++        h026_delete(name_len, copy, (u16)colon, (u16)(len - colon));
++    }
++    h026_copy(dir_max, dir, name_len, copy);
++}
++
++/*
++ * PORT H028+$0576: apre dir + name se esiste; 1 se l'handle non e' nullo.
++ */
++static u8 try_open(cok_bptr *file, u16 dir_len, const char *dir,
++                   u16 name_len, const char *name)
++{
++    char path[0x52];
++
++    h026_copy(0x50, path, dir_len, dir);
++    h026_append(0x50, path, name_len, name);
++    if (!file_exists(0x50, path)) {
++        return 0;
++    }
++    *file = dos_open(path, MODE_OLDFILE);
++    return (u8)(*file != 0);
++}
++
++/*
++ * PORT H028+$05FA (Open_ResourceFile): cerca il file nella directory del
++ * prefisso dei dati (con "DF0:" sostituito dal disco del gruppo di risorse
++ * corrente: 1 "Disk Two:", 2 "Disk Three:") e poi nel volume del nome (o
++ * nella directory alternativa del modulo se il nome non ne ha).  Se non lo
++ * trova chiede di inserire il disco e riprova all'infinito: il ramo che
++ * restituirebbe 0 nell'originale non e' raggiungibile (moveq #0 / tst.b /
++ * beq).  Restituisce 1 con l'handle in *file.
++ */
++u8 open_resource_file(u16 name_len, const char *name, u16 msg_len,
++                      const char *msg, u8 unused, cok_bptr *file)
++{
++    char ext[0x52];             /* -$14C(a5) */
++    char base[0x52];            /* -$FA(a5) */
++    char dir[0x52];             /* -$A8(a5) */
++    char text[0x52];            /* -$56(a5) */
++    char disk[0x16];            /* -$162(a5) */
++
++    (void)unused;
++    split_resource_name(name_len, name, 0x50, dir, 0x50, base, 0x50, ext);
++    h026_append(0x50, base, 0x50, ext);
++    if (h026_compare_nocase(0x50, dir, 0, "") == 1) {
++        h026_copy(0x50, dir, 0x50, g_h028_m52);
++    }
++    h026_copy(0x14, disk, 0x50, G_DATA_PREFIX);
++    if (h026_compare_nocase(0x14, disk, 4, "DF0:") == 1) {
++        switch (G_RESOURCE_GROUP) {
++        case 1:
++            h026_copy(0x14, disk, 9, "Disk Two:");
++            break;
++        case 2:
++            h026_copy(0x14, disk, 0x0B, "Disk Three:");
++            break;
++        default:
++            break;
++        }
++    }
++    for (;;) {
++        if (try_open(file, 0x14, disk, 0x50, base)) {
++            return 1;
++        }
++        if (try_open(file, 0x50, dir, 0x50, base)) {
++            return 1;
++        }
++        h026_copy(0x50, text, msg_len, msg);
++        disk_request(0x0E, 0, 0x50, text);
++    }
++}
+diff --git a/src_c/readable/h028_files.h b/src_c/readable/h028_files.h
+index 11c727a..d08a43f 100644
+--- a/src_c/readable/h028_files.h
++++ b/src_c/readable/h028_files.h
+@@ -4,6 +4,11 @@
+ 
+ #include "cok.h"
+ 
++#include "h002_dos.h"
++
+ u8 file_exists(u16 len, const char *name);      /* H028+$02D0 */
++u8 open_resource_file(u16 name_len, const char *name, u16 msg_len,
++                      const char *msg, u8 unused, cok_bptr *file);
++                                                /* H028+$05FA */
+ 
+ #endif
+diff --git a/src_c/readable/h029_gfx.c b/src_c/readable/h029_gfx.c
+index c62ad14..6a0c00f 100644
+--- a/src_c/readable/h029_gfx.c
++++ b/src_c/readable/h029_gfx.c
+@@ -222,7 +222,12 @@ void allocate_gfx_record(u16 rows, u16 count, u16 width8, u16 with_mask,
+ /* PORT H029+$1308: byte con segno esteso a word. */
+ static s16 signed_byte(u8 b)
+ {
+-    return b < 0x80 ? (s16)b : (s16)(b - 0x100);
++    s16 v = (s16)b;
++
++    if (b >= 0x80) {
++        v = (s16)(v - 0x100);
++    }
++    return v;
+ }
+ 
+ /*
+diff --git a/src_c/readable/h029_gfx.h b/src_c/readable/h029_gfx.h
+index c8f5dc6..576bd9b 100644
+--- a/src_c/readable/h029_gfx.h
++++ b/src_c/readable/h029_gfx.h
+@@ -3,22 +3,8 @@
+ #define COK_H029_GFX_H
+ 
+ #include "cok.h"
++#include "gfx_record.h"
+ 
+-/*
+- * Record grafico (20 byte nell'originale, MEMF_CLEAR): un'immagine a 5
+- * piani e la sua eventuale maschera.  Sull'host i puntatori sono a 64 bit,
+- * quindi la struttura e' piu' grande, con gli stessi campi.
+- */
+-struct GfxRecord {
+-    u16 rows;                   /* +$00: righe */
+-    u16 count;                  /* +$02: 3o argomento di H029+$0408 */
+-    u16 w4;                     /* +$04 */
+-    u16 w6;                     /* +$06 */
+-    u16 width8;                 /* +$08: larghezza unitaria in byte (8 px) */
+-    u16 plane_bytes;            /* +$0A: byte dei 5 piani (word) */
+-    struct BitMap *mask;        /* +$0C: maschera, un piano ripetuto 5 volte */
+-    struct BitMap *image;       /* +$10: immagine a 5 piani */
+-};
+ 
+ void allocate_gfx_record(u16 rows, u16 count, u16 width8, u16 with_mask,
+                          struct GfxRecord **rec);       /* H029+$0408 */
+diff --git a/src_c/readable/host/display.c b/src_c/readable/host/display.c
+index b64bd98..ac03aee 100644
+--- a/src_c/readable/host/display.c
++++ b/src_c/readable/host/display.c
+@@ -211,3 +211,25 @@ void host_display_refresh(int force)
+     s_last_present = now;
+     s_dirty = 0;
+ }
++
++int host_display_wait_key(void)
++{
++    SDL_Event ev;
++
++    if (!s_sdl_ready || s_window == NULL) {
++        return -1;
++    }
++    host_display_refresh(1);
++    while (SDL_WaitEvent(&ev)) {
++        if (ev.type == SDL_QUIT) {
++            exit(0);
++        }
++        if (ev.type == SDL_KEYDOWN) {
++            return (int)ev.key.keysym.sym;
++        }
++        if (ev.type == SDL_WINDOWEVENT) {
++            host_display_refresh(1);
++        }
++    }
++    return -1;
++}
+diff --git a/src_c/readable/host/intuition.c b/src_c/readable/host/intuition.c
+index e418ae5..3ada20b 100644
+--- a/src_c/readable/host/intuition.c
++++ b/src_c/readable/host/intuition.c
+@@ -2,6 +2,7 @@
+  * Build host: intuition.library ed exec emulati (solo quanto usa il port).
+  * Lo schermo e' una BitMap planare in memoria, mostrata da host/display.c.
+  */
++#include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include "ndk.h"
+@@ -163,3 +164,48 @@ void ClearPointer(struct Window *window)
+ {
+     (void)window;
+ }
++
++/*
++ * Richiesta di sistema: il testo va su stderr e si attende un tasto nella
++ * finestra: Invio o R = scelta positiva (TRUE), Esc o C = negativa (FALSE).
++ * Senza display interattivo (SDL_VIDEODRIVER=dummy) o con
++ * COK_NONINTERACTIVE definita il programma termina, perche' il gioco
++ * ripeterebbe la richiesta all'infinito.
++ */
++BOOL AutoRequest(struct Window *window, struct IntuiText *body,
++                 struct IntuiText *pos, struct IntuiText *neg,
++                 ULONG pos_flags, ULONG neg_flags, LONG width, LONG height)
++{
++    const struct IntuiText *t;
++    const char *driver = getenv("SDL_VIDEODRIVER");
++
++    (void)window;
++    (void)pos_flags;
++    (void)neg_flags;
++    (void)width;
++    (void)height;
++    fprintf(stderr, "Richiesta:");
++    for (t = body; t != NULL; t = t->NextText) {
++        fprintf(stderr, " %s", t->IText != NULL ? (const char *)t->IText : "");
++    }
++    fprintf(stderr, "  [%s / %s]\n",
++            pos != NULL && pos->IText != NULL ? (const char *)pos->IText : "",
++            neg != NULL && neg->IText != NULL ? (const char *)neg->IText : "");
++    if (getenv("COK_NONINTERACTIVE") != NULL ||
++        (driver != NULL && strcmp(driver, "dummy") == 0)) {
++        exit(20);
++    }
++    for (;;) {
++        int key = host_display_wait_key();
++
++        if (key < 0) {
++            exit(20);
++        }
++        if (key == '\r' || key == 'r') {
++            return TRUE;
++        }
++        if (key == 27 || key == 'c') {
++            return FALSE;
++        }
++    }
++}
+diff --git a/src_c/readable/host/ndk.h b/src_c/readable/host/ndk.h
+index bf5b2e7..8b24015 100644
+--- a/src_c/readable/host/ndk.h
++++ b/src_c/readable/host/ndk.h
+@@ -191,6 +191,19 @@ struct Preferences {
+ };
+ 
+ struct Preferences *GetPrefs(struct Preferences *prefs, LONG size);
++struct IntuiText {
++    UBYTE FrontPen, BackPen;
++    UBYTE DrawMode;
++    WORD LeftEdge;
++    WORD TopEdge;
++    struct TextAttr *ITextFont;
++    UBYTE *IText;
++    struct IntuiText *NextText;
++};
++
++BOOL AutoRequest(struct Window *window, struct IntuiText *body,
++                 struct IntuiText *pos, struct IntuiText *neg,
++                 ULONG pos_flags, ULONG neg_flags, LONG width, LONG height);
+ struct Screen *OpenScreen(struct NewScreen *ns);
+ void           CloseScreen(struct Screen *screen);
+ struct Window *OpenWindow(struct NewWindow *nw);
+@@ -207,5 +220,6 @@ void host_display_detach(struct Screen *screen);
+ void host_display_changed(void);   /* bitmap o colori modificati */
+ void host_display_view(struct View *view);   /* LoadView */
+ void host_display_refresh(int force);
++int  host_display_wait_key(void);  /* tasto premuto (SDL_Keycode), -1 se nessun display */
+ 
+ #endif
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index b57f7ba..9224914 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -7,8 +7,7 @@
+ #define COK_UNPORTED_H
+ 
+ #include "cok.h"
+-
+-struct GfxRecord;
++#include "gfx_record.h"
+ 
+ void h006_0914(void);
+ void h006_00fa(void);
+-- 
+2.43.0
+

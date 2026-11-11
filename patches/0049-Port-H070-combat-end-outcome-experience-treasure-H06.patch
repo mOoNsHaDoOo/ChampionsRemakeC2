@@ -1,0 +1,1612 @@
+From 24f66b7bf62ef7e8b4236891289c67f6c169654d Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 11 Nov 2026 10:04:38 +0000
+Subject: [PATCH 49/65] Port H070 combat end (outcome, experience, treasure),
+ H067 pool/share/take money, H071+$047C, H006+$0914
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md | 142 +++----
+ src_c/readable/backlog.md     |  50 +++
+ src_c/readable/h001_main.c    |   2 +-
+ src_c/readable/h006.c         |  82 ++++
+ src_c/readable/h006.h         |   1 +
+ src_c/readable/h012.c         |   5 +-
+ src_c/readable/h065.c         |   2 +-
+ src_c/readable/h065.h         |   1 +
+ src_c/readable/h067.c         | 241 +++++++++++
+ src_c/readable/h067.h         |   4 +
+ src_c/readable/h070.c         | 757 +++++++++++++++++++++++++++++++++-
+ src_c/readable/h070.h         |   7 +
+ src_c/readable/h071.c         |  36 ++
+ src_c/readable/h071.h         |   7 +
+ src_c/readable/unported.c     |   2 -
+ src_c/readable/unported.h     |   2 -
+ 16 files changed, 1261 insertions(+), 80 deletions(-)
+ create mode 100644 src_c/readable/h070.h
+ create mode 100644 src_c/readable/h071.h
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index a40e10a..cc9bdb5 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **949 / 1113**.
++Routine portate: **969 / 1113**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -12,7 +12,7 @@ Routine portate: **949 / 1113**.
+ | H003 | 316 | 5 | 5 |
+ | H004 | 24284 | 2 | 2 |
+ | H005 | 21276 | 1 | 1 |
+-| H006 | 3020 | 4 | 3 |
++| H006 | 3020 | 4 | 4 |
+ | H007 | 3036 | 11 | 11 |
+ | H008 | 8660 | 21 | 21 |
+ | H009 | 988 | 3 | 3 |
+@@ -73,11 +73,11 @@ Routine portate: **949 / 1113**.
+ | H064 | 6460 | 28 | 28 |
+ | H065 | 14268 | 27 | 27 |
+ | H066 | 13840 | 27 | 25 |
+-| H067 | 9820 | 22 | 12 |
++| H067 | 9820 | 22 | 18 |
+ | H068 | 5788 | 14 | 14 |
+ | H069 | 232 | 3 | 3 |
+-| H070 | 6940 | 13 | 1 |
+-| H071 | 3132 | 5 | 1 |
++| H070 | 6940 | 13 | 13 |
++| H071 | 3132 | 5 | 2 |
+ | H072 | 5404 | 12 | 1 |
+ | H073 | 4928 | 10 | 10 |
+ | H074 | 1216 | 4 | 1 |
+@@ -173,7 +173,7 @@ Routine portate: **949 / 1113**.
+ | `$00EC` | `module_init_H006` | parziale | h006.c:35 |
+ | `$00FA` | `sub_H006_000000FA` | parziale | h006.c:54 |
+ | `$01AE` | `Initialize_GameEnvironment` | verificato | h006.c:93 |
+-| `$0914` | `sub_H006_00000914` | parziale |  |
++| `$0914` | `sub_H006_00000914` | parziale | h006.c:262 |
+ 
+ ### H007
+ 
+@@ -261,39 +261,39 @@ Routine portate: **949 / 1113**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0178` | `module_init_H012` | parziale | h012.c:33 |
++| `$0178` | `module_init_H012` | parziale | h012.c:34 |
+ | `$0186` | `trampoline_H012_3004` | parziale |  |
+-| `$018A` | `ECL_RunAtAddress` | verificato | h012.c:105 |
+-| `$01FA` | `(senza scheda)` | - | h012.c:158 |
+-| `$0208` | `sub_H012_00000208` | parziale | h012.c:138 |
+-| `$05D6` | `(senza scheda)` | - | h012.c:253 |
+-| `$0688` | `(senza scheda)` | - | h012.c:271 |
+-| `$0766` | `(senza scheda)` | - | h012.c:306 |
+-| `$0B18` | `(senza scheda)` | - | h012.c:381 |
+-| `$0BEA` | `(senza scheda)` | - | h012.c:508 |
+-| `$15AE` | `(senza scheda)` | - | h012.c:583 |
+-| `$1DDE` | `(senza scheda)` | - | h012.c:810 |
+-| `$1E90` | `(senza scheda)` | - | h012.c:829 |
+-| `$1F4C` | `(senza scheda)` | - | h012.c:852 |
+-| `$1F68` | `(senza scheda)` | - | h012.c:860 |
+-| `$2358` | `(senza scheda)` | - | h012.c:959 |
+-| `$2392` | `(senza scheda)` | - | h012.c:971 |
+-| `$23D6` | `(senza scheda)` | - | h012.c:983 |
+-| `$241C` | `(senza scheda)` | - | h012.c:997 |
+-| `$2486` | `(senza scheda)` | - | h012.c:1013 |
+-| `$2502` | `(senza scheda)` | - | h012.c:1029 |
+-| `$2596` | `(senza scheda)` | - | h012.c:1044 |
+-| `$26D6` | `(senza scheda)` | - | h012.c:1206 |
+-| `$2922` | `sub_H012_00002922` | parziale | h012.c:1271 |
+-| `$29A6` | `(senza scheda)` | - | h012.c:1296 |
+-| `$2AAE` | `(senza scheda)` | - | h012.c:1090 |
+-| `$2ABE` | `(senza scheda)` | - | h012.c:1097 |
+-| `$2AF6` | `(senza scheda)` | - | h012.c:1106 |
+-| `$2B64` | `(senza scheda)` | - | h012.c:1120 |
+-| `$2C28` | `(senza scheda)` | - | h012.c:1151 |
+-| `$2DF2` | `ECL_DispatchOpcode` | verificato | h012.c:39 |
+-| `$3020` | `sub_H012_00003020` | parziale | h012.c:1340 |
+-| `$3150` | `Scenario_MainLoop` | verificato | h012.c:1401 |
++| `$018A` | `ECL_RunAtAddress` | verificato | h012.c:106 |
++| `$01FA` | `(senza scheda)` | - | h012.c:159 |
++| `$0208` | `sub_H012_00000208` | parziale | h012.c:139 |
++| `$05D6` | `(senza scheda)` | - | h012.c:254 |
++| `$0688` | `(senza scheda)` | - | h012.c:272 |
++| `$0766` | `(senza scheda)` | - | h012.c:307 |
++| `$0B18` | `(senza scheda)` | - | h012.c:382 |
++| `$0BEA` | `(senza scheda)` | - | h012.c:509 |
++| `$15AE` | `(senza scheda)` | - | h012.c:584 |
++| `$1DDE` | `(senza scheda)` | - | h012.c:811 |
++| `$1E90` | `(senza scheda)` | - | h012.c:830 |
++| `$1F4C` | `(senza scheda)` | - | h012.c:853 |
++| `$1F68` | `(senza scheda)` | - | h012.c:861 |
++| `$2358` | `(senza scheda)` | - | h012.c:960 |
++| `$2392` | `(senza scheda)` | - | h012.c:972 |
++| `$23D6` | `(senza scheda)` | - | h012.c:984 |
++| `$241C` | `(senza scheda)` | - | h012.c:998 |
++| `$2486` | `(senza scheda)` | - | h012.c:1014 |
++| `$2502` | `(senza scheda)` | - | h012.c:1030 |
++| `$2596` | `(senza scheda)` | - | h012.c:1045 |
++| `$26D6` | `(senza scheda)` | - | h012.c:1207 |
++| `$2922` | `sub_H012_00002922` | parziale | h012.c:1272 |
++| `$29A6` | `(senza scheda)` | - | h012.c:1297 |
++| `$2AAE` | `(senza scheda)` | - | h012.c:1091 |
++| `$2ABE` | `(senza scheda)` | - | h012.c:1098 |
++| `$2AF6` | `(senza scheda)` | - | h012.c:1107 |
++| `$2B64` | `(senza scheda)` | - | h012.c:1121 |
++| `$2C28` | `(senza scheda)` | - | h012.c:1152 |
++| `$2DF2` | `ECL_DispatchOpcode` | verificato | h012.c:40 |
++| `$3020` | `sub_H012_00003020` | parziale | h012.c:1341 |
++| `$3150` | `Scenario_MainLoop` | verificato | h012.c:1402 |
+ 
+ ### H013
+ 
+@@ -1265,25 +1265,25 @@ Routine portate: **949 / 1113**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$01BA` | `module_init_H067` | parziale | h067.c:13 |
+-| `$01C8` | `sub_H067_000001C8` | parziale | h067.c:18 |
+-| `$01F2` | `sub_H067_000001F2` | parziale | h067.c:24 |
+-| `$0212` | `sub_H067_00000212` | parziale | h067.c:30 |
+-| `$0232` | `sub_H067_00000232` | parziale | h067.c:183 |
+-| `$02AE` | `sub_H067_000002AE` | parziale | h067.c:206 |
+-| `$032A` | `sub_H067_0000032A` | parziale | h067.c:220 |
+-| `$0374` | `sub_H067_00000374` | parziale | h067.c:231 |
++| `$01BA` | `module_init_H067` | parziale | h067.c:17 |
++| `$01C8` | `sub_H067_000001C8` | parziale | h067.c:22 |
++| `$01F2` | `sub_H067_000001F2` | parziale | h067.c:28 |
++| `$0212` | `sub_H067_00000212` | parziale | h067.c:34 |
++| `$0232` | `sub_H067_00000232` | parziale | h067.c:187 |
++| `$02AE` | `sub_H067_000002AE` | parziale | h067.c:210 |
++| `$032A` | `sub_H067_0000032A` | parziale | h067.c:224 |
++| `$0374` | `sub_H067_00000374` | parziale | h067.c:235 |
+ | `$03BC` | `sub_H067_000003BC` | parziale |  |
+-| `$044E` | `sub_H067_0000044E` | parziale | h067.c:37 |
+-| `$06F8` | `sub_H067_000006F8` | parziale | h067.c:96 |
+-| `$0794` | `sub_H067_00000794` | parziale |  |
+-| `$086E` | `sub_H067_0000086E` | parziale |  |
+-| `$08CC` | `sub_H067_000008CC` | parziale |  |
+-| `$0C8C` | `sub_H067_00000C8C` | parziale | h067.c:113 |
+-| `$0D0A` | `sub_H067_00000D0A` | parziale |  |
+-| `$0DCA` | `sub_H067_00000DCA` | parziale | h067.c:127 |
+-| `$0F72` | `sub_H067_00000F72` | parziale |  |
+-| `$11F4` | `sub_H067_000011F4` | parziale |  |
++| `$044E` | `sub_H067_0000044E` | parziale | h067.c:41 |
++| `$06F8` | `sub_H067_000006F8` | parziale | h067.c:100 |
++| `$0794` | `sub_H067_00000794` | parziale | h067.c:258 |
++| `$086E` | `sub_H067_0000086E` | parziale | h067.c:279 |
++| `$08CC` | `sub_H067_000008CC` | parziale | h067.c:294 |
++| `$0C8C` | `sub_H067_00000C8C` | parziale | h067.c:117 |
++| `$0D0A` | `sub_H067_00000D0A` | parziale | h067.c:371 |
++| `$0DCA` | `sub_H067_00000DCA` | parziale | h067.c:131 |
++| `$0F72` | `sub_H067_00000F72` | parziale | h067.c:392 |
++| `$11F4` | `sub_H067_000011F4` | parziale | h067.c:464 |
+ | `$125A` | `sub_H067_0000125A` | parziale |  |
+ | `$1292` | `sub_H067_00001292` | parziale |  |
+ | `$1D7C` | `sub_H067_00001D7C` | parziale |  |
+@@ -1319,27 +1319,27 @@ Routine portate: **949 / 1113**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0272` | `module_init_H070` | parziale | h070.c:4 |
+-| `$0280` | `sub_H070_00000280` | parziale |  |
+-| `$0558` | `trampoline_H070_076E` | parziale |  |
+-| `$0778` | `sub_H070_00000778` | parziale |  |
+-| `$0B9E` | `sub_H070_00000B9E` | parziale |  |
+-| `$0DE0` | `sub_H070_00000DE0` | parziale |  |
+-| `$0E94` | `sub_H070_00000E94` | parziale |  |
+-| `$0F8A` | `sub_H070_00000F8A` | parziale |  |
+-| `$1136` | `sub_H070_00001136` | parziale |  |
+-| `$152E` | `sub_H070_0000152E` | parziale |  |
+-| `$165C` | `sub_H070_0000165C` | parziale |  |
+-| `$18BE` | `sub_H070_000018BE` | parziale |  |
+-| `$1958` | `sub_H070_00001958` | parziale |  |
++| `$0272` | `module_init_H070` | parziale | h070.c:31 |
++| `$0280` | `sub_H070_00000280` | parziale | h070.c:51 |
++| `$0558` | `trampoline_H070_076E` | parziale | h070.c:113 |
++| `$0778` | `sub_H070_00000778` | parziale | h070.c:160 |
++| `$0B9E` | `sub_H070_00000B9E` | parziale | h070.c:285 |
++| `$0DE0` | `sub_H070_00000DE0` | parziale | h070.c:375 |
++| `$0E94` | `sub_H070_00000E94` | parziale | h070.c:395 |
++| `$0F8A` | `sub_H070_00000F8A` | parziale | h070.c:439 |
++| `$1136` | `sub_H070_00001136` | parziale | h070.c:489 |
++| `$152E` | `sub_H070_0000152E` | parziale | h070.c:587 |
++| `$165C` | `sub_H070_0000165C` | parziale | h070.c:629 |
++| `$18BE` | `sub_H070_000018BE` | parziale | h070.c:685 |
++| `$1958` | `sub_H070_00001958` | parziale | h070.c:711 |
+ 
+ ### H071
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$011C` | `module_init_H071` | parziale | h071.c:4 |
++| `$011C` | `module_init_H071` | parziale | h071.c:10 |
+ | `$012A` | `sub_H071_0000012A` | parziale |  |
+-| `$047C` | `sub_H071_0000047C` | parziale |  |
++| `$047C` | `sub_H071_0000047C` | parziale | h071.c:16 |
+ | `$0572` | `sub_H071_00000572` | parziale |  |
+ | `$092C` | `sub_H071_0000092C` | parziale |  |
+ 
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index 3764f18..5436875 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -2362,3 +2362,53 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
+ **Prossimo passo:** H070+$1958 (fine del combattimento), poi Encamp (H057+$2F3A) e Cast (H057+$0C04).
+ 
+ ---
++
++## 2026-11-11 (cok-port-42)
++
++**Richiesta:** "ok compila su sasc, procedi con H070+$1958".
++
++**H070 portato per intero** (fine del combattimento)
++- **$1958 `combat_end`:**
++  - gli oggetti caduti tornano a chi li aveva ($18BE);
++  - esito ($0778): sconfitta $24D0, vittoria $24C0, fuga; gli effetti del combattimento vengono tolti; chi era fuggito o svenuto si rialza; chi non c'è più esce dal party;
++  - i nemici vengono tolti dal party ($152E);
++  - se il party c'è ancora:
++    - quote dei PNG, "takes and hides his/her share" ($165C);
++    - schermata dell'esito ($0B9E: "The party has fled.", "You have lost the fight.", "The party has won.", "Each character receives n experience points.");
++    - schermata del tesoro ($1136);
++  - se il party è distrutto: "The monsters rejoice for the party has been destroyed.".
++- **Esperienza:**
++  - $0280: valore dei nemici sconfitti; le loro monete nella cassa e i loro oggetti nel tesoro; valore della cassa e degli oggetti magici; diviso per i personaggi;
++  - $0558: assegnazione col 10% per la caratteristica principale della classe, metà o un terzo alle classi multiple.
++- **Tesoro:**
++  - $1136 menu View/Take/Pool/Share/Detect/Exit, con conferma se resta tesoro;
++  - $0F8A Take (Money/Items);
++  - $0E94/$0DE0 elenco "Items:" e Take.
++- **H067:**
++  - $0794 Pool;
++  - $086E;
++  - $08CC Share (nei limiti del carico);
++  - $0D0A;
++  - $0F72 Take Money ("Select type of coin", "How much ... will you take?");
++  - $11F4 c'è tesoro?
++- **H071+$047C `take_item`:** il personaggio corrente prende l'oggetto, salvo "OverLoaded".
++- **H006+$0914 `reset_game_state`:** azzera lo stato per una nuova partita, chiamato da `h001_main` dopo l'esplorazione.
++- **Esportate:** `item_overloads` (H065+$32F6). Per l'elenco del tesoro si costruisce una lista di voci di menu, come in H065.
++
++**Dove mi discosto dall'asm (tutto documentato nel codice)**
++- **Esperienza con divisore 0:** l'originale va in eccezione; qui il totale.
++- **Share senza personaggi del giocatore:** l'originale divide per 0; qui nessuna divisione.
++- **Rimozione dal party (sconfitta):** dove l'originale legge il successivo di un personaggio già tolto, qui lo legge prima.
++- **Take Money:** l'elenco si libera anche uscendo senza scelta.
++
++**Prove con i dati veri** (binario ASan di test, non committato)
++- **Sconfitta:** la battaglia della carovana (L da solo contro i Baaz) finisce con il party distrutto.
++  - Compaiono "The monsters rejoice for the party has been destroyed." e "Press any key to continue".
++  - Lo stato si azzera e il gioco riparte dalla verifica del manuale.
++- **Non provato:** il ramo della vittoria (esperienza, tesoro, Take, Pool, Share), perché un personaggio solo non vince questa battaglia.
++- **ASan:** pulito.
++- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
++
++**Prossimo passo:** Encamp (H057+$2F3A) e Cast (H057+$0C04).
++
++---
+diff --git a/src_c/readable/h001_main.c b/src_c/readable/h001_main.c
+index c14cf7b..385aadd 100644
+--- a/src_c/readable/h001_main.c
++++ b/src_c/readable/h001_main.c
+@@ -99,7 +99,7 @@ void game_main(void)
+         set_view_start(G_VIEW_START(3), G_VIEW_START(2), G_VIEW_START(1),
+                G_VIEW_START(0));
+         explore_loop();
+-        h006_0914();
++        reset_game_state();
+ 
+         if (G_DEMO_FLAG) {
+             G_RESOURCE_GROUP = 0;
+diff --git a/src_c/readable/h006.c b/src_c/readable/h006.c
+index c21f1d9..806b8c4 100644
+--- a/src_c/readable/h006.c
++++ b/src_c/readable/h006.c
+@@ -257,3 +257,85 @@ void init_game_environment(void)
+     install_effect_handlers();
+     install_action_handlers();
+ }
++
++/*
++ * PORT H006+$0914: azzera lo stato per una nuova partita (dopo la fine
++ * dell'avventura): stati A, B, C e programma ECL, posizione 7,13 verso
++ * est, definizioni dei muri, party vuoto, PC dell'ECL a $3500, velocita'
++ * 4, disco 1 e i flag del gioco; contesto 4.
++ */
++void reset_game_state(void)
++{
++    h029_fill_bytes(0x7FF, g_state_a, 0x800, 0);
++    COK_PUT16(g_state_a + 0x3E8, 3);
++    COK_PUT16(g_state_a + 0x1CC, 1);
++    COK_PUT16(g_state_a + 0x1E4, 0);
++    h029_fill_bytes(0x7FF, g_state_b, 0x800, 0);
++    h029_fill_bytes(0x3FF, g_state_c, 0x400, 0);
++    h029_fill_bytes(0x1DFF, g_ecl_buffer, 0x1DFF, 0);
++    h029_fill_bytes(7, &H005_B(0x281C), 7, 0);
++    H005_SET_W(0x281C, 7);
++    H005_SET_W(0x281E, 0x0D);
++    H005_B(0x2820) = 2;
++    h029_fill_bytes(2, &H005_B(0x24E4), 3, 1);
++    H005_B(0x24A2) = 1;
++    H005_SET_W(0x2810, 0);
++    H005_SET_W(0x2812, 1);
++    for (s_i = 2; s_i <= 3; ++s_i) {
++        H005_SET_W(0x2810 + (s_i - 1) * 4, 0xFFFF);
++        H005_SET_W(0x2812 + (s_i - 1) * 4, 0xFFFF);
++    }
++    H005_B(0x24D2) = 0;
++    COK_PUT16(g_state_a + 0x3F2, 2);
++    COK_PUT16(g_state_a + 0x3F4, 2);
++    COK_PUT16(g_state_a + 0x3F6, 2);
++    H005_B(0x24CE) = 1;
++    H005_B(0x24D1) = 0;
++    H005_SET_W(0x3DDE, 0);
++    g_party_head = NULL;
++    g_current_char = NULL;
++    H005_SET_W(0x3DEA, 0x3500);
++    H005_SET_W(0x3DF6, 4);
++    H005_B(0x246E) = 1;
++    H005_B(0x246D) = 1;
++    H005_B(0x2825) = 0;
++    COK_PUT16(g_state_b + 0x67C, 0);
++    H005_SET_W(0x2796, 1);
++    H005_B(0x24C1) = 0;
++    H005_B(0x24E2) = 0;
++    H005_B(0x2497) = 0;
++    H005_B(0x24BF) = 0;
++    H005_B(0x24BE) = 0;
++    H005_B(0x24BD) = 0;
++    H005_B(0x24D0) = 0;
++    H005_B(0x24A6) = 1;
++    H005_B(0x24BA) = 0;
++    H005_B(0x24A4) = 0;
++    H005_B(0x27A6) = 0;                 /* stringa vuota (H006 -$A3) */
++    H005_B(0x279C) = 0;                 /* stringa vuota (H006 -$A5) */
++    H005_B(0x2486) = 0xFF;
++    H005_B(0x2485) = 0xFF;
++    H005_B(0x24A3) = 0;
++    H005_B(0x247E) = 0xE8;
++    H005_B(0x247F) = 0xDB;
++    H005_B(0x24B4) = 0;
++    H005_B(0x24C6) = 1;
++    H005_B(0x2484) = 0xFF;
++    H005_B(0x24AD) = 0;
++    H005_B(0x24CF) = 0;
++    clear_message_line();
++    H005_B(0x2483) = 1;
++    H005_B(0x3DE3) = 4;
++    H005_B(0x3DE2) = 0;
++    H005_B(0x24A7) = 1;
++    H005_B(0x24E0) = 0;
++    H005_B(0x24B1) = 0;
++    g_dropped_items = NULL;
++    H005_B(0x24CB) = 0;
++    H005_B(0x24CC) = 0;
++    H005_B(0x24B0) = 0;
++    H005_B(0x249E) = 0;
++    H005_B(0x24D8) = 0;
++    H005_B(0x24DA) = 0;
++    H005_B(0x24AE) = 0;
++}
+diff --git a/src_c/readable/h006.h b/src_c/readable/h006.h
+index b0382e4..278bdba 100644
+--- a/src_c/readable/h006.h
++++ b/src_c/readable/h006.h
+@@ -4,4 +4,5 @@
+ 
+ void init_game_environment(void);       /* H006+$01AE */
+ 
++void reset_game_state(void);             /* H006+$0914 */
+ #endif
+diff --git a/src_c/readable/h012.c b/src_c/readable/h012.c
+index 9573210..c5d987e 100644
+--- a/src_c/readable/h012.c
++++ b/src_c/readable/h012.c
+@@ -5,6 +5,7 @@
+ #include "unported.h"
+ #include "h060.h"
+ #include "h069.h"
++#include "h070.h"
+ #include "h068.h"
+ #include "h061.h"
+ #include "h064.h"
+@@ -337,7 +338,7 @@ void ecl_combat(void)
+             scene_audio();
+         } else {
+             scene_audio();
+-            h070_1958();
++            combat_end();
+             scene_audio();
+         }
+     } else {
+@@ -352,7 +353,7 @@ void ecl_combat(void)
+         if (H005_B(0x24A7)) {
+             h043_190e(0xFF);
+         }
+-        h070_1958();
++        combat_end();
+         if (!H005_B(0x24A7)) {
+             h043_0584();
+         }
+diff --git a/src_c/readable/h065.c b/src_c/readable/h065.c
+index 6088cc1..4076c3d 100644
+--- a/src_c/readable/h065.c
++++ b/src_c/readable/h065.c
+@@ -911,7 +911,7 @@ static CokItem *menu_item_object(Character *c, CokMenuItem *node)
+  * PORT H065+$32F6: dare it a c lo sovraccaricherebbe (o ha gia' 16
+  * oggetti)?
+  */
+-static u8 item_overloads(Character *c, CokItem *it)
++u8 item_overloads(Character *c, CokItem *it)
+ {
+     u16 weight;                         /* -$4(a5) */
+     u8 over = 0;                        /* -$1(a5) */
+diff --git a/src_c/readable/h065.h b/src_c/readable/h065.h
+index 8755345..325b787 100644
+--- a/src_c/readable/h065.h
++++ b/src_c/readable/h065.h
+@@ -19,4 +19,5 @@ void ready_item(CokItem *it);           /* H065+$2C04 */
+ 
+ void select_party_member(u8 key);       /* H065+$3390 */
+ void use_item(CokItem *it, u8 *redraw);  /* H065+$2F82 */
++u8   item_overloads(Character *c, CokItem *it); /* H065+$32F6 */
+ #endif
+diff --git a/src_c/readable/h067.c b/src_c/readable/h067.c
+index ce81d17..615d13a 100644
+--- a/src_c/readable/h067.c
++++ b/src_c/readable/h067.c
+@@ -8,6 +8,10 @@
+ #include "h030.h"
+ #include "h045.h"
+ #include "h063.h"
++#include "h008.h"
++#include "h029_gfx.h"
++#include "h044_tiles.h"
++#include "h003_exec.h"
+ #include "h015_runtime.h"
+ 
+ /* PORT H067+$01BA: link/unlk, nessun effetto. */
+@@ -238,3 +242,240 @@ void set_pool_steel(u16 steel)
+     }
+     H005_SET_L(0x2A2E, steel);
+ }
++
++#define POOL(k)         H005_L(0x2A1E + (k) * 4)
++#define SET_POOL(k, v)  H005_SET_L(0x2A1E + (k) * 4, (v))
++#define COINS(c, k)     CH_W((c), 0xF0 + (k) * 2)
++#define SET_COINS(c, k, v) CH_PUTW((c), 0xF0 + (k) * 2, (v))
++
++/* Il party controllato dal giocatore: +$EC nullo o $B3. */
++static u8 is_player(Character *p)
++{
++    return (u8)(p->b[0xEC] == 0 || p->b[0xEC] == 0xB3);
++}
++
++/*
++ * PORT H067+$0794 (Pool): i personaggi del giocatore mettono tutte le
++ * monete nella cassa ($2A1E) e il loro peso cala.
++ */
++void pool_party_money(void)
++{
++    Character *p;                       /* -$4(a5) */
++    u8 k;                               /* -$7(a5) */
++
++    H005_B(0x24E3) = 1;
++    for (p = g_party_head; p != NULL; p = p->next) {
++        if (!is_player(p)) {
++            continue;
++        }
++        for (k = 0; k <= 6; ++k) {
++            SET_POOL(k, POOL(k) + COINS(p, k));
++            sub_weight(p, COINS(p, k));
++        }
++        h029_fill_bytes(0x0D, &p->b[0xF0], 0x0E, 0);
++    }
++}
++
++/* PORT H067+$086E: quanti personaggi del giocatore. */
++static u16 count_players(void)
++{
++    Character *p;                       /* -$4(a5) */
++    u16 n = 0;                          /* -$6(a5) */
++
++    for (p = g_party_head; p != NULL; p = p->next) {
++        if (is_player(p)) {
++            ++n;
++        }
++    }
++    return n;
++}
++
++/*
++ * PORT H067+$08CC (Share): divide la cassa fra i personaggi del
++ * giocatore (della word bassa di ogni tipo, il resto uno a uno), nei
++ * limiti del carico; quel che non ci sta va a chi ha posto.  Nella
++ * cassa resta l'avanzo.  Senza personaggi l'originale divide per 0:
++ * qui nessuna divisione.
++ */
++void share_money(void)
++{
++    Character *p;                       /* -$4(a5) */
++    u16 n;                              /* -$A(a5) */
++    u16 share[7];                       /* -$1C(a5) */
++    u16 rest[7];                        /* -$2A(a5) */
++    u16 room;                           /* -$E(a5) */
++    s16 k;                              /* -$2B(a5) */
++
++    n = count_players();
++    memset(share, 0, sizeof share);
++    memset(rest, 0, sizeof rest);
++    for (k = 0; k <= 6; ++k) {
++        if ((u16)POOL(k) > 0 && n > 0) {
++            share[k] = (u16)((u16)POOL(k) / n);
++            rest[k] = (u16)((u16)POOL(k) % n);
++        } else {
++            share[k] = 0;
++            rest[k] = 0;
++        }
++    }
++    for (p = g_party_head; p != NULL; p = p->next) {
++        if (p->b[0xEC] >= 0x80) {
++            continue;
++        }
++        for (k = 6; k >= 0; --k) {
++            if (!would_overload(p, share[k], &room)) {
++                SET_COINS(p, k, (u16)(COINS(p, k) + share[k]));
++                add_weight(p, share[k]);
++                if (rest[k] > 0 && !would_overload(p, 1, &room)) {
++                    SET_COINS(p, k, (u16)(COINS(p, k) + 1));
++                    add_weight(p, 1);
++                    --rest[k];
++                }
++            } else {
++                SET_COINS(p, k, (u16)(COINS(p, k) + room));
++                rest[k] = (u16)(rest[k] + share[k] - room);
++                add_weight(p, room);
++            }
++        }
++    }
++    for (k = 6; k >= 0; --k) {
++        if (rest[k] == 0) {
++            continue;
++        }
++        for (p = g_party_head; p != NULL; p = p->next) {
++            room = (u16)(max_carry(p) - CH_W(p, 0x18C));
++            if (room == 0) {
++                continue;
++            }
++            if (room < rest[k]) {
++                SET_COINS(p, k, (u16)(COINS(p, k) + room));
++                add_weight(p, room);
++                rest[k] = (u16)(rest[k] - room);
++            } else {
++                SET_COINS(p, k, (u16)(COINS(p, k) + rest[k]));
++                add_weight(p, rest[k]);
++                rest[k] = 0;
++            }
++        }
++    }
++    H005_B(0x24E3) = 0;
++    for (k = 0; k <= 6; ++k) {
++        SET_POOL(k, rest[k]);
++        if ((u16)POOL(k) != 0) {
++            H005_B(0x24E3) = 1;
++        }
++    }
++}
++
++/*
++ * PORT H067+$0D0A: c prende amount monete del tipo coin dalla cassa
++ * (non piu' di quante ce ne sono, nella word bassa), se non lo
++ * sovraccaricano ("Overloaded").
++ */
++static void take_pool_money(Character *c, u16 amount, u8 coin)
++{
++    u16 room;                           /* -$2(a5) */
++
++    if (would_overload(c, amount, &room)) {
++        show_message_line(0x0A, "Overloaded");
++        return;
++    }
++    if (amount > (u16)POOL(coin)) {
++        amount = (u16)POOL(coin);
++    }
++    SET_POOL(coin, POOL(coin) - amount);
++    SET_COINS(c, coin, (u16)(COINS(c, coin) + amount));
++    add_weight(c, amount);
++}
++
++/*
++ * PORT H067+$0F72 (Take Money): elenco dei tipi di moneta nella cassa
++ * (nome della tabella $4B7E e quantita'), chiede quante prenderne per il
++ * personaggio corrente, finche' resta denaro o si esce.  L'originale
++ * libera l'elenco solo dopo una scelta; qui anche uscendo.
++ */
++void take_money_menu(void)
++{
++    CokMenuItem *list;                  /* -$A(a5) */
++    CokMenuItem *head;                  /* -$12(a5) */
++    CokMenuItem *chosen;                /* -$E(a5) */
++    CokMenuItem *old;
++    char text[0x52];                    /* -$68(a5) */
++    u16 index = 0;                      /* -$16(a5) */
++    u16 amount;                         /* -$6A(a5) */
++    u8 redraw = 1;                      /* -$6C(a5) */
++    u8 key;                             /* -$6D(a5) */
++    u8 done;                            /* -$6B(a5) */
++    u8 coin;                            /* -$2(a5) */
++    u8 k;                               /* -$1(a5) */
++
++    draw_screen_frame(0);
++    index = 0;
++    do {
++        redraw = 1;
++        list = NULL;
++        for (k = 0; k <= 6; ++k) {
++            if ((u16)POOL(k) == 0) {
++                continue;
++            }
++            old = list;
++            list = (CokMenuItem *)exec_alloc_mem(sizeof(CokMenuItem),
++                                                 COK_MEMF_CLEAR);
++            list->next = old;
++            format_number(0x50, text, (s32)POOL(k), 0, 0x0A, 5, ' ');
++            h026_copy(0x28, list->text, 0x0A,
++                      (const char *)&g_h005[0x4B7E + k * 0x0C]);
++            h026_append(0x28, list->text, 1, " ");
++            h026_append(0x28, list->text, 0x50, text);
++            list->header = 0;
++        }
++        chosen = list;
++        head = list;
++        H005_B(0x2483) = 1;
++        key = list_menu(0x14, "Select type of coin ", 6, "Select", 0x0D,
++                        0x0A, 0x0F, 2, 2, 0x0F, 8, list, 1, &redraw, &index,
++                        &chosen);
++        if (chosen == NULL || key == 0) {
++            done = 1;
++        } else {
++            coin = coin_type(0x28, chosen->text, 0x50, text);
++            h026_insert(0x50, text, 9, "How much ", 0);
++            h026_append(0x50, text, 0x10, " will you take? ");
++            amount = input_amount((u16)POOL(coin), 0x50, text, 0x0A);
++            take_pool_money(g_current_char, amount, coin);
++            menu_free(&head);
++            head = NULL;
++            H005_B(0x24E3) = 0;
++            done = 1;
++            for (k = 0; k <= 6; ++k) {
++                if ((u16)POOL(k) > 0) {
++                    H005_B(0x24E3) = 1;
++                    done = 0;
++                }
++            }
++        }
++        if (head != NULL) {
++            menu_free(&head);
++        }
++    } while (!done);
++}
++
++/*
++ * PORT H067+$11F4: nella cassa ci sono monete (word basse) / oggetti
++ * ($2A3A)?
++ */
++void has_treasure(u8 *money, u8 *items)
++{
++    u8 k;                               /* -$1(a5) */
++
++    *money = 0;
++    *items = 0;
++    for (k = 0; k <= 6; ++k) {
++        if ((u16)POOL(k) != 0) {
++            *money = 1;
++        }
++    }
++    if (g_treasure_items != NULL) {
++        *items = 1;
++    }
++}
+diff --git a/src_c/readable/h067.h b/src_c/readable/h067.h
+index aadd1d1..063fdcb 100644
+--- a/src_c/readable/h067.h
++++ b/src_c/readable/h067.h
+@@ -18,4 +18,8 @@ u32  pool_value(void);                                  /* H067+$02AE */
+ void set_steel_only(u16 steel);                         /* H067+$032A */
+ void set_pool_steel(u16 steel);                         /* H067+$0374 */
+ 
++void pool_party_money(void);             /* H067+$0794 */
++void share_money(void);                  /* H067+$08CC */
++void take_money_menu(void);              /* H067+$0F72 */
++void has_treasure(u8 *money, u8 *items); /* H067+$11F4 */
+ #endif
+diff --git a/src_c/readable/h070.c b/src_c/readable/h070.c
+index 591a849..008e1ce 100644
+--- a/src_c/readable/h070.c
++++ b/src_c/readable/h070.c
+@@ -1,7 +1,762 @@
+-/* H070: Esito combattimento, tesori e distribuzione delle ricompense. */
++/* H070: esito del combattimento, esperienza e tesoro. */
++#include <string.h>
+ #include "cok.h"
++#include "h070.h"
++#include "globals.h"
++#include "unported.h"
++#include "h003_exec.h"
++#include "h008.h"
++#include "h015_runtime.h"
++#include "h026_string.h"
++#include "h029_gfx.h"
++#include "h030.h"
++#include "h033.h"
++#include "h044_tiles.h"
++#include "h045.h"
++#include "h053.h"
++#include "h061.h"
++#include "h062.h"
++#include "h063.h"
++#include "h065.h"
++#include "h067.h"
++#include "h071.h"
++
++#define POOL(k)         H005_L(0x2A1E + (k) * 4)
++#define SET_POOL(k, v)  H005_SET_L(0x2A1E + (k) * 4, (v))
++#define TURN(c)         ((c)->block_192)
++
++static u8 s_enemies;                    /* -$1(a4): c'erano nemici */
++static u8 s_fled;                       /* -$2(a4): il party e' fuggito */
+ 
+ /* PORT H070+$0272: link/unlk, nessun effetto. */
+ void h070_init(void)
+ {
+ }
++
++/* Libera la lista del tesoro ($2A3A). */
++static void free_treasure(void)
++{
++    CokItem *it = g_treasure_items;     /* -$4(a5) */
++    CokItem *n;                         /* -$8(a5) */
++
++    while (it != NULL) {
++        n = it;
++        it = it->next;
++        exec_free_mem(n, sizeof(CokItem));
++    }
++    g_treasure_items = NULL;
++}
++
++/*
++ * PORT H070+$0280: esperienza per personaggio: per ogni nemico sconfitto
++ * (lato 1, stato non 0 ne' 3) il suo valore (+$13C piu' +$13E per i dadi
++ * vita +$123), le sue monete (se +$15 del turno = 1) nella cassa e i suoi
++ * oggetti nel tesoro (salvo $3E00+$5C6 = 1); poi il valore della cassa e
++ * degli oggetti magici del tesoro; diviso per i personaggi rimasti
++ * ($3E00+$67C - $2499).  Con divisore 0 l'originale ha un'eccezione: qui
++ * il totale.
++ */
++static void compute_experience(u32 *out)
++{
++    u32 xp = 0;                         /* -$A(a5) */
++    Character *p;                       /* -$4(a5) */
++    CokItem *it;                        /* -$12(a5) */
++    CokItem *n;                         /* -$E(a5) */
++    u16 count = 0;                      /* -$14(a5) */
++    u8 k;                               /* -$5(a5) */
++    s32 div;
++
++    for (p = g_party_head; p != NULL; p = p->next) {
++        it = p->items;
++        if (p->b[0x199] != 1 || p->b[0x197] == 0 || p->b[0x197] == 3) {
++            continue;
++        }
++        s_enemies = 1;
++        if (TURN(p)->b[0x15] == 1) {
++            for (k = 0; k <= 6; ++k) {
++                SET_POOL(k, POOL(k) + CH_W(p, 0xF0 + k * 2));
++            }
++        }
++        xp = xp + CH_W(p, 0x13C) + h015_mulu32(p->b[0x13E], p->b[0x123]);
++        if (COK_GET16(g_state_b + 0x5C6) == 1) {
++            continue;
++        }
++        for (; it != NULL; it = it->next) {
++            ++count;
++            n = (CokItem *)exec_alloc_mem(sizeof(CokItem), COK_MEMF_CLEAR);
++            build_item_name(p, it, 0, 0, 0, 0);
++            memcpy(n->b, it->b, 0x48);
++            n->b[0x3A] = 0;
++            n->next = g_treasure_items;
++            g_treasure_items = n;
++        }
++    }
++    (void)count;
++    xp += (u32)h015_divs32((s32)POOL(0), 0x64, NULL);
++    xp += (u32)h015_divs32((s32)POOL(1), 0x14, NULL);
++    xp += (u32)h015_divs32((s32)POOL(2), 0x0A, NULL);
++    xp += POOL(3);
++    xp += POOL(4) << 1;
++    xp += h015_mulu32(POOL(5), 0xFA);
++    xp += h015_mulu32(POOL(6), 0x898);
++    for (it = g_treasure_items; it != NULL && it != g_thrown_tail;
++         it = it->next) {
++        if ((s16)COK_GET16(it->b + 0x36) > 0) {
++            xp += (u32)((s32)(s16)COK_GET16(it->b + 0x36) * 0x190);
++        }
++    }
++    div = (s32)COK_GET16(g_state_b + 0x67C) - (s32)H005_B(0x2499);
++    *out = div != 0 ? (u32)h015_divs32((s32)xp, div, NULL) : xp;
++}
++
++/*
++ * PORT H070+$0558: dà xp punti esperienza a chi e' in piedi: il 10% in
++ * piu' a chi ha la caratteristica principale della classe oltre 15 (14
++ * per la saggezza del chierico), meta' o un terzo alle classi multiple.
++ */
++static void award_experience(u32 xp)
++{
++    Character *p;                       /* -$4(a5) */
++    u32 v;                              /* -$8(a5) */
++    u8 bonus;
++
++    if (COK_GET16(g_state_a + 0x3EA)) {
++        return;
++    }
++    for (p = g_party_head; p != NULL; p = p->next) {
++        if (!p->b[0x198] || p->b[0x197] == 1) {
++            continue;
++        }
++        v = xp;
++        bonus = 0;
++        switch (p->b[0x5C]) {
++        case 0: bonus = (u8)(p->b[0x15] > 0x0E); break;
++        case 2: bonus = (u8)(p->b[0x11] > 0x0F); break;
++        case 3: bonus = (u8)(p->b[0x11] > 0x0F && p->b[0x15] > 0x0F); break;
++        case 4:
++            bonus = (u8)(p->b[0x11] > 0x0F && p->b[0x13] > 0x0F &&
++                         p->b[0x15] > 0x0F);
++            break;
++        case 5: bonus = (u8)(p->b[0x13] > 0x0F); break;
++        case 6: bonus = (u8)(p->b[0x17] > 0x0F); break;
++        case 8: case 0x0A: case 0x0B: case 0x0C: case 0x0D: case 0x0E:
++        case 0x10:
++            v = (u32)h015_divs32((s32)xp, 2, NULL);
++            break;
++        case 9: case 0x0F:
++            v = (u32)h015_divs32((s32)xp, 3, NULL);
++            break;
++        default:
++            break;
++        }
++        if (bonus) {
++            v = (u32)h015_divs32((s32)xp, 0x0A, NULL) + xp;
++        }
++        CH_PUTL(p, 0x11E, CH_L(p, 0x11E) + v);
++    }
++}
++
++/*
++ * PORT H070+$0778: esito del combattimento: il party ha perso ($24D0)
++ * salvo chi e' rimasto (o rientra con $3E00+$5CC); fuga ($-2(a4)) se
++ * qualcuno e' fuggito e nessuno ha vinto; vittoria ($24C0) se qualcuno e'
++ * rimasto in piedi.  Toglie gli effetti del combattimento, dà
++ * l'esperienza, rimette in piedi chi era fuggito o svenuto e toglie dal
++ * party chi non c'e' piu'.  Dove l'originale legge il successivo di un
++ * personaggio gia' tolto, qui lo legge prima.
++ */
++static void combat_outcome(void)
++{
++    static const u16 effects[11] = {
++        3, 0x0B, 0x15, 0x17, 0x1B, 0x23, 0x28, 0x33, 0x34, 0x35, 0x1F
++    };
++    Character *p;                       /* -$1A(a5) */
++    Character *n;
++    u8 alive = 0;                       /* -$1F(a5) */
++    u8 stop;                            /* -$1B(a5) */
++    u16 k;                              /* -$1E(a5) */
++
++    H005_B(0x2499) = 0;
++    H005_B(0x24D0) = 1;
++    s_fled = 0;
++    for (p = g_party_head; p != NULL && TURN(p)->b[0x15] != 1; p = p->next) {
++        if (p->b[0x197] == 3) {
++            s_fled = 1;
++        }
++    }
++    for (p = g_party_head; p != NULL && !alive; p = p->next) {
++        if (p->b[0x198] || p->b[0x197] == 4 || p->b[0x197] == 3 ||
++            p->b[0x197] == 5) {
++            alive = 1;
++        }
++    }
++    if (COK_GET16(g_state_b + 0x5CC) && alive) {
++        H005_B(0x24D0) = 0;
++    }
++    H005_B(0x24C0) = 0;
++    if (H005_B(0x24D7)) {
++        return;
++    }
++    for (p = g_party_head; p != NULL && TURN(p)->b[0x15] != 1; p = p->next) {
++        if ((p->b[0x197] == 3 || p->b[0x197] == 1 || p->b[0x197] == 0) &&
++            p->b[0x199] == 0 && p->b[0xEC] < 0x80) {
++            H005_B(0x24D0) = 0;
++        }
++        if (p->b[0x197] == 1 || p->b[0x197] == 0) {
++            H005_B(0x24C0) = 1;
++            s_fled = 0;
++        }
++        if (!p->b[0x198] || p->b[0x197] == 1) {
++            add_to_byte(&H005_B(0x2499), 1);
++        }
++        for (k = 1; k <= 0x0B; ++k) {
++            remove_effect(p, effects[k - 1], NULL);
++        }
++    }
++    if (H005_B(0x24C0)) {
++        u32 xp = 0;
++
++        compute_experience(&xp);
++        H005_SET_L(0x236E, xp);
++        award_experience(H005_L(0x236E));
++    }
++    p = g_party_head;
++    if (!H005_B(0x24D0)) {
++        while (p != NULL && TURN(p)->b[0x15] != 1) {
++            if (!s_fled) {
++                switch (p->b[0x197]) {
++                case 3:
++                    p->b[0x197] = 0;
++                    p->b[0x198] = 1;
++                    break;
++                case 4:
++                    if (COK_GET16(g_state_b + 0x5CC)) {
++                        p->b[0x197] = 0;
++                        p->b[0x198] = 1;
++                        p->b[0x1A8] = 1;
++                    } else {
++                        p->b[0x197] = 4;
++                    }
++                    break;
++                case 5:
++                    if (p->b[0x1A8] > 0) {
++                        p->b[0x197] = 0;
++                        p->b[0x198] = 1;
++                    } else if (COK_GET16(g_state_b + 0x5CC)) {
++                        p->b[0x197] = 0;
++                        p->b[0x198] = 1;
++                        p->b[0x1A8] = 1;
++                    }
++                    break;
++                default:
++                    break;
++                }
++                p = p->next;
++            } else {
++                COK_PUT16(g_state_b + 0x58E, 0x81);
++                if (p->b[0x197] == 3) {
++                    p->b[0x197] = 0;
++                    p->b[0x198] = 1;
++                    p = p->next;
++                } else {
++                    g_current_char = p;
++                    p = p->next;
++                    remove_from_party(0, 1);
++                }
++            }
++        }
++    } else {
++        stop = 0;
++        while (p != NULL && !stop) {
++            n = p->next;
++            if (TURN(p)->b[0x15] != 1) {
++                g_current_char = p;
++                remove_from_party(0, 1);
++            } else {
++                stop = 1;
++            }
++            p = n;
++        }
++        COK_PUT16(g_state_b + 0x67C, 0);
++    }
++}
++
++/*
++ * PORT H070+$0B9E: schermata dell'esito: "The party has fled." (tesoro e
++ * cassa persi), "You have lost the fight.", "The party has won.", o senza
++ * nemici "The party has found Treasure!" (o il prelievo dalla banca); poi
++ * l'esperienza per personaggio.
++ */
++static void show_outcome(u32 xp)
++{
++    char num[0x0C];                     /* -$C(a5) */
++    char line[0x52];                    /* -$5E(a5) */
++    u8 special;                         /* -$65(a5) */
++
++    draw_screen_frame(1);
++    if (s_enemies) {
++        if (s_fled) {
++            ui_draw_text(1, 3, 0x0A, 0, 0x13, "The party has fled.");
++            xp = 0;
++            free_treasure();
++            h029_fill_bytes(0x1B, &H005_B(0x2A1E), 0x1C, 0);
++        } else if (!H005_B(0x24C0) && COK_GET16(g_state_b + 0x5CC)) {
++            COK_PUT16(g_state_b + 0x58E, 0x80);
++            ui_draw_text(1, 3, 0x0A, 0, 0x18, "You have lost the fight.");
++            xp = 0;
++        } else {
++            ui_draw_text(1, 3, 0x0A, 0, 0x12, "The party has won.");
++        }
++    } else if (COK_GET16(g_state_a + 0x3EA)) {
++        ui_draw_text(1, 5, 0x0A, 0, 0x25,
++                     "The party makes a withdrawl.  A small");
++        ui_draw_text(1, 7, 0x0A, 0, 0x22,
++                     "fee has been assessed by the bank.");
++    } else {
++        ui_draw_text(1, 3, 0x0A, 0, 0x1D, "The party has found Treasure!");
++    }
++    format_number(0x0A, num, (s32)xp, 0, 0x0A, 6, ' ');
++    trim_leading_spaces(0x0A, num);
++    strcpy(line, "Each character receives ");
++    h026_append(0x50, line, 0x0A, num);
++    if (!COK_GET16(g_state_a + 0x3EA)) {
++        ui_draw_text(1, 5, 0x0A, 0, 0x50, line);
++        ui_draw_text(1, 7, 0x0A, 0, 0x12, "experience points.");
++    }
++    (void)ui_request_choice(2, "", 0x22, "press <enter>/<return> to continue",
++                            0x0F, 0x0F, 0x0F, 1, 0, &special);
++}
++
++/*
++ * Nell'originale la lista degli oggetti e' passata al menu a elenco
++ * (forma compatibile con le voci); qui una lista di voci con gli stessi
++ * nomi, e l'oggetto nella stessa posizione della voce scelta.
++ */
++static CokMenuItem *s_treasure_menu;
++
++static CokMenuItem *treasure_as_menu(void)
++{
++    CokItem *it;
++    CokMenuItem *tail = NULL;
++
++    menu_free(&s_treasure_menu);
++    for (it = g_treasure_items; it != NULL; it = it->next) {
++        CokMenuItem *n = (CokMenuItem *)exec_alloc_mem(sizeof(CokMenuItem),
++                                                       COK_MEMF_CLEAR);
++
++        memcpy(n->text, it->b, 0x2A);
++        n->header = it->b[0x2A];
++        if (tail == NULL) {
++            s_treasure_menu = n;
++        } else {
++            tail->next = n;
++        }
++        tail = n;
++    }
++    return s_treasure_menu;
++}
++
++static CokItem *treasure_menu_item(CokMenuItem *node)
++{
++    CokMenuItem *m = s_treasure_menu;
++    CokItem *it = g_treasure_items;
++
++    while (m != NULL && it != NULL) {
++        if (m == node) {
++            return it;
++        }
++        m = m->next;
++        it = it->next;
++    }
++    return NULL;
++}
++
++/*
++ * PORT H070+$0DE0: elenco degli oggetti del tesoro ("Items:", Take):
++ * restituisce il tasto e l'oggetto scelto.
++ */
++static void treasure_list(u16 *index, CokMenuItem **cursor, CokItem **out,
++                          u8 *key)
++{
++    CokItem *it;                        /* -$20(a5) */
++    u8 redraw = 1;                      /* -$1B(a5) */
++
++    draw_screen_frame(1);
++    for (it = g_treasure_items; it != NULL; it = it->next) {
++        build_item_name(NULL, it, 0, 0, 0, 0);
++    }
++    *cursor = NULL;
++    *key = list_menu(7, "Items: ", 4, "Take", 0x0D, 0x0A, 0x0F, 1, 1, 0x26,
++                     0x16, treasure_as_menu(), 1, &redraw, index, cursor);
++    *out = treasure_menu_item(*cursor);
++}
++
++/*
++ * PORT H070+$0E94 (Take Items): il personaggio corrente prende oggetti
++ * dal tesoro (H071+$047C) finche' esce o il tesoro e' vuoto.
++ */
++static void take_items(void)
++{
++    CokItem *chosen;                    /* -$4(a5) */
++    CokItem *p;                         /* -$8(a5) */
++    CokMenuItem *cursor;                /* -$E(a5) */
++    u16 index;                          /* -$10(a5) */
++    u8 key;                             /* -$9(a5) */
++    u8 done;                            /* -$A(a5) */
++    u8 fail;                            /* -$11(a5) */
++
++    do {
++        index = 0;
++        chosen = NULL;
++        treasure_list(&index, &cursor, &chosen, &key);
++        if ((key != 'T' && key != 0x0D) || chosen == NULL) {
++            done = 1;
++            continue;
++        }
++        done = 0;
++        take_item(chosen, &fail);
++        if (fail) {
++            continue;
++        }
++        if (g_treasure_items == chosen) {
++            g_treasure_items = chosen->next;
++        } else {
++            for (p = g_treasure_items; p->next != chosen; p = p->next) {
++            }
++            p->next = chosen->next;
++        }
++        chosen->next = NULL;
++        exec_free_mem(chosen, sizeof(CokItem));
++        if (g_treasure_items == NULL) {
++            done = 1;
++        }
++    } while (!done);
++    menu_free(&s_treasure_menu);
++    redraw_game_screen();
++}
++
++/*
++ * PORT H070+$0F8A (Take): con monete e oggetti il menu "Money Items
++ * Exit" (H e P cambiano personaggio) finche' resta tutto; solo monete
++ * H067+$0F72, solo oggetti H070+$0E94.
++ */
++static void take_menu(u8 *money, u8 *items)
++{
++    u8 done = 0;                        /* -$2(a5) */
++    u8 special;                         /* -$3(a5) */
++    u8 key;                             /* -$1(a5) */
++
++    if (!*money) {
++        take_items();
++        return;
++    }
++    if (!*items) {
++        take_money_menu();
++        redraw_game_screen();
++        return;
++    }
++    do {
++        key = ui_request_choice(6, "Take: ", 0x10, "Money Items Exit", 0x0D,
++                                0x0A, 0x0F, 1, 1, &special);
++        switch (key) {
++        case 'M':
++            take_money_menu();
++            redraw_game_screen();
++            break;
++        case 'I':
++            take_items();
++            break;
++        case 0:
++        case 'E':
++            done = 1;
++            break;
++        case 'H':
++        case 'P':
++            select_party_member(key);
++            break;
++        default:
++            break;
++        }
++        draw_party(g_current_char);
++        has_treasure(money, items);
++        if (!*money || !*items) {
++            done = 1;
++        }
++    } while (!done);
++}
++
++/*
++ * PORT H070+$1136: schermata del tesoro: View, Take, Pool, Share, Detect
++ * (se il corrente ha memorizzato un incantesimo di individuazione: 5, $B,
++ * $4D, $67) ed Exit, che con tesoro rimasto chiede conferma.
++ */
++static void treasure_screen(void)
++{
++    char menu[0x52];                    /* -$56(a5) */
++    char extra[0x10];                   /* -$76(a5) */
++    u8 money = 0;                       /* -$1(a5) */
++    u8 items = 0;                       /* -$2(a5) */
++    u8 done = 0;                        /* -$58(a5) */
++    u8 special;                         /* -$59(a5) */
++    u8 key;                             /* -$57(a5) */
++    u8 detect;                          /* -$65(a5) */
++    u8 saved;                           /* -$77(a5) */
++    u16 k;                              /* -$62(a5) */
++    u16 spell = 0;                      /* -$64(a5) */
++    u8 s;
++
++    redraw_game_screen();
++    do {
++        money = 0;
++        has_treasure(&money, &items);
++        strcpy(menu, "View Pool Exit");
++        strcpy(extra, " Exit");
++        detect = 0;
++        if (items) {
++            for (k = 0; k <= 0x39 && !detect; ++k) {
++                s = g_current_char->b[0x1E + k];
++                if ((s == 5 || s == 0x0B || s == 0x4D || s == 0x67) &&
++                    g_current_char->b[0x198]) {
++                    detect = 1;
++                    spell = s;
++                }
++            }
++        }
++        if (detect) {
++            strcpy(extra, " Detect Exit");
++        }
++        if (money) {
++            strcpy(menu, "View Take Pool Share");
++            h026_append(0x50, menu, 0x0F, extra);
++        } else if (items) {
++            strcpy(menu, "View Take Pool");
++            h026_append(0x50, menu, 0x0F, extra);
++        }
++        key = ui_request_choice(2, "", 0x50, menu, 0x0D, 0x0A, 0x0F, 1, 1,
++                                &special);
++        if (special) {
++            select_party_member(key);
++            draw_party(g_current_char);
++            continue;
++        }
++        saved = H005_B(0x2483);
++        switch (key) {
++        case 'V':
++            view_character(&special);
++            break;
++        case 'T':
++            take_menu(&money, &items);
++            break;
++        case 'P':
++            if (!special) {
++                pool_party_money();
++            }
++            break;
++        case 'S':
++            share_money();
++            break;
++        case 'D':
++            cast_spell(spell, 0, 0, &special);
++            break;
++        case 0:
++        case 'E':
++            has_treasure(&money, &items);
++            if (money || items) {
++                word_wrap_text(1, 0x11, 0x26, 0x16, 0x0A, 0, 1, 0x1F,
++                               "There is still treasure left.  ");
++                word_wrap_text(1, 0x11, 0x26, 0x16, 0x0F, 0, 0, 0x2F,
++                               "Do you want to go back and claim your treasure?");
++                strcpy(menu, "~Yes ~No");
++                if (ecl_menu(2, "", 0x50, menu, 0x0D, 0x0A, 0x0F, 0, 0) == 1) {
++                    done = 1;
++                } else {
++                    clear_text_cells(1, 0x11, 0x26, 0x16);
++                }
++            } else {
++                done = 1;
++            }
++            break;
++        default:
++            break;
++        }
++        H005_B(0x2483) = saved;
++    } while (!done);
++}
++
++/*
++ * PORT H070+$152E: a fine combattimento toglie dal party i nemici (+$15
++ * del turno o lato 1), contando i caduti ($3E00+$590) e i fuggiti
++ * ($3E00+$58E), e libera i blocchi del turno degli altri.
++ */
++static void remove_combatants(void)
++{
++    u8 first = 1;                       /* -$9(a5) */
++    Character *p;                       /* -$4(a5) */
++    Character *n;                       /* -$8(a5) */
++
++    COK_PUT16(g_state_b + 0x590, 0);
++    p = g_party_head;
++    while (p != NULL) {
++        if (TURN(p)->b[0x15] == 1 || p->b[0x199] == 1) {
++            s_enemies = 1;
++            if (p->b[0x198] != 1) {
++                COK_PUT16(g_state_b + 0x590,
++                          COK_GET16(g_state_b + 0x590) + 1);
++                if (first) {
++                    COK_PUT16(g_state_a + 0x3F0, 1);
++                }
++            }
++            if (p->b[0x197] == 3 && COK_GET16(g_state_b + 0x58E) == 0) {
++                COK_PUT16(g_state_b + 0x58E, 1);
++            }
++            first = 0;
++            n = p->next;
++            g_current_char = p;
++            remove_from_party((u8)(TURN(p)->b[0x15] == 1), 1);
++            p = n;
++        } else {
++            if (p->block_192 != NULL) {
++                exec_free_mem(p->block_192, sizeof(CokTurn));
++                p->block_192 = NULL;
++            }
++            p = p->next;
++        }
++    }
++    g_current_char = g_party_head;
++}
++
++/*
++ * PORT H070+$165C: i personaggi non giocanti (+$EC > $7F, in piedi) con
++ * una quota (+$ED & 7) prendono la loro parte di ogni tipo di moneta
++ * ("takes and hides his/her share").
++ */
++static void npc_shares(void)
++{
++    char text[0x52];                    /* -$6E(a5) */
++    Character *p;                       /* -$4(a5) */
++    u16 shares = 0;                     /* -$6(a5) */
++    u16 total = 0;                      /* -$8(a5) */
++    u16 per;                            /* -$A(a5) */
++    u16 row;                            /* -$C(a5) */
++    u8 hidden = 0;                      /* -$19(a5) */
++    u8 special;                         /* -$1A(a5) */
++    u8 k;                               /* -$D(a5) */
++
++    for (p = g_party_head; p != NULL; p = p->next) {
++        if (p->b[0xEC] > 0x7F && p->b[0x197] == 0) {
++            shares = (u16)(shares + mask_byte(p->b[0xED], 7));
++            total = (u16)(total + mask_byte(p->b[0xED], 7));
++        } else {
++            ++total;
++        }
++    }
++    if (shares > 0) {
++        for (k = 0; k <= 6; ++k) {
++            if ((s32)POOL(k) > 0) {
++                per = (u16)h015_divs32((s32)POOL(k), (s32)total, NULL);
++                SET_POOL(k, POOL(k) - (u32)shares * per);
++                hidden = 1;
++            }
++        }
++    }
++    if (!hidden) {
++        return;
++    }
++    draw_screen_frame(1);
++    row = 0;
++    for (p = g_party_head; p != NULL; p = p->next) {
++        if (p->b[0xEC] > 0x7F && p->b[0x197] == 0 && p->b[0xED] > 0) {
++            h026_copy(0x50, text, 0x0F, (const char *)p->b);
++            if (!p->b[0x10E]) {
++                h026_append(0x50, text, 0x1B, " takes and hides his share.");
++            } else {
++                h026_append(0x50, text, 0x1B, " takes and hides her share.");
++            }
++            word_wrap_text(5, (u16)(row + 5), 0x22, 0x16, 0x0A, 0, 1, 0x50,
++                           text);
++            row = (u16)(row + 2);
++        }
++    }
++    (void)ui_request_choice(0, "", 0x22, "press <enter>/<return> to continue",
++                            0x0F, 0x0F, 0x0F, 1, 0, &special);
++}
++
++/*
++ * PORT H070+$18BE: gli oggetti lasciati cadere in combattimento ($3360)
++ * tornano a chi li aveva (H071+$047C).
++ */
++static void return_dropped_items(void)
++{
++    CokDropped *d;                      /* -$C(a5) */
++    CokDropped *n;                      /* -$10(a5) */
++    CokItem *copy;                      /* -$4(a5) */
++    u8 fail;                            /* -$11(a5) */
++
++    d = g_dropped_items;
++    while (d != NULL) {
++        copy = (CokItem *)exec_alloc_mem(sizeof(CokItem), COK_MEMF_CLEAR);
++        g_current_char = d->owner;
++        memcpy(copy->b, d->b, 0x48);
++        copy->next = NULL;
++        take_item(copy, &fail);
++        exec_free_mem(copy, sizeof(CokItem));
++        n = d;
++        d = d->next;
++        exec_free_mem(n, sizeof(CokDropped));
++    }
++    g_dropped_items = NULL;
++}
++
++/*
++ * PORT H070+$1958: fine del combattimento: oggetti caduti, esito, nemici
++ * tolti, valori ricalcolati; se il party c'e' ancora quote dei PNG,
++ * esito, tesoro e cassa; altrimenti "The monsters rejoice for the party
++ * has been destroyed.".  Nella dimostrazione ($24D7) esce subito.
++ */
++void combat_end(void)
++{
++    Character *p;                       /* -$C(a5) */
++    u8 special;
++
++    return_dropped_items();
++    COK_PUT16(g_state_b + 0x58E, 0);
++    s_enemies = 0;
++    if (!H005_B(0x24D7)) {
++        combat_outcome();
++    }
++    H005_B(0x3DE3) = 6;
++    remove_combatants();
++    if (H005_B(0x24D7)) {
++        return;
++    }
++    for (p = g_party_head; p != NULL; p = p->next) {
++        recompute_stats(p);
++    }
++    if (!H005_B(0x24D0) || H005_B(0x24C1)) {
++        if (s_fled) {
++            free_treasure();
++        }
++        if (!H005_B(0x24D7)) {
++            npc_shares();
++            show_outcome(H005_L(0x236E));
++            treasure_screen();
++        }
++        free_treasure();
++    } else {
++        COK_PUT16(g_state_b + 0x58E, 0x80);
++        draw_screen_frame(1);
++        H005_SET_W(0x334E, 2);
++        H005_SET_W(0x334C, 6);
++        word_wrap_text(2, 5, 0x25, 0x16, 0x0A, 0, 1, 0x36,
++                       "The monsters rejoice for the party has been destroyed.");
++        show_message_wait(0x0D, 0, 0x19, "Press any key to continue");
++    }
++    (void)special;
++    H005_B(0x24CE) = 1;
++    COK_PUT16(g_state_b + 0x6E0, 0);
++    COK_PUT16(g_state_b + 0x6E2, 0);
++    COK_PUT16(g_state_b + 0x6E4, 0);
++    COK_PUT16(g_state_b + 0x5C6, 0);
++    COK_PUT16(g_state_b + 0x5CC, 0);
++    COK_PUT16(g_state_a + 0x3EA, 0);
++}
+diff --git a/src_c/readable/h070.h b/src_c/readable/h070.h
+new file mode 100644
+index 0000000..02d7243
+--- /dev/null
++++ b/src_c/readable/h070.h
+@@ -0,0 +1,7 @@
++/* H070: esito del combattimento, esperienza e tesoro. */
++#ifndef COK_H070_H
++#define COK_H070_H
++#include "cok.h"
++void h070_init(void);                   /* H070+$0272 */
++void combat_end(void);                  /* H070+$1958 */
++#endif
+diff --git a/src_c/readable/h071.c b/src_c/readable/h071.c
+index ecf6591..091baa8 100644
+--- a/src_c/readable/h071.c
++++ b/src_c/readable/h071.c
+@@ -1,7 +1,43 @@
+ /* H071: Negozio e acquisto di oggetti. */
++#include <string.h>
+ #include "cok.h"
++#include "h071.h"
++#include "globals.h"
++#include "h003_exec.h"
++#include "h063.h"
++#include "h065.h"
+ 
+ /* PORT H071+$011C: link/unlk, nessun effetto. */
+ void h071_init(void)
+ {
+ }
++
++/*
++ * PORT H071+$047C: il personaggio corrente prende una copia di it in
++ * fondo ai suoi oggetti, se non lo sovraccarica ("OverLoaded", *fail).
++ */
++void take_item(CokItem *it, u8 *fail)
++{
++    CokItem *p;                         /* -$4(a5) */
++    CokItem *n;                         /* -$8(a5) */
++
++    if (item_overloads(g_current_char, it)) {
++        show_message_line(0x0A, "OverLoaded");
++        *fail = 1;
++        return;
++    }
++    *fail = 0;
++    n = (CokItem *)exec_alloc_mem(sizeof(CokItem), COK_MEMF_CLEAR);
++    memcpy(n->b, it->b, 0x48);
++    n->next = NULL;
++    p = g_current_char->items;
++    if (p == NULL) {
++        g_current_char->items = n;
++    } else {
++        while (p->next != NULL) {
++            p = p->next;
++        }
++        p->next = n;
++    }
++    recompute_stats(g_current_char);
++}
+diff --git a/src_c/readable/h071.h b/src_c/readable/h071.h
+new file mode 100644
+index 0000000..9450a40
+--- /dev/null
++++ b/src_c/readable/h071.h
+@@ -0,0 +1,7 @@
++/* H071: negozio e acquisto di oggetti. */
++#ifndef COK_H071_H
++#define COK_H071_H
++#include "character.h"
++void h071_init(void);                   /* H071+$011C */
++void take_item(CokItem *it, u8 *fail);  /* H071+$047C */
++#endif
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index 93c76c7..08f5b64 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -32,7 +32,6 @@ void cok_unported(const char *where)
+     exit(20);
+ }
+ 
+-void h006_0914(void) { cok_unported("H006+$0914"); }
+ 
+ /* Chiamate da H006+$01AE. */
+ 
+@@ -74,7 +73,6 @@ void h044_0492(void) { cok_unported("H044+$0492"); }
+ 
+ void h012_14c8(void) { cok_unported("H012+$14C8"); }
+ 
+-void h070_1958(void) { cok_unported("H070+$1958"); }
+ void h071_092c(void) { cok_unported("H071+$092C"); }
+ void h072_120c(void) { cok_unported("H072+$120C"); }
+ void h066_276e(u16 npc) { (void)npc; cok_unported("H066+$276E"); }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index 56e7dd0..83bded4 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -10,7 +10,6 @@
+ #include "gfx_record.h"
+ #include "character.h"
+ 
+-void h006_0914(void);
+ void h043_0584(void);
+ void h043_190e(u16 command);
+ void h010_03aa(void);
+@@ -63,7 +62,6 @@ void h044_0492(void);
+ void h012_14c8(void);
+ 
+ /* Usati dai comandi ECL di H012. */
+-void h070_1958(void);                    /* scena dopo il combattimento */
+ void h071_092c(void);                    /* scena speciale ($6D8) */
+ void h072_120c(void);                    /* scena speciale ($5C4) */
+ void h066_276e(u16 npc);                 /* aggiunge un PNG */
+-- 
+2.43.0
+

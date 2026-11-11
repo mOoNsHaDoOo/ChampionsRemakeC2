@@ -1,0 +1,1090 @@
+From 61a06da05adb6878e46bc1a484d58b18a81043fe Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 19:23:41 +0000
+Subject: [PATCH 24/65] Port Add Character to Party, Load_CharacterRecord and
+ the party list
+
+Port H013+$52E0 Add_CharacterToParty (trampoline $0518) with the party
+rules (duplicates, 6 player characters or 8 members, paladins, rangers,
+evil alignments), H066+$03D0/$03DE (list the saved .WHO characters),
+$0852 (open without the disk substitution), $1B0E Load_CharacterRecord
+(record, .swg items, .fx effects) and $27EE (append to the party),
+H063+$0D80 (party list in the main menu) and $1D44 (timed message).
+
+Host dos.library: locks now keep the host path, and Examine/ExNext scan
+directories (dirent, or _findfirst on Windows).
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md |  80 +++++-----
+ src_c/readable/h002_dos.c     | 179 ++++++++++++++++++---
+ src_c/readable/h002_dos.h     |   5 +-
+ src_c/readable/h013.c         | 133 +++++++++++++++-
+ src_c/readable/h013.h         |   1 +
+ src_c/readable/h063.c         |  76 +++++++++
+ src_c/readable/h063.h         |   2 +
+ src_c/readable/h066.c         | 292 ++++++++++++++++++++++++++++++++++
+ src_c/readable/h066.h         |   6 +
+ src_c/readable/unported.c     |   3 -
+ src_c/readable/unported.h     |   3 -
+ 11 files changed, 707 insertions(+), 73 deletions(-)
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index f5b80a1..971dac3 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,13 +2,13 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **377 / 916**.
++Routine portate: **386 / 916**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+ | H000 | 600 | 1 | 1 |
+ | H001 | 664 | 2 | 2 |
+-| H002 | 572 | 15 | 13 |
++| H002 | 572 | 15 | 14 |
+ | H003 | 316 | 5 | 5 |
+ | H004 | 24284 | 2 | 2 |
+ | H005 | 21276 | 1 | 1 |
+@@ -19,7 +19,7 @@ Routine portate: **377 / 916**.
+ | H010 | 2488 | 9 | 6 |
+ | H011 | 7004 | 12 | 2 |
+ | H012 | 13580 | 8 | 1 |
+-| H013 | 25244 | 22 | 10 |
++| H013 | 25244 | 22 | 11 |
+ | H014 | 224 | 2 | 1 |
+ | H015 | 1016 | 11 | 5 |
+ | H016 | 436 | 5 | 5 |
+@@ -69,10 +69,10 @@ Routine portate: **377 / 916**.
+ | H060 | 396 | 2 | 1 |
+ | H061 | 16936 | 35 | 1 |
+ | H062 | 10496 | 32 | 3 |
+-| H063 | 16496 | 52 | 19 |
++| H063 | 16496 | 52 | 21 |
+ | H064 | 6460 | 7 | 1 |
+ | H065 | 14268 | 27 | 6 |
+-| H066 | 13840 | 27 | 13 |
++| H066 | 13840 | 27 | 18 |
+ | H067 | 9820 | 22 | 1 |
+ | H068 | 5788 | 14 | 1 |
+ | H069 | 232 | 3 | 1 |
+@@ -127,21 +127,21 @@ Routine portate: **377 / 916**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0008` | `sub_H002_00000008` | parziale | h002_dos.c:108 |
+-| `$0014` | `wrapper_Close` | parziale | h002_dos.c:187 |
+-| `$0026` | `wrapper_CreateDir` | parziale | h002_dos.c:285 |
+-| `$004A` | `wrapper_DeleteFile` | parziale | h002_dos.c:299 |
+-| `$0070` | `wrapper_Examine` | parziale | h002_dos.c:310 |
+-| `$0088` | `wrapper_ExNext` | parziale |  |
+-| `$00A0` | `wrapper_Info` | parziale | h002_dos.c:154 |
++| `$0008` | `sub_H002_00000008` | parziale | h002_dos.c:115 |
++| `$0014` | `wrapper_Close` | parziale | h002_dos.c:256 |
++| `$0026` | `wrapper_CreateDir` | parziale | h002_dos.c:354 |
++| `$004A` | `wrapper_DeleteFile` | parziale | h002_dos.c:368 |
++| `$0070` | `wrapper_Examine` | parziale | h002_dos.c:379 |
++| `$0088` | `wrapper_ExNext` | parziale | h002_dos.c:415 |
++| `$00A0` | `wrapper_Info` | parziale | h002_dos.c:223 |
+ | `$00C0` | `wrapper_IoErr` | parziale |  |
+-| `$00DC` | `wrapper_Lock` | parziale | h002_dos.c:116 |
+-| `$00F2` | `wrapper_Open` | parziale | h002_dos.c:202 |
+-| `$0122` | `wrapper_Read` | parziale | h002_dos.c:226 |
+-| `$0156` | `wrapper_Seek` | parziale | h002_dos.c:250 |
+-| `$01A2` | `wrapper_UnLock` | parziale | h002_dos.c:144 |
+-| `$01CC` | `wrapper_Write` | parziale | h002_dos.c:238 |
+-| `$01E8` | `wrapper_Execute` | parziale | h002_dos.c:268 |
++| `$00DC` | `wrapper_Lock` | parziale | h002_dos.c:163 |
++| `$00F2` | `wrapper_Open` | parziale | h002_dos.c:271 |
++| `$0122` | `wrapper_Read` | parziale | h002_dos.c:295 |
++| `$0156` | `wrapper_Seek` | parziale | h002_dos.c:319 |
++| `$01A2` | `wrapper_UnLock` | parziale | h002_dos.c:199 |
++| `$01CC` | `wrapper_Write` | parziale | h002_dos.c:307 |
++| `$01E8` | `wrapper_Execute` | parziale | h002_dos.c:337 |
+ 
+ ### H003
+ 
+@@ -292,7 +292,7 @@ Routine portate: **377 / 916**.
+ | `$4508` | `sub_H013_00004508` | parziale |  |
+ | `$4BFC` | `Party_MainMenu` | verificato | h013.c:96 |
+ | `$4C0A` | `sub_H013_00004C0A` | parziale | h013.c:57 |
+-| `$52E0` | `Add_CharacterToParty` | parziale |  |
++| `$52E0` | `Add_CharacterToParty` | parziale | h013.c:1481 |
+ | `$56CE` | `(senza scheda)` | - | h013.c:325 |
+ | `$58DC` | `(senza scheda)` | - | h013.c:1265 |
+ 
+@@ -1003,7 +1003,7 @@ Routine portate: **377 / 916**.
+ | `$08A2` | `sub_H063_000008A2` | parziale | h063.c:334 |
+ | `$0946` | `sub_H063_00000946` | parziale | h063.c:357 |
+ | `$09B2` | `sub_H063_000009B2` | parziale | h063.c:374 |
+-| `$0D80` | `sub_H063_00000D80` | parziale |  |
++| `$0D80` | `sub_H063_00000D80` | parziale | h063.c:697 |
+ | `$0FA0` | `sub_H063_00000FA0` | parziale | h063.c:449 |
+ | `$103A` | `sub_H063_0000103A` | parziale | h063.c:464 |
+ | `$1160` | `trampoline_H063_1350` | parziale |  |
+@@ -1015,7 +1015,7 @@ Routine portate: **377 / 916**.
+ | `$1B90` | `sub_H063_00001B90` | parziale |  |
+ | `$1BE8` | `sub_H063_00001BE8` | parziale |  |
+ | `$1CC0` | `sub_H063_00001CC0` | parziale |  |
+-| `$1D44` | `sub_H063_00001D44` | parziale |  |
++| `$1D44` | `sub_H063_00001D44` | parziale | h063.c:678 |
+ | `$1DC2` | `sub_H063_00001DC2` | parziale |  |
+ | `$1EE8` | `sub_H063_00001EE8` | parziale |  |
+ | `$1F34` | `trampoline_H063_1F7E` | parziale | h063.c:608 |
+@@ -1093,28 +1093,28 @@ Routine portate: **377 / 916**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$02F0` | `module_init_H066` | parziale | h066.c:17 |
+-| `$03D0` | `trampoline_H066_0780` | parziale |  |
+-| `$03DE` | `sub_H066_000003DE` | parziale |  |
+-| `$0852` | `sub_H066_00000852` | parziale |  |
+-| `$08E4` | `trampoline_H066_0B88` | parziale | h066.c:228 |
+-| `$08F2` | `sub_H066_000008F2` | parziale | h066.c:210 |
+-| `$0BAC` | `sub_H066_00000BAC` | parziale | h066.c:28 |
+-| `$0C34` | `trampoline_H066_0E5A` | parziale | h066.c:98 |
+-| `$0C42` | `sub_H066_00000C42` | parziale | h066.c:40 |
+-| `$0D2A` | `sub_H066_00000D2A` | parziale | h066.c:67 |
+-| `$0DEA` | `sub_H066_00000DEA` | parziale | h066.c:86 |
++| `$02F0` | `module_init_H066` | parziale | h066.c:19 |
++| `$03D0` | `trampoline_H066_0780` | parziale | h066.c:592 |
++| `$03DE` | `sub_H066_000003DE` | parziale | h066.c:497 |
++| `$0852` | `sub_H066_00000852` | parziale | h066.c:481 |
++| `$08E4` | `trampoline_H066_0B88` | parziale | h066.c:230 |
++| `$08F2` | `sub_H066_000008F2` | parziale | h066.c:212 |
++| `$0BAC` | `sub_H066_00000BAC` | parziale | h066.c:30 |
++| `$0C34` | `trampoline_H066_0E5A` | parziale | h066.c:100 |
++| `$0C42` | `sub_H066_00000C42` | parziale | h066.c:42 |
++| `$0D2A` | `sub_H066_00000D2A` | parziale | h066.c:69 |
++| `$0DEA` | `sub_H066_00000DEA` | parziale | h066.c:88 |
+ | `$1312` | `Delete_CharacterSidecarFiles` | verificato |  |
+-| `$142E` | `Query_FreeDiskSpace` | parziale | h066.c:276 |
+-| `$14DC` | `Check_SaveWritable` | parziale | h066.c:306 |
+-| `$14EA` | `sub_H066_000014EA` | parziale | h066.c:297 |
+-| `$1640` | `Save_CharacterRecord` | verificato | h066.c:361 |
+-| `$164E` | `sub_H066_0000164E` | parziale | h066.c:349 |
+-| `$1B0E` | `Load_CharacterRecord` | verificato |  |
++| `$142E` | `Query_FreeDiskSpace` | parziale | h066.c:278 |
++| `$14DC` | `Check_SaveWritable` | parziale | h066.c:308 |
++| `$14EA` | `sub_H066_000014EA` | parziale | h066.c:299 |
++| `$1640` | `Save_CharacterRecord` | verificato | h066.c:363 |
++| `$164E` | `sub_H066_0000164E` | parziale | h066.c:351 |
++| `$1B0E` | `Load_CharacterRecord` | verificato | h066.c:615 |
+ | `$1FDA` | `Load_MonsterRecord` | verificato |  |
+ | `$1FE8` | `sub_H066_00001FE8` | parziale |  |
+ | `$276E` | `trampoline_H066_27E4` | parziale |  |
+-| `$27EE` | `sub_H066_000027EE` | parziale |  |
++| `$27EE` | `sub_H066_000027EE` | parziale | h066.c:726 |
+ | `$291E` | `Load_GameSlot` | verificato |  |
+ | `$292C` | `sub_H066_0000292C` | parziale |  |
+ | `$3000` | `Save_GameSlot` | verificato |  |
+diff --git a/src_c/readable/h002_dos.c b/src_c/readable/h002_dos.c
+index 3a3ecb4..8068a2c 100644
+--- a/src_c/readable/h002_dos.c
++++ b/src_c/readable/h002_dos.c
+@@ -18,6 +18,13 @@
+ #include <sys/stat.h>
+ #if defined(_WIN32)
+ #include <direct.h>
++#include <io.h>
++#include <stdint.h>
++#ifndef S_ISDIR
++#define S_ISDIR(m) (((m) & _S_IFMT) == _S_IFDIR)
++#endif
++#else
++#include <dirent.h>
+ #endif
+ 
+ /*
+@@ -113,31 +120,79 @@ void h002_init(void)
+ {
+ }
+ 
++#if !COK_AMIGA
++/*
++ * Host: i lock sono indici (da 1) in questa tabella: il percorso dell'host
++ * e, dopo Examine di una directory, la sua scansione per ExNext.
++ */
++#define HOST_LOCKS 16
++typedef struct HostLock {
++    int used;
++    char path[1024];
++#if defined(_WIN32)
++    intptr_t find;              /* _findfirst, -1 se nessuna scansione */
++    struct _finddata_t data;
++    int have_data;
++#else
++    DIR *dir;
++#endif
++} HostLock;
++static HostLock s_locks[HOST_LOCKS];
++
++static HostLock *host_lock(cok_bptr lock)
++{
++    return lock >= 1 && lock <= HOST_LOCKS && s_locks[lock - 1].used ?
++           &s_locks[lock - 1] : NULL;
++}
++
++/* Ultimo componente di un percorso dell'host. */
++static const char *host_base_name(const char *path)
++{
++    const char *slash = strrchr(path, '/');
++#if defined(_WIN32)
++    const char *bslash = strrchr(path, '\\');
++
++    if (bslash != NULL && (slash == NULL || bslash > slash)) {
++        slash = bslash;
++    }
++#endif
++    return slash != NULL ? slash + 1 : path;
++}
++#endif
++
+ /* PORT H002+$00DC */
+ cok_bptr dos_lock(const char *name, s32 mode)
+ {
+ #if COK_AMIGA
+     return Lock((STRPTR)name, mode);
+ #else
+-    FILE *f;
++    const char *path;
++    struct stat st;
++    int i;
+ 
+     (void)mode;
+-    /* Host: "" e' la directory corrente; altrimenti il file deve esistere. */
+-    if (name[0] == 0) {
+-        return 1;
+-    }
+-    if (strchr(name, ':') != NULL && strchr(name, ':')[1] == 0) {
+-        return 1;               /* solo il volume: la directory dei dati */
++    /* "" e solo il volume ("df0:") sono la directory dei dati. */
++    if (name[0] == 0 ||
++        (strchr(name, ':') != NULL && strchr(name, ':')[1] == 0)) {
++        path = host_path("");
++    } else {
++        path = host_path(name);
++        if (stat(path, &st) != 0) {
++            return 0;
++        }
+     }
+-    f = fopen(host_path(name), "rb");
+-    if (f == NULL) {
+-        struct stat st;
+-
+-        /* Le directory: fopen non le apre ovunque (Windows). */
+-        return stat(host_path(name), &st) == 0 ? 1 : 0;
++    for (i = 0; i < HOST_LOCKS; ++i) {
++        if (!s_locks[i].used) {
++            memset(&s_locks[i], 0, sizeof(s_locks[i]));
++            s_locks[i].used = 1;
++            sprintf(s_locks[i].path, "%.1000s", path);
++#if defined(_WIN32)
++            s_locks[i].find = -1;
++#endif
++            return i + 1;
++        }
+     }
+-    fclose(f);
+-    return 1;
++    return 0;
+ #endif
+ }
+ 
+@@ -147,7 +202,21 @@ void dos_unlock(cok_bptr lock)
+ #if COK_AMIGA
+     UnLock(lock);
+ #else
+-    (void)lock;
++    HostLock *l = host_lock(lock);
++
++    if (l == NULL) {
++        return;
++    }
++#if defined(_WIN32)
++    if (l->find != -1) {
++        _findclose(l->find);
++    }
++#else
++    if (l->dir != NULL) {
++        closedir(l->dir);
++    }
++#endif
++    l->used = 0;
+ #endif
+ }
+ 
+@@ -307,15 +376,85 @@ u8 dos_delete_file(const char *name)
+ }
+ 
+ /*
+- * PORT H002+$0070: Examine, poi neg.b d0.  Host: senza volumi ne' nomi
+- * associati ai lock il nome resta vuoto.
++ * PORT H002+$0070: Examine, poi neg.b d0.  Host: nome (ultimo componente)
++ * e dimensione; per una directory comincia la scansione usata da ExNext.
+  */
+ u8 dos_examine(cok_bptr lock, cok_fib *fib)
+ {
+ #if COK_AMIGA
+     return (u8)(-(s8)Examine(lock, fib));
+ #else
+-    fib->fib_FileName[0] = 0;
+-    return (u8)(lock != 0 ? 1 : 0);
++    HostLock *l = host_lock(lock);
++    struct stat st;
++
++    memset(fib, 0, sizeof(*fib));
++    if (l == NULL || stat(l->path, &st) != 0) {
++        return 0;
++    }
++    sprintf(fib->fib_FileName, "%.100s", host_base_name(l->path));
++    fib->fib_Size = (s32)st.st_size;
++    fib->fib_DirEntryType = S_ISDIR(st.st_mode) ? 2 : -3;
++#if defined(_WIN32)
++    if (S_ISDIR(st.st_mode) && l->find == -1) {
++        char pattern[1100];
++
++        sprintf(pattern, "%.1000s/*", l->path);
++        l->find = _findfirst(pattern, &l->data);
++        l->have_data = l->find != -1;
++    }
++#else
++    if (S_ISDIR(st.st_mode) && l->dir == NULL) {
++        l->dir = opendir(l->path);
++    }
++#endif
++    return 1;
++#endif
++}
++
++/*
++ * PORT H002+$0088: ExNext, poi neg.b d0.  Host: voce successiva della
++ * directory (senza "." e ".."), 0 alla fine.
++ */
++u8 dos_exnext(cok_bptr lock, cok_fib *fib)
++{
++#if COK_AMIGA
++    return (u8)(-(s8)ExNext(lock, fib));
++#else
++    HostLock *l = host_lock(lock);
++    char full[1200];
++    struct stat st;
++    const char *entry;
++
++    if (l == NULL) {
++        return 0;
++    }
++    for (;;) {
++#if defined(_WIN32)
++        if (l->find == -1 || !l->have_data) {
++            return 0;
++        }
++        sprintf(full, "%.100s", l->data.name);
++        l->have_data = _findnext(l->find, &l->data) == 0;
++        entry = full;
++#else
++        struct dirent *e;
++
++        if (l->dir == NULL || (e = readdir(l->dir)) == NULL) {
++            return 0;
++        }
++        entry = e->d_name;
++#endif
++        if (strcmp(entry, ".") != 0 && strcmp(entry, "..") != 0) {
++            break;
++        }
++    }
++    memset(fib, 0, sizeof(*fib));
++    sprintf(fib->fib_FileName, "%.100s", entry);
++    sprintf(full, "%.1000s/%.100s", l->path, fib->fib_FileName);
++    if (stat(full, &st) == 0) {
++        fib->fib_Size = (s32)st.st_size;
++        fib->fib_DirEntryType = S_ISDIR(st.st_mode) ? 2 : -3;
++    }
++    return 1;
+ #endif
+ }
+diff --git a/src_c/readable/h002_dos.h b/src_c/readable/h002_dos.h
+index a9731ed..8c80316 100644
+--- a/src_c/readable/h002_dos.h
++++ b/src_c/readable/h002_dos.h
+@@ -17,7 +17,9 @@ typedef struct cok_info_data {
+ } cok_info_data;
+ /* Solo il campo del FileInfoBlock letto dal gioco (offset 8). */
+ typedef struct cok_fib {
+-    char fib_FileName[108];
++    s32 fib_DirEntryType;      /* $04: > 0 directory */
++    char fib_FileName[108];    /* $08 */
++    s32 fib_Size;              /* $7C */
+ } cok_fib;
+ #define ACCESS_WRITE     (-1)
+ #define ACCESS_READ      (-2)
+@@ -41,5 +43,6 @@ u8       dos_execute(const char *cmd, cok_bptr in, cok_bptr out); /* H002+$01E8
+ cok_bptr dos_create_dir(const char *name);        /* H002+$0026 */
+ u8       dos_delete_file(const char *name);       /* H002+$004A */
+ u8       dos_examine(cok_bptr lock, cok_fib *fib); /* H002+$0070 */
++u8       dos_exnext(cok_bptr lock, cok_fib *fib);  /* H002+$0088 */
+ 
+ #endif
+diff --git a/src_c/readable/h013.c b/src_c/readable/h013.c
+index 803b079..e3ccc5a 100644
+--- a/src_c/readable/h013.c
++++ b/src_c/readable/h013.c
+@@ -126,7 +126,7 @@ void main_menu(void)
+         if (rebuild) {
+             draw_screen_frame(1);
+             if (g_current_char != NULL) {
+-                h063_0d80(g_current_char);
++                draw_party(g_current_char);
+                 items[MM_DROP].enabled = 1;
+                 items[MM_MODIFY].enabled = 1;
+                 items[MM_TRAIN].enabled =
+@@ -211,7 +211,7 @@ void main_menu(void)
+             break;
+         case 'A':
+             if (items[MM_ADD].enabled) {
+-                h013_0518();
++                add_character_to_party();
+             }
+             break;
+         case 'R':
+@@ -251,11 +251,11 @@ void main_menu(void)
+                         } else {
+                             h044_0330();
+                         }
+-                        h063_0d80(g_current_char);
++                        draw_party(g_current_char);
+                     } else if (COK_GET16(g_state_a + 0x1E4) == 0 ||
+                                COK_GET16(g_state_a + 0x270) != 0) {
+                         h044_0330();
+-                        h063_0d80(g_current_char);
++                        draw_party(g_current_char);
+                     }
+                     clear_message_line();
+                     COK_PUT16(g_state_b + 0x550, 0);
+@@ -299,7 +299,7 @@ void main_menu(void)
+                 } else {
+                     h026_append(0x50, s_message, 3, "off");
+                 }
+-                h063_1d44(0x50, s_message);
++                show_message_line(0x50, s_message);
+             }
+             break;
+         default:
+@@ -1403,7 +1403,7 @@ void train_character(void)
+             'Y') {
+             return;
+         }
+-        h063_1d44(0x12, "Congratulations...");
++        show_message_line(0x12, "Congratulations...");
+     }
+ 
+     nclasses = 0;
+@@ -1470,3 +1470,124 @@ void train_character(void)
+         }
+     }
+ }
++
++/* Allineamento malvagio: (allineamento + 1) multiplo di 3 (2, 5, 8). */
++static u8 is_evil(const Character *c)
++{
++    return (u8)((u16)(c->b[0x10F] + 1) % 3 == 0);
++}
++
++/*
++ * PORT H013+$52E0 (trampolino H013+$0518): Add Character to Party.
++ * Elenco dei personaggi salvati (H066+$03D0); quello scelto e' caricato,
++ * segnato con "* " e aggiunto se non e' gia' nel party, se il party non
++ * e' pieno (6 personaggi giocanti, 8 in tutto) e se paladini, ranger
++ * (al massimo 3) e allineamenti malvagi sono compatibili; altrimenti il
++ * segno e' tolto, con il messaggio del motivo.  Fino a Esc/Exit o party
++ * pieno.  Il personaggio rifiutato libera solo il record, come
++ * nell'originale (oggetti ed effetti caricati restano allocati).
++ */
++void add_character_to_party(void)
++{
++    CokMenuItem *names = NULL;          /* -$4(a5) */
++    CokMenuItem *files = NULL;          /* -$8(a5) */
++    CokMenuItem *chosen;                /* -$c(a5) */
++    CokMenuItem *file_node;             /* -$10(a5) */
++    Character *c;                       /* -$14(a5) */
++    Character *m;                       /* -$18(a5) */
++    char paladin_name[0x2A];            /* -$4e(a5) */
++    u16 index;                          /* -$1a(a5) */
++    u16 members = 0;                    /* -$22(a5): nell'originale non
++                                         * inizializzato prima della prima
++                                         * scelta; qui 0 */
++    u16 rangers = 0;                    /* -$24(a5) */
++    u8 key;                             /* -$1b(a5) */
++    u8 has_evil = 0;                    /* -$1c(a5) */
++    u8 has_paladin = 0;                 /* -$1d(a5) */
++    u8 with_exit = 0;                   /* -$1e(a5): non inizializzato
++                                         * nell'originale; qui 0 */
++    u8 redraw;                          /* -$20(a5) */
++
++    paladin_name[0] = 0;
++    H005_B(0x24E9) = 0;
++    list_saved_characters(&names, &files);
++    if (names == NULL) {
++        return;
++    }
++    index = 0;
++    chosen = names;
++    redraw = 1;
++    do {
++        key = list_menu(0x11, "Add a character: ", 4, "Add ", 0x0D, 0x0A,
++                        0x0F, 1, 2, 0x26, 0x16, names, with_exit, &redraw,
++                        &index, &chosen);
++        if ((key == 0x0D || key == 'A') && chosen->text[0] != '#') {
++            clear_message_line();
++            c = (Character *)exec_alloc_mem(sizeof(Character),
++                                            COK_MEMF_CLEAR);
++            file_node = menu_nth(files, index);
++            load_character(0x28, file_node->text, c, 0, 1);
++            h026_insert(0x28, chosen->text, 2, "* ", 0);
++            members = 0;
++            if (g_party_head == NULL) {
++                COK_PUT16(g_state_b + 0x67C, 0);
++                add_to_party(c);
++                build_char_icon(1);
++            } else {
++                rangers = 0;
++                for (m = g_party_head; m != NULL; m = m->next) {
++                    if (h026_compare_nocase(0x0F, (const char *)m->b, 0x0F,
++                                            (const char *)c->b) == 1 &&
++                        m->b[0x11C] == c->b[0x11C]) {
++                        break;          /* gia' nel party */
++                    }
++                    if (m->b[0xEC] < 0x80) {
++                        ++members;
++                    }
++                    if (m->b[0x102] > 0) {
++                        ++rangers;
++                    }
++                    if (is_evil(m)) {
++                        has_evil = 1;
++                    }
++                    if (m->b[0x101] > 0) {
++                        has_paladin = 1;
++                        h026_copy(0x28, paladin_name, 0x0F,
++                                  (const char *)m->b);
++                    }
++                }
++                if (m == NULL &&
++                    ((c->b[0xEC] < 0x80 && members < 6) ||
++                     (c->b[0xEC] > 0x7F &&
++                      COK_GET16(g_state_b + 0x67C) < 8)) &&
++                    !(c->b[0x101] != 0 && has_evil) &&
++                    !(c->b[0x102] != 0 && rangers >= 3) &&
++                    !(is_evil(c) && has_paladin)) {
++                    add_to_party(c);
++                    build_char_icon(1);
++                    if (c->b[0xEC] < 0x80) {
++                        ++members;
++                    }
++                } else {
++                    h026_delete(0x28, chosen->text, 0, 2);
++                    if (c->b[0x101] > 0 && has_evil) {
++                        show_message_line(0x23,
++                            "paladins do not join with evil scum");
++                        message_delay();
++                    } else if (c->b[0x102] > 0 && rangers > 2) {
++                        show_message_line(0x19, "too many rangers in party");
++                    } else if (is_evil(c) && has_paladin) {
++                        h026_copy(0x50, s_message, 0x28, paladin_name);
++                        h026_append(0x50, s_message, 0x17,
++                                    " will tolerate no evil!");
++                        show_message_line(0x50, s_message);
++                    }
++                    exec_free_mem(c, sizeof(Character));
++                }
++            }
++        }
++    } while (key != 'E' && key != 0 && members <= 5 &&
++             COK_GET16(g_state_b + 0x67C) <= 7);
++    menu_free(&names);
++    menu_free(&files);
++}
+diff --git a/src_c/readable/h013.h b/src_c/readable/h013.h
+index d711d84..6a98690 100644
+--- a/src_c/readable/h013.h
++++ b/src_c/readable/h013.h
+@@ -5,5 +5,6 @@
+ void main_menu(void);                   /* H013+$4BFC */
+ void create_character(void);            /* H013+$0982 */
+ void train_character(void);             /* H013+$58DC */
++void add_character_to_party(void);      /* H013+$52E0 */
+ 
+ #endif
+diff --git a/src_c/readable/h063.c b/src_c/readable/h063.c
+index def06bd..417a327 100644
+--- a/src_c/readable/h063.c
++++ b/src_c/readable/h063.c
+@@ -673,3 +673,79 @@ u8 class_xp_row(Character *c, u8 cls)
+     }
+     return row;
+ }
++
++/*
++ * PORT H063+$1D44: messaggio sulla riga $18 (testo per valore), pausa
++ * dei messaggi, poi riga cancellata.
++ */
++void show_message_line(u16 len, const char *text)
++{
++    char copy[0x100];
++    u16 i;
++
++    for (i = 0; i <= len && i < sizeof(copy) - 1; ++i) {
++        copy[i] = text[i];
++    }
++    copy[i] = 0;
++    clear_text_cells(0, 0x18, 0x27, 0x18);
++    ui_draw_text(0, 0x18, 0x0A, 0, len, copy);
++    message_delay();
++    clear_text_cells(0, 0x18, 0x27, 0x18);
++}
++
++/*
++ * PORT H063+$0D80: elenco del party (nome, CA, PF) dalla riga 4, nella
++ * colonna 1 (fuori dal combattimento) o $11; il personaggio current in
++ * bianco.  Imposta l'area cliccabile H005+$248A..$248D.  Non disegna in
++ * combattimento senza H005 stato A +$270, ne' con $24AE.
++ */
++void draw_party(Character *current)
++{
++    Character *m;                       /* -$4(a5) */
++    u16 col;                            /* -$6(a5) */
++    u16 row;                            /* -$8(a5) */
++    u16 off;                            /* -$a(a5) */
++
++    if ((H005_B(0x3DE3) == 3 && COK_GET16(g_state_a + 0x270) == 0) ||
++        H005_B(0x24AE)) {
++        return;
++    }
++    col = (u16)(H005_B(0x3DE3) == 0 ? 1 : 0x11);
++    H005_B(0x248D) = (u8)col;
++    H005_B(0x248B) = 4;
++    H005_B(0x248C) = 0x26;
++    H005_B(0x248A) = 3;
++    row = 2;
++    ui_draw_text(col, row, 0x0F, 0, 4, "Name");
++    ui_draw_text(0x21, row, 0x0F, 0, 6, "AC  HP");
++    row = (u16)(row + 2);
++    for (m = g_party_head; m != NULL; m = m->next) {
++        add_to_byte(&H005_B(0x248A), 1);
++        clear_text_cells(col, row, 0x26, row);
++        if (m == current) {
++            ui_draw_text(col, row, 0x0F, 0, 0x0F, (const char *)m->b);
++        } else {
++            draw_character_name(m, col, row, 0);
++        }
++        if (m->b[0x19C] < 0x33) {
++            off = 1;
++        } else if (m->b[0x19C] < 0x3D) {
++            off = 2;
++        } else if (m->b[0x19C] < 0x46) {
++            off = 1;
++        } else {
++            off = 0;
++        }
++        draw_armor_class(m, (u16)(off + 0x20), row);
++        if (m->b[0x1A8] < 0x0A) {
++            off = 2;
++        } else if (m->b[0x1A8] < 0x64) {
++            off = 1;
++        } else {
++            off = 0;
++        }
++        draw_hit_points(m, (u16)(off + 0x24), row, 0, 0);
++        ++row;
++    }
++    clear_text_cells(col, row, 0x26, row);
++}
+diff --git a/src_c/readable/h063.h b/src_c/readable/h063.h
+index 3d4d702..f6177b4 100644
+--- a/src_c/readable/h063.h
++++ b/src_c/readable/h063.h
+@@ -16,5 +16,7 @@ void recompute_stats(Character *c);                     /* H063+$13BE */
+ void draw_character_name(Character *c, u16 col, u16 row, u8 possessive);
+                                                         /* H063+$1F34 */
+ u8   class_xp_row(Character *c, u8 cls);            /* H063+$3F72 */
++void show_message_line(u16 len, const char *text);     /* H063+$1D44 */
++void draw_party(Character *current);                   /* H063+$0D80 */
+ 
+ #endif
+diff --git a/src_c/readable/h066.c b/src_c/readable/h066.c
+index 13f624e..57a4258 100644
+--- a/src_c/readable/h066.c
++++ b/src_c/readable/h066.c
+@@ -13,6 +13,8 @@
+ #include "h015_runtime.h"
+ #include "h026_string.h"
+ #include "h030.h"
++#include "h063.h"
++#include "h073.h"
+ 
+ /* PORT H066+$02F0: link/unlk, nessun effetto. */
+ void h066_init(void)
+@@ -468,3 +470,293 @@ void save_character(Character *c, u16 name_len, const char *name)
+         dos_close(file);
+     }
+ }
++
++/* Dati del modulo sotto a4. */
++static cok_fib *s_list_fib;             /* -$c(a4) */
++static cok_bptr s_list_lock;            /* -$4(a4) */
++static cok_bptr s_list_file;            /* -$8(a4) */
++static char s_load_path[0x52];          /* -$5e(a4) */
++
++/*
++ * PORT H066+$0852: Open_ResourceFile con il gruppo di risorse ($246E)
++ * azzerato, cioe' senza sostituire il disco nel percorso.
++ */
++static u8 open_save_file(u16 path_len, const char *path, u16 msg_len,
++                         const char *msg, u8 flag, cok_bptr *file)
++{
++    u8 saved = H005_B(0x246E);          /* -$2(a5) */
++    u8 ok;                              /* -$1(a5) */
++
++    H005_B(0x246E) = 0;
++    ok = open_resource_file(path_len, path, msg_len, msg, flag, file);
++    H005_B(0x246E) = saved;
++    return ok;
++}
++
++/*
++ * PORT H066+$03DE: procedura annidata di H066+$03D0: scandisce la
++ * directory path (per valore) e, per ogni file ".WHO" di record_size byte,
++ * legge il nome (16 byte da name_at) e la word a status_at (dalla
++ * posizione corrente).  Escluso se la word supera $7F o se il nome e' gia'
++ * nel party; altrimenti il nome va in *names e il nome del file in *files.
++ * La stringa "from saved game ..." (-$70) e' composta ma non usata.
++ */
++static void scan_save_dir(u16 path_len, const char *path, u16 name_at,
++                          u16 status_at, u16 record_size,
++                          CokMenuItem **names, CokMenuItem **files)
++{
++    char dir[0x52];                     /* $1a(a5): per valore */
++    char full[0x52];                    /* -$70(a5) */
++    char ext[0x52];                     /* -$114(a5) */
++    char tail[0x52];                    /* -$166(a5) */
++    u8 word_raw[2];                     /* -$16a(a5) */
++    CokMenuItem *name_node = NULL;      /* -$6(a5) */
++    CokMenuItem *file_node = NULL;      /* -$e(a5) */
++    CokMenuItem *name_tail = NULL;      /* -$a(a5) */
++    CokMenuItem *file_tail = NULL;      /* -$12(a5) */
++    Character *m;                       /* -$16(a5) */
++    s16 dot;                            /* -$168(a5) */
++
++    memcpy(dir, path, (size_t)path_len + 1 < sizeof(dir) ?
++                      (size_t)path_len + 1 : sizeof(dir));
++    s_list_fib = (cok_fib *)exec_alloc_mem(sizeof(cok_fib), COK_MEMF_CLEAR);
++    s_list_lock = dos_lock(dir, -1);
++    if (dos_examine(s_list_lock, s_list_fib)) {
++        while (dos_exnext(s_list_lock, s_list_fib)) {
++            const char *fname = s_list_fib->fib_FileName;
++
++            h026_copy(0x50, tail, 0,
++                      fname + h026_strlen(0x6B, fname) - 4);
++            if (h026_compare_nocase(0x50, tail, 4, ".WHO") != 1) {
++                continue;
++            }
++            h026_copy(0x50, full, 0x50, SAVE_PATH);
++            h026_append(0x50, full, 1, "/");
++            h026_append(0x50, full, 0x6B, fname);
++            s_list_file = dos_open(full, MODE_OLDFILE);
++            if ((u16)s_list_fib->fib_Size == record_size) {
++                name_node = (CokMenuItem *)exec_alloc_mem(sizeof(CokMenuItem),
++                                                          COK_MEMF_CLEAR);
++                file_node = (CokMenuItem *)exec_alloc_mem(sizeof(CokMenuItem),
++                                                          COK_MEMF_CLEAR);
++                (void)dos_seek(s_list_file, name_at, OFFSET_CURRENT);
++                (void)dos_read(s_list_file, name_node->text, 0x10);
++                (void)dos_seek(s_list_file, status_at, OFFSET_CURRENT);
++                word_raw[0] = 0;
++                word_raw[1] = 0;
++                (void)dos_read(s_list_file, word_raw, 2);
++                h026_copy(0x28, file_node->text, 0x6B, fname);
++                dot = h026_find_char(0x6B, fname, '.', 0,
++                                     h026_strlen(0x6B, fname));
++                h026_substr(0x50, ext, 0x6B, fname, (u16)dot, 4);
++                if (h026_compare_nocase(0x50, ext, 4, ".SAV") == 1) {
++                    h026_copy(0x50, full, 0x10, "from saved game ");
++                    h026_append(0x50, full, 0, fname + 7);
++                } else {
++                    copy_dbeq(full, "", 0x50);
++                }
++                for (m = g_party_head; m != NULL; m = m->next) {
++                    if (h026_compare_nocase(0x0F, (const char *)m->b, 0x28,
++                                            name_node->text) == 1) {
++                        break;
++                    }
++                }
++                if (COK_GET16(word_raw) > 0x7F || m != NULL) {
++                    exec_free_mem(name_node, sizeof(CokMenuItem));
++                    exec_free_mem(file_node, sizeof(CokMenuItem));
++                    name_node = NULL;
++                    file_node = NULL;
++                }
++                if (name_node != NULL) {
++                    if (*names == NULL) {
++                        *names = name_node;
++                        name_tail = *names;
++                        *files = file_node;
++                        file_tail = *files;
++                    } else {
++                        name_tail->next = name_node;
++                        name_tail = name_tail->next;
++                        file_tail->next = file_node;
++                        file_tail = file_tail->next;
++                    }
++                }
++            }
++            dos_close(s_list_file);
++        }
++    }
++    dos_unlock(s_list_lock);
++    exec_free_mem(s_list_fib, sizeof(cok_fib));
++}
++
++/*
++ * PORT H066+$03D0 (corpo a $0780): elenchi dei personaggi salvati (nomi e
++ * nomi dei file) nella directory dei salvataggi, per il tipo $24E9 (0:
++ * record di $1AA byte, nome all'inizio, word a +$107).
++ */
++void list_saved_characters(CokMenuItem **names, CokMenuItem **files)
++{
++    static const u16 name_at[3] = { 0, 0, 4 };          /* -$5a(a5) */
++    static const u16 status_at[3] = { 0xF7, 0x84, 0x13 };   /* -$60(a5) */
++    static const u16 sizes[3] = { 0x1AA, 0x1AA, 0x1AA };    /* -$66(a5) */
++    u8 kind = H005_B(0x24E9);
++
++    *names = NULL;
++    *files = NULL;
++    if (!ensure_save_dir(0)) {
++        return;
++    }
++    if (kind == 0) {
++        scan_save_dir(0x50, SAVE_PATH, name_at[kind], status_at[kind],
++                      sizes[kind], names, files);
++    }
++}
++
++/*
++ * PORT H066+$1B0E (Load_CharacterRecord): carica in c il personaggio dal
++ * file name (per valore) della directory dei salvataggi: il record ($1AA
++ * byte, liste azzerate), poi gli oggetti (.swg, $48 byte) e gli effetti
++ * (.fx, $0A byte) se esistono; ricalcola i valori derivati.  Con
++ * save_disk il messaggio del disco e' "Put save disk in ...", altrimenti
++ * quello del gruppo di risorse.
++ */
++void load_character(u16 name_len, const char *name, Character *c,
++                    u8 unused, u8 save_disk)
++{
++    char fname[0x100];                  /* $14(a5): per valore */
++    char msg[0x2A];                     /* -$52(a5) */
++    char head[0x52];                    /* -$106(a5) */
++    cok_bptr file = 0;                  /* -$4(a5) */
++    CokItem *item_buf;                  /* -$20(a5) */
++    CokItem *item_tail = NULL;          /* -$1c(a5) */
++    CokEffect *fx_buf;                  /* -$28(a5) */
++    CokEffect *fx_tail = NULL;          /* -$24(a5) */
++    s16 got;                            /* -$18(a5) */
++    s16 dot;                            /* -$16(a5) */
++
++    (void)unused;
++    memcpy(fname, name, (size_t)name_len + 1 < sizeof(fname) ?
++                        (size_t)name_len + 1 : sizeof(fname));
++    load_char_screens();
++    if (save_disk) {
++        h026_copy(0x28, msg, 0x11, "Put save disk in ");
++        h026_substr(0x50, head, 0x50, SAVE_PATH, 0, 4);
++        h026_append(0x28, msg, 0x50, head);
++    } else {
++        h026_copy(0x28, msg, 0x1D, (const char *)&g_h005[0x3E08 +
++                  ((s16)H005_B(0x246E) - 1) * 0x1E]);
++    }
++    h026_copy(0x50, s_load_path, 0x50, SAVE_PATH);
++    h026_append(0x50, s_load_path, 1, "/");
++    h026_append(0x50, s_load_path, name_len, fname);
++    (void)open_save_file(0x50, s_load_path, 0x28, msg, 0, &file);
++    ui_draw_text(0, 0x18, 0x0A, 0, 0x15, "Loading...Please Wait");
++    h029_fill_bytes(0x1A9, c->b, 0x1AA, 0);
++    if (H005_B(0x24E9) == 0) {
++        (void)dos_read(file, c->b, 0x1AA);
++        dos_close(file);
++        c->items = NULL;
++        c->effects = NULL;
++        c->block_192 = NULL;
++        c->next = NULL;
++    }
++    memset(c->readied, 0, sizeof(c->readied));
++    dot = h026_find_char(name_len, fname, '.', 0,
++                         h026_strlen(name_len, fname));
++    h026_delete(name_len, fname, (u16)dot, 4);
++
++    h026_copy(0x50, s_load_path, 0x50, SAVE_PATH);
++    h026_append(0x50, s_load_path, 1, "/");
++    h026_append(0x50, s_load_path, name_len, fname);
++    h026_append(0x50, s_load_path, 4, ".swg");
++    if (file_exists(0x50, s_load_path)) {
++        item_buf = (CokItem *)exec_alloc_mem(sizeof(CokItem), COK_MEMF_CLEAR);
++        (void)open_save_file(0x50, s_load_path, 0x28, msg, 0, &file);
++        do {
++            got = (s16)dos_read(file, item_buf->b, 0x48);
++            if (got == 0x48) {
++                CokItem *n = (CokItem *)exec_alloc_mem(sizeof(CokItem),
++                                                       COK_MEMF_CLEAR);
++
++                if (c->items == NULL) {
++                    c->items = n;
++                } else {
++                    item_tail->next = n;
++                }
++                item_tail = n;
++                memcpy(item_tail->b, item_buf->b, 0x48);
++                item_tail->next = NULL;
++            }
++        } while (got == 0x48);
++        dos_close(file);
++        exec_free_mem(item_buf, sizeof(CokItem));
++    }
++
++    h026_copy(0x50, s_load_path, 0x50, SAVE_PATH);
++    h026_append(0x50, s_load_path, 1, "/");
++    h026_append(0x50, s_load_path, name_len, fname);
++    h026_append(0x50, s_load_path, 3, ".fx");
++    if (file_exists(0x50, s_load_path)) {
++        fx_buf = (CokEffect *)exec_alloc_mem(sizeof(CokEffect),
++                                             COK_MEMF_CLEAR);
++        (void)open_save_file(0x50, s_load_path, 0x28, msg, 0, &file);
++        do {
++            got = (s16)dos_read(file, fx_buf->b, 0x0A);
++            if (got == 0x0A) {
++                CokEffect *n = (CokEffect *)exec_alloc_mem(sizeof(CokEffect),
++                                                           COK_MEMF_CLEAR);
++
++                if (c->effects == NULL) {
++                    c->effects = n;
++                } else {
++                    fx_tail->next = n;
++                }
++                fx_tail = n;
++                memcpy(fx_tail->b, fx_buf->b, 0x0A);
++                fx_tail->next = NULL;
++            }
++        } while (got == 0x0A);
++        dos_close(file);
++        exec_free_mem(fx_buf, sizeof(CokEffect));
++    }
++    recompute_stats(c);
++    level_derived_values(c);
++}
++
++/*
++ * PORT H066+$27EE: aggiunge c in fondo al party e lo rende corrente; il
++ * suo posto delle icone (+$143) e' il primo libero tra 0 e 7; conta i
++ * membri (stato B +$67C) e per i non giocanti (+$EC > $7F) ricalcola i
++ * valori di livello.
++ */
++void add_to_party(Character *c)
++{
++    u8 used[8];                         /* -$c(a5) */
++    Character *m;                       /* -$4(a5) */
++
++    c->b[0x143] = 0xFF;
++    if (g_party_head == NULL) {
++        g_party_head = c;
++    } else {
++        m = g_party_head;
++        while (m->next != NULL) {
++            m = m->next;
++        }
++        m->next = c;
++    }
++    g_current_char = c;
++    h029_fill_bytes(7, used, 8, 0);
++    for (m = g_party_head; m != NULL; m = m->next) {
++        if (m->b[0x143] <= 7) {
++            used[m->b[0x143]] = 1;
++        }
++    }
++    c = g_current_char;
++    c->b[0x143] = 0;
++    while (c->b[0x143] < 8 && used[c->b[0x143]]) {
++        add_to_byte(&c->b[0x143], 1);
++    }
++    COK_PUT16(g_state_b + 0x67C, (u16)(COK_GET16(g_state_b + 0x67C) + 1));
++    if (c->b[0xEC] > 0x7F) {
++        level_derived_values(c);
++    }
++}
+diff --git a/src_c/readable/h066.h b/src_c/readable/h066.h
+index 6e026e5..a9608ad 100644
+--- a/src_c/readable/h066.h
++++ b/src_c/readable/h066.h
+@@ -3,9 +3,15 @@
+ #define COK_H066_H
+ 
+ #include "character.h"
++#include "h008.h"
+ 
+ void build_char_icon(u8 recolor);       /* H066+$0C34 */
+ void save_character(Character *c, u16 name_len, const char *name);
+                                         /* H066+$1640 */
++void list_saved_characters(CokMenuItem **names, CokMenuItem **files);
++                                        /* H066+$03D0 */
++void load_character(u16 name_len, const char *name, Character *c,
++                    u8 unused, u8 save_disk);   /* H066+$1B0E */
++void add_to_party(Character *c);        /* H066+$27EE */
+ 
+ #endif
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index a8134aa..effe265 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -230,7 +230,6 @@ s32 h042_0b80(u16 a, u16 b, u8 animate, u16 frame) { (void)a; (void)b; (void)ani
+ void h042_0254(s32 handle) { (void)handle; cok_unported("H042+$0254"); }
+ const u8 *g_h005_2ade_area(void) { cok_unported("H005+$2ADE (area della mappa)"); return NULL; }
+ void *g_h005_2508;
+-void h013_0518(void) { cok_unported("H013+$0518"); }
+ void h013_2b9a(void) { cok_unported("H013+$2B9A"); }
+ void h013_31e0(void) { cok_unported("H013+$31E0"); }
+ void h013_4508(void) { cok_unported("H013+$4508"); }
+@@ -241,8 +240,6 @@ void h066_291e(void) { cok_unported("H066+$291E"); }
+ void h066_3000(void) { cok_unported("H066+$3000"); }
+ void h044_0330(void) { cok_unported("H044+$0330"); }
+ void h044_0452(void) { cok_unported("H044+$0452"); }
+-void h063_0d80(void *character) { (void)character; cok_unported("H063+$0D80"); }
+-void h063_1d44(u16 len, const char *text) { (void)len; (void)text; cok_unported("H063+$1D44"); }
+ void h028_0d74(void) { cok_unported("H028+$0D74"); }
+ void h043_0840(void) { cok_unported_skip("H043+$0840"); }
+ 
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index 85f5106..cd28d84 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -201,7 +201,6 @@ void h085_4798(void);
+ void h085_4a02(void);
+ 
+ /* Funzioni del menu principale (H013+$4BFC). */
+-void h013_0518(void);
+ void h013_2b9a(void);
+ void h013_31e0(void);
+ void h013_4508(void);
+@@ -212,8 +211,6 @@ void h066_291e(void);
+ void h066_3000(void);
+ void h044_0330(void);
+ void h044_0452(void);
+-void h063_0d80(void *character);
+-void h063_1d44(u16 len, const char *text);
+ void h028_0d74(void);
+ void h043_0840(void);
+ 
+-- 
+2.43.0
+

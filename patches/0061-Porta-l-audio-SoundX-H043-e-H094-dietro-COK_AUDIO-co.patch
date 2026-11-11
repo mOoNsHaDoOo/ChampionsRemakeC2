@@ -1,0 +1,3030 @@
+From 65594cfcf1cb90f3d99eb884bd3550e42539fc68 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 11 Nov 2026 12:13:04 +0000
+Subject: [PATCH 61/65] Porta l'audio SoundX (H043 e H094) dietro COK_AUDIO,
+ con il target smake AUDIO
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/Makefile       |   7 +
+ src_c/readable/PORT_STATUS.md | 571 +++++++++++++------------
+ src_c/readable/backlog.md     |  51 +++
+ src_c/readable/h020_io.c      |  28 ++
+ src_c/readable/h020_io.h      |   1 +
+ src_c/readable/h043_audio.c   | 784 +++++++++++++++++++++++++++++++++-
+ src_c/readable/h043_audio.h   | 135 ++++++
+ src_c/readable/h079.c         |  32 +-
+ src_c/readable/h079.h         |  17 +
+ src_c/readable/h090.c         |  21 +-
+ src_c/readable/h090.h         |  16 +
+ src_c/readable/h092.c         |  12 +-
+ src_c/readable/h092.h         |  14 +
+ src_c/readable/h094.c         | 589 ++++++++++++++++++++++++-
+ src_c/readable/host/audio.c   | 143 +++++++
+ src_c/readable/host/display.c |   7 +
+ src_c/readable/host/input.c   |  16 +
+ src_c/readable/host/ndk.h     |  64 +++
+ src_c/readable/smakefile      |  42 +-
+ src_c/readable/unported.c     |   8 +-
+ 20 files changed, 2262 insertions(+), 296 deletions(-)
+ create mode 100644 src_c/readable/h043_audio.h
+ create mode 100644 src_c/readable/h079.h
+ create mode 100644 src_c/readable/h090.h
+ create mode 100644 src_c/readable/h092.h
+ create mode 100644 src_c/readable/host/audio.c
+
+diff --git a/src_c/readable/Makefile b/src_c/readable/Makefile
+index 1084110..b43be5b 100644
+--- a/src_c/readable/Makefile
++++ b/src_c/readable/Makefile
+@@ -3,12 +3,19 @@
+ #   make          compila build/cok (richiede SDL2: libsdl2-dev, brew sdl2, ...)
+ #   make status   aggiorna PORT_STATUS.md
+ #   make clean    rimuove build/
++#   make AUDIO=1  compila anche l'audio (COK_AUDIO, H043/H094; sull'host muto),
++#                 in build-audio/
+ 
+ CC        ?= cc
+ CFLAGS    ?= -std=c99 -O2 -Wall -Wextra -pedantic
+ SDL_CFLAGS := $(shell pkg-config --cflags sdl2 2>/dev/null || sdl2-config --cflags)
+ SDL_LIBS   := $(shell pkg-config --libs sdl2 2>/dev/null || sdl2-config --libs)
++ifeq ($(AUDIO),1)
++CFLAGS    += -DCOK_AUDIO
++BUILD_DIR ?= build-audio
++else
+ BUILD_DIR ?= build
++endif
+ TARGET    := $(BUILD_DIR)/cok
+ 
+ SRCS := $(wildcard *.c) $(wildcard host/*.c)
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index 9d34ad8..0db756a 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **1012 / 1113**.
++Routine portate: **1107 / 1132**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -16,17 +16,17 @@ Routine portate: **1012 / 1113**.
+ | H007 | 3036 | 11 | 11 |
+ | H008 | 8660 | 21 | 21 |
+ | H009 | 988 | 3 | 3 |
+-| H010 | 2488 | 9 | 7 |
++| H010 | 2488 | 9 | 8 |
+ | H011 | 7004 | 13 | 13 |
+-| H012 | 13580 | 33 | 32 |
++| H012 | 13580 | 34 | 33 |
+ | H013 | 25244 | 22 | 19 |
+ | H014 | 224 | 2 | 2 |
+-| H015 | 1016 | 11 | 5 |
++| H015 | 1016 | 11 | 9 |
+ | H016 | 436 | 5 | 5 |
+ | H017 | 56 | 1 | 1 |
+ | H018 | 192 | 3 | 3 |
+ | H019 | 240 | 1 | 1 |
+-| H020 | 2884 | 6 | 3 |
++| H020 | 2884 | 6 | 4 |
+ | H021 | 1632 | 14 | 14 |
+ | H022 | 328 | 10 | 10 |
+ | H023 | 140 | 2 | 2 |
+@@ -39,7 +39,7 @@ Routine portate: **1012 / 1113**.
+ | H030 | 3240 | 18 | 18 |
+ | H031 | 212 | 4 | 4 |
+ | H032 | 9352 | 1 | 1 |
+-| H033 | 8140 | 16 | 16 |
++| H033 | 8140 | 17 | 17 |
+ | H034 | 472 | 3 | 3 |
+ | H035 | 1760 | 6 | 6 |
+ | H036 | 144 | 2 | 2 |
+@@ -49,7 +49,7 @@ Routine portate: **1012 / 1113**.
+ | H040 | 1632 | 5 | 5 |
+ | H041 | 240 | 4 | 4 |
+ | H042 | 4420 | 14 | 14 |
+-| H043 | 6680 | 30 | 1 |
++| H043 | 6680 | 32 | 29 |
+ | H044 | 2668 | 10 | 10 |
+ | H045 | 828 | 4 | 3 |
+ | H046 | 724 | 2 | 2 |
+@@ -67,40 +67,40 @@ Routine portate: **1012 / 1113**.
+ | H058 | 4720 | 16 | 16 |
+ | H059 | 6340 | 14 | 14 |
+ | H060 | 396 | 2 | 2 |
+-| H061 | 16936 | 35 | 33 |
++| H061 | 16936 | 35 | 34 |
+ | H062 | 10496 | 32 | 32 |
+ | H063 | 16496 | 52 | 52 |
+ | H064 | 6460 | 28 | 28 |
+ | H065 | 14268 | 27 | 27 |
+-| H066 | 13840 | 27 | 25 |
+-| H067 | 9820 | 22 | 18 |
++| H066 | 13840 | 27 | 26 |
++| H067 | 9820 | 22 | 22 |
+ | H068 | 5788 | 14 | 14 |
+ | H069 | 232 | 3 | 3 |
+ | H070 | 6940 | 13 | 13 |
+-| H071 | 3132 | 5 | 2 |
+-| H072 | 5404 | 12 | 1 |
++| H071 | 3132 | 5 | 5 |
++| H072 | 5404 | 12 | 12 |
+ | H073 | 4928 | 10 | 10 |
+ | H074 | 1216 | 4 | 1 |
+ | H075 | 392 | 4 | 1 |
+ | H076 | 8 | 1 | 1 |
+ | H077 | 3100 | 8 | 8 |
+ | H078 | 8 | 1 | 1 |
+-| H079 | 148 | 5 | 1 |
++| H079 | 148 | 5 | 5 |
+ | H080 | 1388 | 1 | 1 |
+ | H081 | 76 | 1 | 1 |
+ | H082 | 156 | 2 | 2 |
+ | H083 | 92 | 1 | 1 |
+ | H084 | 92 | 2 | 2 |
+-| H085 | 19904 | 70 | 62 |
++| H085 | 19904 | 85 | 84 |
+ | H086 | 2088 | 14 | 14 |
+ | H087 | 1132 | 4 | 4 |
+ | H088 | 328 | 2 | 2 |
+ | H089 | 8 | 1 | 1 |
+-| H090 | 200 | 3 | 1 |
++| H090 | 200 | 3 | 3 |
+ | H091 | 8 | 1 | 1 |
+-| H092 | 200 | 2 | 1 |
++| H092 | 200 | 2 | 2 |
+ | H093 | 56 | 1 | 1 |
+-| H094 | 1904 | 11 | 1 |
++| H094 | 1904 | 11 | 11 |
+ | H095 | 10484 | 21 | 21 |
+ | H096 | 19972 | 36 | 36 |
+ | H097 | 8296 | 15 | 15 |
+@@ -229,15 +229,15 @@ Routine portate: **1012 / 1113**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$00B6` | `module_init_H010` | parziale | h010_input.c:24 |
+-| `$00C4` | `sub_H010_000000C4` | parziale | h010_input.c:159 |
+-| `$0332` | `sub_H010_00000332` | parziale | h010_input.c:218 |
+-| `$0360` | `sub_H010_00000360` | parziale | h010_input.c:231 |
+-| `$03AA` | `sub_H010_000003AA` | parziale |  |
+-| `$042E` | `trampoline_H010_0882` | parziale | h010_input.c:113 |
+-| `$043C` | `sub_H010_0000043C` | parziale | h010_input.c:52 |
++| `$00B6` | `module_init_H010` | parziale | h010_input.c:25 |
++| `$00C4` | `sub_H010_000000C4` | parziale | h010_input.c:176 |
++| `$0332` | `sub_H010_00000332` | parziale | h010_input.c:235 |
++| `$0360` | `sub_H010_00000360` | parziale | h010_input.c:248 |
++| `$03AA` | `sub_H010_000003AA` | parziale | h010_input.c:56 |
++| `$042E` | `trampoline_H010_0882` | parziale | h010_input.c:130 |
++| `$043C` | `sub_H010_0000043C` | parziale | h010_input.c:69 |
+ | `$0882` | `Poll_IntuitionEvents` | verificato |  |
+-| `$0974` | `sub_H010_00000974` | parziale | h010_input.c:149 |
++| `$0974` | `sub_H010_00000974` | parziale | h010_input.c:166 |
+ 
+ ### H011
+ 
+@@ -261,39 +261,40 @@ Routine portate: **1012 / 1113**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0178` | `module_init_H012` | parziale | h012.c:35 |
++| `$0178` | `module_init_H012` | parziale | h012.c:39 |
+ | `$0186` | `trampoline_H012_3004` | parziale |  |
+-| `$018A` | `ECL_RunAtAddress` | verificato | h012.c:107 |
+-| `$01FA` | `(senza scheda)` | - | h012.c:160 |
+-| `$0208` | `sub_H012_00000208` | parziale | h012.c:140 |
+-| `$05D6` | `(senza scheda)` | - | h012.c:255 |
+-| `$0688` | `(senza scheda)` | - | h012.c:273 |
+-| `$0766` | `(senza scheda)` | - | h012.c:308 |
+-| `$0B18` | `(senza scheda)` | - | h012.c:383 |
+-| `$0BEA` | `(senza scheda)` | - | h012.c:510 |
+-| `$15AE` | `(senza scheda)` | - | h012.c:585 |
+-| `$1DDE` | `(senza scheda)` | - | h012.c:812 |
+-| `$1E90` | `(senza scheda)` | - | h012.c:831 |
+-| `$1F4C` | `(senza scheda)` | - | h012.c:854 |
+-| `$1F68` | `(senza scheda)` | - | h012.c:862 |
+-| `$2358` | `(senza scheda)` | - | h012.c:961 |
+-| `$2392` | `(senza scheda)` | - | h012.c:973 |
+-| `$23D6` | `(senza scheda)` | - | h012.c:985 |
+-| `$241C` | `(senza scheda)` | - | h012.c:999 |
+-| `$2486` | `(senza scheda)` | - | h012.c:1015 |
+-| `$2502` | `(senza scheda)` | - | h012.c:1031 |
+-| `$2596` | `(senza scheda)` | - | h012.c:1046 |
+-| `$26D6` | `(senza scheda)` | - | h012.c:1208 |
+-| `$2922` | `sub_H012_00002922` | parziale | h012.c:1273 |
+-| `$29A6` | `(senza scheda)` | - | h012.c:1298 |
+-| `$2AAE` | `(senza scheda)` | - | h012.c:1092 |
+-| `$2ABE` | `(senza scheda)` | - | h012.c:1099 |
+-| `$2AF6` | `(senza scheda)` | - | h012.c:1108 |
+-| `$2B64` | `(senza scheda)` | - | h012.c:1122 |
+-| `$2C28` | `(senza scheda)` | - | h012.c:1153 |
+-| `$2DF2` | `ECL_DispatchOpcode` | verificato | h012.c:41 |
+-| `$3020` | `sub_H012_00003020` | parziale | h012.c:1342 |
+-| `$3150` | `Scenario_MainLoop` | verificato | h012.c:1403 |
++| `$018A` | `ECL_RunAtAddress` | verificato | h012.c:111 |
++| `$01FA` | `(senza scheda)` | - | h012.c:164 |
++| `$0208` | `sub_H012_00000208` | parziale | h012.c:144 |
++| `$05D6` | `(senza scheda)` | - | h012.c:259 |
++| `$0688` | `(senza scheda)` | - | h012.c:277 |
++| `$0766` | `(senza scheda)` | - | h012.c:312 |
++| `$0B18` | `(senza scheda)` | - | h012.c:387 |
++| `$0BEA` | `(senza scheda)` | - | h012.c:514 |
++| `$14C8` | `(senza scheda)` | - | h012.c:866 |
++| `$15AE` | `(senza scheda)` | - | h012.c:589 |
++| `$1DDE` | `(senza scheda)` | - | h012.c:816 |
++| `$1E90` | `(senza scheda)` | - | h012.c:835 |
++| `$1F4C` | `(senza scheda)` | - | h012.c:858 |
++| `$1F68` | `(senza scheda)` | - | h012.c:898 |
++| `$2358` | `(senza scheda)` | - | h012.c:997 |
++| `$2392` | `(senza scheda)` | - | h012.c:1009 |
++| `$23D6` | `(senza scheda)` | - | h012.c:1021 |
++| `$241C` | `(senza scheda)` | - | h012.c:1035 |
++| `$2486` | `(senza scheda)` | - | h012.c:1051 |
++| `$2502` | `(senza scheda)` | - | h012.c:1067 |
++| `$2596` | `(senza scheda)` | - | h012.c:1082 |
++| `$26D6` | `(senza scheda)` | - | h012.c:1244 |
++| `$2922` | `sub_H012_00002922` | parziale | h012.c:1309 |
++| `$29A6` | `(senza scheda)` | - | h012.c:1334 |
++| `$2AAE` | `(senza scheda)` | - | h012.c:1128 |
++| `$2ABE` | `(senza scheda)` | - | h012.c:1135 |
++| `$2AF6` | `(senza scheda)` | - | h012.c:1144 |
++| `$2B64` | `(senza scheda)` | - | h012.c:1158 |
++| `$2C28` | `(senza scheda)` | - | h012.c:1189 |
++| `$2DF2` | `ECL_DispatchOpcode` | verificato | h012.c:45 |
++| `$3020` | `sub_H012_00003020` | parziale | h012.c:1378 |
++| `$3150` | `Scenario_MainLoop` | verificato | h012.c:1439 |
+ 
+ ### H013
+ 
+@@ -333,15 +334,15 @@ Routine portate: **1012 / 1113**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0042` | `trampoline_H015_0196` | parziale | h015_runtime.c:28 |
+-| `$0046` | `trampoline_H015_033E` | parziale | h015_runtime.c:42 |
+-| `$004A` | `sub_H015_0000004A` | parziale | h015_runtime.c:56 |
+-| `$006E` | `sub_H015_0000006E` | parziale | h015_runtime.c:62 |
+-| `$00BC` | `sub_H015_000000BC` | parziale | h015_runtime.c:72 |
+-| `$010C` | `wrapper_SPMul` | parziale |  |
+-| `$0122` | `wrapper_SPDiv` | parziale |  |
+-| `$0172` | `wrapper_SPFlt` | parziale |  |
+-| `$0184` | `sub_H015_00000184` | parziale |  |
++| `$0042` | `trampoline_H015_0196` | parziale | h015_runtime.c:27 |
++| `$0046` | `trampoline_H015_033E` | parziale | h015_runtime.c:41 |
++| `$004A` | `sub_H015_0000004A` | parziale | h015_runtime.c:55 |
++| `$006E` | `sub_H015_0000006E` | parziale | h015_runtime.c:61 |
++| `$00BC` | `sub_H015_000000BC` | parziale | h015_runtime.c:71 |
++| `$010C` | `wrapper_SPMul` | parziale | h015_runtime.c:183 |
++| `$0122` | `wrapper_SPDiv` | parziale | h015_runtime.c:189 |
++| `$0172` | `wrapper_SPFlt` | parziale | h015_runtime.c:200 |
++| `$0184` | `sub_H015_00000184` | parziale | h015_runtime.c:206 |
+ | `$0196` | `Runtime_Start` | verificato |  |
+ | `$033E` | `Runtime_Cleanup` | verificato |  |
+ 
+@@ -384,7 +385,7 @@ Routine portate: **1012 / 1113**.
+ | `$00F0` | `sub_H020_000000F0` | parziale |  |
+ | `$082E` | `trampoline_H020_0856` | parziale | h020_io.c:30 |
+ | `$085A` | `sub_H020_0000085A` | parziale | h020_io.c:15 |
+-| `$08C2` | `sub_H020_000008C2` | parziale |  |
++| `$08C2` | `sub_H020_000008C2` | parziale | h020_io.c:38 |
+ 
+ ### H021
+ 
+@@ -673,12 +674,13 @@ Routine portate: **1012 / 1113**.
+ | `$084C` | `sub_H033_0000084C` | parziale | h033.c:239 |
+ | `$0C64` | `sub_H033_00000C64` | parziale | h033.c:332 |
+ | `$0D7C` | `sub_H033_00000D7C` | parziale | h033.c:368 |
+-| `$11FC` | `sub_H033_000011FC` | parziale | h033.c:816 |
+-| `$12D4` | `(senza scheda)` | - | h033.c:627 |
+-| `$1426` | `sub_H033_00001426` | parziale | h033.c:670 |
+-| `$17E6` | `sub_H033_000017E6` | parziale | h033.c:617 |
+-| `$1836` | `sub_H033_00001836` | parziale | h033.c:764 |
+-| `$18EE` | `sub_H033_000018EE` | parziale | h033.c:790 |
++| `$11FC` | `sub_H033_000011FC` | parziale | h033.c:821 |
++| `$12D4` | `(senza scheda)` | - | h033.c:632 |
++| `$1426` | `sub_H033_00001426` | parziale | h033.c:675 |
++| `$17E6` | `sub_H033_000017E6` | parziale | h033.c:622 |
++| `$1836` | `sub_H033_00001836` | parziale | h033.c:769 |
++| `$18EE` | `sub_H033_000018EE` | parziale | h033.c:795 |
++| `$1A40` | `(senza scheda)` | - | h033.c:617 |
+ | `$1A50` | `sub_H033_00001A50` | parziale | h033.c:489 |
+ 
+ ### H034
+@@ -773,36 +775,38 @@ Routine portate: **1012 / 1113**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$01BC` | `module_init_H043` | parziale | h043_audio.c:11 |
++| `$01BC` | `module_init_H043` | parziale | h043_audio.c:17 |
+ | `$01CA` | `trampoline_H043_165A` | parziale |  |
+ | `$01D2` | `trampoline_H043_113E` | parziale |  |
+-| `$01D6` | `sub_H043_000001D6` | parziale |  |
+-| `$0214` | `sub_H043_00000214` | parziale |  |
+-| `$0252` | `sub_H043_00000252` | parziale |  |
+-| `$0286` | `sub_H043_00000286` | parziale |  |
+-| `$02C4` | `sub_H043_000002C4` | parziale |  |
+-| `$0340` | `sub_H043_00000340` | parziale |  |
+-| `$038A` | `sub_H043_0000038A` | parziale |  |
+-| `$03CA` | `sub_H043_000003CA` | parziale |  |
+-| `$0422` | `sub_H043_00000422` | parziale |  |
+-| `$045E` | `sub_H043_0000045E` | parziale |  |
+-| `$048E` | `sub_H043_0000048E` | parziale |  |
+-| `$04B6` | `sub_H043_000004B6` | parziale |  |
+-| `$0584` | `Audio_Initialize` | verificato |  |
++| `$01D6` | `sub_H043_000001D6` | parziale | h043_audio.c:56 |
++| `$0214` | `sub_H043_00000214` | parziale | h043_audio.c:67 |
++| `$0252` | `sub_H043_00000252` | parziale | h043_audio.c:78 |
++| `$0286` | `sub_H043_00000286` | parziale | h043_audio.c:87 |
++| `$02C4` | `sub_H043_000002C4` | parziale | h043_audio.c:95 |
++| `$0304` | `(senza scheda)` | - | h043_audio.c:113 |
++| `$0340` | `sub_H043_00000340` | parziale | h043_audio.c:123 |
++| `$038A` | `sub_H043_0000038A` | parziale | h043_audio.c:134 |
++| `$03CA` | `sub_H043_000003CA` | parziale | h043_audio.c:141 |
++| `$0422` | `sub_H043_00000422` | parziale | h043_audio.c:155 |
++| `$045E` | `sub_H043_0000045E` | parziale | h043_audio.c:165 |
++| `$048E` | `sub_H043_0000048E` | parziale | h043_audio.c:174 |
++| `$04B6` | `sub_H043_000004B6` | parziale | h043_audio.c:183 |
++| `$0584` | `Audio_Initialize` | verificato | h043_audio.c:680 |
+ | `$07F6` | `trampoline_H043_15C6` | parziale |  |
+-| `$07FA` | `sub_H043_000007FA` | parziale |  |
+-| `$0840` | `Audio_Shutdown` | parziale |  |
+-| `$08C4` | `sub_H043_000008C4` | parziale |  |
+-| `$0986` | `sub_H043_00000986` | parziale |  |
+-| `$0BB2` | `sub_H043_00000BB2` | parziale |  |
+-| `$0D3A` | `sub_H043_00000D3A` | parziale |  |
+-| `$0D84` | `sub_H043_00000D84` | parziale |  |
+-| `$0F50` | `sub_H043_00000F50` | parziale |  |
+-| `$1058` | `sub_H043_00001058` | parziale |  |
+-| `$113E` | `sub_H043_0000113E` | parziale |  |
+-| `$15C6` | `sub_H043_000015C6` | parziale |  |
+-| `$169A` | `trampoline_H043_18EC` | parziale |  |
+-| `$190E` | `Audio_Command` | parziale |  |
++| `$07FA` | `sub_H043_000007FA` | parziale | h043_audio.c:228 |
++| `$0840` | `Audio_Shutdown` | parziale | h043_audio.c:241 |
++| `$08C4` | `sub_H043_000008C4` | parziale | h043_audio.c:263 |
++| `$0986` | `sub_H043_00000986` | parziale | h043_audio.c:295 |
++| `$0BB2` | `sub_H043_00000BB2` | parziale | h043_audio.c:355 |
++| `$0D3A` | `sub_H043_00000D3A` | parziale | h043_audio.c:403 |
++| `$0D84` | `sub_H043_00000D84` | parziale | h043_audio.c:414 |
++| `$0F50` | `sub_H043_00000F50` | parziale | h043_audio.c:458 |
++| `$1058` | `sub_H043_00001058` | parziale | h043_audio.c:503 |
++| `$113E` | `sub_H043_0000113E` | parziale | h043_audio.c:538 |
++| `$15C6` | `sub_H043_000015C6` | parziale | h043_audio.c:206 |
++| `$165A` | `(senza scheda)` | - | h043_audio.c:653 |
++| `$169A` | `trampoline_H043_18EC` | parziale | h043_audio.c:665 |
++| `$190E` | `Audio_Command` | parziale | h043_audio.c:756 |
+ 
+ ### H044
+ 
+@@ -1034,41 +1038,41 @@ Routine portate: **1012 / 1113**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$15C2` | `module_init_H061` | parziale | h061.c:36 |
++| `$15C2` | `module_init_H061` | parziale | h061.c:37 |
+ | `$162A` | `trampoline_H061_1F12` | parziale |  |
+-| `$162E` | `sub_H061_0000162E` | parziale | h061.c:47 |
+-| `$1670` | `ECL_ReadOperands` | verificato | h061.c:449 |
+-| `$184E` | `ECL_EvaluateOperand` | parziale | h061.c:501 |
+-| `$1928` | `ECL_ResetExecution` | verificato | h061.c:637 |
+-| `$1ACC` | `ECL_LoadProgram` | verificato | h061.c:687 |
+-| `$1BD6` | `sub_H061_00001BD6` | parziale | h061.c:714 |
+-| `$1C42` | `sub_H061_00001C42` | parziale | h061.c:728 |
+-| `$1D20` | `sub_H061_00001D20` | parziale | h061.c:760 |
+-| `$1D6E` | `sub_H061_00001D6E` | parziale | h061.c:771 |
+-| `$1F12` | `sub_H061_00001F12` | parziale | h061.c:57 |
+-| `$1F3C` | `ECL_DecodeAddress` | verificato | h061.c:63 |
+-| `$1F6A` | `trampoline_H061_1F9A` | parziale | h061.c:69 |
+-| `$1FA4` | `sub_H061_00001FA4` | parziale | h061.c:79 |
+-| `$202C` | `sub_H061_0000202C` | parziale | h061.c:102 |
+-| `$208E` | `sub_H061_0000208E` | parziale | h061.c:122 |
+-| `$27E2` | `sub_H061_000027E2` | parziale | h061.c:283 |
+-| `$2BAA` | `sub_H061_00002BAA` | parziale | h061.c:369 |
+-| `$2E04` | `sub_H061_00002E04` | parziale | h061.c:233 |
+-| `$3012` | `sub_H061_00003012` | parziale | h061.c:1146 |
+-| `$3244` | `sub_H061_00003244` | parziale | h061.c:531 |
+-| `$33F0` | `sub_H061_000033F0` | parziale | h061.c:583 |
+-| `$35E2` | `sub_H061_000035E2` | parziale | h061.c:824 |
+-| `$36E6` | `sub_H061_000036E6` | parziale | h061.c:851 |
+-| `$3860` | `sub_H061_00003860` | parziale | h061.c:1204 |
+-| `$3904` | `sub_H061_00003904` | parziale | h061.c:897 |
+-| `$3A0A` | `sub_H061_00003A0A` | parziale | h061.c:930 |
+-| `$3AAC` | `sub_H061_00003AAC` | parziale | h061.c:955 |
+-| `$3B4E` | `trampoline_H061_3BEE` | parziale | h061.c:975 |
+-| `$3C4C` | `sub_H061_00003C4C` | parziale |  |
+-| `$3DBE` | `sub_H061_00003DBE` | parziale | h061.c:1020 |
+-| `$3E80` | `ECL_SkipInstruction` | verificato | h061.c:1047 |
+-| `$3FA8` | `sub_H061_00003FA8` | parziale | h061.c:1071 |
+-| `$4092` | `sub_H061_00004092` | parziale | h061.c:1105 |
++| `$162E` | `sub_H061_0000162E` | parziale | h061.c:48 |
++| `$1670` | `ECL_ReadOperands` | verificato | h061.c:450 |
++| `$184E` | `ECL_EvaluateOperand` | parziale | h061.c:502 |
++| `$1928` | `ECL_ResetExecution` | verificato | h061.c:638 |
++| `$1ACC` | `ECL_LoadProgram` | verificato | h061.c:688 |
++| `$1BD6` | `sub_H061_00001BD6` | parziale | h061.c:715 |
++| `$1C42` | `sub_H061_00001C42` | parziale | h061.c:729 |
++| `$1D20` | `sub_H061_00001D20` | parziale | h061.c:761 |
++| `$1D6E` | `sub_H061_00001D6E` | parziale | h061.c:772 |
++| `$1F12` | `sub_H061_00001F12` | parziale | h061.c:58 |
++| `$1F3C` | `ECL_DecodeAddress` | verificato | h061.c:64 |
++| `$1F6A` | `trampoline_H061_1F9A` | parziale | h061.c:70 |
++| `$1FA4` | `sub_H061_00001FA4` | parziale | h061.c:80 |
++| `$202C` | `sub_H061_0000202C` | parziale | h061.c:103 |
++| `$208E` | `sub_H061_0000208E` | parziale | h061.c:123 |
++| `$27E2` | `sub_H061_000027E2` | parziale | h061.c:284 |
++| `$2BAA` | `sub_H061_00002BAA` | parziale | h061.c:370 |
++| `$2E04` | `sub_H061_00002E04` | parziale | h061.c:234 |
++| `$3012` | `sub_H061_00003012` | parziale | h061.c:1164 |
++| `$3244` | `sub_H061_00003244` | parziale | h061.c:532 |
++| `$33F0` | `sub_H061_000033F0` | parziale | h061.c:584 |
++| `$35E2` | `sub_H061_000035E2` | parziale | h061.c:825 |
++| `$36E6` | `sub_H061_000036E6` | parziale | h061.c:852 |
++| `$3860` | `sub_H061_00003860` | parziale | h061.c:1222 |
++| `$3904` | `sub_H061_00003904` | parziale | h061.c:898 |
++| `$3A0A` | `sub_H061_00003A0A` | parziale | h061.c:931 |
++| `$3AAC` | `sub_H061_00003AAC` | parziale | h061.c:956 |
++| `$3B4E` | `trampoline_H061_3BEE` | parziale | h061.c:976 |
++| `$3C4C` | `sub_H061_00003C4C` | parziale | h061.c:1021 |
++| `$3DBE` | `sub_H061_00003DBE` | parziale | h061.c:1038 |
++| `$3E80` | `ECL_SkipInstruction` | verificato | h061.c:1065 |
++| `$3FA8` | `sub_H061_00003FA8` | parziale | h061.c:1089 |
++| `$4092` | `sub_H061_00004092` | parziale | h061.c:1123 |
+ 
+ ### H062
+ 
+@@ -1244,49 +1248,49 @@ Routine portate: **1012 / 1113**.
+ | `$0C42` | `sub_H066_00000C42` | parziale | h066.c:50 |
+ | `$0D2A` | `sub_H066_00000D2A` | parziale | h066.c:77 |
+ | `$0DEA` | `sub_H066_00000DEA` | parziale | h066.c:96 |
+-| `$1312` | `Delete_CharacterSidecarFiles` | verificato | h066.c:773 |
++| `$1312` | `Delete_CharacterSidecarFiles` | verificato | h066.c:792 |
+ | `$142E` | `Query_FreeDiskSpace` | parziale | h066.c:286 |
+ | `$14DC` | `Check_SaveWritable` | parziale | h066.c:316 |
+ | `$14EA` | `sub_H066_000014EA` | parziale | h066.c:307 |
+ | `$1640` | `Save_CharacterRecord` | verificato | h066.c:371 |
+ | `$164E` | `sub_H066_0000164E` | parziale | h066.c:359 |
+ | `$1B0E` | `Load_CharacterRecord` | verificato | h066.c:623 |
+-| `$1FDA` | `Load_MonsterRecord` | verificato | h066.c:1109 |
+-| `$1FE8` | `sub_H066_00001FE8` | parziale | h066.c:1097 |
+-| `$276E` | `trampoline_H066_27E4` | parziale |  |
+-| `$27EE` | `sub_H066_000027EE` | parziale | h066.c:734 |
+-| `$291E` | `Load_GameSlot` | verificato | h066.c:949 |
++| `$1FDA` | `Load_MonsterRecord` | verificato | h066.c:1128 |
++| `$1FE8` | `sub_H066_00001FE8` | parziale | h066.c:1116 |
++| `$276E` | `trampoline_H066_27E4` | parziale | h066.c:734 |
++| `$27EE` | `sub_H066_000027EE` | parziale | h066.c:753 |
++| `$291E` | `Load_GameSlot` | verificato | h066.c:968 |
+ | `$292C` | `sub_H066_0000292C` | parziale |  |
+-| `$3000` | `Save_GameSlot` | verificato | h066.c:851 |
+-| `$300E` | `sub_H066_0000300E` | parziale | h066.c:798 |
+-| `$30A8` | `sub_H066_000030A8` | parziale | h066.c:822 |
++| `$3000` | `Save_GameSlot` | verificato | h066.c:870 |
++| `$300E` | `sub_H066_0000300E` | parziale | h066.c:817 |
++| `$30A8` | `sub_H066_000030A8` | parziale | h066.c:841 |
+ 
+ ### H067
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$01BA` | `module_init_H067` | parziale | h067.c:17 |
+-| `$01C8` | `sub_H067_000001C8` | parziale | h067.c:22 |
+-| `$01F2` | `sub_H067_000001F2` | parziale | h067.c:28 |
+-| `$0212` | `sub_H067_00000212` | parziale | h067.c:34 |
+-| `$0232` | `sub_H067_00000232` | parziale | h067.c:187 |
+-| `$02AE` | `sub_H067_000002AE` | parziale | h067.c:210 |
+-| `$032A` | `sub_H067_0000032A` | parziale | h067.c:224 |
+-| `$0374` | `sub_H067_00000374` | parziale | h067.c:235 |
+-| `$03BC` | `sub_H067_000003BC` | parziale |  |
+-| `$044E` | `sub_H067_0000044E` | parziale | h067.c:41 |
+-| `$06F8` | `sub_H067_000006F8` | parziale | h067.c:100 |
+-| `$0794` | `sub_H067_00000794` | parziale | h067.c:258 |
+-| `$086E` | `sub_H067_0000086E` | parziale | h067.c:279 |
+-| `$08CC` | `sub_H067_000008CC` | parziale | h067.c:294 |
+-| `$0C8C` | `sub_H067_00000C8C` | parziale | h067.c:117 |
+-| `$0D0A` | `sub_H067_00000D0A` | parziale | h067.c:371 |
+-| `$0DCA` | `sub_H067_00000DCA` | parziale | h067.c:131 |
+-| `$0F72` | `sub_H067_00000F72` | parziale | h067.c:392 |
+-| `$11F4` | `sub_H067_000011F4` | parziale | h067.c:464 |
+-| `$125A` | `sub_H067_0000125A` | parziale |  |
+-| `$1292` | `sub_H067_00001292` | parziale |  |
+-| `$1D7C` | `sub_H067_00001D7C` | parziale |  |
++| `$01BA` | `module_init_H067` | parziale | h067.c:20 |
++| `$01C8` | `sub_H067_000001C8` | parziale | h067.c:25 |
++| `$01F2` | `sub_H067_000001F2` | parziale | h067.c:31 |
++| `$0212` | `sub_H067_00000212` | parziale | h067.c:37 |
++| `$0232` | `sub_H067_00000232` | parziale | h067.c:190 |
++| `$02AE` | `sub_H067_000002AE` | parziale | h067.c:213 |
++| `$032A` | `sub_H067_0000032A` | parziale | h067.c:227 |
++| `$0374` | `sub_H067_00000374` | parziale | h067.c:238 |
++| `$03BC` | `sub_H067_000003BC` | parziale | h067.c:250 |
++| `$044E` | `sub_H067_0000044E` | parziale | h067.c:44 |
++| `$06F8` | `sub_H067_000006F8` | parziale | h067.c:103 |
++| `$0794` | `sub_H067_00000794` | parziale | h067.c:281 |
++| `$086E` | `sub_H067_0000086E` | parziale | h067.c:302 |
++| `$08CC` | `sub_H067_000008CC` | parziale | h067.c:317 |
++| `$0C8C` | `sub_H067_00000C8C` | parziale | h067.c:120 |
++| `$0D0A` | `sub_H067_00000D0A` | parziale | h067.c:394 |
++| `$0DCA` | `sub_H067_00000DCA` | parziale | h067.c:134 |
++| `$0F72` | `sub_H067_00000F72` | parziale | h067.c:415 |
++| `$11F4` | `sub_H067_000011F4` | parziale | h067.c:487 |
++| `$125A` | `sub_H067_0000125A` | parziale | h067.c:506 |
++| `$1292` | `sub_H067_00001292` | parziale | h067.c:781 |
++| `$1D7C` | `sub_H067_00001D7C` | parziale | h067.c:907 |
+ 
+ ### H068
+ 
+@@ -1337,28 +1341,28 @@ Routine portate: **1012 / 1113**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$011C` | `module_init_H071` | parziale | h071.c:10 |
+-| `$012A` | `sub_H071_0000012A` | parziale |  |
+-| `$047C` | `sub_H071_0000047C` | parziale | h071.c:16 |
+-| `$0572` | `sub_H071_00000572` | parziale |  |
+-| `$092C` | `sub_H071_0000092C` | parziale |  |
++| `$011C` | `module_init_H071` | parziale | h071.c:18 |
++| `$012A` | `sub_H071_0000012A` | parziale | h071.c:103 |
++| `$047C` | `sub_H071_0000047C` | parziale | h071.c:24 |
++| `$0572` | `sub_H071_00000572` | parziale | h071.c:176 |
++| `$092C` | `sub_H071_0000092C` | parziale | h071.c:247 |
+ 
+ ### H072
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0304` | `module_init_H072` | parziale | h072.c:9 |
+-| `$0312` | `sub_H072_00000312` | parziale |  |
+-| `$036C` | `sub_H072_0000036C` | parziale |  |
+-| `$050A` | `sub_H072_0000050A` | parziale |  |
+-| `$05AA` | `sub_H072_000005AA` | parziale |  |
+-| `$06BC` | `trampoline_H072_08EE` | parziale |  |
+-| `$0910` | `sub_H072_00000910` | parziale |  |
+-| `$0C04` | `sub_H072_00000C04` | parziale |  |
+-| `$0D24` | `sub_H072_00000D24` | parziale |  |
+-| `$0E0A` | `sub_H072_00000E0A` | parziale |  |
+-| `$0EBE` | `sub_H072_00000EBE` | parziale |  |
+-| `$120C` | `sub_H072_0000120C` | parziale |  |
++| `$0304` | `module_init_H072` | parziale | h072.c:29 |
++| `$0312` | `sub_H072_00000312` | parziale | h072.c:36 |
++| `$036C` | `sub_H072_0000036C` | parziale | h072.c:52 |
++| `$050A` | `sub_H072_0000050A` | parziale | h072.c:94 |
++| `$05AA` | `sub_H072_000005AA` | parziale | h072.c:111 |
++| `$06BC` | `trampoline_H072_08EE` | parziale | h072.c:141 |
++| `$0910` | `sub_H072_00000910` | parziale | h072.c:200 |
++| `$0C04` | `sub_H072_00000C04` | parziale | h072.c:280 |
++| `$0D24` | `sub_H072_00000D24` | parziale | h072.c:313 |
++| `$0E0A` | `sub_H072_00000E0A` | parziale | h072.c:341 |
++| `$0EBE` | `sub_H072_00000EBE` | parziale | h072.c:360 |
++| `$120C` | `sub_H072_0000120C` | parziale | h072.c:431 |
+ 
+ ### H073
+ 
+@@ -1404,13 +1408,13 @@ Routine portate: **1012 / 1113**.
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+ | `$0004` | `module_init_H077` | parziale | h077.c:7 |
+-| `$0012` | `trampoline_H077_004C` | parziale | h077.c:33 |
+-| `$0056` | `sub_H077_00000056` | parziale | h077.c:207 |
+-| `$01CC` | `sub_H077_000001CC` | parziale | h077.c:45 |
+-| `$0242` | `sub_H077_00000242` | parziale | h077.c:62 |
+-| `$0378` | `sub_H077_00000378` | parziale | h077.c:107 |
+-| `$0508` | `sub_H077_00000508` | parziale | h077.c:150 |
+-| `$08AC` | `sub_H077_000008AC` | parziale | h077.c:241 |
++| `$0012` | `trampoline_H077_004C` | parziale | h077.c:12 |
++| `$0056` | `sub_H077_00000056` | parziale | h077.c:186 |
++| `$01CC` | `sub_H077_000001CC` | parziale | h077.c:24 |
++| `$0242` | `sub_H077_00000242` | parziale | h077.c:41 |
++| `$0378` | `sub_H077_00000378` | parziale | h077.c:86 |
++| `$0508` | `sub_H077_00000508` | parziale | h077.c:129 |
++| `$08AC` | `sub_H077_000008AC` | parziale | h077.c:220 |
+ 
+ ### H078
+ 
+@@ -1423,10 +1427,10 @@ Routine portate: **1012 / 1113**.
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+ | `$0004` | `sub_H079_00000004` | parziale | h079.c:4 |
+-| `$0006` | `wrapper_AddIntServer` | parziale |  |
+-| `$002E` | `wrapper_Disable` | parziale |  |
+-| `$0036` | `wrapper_Enable` | parziale |  |
+-| `$004E` | `wrapper_RemIntServer` | parziale |  |
++| `$0006` | `wrapper_AddIntServer` | parziale | h079.c:14 |
++| `$002E` | `wrapper_Disable` | parziale | h079.c:20 |
++| `$0036` | `wrapper_Enable` | parziale | h079.c:26 |
++| `$004E` | `wrapper_RemIntServer` | parziale | h079.c:32 |
+ 
+ ### H080
+ 
+@@ -1464,76 +1468,91 @@ Routine portate: **1012 / 1113**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0664` | `module_init_H085` | parziale | h085.c:23 |
+-| `$0672` | `trampoline_H085_078A` | parziale | h085.c:119 |
+-| `$07B6` | `sub_H085_000007B6` | parziale | h085.c:236 |
+-| `$0A1A` | `sub_H085_00000A1A` | parziale | h085.c:61 |
+-| `$0AB2` | `sub_H085_00000AB2` | parziale | h085.c:304 |
+-| `$0BB2` | `trampoline_H085_0D50` | parziale |  |
+-| `$0BC0` | `sub_H085_00000BC0` | parziale |  |
+-| `$0C04` | `trampoline_H085_0C58` | parziale |  |
+-| `$0C62` | `sub_H085_00000C62` | parziale |  |
+-| `$1234` | `sub_H085_00001234` | parziale |  |
+-| `$1306` | `sub_H085_00001306` | parziale |  |
+-| `$1A6C` | `sub_H085_00001A6C` | parziale |  |
+-| `$1C60` | `(senza scheda)` | - | h085.c:324 |
+-| `$1C86` | `(senza scheda)` | - | h085.c:330 |
+-| `$1CB8` | `(senza scheda)` | - | h085.c:48 |
+-| `$1D3C` | `(senza scheda)` | - | h085.c:337 |
+-| `$1D78` | `(senza scheda)` | - | h085.c:343 |
+-| `$1DA6` | `(senza scheda)` | - | h085.c:349 |
+-| `$1DE4` | `(senza scheda)` | - | h085.c:356 |
+-| `$1EBA` | `(senza scheda)` | - | h085.c:157 |
+-| `$1FFA` | `(senza scheda)` | - | h085.c:378 |
+-| `$2090` | `(senza scheda)` | - | h085.c:397 |
+-| `$20DE` | `(senza scheda)` | - | h085.c:405 |
+-| `$2144` | `(senza scheda)` | - | h085.c:414 |
+-| `$2172` | `(senza scheda)` | - | h085.c:420 |
+-| `$21C8` | `(senza scheda)` | - | h085.c:433 |
+-| `$23B8` | `(senza scheda)` | - | h085.c:474 |
+-| `$23E6` | `(senza scheda)` | - | h085.c:480 |
+-| `$2414` | `(senza scheda)` | - | h085.c:486 |
+-| `$24C6` | `(senza scheda)` | - | h085.c:508 |
+-| `$25B8` | `(senza scheda)` | - | h085.c:529 |
+-| `$25FA` | `(senza scheda)` | - | h085.c:536 |
+-| `$2628` | `(senza scheda)` | - | h085.c:542 |
+-| `$2692` | `(senza scheda)` | - | h085.c:552 |
+-| `$2BD4` | `(senza scheda)` | - | h085.c:192 |
+-| `$2DBA` | `(senza scheda)` | - | h085.c:558 |
+-| `$2DFA` | `(senza scheda)` | - | h085.c:566 |
+-| `$2E28` | `(senza scheda)` | - | h085.c:82 |
+-| `$2E40` | `(senza scheda)` | - | h085.c:572 |
+-| `$2E70` | `(senza scheda)` | - | h085.c:578 |
+-| `$2EC4` | `(senza scheda)` | - | h085.c:588 |
+-| `$2FCE` | `(senza scheda)` | - | h085.c:622 |
+-| `$2FFC` | `(senza scheda)` | - | h085.c:628 |
+-| `$302A` | `sub_H085_0000302A` | parziale | h085.c:635 |
+-| `$318A` | `(senza scheda)` | - | h085.c:664 |
+-| `$3224` | `(senza scheda)` | - | h085.c:670 |
+-| `$3252` | `(senza scheda)` | - | h085.c:676 |
+-| `$3298` | `(senza scheda)` | - | h085.c:54 |
+-| `$331E` | `(senza scheda)` | - | h085.c:685 |
+-| `$3402` | `(senza scheda)` | - | h085.c:700 |
+-| `$3430` | `(senza scheda)` | - | h085.c:894 |
+-| `$3482` | `(senza scheda)` | - | h085.c:714 |
+-| `$34B0` | `(senza scheda)` | - | h085.c:720 |
+-| `$34F0` | `(senza scheda)` | - | h085.c:727 |
+-| `$3552` | `(senza scheda)` | - | h085.c:89 |
+-| `$36B8` | `(senza scheda)` | - | h085.c:741 |
+-| `$37E2` | `(senza scheda)` | - | h085.c:758 |
+-| `$3A5E` | `(senza scheda)` | - | h085.c:779 |
+-| `$3C06` | `(senza scheda)` | - | h085.c:823 |
+-| `$3D0A` | `(senza scheda)` | - | h085.c:846 |
+-| `$3D46` | `(senza scheda)` | - | h085.c:852 |
+-| `$3D74` | `(senza scheda)` | - | h085.c:858 |
+-| `$3DA0` | `(senza scheda)` | - | h085.c:864 |
+-| `$3DCC` | `(senza scheda)` | - | h085.c:870 |
+-| `$3DF8` | `(senza scheda)` | - | h085.c:900 |
+-| `$3E4A` | `(senza scheda)` | - | h085.c:876 |
+-| `$3E78` | `(senza scheda)` | - | h085.c:882 |
+-| `$3EA6` | `(senza scheda)` | - | h085.c:888 |
+-| `$3ED4` | `(senza scheda)` | - | h085.c:925 |
++| `$0664` | `module_init_H085` | parziale | h085.c:26 |
++| `$0672` | `trampoline_H085_078A` | parziale | h085.c:122 |
++| `$07B6` | `sub_H085_000007B6` | parziale | h085.c:239 |
++| `$0A1A` | `sub_H085_00000A1A` | parziale | h085.c:64 |
++| `$0AB2` | `sub_H085_00000AB2` | parziale | h085.c:307 |
++| `$0BB2` | `trampoline_H085_0D50` | parziale | h085.c:1115 |
++| `$0BC0` | `sub_H085_00000BC0` | parziale | h085.c:1058 |
++| `$0C04` | `trampoline_H085_0C58` | parziale | h085.c:1068 |
++| `$0C62` | `sub_H085_00000C62` | parziale | h085.c:1084 |
++| `$1234` | `sub_H085_00001234` | parziale | h085.c:1595 |
++| `$1306` | `sub_H085_00001306` | parziale | h085.c:1623 |
++| `$15FE` | `(senza scheda)` | - | h085.c:1020 |
++| `$172A` | `(byte non classificati)` | - | h085.c:1242 |
++| `$1A6C` | `sub_H085_00001A6C` | parziale | h085.c:1359 |
++| `$1C60` | `(senza scheda)` | - | h085.c:327 |
++| `$1C86` | `(senza scheda)` | - | h085.c:333 |
++| `$1CB8` | `(senza scheda)` | - | h085.c:51 |
++| `$1D3C` | `(senza scheda)` | - | h085.c:340 |
++| `$1D78` | `(senza scheda)` | - | h085.c:346 |
++| `$1DA6` | `(senza scheda)` | - | h085.c:352 |
++| `$1DE4` | `(senza scheda)` | - | h085.c:359 |
++| `$1EBA` | `(senza scheda)` | - | h085.c:160 |
++| `$1FFA` | `(senza scheda)` | - | h085.c:381 |
++| `$2090` | `(senza scheda)` | - | h085.c:400 |
++| `$20DE` | `(senza scheda)` | - | h085.c:408 |
++| `$2144` | `(senza scheda)` | - | h085.c:417 |
++| `$2172` | `(senza scheda)` | - | h085.c:423 |
++| `$21C8` | `(senza scheda)` | - | h085.c:436 |
++| `$2338` | `(senza scheda)` | - | h085.c:1404 |
++| `$23B8` | `(senza scheda)` | - | h085.c:477 |
++| `$23E6` | `(senza scheda)` | - | h085.c:483 |
++| `$2414` | `(senza scheda)` | - | h085.c:489 |
++| `$24C6` | `(senza scheda)` | - | h085.c:511 |
++| `$25B8` | `(senza scheda)` | - | h085.c:532 |
++| `$25FA` | `(senza scheda)` | - | h085.c:539 |
++| `$2628` | `(senza scheda)` | - | h085.c:545 |
++| `$2692` | `(senza scheda)` | - | h085.c:555 |
++| `$26C0` | `(senza scheda)` | - | h085.c:1435 |
++| `$2BD4` | `(senza scheda)` | - | h085.c:195 |
++| `$2DBA` | `(senza scheda)` | - | h085.c:561 |
++| `$2DFA` | `(senza scheda)` | - | h085.c:569 |
++| `$2E28` | `(senza scheda)` | - | h085.c:85 |
++| `$2E40` | `(senza scheda)` | - | h085.c:575 |
++| `$2E70` | `(senza scheda)` | - | h085.c:581 |
++| `$2EC4` | `(senza scheda)` | - | h085.c:591 |
++| `$2FCE` | `(senza scheda)` | - | h085.c:625 |
++| `$2FFC` | `(senza scheda)` | - | h085.c:631 |
++| `$302A` | `sub_H085_0000302A` | parziale | h085.c:638 |
++| `$318A` | `(senza scheda)` | - | h085.c:667 |
++| `$31B4` | `(senza scheda)` | - | h085.c:1718 |
++| `$3224` | `(senza scheda)` | - | h085.c:673 |
++| `$3252` | `(senza scheda)` | - | h085.c:679 |
++| `$3298` | `(senza scheda)` | - | h085.c:57 |
++| `$331E` | `(senza scheda)` | - | h085.c:688 |
++| `$33A8` | `(senza scheda)` | - | h085.c:1733 |
++| `$3402` | `(senza scheda)` | - | h085.c:703 |
++| `$3430` | `(senza scheda)` | - | h085.c:897 |
++| `$3482` | `(senza scheda)` | - | h085.c:717 |
++| `$34B0` | `(senza scheda)` | - | h085.c:723 |
++| `$34F0` | `(senza scheda)` | - | h085.c:730 |
++| `$3552` | `(senza scheda)` | - | h085.c:92 |
++| `$363E` | `(senza scheda)` | - | h085.c:1322 |
++| `$36B8` | `(senza scheda)` | - | h085.c:744 |
++| `$3758` | `(senza scheda)` | - | h085.c:1541 |
++| `$37E2` | `(senza scheda)` | - | h085.c:761 |
++| `$38AA` | `(senza scheda)` | - | h085.c:1342 |
++| `$3936` | `(senza scheda)` | - | h085.c:1558 |
++| `$3A5E` | `(senza scheda)` | - | h085.c:782 |
++| `$3C06` | `(senza scheda)` | - | h085.c:826 |
++| `$3D0A` | `(senza scheda)` | - | h085.c:849 |
++| `$3D46` | `(senza scheda)` | - | h085.c:855 |
++| `$3D74` | `(senza scheda)` | - | h085.c:861 |
++| `$3DA0` | `(senza scheda)` | - | h085.c:867 |
++| `$3DCC` | `(senza scheda)` | - | h085.c:873 |
++| `$3DF8` | `(senza scheda)` | - | h085.c:903 |
++| `$3E4A` | `(senza scheda)` | - | h085.c:879 |
++| `$3E78` | `(senza scheda)` | - | h085.c:885 |
++| `$3EA6` | `(senza scheda)` | - | h085.c:891 |
++| `$3ED4` | `(senza scheda)` | - | h085.c:928 |
+ | `$3EE2` | `sub_H085_00003EE2` | parziale |  |
++| `$431A` | `(byte non classificati)` | - | h085.c:1791 |
++| `$442E` | `(byte non classificati)` | - | h085.c:1815 |
++| `$4628` | `(byte non classificati)` | - | h085.c:1854 |
++| `$4798` | `(byte non classificati)` | - | h085.c:1892 |
++| `$4A02` | `(byte non classificati)` | - | h085.c:1937 |
+ 
+ ### H086
+ 
+@@ -1581,8 +1600,8 @@ Routine portate: **1012 / 1113**.
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+ | `$0004` | `sub_H090_00000004` | parziale | h090.c:4 |
+-| `$0018` | `wrapper_CloseDevice` | parziale |  |
+-| `$002A` | `wrapper_OpenDevice` | parziale |  |
++| `$0018` | `wrapper_CloseDevice` | parziale | h090.c:14 |
++| `$002A` | `wrapper_OpenDevice` | parziale | h090.c:20 |
+ 
+ ### H091
+ 
+@@ -1595,7 +1614,7 @@ Routine portate: **1012 / 1113**.
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+ | `$0004` | `sub_H092_00000004` | parziale | h092.c:4 |
+-| `$007A` | `sub_H092_0000007A` | parziale |  |
++| `$007A` | `sub_H092_0000007A` | parziale | h092.c:10 |
+ 
+ ### H093
+ 
+@@ -1607,17 +1626,17 @@ Routine portate: **1012 / 1113**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0004` | `wrapper_Cause` | parziale | h094.c:4 |
+-| `$0006` | `Audio_VBlankServer` | verificato |  |
+-| `$0016` | `Audio_SoftInterrupt` | verificato |  |
+-| `$003A` | `sub_H094_0000003A` | parziale |  |
+-| `$0108` | `sub_H094_00000108` | parziale |  |
+-| `$0188` | `sub_H094_00000188` | parziale |  |
+-| `$01BE` | `sub_H094_000001BE` | parziale |  |
+-| `$0288` | `sub_H094_00000288` | parziale |  |
+-| `$0390` | `sub_H094_00000390` | parziale |  |
+-| `$04A4` | `sub_H094_000004A4` | parziale |  |
+-| `$0738` | `sub_H094_00000738` | parziale |  |
++| `$0004` | `wrapper_Cause` | parziale | h094.c:9 |
++| `$0006` | `Audio_VBlankServer` | verificato | h094.c:583 |
++| `$0016` | `Audio_SoftInterrupt` | verificato | h094.c:567 |
++| `$003A` | `sub_H094_0000003A` | parziale | h094.c:360 |
++| `$0108` | `sub_H094_00000108` | parziale | h094.c:325 |
++| `$0188` | `sub_H094_00000188` | parziale | h094.c:222 |
++| `$01BE` | `sub_H094_000001BE` | parziale | h094.c:169 |
++| `$0288` | `sub_H094_00000288` | parziale | h094.c:85 |
++| `$0390` | `sub_H094_00000390` | parziale | h094.c:237 |
++| `$04A4` | `sub_H094_000004A4` | parziale | h094.c:415 |
++| `$0738` | `sub_H094_00000738` | parziale | h094.c:66 |
+ 
+ ### H095
+ 
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index f850f54..2f8df5e 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -2660,3 +2660,54 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
+ - **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
+ 
+ ---
++
++## v53: audio SoundX (H043 e H094), compilato solo con COK_AUDIO
++
++**Come si compila**
++- **`smake`:** compila come prima, senza audio. I comandi audio sono gli stub di unported.c, che non fanno nulla.
++- **`smake AUDIO`:** compila anche l'audio. I sei moduli coinvolti (h043_audio, h079, h090, h092, h094, unported) si compilano con `DEFINE=COK_AUDIO` in oggetti separati `*_a.o` (OBJNAME), cosi' le due build non si mescolano; poi collega `cok`.
++- **Host:** `make AUDIO=1` compila con `-DCOK_AUDIO` in build-audio/.
++
++**Portato** (tutto dentro `#ifdef COK_AUDIO`)
++- **H043, caricamento e gestione** (lettore SMUS/8SVX "SoundX"):
++  - $0584 avvio: SOUND/periodTable con $80 periodi e $40 durate; due porte; audio.device con la maschera dei canali $F; 16 richieste CMD_WRITE rese libere con ReplyMsg; server del VBlank che fa partire l'interrupt software;
++  - $0840 chiusura;
++  - $190E comandi: $FF ferma, 0/1 disabilita/abilita, $FE libera e ricarica, $FD precarica i suoni 1..$16, altrimenti suona il suono numero n;
++  - $113E carica un oggetto per nome da SOUND/nome o da SOUND/soundData (FORM SMUS, 8SVX, INST, ENVL, con NAME facoltativo);
++  - $0986/$0BB2/$0D84/$0D3A i parser IFF, $04B6 e seguenti la liberazione, $0F50/$1058 le liste attivi/caricati, $15C6 stop, $165A l'errore "SoundX is quiting".
++- **H094, il lettore** (assembly scritto a mano nell'originale):
++  - $0006 server del VBlank (Cause); $0016 interrupt software (orologio del tempo);
++  - $0108/$0188/$01BE lettura delle tracce SMUS: note, pause, legature, accordi, cambio di strumento $81, volume $84, fine $FF;
++  - $0288 avvio di una nota: ottava dal periodo, o samplesPerSec;
++  - $0390 suoni singoli 8SVX/INST;
++  - $003A assegnazione delle 4 voci (la piu' vicina alla fine con ADCMD_FINISH);
++  - $04A4 inviluppi PTCH/VLUM e richieste CMD_WRITE (parte iniziale 1 ciclo, parte ripetuta senza fine) e ADCMD_PERVOL;
++  - $0738 note libere.
++- **Adattatori Exec:** H079 (AddIntServer, Disable, Enable, RemIntServer), H090 (OpenDevice, CloseDevice), H092 (NewList).
++- **H020+$08C2 `console_write_int`:** intero allineato a destra, per il messaggio d'errore; compilato sempre.
++
++**Host (solo con COK_AUDIO, per ora muto)**
++- host/ndk.h ha i tipi Exec che servono (Node, List, porte con coda, IORequest, IOAudio, Interrupt).
++- host/audio.c:
++  - OpenDevice riesce; BeginIO completa subito la richiesta (torna alla porta delle risposte);
++  - il server del VBlank gira a 50 Hz dal refresh del display, mai fra Disable ed Enable;
++  - Cause esegue subito l'interrupt software.
++- GetMsg/ReplyMsg gestiscono anche le porte diverse da IDCMP.
++
++**Dove mi discosto dall'asm (documentato nel codice)**
++- **Porta di risposta dell'apertura in $0584:** variabile locale non inizializzata nell'originale; qui azzerata.
++- **Nome di INS1 lungo $28 byte:** nell'originale non e' terminato; qui il buffer parte azzerato.
++- **VHDR piu' lungo di $14 byte:** qui si legge $14 e si salta il resto, invece di scrivere oltre il record.
++- **Note senza strumento (H094 $0288):** qui restano mute; l'originale leggerebbe da indirizzi nulli.
++- **samplesPerSec 0 in $0390:** l'originale dividerebbe per zero; qui il quoziente resta il dividendo.
++- **Cambio di strumento $81 con indice pari al numero degli strumenti:** l'originale legge oltre la tabella; qui l'indice e' limitato a 0..7.
++
++**Prove con i dati veri** (ASan, `make AUDIO=1`, audio muto)
++- **Caricamento:** periodTable e i 55 oggetti di soundData (forme d'onda, inviluppi, strumenti IN1..IN7, campioni, il brano KRYNN); $FE libera e $FD ricarica.
++- **Riproduzione:** durante intro e battaglia il lettore manda 358 richieste (83 CMD_WRITE, 192 ADCMD_PERVOL, 83 ADCMD_FINISH), con periodi e lunghezze coerenti fra le ottave.
++- **Errore trovato e corretto:** gli identificatori IFF a 4 byte non erano terminati; nell'originale il byte seguente e' una variabile azzerata apposta.
++- **ASan:** pulito.
++- **Controlli:** le build host con e senza COK_AUDIO, il controllo C89 con e senza COK_AUDIO, MinGW x86 e x64 e ctest 8/8 sono puliti.
++- **Non provato:** l'Amiga reale (`smake AUDIO`) e il suono vero sull'host (emulazione SDL di Paula: prossimo passo).
++
++---
+diff --git a/src_c/readable/h020_io.c b/src_c/readable/h020_io.c
+index 82be7fb..509a2ba 100644
+--- a/src_c/readable/h020_io.c
++++ b/src_c/readable/h020_io.c
+@@ -33,3 +33,31 @@ void console_newline(void)
+     fputc('\n', stdout);
+     fflush(stdout);
+ }
++
++/*
++ * PORT H020+$08C2: write di un intero: value in decimale (col segno
++ * meno), allineato a destra su width caratteri.
++ */
++void console_write_int(s16 value, u16 width)
++{
++    char digits[0x0A];                  /* -$C(a5) */
++    u16 n = 0;                          /* -$2(a5) */
++    u16 v;                              /* -$4(a5) */
++
++    v = (u16)(value < 0 ? -value : value);
++    do {
++        digits[n++] = (char)('0' + v % 10);
++        v = (u16)(v / 10);
++    } while (v != 0);
++    if (value < 0) {
++        digits[n++] = '-';
++    }
++    while (width > n) {
++        --width;
++        fputc(' ', stdout);
++    }
++    while (n > 0) {
++        fputc(digits[--n], stdout);
++    }
++    fflush(stdout);
++}
+diff --git a/src_c/readable/h020_io.h b/src_c/readable/h020_io.h
+index ad7a196..164de4c 100644
+--- a/src_c/readable/h020_io.h
++++ b/src_c/readable/h020_io.h
+@@ -3,5 +3,6 @@
+ #define COK_H020_IO_H
+ #include "cok.h"
+ void console_write(u16 len, const char *text);  /* H020+$085A */
++void console_write_int(s16 value, u16 width); /* H020+$08C2 */
+ void console_newline(void);                     /* H020+$082E */
+ #endif
+diff --git a/src_c/readable/h043_audio.c b/src_c/readable/h043_audio.c
+index 707423f..8daa577 100644
+--- a/src_c/readable/h043_audio.c
++++ b/src_c/readable/h043_audio.c
+@@ -1,14 +1,20 @@
+-/* H043: sottosistema audio.device e richieste sonore. */
+-#include "cok.h"
++/*
++ * H043: "SoundX", caricamento e gestione di brani SMUS e campioni 8SVX,
++ * avvio e chiusura di audio.device e del server del VBlank (H094).
++ * Tutto il lettore e' compilato solo con COK_AUDIO; senza, h043_0584,
++ * h043_0840 e h043_190e sono gli stub di unported.c.
++ */
++#include <string.h>
++#include "h043_audio.h"
+ 
+ /* Dati del modulo (offset rispetto ad a4). */
+-u8  g_h043_m1;                  /* -$1 */
+-u8  g_h043_m2;                  /* -$2 */
+-u8  g_h043_m3;                  /* -$3 */
+-u8  g_h043_m5;                  /* -$5 */
+-u32 g_h043_m8a;                 /* -$8A */
++u8  g_h043_m1;                  /* -$1: soundData aperto da load_object */
++u8  g_h043_m2;                  /* -$2: lettore avviato */
++u8  g_h043_m3;                  /* -$3: audio.device aperto */
++u8  g_h043_m5;                  /* -$5: musica abilitata */
++u32 g_h043_m8a;                 /* -$8A (il puntatore e' g_sound) */
+ 
+-/* PORT H043+$01BC */
++/* PORT H043+$01BC (corpo a $19FC) */
+ void h043_init(void)
+ {
+     g_h043_m5 = 1;
+@@ -17,3 +23,765 @@ void h043_init(void)
+     g_h043_m8a = 0;
+     g_h043_m1 = 0;
+ }
++
++#ifdef COK_AUDIO
++
++#include "h002_dos.h"
++#include "h003_exec.h"
++#include "h010_input.h"
++#include "h020_io.h"
++#include "h026_string.h"
++#include "h028_files.h"
++#include "h050.h"
++#include "h079.h"
++#include "h090.h"
++#include "h092.h"
++#if COK_AMIGA
++#include <proto/exec.h>
++#endif
++
++static SoundX *g_sound;                 /* -$8A(a4) */
++static SxObject *s_last_loaded;         /* -$8E(a4) */
++static u8 s_error;                      /* -$4(a4) */
++static u8 s_resource_result;            /* -$6(a4) */
++static char s_sound_dir[0x28];          /* -$58(a4): "SOUND/" */
++static char s_name[0x28];               /* -$30(a4) */
++static struct Interrupt s_soft_int;     /* -$86(a4) */
++static struct Interrupt s_vblank_int;   /* -$70(a4) */
++
++#define INTB_VERTB_NUM  5
++
++static void sx_error(u16 code);
++
++/* PORT H043+$01D6: memoria CHIP, altrimenti errore 1. */
++static void *sx_alloc_chip(u32 size)
++{
++    void *p = exec_alloc_mem(size, COK_MEMF_CHIP);
++
++    if (p == NULL) {
++        sx_error(1);
++    }
++    return p;
++}
++
++/* PORT H043+$0214: memoria azzerata, altrimenti errore 2. */
++static void *sx_alloc(u32 size)
++{
++    void *p = exec_alloc_mem(size, COK_MEMF_CLEAR);
++
++    if (p == NULL) {
++        sx_error(2);
++    }
++    return p;
++}
++
++/* PORT H043+$0252: libera *pp di size byte e lo azzera. */
++static void sx_free(void **pp, u32 size)
++{
++    if (*pp != NULL) {
++        exec_free_mem(*pp, size);
++        *pp = NULL;
++    }
++}
++
++/* PORT H043+$0286: salta n byte del file (errore se Seek fallisce). */
++static void sx_skip(cok_bptr file, s32 n)
++{
++    if (!s_error && dos_seek(file, n, 0) == -1) {
++        s_error = 1;
++    }
++}
++
++/* PORT H043+$02C4: legge n byte (errore se ne arrivano meno). */
++static void sx_read(cok_bptr file, void *buf, s32 n)
++{
++    if (!s_error && dos_read(file, buf, n) != n) {
++        s_error = 1;
++    }
++}
++
++/* Lunghezze dei blocchi IFF: long big-endian. */
++static s32 sx_read_long(cok_bptr file)
++{
++    u8 b[4];
++
++    memset(b, 0, sizeof(b));
++    sx_read(file, b, 4);
++    return (s32)COK_GET32(b);
++}
++
++/* PORT H043+$0304: porta messaggi senza segnale (tipo 4, lista vuota). */
++static struct MsgPort *sx_create_port(void)
++{
++    struct MsgPort *p = (struct MsgPort *)sx_alloc(sizeof(struct MsgPort));
++
++    p->mp_Node.ln_Type = 4;
++    exec_new_list(&p->mp_MsgList);
++    return p;
++}
++
++/* PORT H043+$0340: chiude la porta (tipo $FF, lista -1) e la libera. */
++static void sx_delete_port(struct MsgPort **pp)
++{
++    if (*pp != NULL) {
++        (*pp)->mp_Node.ln_Type = 0xFF;
++        (*pp)->mp_MsgList.lh_Head = (struct Node *)-1;
++        sx_free((void **)pp, sizeof(struct MsgPort));
++        *pp = NULL;
++    }
++}
++
++/* PORT H043+$038A: libera una traccia. */
++static void sx_free_track(SxTrack *t)
++{
++    sx_free((void **)&t->data, (u32)(t->end - t->data));
++    sx_free((void **)&t, sizeof(SxTrack));
++}
++
++/* PORT H043+$03CA: libera un brano con le sue tracce. */
++static void sx_free_score(SxScore *s)
++{
++    s16 i;
++
++    if (s == NULL) {
++        return;
++    }
++    for (i = 0; i < (s16)s->ntracks; ++i) {
++        sx_free_track(s->tracks[i]);
++    }
++    sx_free((void **)&s, sizeof(SxScore));
++}
++
++/* PORT H043+$0422: libera un campione 8SVX. */
++static void sx_free_8svx(Sx8svx *v)
++{
++    if (v == NULL) {
++        return;
++    }
++    sx_free((void **)&v->body, v->body_size);
++    sx_free((void **)&v, sizeof(Sx8svx));
++}
++
++/* PORT H043+$045E: libera un inviluppo (word della lunghezza + dati). */
++static void sx_free_envl(u8 *e)
++{
++    if (e == NULL) {
++        return;
++    }
++    sx_free((void **)&e, (u32)COK_GET16(e) + 2);
++}
++
++/* PORT H043+$048E: libera uno strumento (non i suoi oggetti). */
++static void sx_free_inst(SxInst *i)
++{
++    if (i == NULL) {
++        return;
++    }
++    sx_free((void **)&i, sizeof(SxInst));
++}
++
++/* PORT H043+$04B6: libera *pp secondo il tipo e lo sostituisce col seguente. */
++static void sx_free_object(SxObject **pp)
++{
++    SxObject *o = *pp;
++    SxObject *next = o->next;           /* -$4(a5) */
++
++    if (o->flags & 0x01) {
++        sx_free_score((SxScore *)o->data);
++    } else if (o->flags & 0x02) {
++        sx_free_inst((SxInst *)o->data);
++    } else if (o->flags & 0x04) {
++        sx_free_8svx((Sx8svx *)o->data);
++    } else if (o->flags & 0x20) {
++        sx_free_track((SxTrack *)o->data);
++    } else if (o->flags & 0x40) {
++        sx_free_envl((u8 *)o->data);
++    }
++    sx_free((void **)&o->name, 0x28);
++    sx_free((void **)pp, sizeof(SxObject));
++    *pp = next;
++}
++
++/*
++ * PORT H043+$15C6 (anche $07F6): ferma tutto: gli oggetti attivi non
++ * suonano piu' in questo turno (bit 4), le voci finiscono subito e la
++ * lista delle note da assegnare si svuota.
++ */
++static void sx_stop_all(void)
++{
++    SxObject *o;                        /* -$4(a5) */
++    s16 i;                              /* -$6(a5) */
++
++    exec_disable();
++    for (o = g_sound->active; o != NULL; o = o->next) {
++        o->flags = (u8)(o->flags & (0xFF - (1 << 4)));
++    }
++    for (i = 3; i >= 0; --i) {
++        if (g_sound->voice[i] != NULL) {
++            g_sound->voice[i]->end = 0;
++        }
++    }
++    g_sound->pending = NULL;
++    exec_enable();
++}
++
++/* PORT H043+$07FA: ferma tutto e libera tutti gli oggetti. */
++static void sx_free_all(void)
++{
++    sx_stop_all();
++    while (g_sound->active != NULL) {
++        sx_free_object(&g_sound->active);
++    }
++    while (g_sound->loaded != NULL) {
++        sx_free_object(&g_sound->loaded);
++    }
++}
++
++/*
++ * PORT H043+$0840: chiusura: toglie il server del VBlank, libera gli
++ * oggetti, chiude audio.device, le porte e la memoria del lettore.
++ */
++void h043_0840(void)
++{
++    if (!g_h043_m2) {
++        return;
++    }
++    exec_rem_int_server(INTB_VERTB_NUM, &s_vblank_int);
++    sx_free_all();
++    if (g_sound->device != NULL) {
++        exec_close_device((struct IORequest *)&g_sound->open_io);
++        g_sound->device = NULL;
++    }
++    sx_delete_port(&g_sound->reply);
++    sx_delete_port(&g_sound->port);
++    sx_free((void **)&g_sound->periods, 0x280);
++    sx_free((void **)&g_sound, sizeof(SoundX));
++    g_h043_m2 = 0;
++}
++
++/*
++ * PORT H043+$08C4: riporta all'inizio le tracce del brano, assegna gli
++ * strumenti (le tracce oltre gli strumenti usano il primo) e segna attive
++ * tutte le tracce.
++ */
++static void sx_rewind_score(SxScore *s)
++{
++    s16 i;                              /* -$6(a5) */
++    SxTrack *t;                         /* -$A(a5) */
++    SxObject *ins;                      /* -$4(a5) */
++
++    if (s_error) {
++        return;
++    }
++    for (i = 0; i < (s16)s->ntracks; ++i) {
++        t = s->tracks[i];
++        t->cursor = t->data;
++        if (i >= (s16)s->ninstr) {
++            ins = s->instr[0];
++        } else {
++            ins = s->instr[i];
++        }
++        t->instr = ins;
++        if (ins != NULL) {
++            ++ins->refs;
++        }
++    }
++    s->active = (u8)((1 << s->ntracks) - 1);
++}
++
++static SxObject *sx_load_object(char *name, u8 play);
++
++/*
++ * PORT H043+$0986: FORM SMUS di len byte: SHDR (tempo / $44), INS1 (nome
++ * dello strumento, caricato), TRAK (dati della traccia).  Il nome di INS1
++ * non e' terminato nell'originale se riempie il buffer: qui il buffer
++ * parte azzerato.
++ */
++static SxScore *sx_load_smus(s32 len, cok_bptr file)
++{
++    SxScore *s;                         /* -$3E(a5) */
++    SxTrack *t;                         /* -$42(a5) */
++    SxObject *ins;                      /* -$46(a5) */
++    char id[5];                         /* -$6(a5); -$2(a5) azzerato fa da NUL */
++    s32 size;                           /* -$A(a5) */
++    u8 shdr[4];                         /* -$E(a5) */
++    u8 skip4[4];                        /* -$12(a5) */
++    char name[0x28];                    /* -$3A(a5) */
++
++    memset(id, 0, sizeof(id));
++    s = (SxScore *)sx_alloc(sizeof(SxScore));
++    s->volume = 0x40;
++    while (len >= 8 && !s_error) {
++        if (len & 1) {
++            sx_skip(file, 1);
++            --len;
++        }
++        sx_read(file, id, 4);
++        len -= 4;
++        size = sx_read_long(file);
++        len -= 4;
++        len -= size;
++        if (h026_compare(4, id, 4, "SHDR") == 1) {
++            sx_read(file, shdr, 4);
++            g_sound->tempo = (u32)(COK_GET16(shdr) / 0x44);
++        } else if (h026_compare(4, id, 4, "INS1") == 1) {
++            sx_read(file, skip4, 4);
++            size -= 4;
++            if (size > 0x28) {
++                sx_error(5);
++            }
++            memset(name, 0, sizeof(name));
++            sx_read(file, name, size);
++            h026_upcase(0x27, name);
++            ins = sx_load_object(name, 0);
++            s->instr[s->ninstr] = ins;
++            ++s->ninstr;
++        } else if (h026_compare(4, id, 4, "TRAK") == 1) {
++            t = (SxTrack *)sx_alloc(sizeof(SxTrack));
++            t->volume = 0x80;
++            t->data = (u8 *)sx_alloc((u32)size);
++            t->end = t->data + size;
++            s->tracks[s->ntracks] = t;
++            sx_read(file, t->data, size);
++            ++s->ntracks;
++        } else {
++            sx_skip(file, size);
++        }
++    }
++    return s;
++}
++
++/*
++ * PORT H043+$0BB2: FORM 8SVX di len byte: VHDR (letto com'e'), BODY (in
++ * memoria CHIP), ATAK e il resto saltati.  Un VHDR piu' lungo di $14 byte
++ * scriverebbe oltre il record nell'originale: qui si legge $14 e si salta
++ * il resto.
++ */
++static Sx8svx *sx_load_8svx(s32 len, cok_bptr file)
++{
++    Sx8svx *v;                          /* -$12(a5) */
++    char id[5];                         /* -$6(a5); -$2(a5) azzerato fa da NUL */
++    s32 size;                           /* -$A(a5) */
++
++    memset(id, 0, sizeof(id));
++    v = (Sx8svx *)sx_alloc(sizeof(Sx8svx));
++    while (len >= 8 && !s_error) {
++        if (len & 1) {
++            sx_skip(file, 1);
++            --len;
++        }
++        sx_read(file, id, 4);
++        size = sx_read_long(file);
++        len -= 8;
++        if (h026_compare(4, id, 4, "VHDR") == 1) {
++            if (size > 0x14) {
++                sx_read(file, v->vhdr, 0x14);
++                sx_skip(file, size - 0x14);
++            } else {
++                sx_read(file, v->vhdr, size);
++            }
++            len -= size;
++        } else if (h026_compare(4, id, 4, "BODY") == 1) {
++            v->body_size = (u32)size;
++            v->body = (s8 *)sx_alloc_chip((u32)size);
++            sx_read(file, v->body, size);
++            len -= size;
++        } else if (h026_compare(4, id, 4, "ATAK") == 1) {
++            sx_skip(file, size);
++            len -= size;
++        } else {
++            sx_skip(file, size);
++            len -= size;
++        }
++    }
++    if (s_error) {
++        return NULL;
++    }
++    return v;
++}
++
++/* PORT H043+$0D3A: FORM ENVL: word della lunghezza e i len byte. */
++static u8 *sx_load_envl(s32 len, cok_bptr file)
++{
++    u8 *e = (u8 *)sx_alloc((u32)len + 2);  /* -$4(a5) */
++
++    COK_PUT16(e, (u16)len);
++    sx_read(file, e + 2, len);
++    return e;
++}
++
++/*
++ * PORT H043+$0D84: FORM INST: PTCH e VLUM (inviluppi, dopo la word della
++ * lunghezza) e SAMP (campione), caricati per nome.
++ */
++static SxInst *sx_load_inst(s32 len, cok_bptr file)
++{
++    SxInst *i;                          /* -$E(a5) */
++    char id[5];                         /* -$6(a5); -$2(a5) azzerato fa da NUL */
++    s32 size;                           /* -$A(a5) */
++    char name[0x28];                    /* -$36(a5) */
++
++    memset(id, 0, sizeof(id));
++    i = (SxInst *)sx_alloc(sizeof(SxInst));
++    while (len >= 8 && !s_error) {
++        sx_read(file, id, 4);
++        size = sx_read_long(file);
++        len -= 8;
++        memset(name, 0, sizeof(name));
++        if (h026_compare(4, id, 4, "PTCH") == 1) {
++            sx_read(file, name, size);
++            i->ptch_obj = sx_load_object(name, 0);
++            if (i->ptch_obj != NULL) {
++                i->ptch = (u8 *)i->ptch_obj->data + 2;
++            }
++        } else if (h026_compare(4, id, 4, "VLUM") == 1) {
++            sx_read(file, name, size);
++            i->vlum_obj = sx_load_object(name, 0);
++            if (i->vlum_obj != NULL) {
++                i->vlum = (u8 *)i->vlum_obj->data + 2;
++            }
++        } else if (h026_compare(4, id, 4, "SAMP") == 1) {
++            sx_read(file, name, size);
++            i->samp_obj = sx_load_object(name, 0);
++            if (i->samp_obj != NULL) {
++                i->samp = (Sx8svx *)i->samp_obj->data;
++            }
++        } else {
++            sx_skip(file, size);
++        }
++        len -= size;
++    }
++    return i;
++}
++
++/*
++ * PORT H043+$0F50: cerca per nome fra gli attivi e i caricati e, se lo
++ * trova, lo toglie dalla sua lista.
++ */
++static SxObject *sx_find_object(const char *name)
++{
++    SxObject *found = NULL;             /* -$4(a5) */
++    SxObject *p;                        /* -$8(a5) */
++    SxObject *prev = NULL;              /* -$C(a5) */
++    u8 in_loaded = 0;                   /* -$D(a5) */
++
++    exec_disable();
++    p = g_sound->active;
++    if (p == NULL) {
++        p = g_sound->loaded;
++        in_loaded = 1;
++    }
++    while (p != NULL) {
++        if (h026_compare(0x27, p->name, 0x27, name) == 1) {
++            found = p;
++            if (prev == NULL) {
++                if (in_loaded) {
++                    g_sound->loaded = p->next;
++                } else {
++                    g_sound->active = p->next;
++                }
++            } else {
++                prev->next = p->next;
++            }
++            p->next = NULL;
++            p = NULL;
++        } else {
++            prev = p;
++            p = p->next;
++            if (p == NULL && !in_loaded) {
++                p = g_sound->loaded;
++                prev = NULL;
++                in_loaded = 1;
++            }
++        }
++    }
++    exec_enable();
++    return found;
++}
++
++/*
++ * PORT H043+$1058: mette o fra gli attivi (play: suona da ora, segnato col
++ * bit 4) o fra i caricati.  Un brano prima ferma tutto e si riavvolge.
++ */
++static void sx_add_object(u8 play, SxObject *o)
++{
++    SxScore *s;                         /* -$4(a5) */
++    s16 i;                              /* -$6(a5) */
++    SxTrack *t;                         /* -$A(a5) */
++
++    if (o->flags & 0x01) {
++        sx_stop_all();
++        sx_rewind_score((SxScore *)o->data);
++    }
++    exec_disable();
++    if (play) {
++        o->flags = (u8)(o->flags + 0x10);
++        o->next = g_sound->active;
++        g_sound->active = o;
++        if (o->flags & 0x01) {
++            s = (SxScore *)o->data;
++            for (i = 0; i < (s16)s->ntracks; ++i) {
++                t = s->tracks[i];
++                if (t != NULL) {
++                    t->time = g_sound->clock;
++                }
++            }
++        }
++    } else {
++        o->next = g_sound->loaded;
++        g_sound->loaded = o;
++    }
++    exec_enable();
++}
++
++/*
++ * PORT H043+$113E (anche $01D2): l'oggetto name (gia' caricato, oppure
++ * dal file SOUND/name o, la prima volta che manca, da SOUND/soundData).
++ * Il file e' una sequenza di FORM (con un NAME facoltativo davanti); gli
++ * oggetti con altro nome si caricano e restano fra i caricati.  Come
++ * nell'originale, un FORM gia' presente viene saltato e l'oggetto trovato
++ * esce dalla sua lista.
++ */
++static SxObject *sx_load_object(char *name, u8 play)
++{
++    cok_bptr file;                      /* -$4(a5) */
++    char path[0x2C];                    /* -$2C(a5) */
++    char fname[0x28];                   /* -$54(a5) */
++    char id[5];                         /* -$5A(a5); -$56(a5) azzerato fa da NUL */
++    s32 total;                          /* -$5E(a5) */
++    s32 size;                           /* -$62(a5) */
++    SxObject *result;                   /* -$66(a5) */
++    SxObject *o;                        /* -$6A(a5) */
++    u8 from_data = 0;                   /* -$6B(a5) */
++
++    memset(id, 0, sizeof(id));
++    h026_upcase(0x27, name);
++    o = sx_find_object(name);
++    if (o != NULL) {
++        sx_add_object(play, o);
++        return o;
++    }
++    result = NULL;
++    memset(path, 0, sizeof(path));
++    h026_copy(0x27, path, 0x27, s_sound_dir);
++    h026_append(0x27, path, 0x27, name);
++    file = dos_open(path, MODE_OLDFILE);
++    if (file == 0 && !g_h043_m1) {
++        h026_copy(0x27, path, 0x27, s_sound_dir);
++        h026_append(0x27, path, 9, "soundData");
++        file = dos_open(path, MODE_OLDFILE);
++        g_h043_m1 = 1;
++        from_data = 1;
++    }
++    if (file == 0) {
++        s_error = 1;
++        return result;
++    }
++    (void)dos_seek(file, 0, 1);
++    total = dos_seek(file, 0, -1);
++    sx_skip(file, 0);
++    while (total > 0 && !s_error) {
++        sx_read(file, id, 4);
++        total -= 4;
++        memset(fname, 0, sizeof(fname));
++        if (h026_compare(4, id, 4, "NAME") == 1) {
++            size = sx_read_long(file);
++            total -= 4;
++            sx_read(file, fname, size);
++            h026_upcase(0x27, fname);
++            total -= size;
++            sx_read(file, id, 4);
++            total -= 4;
++        } else {
++            h026_copy(0x27, fname, 0x27, name);
++        }
++        if (h026_compare(4, id, 4, "FORM") != 1) {
++            s_error = 1;
++        }
++        size = sx_read_long(file);
++        total -= 4;
++        total -= size;
++        if (sx_find_object(fname) != NULL) {
++            sx_skip(file, size);
++            continue;
++        }
++        o = (SxObject *)sx_alloc(sizeof(SxObject));
++        sx_read(file, id, 4);
++        size -= 4;
++        if (!s_error) {
++            if (h026_compare(4, id, 4, "SMUS") == 1) {
++                o->data = sx_load_smus(size, file);
++                o->flags = 1;
++            } else if (h026_compare(4, id, 4, "8SVX") == 1) {
++                o->data = sx_load_8svx(size, file);
++                o->flags = 4;
++            } else if (h026_compare(4, id, 4, "INST") == 1) {
++                o->data = sx_load_inst(size, file);
++                o->flags = 2;
++            } else if (h026_compare(4, id, 4, "ENVL") == 1) {
++                o->data = sx_load_envl(size, file);
++                o->flags = 0x40;
++            } else {
++                s_error = 1;
++            }
++            if (o->data == NULL) {
++                s_error = 1;
++            }
++        }
++        if (s_error) {
++            sx_free_object(&o);
++            return NULL;
++        }
++        ++o->refs;
++        o->name = (char *)sx_alloc(0x28);
++        h026_copy(0x27, o->name, 0x27, fname);
++        if (h026_compare(0x27, fname, 0x27, name) == 1) {
++            sx_add_object(play, o);
++            result = o;
++        } else {
++            sx_add_object(0, o);
++        }
++    }
++    dos_close(file);
++    if (from_data) {
++        g_h043_m1 = 0;
++    }
++    return result;
++}
++
++/*
++ * PORT H043+$165A (anche $01CA): "SoundX is quiting, exit code =", il
++ * codice, chiusura dell'audio e uscita dal gioco.
++ */
++static void sx_error(u16 code)
++{
++    console_write(0x1E, "SoundX is quiting, exit code =");
++    console_write_int(code, 2);
++    console_newline();
++    h043_0840();
++    quit_game();
++}
++
++/* PORT H043+$169A: nome del suono numero 2..$17 (gli altri: invariato). */
++static void sx_sound_name(u16 n, char *buf, u16 max)
++{
++    static const char *const names[0x16] = {
++        "cast", "cast2", "cast3", "cast4", "swish", "spell", "dead0",
++        "dead1", "dead", "dead3", "dead4", "whisl", "hit", "light",
++        "swish", "pad", "bigPad", "fireb", "arrow", "turn", "gate", "krynn"
++    };
++
++    if (n >= 2 && n <= 0x17) {
++        h026_copy(max, buf, (u16)strlen(names[n - 2]), names[n - 2]);
++    }
++}
++
++/*
++ * PORT H043+$0584: avvio: "SOUND/periodTable" ($80 periodi e $40
++ * durate), due porte, audio.device con la maschera dei canali $F, 16
++ * richieste CMD_WRITE (rese libere con ReplyMsg) e il server del VBlank
++ * che fa partire l'interrupt software del lettore (H094).  La porta delle
++ * risposte dell'apertura e' una variabile locale non inizializzata
++ * nell'originale: qui azzerata.
++ */
++void h043_0584(void)
++{
++    char path[0x28];                    /* -$4E(a5) */
++    cok_bptr file;                      /* -$52(a5) */
++    struct MsgPort open_port;           /* -$24(a5) */
++    UBYTE mask;                         /* -$1(a5) */
++    s16 i;                              /* -$26(a5) */
++    struct IOAudio *io;
++
++    h026_copy(0x27, s_sound_dir, 6, "SOUND/");
++    if (g_h043_m2) {
++        return;
++    }
++    g_sound = (SoundX *)sx_alloc(sizeof(SoundX));
++    g_sound->tempo = 1;
++    g_sound->periods = (u32 *)sx_alloc(0x280);
++    g_sound->durations = (u16 *)((u8 *)g_sound->periods + 0x200);
++    h026_copy(0x27, path, 0x27, s_sound_dir);
++    h026_append(0x27, path, 0x0B, "periodTable");
++    s_resource_result = open_resource_file(0x27, path, 0x13,
++                                           "Insert Disk One in ", 0, &file);
++    if (file == 0) {
++        sx_error(3);
++    }
++    sx_read(file, g_sound->periods, 0x280);
++    dos_close(file);
++    g_sound->port = sx_create_port();
++    g_sound->reply = sx_create_port();
++    mask = 0x0F;
++    memset(&open_port, 0, sizeof(open_port));
++    io = &g_sound->open_io;
++    io->ioa_Request.io_Message.mn_Node.ln_Pri = 0x7F;
++    io->ioa_Request.io_Message.mn_ReplyPort = &open_port;
++    io->ioa_Data = &mask;
++    io->ioa_Length = 1;
++    if (exec_open_device("audio.device", 0, (struct IORequest *)io, 0) != 0) {
++        sx_error(4);
++    }
++    g_sound->device = io->ioa_Request.io_Device;
++    g_h043_m3 = 1;
++    io = &g_sound->model;
++    io->ioa_Request.io_Message.mn_ReplyPort = g_sound->reply;
++    io->ioa_Request.io_Device = g_sound->device;
++    io->ioa_Request.io_Unit = NULL;
++    io->ioa_Request.io_Command = 8;     /* CMD_FLUSH */
++    io->ioa_Request.io_Flags = 1;       /* IOF_QUICK */
++    io->ioa_Request.io_Error = 0;
++    g_sound->model.ioa_AllocKey = g_sound->open_io.ioa_AllocKey;
++    for (i = 0; i < 16; ++i) {
++        g_sound->requests[i] = g_sound->model;
++        g_sound->requests[i].ioa_Request.io_Command = 3;   /* CMD_WRITE */
++        g_sound->requests[i].ioa_Request.io_Flags = 0x10;  /* ADIOF_PERVOL */
++        exec_reply_msg(&g_sound->requests[i].ioa_Request.io_Message);
++    }
++    s_soft_int.is_Node.ln_Pri = 0;
++    s_soft_int.is_Node.ln_Type = 2;     /* NT_INTERRUPT */
++    s_soft_int.is_Node.ln_Name = NULL;
++    s_soft_int.is_Data = g_sound;
++    s_soft_int.is_Code = (void (*)(void))audio_soft_interrupt;
++    s_vblank_int.is_Node.ln_Pri = 0;
++    s_vblank_int.is_Node.ln_Type = 2;
++    s_vblank_int.is_Node.ln_Name = NULL;
++    s_vblank_int.is_Data = &s_soft_int;
++    s_vblank_int.is_Code = (void (*)(void))audio_vblank_server;
++    exec_add_int_server(INTB_VERTB_NUM, &s_vblank_int);
++    g_h043_m2 = 1;
++}
++
++/*
++ * PORT H043+$190E: comando audio: $FF ferma tutto; 0 ferma e disabilita;
++ * 1 abilita; $FE ricarica (toglie il server, libera tutto, lo rimette);
++ * $FD carica in anticipo i suoni 1..$16; altrimenti, se abilitata, suona
++ * il suono numero command.
++ */
++void h043_190e(u16 command)
++{
++    if (command == 0xFF) {
++        sx_stop_all();
++    } else if (command == 0) {
++        sx_stop_all();
++        g_h043_m5 = 0;
++    } else if (command == 1) {
++        g_h043_m5 = 1;
++    } else if (command == 0xFE) {
++        exec_rem_int_server(INTB_VERTB_NUM, &s_vblank_int);
++        sx_free_all();
++        exec_add_int_server(INTB_VERTB_NUM, &s_vblank_int);
++    } else if (command == 0xFD) {
++        for (command = 1; command <= 0x16; ++command) {
++            s_error = 0;
++            sx_sound_name(command, s_name, 0x27);
++            s_last_loaded = sx_load_object(s_name, 0);
++        }
++    } else if (g_h043_m5) {
++        s_error = 0;
++        sx_sound_name(command, s_name, 0x27);
++        s_last_loaded = sx_load_object(s_name, 1);
++    }
++}
++
++#endif /* COK_AUDIO */
+diff --git a/src_c/readable/h043_audio.h b/src_c/readable/h043_audio.h
+new file mode 100644
+index 0000000..9a0dd73
+--- /dev/null
++++ b/src_c/readable/h043_audio.h
+@@ -0,0 +1,135 @@
++/*
++ * H043/H094: "SoundX", lettore di musica IFF SMUS con campioni 8SVX su
++ * audio.device.  Compilato solo con COK_AUDIO (smake AUDIO, make AUDIO=1);
++ * senza, i comandi audio restano gli stub che non fanno nulla
++ * (unported.c).
++ */
++#ifndef COK_H043_AUDIO_H
++#define COK_H043_AUDIO_H
++
++#include "cok.h"
++
++void h043_init(void);                   /* H043+$01BC */
++void h043_0584(void);                   /* H043+$0584: avvio */
++void h043_0840(void);                   /* H043+$0840: chiusura */
++void h043_190e(u16 command);            /* H043+$190E: comando */
++
++#ifdef COK_AUDIO
++
++#if COK_AMIGA
++#include <exec/types.h>
++#include <exec/ports.h>
++#include <exec/interrupts.h>
++#include <devices/audio.h>
++#else
++#include "host/ndk.h"
++#endif
++
++/*
++ * Oggetto caricato ($10 byte): nome, dati e tipo (+$E: 1 SMUS, 2 INST,
++ * 4 8SVX, $20 SAMP, $40 ENVL; $10 = suona in questo turno).
++ */
++typedef struct SxObject {
++    struct SxObject *next;              /* +$00 */
++    u16 refs;                           /* +$04 */
++    void *data;                         /* +$06 */
++    char *name;                         /* +$0A: $28 byte */
++    u8 flags;                           /* +$0E */
++} SxObject;
++
++/* Traccia SMUS ($16 byte). */
++typedef struct SxTrack {
++    u32 time;                           /* +$00: istante del prossimo evento */
++    SxObject *instr;                    /* +$04 */
++    u8 volume;                          /* +$08 */
++    u8 *data;                           /* +$0A */
++    u8 *cursor;                         /* +$0E */
++    u8 *end;                            /* +$12 */
++} SxTrack;
++
++/* Brano SMUS ($4A byte). */
++typedef struct SxScore {
++    u16 ntracks;                        /* +$00 */
++    u16 ninstr;                         /* +$02 */
++    SxTrack *tracks[8];                 /* +$04 */
++    SxObject *instr[8];                 /* +$24 */
++    u16 volume;                         /* +$44 */
++    u8 pad;
++    u8 active;                          /* +$48: tracce ancora attive */
++} SxScore;
++
++/*
++ * Campione 8SVX ($1C byte): VHDR letto cosi' com'e' dal file (big-endian:
++ * +0 oneShotHiSamples, +4 repeatHiSamples, +8 samplesPerHiCycle, +$C
++ * samplesPerSec, +$E ctOctave, +$F sCompression, +$10 volume), BODY.
++ */
++typedef struct Sx8svx {
++    u8 vhdr[0x14];                      /* +$00 */
++    u32 body_size;                      /* +$14 */
++    s8 *body;                           /* +$18 */
++} Sx8svx;
++
++/* Strumento INST ($18 byte): inviluppi PTCH e VLUM, campione SAMP. */
++typedef struct SxInst {
++    u8 *ptch;                           /* +$00: dati dopo la lunghezza */
++    u8 *vlum;                           /* +$04 */
++    Sx8svx *samp;                       /* +$08 */
++    SxObject *ptch_obj;                 /* +$0C */
++    SxObject *vlum_obj;                 /* +$10 */
++    SxObject *samp_obj;                 /* +$14 */
++} SxInst;
++
++/* Inviluppo ENVL: word della lunghezza e i byte. */
++
++/* Nota in corso su una voce ($36 byte). */
++typedef struct SxNote {
++    struct SxNote *next;                /* +$00 */
++    s8 *data;                           /* +$04: parte iniziale */
++    s8 *repeat;                         /* +$08: parte ripetuta */
++    u32 len1;                           /* +$0C */
++    u32 len2;                           /* +$10 */
++    u32 start;                          /* +$14 */
++    u32 end;                            /* +$18 */
++    u8 *ptch;                           /* +$1C */
++    u16 period;                         /* +$20 */
++    u16 period_now;                     /* +$22 */
++    s16 period_step;                    /* +$24 */
++    u8 period_count;                    /* +$26 */
++    u8 *vlum;                           /* +$28 */
++    u16 volume;                         /* +$2C */
++    u16 volume_now;                     /* +$2E */
++    s16 volume_step;                    /* +$30 */
++    u8 volume_count;                    /* +$32 */
++    u8 flags;                           /* +$34: 1 in uso, 2 assegnata, 4 da avviare */
++} SxNote;
++
++/* Stato del lettore ($6B0 byte). */
++typedef struct SoundX {
++    u32 clock;                          /* +$000 */
++    u32 tempo;                          /* +$004: avanzamento per VBlank */
++    struct IOAudio open_io;             /* +$008: allocazione dei canali */
++    struct IOAudio model;               /* +$04C: modello delle richieste */
++    struct Device *device;              /* +$090 */
++    SxNote *voice[4];                   /* +$094 */
++    SxNote notes[8];                    /* +$0A4 */
++    SxNote *pending;                    /* +$254 */
++    struct IOAudio requests[16];        /* +$258 */
++    struct MsgPort *port;               /* +$698 */
++    struct MsgPort *reply;              /* +$69C: richieste libere */
++    SxObject *active;                   /* +$6A0 */
++    SxObject *loaded;                   /* +$6A4 */
++    u32 *periods;                       /* +$6A8: $80 periodi ... */
++    u16 *durations;                     /* +$6AC: ... e $40 durate */
++} SoundX;
++
++/* H094: server del VBlank e interrupt software del lettore. */
++#if COK_AMIGA
++LONG __asm audio_vblank_server(register __a1 struct Interrupt *soft);
++LONG __asm audio_soft_interrupt(register __a1 SoundX *sx);
++#else
++LONG audio_vblank_server(struct Interrupt *soft);
++LONG audio_soft_interrupt(SoundX *sx);
++#endif
++
++#endif /* COK_AUDIO */
++#endif
+diff --git a/src_c/readable/h079.c b/src_c/readable/h079.c
+index 4dcdb66..1e6b2b6 100644
+--- a/src_c/readable/h079.c
++++ b/src_c/readable/h079.c
+@@ -1,7 +1,37 @@
+ /* H079: Adattatori Exec per interrupt e abilitazione/disabilitazione. */
+-#include "cok.h"
++#include "h079.h"
+ 
+ /* PORT H079+$0004: rts. */
+ void h079_init(void)
+ {
+ }
++
++#ifdef COK_AUDIO
++#if COK_AMIGA
++#include <proto/exec.h>
++#endif
++
++/* PORT H079+$0006: AddIntServer(intnum, interrupt). */
++void exec_add_int_server(u16 intnum, struct Interrupt *interrupt)
++{
++    AddIntServer((LONG)intnum, interrupt);
++}
++
++/* PORT H079+$002E: Disable. */
++void exec_disable(void)
++{
++    Disable();
++}
++
++/* PORT H079+$0036: Enable. */
++void exec_enable(void)
++{
++    Enable();
++}
++
++/* PORT H079+$004E: RemIntServer(intnum, interrupt). */
++void exec_rem_int_server(u16 intnum, struct Interrupt *interrupt)
++{
++    RemIntServer((LONG)intnum, interrupt);
++}
++#endif
+diff --git a/src_c/readable/h079.h b/src_c/readable/h079.h
+new file mode 100644
+index 0000000..5627ec5
+--- /dev/null
++++ b/src_c/readable/h079.h
+@@ -0,0 +1,17 @@
++/* H079: adattatori Exec per gli interrupt (usati dall'audio). */
++#ifndef COK_H079_H
++#define COK_H079_H
++#include "cok.h"
++void h079_init(void);
++#ifdef COK_AUDIO
++#if COK_AMIGA
++#include <exec/interrupts.h>
++#else
++#include "host/ndk.h"
++#endif
++void exec_add_int_server(u16 intnum, struct Interrupt *interrupt); /* H079+$0006 */
++void exec_disable(void);                                 /* H079+$002E */
++void exec_enable(void);                                  /* H079+$0036 */
++void exec_rem_int_server(u16 intnum, struct Interrupt *interrupt); /* H079+$004E */
++#endif
++#endif
+diff --git a/src_c/readable/h090.c b/src_c/readable/h090.c
+index 0669b94..3c90150 100644
+--- a/src_c/readable/h090.c
++++ b/src_c/readable/h090.c
+@@ -1,7 +1,26 @@
+ /* H090: Adattatori Exec per OpenDevice/CloseDevice. */
+-#include "cok.h"
++#include "h090.h"
+ 
+ /* PORT H090+$0004: rts. */
+ void h090_init(void)
+ {
+ }
++
++#ifdef COK_AUDIO
++#if COK_AMIGA
++#include <proto/exec.h>
++#endif
++
++/* PORT H090+$0018: CloseDevice(io). */
++void exec_close_device(struct IORequest *io)
++{
++    CloseDevice(io);
++}
++
++/* PORT H090+$002A: OpenDevice(name, unit, io, flags). */
++s32 exec_open_device(const char *name, u32 unit, struct IORequest *io,
++                     u32 flags)
++{
++    return (s32)OpenDevice((STRPTR)name, unit, io, flags);
++}
++#endif
+diff --git a/src_c/readable/h090.h b/src_c/readable/h090.h
+new file mode 100644
+index 0000000..e726960
+--- /dev/null
++++ b/src_c/readable/h090.h
+@@ -0,0 +1,16 @@
++/* H090: adattatori Exec per i device (usati dall'audio). */
++#ifndef COK_H090_H
++#define COK_H090_H
++#include "cok.h"
++void h090_init(void);
++#ifdef COK_AUDIO
++#if COK_AMIGA
++#include <exec/io.h>
++#else
++#include "host/ndk.h"
++#endif
++void exec_close_device(struct IORequest *io);           /* H090+$0018 */
++s32  exec_open_device(const char *name, u32 unit, struct IORequest *io,
++                      u32 flags);                       /* H090+$002A */
++#endif
++#endif
+diff --git a/src_c/readable/h092.c b/src_c/readable/h092.c
+index e2fe66d..bb3cf28 100644
+--- a/src_c/readable/h092.c
++++ b/src_c/readable/h092.c
+@@ -1,7 +1,17 @@
+ /* H092: Helper per liste Exec. */
+-#include "cok.h"
++#include "h092.h"
+ 
+ /* PORT H092+$0004: rts. */
+ void h092_init(void)
+ {
+ }
++
++#ifdef COK_AUDIO
++/* PORT H092+$007A: NewList: lista vuota (testa -> coda, coda nulla). */
++void exec_new_list(struct List *list)
++{
++    list->lh_Head = (struct Node *)&list->lh_Tail;
++    list->lh_Tail = NULL;
++    list->lh_TailPred = (struct Node *)&list->lh_Head;
++}
++#endif
+diff --git a/src_c/readable/h092.h b/src_c/readable/h092.h
+new file mode 100644
+index 0000000..0495c95
+--- /dev/null
++++ b/src_c/readable/h092.h
+@@ -0,0 +1,14 @@
++/* H092: liste Exec (usate dall'audio). */
++#ifndef COK_H092_H
++#define COK_H092_H
++#include "cok.h"
++void h092_init(void);
++#ifdef COK_AUDIO
++#if COK_AMIGA
++#include <exec/lists.h>
++#else
++#include "host/ndk.h"
++#endif
++void exec_new_list(struct List *list);                  /* H092+$007A */
++#endif
++#endif
+diff --git a/src_c/readable/h094.c b/src_c/readable/h094.c
+index ec45f32..b241033 100644
+--- a/src_c/readable/h094.c
++++ b/src_c/readable/h094.c
+@@ -1,7 +1,594 @@
+-/* H094: Callback audio: server verticale e interrupt software. */
++/*
++ * H094: Callback audio: server del VBlank e interrupt software che fa
++ * suonare il lettore SoundX (H043).  Compilato solo con COK_AUDIO.
++ * Nell'originale e' assembly scritto a mano con lo stato del lettore in
++ * a5; qui ogni routine riceve il puntatore al lettore.
++ */
+ #include "cok.h"
+ 
+ /* PORT H094+$0004: rts. */
+ void h094_init(void)
+ {
+ }
++
++#ifdef COK_AUDIO
++
++#include "h043_audio.h"
++#if COK_AMIGA
++#include <proto/exec.h>
++#include <clib/alib_protos.h>
++#endif
++
++#define VHDR_L(v, o)    COK_GET32(&(v)->vhdr[(o)])
++#define VHDR_W(v, o)    COK_GET16(&(v)->vhdr[(o)])
++
++/* Periodo della nota n e durata d (tabelle big-endian di periodTable). */
++#define PERIOD(sx, n)   COK_GET32((u8 *)(sx)->periods + (n) * 4)
++#define DURATION(sx, d) COK_GET16((u8 *)(sx)->durations + (d) * 2)
++
++/* Richiesta libera dalla porta delle risposte, o NULL. */
++static struct IOAudio *free_request(SoundX *sx)
++{
++    return (struct IOAudio *)GetMsg(sx->reply);
++}
++
++static void send(struct IOAudio *io, u32 unit_mask, u16 command, u8 flags)
++{
++#if COK_AMIGA
++    io->ioa_Request.io_Unit = (struct Unit *)unit_mask;
++#else
++    io->ioa_Request.io_Unit = (struct Unit *)(uintptr_t)unit_mask;
++#endif
++    io->ioa_Request.io_Command = command;
++    io->ioa_Request.io_Flags = flags;
++    BeginIO((struct IORequest *)io);
++}
++
++/*
++ * divu.w: dividend / divisor in 16 bit; se il quoziente non sta in una
++ * word il dividendo resta com'e' (V acceso).  Restituisce 1 se riuscita.
++ */
++static int divu_w(u32 *d, u16 divisor)
++{
++    u32 q;
++
++    if (divisor == 0) {
++        return 0;
++    }
++    q = *d / divisor;
++    if (q > 0xFFFF) {
++        return 0;
++    }
++    *d = ((*d % divisor) << 16) | q;
++    return 1;
++}
++
++/* PORT H094+$0738: una delle 8 note libere (flag 7) in testa alle da assegnare. */
++static SxNote *alloc_note(SoundX *sx)
++{
++    u16 i;
++    SxNote *n;
++
++    for (i = 0; i < 8; ++i) {
++        n = &sx->notes[i];
++        if (!(n->flags & 2)) {
++            n->flags = 7;
++            n->next = sx->pending;
++            sx->pending = n;
++            return n;
++        }
++    }
++    return NULL;
++}
++
++/*
++ * PORT H094+$0288: avvia la nota note della traccia t sulla nota n:
++ * campione dell'ottava giusta (con samplesPerHiCycle il periodo si
++ * dimezza e il campione raddoppia finche' il periodo e' sotto $118 o
++ * finiscono le ottave; altrimenti periodo da samplesPerSec), inviluppi
++ * dello strumento e volume brano * traccia.  Senza strumento l'originale
++ * leggerebbe da indirizzi nulli: qui la nota resta muta.
++ */
++static void start_note(SoundX *sx, SxScore *sc, SxTrack *t, SxNote *n,
++                       u16 note)
++{
++    SxInst *inst;
++    Sx8svx *v;
++    u32 per;
++    u32 d1;
++    u16 oct;
++    u32 d3;
++    u32 d4;
++    u32 d5 = 0;
++
++    if (t->instr == NULL || t->instr->data == NULL ||
++        ((SxInst *)t->instr->data)->samp == NULL) {
++        return;
++    }
++    inst = (SxInst *)t->instr->data;
++    v = inst->samp;
++    per = VHDR_L(v, 8);
++    if (per != 0) {
++        d1 = PERIOD(sx, note);
++        oct = v->vhdr[0x0E];
++        d3 = VHDR_L(v, 0);
++        d4 = VHDR_L(v, 4);
++        while (!divu_w(&d1, (u16)per)) {
++            if ((s16)oct <= 1) {
++                goto done;
++            }
++            d5 += d3 + d4;
++            d3 <<= 1;
++            d4 <<= 1;
++            d1 = (u32)((s32)d1 >> 1);
++            --oct;
++        }
++        while ((s16)oct > 1 && (u16)d1 >= 0x118) {
++            d5 += d3 + d4;
++            d3 <<= 1;
++            d4 <<= 1;
++            d1 = (d1 & 0xFFFF0000UL) | (u16)((s16)(u16)d1 >> 1);
++            --oct;
++        }
++done:
++        n->data = v->body + d5;
++        n->repeat = n->data + d3;
++        n->len1 = d3;
++        n->len2 = d4;
++    } else {
++        d1 = 0x369E9AUL;
++        (void)divu_w(&d1, VHDR_W(v, 0x0C));
++        d3 = VHDR_L(v, 0);
++        d4 = VHDR_L(v, 4);
++        n->data = v->body;
++        n->repeat = n->data + d3;
++        n->len1 = d3;
++        n->len2 = d4;
++    }
++    n->period = (u16)d1;
++    n->period_now = (u16)d1;
++    if (inst->ptch == NULL) {
++        n->ptch = NULL;
++    } else {
++        n->ptch = inst->ptch;
++        n->period_count = 0;
++        n->period_step = 0;
++    }
++    n->volume = (u16)(sc->volume * t->volume);
++    n->volume_now = n->volume;
++    if (inst->vlum == NULL) {
++        n->vlum = NULL;
++    } else {
++        n->vlum = inst->vlum;
++        n->volume_count = 0;
++        n->volume_step = 0;
++    }
++}
++
++/*
++ * PORT H094+$01BE: eventi della traccia i fino all'istante corrente:
++ * note e pause (durata dalla tabella; legature e accordi), cambio di
++ * strumento ($81), volume ($84), fine ($FF o fine dei dati).
++ */
++static void play_track(SoundX *sx, SxScore *sc, SxTrack *t, u16 i)
++{
++    u32 dur = 0;                        /* d4 */
++    u16 type;                           /* d6 */
++    u16 data;                           /* d5 */
++    SxNote *n;
++
++    for (;;) {
++        if (t->time > sx->clock) {
++            return;
++        }
++        if (t->cursor >= t->end) {
++            sc->active = (u8)(sc->active & ~(1 << (i & 7)));
++            return;
++        }
++        type = *t->cursor++;
++        data = *t->cursor++;
++        if (type <= 0x80) {
++            if (data & 0x80) {
++                continue;
++            }
++            dur += DURATION(sx, data & 0x3F);
++            if (data & 0x40) {
++                continue;
++            }
++            if (type != 0x80) {
++                n = alloc_note(sx);
++                if (n != NULL) {
++                    n->start = t->time;
++                    n->end = t->time + dur;
++                    start_note(sx, sc, t, n, type);
++                }
++            }
++            t->time += dur;
++            dur = 0;
++        } else if (type == 0x81) {
++            if (data > sc->ninstr) {
++                data = 0;
++            }
++            t->instr = sc->instr[data & 7];
++        } else if (type == 0x84) {
++            t->volume = (u8)data;
++        } else if (type == 0xFF) {
++            sc->active = (u8)(sc->active & ~(1 << (i & 7)));
++            return;
++        }
++    }
++}
++
++/* PORT H094+$0188: le tracce del brano; finito, l'oggetto non suona piu'. */
++static void play_score(SoundX *sx, SxObject *o)
++{
++    SxScore *sc = (SxScore *)o->data;
++    u16 i;
++
++    for (i = 0; i < sc->ntracks; ++i) {
++        play_track(sx, sc, sc->tracks[i], i);
++    }
++    if (!sc->active) {
++        o->flags = (u8)(o->flags & ~0x10);
++    }
++}
++
++/*
++ * PORT H094+$0390: suono singolo (8SVX o strumento INST): una nota dal
++ * momento corrente, all'ottava piu' alta, con periodo da samplesPerSec
++ * (0: 2000) e volume dal VHDR; senza parte ripetuta finisce dopo la
++ * durata del campione.  samplesPerSec 0 dividerebbe per zero
++ * nell'originale: qui il quoziente resta quello del dividendo.
++ */
++static void play_sample(SoundX *sx, SxObject *o)
++{
++    SxNote *n;
++    SxObject *so = o;
++    SxInst *inst;
++    Sx8svx *v;
++    u32 d0;
++    u32 d1;
++    u16 oct;
++    u32 d3;
++    u32 d4;
++    u32 d5 = 0;
++    u16 sps;
++
++    o->flags = (u8)(o->flags & ~0x10);
++    n = alloc_note(sx);
++    if (n == NULL) {
++        return;
++    }
++    if (!(o->flags & 2)) {
++        n->ptch = NULL;
++        n->vlum = NULL;
++    } else {
++        inst = (SxInst *)o->data;
++        if (inst->ptch == NULL) {
++            n->ptch = NULL;
++        } else {
++            n->ptch = inst->ptch;
++            n->period_count = 0;
++            n->period_step = 0;
++        }
++        if (inst->vlum == NULL) {
++            n->vlum = NULL;
++        } else {
++            n->vlum = inst->vlum;
++            n->volume_count = 0;
++            n->volume_step = 0;
++        }
++        so = inst->samp_obj;
++    }
++    n->start = sx->clock;
++    v = (Sx8svx *)so->data;
++    sps = VHDR_W(v, 0x0C);
++    if (sps == 0) {
++        sps = 0x7D0;
++    }
++    d1 = 0x369E9AUL;
++    (void)divu_w(&d1, sps);
++    oct = v->vhdr[0x0E];
++    d3 = VHDR_L(v, 0);
++    d4 = VHDR_L(v, 4);
++    while ((s16)oct > 1) {
++        d5 += d3 + d4;
++        d3 <<= 1;
++        d4 <<= 1;
++        --oct;
++    }
++    n->data = v->body + d5;
++    n->repeat = n->data + d3;
++    n->len1 = d3;
++    n->len2 = d4;
++    n->end = 0xFFFFFFFFUL;
++    if (VHDR_L(v, 4) == 0) {
++        d0 = (u32)(u16)sx->tempo * 0x3CUL;
++        d0 = (u32)(u16)d0 * (u32)(u16)VHDR_L(v, 0);
++        (void)divu_w(&d0, VHDR_W(v, 0x0C));
++        d0 = (u32)(s32)(s16)(u16)d0;
++        n->end = d0 + sx->clock;
++    }
++    n->period = (u16)d1;
++    n->period_now = (u16)d1;
++    d0 = VHDR_L(v, 0x10);
++    if ((s32)d0 >= 0x10000L) {
++        d0 = 0x4000;
++    } else {
++        d0 >>= 2;
++    }
++    n->volume = (u16)d0;
++    n->volume_now = (u16)d0;
++}
++
++/*
++ * PORT H094+$0108: gli oggetti attivi suonano; quelli finiti (bit 4
++ * spento) passano fra i caricati.
++ */
++static void play_objects(SoundX *sx)
++{
++    SxObject *o = sx->active;
++    SxObject *prev = NULL;
++    SxObject *next;
++
++    while (o != NULL) {
++        if (o->flags & 0x01) {
++            play_score(sx, o);
++        } else if (o->flags & 0x02) {
++            play_sample(sx, o);
++        } else if (o->flags & 0x04) {
++            play_sample(sx, o);
++        }
++        if (o->flags & 0x10) {
++            prev = o;
++            o = o->next;
++            continue;
++        }
++        next = o->next;
++        if (prev == NULL) {
++            sx->active = next;
++        } else {
++            prev->next = next;
++        }
++        o->next = sx->loaded;
++        sx->loaded = o;
++        o = next;
++    }
++}
++
++/*
++ * PORT H094+$003A: assegna alle voci le note nuove: una voce libera, o
++ * quella che finisce prima (fermata con ADCMD_FINISH).  Le note senza il
++ * bit 0 tornano libere.
++ */
++static void assign_voices(SoundX *sx)
++{
++    SxNote *n = sx->pending;            /* a4 */
++    SxNote *prev = NULL;                /* d6 */
++    s16 slot;                           /* d7 */
++    s16 best;                           /* d5 */
++    u32 earliest;                       /* d4 */
++    SxNote *v;
++    struct IOAudio *io;
++
++    sx->pending = NULL;
++    while (n != NULL) {
++        if (!(n->flags & 1)) {
++            n->flags = (u8)(n->flags & ~2);
++            if (prev == NULL) {
++                sx->pending = n->next;
++            } else {
++                prev->next = n->next;
++            }
++            n = n->next;
++            continue;
++        }
++        earliest = 0xFFFFFFFFUL;
++        best = 3;
++        for (slot = 3; slot >= 0; --slot) {
++            v = sx->voice[slot];
++            if (v == NULL) {
++                break;
++            }
++            if (earliest >= v->end) {
++                earliest = v->end;
++                best = slot;
++            }
++        }
++        if (slot < 0) {
++            slot = best;
++            v = sx->voice[slot];
++            v->flags = (u8)(v->flags & ~2);
++            io = free_request(sx);
++            if (io == NULL) {
++                return;
++            }
++            send(io, 1UL << slot, 11, 0);      /* ADCMD_FINISH */
++        }
++        sx->voice[slot] = n;
++        prev = n;
++        n = n->next;
++    }
++}
++
++/*
++ * PORT H094+$04A4: per ogni voce: a fine nota ADCMD_FINISH; poi gli
++ * inviluppi di periodo (PTCH) e volume (VLUM); una nota nuova parte con
++ * CMD_WRITE della parte iniziale (1 ciclo) e di quella ripetuta (senza
++ * fine), le altre aggiornano periodo e volume con ADCMD_PERVOL.
++ */
++static void update_voices(SoundX *sx)
++{
++    s16 slot;
++    u32 unit = 8;
++    SxNote *n;
++    u8 *p;
++    u16 d1;
++    u16 d0;
++    s32 d2;
++    struct IOAudio *io;
++
++    for (slot = 3; slot >= 0; --slot, unit >>= 1) {
++        n = sx->voice[slot];
++        if (n == NULL) {
++            continue;
++        }
++        if (n->end < sx->clock) {
++            goto finish;
++        }
++        if (n->ptch != NULL) {
++            n->period_now = (u16)(n->period_now + n->period_step);
++            if ((u8)(--n->period_count) == 0 || n->period_count == 0xFF) {
++                p = n->ptch;
++                for (;;) {
++                    d1 = *p++;
++                    if (d1 == 0xFF) {
++                        d1 = *p++;
++                        if (d1 == 0) {
++                            goto finish;
++                        }
++                        if (d1 == 1) {
++                            n->ptch = NULL;
++                            break;
++                        }
++                        d1 = (u16)(*p++ << 8);
++                        d1 = (u16)(d1 | *p++);
++                        n->period_now = d1;
++                        continue;
++                    }
++                    if (d1 == 0xFE) {
++                        d1 = *p++;
++                        p -= ((u32)d1 + 1) * 2;
++                        continue;
++                    }
++                    n->period_step = (s16)(s8)*p++;
++                    n->period_count = (u8)d1;
++                    n->ptch = p;
++                    break;
++                }
++            }
++        }
++        if (n->vlum != NULL) {
++            n->volume_now = (u16)(n->volume_now + n->volume_step);
++            if ((u8)(--n->volume_count) == 0 || n->volume_count == 0xFF) {
++                p = n->vlum;
++                for (;;) {
++                    d1 = *p++;
++                    if (d1 == 0xFF) {
++                        if (*p == 0) {
++                            goto finish;
++                        }
++                        n->vlum = NULL;
++                        break;
++                    }
++                    if (d1 == 0xFE) {
++                        d1 = *p++;
++                        p -= ((u32)d1 + 1) * 2;
++                        continue;
++                    }
++                    d0 = *p++;
++                    if (d0 & 0x80) {
++                        d0 = (u16)((u16)((u16)(d0 - 0xC0) << 8) + n->volume_now);
++                    } else {
++                        d2 = (s32)((u32)n->volume * d0) >> 6;
++                        if ((s16)d2 > 0x4000) {
++                            d2 = 0x4000;
++                        }
++                        d0 = (u16)d2;
++                    }
++                    if (d1 == 0) {
++                        n->volume_now = d0;
++                        continue;
++                    }
++                    n->volume_count = (u8)d1;
++                    if (d1 == 1) {
++                        n->volume_now = d0;
++                        n->volume_step = 0;
++                    } else {
++                        n->volume_step = (s16)((s32)(s16)(u16)(d0 - n->volume_now) /
++                                               (s16)d1);
++                    }
++                    n->vlum = p;
++                    break;
++                }
++            }
++        }
++        if (!(n->flags & 4)) {
++            if (n->ptch == NULL && n->vlum == NULL) {
++                continue;
++            }
++            io = free_request(sx);
++            if (io == NULL) {
++                return;
++            }
++            io->ioa_Period = n->period_now;
++            io->ioa_Volume = (UWORD)(n->volume_now >> 8);
++            send(io, unit, 12, 0x10);           /* ADCMD_PERVOL */
++            continue;
++        }
++        n->flags = (u8)(n->flags & ~4);
++        if (n->len1 != 0) {
++            io = free_request(sx);
++            if (io == NULL) {
++                return;
++            }
++            io->ioa_Data = (UBYTE *)n->data;
++            io->ioa_Length = n->len1;
++            io->ioa_Period = n->period_now;
++            io->ioa_Volume = (UWORD)(n->volume_now >> 8);
++            io->ioa_Cycles = 1;
++            send(io, unit, 3, 0x10);            /* CMD_WRITE */
++        }
++        if (n->len2 != 0) {
++            io = free_request(sx);
++            if (io == NULL) {
++                return;
++            }
++            io->ioa_Data = (UBYTE *)n->repeat;
++            io->ioa_Length = n->len2;
++            io->ioa_Period = n->period_now;
++            io->ioa_Volume = (UWORD)(n->volume_now >> 8);
++            io->ioa_Cycles = 0;
++            send(io, unit, 3, 0x10);
++        }
++        continue;
++finish:
++        n->flags = (u8)(n->flags & ~2);
++        sx->voice[slot] = NULL;
++        io = free_request(sx);
++        if (io == NULL) {
++            return;
++        }
++        send(io, unit, 11, 0);                  /* ADCMD_FINISH */
++    }
++}
++
++/*
++ * PORT H094+$0016: interrupt software: avanza l'orologio del tempo, fa
++ * suonare gli oggetti, assegna le voci e le aggiorna.
++ */
++#if COK_AMIGA
++LONG __asm audio_soft_interrupt(register __a1 SoundX *sx)
++#else
++LONG audio_soft_interrupt(SoundX *sx)
++#endif
++{
++    sx->clock += sx->tempo;
++    play_objects(sx);
++    assign_voices(sx);
++    update_voices(sx);
++    return 0;
++}
++
++/* PORT H094+$0006: server del VBlank: Cause dell'interrupt software. */
++#if COK_AMIGA
++LONG __asm audio_vblank_server(register __a1 struct Interrupt *soft)
++#else
++LONG audio_vblank_server(struct Interrupt *soft)
++#endif
++{
++    Cause(soft);
++    return 0;
++}
++
++#endif /* COK_AUDIO */
+diff --git a/src_c/readable/host/audio.c b/src_c/readable/host/audio.c
+new file mode 100644
+index 0000000..c6b043d
+--- /dev/null
++++ b/src_c/readable/host/audio.c
+@@ -0,0 +1,143 @@
++/*
++ * Host: audio.device ed Exec per il lettore SoundX (H043/H094), compilato
++ * solo con COK_AUDIO.  Per ora e' muto: OpenDevice riesce, BeginIO
++ * completa subito la richiesta (torna alla sua porta delle risposte).  Il
++ * server del VBlank registrato gira a 50 Hz dal refresh del display (nel
++ * thread principale, mai fra Disable ed Enable); Cause esegue subito
++ * l'interrupt software.  Le porte hanno una coda vera.
++ */
++#include "ndk.h"
++
++#ifdef COK_AUDIO
++#include <string.h>
++
++static struct Device s_audio_device;
++
++/* Coda di una porta: lista doppia con nodi sentinella come in Exec. */
++static void list_init_if_needed(struct List *l)
++{
++    if (l->lh_Head == NULL) {
++        l->lh_Head = (struct Node *)&l->lh_Tail;
++        l->lh_Tail = NULL;
++        l->lh_TailPred = (struct Node *)&l->lh_Head;
++    }
++}
++
++void host_port_put(struct MsgPort *port, struct Message *msg)
++{
++    struct List *l = &port->mp_MsgList;
++    struct Node *n = &msg->mn_Node;
++    struct Node *tail;
++
++    list_init_if_needed(l);
++    tail = l->lh_TailPred;
++    n->ln_Succ = (struct Node *)&l->lh_Tail;
++    n->ln_Pred = tail;
++    tail->ln_Succ = n;
++    l->lh_TailPred = n;
++}
++
++struct Message *host_port_get(struct MsgPort *port)
++{
++    struct List *l = &port->mp_MsgList;
++    struct Node *n;
++
++    list_init_if_needed(l);
++    n = l->lh_Head;
++    if (n->ln_Succ == NULL) {
++        return NULL;
++    }
++    l->lh_Head = n->ln_Succ;
++    n->ln_Succ->ln_Pred = (struct Node *)&l->lh_Head;
++    return (struct Message *)n;
++}
++
++BYTE OpenDevice(STRPTR name, ULONG unit, struct IORequest *io, ULONG flags)
++{
++    (void)unit;
++    (void)flags;
++    if (strcmp((const char *)name, "audio.device") != 0) {
++        io->io_Error = -1;
++        return -1;
++    }
++    io->io_Device = &s_audio_device;
++    io->io_Error = 0;
++    return 0;
++}
++
++void CloseDevice(struct IORequest *io)
++{
++    io->io_Device = NULL;
++}
++
++/* Richiesta completata subito, senza suono. */
++void BeginIO(struct IORequest *io)
++{
++    io->io_Error = 0;
++    if (io->io_Message.mn_ReplyPort != NULL) {
++        host_port_put(io->io_Message.mn_ReplyPort, &io->io_Message);
++    }
++}
++
++static struct Interrupt *s_vblank_server;
++static int s_disabled;
++static unsigned long s_next_vblank;
++
++typedef LONG (*HostIntCode)(APTR data);
++
++void AddIntServer(LONG intnum, struct Interrupt *interrupt)
++{
++    if (intnum == 5) {
++        s_vblank_server = interrupt;
++    }
++}
++
++void RemIntServer(LONG intnum, struct Interrupt *interrupt)
++{
++    if (intnum == 5 && s_vblank_server == interrupt) {
++        s_vblank_server = NULL;
++    }
++}
++
++void Cause(struct Interrupt *interrupt)
++{
++    if (interrupt != NULL && interrupt->is_Code != NULL) {
++        ((HostIntCode)interrupt->is_Code)(interrupt->is_Data);
++    }
++}
++
++void Disable(void)
++{
++    ++s_disabled;
++}
++
++void Enable(void)
++{
++    if (s_disabled > 0) {
++        --s_disabled;
++    }
++}
++
++/* Dal refresh del display: i VBlank (20 ms) trascorsi, al piu' 5. */
++void host_audio_vblank(unsigned long now_ms)
++{
++    int n = 0;
++
++    if (s_next_vblank == 0) {
++        s_next_vblank = now_ms;
++    }
++    while (now_ms >= s_next_vblank && n < 5) {
++        s_next_vblank += 20;
++        ++n;
++        if (s_vblank_server != NULL && s_disabled == 0 &&
++            s_vblank_server->is_Code != NULL) {
++            ((HostIntCode)s_vblank_server->is_Code)(s_vblank_server->is_Data);
++        }
++    }
++    if (now_ms >= s_next_vblank) {
++        s_next_vblank = now_ms + 20;
++    }
++}
++#else
++typedef int cok_host_audio_unused;
++#endif
+diff --git a/src_c/readable/host/display.c b/src_c/readable/host/display.c
+index 4e9f847..404d99d 100644
+--- a/src_c/readable/host/display.c
++++ b/src_c/readable/host/display.c
+@@ -244,6 +244,10 @@ void host_display_changed(void)
+  * Mostra lo schermo (al massimo ~60 volte al secondo, oppure subito con
+  * force) e smaltisce gli eventi della finestra.
+  */
++#ifdef COK_AUDIO
++void host_audio_vblank(unsigned long now_ms);
++#endif
++
+ void host_display_refresh(int force)
+ {
+     SDL_Event ev;
+@@ -261,6 +265,9 @@ void host_display_refresh(int force)
+     now = SDL_GetTicks();
+     timed_screenshots(now);
+     host_input_script(now);
++#ifdef COK_AUDIO
++    host_audio_vblank(now);
++#endif
+     if (shown_viewport() == NULL || s_texture == NULL ||
+         (!force && (!s_dirty || now - s_last_present < 16))) {
+         return;
+diff --git a/src_c/readable/host/input.c b/src_c/readable/host/input.c
+index abebf39..83f1f24 100644
+--- a/src_c/readable/host/input.c
++++ b/src_c/readable/host/input.c
+@@ -17,6 +17,11 @@ static struct MsgPort s_port;
+ static struct IntuiMessage s_queue[QUEUE_SIZE];
+ static unsigned s_head;                 /* prossimo da consegnare */
+ static unsigned s_count;
++#ifdef COK_AUDIO
++struct Message *host_port_get(struct MsgPort *port);
++void host_port_put(struct MsgPort *port, struct Message *msg);
++#endif
++
+ static struct IntuiMessage s_current;   /* messaggio consegnato da GetMsg */
+ static int s_mouse_x;
+ static int s_mouse_y;
+@@ -170,7 +175,11 @@ int host_input_pending(void)
+ struct Message *GetMsg(struct MsgPort *port)
+ {
+     if (port != &s_port) {
++#ifdef COK_AUDIO
++        return host_port_get(port);
++#else
+         return NULL;
++#endif
+     }
+     host_display_refresh(0);
+     if (s_count == 0) {
+@@ -189,7 +198,14 @@ struct Message *GetMsg(struct MsgPort *port)
+ 
+ void ReplyMsg(struct Message *msg)
+ {
++#ifdef COK_AUDIO
++    if (msg != NULL && msg->mn_ReplyPort != NULL &&
++        msg->mn_ReplyPort != &s_port) {
++        host_port_put(msg->mn_ReplyPort, msg);
++    }
++#else
+     (void)msg;
++#endif
+ }
+ 
+ struct Message *WaitPort(struct MsgPort *port)
+diff --git a/src_c/readable/host/ndk.h b/src_c/readable/host/ndk.h
+index 36daed8..a3a5139 100644
+--- a/src_c/readable/host/ndk.h
++++ b/src_c/readable/host/ndk.h
+@@ -47,14 +47,78 @@ struct Library {
+     UWORD lib_Version;
+ };
+ 
++struct Node {
++    struct Node *ln_Succ;
++    struct Node *ln_Pred;
++    UBYTE ln_Type;
++    BYTE ln_Pri;
++    char *ln_Name;
++};
++
++struct List {
++    struct Node *lh_Head;
++    struct Node *lh_Tail;
++    struct Node *lh_TailPred;
++    UBYTE lh_Type;
++    UBYTE l_pad;
++};
++
+ struct Message {
++    struct Node mn_Node;
+     struct MsgPort *mn_ReplyPort;
++    UWORD mn_Length;
+ };
+ 
+ struct MsgPort {
++    struct Node mp_Node;
++    UBYTE mp_Flags;
+     UBYTE mp_SigBit;
++    void *mp_SigTask;
++    struct List mp_MsgList;
++};
++
++/* Device e richieste di I/O (usati dall'audio, COK_AUDIO). */
++struct Device {
++    struct Library dd_Library;
++};
++
++struct Unit;
++
++struct IORequest {
++    struct Message io_Message;
++    struct Device *io_Device;
++    struct Unit *io_Unit;
++    UWORD io_Command;
++    UBYTE io_Flags;
++    BYTE io_Error;
++};
++
++struct IOAudio {
++    struct IORequest ioa_Request;
++    WORD ioa_AllocKey;
++    UBYTE *ioa_Data;
++    ULONG ioa_Length;
++    UWORD ioa_Period;
++    UWORD ioa_Volume;
++    UWORD ioa_Cycles;
++    struct Message ioa_WriteMsg;
+ };
+ 
++struct Interrupt {
++    struct Node is_Node;
++    APTR is_Data;
++    void (*is_Code)(void);
++};
++
++BYTE OpenDevice(STRPTR name, ULONG unit, struct IORequest *io, ULONG flags);
++void CloseDevice(struct IORequest *io);
++void BeginIO(struct IORequest *io);
++void AddIntServer(LONG intnum, struct Interrupt *interrupt);
++void RemIntServer(LONG intnum, struct Interrupt *interrupt);
++void Cause(struct Interrupt *interrupt);
++void Disable(void);
++void Enable(void);
++
+ struct Task    *FindTask(STRPTR name);
+ struct Message *GetMsg(struct MsgPort *port);
+ void            ReplyMsg(struct Message *msg);
+diff --git a/src_c/readable/smakefile b/src_c/readable/smakefile
+index b0ef62a..aec0e2b 100644
+--- a/src_c/readable/smakefile
++++ b/src_c/readable/smakefile
+@@ -1,6 +1,8 @@
+ # Champions of Krynn - port asm -> C, build AmigaOS con SAS/C 6.x.
+ #
+-#   smake          compila cok
++#   smake          compila cok senza audio (i comandi audio si saltano)
++#   smake AUDIO    compila cok con l'audio (DEFINE=COK_AUDIO: H043, H094 e
++#                  i loro adattatori Exec, oggetti *_a.o separati)
+ #   smake clean    rimuove oggetti ed eseguibile
+ #
+ # Richiede gli header NDK (INCLUDE:) e LIB:c.o, LIB:sc.lib, LIB:amiga.lib.
+@@ -16,17 +18,43 @@ OBJS = globals.o h000_entry.o h001_main.o h002_dos.o h003_exec.o \
+        h018_libs.o h019.o h020_io.o h021_intuition.o h022_view.o \
+        h023_shared.o h024_screen.o h025_window.o h026_string.o h027.o \
+        h028_files.o h029_gfx.o h030.o h031.o h032.o h033.o h034.o h035.o \
+-       h036.o h037.o h038.o h039.o h040.o h041.o h042_seq.o h043_audio.o \
++       h036.o h037.o h038.o h039.o h040.o h041.o h042_seq.o \
+        h044_tiles.o h045.o h046.o h047.o h048.o h049.o h050.o h051.o \
+        h052.o h053.o h054.o h055.o h056.o h057.o h058.o h059.o h060.o \
+        h061.o h062.o h063.o h064.o h065.o h066.o h067.o h068.o h069.o \
+        h070.o h071.o h072.o h073.o h074_path.o h075_file.o h076.o h077.o \
+-       h078.o h079.o h080.o h081.o h082.o h083.o h084.o h085.o h086.o \
+-       h087.o h088.o h089.o h090.o h091.o h092.o h093.o h094.o h095.o \
+-       h096.o h097.o h098.o h099.o h100_custom.o init_data.o unported.o
++       h078.o h080.o h081.o h082.o h083.o h084.o h085.o h086.o \
++       h087.o h088.o h089.o h091.o h093.o h095.o \
++       h096.o h097.o h098.o h099.o h100_custom.o init_data.o
+ 
+-$(TARGET): $(OBJS)
+-	slink LIB:c.o $(OBJS) TO $(TARGET) LIB LIB:sc.lib LIB:amiga.lib NOICONS
++# Moduli che cambiano con COK_AUDIO: senza audio e con audio.
++NOAUDIO_OBJS = h043_audio.o h079.o h090.o h092.o h094.o unported.o
++AUDIO_OBJS   = h043_audio_a.o h079_a.o h090_a.o h092_a.o h094_a.o \
++               unported_a.o
++
++$(TARGET): $(OBJS) $(NOAUDIO_OBJS)
++	slink LIB:c.o $(OBJS) $(NOAUDIO_OBJS) TO $(TARGET) LIB LIB:sc.lib LIB:amiga.lib NOICONS
++
++AUDIO: $(OBJS) $(AUDIO_OBJS)
++	slink LIB:c.o $(OBJS) $(AUDIO_OBJS) TO $(TARGET) LIB LIB:sc.lib LIB:amiga.lib NOICONS
++
++h043_audio_a.o: h043_audio.c
++	$(CC) $(CFLAGS) DEFINE=COK_AUDIO OBJNAME=h043_audio_a.o h043_audio.c
++
++h079_a.o: h079.c
++	$(CC) $(CFLAGS) DEFINE=COK_AUDIO OBJNAME=h079_a.o h079.c
++
++h090_a.o: h090.c
++	$(CC) $(CFLAGS) DEFINE=COK_AUDIO OBJNAME=h090_a.o h090.c
++
++h092_a.o: h092.c
++	$(CC) $(CFLAGS) DEFINE=COK_AUDIO OBJNAME=h092_a.o h092.c
++
++h094_a.o: h094.c
++	$(CC) $(CFLAGS) DEFINE=COK_AUDIO OBJNAME=h094_a.o h094.c
++
++unported_a.o: unported.c
++	$(CC) $(CFLAGS) DEFINE=COK_AUDIO OBJNAME=unported_a.o unported.c
+ 
+ .c.o:
+ 	$(CC) $(CFLAGS) $<
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index 68416a1..4eb62fc 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -36,12 +36,18 @@ void cok_unported(const char *where)
+ /* Chiamate da H006+$01AE. */
+ 
+ /* Gestori delle tabelle H005+$25C0 e H005+$2832 (H027+$4276, H033+$1A50). */
+-/* Audio (H043): non ancora portato; saltato per far proseguire il gioco. */
++/*
++ * Audio (H043/H094): portato in h043_audio.c e h094.c ma compilato solo
++ * con COK_AUDIO (smake AUDIO, make AUDIO=1); senza, i comandi audio si
++ * saltano per far proseguire il gioco.
++ */
++#ifndef COK_AUDIO
+ static const char s_h043_0584[] = "H043+$0584";
+ static const char s_h043_190e[] = "H043+$190E";
+ void h043_0584(void) { cok_unported_skip(s_h043_0584); }
+ void h043_190e(u16 command) { (void)command; cok_unported_skip(s_h043_190e); }
+ void h043_0840(void) { cok_unported_skip("H043+$0840"); }
++#endif
+ 
+ 
+ 
+-- 
+2.43.0
+

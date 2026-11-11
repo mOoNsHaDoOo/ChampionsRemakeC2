@@ -1,0 +1,1076 @@
+From d992ff7b89ff3c5b514116543456c0ec2c66006a Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 14:47:18 +0000
+Subject: [PATCH 03/65] Port H006+$01AE (Initialize_GameEnvironment) and its
+ leaf services
+
+Ports the game environment setup called from main, plus the DOS
+adapters Open/Close/Read/Seek/Execute, intuition CurrentTime, the H026
+case-insensitive string compare ($003A, $0088, $0106), the H029 byte
+fill ($0312), the H031 word swap ($0012) and the H028 file check
+($02D0). Pointers held in H005 become C variables. The program now
+stops at H029+$1206, the screen and window setup.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md   |  60 ++++-----
+ src_c/readable/globals.c        |  16 +++
+ src_c/readable/globals.h        |  23 ++++
+ src_c/readable/h001_main.c      |   3 +-
+ src_c/readable/h002_dos.c       | 118 +++++++++++++++-
+ src_c/readable/h002_dos.h       |  13 +-
+ src_c/readable/h006.c           | 232 +++++++++++++++++++++++++++++++-
+ src_c/readable/h006.h           |   7 +
+ src_c/readable/h021_intuition.c |  20 ++-
+ src_c/readable/h021_intuition.h |   9 ++
+ src_c/readable/h026_string.c    |  90 ++++++++++++-
+ src_c/readable/h026_string.h    |  13 ++
+ src_c/readable/h028_files.c     |  22 ++-
+ src_c/readable/h028_files.h     |   9 ++
+ src_c/readable/h029_gfx.c       |  22 ++-
+ src_c/readable/h029_gfx.h       |   9 ++
+ src_c/readable/h031.c           |  15 ++-
+ src_c/readable/h031.h           |   9 ++
+ src_c/readable/unported.c       |  15 ++-
+ src_c/readable/unported.h       |  17 ++-
+ 20 files changed, 676 insertions(+), 46 deletions(-)
+ create mode 100644 src_c/readable/h006.h
+ create mode 100644 src_c/readable/h021_intuition.h
+ create mode 100644 src_c/readable/h026_string.h
+ create mode 100644 src_c/readable/h028_files.h
+ create mode 100644 src_c/readable/h029_gfx.h
+ create mode 100644 src_c/readable/h031.h
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index dc35ef3..7cac69b 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,17 +2,17 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **112 / 910**.
++Routine portate: **125 / 910**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+ | H000 | 600 | 1 | 1 |
+ | H001 | 664 | 2 | 2 |
+-| H002 | 572 | 15 | 4 |
++| H002 | 572 | 15 | 9 |
+ | H003 | 316 | 5 | 3 |
+ | H004 | 24284 | 2 | 2 |
+ | H005 | 21276 | 1 | 1 |
+-| H006 | 3020 | 4 | 1 |
++| H006 | 3020 | 4 | 2 |
+ | H007 | 3036 | 10 | 1 |
+ | H008 | 8660 | 21 | 1 |
+ | H009 | 988 | 3 | 1 |
+@@ -27,17 +27,17 @@ Routine portate: **112 / 910**.
+ | H018 | 192 | 3 | 1 |
+ | H019 | 240 | 1 | 1 |
+ | H020 | 2884 | 6 | 1 |
+-| H021 | 1632 | 14 | 1 |
++| H021 | 1632 | 14 | 2 |
+ | H022 | 328 | 10 | 1 |
+ | H023 | 140 | 2 | 1 |
+ | H024 | 268 | 2 | 1 |
+ | H025 | 264 | 2 | 1 |
+-| H026 | 1452 | 11 | 1 |
++| H026 | 1452 | 11 | 4 |
+ | H027 | 18156 | 10 | 1 |
+-| H028 | 4488 | 16 | 1 |
+-| H029 | 6084 | 32 | 1 |
++| H028 | 4488 | 16 | 2 |
++| H029 | 6084 | 32 | 2 |
+ | H030 | 3240 | 17 | 1 |
+-| H031 | 212 | 4 | 1 |
++| H031 | 212 | 4 | 2 |
+ | H032 | 9352 | 1 | 1 |
+ | H033 | 8140 | 15 | 1 |
+ | H034 | 472 | 3 | 1 |
+@@ -120,28 +120,28 @@ Routine portate: **112 / 910**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0058` | `Game_Main` | verificato | h001_main.c:60 |
+-| `$0066` | `Select_DataPrefix` | verificato | h001_main.c:27 |
++| `$0058` | `Game_Main` | verificato | h001_main.c:61 |
++| `$0066` | `Select_DataPrefix` | verificato | h001_main.c:28 |
+ 
+ ### H002
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0008` | `sub_H002_00000008` | parziale | h002_dos.c:12 |
+-| `$0014` | `wrapper_Close` | parziale |  |
++| `$0008` | `sub_H002_00000008` | parziale | h002_dos.c:16 |
++| `$0014` | `wrapper_Close` | parziale | h002_dos.c:87 |
+ | `$0026` | `wrapper_CreateDir` | parziale |  |
+ | `$004A` | `wrapper_DeleteFile` | parziale |  |
+ | `$0070` | `wrapper_Examine` | parziale |  |
+ | `$0088` | `wrapper_ExNext` | parziale |  |
+-| `$00A0` | `wrapper_Info` | parziale | h002_dos.c:42 |
++| `$00A0` | `wrapper_Info` | parziale | h002_dos.c:56 |
+ | `$00C0` | `wrapper_IoErr` | parziale |  |
+-| `$00DC` | `wrapper_Lock` | parziale | h002_dos.c:20 |
+-| `$00F2` | `wrapper_Open` | parziale |  |
+-| `$0122` | `wrapper_Read` | parziale |  |
+-| `$0156` | `wrapper_Seek` | parziale |  |
+-| `$01A2` | `wrapper_UnLock` | parziale | h002_dos.c:32 |
++| `$00DC` | `wrapper_Lock` | parziale | h002_dos.c:24 |
++| `$00F2` | `wrapper_Open` | parziale | h002_dos.c:102 |
++| `$0122` | `wrapper_Read` | parziale | h002_dos.c:125 |
++| `$0156` | `wrapper_Seek` | parziale | h002_dos.c:137 |
++| `$01A2` | `wrapper_UnLock` | parziale | h002_dos.c:46 |
+ | `$01CC` | `wrapper_Write` | parziale |  |
+-| `$01E8` | `wrapper_Execute` | parziale |  |
++| `$01E8` | `wrapper_Execute` | parziale | h002_dos.c:155 |
+ 
+ ### H003
+ 
+@@ -170,9 +170,9 @@ Routine portate: **112 / 910**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$00EC` | `module_init_H006` | parziale | h006.c:4 |
++| `$00EC` | `module_init_H006` | parziale | h006.c:28 |
+ | `$00FA` | `sub_H006_000000FA` | parziale |  |
+-| `$01AE` | `Initialize_GameEnvironment` | verificato |  |
++| `$01AE` | `Initialize_GameEnvironment` | verificato | h006.c:69 |
+ | `$0914` | `sub_H006_00000914` | parziale |  |
+ 
+ ### H007
+@@ -362,7 +362,7 @@ Routine portate: **112 / 910**.
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+ | `$0008` | `sub_H021_00000008` | parziale | h021_intuition.c:4 |
+-| `$0030` | `wrapper_CurrentTime` | parziale |  |
++| `$0030` | `wrapper_CurrentTime` | parziale | h021_intuition.c:15 |
+ | `$010C` | `wrapper_CloseScreen` | parziale |  |
+ | `$011E` | `wrapper_CloseWorkBench` | parziale |  |
+ | `$0184` | `wrapper_OpenScreen` | parziale |  |
+@@ -416,11 +416,11 @@ Routine portate: **112 / 910**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0004` | `trampoline_H026_05A6` | parziale | h026_string.c:4 |
++| `$0004` | `trampoline_H026_05A6` | parziale | h026_string.c:5 |
+ | `$000C` | `trampoline_H026_0014` | parziale |  |
+-| `$003A` | `sub_H026_0000003A` | parziale |  |
+-| `$0088` | `sub_H026_00000088` | parziale |  |
+-| `$0106` | `sub_H026_00000106` | parziale |  |
++| `$003A` | `sub_H026_0000003A` | parziale | h026_string.c:11 |
++| `$0088` | `sub_H026_00000088` | parziale | h026_string.c:30 |
++| `$0106` | `sub_H026_00000106` | parziale | h026_string.c:77 |
+ | `$0188` | `sub_H026_00000188` | parziale |  |
+ | `$01E0` | `sub_H026_000001E0` | parziale |  |
+ | `$0254` | `sub_H026_00000254` | parziale |  |
+@@ -447,9 +447,9 @@ Routine portate: **112 / 910**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$01B8` | `module_init_H028` | parziale | h028_files.c:8 |
++| `$01B8` | `module_init_H028` | parziale | h028_files.c:9 |
+ | `$01C6` | `Open_WithRetry` | parziale |  |
+-| `$02D0` | `sub_H028_000002D0` | parziale |  |
++| `$02D0` | `sub_H028_000002D0` | parziale | h028_files.c:18 |
+ | `$033E` | `sub_H028_0000033E` | parziale |  |
+ | `$0408` | `sub_H028_00000408` | parziale |  |
+ | `$0576` | `sub_H028_00000576` | parziale |  |
+@@ -472,7 +472,7 @@ Routine portate: **112 / 910**.
+ | `$0180` | `sub_H029_00000180` | parziale |  |
+ | `$01B6` | `sub_H029_000001B6` | parziale |  |
+ | `$0234` | `sub_H029_00000234` | parziale |  |
+-| `$0312` | `sub_H029_00000312` | parziale |  |
++| `$0312` | `sub_H029_00000312` | parziale | h029_gfx.c:28 |
+ | `$0354` | `trampoline_H029_036C` | parziale |  |
+ | `$0376` | `trampoline_H029_0390` | parziale |  |
+ | `$039A` | `trampoline_H029_03B2` | parziale |  |
+@@ -528,7 +528,7 @@ Routine portate: **112 / 910**.
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+ | `$0004` | `module_init_H031` | parziale | h031.c:4 |
+-| `$0012` | `sub_H031_00000012` | parziale |  |
++| `$0012` | `sub_H031_00000012` | parziale | h031.c:10 |
+ | `$003E` | `sub_H031_0000003E` | parziale |  |
+ | `$008A` | `sub_H031_0000008A` | parziale |  |
+ 
+diff --git a/src_c/readable/globals.c b/src_c/readable/globals.c
+index 81dd4e9..b73006c 100644
+--- a/src_c/readable/globals.c
++++ b/src_c/readable/globals.c
+@@ -3,3 +3,19 @@
+ 
+ u8  g_h005[H005_SIZE];
+ u16 g_distribution_check;
++
++u8 *g_state_a;
++u8 *g_state_b;
++u8 *g_state_c;
++u8 *g_ecl_buffer;
++u8 *g_h005_282e;
++u8 *g_geo_planes;
++struct GfxRecord *g_gfx_332c;
++struct GfxRecord *g_gfx_3334;
++struct GfxRecord *g_gfx_3348;
++struct GfxRecord *g_gfx_3d8a;
++struct GfxRecord *g_gfx_sky_2804;
++struct GfxRecord *g_gfx_sky_2808;
++struct GfxRecord *g_gfx_sky_280c;
++void *g_party_head;
++void *g_current_char;
+diff --git a/src_c/readable/globals.h b/src_c/readable/globals.h
+index cb77a20..4ce0980 100644
+--- a/src_c/readable/globals.h
++++ b/src_c/readable/globals.h
+@@ -34,6 +34,29 @@ extern u8 g_h005[H005_SIZE];
+ #define G_DATA_PREFIX      ((char *)&g_h005[0x3D26]) /* "df0:" o "", $51 byte */
+ #define G_PROMPT_KEY       H005_B(0x52FB)  /* tasto al termine dell'attesa */
+ 
++/*
++ * Puntatori tenuti in H005 (long nell'originale): variabili C, perche' sul
++ * host un puntatore non sta in 32 bit.  Le celle corrispondenti di g_h005
++ * restano inutilizzate.
++ */
++struct GfxRecord;                       /* record grafico di H029 (20 byte) */
++
++extern u8 *g_state_a;                   /* $3E04: stato persistente A, $800 */
++extern u8 *g_state_b;                   /* $3E00: stato persistente B, $800 */
++extern u8 *g_state_c;                   /* $3DFC: stato persistente C, $400 */
++extern u8 *g_ecl_buffer;                /* $3DF8: programma ECL, $1E00 */
++extern u8 *g_h005_282e;                 /* $282E: blocco di $924 byte */
++extern u8 *g_geo_planes;                /* $282A: quattro piani dati GEO, $400 */
++extern struct GfxRecord *g_gfx_332c;    /* $332C */
++extern struct GfxRecord *g_gfx_3334;    /* $3334 */
++extern struct GfxRecord *g_gfx_3348;    /* $3348 */
++extern struct GfxRecord *g_gfx_3d8a;    /* $3D8A */
++extern struct GfxRecord *g_gfx_sky_2804; /* $2804: "sky" $FC */
++extern struct GfxRecord *g_gfx_sky_2808; /* $2808: "sky" $FB */
++extern struct GfxRecord *g_gfx_sky_280c; /* $280C: "sky" $FA */
++extern void *g_party_head;              /* $3364: testa della lista del party */
++extern void *g_current_char;            /* $3368: personaggio corrente */
++
+ /* Dati di altri moduli. */
+ extern u16 g_distribution_check;   /* H009+$0000: $3F8F dopo la verifica */
+ 
+diff --git a/src_c/readable/h001_main.c b/src_c/readable/h001_main.c
+index 9ff677a..30c9fea 100644
+--- a/src_c/readable/h001_main.c
++++ b/src_c/readable/h001_main.c
+@@ -14,6 +14,7 @@
+ #include "h002_dos.h"
+ #include "h003_exec.h"
+ #include "h004_init.h"
++#include "h006.h"
+ #include "globals.h"
+ #include "unported.h"
+ 
+@@ -62,7 +63,7 @@ void game_main(void)
+ {
+     h004_0c28();
+     select_data_prefix();
+-    h006_01ae();
++    init_game_environment();
+     h007_09d8();
+     ask_play_or_demo(3000);
+ 
+diff --git a/src_c/readable/h002_dos.c b/src_c/readable/h002_dos.c
+index 920c935..87fae7d 100644
+--- a/src_c/readable/h002_dos.c
++++ b/src_c/readable/h002_dos.c
+@@ -8,6 +8,10 @@
+  */
+ #include "h002_dos.h"
+ 
++#if !COK_AMIGA
++#include <stdio.h>
++#endif
++
+ /*
+  * PORT H002+$0008: inizializzazione del modulo.  Copia DOSBase (-$8(a4)
+  * di H001) nella cella H002+$0000 usata dagli adattatori; in C la base
+@@ -23,9 +27,19 @@ cok_bptr dos_lock(const char *name, s32 mode)
+ #if COK_AMIGA
+     return Lock((STRPTR)name, mode);
+ #else
+-    (void)name;
++    FILE *f;
++
+     (void)mode;
+-    return 1;                   /* host: la directory corrente esiste */
++    /* Host: "" e' la directory corrente; altrimenti il file deve esistere. */
++    if (name[0] == 0) {
++        return 1;
++    }
++    f = fopen(name, "rb");
++    if (f == NULL) {
++        return 0;
++    }
++    fclose(f);
++    return 1;
+ #endif
+ }
+ 
+@@ -54,3 +68,103 @@ u8 dos_info(cok_bptr lock, cok_info_data *info)
+     return 1;
+ #endif
+ }
++
++#if !COK_AMIGA
++
++/*
++ * Host: i file handle di AmigaDOS sono indici (da 1) in questa tabella di
++ * FILE *.  0 resta "nessun file", come il BPTR nullo restituito da Open.
++ */
++#define HOST_FILES 16
++static FILE *s_files[HOST_FILES];
++
++static FILE *host_file(cok_bptr file)
++{
++    return file >= 1 && file <= HOST_FILES ? s_files[file - 1] : NULL;
++}
++#endif
++
++/* PORT H002+$0014 */
++void dos_close(cok_bptr file)
++{
++#if COK_AMIGA
++    Close(file);
++#else
++    FILE *f = host_file(file);
++
++    if (f != NULL) {
++        fclose(f);
++        s_files[file - 1] = NULL;
++    }
++#endif
++}
++
++/* PORT H002+$00F2 */
++cok_bptr dos_open(const char *name, s32 mode)
++{
++#if COK_AMIGA
++    return Open((STRPTR)name, mode);
++#else
++    const char *how = mode == MODE_NEWFILE ? "w+b" :
++                      mode == MODE_READWRITE ? "r+b" : "rb";
++    int i;
++
++    for (i = 0; i < HOST_FILES; ++i) {
++        if (s_files[i] == NULL) {
++            s_files[i] = fopen(name, how);
++            if (s_files[i] == NULL && mode == MODE_READWRITE) {
++                s_files[i] = fopen(name, "w+b");  /* MODE_READWRITE crea */
++            }
++            return s_files[i] != NULL ? i + 1 : 0;
++        }
++    }
++    return 0;
++#endif
++}
++
++/* PORT H002+$0122 */
++s32 dos_read(cok_bptr file, void *buf, s32 len)
++{
++#if COK_AMIGA
++    return Read(file, buf, len);
++#else
++    FILE *f = host_file(file);
++
++    return f != NULL ? (s32)fread(buf, 1, (size_t)len, f) : -1;
++#endif
++}
++
++/* PORT H002+$0156: restituisce la posizione precedente, come Seek. */
++s32 dos_seek(cok_bptr file, s32 pos, s32 mode)
++{
++#if COK_AMIGA
++    return Seek(file, pos, mode);
++#else
++    FILE *f = host_file(file);
++    long old;
++    int whence = mode == OFFSET_BEGINNING ? SEEK_SET :
++                 mode == OFFSET_END ? SEEK_END : SEEK_CUR;
++
++    if (f == NULL || (old = ftell(f)) < 0 || fseek(f, pos, whence) != 0) {
++        return -1;
++    }
++    return (s32)old;
++#endif
++}
++
++/* PORT H002+$01E8: Execute, poi neg.b d0. */
++u8 dos_execute(const char *cmd, cok_bptr in, cok_bptr out)
++{
++#if COK_AMIGA
++    return (u8)(-(s8)Execute((STRPTR)cmd, in, out));
++#else
++    /*
++     * Host: i comandi del gioco sono solo Assign dei nomi dei dischi, che
++     * non hanno equivalente; si riporta successo senza eseguire nulla.
++     */
++    (void)cmd;
++    (void)in;
++    (void)out;
++    return 1;
++#endif
++}
+diff --git a/src_c/readable/h002_dos.h b/src_c/readable/h002_dos.h
+index 0e62716..bcb887b 100644
+--- a/src_c/readable/h002_dos.h
++++ b/src_c/readable/h002_dos.h
+@@ -12,11 +12,22 @@ typedef s32 cok_bptr;
+ typedef struct cok_info_data {
+     s32 id_NumBlocks;          /* $0C nell'InfoData di AmigaDOS */
+ } cok_info_data;
+-#define ACCESS_READ (-2)
++#define ACCESS_READ      (-2)
++#define MODE_OLDFILE     1005
++#define MODE_NEWFILE     1006
++#define MODE_READWRITE   1004
++#define OFFSET_BEGINNING (-1)
++#define OFFSET_CURRENT   0
++#define OFFSET_END       1
+ #endif
+ 
+ cok_bptr dos_lock(const char *name, s32 mode);   /* H002+$00DC */
+ void     dos_unlock(cok_bptr lock);               /* H002+$01A2 */
+ u8       dos_info(cok_bptr lock, cok_info_data *info);  /* H002+$00A0 */
++void     dos_close(cok_bptr file);                /* H002+$0014 */
++cok_bptr dos_open(const char *name, s32 mode);    /* H002+$00F2 */
++s32      dos_read(cok_bptr file, void *buf, s32 len);   /* H002+$0122 */
++s32      dos_seek(cok_bptr file, s32 pos, s32 mode);    /* H002+$0156 */
++u8       dos_execute(const char *cmd, cok_bptr in, cok_bptr out); /* H002+$01E8 */
+ 
+ #endif
+diff --git a/src_c/readable/h006.c b/src_c/readable/h006.c
+index 7b2871c..020f652 100644
+--- a/src_c/readable/h006.c
++++ b/src_c/readable/h006.c
+@@ -1,7 +1,235 @@
+-/* H006: Preparazione ambiente, percorsi, stato e risorse comuni. */
+-#include "cok.h"
++/*
++ * H006: preparazione dell'ambiente, percorsi, stato e risorse comuni.
++ *
++ * Dati del modulo (a4 = H006+$40):
++ *   +$07 "df0:"       +$0C "df0:Save"    +$15 "Save"
++ *   +$1A/$30/$46      Assign "Disk One:" / "Disk Two:" / "Disk Three:" ""
++ *   +$5E "NormIsKing" +$69 ""  +$6B ""   +$6D "Loading...Please Wait"
++ *   +$83/$8A "COMSPR" +$91/$95/$99 "sky" +$9D "ITEMS"
++ *   -$2  word, contatore dei cicli (dato del modulo, non locale)
++ *   -$40 long, secondi di CurrentTime
++ */
++#include "h006.h"
++#include "h002_dos.h"
++#include "h003_exec.h"
++#include "h021_intuition.h"
++#include "h026_string.h"
++#include "h028_files.h"
++#include "h029_gfx.h"
++#include "h031.h"
++#include "globals.h"
++#include "unported.h"
++
++static u16 s_i;                         /* -$2(a4) */
++static u32 s_time_seconds;              /* -$40(a4) */
++
++extern u32 g_h023_0000;                 /* H023+$0000: microsecondi */
+ 
+ /* PORT H006+$00EC: link/unlk, nessun effetto. */
+ void h006_init(void)
+ {
+ }
++
++/* move.b (a3)+,(a2)+ / dbeq dn: al massimo limit+1 byte, NUL compreso. */
++static void copy_dbeq(char *dst, const char *src, unsigned limit)
++{
++    unsigned i;
++
++    for (i = 0; i <= limit; ++i) {
++        dst[i] = src[i];
++        if (src[i] == 0) {
++            break;
++        }
++    }
++}
++
++/* Legge i 129 record da $12 byte del file ITEMS in H005+$336C. */
++static void load_items_table(void)
++{
++    cok_bptr file;
++
++    file = dos_open("ITEMS", MODE_OLDFILE);
++    if (file == 0) {
++        return;
++    }
++    (void)dos_seek(file, 2, OFFSET_BEGINNING);
++    for (s_i = 0; s_i <= 0x80; ++s_i) {
++        u8 *rec = &g_h005[0x336C + (u32)s_i * 0x12];
++
++        (void)dos_read(file, rec, 5);
++        h031_swap_word(rec + 4);
++        (void)dos_read(file, rec + 6, 7);
++        h031_swap_word(rec + 0x0C);
++        (void)dos_read(file, rec + 0x0E, 4);
++    }
++    dos_close(file);
++}
++
++/*
++ * PORT H006+$01AE (Initialize_GameEnvironment): percorso del salvataggio e
++ * assegnazioni dei dischi, blocchi di stato, record grafici, azzeramento
++ * dello stato di gioco, risorse comuni e tabella degli oggetti.
++ */
++void init_game_environment(void)
++{
++    G_RESOURCE_GROUP = 0;
++
++    /* Percorso del salvataggio ($3CD4, dbeq con $50). */
++    if (h026_compare_nocase(0x50, G_DATA_PREFIX, 4, "df0:") == 1) {
++        copy_dbeq((char *)&g_h005[0x3CD4], "df0:Save", 0x50);
++    } else {
++        copy_dbeq((char *)&g_h005[0x3CD4], "Save", 0x50);
++        (void)dos_execute("Assign \"Disk One:\" \"\"", 0, 0);
++        (void)dos_execute("Assign \"Disk Two:\" \"\"", 0, 0);
++        (void)dos_execute("Assign \"Disk Three:\" \"\"", 0, 0);
++    }
++
++    if (file_exists(0x0A, "NormIsKing") == 0) {
++        intuition_current_time(&s_time_seconds, &g_h023_0000);
++    }
++    h029_1206();
++
++    H005_B(0x24A2) = 1;
++    H005_B(0x2489) = 0;
++    H005_SET_W(0x2356, 0xA0);           /* mouse X */
++    H005_SET_W(0x2354, 0x64);           /* mouse Y */
++    H005_SET_W(0x2352, 0);
++    H005_SET_W(0x2350, 0);
++
++    g_state_a = (u8 *)exec_alloc_mem(0x800, COK_MEMF_CLEAR);
++    g_state_b = (u8 *)exec_alloc_mem(0x800, COK_MEMF_CLEAR);
++    g_state_c = (u8 *)exec_alloc_mem(0x400, COK_MEMF_CLEAR);
++    g_ecl_buffer = (u8 *)exec_alloc_mem(0x1E00, COK_MEMF_CLEAR);
++    g_h005_282e = (u8 *)exec_alloc_mem(0x924, COK_MEMF_CLEAR);
++    g_geo_planes = (u8 *)exec_alloc_mem(0x400, COK_MEMF_CLEAR);
++
++    h029_0408(8, 1, 1, 0, &g_gfx_3334);
++    h029_0408(0x30, 3, 1, 0, &g_gfx_3d8a);
++    h029_0408(0x18, 3, 0x28, 1, &g_gfx_332c);
++    H005_SET_L(0x3D8E, 0);
++    h029_1346();
++
++    COK_PUT16(g_state_a + 0x3E8, 3);
++    COK_PUT16(g_state_a + 0x1CC, 1);
++    COK_PUT16(g_state_a + 0x1E4, 0);
++    COK_PUT16(g_state_a + 0x3F2, 2);
++    COK_PUT16(g_state_a + 0x3F4, 2);
++    COK_PUT16(g_state_a + 0x3F6, 2);
++
++    /* H006+$03E8: 29 coppie di long a $3244. */
++    for (s_i = 0; s_i <= 0x1C; ++s_i) {
++        H005_SET_L(0x3244 + s_i * 8, 0);
++        H005_SET_L(0x3244 + s_i * 8 + 4, 0);
++    }
++    /* H006+$041C: due voci da 6 byte a $27B0. */
++    for (s_i = 1; s_i <= 2; ++s_i) {
++        H005_B(0x27B0 + (s_i - 1) * 6) = 0xFF;
++        H005_SET_L(0x27B0 + (s_i - 1) * 6 + 2, 0);
++    }
++    H005_SET_L(0x27C2, 0);
++    H005_SET_L(0x27C6, 0);
++    /* H006+$0468 */
++    for (s_i = 2; s_i <= 8; ++s_i) {
++        H005_SET_W(0x27DA + (s_i - 2) * 2, 0);
++        H005_SET_L(0x27E8 + (s_i - 2) * 4, 0);
++    }
++    H005_SET_W(0x27BC, 0);
++    H005_SET_L(0x2798, 0);
++    H005_SET_L(0x2A3A, 0);
++
++    h029_fill_bytes(7, &g_h005[0x281C], 7, 0);
++    H005_SET_W(0x281C, 7);
++    H005_SET_W(0x281E, 0x0D);
++    H005_B(0x2820) = 0;
++    h029_fill_bytes(2, &g_h005[0x24E4], 3, 1);
++
++    /* H006+$04F8: stato dei tre insiemi di pareti. */
++    H005_SET_W(0x2810, 0);
++    H005_SET_W(0x2812, 1);
++    for (s_i = 2; s_i <= 3; ++s_i) {
++        H005_SET_W(0x2810 + (s_i - 1) * 4, 0xFFFF);
++        H005_SET_W(0x2810 + (s_i - 1) * 4 + 2, 0xFFFF);
++    }
++
++    H005_B(0x24D4) = 1;
++    H005_B(0x24D5) = 1;
++    H005_B(0x24D2) = 0;
++    H005_B(0x24CE) = 1;
++    H005_B(0x24D1) = 0;
++    H005_SET_W(0x3DDE, 0);
++    g_party_head = NULL;
++    g_current_char = NULL;
++    H005_SET_W(0x3DEA, 0x3500);         /* PC logico ECL */
++    H005_SET_W(0x3DF6, 4);
++    G_DEMO_FLAG = 0;
++    H005_B(0x246D) = 1;
++    H005_B(0x2825) = 0;
++    COK_PUT16(g_state_b + 0x67C, 0);
++    H005_SET_W(0x2796, 1);
++    H005_B(0x24C1) = 0;
++    H005_B(0x24E2) = 0;
++    H005_B(0x2497) = 0;
++    H005_B(0x24BF) = 0;
++    H005_B(0x24BE) = 0;
++    H005_B(0x24BD) = 0;
++    H005_B(0x24D0) = 0;
++    H005_B(0x24A6) = 1;
++    H005_B(0x24BA) = 0;
++    H005_B(0x24A4) = 0;
++    copy_dbeq((char *)&g_h005[0x27A6], "", 8);
++    copy_dbeq((char *)&g_h005[0x279C], "", 8);
++    H005_B(0x2486) = 0xFF;
++    H005_B(0x2485) = 0xFF;
++    H005_B(0x24A3) = 0;
++    H005_B(0x247E) = 0xE8;
++    H005_B(0x247F) = 0xDB;
++    H005_B(0x24B4) = 0;
++    H005_B(0x24D8) = 0;
++    H005_B(0x24C6) = 1;
++    H005_B(0x2484) = 0xFF;
++    H005_B(0x24AD) = 0;
++    H005_B(0x24CF) = 0;
++    H005_B(0x2483) = 1;
++    H005_B(0x3DE3) = 4;                 /* contesto nativo */
++    H005_B(0x3DE2) = 0;
++    H005_B(0x24A7) = 1;
++    H005_B(0x24E0) = 0;
++    H005_B(0x24AE) = 0;
++    g_gfx_sky_280c = NULL;
++    g_gfx_sky_2808 = NULL;
++    g_gfx_sky_2804 = NULL;
++    H005_SET_L(0x3360, 0);
++    H005_B(0x24B1) = 0;
++    H005_B(0x24CB) = 0;
++    H005_B(0x24CC) = 0;
++    H005_B(0x24B0) = 0;
++    H005_B(0x249E) = 0;
++    H005_B(0x24DA) = 0;
++
++    h029_fill_bytes(0x4F, &g_h005[0x16], 0x50, 0);
++    H005_SET_W(0x14, 0);
++    h030_0c10();
++    h008_139e();
++    h030_0256(0, 0x18, 0x0A, 0, 0x15, "Loading...Please Wait");
++
++    for (s_i = 0; s_i <= 4; ++s_i) {
++        H005_SET_L(0x3338 + s_i * 4, 0);
++    }
++    h034_0032(0xCA, 4);
++    h034_0032(0xCB, 0);
++    h006_00fa();
++
++    for (s_i = 0; s_i <= 0x0B; ++s_i) {
++        h035_0246(6, "COMSPR", s_i, (u16)(s_i + 0x0D));
++    }
++    for (s_i = 0x19; s_i <= 0x1C; ++s_i) {
++        h035_0246(6, "COMSPR", s_i, s_i);
++    }
++    h029_0a0e(3, "sky", 0xFA, 1, 0, &g_gfx_sky_280c);
++    h029_0a0e(3, "sky", 0xFB, 1, 0, &g_gfx_sky_2808);
++    h029_0a0e(3, "sky", 0xFC, 1, 0x0D, &g_gfx_sky_2804);
++
++    load_items_table();
++    h027_4276();
++    h033_1a50();
++}
+diff --git a/src_c/readable/h006.h b/src_c/readable/h006.h
+new file mode 100644
+index 0000000..b0382e4
+--- /dev/null
++++ b/src_c/readable/h006.h
+@@ -0,0 +1,7 @@
++/* H006: preparazione dell'ambiente, percorsi, stato e risorse comuni. */
++#ifndef COK_H006_H
++#define COK_H006_H
++
++void init_game_environment(void);       /* H006+$01AE */
++
++#endif
+diff --git a/src_c/readable/h021_intuition.c b/src_c/readable/h021_intuition.c
+index 08b5213..3a04923 100644
+--- a/src_c/readable/h021_intuition.c
++++ b/src_c/readable/h021_intuition.c
+@@ -1,7 +1,25 @@
+ /* H021: adattatori intuition.library. */
+-#include "cok.h"
++#include "h021_intuition.h"
+ 
+ /* PORT H021+$0008: copia IntuitionBase (-$10(a4) del runtime H015). */
+ void h021_init(void)
+ {
+ }
++
++#if COK_AMIGA
++#include <proto/intuition.h>
++#else
++#include <time.h>
++#endif
++
++/* PORT H021+$0030 */
++void intuition_current_time(u32 *seconds, u32 *micros)
++{
++#if COK_AMIGA
++    CurrentTime((ULONG *)seconds, (ULONG *)micros);
++#else
++    /* Host: secondi dall'orologio di sistema, microsecondi dal clock(). */
++    *seconds = (u32)time(NULL);
++    *micros = (u32)(clock() % 1000000);
++#endif
++}
+diff --git a/src_c/readable/h021_intuition.h b/src_c/readable/h021_intuition.h
+new file mode 100644
+index 0000000..a52406f
+--- /dev/null
++++ b/src_c/readable/h021_intuition.h
+@@ -0,0 +1,9 @@
++/* H021: adattatori intuition.library. */
++#ifndef COK_H021_INTUITION_H
++#define COK_H021_INTUITION_H
++
++#include "cok.h"
++
++void intuition_current_time(u32 *seconds, u32 *micros);   /* H021+$0030 */
++
++#endif
+diff --git a/src_c/readable/h026_string.c b/src_c/readable/h026_string.c
+index 8315477..588a6f5 100644
+--- a/src_c/readable/h026_string.c
++++ b/src_c/readable/h026_string.c
+@@ -1,7 +1,95 @@
+ /* H026: funzioni su stringhe e buffer con limiti passati dai chiamanti. */
+-#include "cok.h"
++#include "h026_string.h"
++#include "h003_exec.h"
+ 
+ /* PORT H026+$0004: link/unlk, nessun effetto. */
+ void h026_init(void)
+ {
+ }
++
++/*
++ * PORT H026+$003A: porta in maiuscolo ('a'..'z' and $5F) fino al NUL.  Il
++ * limite len e' passato ma non usato.
++ */
++void h026_upcase(u16 len, char *s)
++{
++    u16 i;
++
++    (void)len;
++    for (i = 0; s[i] != 0; ++i) {
++        u8 c = (u8)s[i];
++
++        if (c >= 'a' && c <= 'z') {
++            c &= 0x5F;
++        }
++        s[i] = (char)c;
++    }
++}
++
++/*
++ * PORT H026+$0088: confronto byte per byte (senza segno) fino al NUL di a.
++ * Restituisce 1 se uguali, 2 se a > b, 0 se a < b.  I limiti non sono usati.
++ */
++u8 h026_compare(u16 len_a, const char *a, u16 len_b, const char *b)
++{
++    u16 i;
++
++    (void)len_a;
++    (void)len_b;
++    for (i = 0;; ++i) {
++        if (a[i] != b[i]) {
++            return (u8)a[i] > (u8)b[i] ? 2 : 0;
++        }
++        if (a[i] == 0) {
++            return 1;
++        }
++    }
++}
++
++/* Copia locale di H026+$0106: (len + 1) arrotondato a pari, dbra. */
++static char *copy_arg(u16 len, const char *src, u16 *size)
++{
++    u16 n = (u16)(len + 1);
++    char *copy;
++    u16 i;
++
++    if (n & 1) {
++        ++n;
++    }
++    *size = (u16)(n + 1);       /* + un NUL garantito, vedi sotto */
++    copy = (char *)exec_alloc_mem(*size, COK_MEMF_CLEAR);
++    /*
++     * L'originale copia sempre n byte dalla sorgente; qui la copia si ferma
++     * al NUL (i byte dopo non cambiano il risultato: maiuscolo e confronto
++     * si fermano al NUL) per non leggere oltre gli oggetti C; il byte in
++     * piu' azzerato termina anche una sorgente senza NUL entro n byte.
++     */
++    for (i = 0; i < n; ++i) {
++        copy[i] = src[i];
++        if (src[i] == 0) {
++            break;
++        }
++    }
++    return copy;
++}
++
++/*
++ * PORT H026+$0106: confronto senza distinzione di maiuscole.  Copia le due
++ * stringhe (nell'originale sullo stack), le porta in maiuscolo con
++ * H026+$003A e le confronta con H026+$0088.
++ */
++u8 h026_compare_nocase(u16 len_a, const char *a, u16 len_b, const char *b)
++{
++    u16 size_a;
++    u16 size_b;
++    char *ca = copy_arg(len_a, a, &size_a);
++    char *cb = copy_arg(len_b, b, &size_b);
++    u8 result;
++
++    h026_upcase(len_a, ca);
++    h026_upcase(len_b, cb);
++    result = h026_compare(len_a, ca, len_b, cb);
++    exec_free_mem(cb, size_b);
++    exec_free_mem(ca, size_a);
++    return result;
++}
+diff --git a/src_c/readable/h026_string.h b/src_c/readable/h026_string.h
+new file mode 100644
+index 0000000..812833c
+--- /dev/null
++++ b/src_c/readable/h026_string.h
+@@ -0,0 +1,13 @@
++/* H026: funzioni su stringhe e buffer con limiti passati dai chiamanti. */
++#ifndef COK_H026_STRING_H
++#define COK_H026_STRING_H
++
++#include "cok.h"
++
++void h026_upcase(u16 len, char *s);                         /* H026+$003A */
++u8   h026_compare(u16 len_a, const char *a, u16 len_b, const char *b);
++                                                            /* H026+$0088 */
++u8   h026_compare_nocase(u16 len_a, const char *a, u16 len_b,
++                         const char *b);                    /* H026+$0106 */
++
++#endif
+diff --git a/src_c/readable/h028_files.c b/src_c/readable/h028_files.c
+index 2c3c895..b6b53a6 100644
+--- a/src_c/readable/h028_files.c
++++ b/src_c/readable/h028_files.c
+@@ -1,5 +1,6 @@
+ /* H028: file, richieste disco, caricamento per ID e RLE dei DAX. */
+-#include "cok.h"
++#include "h028_files.h"
++#include "h002_dos.h"
+ 
+ u8  g_h028_mf9;                 /* -$F9(a4) */
+ u32 g_h028_maa;                 /* -$AA(a4) */
+@@ -12,3 +13,22 @@ void h028_init(void)
+     g_h028_maa = 0;
+     g_h028_mae = 0;
+ }
++
++/*
++ * PORT H028+$02D0: 1 se Lock(name, ACCESS_READ) riesce (il lock viene
++ * subito rilasciato), altrimenti 0.  L'originale copia prima il nome sullo
++ * stack ((len + 1) arrotondato a pari); Lock legge solo fino al NUL, quindi
++ * qui si passa direttamente la stringa.
++ */
++u8 file_exists(u16 len, const char *name)
++{
++    cok_bptr lock;
++
++    (void)len;
++    lock = dos_lock(name, ACCESS_READ);
++    if (lock == 0) {
++        return 0;
++    }
++    dos_unlock(lock);
++    return 1;
++}
+diff --git a/src_c/readable/h028_files.h b/src_c/readable/h028_files.h
+new file mode 100644
+index 0000000..11c727a
+--- /dev/null
++++ b/src_c/readable/h028_files.h
+@@ -0,0 +1,9 @@
++/* H028: file, richieste disco, caricamento per ID e RLE dei DAX. */
++#ifndef COK_H028_FILES_H
++#define COK_H028_FILES_H
++
++#include "cok.h"
++
++u8 file_exists(u16 len, const char *name);      /* H028+$02D0 */
++
++#endif
+diff --git a/src_c/readable/h029_gfx.c b/src_c/readable/h029_gfx.c
+index c505796..d7baa49 100644
+--- a/src_c/readable/h029_gfx.c
++++ b/src_c/readable/h029_gfx.c
+@@ -1,5 +1,5 @@
+ /* H029: record grafici, bitplane, maschere e disegno dei tile. */
+-#include "cok.h"
++#include "h029_gfx.h"
+ 
+ /* Dati del modulo (offset rispetto ad a4). */
+ u32 g_h029_m4;                  /* -$4 */
+@@ -23,3 +23,23 @@ void h029_init(void)
+     g_h029_m6 = 0;
+     g_h029_m9 = 0;
+ }
++
++/*
++ * PORT H029+$0312: scrive value in dst[0..count-1].  Il primo argomento non
++ * e' letto.  Il ciclo confronta l'indice (word) con count-1 senza segno:
++ * con count = 0 riempie 65536 byte, come l'originale.
++ */
++void h029_fill_bytes(u16 unused, u8 *dst, u16 count, u8 value)
++{
++    u16 last = (u16)(count - 1);
++    u16 i = 0;
++
++    (void)unused;
++    for (;;) {
++        dst[i] = value;
++        if (i == last) {
++            break;
++        }
++        ++i;
++    }
++}
+diff --git a/src_c/readable/h029_gfx.h b/src_c/readable/h029_gfx.h
+new file mode 100644
+index 0000000..cc47747
+--- /dev/null
++++ b/src_c/readable/h029_gfx.h
+@@ -0,0 +1,9 @@
++/* H029: record grafici, bitplane, maschere e disegno dei tile. */
++#ifndef COK_H029_GFX_H
++#define COK_H029_GFX_H
++
++#include "cok.h"
++
++void h029_fill_bytes(u16 unused, u8 *dst, u16 count, u8 value); /* H029+$0312 */
++
++#endif
+diff --git a/src_c/readable/h031.c b/src_c/readable/h031.c
+index a1b78e8..de3c366 100644
+--- a/src_c/readable/h031.c
++++ b/src_c/readable/h031.c
+@@ -1,7 +1,20 @@
+ /* H031: Conversioni dell’ordine dei byte e valori del formato su disco. */
+-#include "cok.h"
++#include "h031.h"
+ 
+ /* PORT H031+$0004: link/unlk, nessun effetto. */
+ void h031_init(void)
+ {
+ }
++
++/*
++ * PORT H031+$0012: scambia i due byte della word puntata (dati su disco in
++ * little-endian).  La word e' in memoria come nell'originale (big-endian),
++ * quindi lo scambio dei due byte e' identico a (w >> 8) + (w << 8).
++ */
++void h031_swap_word(u8 *word)
++{
++    u8 hi = word[0];
++
++    word[0] = word[1];
++    word[1] = hi;
++}
+diff --git a/src_c/readable/h031.h b/src_c/readable/h031.h
+new file mode 100644
+index 0000000..004c488
+--- /dev/null
++++ b/src_c/readable/h031.h
+@@ -0,0 +1,9 @@
++/* H031: conversioni dell'ordine dei byte e valori del formato su disco. */
++#ifndef COK_H031_H
++#define COK_H031_H
++
++#include "cok.h"
++
++void h031_swap_word(u8 *word);          /* H031+$0012 */
++
++#endif
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index d7340ec..912e377 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -14,7 +14,6 @@ void cok_unported(const char *where)
+     exit(20);
+ }
+ 
+-void h006_01ae(void) { cok_unported("H006+$01AE"); }
+ void h006_0914(void) { cok_unported("H006+$0914"); }
+ void h007_09d8(void) { cok_unported("H007+$09D8"); }
+ u8 h008_01fc(u8 *special, u8 cycle, u8 numeric, u16 sel_pen,
+@@ -37,4 +36,16 @@ void h011_04a6(u16 a, u16 b, u16 c, u16 d)
+ void h012_3150(void) { cok_unported("H012+$3150"); }
+ void h013_4bfc(void) { cok_unported("H013+$4BFC"); }
+ 
+-/* Inizializzazioni dei moduli. */
++/* Chiamate da H006+$01AE. */
++void h006_00fa(void) { cok_unported("H006+$00FA"); }
++void h008_139e(void) { cok_unported("H008+$139E"); }
++void h027_4276(void) { cok_unported("H027+$4276"); }
++void h029_0408(u16 a, u16 b, u16 c, u16 d, struct GfxRecord **rec) { (void)a; (void)b; (void)c; (void)d; (void)rec; cok_unported("H029+$0408"); }
++void h029_0a0e(u16 a, const char *name, u16 id, u16 b, u8 c, struct GfxRecord **rec) { (void)a; (void)name; (void)id; (void)b; (void)c; (void)rec; cok_unported("H029+$0A0E"); }
++void h029_1206(void) { cok_unported("H029+$1206"); }
++void h029_1346(void) { cok_unported("H029+$1346"); }
++void h030_0256(u16 a, u16 b, u16 c, u16 d, u16 len, const char *text) { (void)a; (void)b; (void)c; (void)d; (void)len; (void)text; cok_unported("H030+$0256"); }
++void h030_0c10(void) { cok_unported("H030+$0C10"); }
++void h033_1a50(void) { cok_unported("H033+$1A50"); }
++void h034_0032(u8 a, u8 b) { (void)a; (void)b; cok_unported("H034+$0032"); }
++void h035_0246(u16 a, const char *name, u16 b, u16 c) { (void)a; (void)name; (void)b; (void)c; cok_unported("H035+$0246"); }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index ddd6f74..bac966b 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -8,8 +8,21 @@
+ 
+ #include "cok.h"
+ 
+-void h006_01ae(void);
++struct GfxRecord;
++
+ void h006_0914(void);
++void h006_00fa(void);
++void h008_139e(void);
++void h027_4276(void);
++void h029_0408(u16 a, u16 b, u16 c, u16 d, struct GfxRecord **rec);
++void h029_0a0e(u16 a, const char *name, u16 id, u16 b, u8 c, struct GfxRecord **rec);
++void h029_1206(void);
++void h029_1346(void);
++void h030_0256(u16 a, u16 b, u16 c, u16 d, u16 len, const char *text);
++void h030_0c10(void);
++void h033_1a50(void);
++void h034_0032(u8 a, u8 b);
++void h035_0246(u16 a, const char *name, u16 b, u16 c);
+ void h007_09d8(void);
+ u8   h008_01fc(u8 *special, u8 cycle, u8 numeric, u16 sel_pen,
+                u16 normal_pen, u16 title_pen, const char *option,
+@@ -20,6 +33,4 @@ void h011_04a6(u16 a, u16 b, u16 c, u16 d);
+ void h012_3150(void);
+ void h013_4bfc(void);
+ 
+-/* Inizializzazioni dei moduli chiamate da H000. */
+-
+ #endif
+-- 
+2.43.0
+

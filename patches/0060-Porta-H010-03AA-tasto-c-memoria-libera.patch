@@ -1,0 +1,106 @@
+From 0159eb45910c2c872f378dd5ca2bbc04351aa367 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 11 Nov 2026 11:49:59 +0000
+Subject: [PATCH 60/65] Porta H010+$03AA (tasto c: memoria libera)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/backlog.md   | 13 +++++++++++++
+ src_c/readable/h010_input.c | 19 ++++++++++++++++++-
+ src_c/readable/unported.c   |  1 -
+ src_c/readable/unported.h   |  1 -
+ 4 files changed, 31 insertions(+), 3 deletions(-)
+
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index 9e31a1f..f850f54 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -2647,3 +2647,16 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
+ - **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
+ 
+ ---
++
++## v52: H010+$03AA (tasto 'c', memoria libera)
++
++**Portato**
++- **H010+$03AA `show_free_memory`:** il tasto di debug 'c' mostra "max free block is NNNNNNNN bytes." in alto a sinistra (riga 1, colore 15), con AvailMem(MEMF_LARGEST) (H003+$007E).
++  - Il testo sta nel buffer di modulo -$52(a4).
++  - Tolto lo stub h010_03aa.
++- **Stub rimasti:** solo l'audio di H043 ($0584, $0840, $190E), che si salta senza fermare il programma.
++
++**Prove**
++- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
++
++---
+diff --git a/src_c/readable/h010_input.c b/src_c/readable/h010_input.c
+index e777cd9..58d4016 100644
+--- a/src_c/readable/h010_input.c
++++ b/src_c/readable/h010_input.c
+@@ -1,6 +1,7 @@
+ /* H010: input Intuition, conversione degli eventi, uscita ed errori. */
+ #include <stdio.h>
+ #include "h010_input.h"
++#include "h045.h"
+ #include "character.h"
+ #include "h053.h"
+ #include "h050.h"
+@@ -48,6 +49,22 @@ static const u8 s_rawkey_ascii[0x4F] = {
+     '8', '2', '6', '4'                                  /* $4C..$4F */
+ };
+ 
++/* Dati del modulo sotto a4: -$52(a4), testo di $52 byte. */
++static char s_free_text[0x52];
++
++/*
++ * PORT H010+$03AA (tasto 'c'): "max free block is NNNNNNNN bytes." in
++ * alto a sinistra, con il blocco libero piu' grande (MEMF_LARGEST).
++ */
++static void show_free_memory(void)
++{
++    format_number(0x50, s_free_text,
++                  (s32)exec_avail_mem(0x00020000UL), 0, 0x0A, 8, '0');
++    h026_insert(0x50, s_free_text, 0x12, "max free block is ", 0);
++    h026_append(0x50, s_free_text, 7, " bytes.");
++    ui_draw_text(1, 1, 0x0F, 0, 0x50, s_free_text);
++}
++
+ /*
+  * PORT H010+$043C: converte il codice RAWKEY in G_KEY.  Shift, Ctrl e Alt
+  * (premuti $60/$61, $63, $64/$65; rilasciati con il bit 7) aggiornano i
+@@ -101,7 +118,7 @@ static void convert_rawkey(void)
+         G_KEY = 4;
+         break;
+     case 'c':
+-        h010_03aa();
++        show_free_memory();
+         break;
+     default:
+         g_input_alt = 1;
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index cab097d..68416a1 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -36,7 +36,6 @@ void cok_unported(const char *where)
+ /* Chiamate da H006+$01AE. */
+ 
+ /* Gestori delle tabelle H005+$25C0 e H005+$2832 (H027+$4276, H033+$1A50). */
+-void h010_03aa(void) { cok_unported("H010+$03AA"); }
+ /* Audio (H043): non ancora portato; saltato per far proseguire il gioco. */
+ static const char s_h043_0584[] = "H043+$0584";
+ static const char s_h043_190e[] = "H043+$190E";
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index 9aa30c5..2f0db07 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -12,7 +12,6 @@
+ 
+ void h043_0584(void);
+ void h043_190e(u16 command);
+-void h010_03aa(void);
+ 
+ /* Gestori delle tabelle H005+$25C0 e H005+$2832. */
+ 
+-- 
+2.43.0
+

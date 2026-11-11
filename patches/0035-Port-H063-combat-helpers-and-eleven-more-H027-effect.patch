@@ -1,0 +1,2270 @@
+From 72fb82bb2e6dddbfaf2d0933752891b91526efa9 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 21:33:49 +0000
+Subject: [PATCH 35/65] Port H063 combat helpers and eleven more H027 effect
+ handlers; add backlog.md
+
+H063+$135A, $1160, $2DC6 and $37B2; $016A, $0354 and $19B6 are exported.
+H027 handlers for effects 7, $B, $D, $1E, $20, $23, $5D, $64, $66, $69
+and $70, with H027+$17DE.  backlog.md collects the progress reports.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md |   29 +-
+ src_c/readable/backlog.md     | 1547 +++++++++++++++++++++++++++++++++
+ src_c/readable/h027.c         |  290 +++++-
+ src_c/readable/h063.c         |  116 ++-
+ src_c/readable/h063.h         |    9 +
+ src_c/readable/unported.c     |   11 -
+ src_c/readable/unported.h     |   11 -
+ 7 files changed, 1968 insertions(+), 45 deletions(-)
+ create mode 100644 src_c/readable/backlog.md
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index 2c08b7d..76d1c1c 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **626 / 1040**.
++Routine portate: **642 / 1051**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -33,7 +33,7 @@ Routine portate: **626 / 1040**.
+ | H024 | 268 | 2 | 2 |
+ | H025 | 264 | 2 | 2 |
+ | H026 | 1452 | 11 | 11 |
+-| H027 | 18156 | 77 | 75 |
++| H027 | 18156 | 88 | 87 |
+ | H028 | 4488 | 16 | 15 |
+ | H029 | 6084 | 32 | 21 |
+ | H030 | 3240 | 18 | 17 |
+@@ -69,7 +69,7 @@ Routine portate: **626 / 1040**.
+ | H060 | 396 | 2 | 1 |
+ | H061 | 16936 | 35 | 1 |
+ | H062 | 10496 | 32 | 25 |
+-| H063 | 16496 | 52 | 35 |
++| H063 | 16496 | 52 | 39 |
+ | H064 | 6460 | 7 | 1 |
+ | H065 | 14268 | 27 | 27 |
+ | H066 | 13840 | 27 | 23 |
+@@ -444,10 +444,13 @@ Routine portate: **626 / 1040**.
+ | `$0364` | `(senza scheda)` | - | h027.c:69 |
+ | `$0390` | `(senza scheda)` | - | h027.c:77 |
+ | `$03D6` | `(senza scheda)` | - | h027.c:90 |
++| `$0492` | `(senza scheda)` | - | h027.c:1031 |
+ | `$05C6` | `(senza scheda)` | - | h027.c:118 |
+ | `$0622` | `(senza scheda)` | - | h027.c:128 |
+ | `$067C` | `(senza scheda)` | - | h027.c:138 |
++| `$06D4` | `(senza scheda)` | - | h027.c:1066 |
+ | `$07F4` | `(senza scheda)` | - | h027.c:148 |
++| `$080A` | `(senza scheda)` | - | h027.c:1094 |
+ | `$0912` | `(senza scheda)` | - | h027.c:168 |
+ | `$09A4` | `(senza scheda)` | - | h027.c:182 |
+ | `$0A00` | `(senza scheda)` | - | h027.c:30 |
+@@ -459,13 +462,16 @@ Routine portate: **626 / 1040**.
+ | `$0DB8` | `(senza scheda)` | - | h027.c:742 |
+ | `$0E18` | `(senza scheda)` | - | h027.c:231 |
+ | `$0EC6` | `(senza scheda)` | - | h027.c:248 |
++| `$0EFC` | `(senza scheda)` | - | h027.c:934 |
++| `$0FCE` | `(senza scheda)` | - | h027.c:1116 |
+ | `$10CC` | `(senza scheda)` | - | h027.c:255 |
+ | `$1120` | `(senza scheda)` | - | h027.c:265 |
++| `$1162` | `(senza scheda)` | - | h027.c:1141 |
+ | `$1310` | `(senza scheda)` | - | h027.c:272 |
+ | `$133C` | `(senza scheda)` | - | h027.c:280 |
+ | `$1374` | `(senza scheda)` | - | h027.c:290 |
+ | `$174E` | `sub_H027_0000174E` | parziale |  |
+-| `$17DE` | `sub_H027_000017DE` | parziale |  |
++| `$17DE` | `sub_H027_000017DE` | parziale | h027.c:919 |
+ | `$1878` | `(senza scheda)` | - | h027.c:302 |
+ | `$18A4` | `(senza scheda)` | - | h027.c:631 |
+ | `$1956` | `(senza scheda)` | - | h027.c:648 |
+@@ -494,16 +500,21 @@ Routine portate: **626 / 1040**.
+ | `$37E4` | `(senza scheda)` | - | h027.c:795 |
+ | `$3806` | `(senza scheda)` | - | h027.c:861 |
+ | `$3842` | `(senza scheda)` | - | h027.c:394 |
++| `$3916` | `(senza scheda)` | - | h027.c:957 |
+ | `$3A46` | `(senza scheda)` | - | h027.c:40 |
+ | `$3A84` | `(senza scheda)` | - | h027.c:413 |
+ | `$3AAA` | `(senza scheda)` | - | h027.c:421 |
+ | `$3AC8` | `(senza scheda)` | - | h027.c:428 |
+ | `$3AFC` | `(senza scheda)` | - | h027.c:437 |
++| `$3B34` | `(senza scheda)` | - | h027.c:969 |
+ | `$3BC0` | `(senza scheda)` | - | h027.c:448 |
++| `$3C2A` | `(senza scheda)` | - | h027.c:986 |
++| `$3C88` | `(senza scheda)` | - | h027.c:999 |
+ | `$3D02` | `(senza scheda)` | - | h027.c:458 |
+ | `$3E6C` | `(senza scheda)` | - | h027.c:467 |
+ | `$3EB2` | `(senza scheda)` | - | h027.c:474 |
+ | `$3F1E` | `(senza scheda)` | - | h027.c:486 |
++| `$3F72` | `(senza scheda)` | - | h027.c:1010 |
+ | `$4028` | `(senza scheda)` | - | h027.c:870 |
+ | `$408A` | `(senza scheda)` | - | h027.c:885 |
+ | `$4104` | `(senza scheda)` | - | h027.c:900 |
+@@ -511,7 +522,7 @@ Routine portate: **626 / 1040**.
+ | `$41AA` | `(senza scheda)` | - | h027.c:508 |
+ | `$41F6` | `(senza scheda)` | - | h027.c:50 |
+ | `$420C` | `(senza scheda)` | - | h027.c:516 |
+-| `$4276` | `sub_H027_00004276` | parziale | h027.c:920 |
++| `$4276` | `sub_H027_00004276` | parziale | h027.c:1188 |
+ 
+ ### H028
+ 
+@@ -1074,8 +1085,8 @@ Routine portate: **626 / 1040**.
+ | `$0D80` | `sub_H063_00000D80` | parziale | h063.c:705 |
+ | `$0FA0` | `sub_H063_00000FA0` | parziale | h063.c:457 |
+ | `$103A` | `sub_H063_0000103A` | parziale | h063.c:472 |
+-| `$1160` | `trampoline_H063_1350` | parziale |  |
+-| `$135A` | `sub_H063_0000135A` | parziale |  |
++| `$1160` | `trampoline_H063_1350` | parziale | h063.c:1210 |
++| `$135A` | `sub_H063_0000135A` | parziale | h063.c:1194 |
+ | `$13BE` | `sub_H063_000013BE` | parziale | h063.c:499 |
+ | `$18F8` | `sub_H063_000018F8` | parziale | h063.c:155 |
+ | `$19B6` | `sub_H063_000019B6` | parziale | h063.c:178 |
+@@ -1097,7 +1108,7 @@ Routine portate: **626 / 1040**.
+ | `$2B4C` | `trampoline_H063_2B72` | parziale | h085.c:302 |
+ | `$2B7C` | `sub_H063_00002B7C` | parziale | h063.c:1180 |
+ | `$2BDE` | `sub_H063_00002BDE` | parziale |  |
+-| `$2DC6` | `sub_H063_00002DC6` | parziale |  |
++| `$2DC6` | `sub_H063_00002DC6` | parziale | h063.c:1249 |
+ | `$2F12` | `sub_H063_00002F12` | parziale | h063.c:888 |
+ | `$2F5A` | `sub_H063_00002F5A` | parziale |  |
+ | `$2FAA` | `sub_H063_00002FAA` | parziale | h063.c:1020 |
+@@ -1107,7 +1118,7 @@ Routine portate: **626 / 1040**.
+ | `$3698` | `sub_H063_00003698` | parziale |  |
+ | `$36EE` | `sub_H063_000036EE` | parziale |  |
+ | `$3734` | `sub_H063_00003734` | parziale |  |
+-| `$37B2` | `sub_H063_000037B2` | parziale |  |
++| `$37B2` | `sub_H063_000037B2` | parziale | h063.c:1277 |
+ | `$3980` | `sub_H063_00003980` | parziale |  |
+ | `$3A26` | `sub_H063_00003A26` | parziale | h063.c:901 |
+ | `$3CA0` | `sub_H063_00003CA0` | parziale |  |
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+new file mode 100644
+index 0000000..4846787
+--- /dev/null
++++ b/src_c/readable/backlog.md
+@@ -0,0 +1,1547 @@
++# Backlog del port di Champions of Krynn
++
++Resoconti consegnati durante il port (dal più vecchio al più recente).
++Ogni voce riporta data/ora (UTC) del messaggio originale.
++
++## 2026-11-10 11:20
++
++In breve: **non puoi usare l'abbonamento Pro con le API.** Sono due prodotti separati, con fatturazione separata.
++
++**Abbonamento Pro (claude.ai)**
++- Copre l'uso di Claude su web, desktop e app mobile.
++- Copre anche **Claude Code**: accedi con il tuo account claude.ai (`/login` nel terminale) e l'uso rientra nei limiti del piano Pro, senza bisogno di una chiave API.
++- **Non** include crediti né chiavi per l'API.
++
++**API di Claude (Claude Console)**
++- Ha un account e una fatturazione a parte: paghi a consumo, per token, caricando credito prepagato.
++- Per iniziare:
++  1. Vai su **platform.claude.com** (la Console, prima console.anthropic.com) e accedi. Puoi usare la stessa email, ma il credito è separato.
++  2. Aggiungi un metodo di pagamento e acquista credito in **Billing**.
++  3. Crea una chiave in **API Keys**.
++  4. Usala nel tuo codice o nei tuoi strumenti:
++     ```bash
++     export ANTHROPIC_API_KEY="sk-ant-..."
++     ```
++
++**Quindi:**
++- Se vuoi usare Claude per programmare, Claude Code con il login Pro è la strada giusta e non paghi nulla in più.
++- Se invece vuoi integrare Claude in un'app o in uno script tuo, oppure usare uno strumento di terze parti che chiede una chiave API, devi usare l'API, con un costo a parte.
++
++Cosa vuoi fare di preciso? Così ti indico il percorso più adatto.
++
++---
++
++## 2026-11-10 12:41
++
++I found several definite mismatches between the assembly and the readable C layer (`src_c/readable`), and the worst ones are in the ECL script engine. The project builds cleanly with no warnings, so these are behaviour differences, not compile problems.
++
++**Scope:** there is 286k lines of assembly and 11k lines of C, so I didn't check everything. I compared these routines instruction by instruction: the ECL engine (H061/H064), the menu frame (H044), the tile and text blitters (H049), and save/load (H066). The rest of the C (`actions.c`, `ui.c`, `audio.c`, combat, shop and others) has not been checked.
++
++## ECL script engine (`ecl.c`): serious
++
++**1. Variables are read and written at the wrong place (`ecl.c:154`, `ecl.c:174`).** The original treats script variables as 16-bit words, so variable N lives at byte N×2 (`H061+$2E48`, `$2C3A`). The C uses N as a byte offset, so it reads and writes overlapping, wrong bytes.
++- This disagrees with the C itself: `ui.c` reads the state block at byte offsets taken from native code (`$3F2`, which is variable `$1F9`).
++- The C also leaves out three things the original handles:
++  - Addresses `$3500–$52FF` read and write bytes of the script program itself, so scripts can modify their own code.
++  - A set of special addresses (`$EA`, `$B1`, `$FB`, `$FC`, `$33D`, and everything from `$754B` up) map to other game globals.
++  - Writes trigger side effects: variables `$FD`/`$FE` set a flag (`$24B5`), variable `$E6` changes the game mode (`$3DE3`), and every write to state block B calls the hook at `$27E2`.
++
++**2. Operand types are decoded wrongly (`ecl.c:145`).** `H061+$184E` folds the high types with `desc - $7D` (the operand reader uses `- $7C`), then picks from a jump table:
++
++| Operand type | Original | C |
++|---|---|---|
++| 0 | the inline byte | inline byte ✓ |
++| 1 | reads a variable | returns the inline byte ✗ |
++| 2 | 16-bit constant (high byte first, no offset subtracted) | reads a variable ✗ |
++| 3 | reads a variable | 16-bit constant ✗ |
++| 4 | the decoded address itself, as a number | reads a variable ✗ |
++| 5 | nothing (default case) | 16-bit constant ✗ |
++| 0x80 | reads a variable | 0 ✗ |
++| 0x81 | the decoded address itself | reads a variable ✗ |
++
++**3. SAVE has its operands reversed (`ecl.c:295`).** `H064+$0468` writes the value of operand 1 into the address given by operand 2. The C writes operand 2's value into operand 1's address. The original also only checks operand 1 to decide on the string path.
++
++**4. COMPARE uses unsigned comparisons in the original (`ecl.c:261`).** `H061+$3A0A` uses unsigned branches (`bcc/bls/bhi/bcs`). The C compares signed values, so results differ for values of `$8000` and above. The original also compares strings when either operand type is 0x80 or higher (via `$3904`); the C skips this.
++
++**5. DIVIDE (`ecl.c:275`).** The original divides unsigned (`divu`) and stores the remainder in state block B at byte `$67E`. The C divides signed and drops the remainder.
++
++**6. Smaller differences:**
++- When a string operand's control byte is 0, the original copies the runtime string at `$27(a4)`. The C leaves the string empty (`ecl.c:121`).
++- The original's GOSUB stack is an unbounded linked list. The C stack holds 16 entries and silently drops extra calls.
++- RETURN with an empty stack runs the full EXIT handler (`H064+$0156`). The C only sets `halted`.
++
++These parts match the assembly exactly:
++- the operand reader, including when the program counter advances;
++- the 6-bit string decoder;
++- address decoding (high byte = third byte of the operand);
++- the order of the IF flags;
++- the operand count table used to skip instructions (all 66 entries).
++
++## Save/load (`save.c`): fields missing
++
++- **Before saving (`H066+$329C`)**, the original writes:
++  - `$3DF6` into state A byte `$1F8`;
++  - `$24D5*2 + $24D4` into state A byte `$1FE`;
++  - `$246E` into state B byte `$624`.
++- **After loading**, it reads them back and finishes with `$3DE2 = $3DE3; $3DE3 = 0`. Note that `$246E` is restored from state B and overrides the header byte.
++- `save_game` (`save.c:165`) and `load_game` (`save.c:367`) do none of this.
++- The block sizes and order do match: 1 + `$800` + `$800` + `$400` + 8 + 1 + 1 + 3×(2+2) bytes.
++
++## Graphics
++
++- **The tile blitter copies 5 bitplanes; the C copies 4 (`tile8.c:25`, `tile8.c:53`).** `H049+$012A` loops over planes 4 down to 0, and the screen is 5 planes deep (`intuition.c:141`). The C never touches plane 4, so stale pixels there would show through as wrong colours.
++  - If DAA record 0xCA really holds 4 planes, plane 4 should at least be cleared.
++  - The original also chooses one of 5 sheets by tile-code range (`<$2E`, `<$74`, `<$BA`, `<$100`, `<$128`). The C's `0x14 + value` is correct only because tile `$114` falls in sheet 4.
++- **Text is drawn transparent in the C but opaque in the original (`text.c:93`).** `H049+$0224` writes every plane from a foreground/background pen pair (fill or inverted glyph), so the background is always overwritten. The C uses JAM1 with a single pen, so it works only where callers clear the area first, as `ui_draw_inverse_text` and `ui_choice_draw` do.
++- In the same routine, x and y are character cells, not pixels, and text is clipped at 40 columns.
++- The menu frame in `ui.c` matches H044 for the column/state mapping, the side rows 15–17 gap, and the bottom row. It omits the palette/clear calls at `H044+$01CC–$0200`.
++
++The ECL problems will break almost any script, so I'd fix those first, starting with word addressing and the operand-type table. I can write those fixes if you want.
++
++---
++
++## 2026-11-10 12:46
++
++I've rewritten the ECL engine's memory and operand handling in `src_c/readable/ecl.c` to match the assembly. It builds with no warnings under gcc and clang (`-Wall -Wextra`), and `make check` passes.
++
++`make check` doesn't run any scripts, so I also wrote a standalone test that executes small ECL programs. It covers variable addressing, every operand type, the maths operations, SAVE of numbers and strings, string loading and comparison, the special variables, and RETURN with an empty stack. All of it passes. I haven't run a real game script or the Amiga build.
++
++**What changed:**
++- **Variable addressing:** variable N is now the 16-bit word at byte N×2, as the original does. The script-program region (`$3500–$52FF`, byte-sized, scripts can modify it) and the special addresses (`$754B` and up, which map to the party's position and facing) are now handled.
++- **Side effects of writes:**
++  - Writing variable `$FD`/`$FE` sets the flag at `$24B5`.
++  - Changing variable `$E6` switches the game mode byte (`$3DE3` to 3 or 4) and saves the old one.
++  - Writing the special addresses updates the position/facing and sets `$24B7`/`$24B8`.
++- **Operand types:** the reader and the evaluator now each use their own folding of the high types (`-$7C` and `-$7D`, as in the original). Type `5`/`0x81` now also loads a string from the given address.
++- **SAVE:** operands are now in the original order (value first, then destination). String SAVE writes one character per word plus a terminating zero; address `$3100` is the current character's name, up to 15 characters.
++- **COMPARE:**
++  - Numbers are compared unsigned.
++  - If either operand is a string type, it now compares the strings ignoring case, as `H026+$0106` does.
++- **DIVIDE:** unsigned, and the remainder goes into state block B at byte `$67E`. MULTIPLY no longer risks signed overflow.
++- **RETURN** with an empty stack now behaves like EXIT, and EXIT clears the GOSUB stack.
++- **Header:** I added `ecl_var_read`/`ecl_var_write` to `ecl_exec.h` so other modules can use the same variable logic.
++
++**Still not done, each marked in the code:**
++- Reads and writes to state block B skip the hooks `H061+$208E` and `$27E2`, which map some of those variables onto the current character's fields. Those routines are about 1.9 KB of assembly and need porting separately.
++- An inline string with a control byte of 0 should copy a string stored at `H061+$27(a4)`, but I couldn't identify its contents, so it stays empty.
++- The GOSUB stack is still capped at 16 entries; the original's is unlimited.
++
++I worked on a local copy of your zip, so nothing has been committed anywhere. Apply the patch from the root of your repository:
++```bash
++git apply ecl-fix.patch
++```
++
++Next on the list are the save/load fields in `save.c`, then the 5-bitplane tile copy. Want me to continue with those?
++
++Files are in /tmp/claude-0/-home-user/74ed0d1a-ba31-56dc-8643-7b071be4f004/scratchpad:
++- ecl-fix.patch
++- ecl_vm_test.c
++
++---
++
++## 2026-11-10 12:49
++
++I've added the fields the original game syncs around saving and loading to `src_c/readable/save.c`. It builds cleanly with gcc and clang. A direct test of the new code passes, but I couldn't test a full save→load round trip, because the host build crashes on its first file operation (details at the end).
++
++**Before saving** (from `H066+$329C`), these globals are now copied into the state blocks:
++- `$3DF6` (demo scenario) goes into state A at byte `$1F8`.
++- `$24D5 * 2 + $24D4` goes into state A at byte `$1FE`.
++- `$246E` (resource group) goes into state B at byte `$624`.
++
++**After loading** (from `H066+$2CE4`, `$2F48` and `$2FEA`), they're read back:
++- `$24D5` is set to the word at `$1FE` shifted right by 1, and `$24D4` to its lowest bit.
++- `$3DF6` is restored from the word at `$1F8`.
++- The word at `$67C` in state B is set to 0.
++- `$246E` is taken from the word at `$624` in state B. This overrides the resource-group byte in the file header, as the original does.
++- Finally, the saved game mode (`$3DE3`) is moved into "previous mode" (`$3DE2`) and the current mode is set to 0. No C code reads the mode after a load, so this doesn't affect anything else.
++
++The test sets the globals, runs the pre-save copy, scrambles everything, runs the post-load copy, and checks that each value comes back.
++
++**Still not done:** after loading, the original also reloads the wall sets and view, or else shows screen `$79`, and then redraws (`H066+$2F58–$2FE4`). Those are native graphics routines that the C doesn't have yet, so I left a comment there instead.
++
++**Existing problem you should know about:** in the host build, `save_game` crashes on the first DOS call. On the host, `dos_Open`/`dos_Read` call through `DOSBase`, which is NULL there. My change didn't cause this, and the Amiga build isn't affected, but on the host save/load can't work until those calls get host implementations.
++
++Apply the patch from the root of your repository, on top of the ECL patch:
++```bash
++git apply save-fix.patch
++```
++
++The last item from the review is the tile blitter, which copies 4 bitplanes where the original copies 5. Should I fix that next, or look at the host DOS crash first?
++
++Files are in /tmp/claude-0/-home-user/74ed0d1a-ba31-56dc-8643-7b071be4f004/scratchpad:
++- save-fix.patch
++- save_sync_test.c
++
++---
++
++## 2026-11-10 12:51
++
++I've fixed the tile blitter in `src_c/readable/tile8.c`, and the bug turned out to be narrower than I said in the review. The C was reading the tile data correctly; it just wasn't clearing the fifth bitplane.
++
++**What the assembly shows:**
++- **Sheet BitMap:** `H029+$0408` always allocates the sheet BitMap with 5 planes and zero-fills every one of them.
++- **Record layout:** `H029+$0A0E` picks the layout from a 3-character file-name prefix (almost certainly `8X8`).
++  - On a match, the data starts right after the 9-byte header and fills 4 planes.
++  - Other records carry a 64-byte palette and fill 5 planes starting at `0x49`.
++- **The C's loader is right:** its 38 columns × 4 planes only fits the 4-plane layout. Plane 4 of the menu sheet is therefore all zeros.
++- **The blit:** `H049+$012A` copies all 5 planes, so drawing a tile clears plane 4 of that 8×8 cell on the 5-plane screen. The C copied only 4 planes, so whatever was already in plane 4 stayed there and could show through as wrong colours.
++
++**The fix:** `tile8_draw` now writes all 5 planes, up to the screen's depth. Planes the record doesn't have are written as zero, matching the original's empty plane. The loader is unchanged; I added comments recording the layout rules above.
++
++**Testing:**
++- The host build is clean with gcc and clang, and `make check` passes.
++- The draw code only compiles for Amiga, so I built `tile8.c` with `COK_AMIGA=1` on the host and drew into a fake 5-plane screen. The 4 data planes copy correctly, plane 4 of the cell is cleared, and neighbouring bytes are untouched.
++- The same test against the old `tile8.c` fails on plane 4, so it catches the bug.
++- I haven't run it on real Amiga hardware.
++
++Apply it from the root of your repository, after the earlier two patches:
++```bash
++git apply tile8-fix.patch
++```
++
++That finishes the items from the review. One related point is still open: text drawing is transparent in the C but opaque in the original, so text can leave old pixels behind unless the caller clears the area first. There's also the host-build crash in save/load (`DOSBase` is NULL). Want me to take either of those next?
++
++Files are in /tmp/claude-0/-home-user/74ed0d1a-ba31-56dc-8643-7b071be4f004/scratchpad:
++- tile8-fix.patch
++- tile8_draw_test.c
++
++---
++
++## 2026-11-10 12:55
++
++Text drawing is now opaque like the original. Every character cell is filled with the background pen and the glyph pixels with the foreground pen, so text no longer leaves old pixels behind.
++
++**What the assembly shows:**
++- **Arguments:** every game text call goes through `H030+$0256`, which passes (string, length, background, foreground, row, column) straight to `H049+$0224`.
++- **Per-plane rule:** for each plane, the foreground and background pen bits choose between filling with 0, filling with 1, the glyph, or the inverted glyph. That works out to "glyph pixel ? foreground : background" for every pixel in the cell.
++- **Background pen:** the calls I checked ("Loading...Please Wait" at `H006+$06EE` and the party menu in H063) pass background 0. Highlighted items use a non-zero background.
++
++**What changed:**
++- **`text_font_draw_bg(text, x, y, pen, bg_pen, maxlen)`** is new.
++  - It fills the line's cells with the background pen and then draws the glyphs on top in the foreground pen.
++  - It forces the plane mask to `$FF` so all 5 planes are written.
++  - Lines are clipped at column 40, as the original does (`40 - x`).
++- **`text_font_draw`** keeps its signature and now calls the new function with background 0. None of the ~30 existing call sites needed changing.
++- **`ui_draw_inverse_text`** in `ui.c` now uses the new function directly, instead of filling a rectangle and then drawing over it.
++- **Glyph lookup** now uses the low 6 bits of the character code, like `H049+$045A`. Before, any code outside 32–95 became a space; now it maps to the same glyph as in the original.
++- **Kept on purpose:** `maxlen` still limits the text, even though the original ignores its length argument and always draws to the end of the string. The C menu code relies on `maxlen` to draw single words of an option.
++
++**Testing:**
++- The host build is clean with gcc and clang, and `make check` passes.
++- The drawing code only compiles for Amiga, so I built `text.c` with `COK_AMIGA=1` and routed the graphics calls (SetAPen, SetDrMd, RectFill, BltTemplate) to stubs that draw into a fake 5-plane screen. I compared the result against an independent model of `H049+$0224`, plane by plane.
++- The cases covered normal text, the "Loading" call, a highlighted item, both pens non-zero, a line longer than 40 columns, and unusual characters. All matched.
++- The same test fails on every case with the old `text.c`.
++- Not checked on real Amiga hardware.
++
++Any text the C previously drew transparently over a picture will now get a black box behind it. That matches the original, but it's the place to look if a screen suddenly looks different.
++
++Apply it from the root of your repository, after the earlier patches:
++```bash
++git apply text-fix.patch
++```
++
++That leaves the host-build crash in save/load (`DOSBase` is NULL on the host). Want me to look at that next?
++
++Files are in /tmp/claude-0/-home-user/74ed0d1a-ba31-56dc-8643-7b071be4f004/scratchpad:
++- text-fix.patch
++- text_draw_test.c
++
++---
++
++## 2026-11-10 13:00
++
++I've fixed the host `DOSBase` crash. Save/load and character load/save now work in the host build. The save→load round trip that used to segfault passes, and I also tested a two-character party.
++
++**Cause:** in the host build (`COK_AMIGA=0`) the `dos_*` macros in `dos.h` still called through `DOSBase` plus the library offset, and `DOSBase` is NULL on the host. Only SAS/C remapped them to real functions. It hit `save_game`, `load_game`, `save_game_exists`, `character_load`/`character_save` and `io_read_all`/`io_write_all`. The host data loader already used stdio, which is why the game got as far as it did.
++
++**What changed:**
++- **`include/amiga/dos/dos.h`:**
++  - On Amiga builds the macros are unchanged.
++  - On the host, `dos_Open`, `Close`, `Read`, `Write`, `Seek`, `DeleteFile` and `IoErr` now go to host functions.
++  - It now includes `cok/platform.h` itself, so `COK_AMIGA` is always defined at that point.
++- **New `readable/dos_host.c`** implements those calls with stdio while keeping AmigaDOS behaviour:
++  - A file handle is a number from 1 up (from a table of 32 open files); 0 means failure.
++  - `Close` and `DeleteFile` return -1 for success and 0 for failure.
++  - `Seek` returns the previous position.
++  - Opening for read/write creates the file if it's missing and doesn't truncate it.
++  - `IoErr` returns AmigaDOS error codes, for example 205 for "object not found".
++- **Where save files go:** relative paths are tried under `COK_DATA_DIR` first, the same way the host data loader works. Reads fall back to the current directory.
++  - Like AmigaDOS, it doesn't create folders, so the `SAVE/` folder must already exist. If it doesn't, saving prints an error instead of crashing.
++- **Build files:** `dos_host.c` is added to `CMakeLists.txt` and `build_reference.sh`. The Makefile picks it up automatically, and `smakefile` doesn't need it.
++
++**Testing:**
++- The host builds with gcc and clang are clean, and `make check` passes.
++- No host code path references `DOSBase` any more. Seven wrappers in `dos_exec.c` (Lock, Examine, Info and similar) still do, but nothing on the host calls them.
++- The save→load round trip passes, both from the current directory and with `COK_DATA_DIR` set. `savgamZ.dat` comes out at 5481 bytes, the original format's size.
++- With a two-character party, it writes `savgamY.dat` plus a `.sav`, `.swg` and `.fx` file per character. Both characters load back with their names and levels, in the right order.
++- The host DOS functions pass checks for writing, seeking, reading to end of file, opening read/write, the error code for a missing file, invalid handles, and deleting.
++- Not tested on Amiga hardware. Amiga builds still use the original macros.
++
++**Existing problem, not fixed:** `build_reference.sh` compiles and links again with gcc and clang, but its `runtime_test` crashes in the decompiled `sub_H013_00000982`. It crashes the same way with all my changes removed, so it's unrelated to DOS. I can look at it if you want.
++
++Apply it from the root of your repository, after the earlier patches:
++```bash
++git apply dos-host-fix.patch
++```
++
++Files are in /tmp/claude-0/-home-user/74ed0d1a-ba31-56dc-8643-7b071be4f004/scratchpad:
++- dos-host-fix.patch
++- dos_host_test.c
++
++---
++
++## 2026-11-10 13:19
++
++The `runtime_test` crash is fixed. The bug was in the test, not in the decompiled code, and `build_reference.sh` now finishes with "runtime H013/H059: OK" under both gcc and clang.
++
++**Cause:**
++- **The decompiled routine is correct:** `sub_H013_00004F6C` is `tst.b -$210(a5)` followed by a call to `$0982` only if that byte is non-zero, and the C matches the assembly exactly.
++- **The test's A5 was wrong:** on the 68000, a routine's locals sit below A5. The test passed the start of its zeroed 1024-byte buffer as A5, so `A5 - 0x210` read 528 bytes *before* the buffer.
++- **Why it crashed:** that out-of-bounds byte happened to be non-zero. So instead of returning early as the test intends, the routine ran the full `$0982` routine, which isn't set up for that, and crashed.
++
++**Fix:** the test now sets A5 64 bytes below the top of the buffer, the same convention `registers_init()` uses, so `A5 - 0x210` falls inside the zeroed frame. It's a six-line change to `tests/runtime_test.c`; nothing else changed.
++
++**Testing:**
++- `build_reference.sh` passes with gcc and clang.
++- Under AddressSanitizer and UndefinedBehaviorSanitizer (gcc), the old test reports a `global-buffer-overflow` at exactly that read in `sub_H013_00004F6C`. The fixed test runs clean.
++- I couldn't use clang for the sanitizer run because its sanitizer runtime isn't installed here. The script's relocatable link (`-r`) also doesn't work with sanitizers, so for that run I linked the test directly from the script's objects.
++
++This runtime test needs the DOS host patch to link, so apply it after the earlier ones, from the root of your repository:
++```bash
++git apply runtime-test-fix.patch
++```
++
++That's everything from the original review fixed, apart from the native routines I flagged as not yet ported. Each patch is separate, so you can apply them in order:
++
++```bash
++git apply ecl-fix.patch
++```
++```bash
++git apply save-fix.patch
++```
++```bash
++git apply tile8-fix.patch
++```
++```bash
++git apply text-fix.patch
++```
++```bash
++git apply dos-host-fix.patch
++```
++```bash
++git apply runtime-test-fix.patch
++```
++
++Files are in /tmp/claude-0/-home-user/74ed0d1a-ba31-56dc-8643-7b071be4f004/scratchpad:
++- runtime-test-fix.patch
++- ecl-fix.patch
++- save-fix.patch
++- tile8-fix.patch
++- text-fix.patch
++- dos-host-fix.patch
++
++---
++
++## 2026-11-10 13:23
++
++I've zipped everything, including the `.gitignore` fix.
++
++**`.gitignore`:** the bare `cok` line, meant for the built binary, also matched the `src_c/include/cok/` header folder. That's why `src_c/include/cok/tile8.h` was never committed, so a fresh clone of your repository doesn't build, with or without my changes.
++- I added `!cok/` right after it, so files named `cok` (or `cok.exe`, `cok_readable`) are still ignored anywhere, but folders named `cok` aren't.
++- I also added `cok_audio`, which `smake AUDIO` produces.
++- With git's own ignore check, the headers in `src_c/include/cok/` are no longer ignored, while `src_c/readable/cok`, `build/cok`, `cok_audio`, `cok.exe` and `*.o` still are.
++- This is patch 07, which also adds the missing `tile8.h`. After applying it, commit `tile8.h` so other clones get it.
++
++**What's in the zip:**
++- `patches/`: seven patches to apply in order (01 ECL, 02 save, 03 tile blitter, 04 text, 05 host DOS, 06 runtime test, 07 `.gitignore` plus `tile8.h`), and `all-fixes.patch` with all of them in one file.
++- `source/`: your full source tree at commit `9561aac` with every fix applied. It has no `.git` folder and no build outputs.
++- `changed-files/`: only the 14 changed or new files, at their repository paths, if you'd rather copy files than apply patches.
++- `tests/`: the standalone tests I wrote during the review.
++- `README.md`: what each patch fixes, the apply order, what's still not ported, and how to run the tests.
++
++**Verification, from a clean clone of your repository:**
++- Applying the seven patches one by one gives exactly the same files as `all-fixes.patch` and as `source/` (checked with `diff -r`).
++- From `source/` without any extra files: host builds are clean with gcc and clang, `make check` passes, and `build_reference.sh` prints "runtime H013/H059: OK" with both compilers.
++- All five bundled tests pass when built with the README's commands.
++- Nothing has been run on real Amiga hardware.
++
++To apply everything to your repository at once, from its root:
++```bash
++git apply cok-fixes/patches/all-fixes.patch
++```
++
++The zip is 2.8 MB and is in /tmp/claude-0/-home-user/74ed0d1a-ba31-56dc-8643-7b071be4f004/scratchpad:
++- cok-fixes.zip
++
++---
++
++## 2026-11-10 13:30
++
++I fixed one part of `audio.c` (the envelopes) and stopped there. Everything else wrong in `audio.c` and `actions.c` would mean porting whole routines from the assembly, and that needs your go-ahead.
++
++**Fixed: `audio.c` envelopes (patch 08)**, following `H094+$050C..$0614`:
++- **Period envelope, `FF xx`:** it's now a 4-byte command. After `FF` comes an opcode byte (0 = end the note, 1 = stop the envelope, anything else = "set"), and the new period is the next two bytes. The C used to read 3 bytes, using the opcode as the high byte, so it read the rest of the envelope out of step.
++- **Volume envelope:** the level is now `scale * v >> 6`, capped at `$4000`, where `scale` is the voice's word `$2C`. The C used to hard-code 64. The delta is a 16-bit signed difference divided by the count, as in the original.
++- **Step order:** both envelopes now add `delta` before decrementing the count (`subi.b #1` / `bhi`), matching the original.
++- **Envelope order:** the period envelope runs before the volume envelope. On `FF 00`, the note ends straight away and the volume envelope is skipped that tick.
++- **Testing:**
++  - The host build is clean and `make check` passes.
++  - A new test runs crafted envelope bytecode through `audio.c` compiled in its Amiga+audio configuration. All checks pass on the new code; the old code fails 6 of them.
++  - The three warnings in that configuration were already in the original file.
++  - Not checked on real Amiga hardware.
++- **Still missing:** `scale` should be track volume × note velocity, but the voice setup still passes 64 (see below).
++
++**Needs a port instead of a fix:**
++- **`audio.c` note setup (`H094+$0288`/`$0390`):**
++  - The original picks an octave from the 8SVX header (`samplesPerHiCycle`, `ctOctave`, period threshold `$118`) and builds one-shot/repeat segments. The period table comes from `H043+$05D2`.
++  - The C uses its own length/period rule (minimum 124) and its own volume formula (`64 * dynamic / 127`), neither of which is in the assembly.
++  - Its playback model (`cycle`/`data_len`) would have to change with it.
++- **`actions.c` LOAD FILES / LOAD PIECES (`H064+$1004`):**
++  - The original evaluates the operands, so variables work. LOAD FILES loads block `op1` from `GEO<resource group>.dax`. LOAD PIECES fills wall slots 1–3 through `H011+$14EA`, with `$FF`/`$7F` as special values.
++  - The C merges the two opcodes, uses the raw operand bytes, and uses the operand as the file-name digit.
++  - A faithful version needs the three-slot wall model, which `view3d.c` doesn't have.
++- **`actions.c` ECL menus (`H064+$13AC`/`$1544`):**
++  - The originals read 3 or 2 operands, then a variable number of item strings, and store the chosen item in a variable.
++  - The C reads no operands, so any script with a menu goes out of step after it.
++- **Placeholders:**
++  - `party_cast_spell`, `party_view_map`, `party_search`, `party_look`, `party_encamp`, `party_open_area_map` and the combat helpers print debug text or do minimal work. There's no original logic in them to fix.
++  - Each would be a separate port.
++
++---
++
++## 2026-11-10 13:39
++
++I've fixed one part of `audio.c` (the envelopes) and stopped before the larger ports. Each of the four turned out to sit on top of other code the C also reconstructed loosely, so I want to agree the order with you before going further. Nothing in `actions.c` has changed yet. The updated zip is attached.
++
++**Fixed: `audio.c` envelopes (patch 08)**, following `H094+$050C..$0614`:
++- **Period envelope:** `FF xx hi lo` is now read as 4 bytes. The C used to read 3, so it fell out of step with the envelope data.
++- **Volume envelope:** the level is `$2C * v >> 6`, capped at `$4000`, instead of a hard-coded 64.
++- **Step order:** both envelopes add `delta` before decrementing the count.
++- **Envelope order:** the period envelope runs first, and `FF 00` ends the note straight away.
++- **Testing:** a new envelope test passes on the new code and fails on the old one, and `make check` passes. Not tested on Amiga hardware.
++
++**The four ports depend on code below them that's also not faithful:**
++- **ECL menus:**
++  - What the original stores is now clear: the vertical menu stores the 0-based index, and Esc/E stores the row highlighted at that moment. The horizontal menu stores the 0-based position of the hotkey, or `$FF`.
++  - Showing them correctly needs four layers rebuilt first:
++    - the key translation in `H010`, because the C returns Amiga raw codes for the cursor keys;
++    - `UI_RequestChoice` (`H008+$01FC`), because the C port uses the arrows itself and returns the wrong thing in its first parameter;
++    - the text window `H030+$0302`;
++    - the list menu `H008+$1AF4`.
++- **LOAD FILES/PIECES:**
++  - The file is `GEO<resource group>.dax` with the operand as the block, and there are three WALLDEF slots.
++  - `view3d.c` has only one wall set, so this needs `H011+$14EA` and the view model.
++- **Audio note setup:**
++  - The octave/period/volume rules come from the 8SVX header and a period table built in `H043+$05D2`.
++  - The C's own playback model has to be replaced along with it.
++- **Placeholder commands:** each is a separate port.
++
++Everything I read is in `PORTING_NOTES.md` in the zip, with offsets, so none of it needs re-reading. `tools/hunkbytes.py` reads bytes and strings from the `.asm` files; that's how I resolved the menu strings (`"Select"`, `" Next"`, `"PRESS <ENTER>/<RETURN> TO CONTINUE"` and so on). It also confirmed that the two string literals I'd left empty in the ECL fix really are empty, so that fix is exact. I didn't need kb.marrani.lol for any of this.
++
++Unless you'd prefer a different order, I'll build from the bottom up:
++1. `H010` key translation;
++2. `H008+$01FC` `UI_RequestChoice`;
++3. `H030+$0302`/`$0B6C`;
++4. `H008+$1AF4` list menu;
++5. then the two ECL menus, LOAD FILES/PIECES with `H011`, the audio note setup, and finally the placeholder commands.
++
++That replaces some existing C UI code (`ui_request_choice*`, `ui_list_menu`) rather than patching it. Should I go ahead?
++
++---
++
++## 2026-11-10 14:04
++
++The first five steps are ported (input, `UI_RequestChoice`, text window, list menu, ECL menus), and ECL scripts with menus now stay in step. They're in patch 09 of the zip I've sent. I stopped before LOAD FILES/PIECES because doing it faithfully means porting the whole 3D-view module, and I want your go-ahead on that first.
++
++All 12 tests pass from the bundled source tree, along with the build, `make check` and the reference build. Nothing has been run on real Amiga hardware.
++
++**What patch 09 changes, step by step:**
++- **Input (`H010`, `H007+$064E`):**
++  - The original's key codes: lowercase letters, cursor keys as `8/2/6/4` (as on the numeric keypad), Del = `$10`, Alt+A/M/Q/X = 1–4, Alt+C shows free memory.
++  - Left mouse button = Enter, right button = Esc.
++  - The timed wait returns 0 if the key arrives on the very last step, as the original does.
++- **`UI_RequestChoice` (`H008+$01FC`)**, in a new file `choice.c`:
++  - Choices start at each capital letter or digit, not at spaces, and hotkeys are always highlighted.
++  - The selected choice is remembered between calls, as in the original.
++  - Digits turn into direction codes using the original table, so a list can be moved with the cursor keys.
++  - Mouse clicks are handled on the option row, the party list, the 3D view and lists.
++  - INTUITICKS is switched on while it waits, and there's a prompt timeout.
++- **Text window (`H030+$0302`):** word wrap that keeps punctuation with its word, a "Press any key to continue" page break when the window fills, and optional slow text.
++- **List menu (`H008+$1AF4`):** header rows that are skipped, wrapping within the page, Next/Prev paging, Esc/E to leave, and select on the second click with the mouse.
++- **ECL menus (`H064+$13AC/$1544`, `H061+$36E6`):** both read exactly the original's operands and store the original value. The vertical menu stores the 0-based row (or the current row on cancel); the horizontal one stores the hotkey's position, or `$FF`.
++- **Creation menus:**
++  - Pick Race/Gender/Class/God/Alignment now use the original layout: the title is a header row inside the list, items are indented by two spaces, the option is "Select" plus "Exit", and the original titles are used.
++  - Add Character uses its own original layout.
++
++**Still stubs or unverified in this area:**
++- **Not yet ported:** palette cycling (`H042`) and the combat-map pointer and clicks (`H046`/`H048`). They're stubs marked with their original addresses.
++- **Load Game list:** I haven't found its original call, so it still uses the creation layout.
++- **Add Character's exit option:** the original passes an uninitialised value, so I pass 0.
++- **Waiting loop:** it pauses one tick per empty poll instead of busy-polling, because the C's audio fallback needs that loop.
++
++**Decision for the next step:** `H011` (about 7 KB) holds both the GEO/WALLDEF loaders *and* the 3D-view drawing that `view3d.c` claims to reconstruct. `view3d.c` uses a simplified model with one wall set, while the original has three slots, and the ECL handler loads into those slots. Fixing only the loaders would load data the C drawing code never reads. So for step 6 I'd port `H011` as a whole, loaders and 3D view, replacing that part of `view3d.c`.
++
++Should I go ahead with the full `H011` port, or only the loaders and the ECL handler, leaving the C 3D view as it is for now?
++
++The zip is in /tmp/claude-0/-home-user/74ed0d1a-ba31-56dc-8643-7b071be4f004/scratchpad:
++- cok-fixes.zip
++
++---
++
++## 2026-11-10 14:19
++
++Ho cancellato `src_c/readable` e ricominciato il port da zero, a mano dall'asm. Per ora sono portate 15 routine su 902: il programma parte, apre le librerie e si ferma alla prima routine mancante, `H005+$530A`, stampando il suo indirizzo.
++
++**Cosa c'è nel nuovo port:**
++- **Avvio (`H000+$0000`):** le 99 inizializzazioni dei moduli nell'ordine originale, poi il main.
++- **Main (`H001`):**
++  - la scelta del prefisso dati: `"df0:"` sotto 1800 blocchi, altrimenti `""`;
++  - il prompt `"Champions of Krynn v1.0 "` con `"Play Demo"` (attesa 30 s, tasto predefinito `D`);
++  - il ciclo gioco/demo con la verifica di distribuzione.
++- **`H002`/`H003`:** gli adattatori DOS (Lock, Info, UnLock) e di memoria, con la conversione di DOSTRUE in 1 come nell'originale.
++- **`H015`:** l'apertura e la chiusura delle librerie, e la moltiplicazione e divisione a 32 bit. La divisione con segno lascia il resto positivo, come l'originale.
++- **Organizzazione:**
++  - un file per hunk, e ogni funzione portata ha il marcatore `PORT Hnnn+$XXXX`;
++  - le routine non portate stanno in `unported.c`;
++  - i dati globali hanno un nome e, nel commento, il loro offset originale.
++
++**Strumenti:** `scripts/port_status.py` legge tutte le routine dall'asm e i marcatori nei sorgenti, e genera `PORT_STATUS.md` con l'avanzamento per hunk. Nel repository c'è anche `scripts/hunkbytes.py` per leggere byte e stringhe dall'asm.
++
++**Verifiche:**
++- Compila senza avvisi con gcc e clang (`-pedantic`).
++- Il test di `H015` passa contro i valori calcolati emulando le routine asm.
++- Il patch si applica al commit base `9561aac`.
++- **Non ho potuto compilare con SAS/C** perché qui non c'è un compilatore Amiga; il codice Amiga usa gli header NDK standard.
++
++**Cose cambiate fuori da `readable/`:**
++- `registers.c`, `hunk_runtime.c` e `dos_exec.c` servivano alla build di riferimento Ghidra, non al livello leggibile. Li ho spostati in `src_c/reference_runtime/`, e `build_reference.sh` funziona ancora.
++- Ho riapplicato le correzioni di `.gitignore` e del test di runtime.
++- I vecchi `CMakeLists.txt`/`CMakePresets.json` erano dentro `readable/` e sono stati cancellati con il resto. Per ora ci sono solo `Makefile` (host) e `smakefile` (SAS/C).
++- Il README principale del repository descrive ancora il vecchio livello leggibile: lo aggiorno quando il port sarà più avanti.
++- I miei patch precedenti (01–09) riguardavano il vecchio `readable/` e non valgono più.
++
++**Prossimo passo:** continuo nell'ordine di avvio. Viene `H005+$530A`, poi `H004+$0C1A` (inizializzazione di 24 KB di dati), poi `H016`, `H017`, `H018` e così via, finché il programma arriva al main.
++
++Lo zip è in /tmp/claude-0/-home-user/74ed0d1a-ba31-56dc-8643-7b071be4f004/scratchpad:
++- cok-port.zip
++
++---
++
++## 2026-11-10 14:47
++
++Il port è arrivato a 125 routine su 910. Il programma ora esegue tutta l'inizializzazione e la prima routine del main, poi si ferma su **H029+$1206**, la routine che apre schermo e finestra.
++
++**Cosa ho fatto (2 commit nuovi su `asm-port`):**
++
++1. **Tutti i 99 init dei moduli sono in C.**
++   - Le tabelle di costanti sono generate dall'asm e applicate da un unico `init_data.c`; i cicli sono scritti a mano.
++   - Ho confrontato byte per byte con l'emulatore dell'asm H004, H032, H011, H044, H057, H072, H085, H095 e H097: 0 differenze in tutti. Gli altri init, che sono semplici assegnazioni, li ho controllati leggendoli.
++   - H004 resta sul suo generatore già verificato, così i suoi cicli non vengono spezzati.
++
++2. **H006+$01AE (Initialize_GameEnvironment)**, insieme ai servizi foglia che usa:
++   - adattatori DOS Open/Close/Read/Seek/Execute e CurrentTime di intuition;
++   - confronto di stringhe senza maiuscole di H026 (`$003A`, `$0088`, `$0106`);
++   - riempimento di byte H029+$0312, scambio dei byte di una word H031+$0012, verifica di esistenza file H028+$02D0;
++   - i puntatori che l'originale tiene in H005 (blocchi di stato, buffer ECL, record grafici) sono diventati variabili C.
++
++**Scostamenti dall'asm, tutti documentati nei commenti:**
++- Le copie sullo stack prima di un confronto o di un Lock si fermano al NUL, per non leggere oltre gli oggetti C. Il risultato non cambia.
++- Sull'host, Execute degli `Assign "Disk …:"` non fa niente e restituisce successo. Lock controlla davvero se il file esiste e i file handle sono una tabella di `FILE *`.
++
++**Non verificato:** non ho compilato nulla con SAS/C perché qui non c'è il compilatore. La build host con gcc (`-Wall -Wextra -pedantic`) non dà warning.
++
++Lo zip contiene le 3 patch a partire da 9561aac, `src_c/readable` e gli script.
++
++**Decisione per te:** da H029+$1206 in poi il codice chiama graphics e intuition (schermo, bitmap, blit, input). Su Amiga è un collegamento diretto alle librerie, ma l'host ha bisogno di un sostituto. Ti consiglio di emulare a livello degli adattatori (H016, H021, H024, H025): bitmap in memoria, salvataggio dello schermo su file, input da script, nessuna dipendenza esterna. L'alternativa è SDL2, con finestra e tastiera reali ma una dipendenza in più. Dimmi quale preferisci; se non indichi niente procedo con la prima.
++
++---
++
++## 2026-11-10 15:01
++
++Ecco **cok-port-2.zip**. Lo zip precedente lo conto come versione 1, quindi d'ora in poi il numero cresce di uno a ogni consegna (`cok-port-3.zip`, …).
++
++Ho aggiunto SDL2 per la build host. Il gioco ora apre lo schermo vero e proprio. Sono 159 routine su 910 e il programma si ferma su **H030+$0C10**, che carica `gothic.lbm`.
++
++**Come funziona l'host:**
++- In `src_c/readable/host/` c'è una copia ridotta delle strutture di AmigaOS: `ndk.h` usa gli stessi nomi dell'originale (Screen, Window, BitMap, RastPort, View, ViewPort, ColorMap, RasInfo, Preferences, GfxBase). Accanto ci sono le funzioni di libreria con lo stesso nome (OpenScreen, OpenWindow, LoadRGB4, InitBitMap, AllocRaster, BltClear, InitView, GetColorMap, LoadView, OpenLibrary, FindTask, …).
++- Per questo gli adattatori del gioco sono lo stesso codice su Amiga e su host: cambia solo la libreria sotto.
++- `host/display.c` converte la bitmap planare in pixel con la palette RGB4 e la mostra in una finestra SDL2. Mostra lo schermo Intuition oppure, dopo `LoadView`, la View personalizzata del gioco.
++- Puoi impostare tre variabili d'ambiente:
++  - `COK_SCALE=n`: ingrandimento della finestra (3 se non impostata);
++  - `COK_SCREENSHOT=f.bmp`: all'uscita salva l'ultimo fotogramma;
++  - `SDL_VIDEODRIVER=dummy`: gira senza finestra.
++- La build richiede SDL2: `libsdl2-dev` su Debian/Ubuntu, `brew install sdl2` su macOS, MSYS2 su Windows.
++
++**Routine nuove (dall'asm):**
++- H029: apertura di schermo e finestra (`$1206`), palette iniziale (`$115C`), caricamento di `pointers.daa` (`$0234`, `$0180`), chiusura (`$12BC`).
++- H029: allocazione dei record grafici (`$0408`) e preparazione della View fuori schermo (`$1346`).
++- H024 Open_GameScreen e H025 Open_GameWindow.
++- Gli adattatori H016, H018, H021, H022, H037, H051, H055 e H084.
++
++**Scostamenti, documentati nei commenti:**
++- I puntatori del mouse in `pointers.daa` finiscono in una tabella C a parte. L'originale invece li riscrive come indirizzi a 32 bit dentro il buffer, e sull'host non ci stanno.
++- Il record grafico è una struct C con gli stessi campi.
++- Sull'host le Preferences danno spostamenti del display pari a 0.
++
++**Limiti attuali:**
++- I file dati del gioco non sono in questo ambiente. Quando servono vanno messi nella directory corrente, quindi da qui posso verificare solo fino a dove non vengono letti.
++- Non ho compilato nulla con SAS/C. La build host è senza warning e gira senza finestra; ho controllato il file dello screenshot ma non ho guardato l'immagine.
++
++Il prossimo blocco è il caricamento delle immagini ILBM: Open_ResourceFile (H028+$05FA), Read_ILBM (H040+$05E4) e il parser IFF generico di H086. Se mi dici "procedi" riparto da lì.
++
++---
++
++## 2026-11-10 15:07
++
++Ho corretto i tre problemi del log SAS/C. Non posso compilare con SAS/C qui, quindi confermi tu: rilancia `smake` su **cok-port-3.zip** e mandami il nuovo `.err` se esce altro.
++
++**Correzioni per SAS/C:**
++- **Warning 63 (`GfxRecord` dichiarato due volte):** la struttura ora sta in un header suo, `gfx_record.h`, incluso da `globals.h`, `unported.h` e `h029_gfx.h`. Non ci sono più dichiarazioni anticipate.
++- **Warning 85 (`signed_byte` restituisce `int`):** il valore ora si calcola in una variabile `s16`. Ho corretto anche un caso uguale in `h026_compare`, che sarebbe uscito più avanti.
++- **Error 61 (`GfxBase` non definito):** `cok.h` include ora sul target Amiga `graphics/gfxbase.h`, `graphics/view.h` e `intuition/preferences.h`.
++
++Lo smake si ferma al primo errore, quindi possono esserci altri problemi nei file dopo `h029_gfx.c`. Come controllo approssimativo ho ricompilato tutto con gcc in C89 rigoroso, senza warning.
++
++**File del gioco:**
++- Li ho estratti nell'area di lavoro.
++- AmigaDOS non distingue maiuscole e minuscole, mentre sul disco ci sono nomi come `items` e `BODY1.DAA` e il gioco chiede `ITEMS`. Sull'host la ricerca dei file ora ignora le maiuscole e scarta il volume ("df0:", "Disk Two:").
++- Per indicare la cartella dei dati c'è la nuova variabile `COK_DATA=dir`; se manca vale la directory corrente.
++- Con i dati veri il gioco arriva fino a H030+$0C10 e si ferma lì come previsto. Il caricamento di `pointers.daa` e di `ITEMS` non l'ho verificato a parte.
++
++**Port nuovo in questa versione:** Open_ResourceFile (H028+$05FA) con le routine stringa di H026 che usa e il requester Retry/CANCEL.
++- Sull'host il requester stampa il testo su stderr e aspetta Invio/R (Retry) o Esc/C (Cancel) nella finestra.
++- Senza finestra il programma termina invece di riproporre la richiesta all'infinito.
++- La routine c'è ma non viene ancora eseguita: la chiama H030+$0C10, che non è ancora portata.
++
++Sono 170 routine su 910. Il prossimo passo è Read_ILBM (H040) con il parser IFF di H086, per caricare `gothic.lbm`. Ora posso anche confrontare la decodifica con i file veri.
++
++---
++
++## 2026-11-10 15:14
++
++Ecco **cok-port-4.zip**, con CMake per tutte le piattaforme e lo script che scarica SDL2 da NuGet per Visual Studio. Visual Studio qui non c'è, quindi il build MSVC non l'ho provato: le prove sono con gcc e MinGW, descritte sotto.
++
++**Visual Studio 2022 (x86 e x64)**, dalla cartella `src_c/readable`:
++```bat
++windows\get-sdl2-nuget.cmd
++cmake --preset vs2022-x64
++cmake --build --preset vs2022-x64-release
++```
++Per x86 i preset sono `vs2022-x86` e `vs2022-x86-release`. Puoi anche aprire la cartella in VS (File > Apri > Cartella) e scegliere il preset dall'elenco, oppure aprire il `.sln` generato in `build-vs2022-x64` o `build-vs2022-x86`.
++
++- **Script NuGet** (`windows/get-sdl2-nuget.ps1`, più il `.cmd` per il doppio clic):
++  - Scarica da nuget.org `sdl2.nuget` e `sdl2.nuget.redist`, versione 2.30.10; un'altra si sceglie con `-Version`.
++  - Non serve `nuget.exe`.
++  - Mette header, `SDL2.lib` e `SDL2.dll` per Win32 e x64 in `third_party/sdl2-nuget`, che è escluso da git.
++  - Questi due pacchetti sono della comunità (kosmotema): ridistribuiscono le librerie ufficiali di libsdl.org ma non le pubblica il progetto SDL.
++- **`CMakeLists.txt`**:
++  - Su Windows usa per prima la SDL2 scaricata, scegliendo l'architettura giusta, e copia `SDL2.dll` accanto a `cok.exe`.
++  - Altrimenti cerca il pacchetto CMake di SDL2 (vcpkg, Homebrew, distribuzioni), poi pkg-config.
++  - Compila anche il test `h015_test`, che `ctest` esegue.
++- **Linux e macOS**: `cmake -S . -B build-cmake && cmake --build build-cmake`. Il `Makefile` resta disponibile.
++- **SDL2main**: il display non lo usa più, quindi su Windows il `main` del gioco resta il punto d'ingresso.
++
++**Cosa ho verificato qui:**
++- Build CMake su Linux senza warning; `ctest` passa e con i tuoi dati il gioco arriva fino a H030+$0C10.
++- Cross-compilazione con MinGW per Windows x64 e x86 (`-Wall -Wextra -pedantic`), con la SDL2 presa proprio dai pacchetti NuGet e lo stesso layout dello script: entrambe generano `cok.exe` e copiano `SDL2.dll`, senza warning.
++- Lo script PowerShell non l'ho potuto eseguire. Il layout dei pacchetti che usa l'ho controllato scaricandoli.
++
++**Port:** il punto è lo stesso di prima (170 routine). Ho già analizzato la catena di lettura delle immagini: è il lettore IFF85 di Electronic Arts compilato nel gioco. Da portare ci sono:
++- H086: parser dei gruppi e dei chunk;
++- H098: I/O con buffer;
++- H087: BMHD, CMAP e BODY;
++- H040: le callback FORM, PROP e LIST.
++
++Nel port i dati letti dal file (ID, dimensioni, header BMHD) vanno convertiti da big-endian, così funzionano anche su x86 e x64. Al prossimo "procedi" riparto da qui; se il build con VS2022 dà errori, mandami il log.
++
++---
++
++## 2026-11-10 15:38
++
++Mi fermo qui: l'inizializzazione dell'ambiente (H006+$01AE) è completa e il programma arriva all'intro, H007+$09D8. Le routine portate passano da 170 a 230 su 912, e ogni passo è un commit. L'intro richiede input da tastiera e mouse, attese e audio, quindi è un blocco a sé.
++
++**Cosa ho portato, sempre dall'asm:**
++- **Lettore IFF/ILBM** di Electronic Arts compilato nel gioco: I/O con buffer (H098), parser dei gruppi e dei chunk (H086, H039), BMHD/CMAP/BODY con ByteRun1 (H087, H088, H054, H099) e Read_ILBM con i suoi callback (H040). Il font `gothic.lbm` si carica.
++- **Testo a schermo**: UI_DrawText e il disegno del testo col blitter (H049). L'originale scrive direttamente nei registri `$DFF000`, e il C fa lo stesso: sull'Amiga va all'hardware, sull'host a un piccolo emulatore del blitter (`host/blitter.c`). Il messaggio "LOADING...PLEASE WAIT" compare col font gotico; l'ho controllato su uno screenshot.
++- **Risorse grafiche**:
++  - lettura dei contenitori DAX con RLE e inversione dei byte per i `.dax` (H028);
++  - record grafici: caricamento, liberazione, piani, maschere, ricolorazione (H029);
++  - set 8x8 (H034), coppie di sprite 24x24 (H035), bordo (H006+$00FA);
++  - BltBitMap, FreeRaster, RectFill e penne, con l'emulazione per l'host.
++- **Tabelle dei gestori** in H005 ($25C0 e $2832): ora sono array C di puntatori a funzione. Le 175 routine a cui puntano per ora sono stub che si fermano col loro indirizzo se vengono chiamati.
++
++**Verifiche con i file del gioco:**
++- Immagini ILBM: tutte e 7 le `.lbm` sono identiche, byte per byte, a un decoder Python indipendente (`scripts/check_ilbm.py`).
++- Contenitori DAX: tutti i 526 blocchi sono identici al lettore di riferimento (`scripts/check_dax.py`). Il riferimento all'inizio era troppo semplice e l'ho riscritto seguendo le regole dell'asm, per esempio il controllo $FF "ripeti il tipo precedente". Non è quindi del tutto indipendente dal port.
++- Con `-DCOK_TEST_DATA=<cartella dei dati>`, `ctest` esegue anche i test ILBM: passano 8 test su 8.
++- Build Linux e cross-build Windows x64/x86 con MinGW senza warning. SAS/C e Visual Studio non li ho qui: se escono errori, mandami i log.
++
++**Problemi trovati e corretti:**
++- Sull'host i percorsi assoluti venivano trattati come relativi alla cartella dei dati; ora sono riconosciuti, comprese le lettere di unità di Windows.
++- L'originale legge e scrive un byte oltre i buffer di AllocMem; sull'Amiga finisce nel margine di arrotondamento, in C sarebbe un accesso fuori memoria. Nel port questi accessi restano dentro i buffer, e il commento nel codice lo dice.
++
++**Da sapere:**
++- In 33 blocchi (`SPRIT*.DAA`, `pic*.daa`, `pointers.daa`) la decompressione supererebbe il buffer, cioè l'originale darebbe l'errore "uncompress overuns buffer". `pointers.daa` non è un contenitore DAX: lo carica H029+$0234 come file grezzo. Per gli altri suppongo che passino da un altro caricatore, ma non l'ho ancora verificato.
++- In H029+$0A0E l'originale scrive due word diverse nello stesso campo `+$04` del record; il port fa lo stesso.
++- I set 8x8 hanno 4 piani, gli altri record 5 piani più una palette di 32 colori.
++
++**Prossimo blocco: l'intro (H007+$09D8).**
++- Serve l'input: gli eventi IDCMP, cioè tasti e mouse. Sull'host li farei arrivare da SDL2.
++- Servono le attese: Delay (H036) e il controllo dei tasti (H010+$042E).
++- Serve l'audio di H043, che sull'host andrebbe su SDL2 audio.
++- Poi il caricamento delle immagini dell'intro (H007+$04F2) e il puntatore del mouse (SetPointer).
++
++Mi baserei su `host/` come per la grafica: stesse funzioni dell'NDK, implementate con SDL2.
++
++Lo zip numerato lo preparo appena me lo chiedi (sarà `cok-port-5.zip`). Altrimenti, con "procedi", parto con l'intro.
++
++---
++
++## 2026-11-10 15:53
++
++L'intro ora gira dall'inizio alla fine nella build host, tranne l'audio. Il programma poi arriva al prompt "Play / Demo" (H008+$01FC), dove si ferma perché quella routine non è ancora portata. Ti ho mandato **cok-port-5.zip** (lo stato di prima), **cok-port-6.zip** (con l'intro) e `intro-host.png` con sei fotogrammi catturati dalla build host. Sono 258 routine portate su 913.
++
++**Cosa si vede:** logo SSI, l'immagine della luna con la rosa, il titolo "Champions of Krynn", "Dragonlance" e la pagina dei crediti con la cornice di tile 8x8, poi il ciclo ricomincia. Le immagini compaiono con le dissolvenze e un tasto o un clic interrompe l'intro.
++
++**Cosa ho portato, dall'asm:**
++- **Intro (H007):**
++  - caricamento delle immagini con dissolvenza in entrata e in uscita (16 passi, uno per quadro);
++  - attesa di N secondi interrompibile da un tasto;
++  - pulizia dello schermo e pagina dei crediti (26 testi estratti dall'asm);
++  - il puntatore del mouse viene nascosto e poi ripristinato.
++- **Input (H010):**
++  - lettura degli eventi della finestra: tasti e pulsanti del mouse;
++  - conversione dei codici tastiera Amiga in caratteri, con la tabella decodificata dai byte non classificati. Frecce e tastierino diventano le cifre di direzione;
++  - tasti speciali Shift, Ctrl e Alt (Alt+a/m/q/x danno 1..4);
++  - pulsante sinistro = Invio, destro = Esc;
++  - attesa di un tasto (H010+$0974).
++- **Grafica:**
++  - tile 8x8 (H034+$0178, H049+$012A);
++  - cornice dello schermo e dei crediti (H044);
++  - cancellazione di aree di testo (H030+$0B6C);
++  - palette del gioco (H011+$010C);
++  - rilascio delle immagini (H042+$0300).
++- **Adattatori:** GetMsg, ReplyMsg, WaitPort, Delay, WaitTOF, SetPointer, AvailMem.
++
++**Sull'host (SDL2):**
++- Tastiera e mouse diventano messaggi come quelli che Intuition darebbe al gioco, con i codici della tastiera Amiga.
++- Delay e WaitTOF regolano la velocità a 50 e 60 Hz.
++- Il cursore di sistema si nasconde quando il gioco imposta un puntatore vuoto.
++- `COK_SCREENSHOT_AT=t1,t2,...` (insieme a `COK_SCREENSHOT=base`) salva fotogrammi ai millisecondi indicati; è così che ho preso quelli che ti ho mandato.
++
++**Da sapere:**
++- **Audio non portato.** H043 è un modulo di circa 1.800 righe e i due comandi musicali dell'intro (H043+$0584, H043+$190E) vengono saltati con un avviso su stderr invece di fermare il programma. È l'unico caso in cui una routine mancante non blocca il gioco; è scritto anche nel README.
++- **Alt+C** (mostra la memoria libera, H010+$03AA) non è ancora portato e ferma il programma se lo premi.
++- **Interruzione col tasto:** non l'ho potuta provare qui perché la build gira senza finestra. Ho verificato la logica sull'asm.
++- **Build:** Linux senza warning; cross-build Windows x64 e x86 con MinGW senza warning; `ctest` 8 su 8. SAS/C e Visual Studio non li ho qui, quindi mandami i log se escono errori.
++
++Al prossimo "procedi" vado avanti col prompt "Play / Demo" (H008+$01FC) e poi col menu principale. L'audio lo porto a parte (H043 più un emulatore del chip audio su SDL2); dimmi tu se preferisci farlo prima.
++
++---
++
++## 2026-11-10 16:01
++
++Il prompt Play/Demo funziona: dopo l'intro compare "CHAMPIONS OF KRYNN V1.0" con "PLAY" e "DEMO" in fondo allo schermo e risponde a tastiera, mouse e tempo massimo. Ti ho mandato **cok-port-7.zip** e la schermata del prompt presa dalla build host. Le routine portate sono 267 su 913.
++
++**Comportamento verificato sulla build host:**
++
++| Ingresso | Risultato |
++|---|---|
++| nessun tasto per 30 secondi | sceglie Demo, come l'originale, e il gioco arriva a H011+$04A6 |
++| P | sceglie Play e il gioco arriva a H009+$010C, la verifica della copia |
++| Esc durante l'intro, poi freccia destra e Invio | l'intro si interrompe, "DEMO" passa in negativo e viene scelto |
++
++Ho controllato le schermate: titolo in magenta, voce selezionata in negativo, iniziale in bianco, resto in verde.
++
++**UI_RequestChoice (H008+$01FC):** il prompt usa il motore generale delle scelte del gioco, che servirà anche per tutti i menu, quindi l'ho portato intero:
++- divisione delle opzioni in voci, una per ogni iniziale maiuscola o cifra;
++- disegno della riga 24;
++- tasti: lettere, Invio, Esc, '4'/'6' per scorrere, le cifre, Alt+a/m/q/x;
++- clic sulla riga delle opzioni e sulle aree del gioco;
++- forma del puntatore, animazione delle immagini, tempo massimo.
++
++Le sotto-procedure dell'originale leggono le variabili della procedura che le chiama attraverso il suo frame; nel C queste variabili sono una struttura passata per puntatore.
++
++**Errore corretto:** nel C scritto all'inizio, H001 chiamava il prompt con gli argomenti in ordine inverso. Ora l'ordine è quello dell'asm.
++
++**Altro portato:** il cambio della forma del puntatore (H029+$01B6), il disegno di una serie di caratteri (H030+$00B6), l'ora in centesimi di secondo (H030+$0A40), H029+$03E2 e ModifyIDCMP.
++
++**Sull'host:**
++- La finestra tiene la posizione del mouse, come MouseX/MouseY dell'Amiga.
++- Il gioco controlla l'input in un ciclo continuo; nell'host c'è una pausa di 1 ms quando non arrivano eventi, così non occupa tutta la CPU.
++- Nuovo `COK_KEYS="ms=Tasto,..."` per simulare tasti a tempo nei test senza finestra, per esempio `COK_KEYS=1500=Escape,5000=P`.
++- Il puntatore del mouse resta il cursore di sistema: lo sprite del gioco non è disegnato.
++
++**Limiti noti:**
++- I rami che servono solo in combattimento, nella mappa o con il party sono portati, ma chiamano routine ancora mancanti (H046+$0012, H048+$0AA8, H042+$0B80/$0254, la struttura dei personaggi). Se vengono raggiunti, il programma si ferma indicando quale manca. Dal prompt non vengono raggiunti.
++- Due punti in cui l'originale ha un comportamento non definito, ora resi definiti e annotati nei commenti:
++  - clic sul titolo: l'originale restituisce un valore dallo stack mai scritto, il C restituisce 0;
++  - una lettera che non è l'inizio di nessuna voce: l'originale la cerca senza limite, il C si ferma a 20 voci.
++- Build: Linux, cross-build Windows x64 e x86 e controllo C89 senza warning; `ctest` 8 su 8. SAS/C e Visual Studio non li ho qui: se escono errori mandami i log.
++
++**Prossimo passo, a tua scelta:**
++1. **Play**: la verifica della copia (H009+$010C) e poi il menu principale (H013+$4BFC: creazione del party, caricamento delle partite salvate).
++2. **Demo**: H011+$04A6 e il ciclo della demo (H012+$3150).
++
++Al prossimo "procedi" vado con Play, salvo indicazioni diverse.
++
++---
++
++## 2026-11-10 16:08
++
++Con "Play" il gioco ora passa la verifica del manuale e arriva alla soglia del menu principale (H013+$4BFC), dove si ferma perché il menu non è ancora portato. Ti ho mandato **cok-port-8.zip** e la schermata della verifica; le routine portate sono 273 su 913.
++
++**La verifica del manuale (H009+$010C):**
++- È la protezione dalla copia: chiede una parola di una pagina del manuale ("the best quartex" o "tavern tale", scelta a caso).
++- La legge con l'input di testo, che accetta caratteri da spazio a 'z', backspace e Invio/Esc ed è mostrato in giallo dopo "Enter".
++- L'eseguibile nei tuoi dati è una **versione già craccata**: il testo dice "broken by the best quartex" e i salti dopo il confronto della risposta sono stati sostituiti da `nop`. Qualunque parola viene quindi accettata, e il port fa lo stesso.
++- La routine calcola comunque la somma di controllo $3F8F che il main verifica.
++- Prova con tasti simulati: la domanda compare dentro la cornice delle tre lune ("of tavern tale # 41, type any word, page 47"); dopo "WORD" e Invio il gioco prosegue.
++
++**Portato in questo passo:**
++- tabella delle 50 domande con le risposte codificate (H049+$079E) e decodifica della risposta (H009+$007E);
++- generatore casuale del gioco (H023+$0010);
++- inserimento di stringa (H026+$0254);
++- input di una riga di testo (H030+$0718);
++- la cornice dello schermo (H044+$01C2), ora usabile anche da altri moduli.
++
++Build Linux, Windows x64/x86 (MinGW) e controllo C89 senza warning.
++
++**Prossimo blocco: il menu principale.** Le voci sono "Create New Character", "Add Character to Party", "Load Saved Game", "BEGIN Adventuring", "Exit to Workbench" e le altre; ognuna si abilita o disabilita in base al party. Per mostrarlo serve il motore dei menu a elenco di H008 (da $13C0 a $2178), che il gioco usa per tutte le liste:
++- disegno delle voci, abilitate in un colore e disabilitate in un altro;
++- scorrimento a pagine con "Next" e "Prev";
++- selezione con le frecce e con il mouse;
++- domanda Sì/No ($203C);
++- creazione e liberazione delle liste ($20C2/$2178).
++
++Con il party vuoto all'avvio sono abilitate solo "Create New Character", "Load Saved Game" ed "Exit to Workbench". La prima schermata del menu richiede quindi solo il motore e la cornice, non il riquadro del party (H063). Le singole funzioni restano stub finché non le porto: prima la creazione del personaggio (H013+$0982), poi il caricamento delle partite salvate.
++
++Al prossimo "procedi" parto dal motore dei menu.
++
++---
++
++## 2026-11-10 16:21
++
++Il menu principale funziona, e "Exit to Workbench" ora chiude il gioco in modo pulito. Ti ho mandato **cok-port-9.zip** e la schermata del menu presa dalla build host. Sono 298 routine portate su 913.
++
++**Cosa si vede:** dopo Play e la verifica del manuale compare "CHOOSE A FUNCTION Select". Con il party vuoto ci sono solo "Create New Character", "Add Character to Party", "Load Saved Game" ed "Exit to Workbench", come nell'originale.
++
++**Provato con i tasti simulati:**
++- le frecce spostano la selezione, e dalla prima voce la freccia su salta all'ultima;
++- su "Exit to Workbench", Invio chiede "QUIT TO WORKBENCH Yes No" con "No" preselezionato;
++- Y libera tutte le risorse e il programma termina con codice 0;
++- Invio su "Create New Character" porta alla creazione del personaggio (H013+$0982), che non è ancora portata e quindi ferma il programma.
++
++**Portato dall'asm:**
++- **Menu principale (H013+$4BFC):**
++  - 12 voci, abilitate in base al party e al personaggio corrente;
++  - funzione scelta in base alla lettera iniziale della voce;
++  - il trucco nascosto 'J': attiva o disattiva "Free training" se il terzo argomento della riga di comando è la parola di H005+$2358. Per questo il `main` ora conserva argc/argv.
++- **Motore dei menu a elenco di H008**, usato da tutte le liste del gioco: righe di intestazione non selezionabili, pagine con "Next"/"Prev", frecce e tastierino, clic per selezionare e doppio clic per scegliere, opzione "Exit". Più la domanda Sì/No e la creazione e liberazione delle liste.
++- **Uscita (H010+$0332 e $00C4):** libera le risorse e la View fuori schermo, chiude schermo e finestra, rimuove gli Assign se il gioco è installato su disco fisso, poi chiude il runtime.
++
++**Errori trovati con AddressSanitizer e corretti:**
++- Decompressione DAX: in alcuni blocchi l'ultima sequenza da copiare dichiara più byte di quelli presenti, e l'originale li legge oltre il buffer. Ora si copiano solo i byte presenti e il resto resta a zero.
++- `SetPointer` dell'host leggeva la parte finale dello sprite del puntatore, oltre gli 8 byte allocati dall'intro.
++- Freccia su dalla prima voce: l'originale legge da un puntatore nullo (il byte all'indirizzo $2A, nella tabella dei vettori della CPU, normalmente diverso da zero) e così salta all'ultima voce. Nel C un nodo nullo conta come riga di intestazione, con lo stesso effetto.
++
++Dopo queste correzioni l'intro completa e la sessione fino all'uscita girano senza errori sotto ASan/UBSan.
++
++**Non verificato e limiti:**
++- L'audio è ancora saltato con un avviso.
++- Le funzioni del menu non ancora portate fermano il programma indicando quale manca: creazione, aggiunta e rimozione di personaggi, caricamento e salvataggio, BEGIN.
++- Build Linux e Windows x64/x86 (MinGW) e controllo C89 senza warning; `ctest` 8 su 8. SAS/C e Visual Studio non li ho qui.
++
++**Prossimo passo, a tua scelta:**
++1. **Create New Character (H013+$0982):** razza, sesso, classe, allineamento, tiro dei punteggi, nome, ritratto. È il percorso naturale da una partita nuova e richiede la struttura dei personaggi (+$18E per il successivo, ecc.).
++2. **Load Saved Game (H066+$291E):** se hai dei salvataggi da usare, porta più in fretta all'avventura.
++
++Con il prossimo "procedi" parto da Create New Character.
++
++---
++
++## 2026-11-10 16:43
++
++Ho portato Create New Character e ti mando **cok-port-10.zip**. Sull'host funziona dal menu principale fino all'allineamento, poi si ferma: dopo l'allineamento il gioco calcola l'età e chiama la schermata del personaggio (H065+$04B8), che non è ancora portata.
++
++**Cosa funziona già:**
++- I cinque menu, come nell'originale:
++  - **Razza:** imposta gli effetti di razza.
++  - **Sesso.**
++  - **Classe:** mostra solo le classi ammesse dalla razza e imposta livelli ed esperienza iniziali.
++  - **Divinità:** appare solo se il personaggio ha livelli da chierico.
++  - **Allineamento:** mostra solo quelli ammessi da classe e divinità. Ad esempio, con Paladine compaiono Lawful, Neutral e Chaotic Good.
++- Esc in un menu libera il personaggio e torna al menu principale.
++- È scritto anche tutto il calcolo che viene dopo, ma finché mancano la schermata e le altre routine sotto non posso provarlo:
++  - età;
++  - caratteristiche: il migliore di 6 tiri di 3d6+1, con i limiti di età, razza, sesso e classe;
++  - punti ferita, denaro, nome e richiesta di salvataggio;
++  - tiri salvezza, abilità da ladro e incantesimi da chierico.
++
++**Struttura del personaggio:** il nuovo `character.h` tiene i $1AA byte del record con gli offset originali. I puntatori sono campi separati, perché sull'host occupano 8 byte invece di 4:
++- `+$E8` effetti;
++- `+$150` oggetti;
++- `+$154..+$184` oggetti pronti all'uso;
++- `+$18E` personaggio successivo;
++- `+$192` blocco di $18 byte.
++
++**Dove ho seguito l'asm anche se sembra un errore (è scritto nei commenti):**
++- **Correzioni di razza sulle caratteristiche:** non si applicano mai. Il codice usa il contatore del menu delle razze, che a quel punto vale sempre 7.
++- **Bonus di costituzione al primo tiro salvezza (H073+$0BA8):** viene sommato una volta per ognuna delle 8 classi.
++- **Due valori che l'originale non inizializza:** il bonus delle abilità da ladro e la maschera della divinità per un valore non previsto. L'originale usa quello che resta nello stack; qui partono da 0. Sono gli unici due punti in cui il C si discosta dall'asm.
++
++**Verifiche:**
++- La build Linux, le build MinGW x64/x86 e il controllo C89 non danno warning.
++- ctest passa 8 test su 8.
++- Ho fatto tre percorsi diversi nei menu più l'annullamento con Esc sotto ASan/UBSan, senza errori.
++- Lo zip si ricompila da solo.
++- Non ho compilato con SAS/C. Se dà errori mandami lo `smake.err`.
++
++**Cosa manca per finire la creazione, in ordine:**
++1. **H065+$04B8:** la schermata del personaggio, con $0ADE, $0BF4, $10DE e le dipendenze in H063 e H044. Serve anche a View Character.
++2. **H013+$58DC:** l'addestramento, che durante la creazione gira con il flag $24CF.
++3. **H028+$0D36 e H047+$00E6:** le routine chiamate dopo il nome. H047+$00E6 dovrebbe essere la scelta della figura.
++4. **H066+$1640:** il salvataggio del personaggio su disco.
++
++Se vuoi procedo con la schermata del personaggio.
++
++---
++
++## 2026-11-10 16:51
++
++Ho portato la schermata del personaggio e ti mando **cok-port-11.zip**. In Create New Character, dopo l'allineamento, ora compaiono la scheda e i valori delle caratteristiche tirate. Poi il programma si ferma su **H013+$58DC**, la schermata di addestramento, che non è ancora portata. Siamo a 335 routine portate su 914.
++
++**Cosa mostra la scheda (H065+$04B8):**
++- **Intestazione:** nome, stato, sesso, età, allineamento, razza.
++- **Classe:** con la divinità per i chierici, l'ordine dei cavalieri e il titolo "of the Crown/Sword/Rose".
++- **Valori principali:** livelli per classe ed esperienza.
++- **Caratteristiche:** STR/INT/WIS/DEX/CON/CHA, con la percentuale della forza 18 e un `*` quando il valore attuale è diverso dal massimo.
++- **Denaro.**
++- **Combattimento:** punti ferita, classe d'armatura, ingombro, THAC0, movimento e danno nel formato "NdM+K".
++- **Oggetti pronti negli slot 0 e 2.**
++
++Nello screenshot (Qualinesti Elf, chierico di Paladine) punti ferita, movimento e danno valgono ancora 0. È corretto anche nell'originale: la scheda viene disegnata prima dei tiri, e quei valori si calcolano dopo.
++
++**Routine nuove dall'asm:**
++- **H065:** $04B8, $0ADE, $0BE6 con la procedura annidata $0BF4, e $10DE.
++- **H044+$068E:** la cornice della scheda.
++- **H063+$13BE:** il ricalcolo dei valori derivati, che serve a tutto il gioco. Usa le routine di slot degli oggetti pronti, bonus di forza e destrezza, arma, armatura, classe d'armatura, ingombro e movimento ($016A, $0228, $0354, $0432, $06AE, $0758, $08A2, $18F8, $19B6, $1A8A).
++- **H063, altre:** spazi iniziali ($0112), ricerca di un effetto ($0946), nome degli oggetti con plurali e quantità ($09B2), CA ($0FA0), punti ferita ($103A), nome del personaggio ($1F34).
++- **`character.h`:** gli oggetti pronti all'uso sono ora un array di 13 puntatori da `+$154` a `+$184`.
++
++**Dove ho seguito l'asm anche se sembra un errore (è nei commenti):**
++- In H063+$13BE c'è un flag sempre a 0, quindi il ramo "-5000 di ingombro" non viene mai eseguito.
++- In H063+$0228, con forza oltre 25 l'originale restituisce un valore non inizializzato; qui 0.
++
++**Verifiche:** la build Linux e quelle MinGW x64/x86 non danno warning, il controllo C89 è pulito e ctest passa 8 test su 8. Ho fatto tre percorsi di creazione sotto ASan/UBSan senza errori. Non ho compilato con SAS/C: se dà errori mandami lo `smake.err`.
++
++**Prossimo passo:** H013+$58DC, l'addestramento (circa 670 istruzioni). È la stessa routine della voce "Train Character" del menu principale; nella creazione gira con il flag $24CF. Dopo restano H028+$0D36, H047+$00E6 e il salvataggio H066+$1640. Se vuoi procedo con l'addestramento.
++
++---
++
++## 2026-11-10 17:01
++
++Ho corretto l'errore di SAS/C: ti mando **cok-port-12.zip**, ma non ho potuto compilarlo con SAS/C.
++
++**Causa:** su Amiga `intuition/intuition.h` dichiara già `struct MenuItem`, cioè le voci dei menu di Intuition. Il tipo del port in `h008.h` aveva lo stesso nome, quindi SAS/C dava "Error 63: already declared".
++
++**Correzione:** ho rinominato il tipo in `CokMenuItem` in `h008.h`, `h008.c` e `h013.c`, gli unici tre file che lo usavano. Il comportamento non cambia.
++
++Ho controllato i nomi delle altre struct del port contro le strutture dell'NDK presenti nel repository, e solo `BitMapHeader` coincide. Lo dichiara datatypes (`pictureclass.h`), che il port non include, quindi oggi non dà errori.
++
++Le build host e il controllo C89 non danno warning e ctest passa 8 test su 8. Se SAS/C si ferma su un altro file, mandami il nuovo `smake.err`.
++
++Se la build Amiga passa, il passo successivo è sempre l'addestramento (H013+$58DC).
++
++---
++
++## 2026-11-10 18:28
++
++Ho portato l'addestramento: ti mando **cok-port-13.zip**. Ora Create New Character arriva fino alla domanda "Reroll stats?" e alla richiesta del nome. Dopo il nome il programma si ferma su **H028+$0D36**, non ancora portata. Siamo a 342 routine portate su 915.
++
++**Addestramento (H013+$58DC):**
++- **Dal menu principale (voce T):** controlla che il personaggio sia cosciente e che abbia esperienza sufficiente secondo la tabella H005+$1946. Controlla anche che la classe si possa addestrare lì (maschera +$550 dello stato B). Poi mostra "X will become: a level N …", chiede "Do you wish to train?" e alza i livelli.
++- **Dentro la creazione:** gira senza messaggi né domande e viene ripetuto finché nessuna classe può più salire. Poi assegna gli incantesimi iniziali del mago e tira i punti ferita.
++- **Esempi:**
++  - Un guerriero con 2001 XP iniziali parte dal livello 2, con 23 PF (screenshot).
++  - Un chierico di Paladine con 2000 XP resta al livello 1, perché per lui il livello 2 richiede 4000 XP.
++
++**Altre routine nuove:**
++- **H073+$05AE:** ricalcola i valori legati al livello (THAC0 base, livello massimo, tiri salvezza, abilità da ladro, oggetti che non si possono più tenere pronti).
++- **H073+$0012:** slot e incantesimi conosciuti per tutte le classi.
++- **Funzioni di supporto:** H063+$3F72 (riga della tabella dell'esperienza), H029+$039A e H030+$0AD2/$0B4A (messaggio a tempo sulla riga 24).
++
++**Cosa resta stub:** H065+$34FC, la scelta interattiva di un nuovo incantesimo del mago quando sale di livello. Si usa solo dalla voce "Train" del menu, non nella creazione.
++
++**Dove ho seguito l'asm anche se sembra un errore (è nei commenti):**
++- Nel secondo ciclo dell'addestramento la riga della tabella e il livello sono quelli rimasti dall'ultima classe del ciclo precedente.
++- H063+$3F72 restituisce un valore non inizializzato per le classi 1 e 3; qui 0.
++
++**Verifiche:**
++- La build Linux, le build MinGW x64/x86 e il controllo C89 non danno warning; ctest passa 8 test su 8.
++- Ho fatto tre creazioni sotto ASan/UBSan senza errori: guerriero, chierico e mago con un nuovo tiro.
++- Non ho compilato con SAS/C. Se dà errori mandami lo `smake.err`.
++
++Per completare la creazione mancano:
++1. **H028+$0D36:** chiamata subito dopo il nome. È lunga solo 17 istruzioni, ma ne chiama di più grandi.
++2. **H047+$00E6:** la scelta della figura del personaggio.
++3. **H066+$1640:** il salvataggio su disco.
++
++Se vuoi procedo con queste tre, in quest'ordine.
++
++---
++
++## 2026-11-10 18:37
++
++Ho portato H028+$0D36 e ti mando **cok-port-14.zip**. Ora Create New Character va oltre il nome e si ferma su **H047+$00E6**, non ancora portata. Siamo a 347 routine portate su 916.
++
++**Cosa fa H028+$0D36:** carica una sola volta, controllando il flag -$F9, le due immagini delle schermate dei personaggi, `charS.LBM` e `charT.LBM`.
++
++**Routine nuove dall'asm:**
++- **H028+$0C68:** per ogni file crea una nuova BitMap e legge l'immagine con Read_ILBM.
++  - Copia i 32 colori in H005+$522E.
++  - Mette il colore 0 in H005+$523E e poi azzera il colore 0.
++  - Sull'host i colori del lettore sono word native, quindi li scrivo in H005 in big-endian. È lo stesso risultato del CopyMem di 64 byte sull'Amiga.
++- **H041+$000C, $004A, $00BE:** l'allocatore che salva la dimensione nella long prima del blocco, e la relativa liberazione.
++  - Toglie lo stub che usava la liberazione delle due schermate (H028+$0D74).
++
++**Verifica del caricamento (con gdb, al punto in cui il programma si ferma):**
++- Entrambe le bitmap risultano 320×200 a 5 piani, come nel BMHD del file.
++- In H005+$522E c'è la palette di charT con il colore 0 a nero.
++- In H005+$523E c'è `0x555`, cioè il colore 0 originale di charT.
++
++**Altre verifiche:**
++- La build Linux, le build MinGW x64/x86 e il controllo C89 non danno warning.
++- Ho dovuto cambiare `dax_test`, perché `h028_files.c` ora usa il lettore ILBM: compila anche `h041.c` e ha uno stub del lettore. Con questa modifica ctest passa 8 test su 8.
++- Ho fatto una creazione completa fino al nome sotto ASan/UBSan, senza errori.
++- Non ho compilato con SAS/C. Se dà errori mandami lo `smake.err`.
++
++Il prossimo passo è **H047+$00E6**, la scelta della figura del personaggio. È un trampolino verso $08D6, circa 440 istruzioni, che usa gli sprite di H035 e le schermate appena caricate. Se vuoi procedo con quella.
++
++---
++
++## 2026-11-10 18:44
++
++Il tuo log mostra che la build SAS/C linka (`SLINK Complete`). Ho corretto i warning che segnalava e ti mando **cok-port-15.zip**. Non l'ho ricompilato con SAS/C.
++
++- **Warning 217** ("macro invocation may call function multiple times", in h007, h013 e h063): `COK_PUT16` e `COK_PUT32` valutavano due volte il valore. Quando il valore era una chiamata, per esempio `max_age(...)` o `str_damage_bonus(c)`, la funzione veniva chiamata due volte. Ora le macro mettono argomenti e puntatore in variabili temporanee, quindi valutano tutto una sola volta.
++- **Warning 84** (`SELECTED`): `intuition/iobsolete.h` definisce già `SELECTED` come flag dei gadget. In `h008.c` la macro del port ora si chiama `CHOICE_SELECTED`.
++- **Warning 63** (`struct Character` già dichiarata): `globals.h` ora include `character.h` invece di ridichiarare la struct.
++
++Nessuna modifica cambia il comportamento. La build Linux, le build MinGW x64/x86 e il controllo C89 non danno warning e ctest passa 8 test su 8. Una creazione rifatta con la build normale arriva come prima fino a H047+$00E6.
++
++Se SAS/C dà ancora warning mandami il nuovo `smake.err`. Il prossimo passo è la scelta della figura del personaggio, **H047+$00E6**.
++
++---
++
++## 2026-11-10 19:01
++
++Ho portato l'editor dell'icona (H047+$00E6) e ti mando **cok-port-16.zip**. Ora Create New Character arriva fino in fondo: nome, icona, "Is this icon ok?" e "Save TAS?". Rispondendo No il gioco torna al menu principale. Rispondendo Sì si ferma, perché il salvataggio (**H066+$1640**) è ancora uno stub. Siamo a 363 routine portate su 916.
++
++**Editor dell'icona (H047+$00E6, corpo a $08D6):** è una macchina a sei stati, ognuno con il suo menu.
++1. Parts / 1st-color / 2nd-color / Size / Exit (oppure Body / Size / Exit per le icone intere).
++2. Head / Weapon.
++3. Scelta della parte da colorare: in quel menu la voce "xxxx" diventa Hair o Face.
++4. Dimensione.
++5. Next / Prev / Keep per il colore.
++6. Griglia 7×N delle teste o dei corpi, scelti con frecce, tastierino o mouse.
++
++Mostra la coppia di pose "old" e "new" (ready/action). Exit dal primo menu conferma le modifiche, poi viene chiesto "Is this icon ok?".
++
++**Altre routine nuove:**
++- **H066+$0C34:** compone l'icona 24×24 ritagliando testa e corpo da charS/charT e la ricolora con le coppie di colori del personaggio (+$146). Usa le procedure $0BAC, $0C42, $0D2A e $0DEA.
++- **H035+$01DC / $0460:** liberano e disegnano un set 24×24 attraverso la maschera.
++- **H029+$10B8:** riempie un rettangolo di celle 8×8.
++- **H016+$00A0:** wrapper di BltMaskBitMapRastPort, con l'emulazione sull'host. Sull'host copia la sorgente dove la maschera è a 1, cioè l'effetto del minterm $E0 usato dal gioco.
++
++**Restano stub:** H049+$04AE e $09D6, usate solo per il disegno in combattimento e con scala > 3.
++
++**Scostamento dall'originale (è nei commenti):** nell'editor una variabile di stato (-$24) non è inizializzata prima del primo menu; qui parte da 0.
++
++**Verifiche sull'host:**
++- **Funzioni dell'editor:** la griglia mostra le 13 teste con la selezione evidenziata. Freccia destra + Invio cambia la testa. Next cambia il colore dei capelli (rosso → magenta → marrone). Size e il ritorno ai menu con Esc funzionano.
++- **ASan/UBSan:** un percorso completo dalla creazione all'editor e ritorno al menu principale, senza errori.
++- **Build:** Linux, MinGW x64/x86 e il controllo C89 non danno warning; ctest passa 8 test su 8.
++- **SAS/C:** non l'ho compilato. Se dà errori mandami lo `smake.err`.
++
++L'ultimo pezzo della creazione è **H066+$1640, Save_CharacterRecord**: circa 480 istruzioni, con la scrittura del record su disco e i file collegati. Se vuoi procedo con quello.
++
++---
++
++## 2026-11-10 19:15
++
++Ho portato il salvataggio del personaggio (H066+$1640) e ti mando **cok-port-17.zip**: Create New Character ora arriva fino in fondo e scrive il personaggio su disco. Siamo a 377 routine portate su 916. Non l'ho compilato con SAS/C: se dà errori mandami lo `smake.err`.
++
++**Cosa scrive (nella directory dei salvataggi H005+$3CD4):**
++- `nome.who` con il record di $1AA byte (oppure `nome.sav` se si passa un nome di file);
++- `nome.swg` con gli oggetti, $48 byte ciascuno, solo se il personaggio ne ha;
++- `nome.fx` con gli effetti, $0A byte ciascuno.
++
++Il nome del file viene dal nome del personaggio: si tolgono i caratteri ` .*,?/#:;|` e si tengono al massimo 8 caratteri.
++
++**Controlli prima di scrivere:**
++- **Directory di salvataggio:** se mancano il disco o la directory, il gioco chiede di inserire il disco o crea la directory.
++- **Spazio libero:** se non basta, mostra "Can't save. No room on this disk." e chiede "Lose character? / Ok, try another disk".
++- **Prova di scrittura:** crea e cancella un file di prova (`testfilename`).
++- **File già esistente:** chiede "Overwrite NOME?". Rispondendo No chiede un nome nuovo, che diventa anche il nome del personaggio, come nell'originale.
++
++**Verifiche:**
++- **Elfo guerriero:** produce `TAS.who` di 426 byte con la stessa struttura di `L.who` dei dati originali. Il suo `.fx` è identico byte per byte a `L.fx`.
++- **Cavaliere:** produce `KNT.swg` di 216 byte. Contiene gli stessi tre oggetti iniziali (Plate Mail, Shield, Long Sword), nello stesso ordine e con gli stessi pesi, di `CHRDATA1.swg` originale.
++- **Overwrite:** con Sì riscrive i file; con No e il nome "BOB" crea `BOB.who`, con il personaggio rinominato BOB.
++- **Build e test:** la build Linux, le build MinGW x64/x86 e il controllo C89 non danno warning e ctest passa 8 test su 8. Il percorso con il nome nuovo è stato rifatto sotto ASan/UBSan senza errori.
++
++**Differenze rispetto all'originale (sono nei commenti):**
++- I campi puntatore del record e dei nodi (+$E8, +$150…, i link "successivo") vengono scritti a 0. L'originale ci scriveva gli indirizzi in memoria, che il caricamento non usa.
++- Dopo il nome nuovo, l'originale ricontrolla l'esistenza su un buffer che ormai contiene la domanda "Overwrite …": l'ho mantenuto così.
++- In H028+$033E l'originale legge il nome del volume dopo aver liberato il blocco che lo contiene; qui lo copio prima di liberarlo.
++
++**Altre routine nuove:**
++- H028+$033E, $07E0, $08F0: nome del volume, rimozione di caratteri, nome del file.
++- H030+$028A: messaggio che resta finché non si preme un tasto.
++- Wrapper DOS CreateDir, DeleteFile ed Examine, con le versioni host.
++
++**Modifiche all'host:**
++- Lock ora trova anche le directory, anche su Windows.
++- Info riporta i blocchi liberi.
++
++Il passo naturale è **Add Character to Party** (H013+$0518 → $52E0), che carica un personaggio salvato con Load_CharacterRecord (H066+$1B0E): permette di rileggere i file appena scritti.
++
++---
++
++## 2026-11-10 19:23
++
++Ho portato Add Character to Party e ti mando **cok-port-18.zip**. Il menu principale ora carica i personaggi salvati e li mostra nel party, con nome, CA e PF. Siamo a 386 routine portate su 916.
++
++**Cosa fa:**
++- Mostra l'elenco dei personaggi salvati ("Add a character:"): i file `.WHO` di $1AA byte nella directory dei salvataggi, esclusi quelli già nel party.
++- Il personaggio scelto viene caricato e segnato con `* `.
++- Viene aggiunto solo se rispetta le regole del gioco. Se non le rispetta, il segno viene tolto e compare il messaggio:
++  - non deve essere già nel party;
++  - al massimo 6 personaggi giocanti e 8 membri in tutto;
++  - niente paladino in un party con membri malvagi ("paladins do not join with evil scum");
++  - al massimo 3 ranger ("too many rangers in party");
++  - niente personaggio malvagio con un paladino ("<nome> will tolerate no evil!").
++- Si continua finché non si esce con Esc/Exit o il party è pieno.
++
++**Routine nuove dall'asm:**
++- **H013+$52E0:** Add_CharacterToParty.
++- **H066+$1B0E (Load_CharacterRecord):** legge il record, poi gli oggetti da `.swg` e gli effetti da `.fx`, e ricalcola i valori derivati.
++- **H066+$03D0/$03DE:** elenco dei personaggi salvati.
++- **H066+$0852:** apertura del file senza la sostituzione del disco.
++- **H066+$27EE:** aggiunta in coda al party, con il primo posto icona libero.
++- **H063+$0D80:** elenco del party nel menu principale, insieme all'area cliccabile.
++- **H063+$1D44:** messaggio a tempo sulla riga 24; prende il posto dello stub usato dall'addestramento.
++
++**Host:** i lock ora ricordano il percorso, ed Examine/ExNext scandiscono davvero le directory (dirent; `_findfirst` su Windows, compilato con MinGW ma non provato su Windows).
++
++**Dove ho seguito l'asm anche se sembra un errore (è nei commenti):**
++- Per un personaggio rifiutato viene liberato solo il record: oggetti ed effetti già caricati restano allocati.
++- Due variabili non sono inizializzate prima della prima scelta nell'originale: il flag "with_exit" del menu e il contatore dei membri. Qui partono da 0.
++- La stringa "from saved game …" viene composta ma non è mai usata.
++
++**Verifiche:**
++- L'elenco mostra L (personaggio dei dati originali), BOB, TAS e KNT. Aggiungendoli, il menu principale mostra il party con CA e PF e abilita Drop/Modify/View/Remove/Save/Begin.
++- Il giro con tutti e quattro è stato fatto anche sotto ASan/UBSan, senza errori.
++- I divieti del party (paladini, ranger, allineamenti malvagi) non li ho provati: tutti e quattro i personaggi sono stati accettati, quindi nessun messaggio di rifiuto è comparso.
++- La build Linux, le build MinGW x64/x86 e il controllo C89 non danno warning e ctest passa 8 test su 8.
++- Non ho compilato con SAS/C: se dà errori mandami lo `smake.err`.
++
++Con un party, nel menu restano da portare View Character (H065+$3702/$196E), Drop, Modify, Remove, Save Current Game e BEGIN Adventuring. Dimmi da quale proseguire.
++
++---
++
++## 2026-11-10 19:24
++
++Questo `smake.err` è identico byte per byte a quello che mi avevi mandato prima della versione 15, quindi viene da una build dei sorgenti vecchi. Non riguarda cok-port-18.
++
++Lo si vede dal contenuto:
++
++- **Warning 84** cita `#define SELECTED` alla riga 138 di `h008.c`. Dalla versione 15 quella riga è `#define CHOICE_SELECTED`.
++- **Warning 63** cita `struct Character;` alla riga 73 di `globals.h`. Dalla 15 lì c'è `#include "character.h"`.
++- **Warning 217** viene dalla vecchia `COK_PUT16`, che valutava due volte l'argomento. Ora usa le variabili temporanee `cok_w_`/`cok_p_`.
++- **Dimensione del programma:** il link riporta 164076 byte di codice, come allora. Con le routine aggiunte nella 16, 17 e 18 (editor dell'icona, salvataggio, caricamento, party) dovrebbe essere più grande.
++
++Probabilmente hai compilato in una directory con una versione precedente, oppure `smake` non ha ricompilato perché i `.o` risultavano più recenti dei sorgenti.
++
++Per una build pulita della 18, estrai **cok-port-18.zip** in una directory nuova, oppure cancella i vecchi `.o`:
++
++```bash
++cd cok-port/src_c/readable
++```
++
++```bash
++delete #?.o cok
++```
++
++```bash
++smake
++```
++
++Poi mandami il nuovo `smake.err`. Se compila, dimmi da quale voce del menu proseguire: View Character, Drop, Modify, Remove, Save Current Game o BEGIN Adventuring.
++
++---
++
++## 2026-11-10 19:27
++
++Ho corretto l'unico warning che restava nel log e ti mando **cok-port-19.zip**.
++
++Questo log viene dalla versione nuova. I warning corretti nella 15 (SELECTED, macro PUT, `struct Character`) non ci sono più, e il programma è cresciuto da 164076 a 178684 byte di codice.
++
++Il warning era il **63** in `unported.h`: alla riga 219 c'era `struct GfxRecord;`, ma la struct è già definita in `gfx_record.h`. Ho tolto la dichiarazione e `unported.h` ora include direttamente `gfx_record.h`. Il comportamento non cambia.
++
++La build Linux, le build MinGW x64/x86 e il controllo C89 non danno warning e ctest passa 8 test su 8. Non ho ricompilato con SAS/C: se il nuovo `smake.err` mostra altro, mandamelo.
++
++Dimmi da quale voce del menu del party proseguire: View Character, Drop, Modify, Remove, Save Current Game o BEGIN Adventuring.
++
++---
++
++## 2026-11-10 19:33
++
++Ho portato View Character e ti mando **cok-port-20.zip**: dal menu del party si sceglie un personaggio, se ne vede la scheda e si torna al menu. Le funzioni del sottomenu (Items, Trade, Drop) non sono ancora portate: sceglierle ferma il programma. Siamo a 392 routine portate su 916.
++
++**Come funziona:**
++1. Dal menu principale si sceglie View Character.
++2. Compare "Pick Character" (H065+$3702), dove si sceglie il personaggio. I tasti speciali passano al precedente o al successivo del party, con il giro dal primo all'ultimo; un clic su un nome sceglie direttamente quel personaggio.
++3. Si apre la scheda del personaggio con un menu (H065+$196E) che contiene solo le voci disponibili per lui:
++   - Items, se ha oggetti;
++   - Spells, se ha incantesimi memorizzati;
++   - Trade e Drop, se ha denaro;
++   - Heal e Cure, che però nell'originale non compaiono mai, perché le due funzioni di controllo ($36A6/$36C0) restituiscono sempre 0;
++   - Exit.
++4. All'uscita la schermata viene ridisegnata secondo il modo di gioco (H063+$321A). Nel menu del party è la cornice; gli altri modi (vista, combattimento, accampamento) usano routine ancora non portate.
++
++**Correzione a codice esistente:** lo stub di H042+$0254 aveva la firma sbagliata. Nell'asm prende quattro argomenti (word, word, byte, puntatore) e viene chiamato con il risultato di H042+$0B80. Ho corretto entrambi gli stub e la chiamata in H008.
++
++**Cosa resta stub nel sottomenu di View:**
++- **Items (H065+$255A):** circa 355 istruzioni; usa altre routine di H065 e H033.
++- **Spells (H065+$34FC):** circa 117 istruzioni.
++- **Trade (H065+$12D6) e Drop (H065+$1636):** circa 200 istruzioni ciascuno; usano H067.
++
++**Verifiche:**
++- Con L aggiunto al party, View mostra la sua scheda (Paladine Cleric, 40 Steel) con il menu "Trade Drop Exit", ed Exit torna al menu principale.
++- Il giro è stato fatto anche sotto ASan/UBSan, senza errori.
++- La build Linux, le build MinGW x64/x86 e il controllo C89 non danno warning e ctest passa 8 test su 8.
++- Non ho compilato con SAS/C: se dà errori mandami lo `smake.err`.
++
++Se vuoi completare View, il passo più utile è **Items**: il cavaliere KNT ha i suoi tre oggetti iniziali per provarlo. In alternativa posso passare alle altre voci del menu (Drop, Modify, Remove, Save Current Game, BEGIN Adventuring).
++
++---
++
++## 2026-11-10 19:42
++
++Ti mando **cok-port-21.zip** con la schermata Items di View Character. Funzionano Ready, Drop, Halve e Join; Use, Trade, Sell e Id sono ancora stub, e sceglierli ferma il programma. Siamo a 407 routine portate su 916.
++
++**La schermata (H065+$255A):**
++- In alto "<Nome>'s Items" e "Ready Item".
++- Sotto, l'elenco degli oggetti con Yes/No (pronto o no) e il nome composto.
++- Il menu mostra solo i comandi validi in quel momento:
++  - Ready (View Ready in modalità debug);
++  - Use: solo in combattimento o accampamento;
++  - Trade: non in combattimento;
++  - Drop;
++  - Halve: con meno di 16 oggetti;
++  - Join;
++  - Sell e Id: solo in città;
++  - Exit.
++
++**Comandi portati:**
++- **Ready (H065+$2C04):** prepara o toglie l'oggetto. Un oggetto maledetto non si toglie ("It's Cursed"). Gli altri impedimenti hanno il loro messaggio:
++  - "Wrong Class";
++  - "already using <oggetto>" (slot occupato);
++  - "Your hands are full!";
++  - "Wrong Magical Order" (pergamene);
++  - "Usable Only By Kender".
++- **Drop:** un oggetto pronto non si può lasciare ("Must be unreadied"). Per le pergamene magiche c'è una conferma. Poi "Your <oggetto> will be gone forever / Drop It?".
++- **Halve:** divide la quantità in un nuovo oggetto, oppure "Can't halve that".
++- **Join:** riunisce gli oggetti uguali, al massimo 255 per oggetto.
++
++**Routine di supporto nuove:**
++- **H063+$1BE8:** cancella un oggetto dalla lista.
++- **H056+$0886:** traccia di debug, attiva solo con $24D2.
++- **H033+$17E6:** riconosce le pergamene.
++- **H030+$0302:** testo a capo automatico, con "Press any key to continue" a pagina piena.
++- **H044+$07DE:** cornice della schermata.
++
++**Differenze rispetto all'originale (sono nei commenti):**
++- **Lista degli oggetti nel menu:** l'originale passa la lista degli oggetti direttamente al motore dei menu, perché i primi $30 byte di un oggetto hanno la forma di una voce. In C le struct sono diverse. Per questo costruisco una lista di voci speculare, e la voce scelta corrisponde all'oggetto nella stessa posizione. L'indice del cursore resta lo stesso dell'originale.
++- **Comando Use in combattimento:** con il modo $3DE3 = 5, l'originale legge il blocco +$192 del personaggio anche quando è nullo. Qui un blocco nullo conta come 0.
++
++**Altri stub:**
++- Gli effetti degli oggetti magici quando diventano pronti (H062+$03F2, $1A32, $0452): si raggiungono solo con oggetti magici.
++
++**Verifiche:**
++- **Ready e scheda:** con KNT gli oggetti sono Plate Mail, Shield e Long Sword. Dopo Ready su armatura e scudo, la CA scende a 1, l'ingombro sale a 565 e il movimento passa a 6. La Plate Mail compare nella riga dello slot 2: l'ho verificato sul file `items` dei dati originali, dove ha davvero slot 2.
++- **ASan/UBSan:** un giro con Ready, Join e Drop (lo scudo: ingombro 515, CA 2) senza errori.
++- **Build e test:** la build Linux, le build MinGW x64/x86 e il controllo C89 non danno warning e ctest passa 8 test su 8.
++- **SAS/C:** non l'ho compilato. Se dà errori mandami lo `smake.err`.
++
++Per completare Items mancano Use (H065+$2F82, con gli incantesimi di H033), Trade (H065+$1D94), Sell e Id, che però servono in città. Dimmi se proseguire con queste o passare ad altre voci del menu del party.
++
++---
++
++## 2026-11-10 20:04
++
++Ti ho mandato **cok-port-22.zip**, con il comando Use della schermata oggetti (H065+$2F82) portato fedelmente dall'asm. Dato che Use chiama il lancio degli incantesimi, ho portato anche la parte di H033 che lo gestisce. Il conteggio passa a 428 routine portate su 917 (commit `4a46ad2`). Su SAS/C e Visual Studio non posso compilare da qui: mandami il log.
++
++**Cosa ho portato**
++- **H065:**
++  - Use (`use_item`).
++  - La scelta dell'incantesimo `choose_spell_of_kind` ($34FC), che sostituisce lo stub chiamato anche da H013 e dal menu Spells.
++- **H033:**
++  - costruzione degli elenchi degli incantesimi: in memoria, grimorio, pergamene, da scegliere, da memorizzare ($0366–$0D7C);
++  - menu Cast/Memorize/Scribe/Learn ($00EE) e scelta dei bersagli ($12D4);
++  - lancio vero e proprio ($1426), rimozione dell'incantesimo dalla pergamena ($1836) e messaggio "casts" ($18EE).
++- **H063:** messaggi nella zona di testo ($1DC2, $1EE8), $2F12 e la scelta di un membro del party "Cast Spell on whom" ($3A26).
++- **H062 e H073:** H062+$1780 (toglie gli effetti $19) e le due routine H073+$1294/$12AE, che restituiscono sempre $11.
++- **Dati:** le tabelle che H033 legge in H085 ora sono variabili C dichiarate in `h085.h`. Anche i puntatori di H005 $2508, $251C, $2520 e $2770 sono variabili globali C.
++
++**Cosa resta come stub**
++Le routine usate solo in combattimento (H048, H077+$508, H063+$1B90/$2178/$21D2/$3658, H044+$492) sono stub. Lo stesso vale per i gestori dei singoli incantesimi H085+$xxxx: il programma si ferma lì.
++
++**Una differenza dall'originale:** nell'asm il contatore delle pergamene H085+$4 non ha limite e, dopo $31 voci, scrive sopra le tabelle successive di H085. In C mi fermo alla fine della tabella, per non corrompere la memoria sull'host.
++
++**Test**
++- **Come ho provato:** Use compare solo durante l'avventura ($3DE3 = 2..4), quindi dal menu principale non si raggiunge ancora. L'ho provato con una modifica temporanea, che non è nel commit, e con dati di prova in cui ho dato ai personaggi una pergamena (Bless e Cure Light Wounds) o un oggetto magico.
++- **Pergamena:** compare il menu "Spells on Scroll" con l'intestazione "1st Level". Col cavaliere esce "KNT oops!". Col chierico L il lancio va avanti fino al gestore di Bless (H085+$1C60), che non è portato.
++- **Oggetto magico:** compaiono "KNT uses an item" e il nome dell'oggetto, poi "Cast Spell on whom Select Exit". Select arriva al gestore di Cure Light Wounds (H085+$1CB8), anche questo non portato.
++- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8 e ASan pulito sia sul flusso normale sia sui due percorsi di Use.
++
++Il prossimo passo naturale sono gli effetti degli incantesimi in H085, per far funzionare davvero Bless e Cure Light Wounds. In alternativa ci sono i comandi Trade, Sell e Id degli oggetti, o le voci rimaste del menu principale.
++
++---
++
++## 2026-11-10 20:37
++
++Ti ho mandato **cok-port-23.zip**: il menu principale ora è completo tranne Begin Adventuring, insieme ai comandi rimasti di View e Items. Degli effetti degli incantesimi ho portato solo una prima parte: il motore comune che serve a quasi tutti gli altri incantesimi resta da fare. Siamo a 483 routine portate su 923, con le patch fino alla 0030. Su SAS/C e Visual Studio non posso compilare da qui: mandami il log.
++
++**Menu principale**
++- **Drop Character:** chiede conferma due volte, cancella i file .who/.swg/.fx e toglie il personaggio dal party. Provato: Garin è stato rimosso.
++- **Modify Character:** Add, Subtract, Keep ed Exit su caratteristiche, punti ferita e nome, con i limiti di razza e classe. Provato: Subtract su STR abbassa la forza eccezionale da 18(51) a 18(48), Esc ripristina tutto.
++- **Knight Change Classes:** portato ma non provato. Dal menu compare solo quando Train è attivo, e nei dati di prova non lo è.
++- **Save Current Game:** scrive `savgamX.dat` e i file `CHRDATXn`, poi cancella i .who dei personaggi. Il file prodotto ha la stessa dimensione e lo stesso formato dell'originale (5481 byte).
++- **Load Saved Game:** carica sia il salvataggio fatto da noi sia quello originale A, con i suoi 6 personaggi.
++  - Il caricamento della mappa 3D e dell'immagine grande (H011+$1876, H011+$14EA, H042+$1006) serve solo all'avventura. Sono stub che segnalano e proseguono, non bloccano.
++
++**View e Items**
++- **Trade e Drop del denaro (View):** portati insieme alle routine delle monete di H067, al parser di numeri H045+$000C e al messaggio d'errore H014+$0018. Il personaggio del salvataggio non aveva denaro, quindi non li ho provati.
++- **Trade di un oggetto (Items):** provato, la Plate Mail passa a Istan.
++- **Sell e Id (Items):** portati ma non provati, perché compaiono solo nei negozi.
++
++**Effetti degli incantesimi**
++- **Funzionano e li ho provati:**
++  - Cure Light Wounds: KNT passa da 10 a 13 PF.
++  - Enlarge: la forza va a 18(00) con "is stronger".
++- **Portati ma non provati:**
++  - Cure Serious Wounds.
++  - Cure Disease e Neutralize Poison: si appoggiano alla rimozione degli effetti e al ricalcolo delle caratteristiche (H062+$0452 e H062+$1A32), che ora sostituiscono anche gli stub usati da Ready.
++  - Strength: provato solo su un cavaliere, dove non ha effetto (vedi sotto).
++- **Cosa manca:** Bless, Detect Magic, Protection, Resist, Invisibility, Prayer, Haste e quasi tutti gli altri passano da H085+$07B6. Restano circa 2300 istruzioni, in parte grafica del combattimento in H049 e H029. È il passo successivo; finché non c'è, quegli incantesimi si fermano sullo stub "routine non ancora portata".
++
++**Valori non inizializzati nell'asm, qui messi a 0**
++- Il bonus di Strength per un personaggio senza classi adatte: per questo su un cavaliere non succede nulla.
++- La costituzione fuori dall'intervallo 3–19.
++- L'ordine di cavalleria diverso da Corona e Spada.
++- Il tipo di moneta sconosciuto.
++- Il livello d'incantatore per una classe oltre 4.
++
++**Prove**
++- Compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8 (ho corretto lo stub di `dax_test`).
++- ASan pulito su Load, View, Save, Modify e Drop, e sui percorsi di Use.
++- Use l'ho provato come nella versione 22: dal menu non è raggiungibile, quindi ho usato una modifica temporanea, non committata.
++
++---
++
++## 2026-11-10 20:56
++
++Ti ho mandato **cok-port-24.zip**: H085+$07B6 è portato insieme alla sua catena non grafica, e con lui una cinquantina di gestori degli incantesimi. Gli effetti che i personaggi hanno già addosso invece sono quasi tutti ancora stub: un incantesimo si ferma lì se il bersaglio ha uno di quegli effetti. Siamo a 552 routine portate su 975 (commit `87123b7`, patch fino alla 0031). Su SAS/C e Visual Studio non posso compilare da qui: mandami il log.
++
++**Il motore (H085+$07B6)**
++Per ogni bersaglio fa il tiro salvezza (H062+$142C), il tiro per colpire quando serve (H062+$12F6), il danno e poi l'effetto con la sua durata. Il danno passa da H062+$2188 (con i messaggi "takes … points of damage from …", "Goes Down", "is killed") e da H063+$2984. L'effetto lo applica H062+$0114. Sotto ci sono:
++- gli eventi degli effetti (H062+$083E), con la tabella dei 25 eventi;
++- l'attivazione di un singolo effetto (H062+$057C);
++- la resistenza alla magia (H062+$0772);
++- la rimozione degli effetti quando un personaggio cade (H062+$17C0);
++- il messaggio dell'effetto (H063+$2760);
++- H063+$1B90 (toglie l'incantesimo lanciato), che sostituisce il suo stub.
++
++**Incantesimi portati**
++- **Chierico:** Bless, Curse, Cause Light/Serious Wounds, Resist Cold e Resist Fire, Silence, Slow Poison, Snake Charm, Spiritual Hammer, Cure/Cause Blindness, Cause Disease, Prayer, Remove Curse, Bestow Curse, Sticks to Snakes.
++- **Mago:** Burning Hands, Charm Person, Reduce, Friends, Magic Missile, Shield, Shocking Grasp, Sleep, Knock, Mirror Image, Ray of Enfeeblement, Blink, Haste, Slow, Confusion, Fire Shield, Fumble, Ice Storm, Minor Globe.
++- **Comuni:** Detect Magic, Protection, Invisibility.
++- **Senza nome (classe 4):** i gestori degli incantesimi dei mostri.
++
++**Cosa resta come stub**
++- **Gestori degli incantesimi:** Hold Person, Stinking Cloud, Lightning Bolt, Fireball, Charm Monsters, Dimension Door, Fear e Poison sono solo da combattimento e restano stub. Anche Dispel Magic (H085+$3ED4) resta stub, ma lì è una mia scelta di priorità: è grosso, non è solo da combattimento, e conviene farlo subito.
++- **Grafica e posizioni del combattimento:** H029, H048, H049, H077, H063+$2178/$2BDE. Fuori dal combattimento non vengono mai chiamate.
++- **Gestori degli effetti (H027, tabella H005+$2832):** è il prossimo livello, 108 gestori. Ho portato solo quelli che i personaggi di prova attivano subito: gli effetti $12 e $5F (H027+$0A00 e $3A46, con il loro helper $0286) e $5C (H027+$41F6, che non fa nulla). Senza questi, Bless si fermava su H027+$3A46.
++
++**Valori non inizializzati nell'asm, qui messi a 0**
++- Il valore della forza nell'incantesimo dei mostri H085+$331E quando la forza non sale.
++- Il caso di H063+$2FAA con una classe oltre 4.
++
++**Prove**
++- **Bless dalla pergamena di L:** compare "L is Blessed" e la pergamena passa da 3 a 2 incantesimi.
++- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
++- **ASan:** pulito sia su Bless sia sull'oggetto magico. Come nelle versioni precedenti ho usato la modifica temporanea per far comparire Use, non committata.
++
++Il passo naturale successivo sono i gestori degli effetti di H027: la maggior parte è sotto le 60 istruzioni, ma sono tanti. In alternativa posso fare prima Dispel Magic.
++
++---
++
++## 2026-11-10 21:03
++
++Ti ho mandato **cok-port-25.zip**. H085+$07B6 era già stato portato in cok-port-24 (commit `87123b7`), quindi non l'ho rifatto. Sono andato avanti con quello che il motore chiama e che mancava ancora: i gestori degli effetti di H027, nella tabella H005+$2832. Il contatore segna ora 596 routine portate su 1017; il totale è salito perché lo script conta anche le routine scoperte con i nuovi tag (commit `07d9a80`, patch fino alla 0032). Su SAS/C e Visual Studio non posso compilare da qui: mandami il log.
++
++**Gestori portati (una cinquantina)**
++Il motore li chiama quando un effetto si applica, si toglie, o quando scatta un evento come danno, tiro salvezza o tiro per colpire.
++- **Modificatori di danno e tiri:** i bonus al tiro salvezza e al tiro per colpire (effetti 1, 2, 8, 9, $21, $24, $39, $76, $77), il danno dimezzato o raddoppiato da fuoco e freddo ($A, $14, $1D, $32, $36), la cecità ($21) e il veleno lento ($F).
++- **Effetti con messaggio:** Mirror Image che perde un'immagine ($1C, "lost an image"), il silenzio ($15) e l'invecchiamento ($27).
++- **Annullamento di effetti e incantesimi in arrivo:** $3B, $3F, $49 e $59–$63.
++- **Fine del turno:** i gestori che chiudono il turno di combattimento ($1B, $1F, $33–$35, $6A).
++- **Oggetti magici:** il vettore $2A0E, che aggiunge o toglie l'effetto quando un oggetto viene preparato o tolto (effetto +$45).
++- **Effetti vuoti:** quelli che nell'originale non fanno nulla.
++
++Ho anche spostato H062+$15C6 (tiro dei dadi del danno) in `h062.c`, perché lo usano sia H027 sia H085.
++
++**Cosa resta**
++- **47 gestori di H027 restano stub.** Sono soprattutto da combattimento: aree della mappa, bersaglio del turno, la lista di personaggi in H005+$16, oppure dipendono da routine non portate di altri moduli (H062+$2650, H063+$2B7C).
++- **Un problema per il combattimento:** diversi di questi gestori salvano un puntatore a personaggio dentro il blocco +$192 (all'offset +$C). Sull'host, con puntatori a 64 bit, quei 4 byte non bastano. Prima di portarli va deciso come rappresentarlo.
++- **Gestori degli incantesimi ancora stub:** Dispel Magic (H085+$3ED4, 329 istruzioni) e quelli solo da combattimento (Hold Person, Fireball, Lightning Bolt, Stinking Cloud, Fear, Charm Monsters, Dimension Door, Poison).
++
++**Prove**
++- **ASan:** pulito sia su Bless dalla pergamena di L sia sull'oggetto magico di KNT, e nessuno dei due arriva più a uno stub.
++- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
++- **Use:** come prima, l'ho fatto comparire con la modifica temporanea, non committata.
++
++Come passo successivo propongo Dispel Magic, che non è solo da combattimento. Poi conviene decidere come rappresentare i puntatori nel blocco +$192, prima di portare i gestori di combattimento.
++
++---
++
++## 2026-11-10 21:13
++
++Ti ho mandato **cok-port-26.zip** con Dispel Magic (H085+$3ED4) portato. Ho provato solo la prima parte (gli effetti sul bersaglio): la parte sulle nubi è portata ma non provata, perché per ora non esistono mai nubi. Siamo a 598 routine portate su 1018 (commit `4f08813`, patch fino alla 0033). Su SAS/C e Visual Studio non posso compilare da qui: mandami il log.
++
++**Cosa fa la routine (due parti)**
++- **Effetti sul bersaglio:** per ogni bersaglio prova a togliere gli effetti con durata (+$4 < $FF) del primo bersaglio, come nell'asm. La probabilità dipende dal livello d'incantatore contro il livello dell'effetto (+$4 & $0F): +5% per livello sopra, −2% per livello sotto, 50% alla pari. Se ne toglie almeno uno mostra "is affected".
++- **Nubi:** nelle 9 caselle attorno a $2518/$251A legge la mappa di combattimento e, sulle caselle con nube ($1E), dissolve gli effetti nube ($28) del loro lanciatore. Poi ridisegna con H048+$0DF2, che è uno stub di combattimento.
++
++**Cosa ho cambiato per farla girare**
++- **H048+$0154 portata:** è la lettura di una casella della mappa. Va portata perché nell'originale la seconda parte gira anche fuori dal combattimento.
++- **Mappa di combattimento (H005+$2ADE):** ora è una variabile C (`g_combat_area`) al posto dello stub `g_h005_2ade_area()`, che fermava il programma. La alloca H095, il modulo che prepara il combattimento, non ancora portato.
++- **Lista delle nubi (H005+$2514):** è una variabile C (`g_clouds`) con il record di $22 byte. Owner e next sono puntatori C, il resto sta nei byte come nell'originale. Per ora resta vuota, perché Stinking Cloud (che crea le nubi) non è portato.
++
++**Una differenza dall'originale:** senza mappa di combattimento l'asm legge da $2ADE = 0, cioè dalla memoria bassa dell'Amiga. Sull'host questo farebbe crashare, quindi in quel caso la casella vale 0: fuori dal combattimento non ci sono nubi da dissolvere.
++
++**Prove**
++- **Dispel Magic da un oggetto magico su KNT:** ho dato durata 3 al suo effetto $12. L'effetto viene dissolto e compare "KNT is affected".
++- **ASan:** pulito sulla stessa prova.
++- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
++- **Use:** come prima, l'ho fatto comparire con la modifica temporanea, non committata.
++
++Restano gli incantesimi e i gestori di effetti solo da combattimento. Prima di quelli conviene decidere come rappresentare i puntatori a personaggio salvati nel blocco +$192 (offset +$C), che sull'host a 64 bit non entrano nei 4 byte.
++
++---
++
++## 2026-11-10 21:15
++
++Dispel Magic (H085+$3ED4) è già portato: è in **cok-port-26.zip**, che ti ho mandato nel messaggio precedente (commit `4f08813`). Non c'è altro da fare su quella routine, quindi non l'ho toccata di nuovo.
++
++L'ho provato da un oggetto magico su KNT: il suo effetto $12 (con durata 3) viene dissolto e compare "KNT is affected", con ASan pulito. La parte sulle nubi invece è portata ma non provata, perché per ora la lista delle nubi è sempre vuota.
++
++Se il messaggio di prima era un invio ripetuto, dimmi come proseguire tra queste strade:
++
++1. **Puntatori nel blocco +$192 (offset +$C):** prima di toccare il codice di combattimento va deciso come rappresentare i puntatori a personaggio salvati lì, perché sull'host a 64 bit non entrano nei 4 byte. Da questo dipendono quasi tutti i 47 gestori di H027 ancora stub e diversi incantesimi.
++2. **Incantesimi solo da combattimento:** Hold Person, Stinking Cloud, Fireball, Lightning Bolt, Fear, Charm Monsters, Dimension Door e Poison. Richiedono anche H048 e H077 (figure e aree del combattimento).
++3. **Altro fuori dal combattimento:** per esempio l'audio (H043) o altre schermate.
++
++Per il log di SAS/C della versione 26 resto in attesa.
++
++---
++
++## 2026-11-10 21:22
++
++Ti ho mandato **cok-port-27.zip**. Ho fatto il passo che sblocca il codice di combattimento: il blocco del turno +$192 ora è una struct, e ho portato altri gestori di effetti di H027. Il contatore segna ora 626 routine portate su 1040; il totale è salito perché lo script conta anche le routine scoperte con i nuovi tag (commit `2a3f9de`, patch fino alla 0034). Su SAS/C e Visual Studio non posso compilare da qui: mandami il log.
++
++**Il blocco del turno (+$192)**
++- **Cosa ho verificato:** in tutto l'asm l'unico campo longword del blocco è +$C, un puntatore al personaggio bersaglio. Tutti gli altri accessi sono a byte o word.
++- **Come l'ho reso:** il blocco ora è `CokTurn` in `character.h`, con i $18 byte originali in `b[]` e il puntatore in un campo separato, `target`. I 4 byte in +$C..+$F restano inutilizzati, e il resto del codice accede ai byte con `block_192->b[...]` come prima.
++- **Altre variabili che contengono puntatori**, ora variabili C:
++  - H005+$2A14 (`g_h005_2a14`), il bersaglio del turno in esame;
++  - H005+$2B32 (`g_combatants[40]`), i combattenti per numero;
++  - H005+$16 (`g_h005_0016[20]`), i personaggi a terra.
++
++**Nuove routine**
++- **Routine di appoggio:**
++  - H062+$02FA, che manda a terra un personaggio;
++  - H062+$2650, che lo rimette in piedi;
++  - H063+$2B7C, che conta i combattenti attivi per lato;
++  - H027+$0214, che paralizza il bersaglio del turno;
++  - H027+$2182, che avvelena il bersaglio del turno;
++  - H027+$0338, il bonus +1.
++- **Gestori di effetti**, 24 in più:
++  - $16 (morte per veleno);
++  - $17 (Spiritual Hammer, che dà e toglie il martello);
++  - $2B e $2C (debolezza e malattia);
++  - $3D e $3E (fuoco ridotto e rigenerazione);
++  - $40, $41, $56 e $57 (veleni);
++  - $42 ("gets zapped!");
++  - $45, $51 e $58 (paralisi);
++  - $1A, $30, $31, $3A, $44, $72, $73 e $75.
++- **H048+$16D4 (posizionamento sulla mappa):** resta stub, ma restituisce 1 fuori dal combattimento come nell'asm. Così il ritorno in piedi funziona anche fuori dal combattimento.
++
++**Una stranezza dell'originale che ho mantenuto:** nel gestore $17, dopo aver dato il martello, la ricerca lascia selezionato l'oggetto che lo segue, non il martello. È quello che fa l'asm.
++
++**Prove**
++- **ASan:** pulito su Bless e Dispel Magic da oggetto, e nessuno dei due si ferma più su uno stub.
++- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
++- **Use:** l'ho fatto comparire con la modifica temporanea, non committata.
++- **Nuovi gestori:** non provati, perché scattano solo in combattimento o con effetti che i personaggi di prova non hanno.
++
++**Cosa resta in H027**
++Restano 25 gestori stub: $0492, $06D4, $080A, $0EFC, $0FCE, $1162, $13F4, $1836, $1E3C, $2400, $266A, $29E2, $2B3E, $2D46, $2FE2, $3160, $3292, $3636, $3916, $3982, $3B34, $3C2A, $3C88, $3D28 e $3F72. Sono quasi tutti legati al combattimento. Usano la lista $250C, la tabella $2AE2 e le nubi, e routine di H063 non portate ($2DC6, $1160, $135A, $37B2, $21D2). Il prossimo passo naturale è continuare con questi, partendo dalle routine di H063 che servono a più gestori.
++
++---
++
++## 2026-11-10 (cok-port-28)
++
++Ti ho mandato **cok-port-28.zip** con le routine di H063 che servivano ai gestori degli effetti, gli 11 gestori di H027 che le usano e il nuovo `backlog.md`. Il contatore segna 642 routine portate su 1051; il totale è salito perché lo script conta anche le routine scoperte con i nuovi tag. Su SAS/C e Visual Studio non posso compilare da qui: mandami il log.
++
++**backlog.md**
++- È in `src_c/readable/backlog.md` e contiene tutti i miei 42 resoconti di questa sessione, ricavati dalla cronologia, in ordine di data, ognuno con data e ora del messaggio originale.
++- Ci sono anche i primi messaggi non legati al port (per esempio quello su abbonamento Pro e API), perché mi avevi chiesto di metterci tutto.
++- D'ora in poi aggiungo lì ogni nuovo resoconto, a partire da questo.
++
++**Routine di H063 portate**
++- **$135A:** il personaggio è indifeso? Controlla gli effetti elencati in H005+$4066..$4069.
++- **$1160:** pannello del combattente a destra (nome, "Hitpoints", "AC", arma pronta, stato, "(Helpless)", "(Casting)").
++- **$2DC6:** distanza fra due combattenti sulla mappa del combattimento. Salva e ripristina la tabella H005+$2A3E come nell'asm.
++- **$37B2:** arma con cui si combatte, dalla mano (+$154) o dalle munizioni (+$180/+$184).
++- **Esportate:** $016A, $0354 e $19B6 (correzioni di destrezza e forza, già portate ma statiche) ora sono visibili agli altri moduli.
++
++**Gestori di H027 portati (11)**
++- **Combattimento:**
++  - effetto 7 (attacco naturale: da vicino 1d6+2 più la forza, a distanza 1d4+1 più la destrezza);
++  - effetto $1E (nube: "is coughing");
++  - effetti $5D, $64 e $66 (danno dimezzato o annullato secondo l'arma);
++  - effetto $69 (danno extra a distanza 1);
++  - effetto $70 (chi colpisce da vicino "gets zapped").
++- **Stati della mente:**
++  - $B (charme, cambio di lato);
++  - $D ("goes mad!");
++  - $20 ("Arises in a new form");
++  - $23 (confusione: fugge, resta confuso, va in berserk o si infuria, poi un tiro salvezza).
++
++**Valori non inizializzati nell'asm, qui messi a 0**
++- Nell'effetto 7 l'originale somma la parola non inizializzata del frame quando il personaggio non ha un'arma in mano.
++
++**Prove**
++- **ASan:** pulito su Bless e Dispel Magic da oggetto (la modifica temporanea per Use non è committata).
++- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
++- **Nuovi gestori:** non provati, perché scattano solo in combattimento, che non è ancora raggiungibile.
++
++**Cosa resta**
++- **Gestori H027 (14):** $13F4, $1836, $1E3C, $2400, $266A, $29E2, $2B3E, $2D46, $2FE2, $3160, $3292, $3636, $3982 e $3D28. Usano le nubi, la lista H005+$250C, la tabella H005+$2AE2, H062+$2734 e la grafica del combattimento.
++- **Routine di H063 di grafica del combattimento:** $1FDC, $2178, $21D2 e $3CA0. Restano stub.
++
++---
+diff --git a/src_c/readable/h027.c b/src_c/readable/h027.c
+index 4d3ea8b..8a4f796 100644
+--- a/src_c/readable/h027.c
++++ b/src_c/readable/h027.c
+@@ -916,6 +916,274 @@ EH(effect_75)
+     }
+ }
+ 
++/* PORT H027+$17DE: arma con cui combatte c (H063+$37B2, o quella in mano). */
++static CokItem *combat_weapon(Character *c)
++{
++    CokItem *w = NULL;                  /* -$4(a5) */
++    u8 ok;                              /* -$5(a5) */
++
++    if (c->readied[0] != NULL) {
++        ok = find_weapon(c, &w);
++        if (!ok || w == NULL) {
++            w = c->readied[0];
++        }
++    }
++    return w;
++}
++
++/* PORT H027+$0EFC (effetto $1E, nube): "is coughing", CA verso 50. */
++EH(effect_1e)
++{
++    Character *c = *cp;
++
++    (void)obj; (void)flag;
++    if (c->block_192->b[2]) {
++        show_char_message(c, 0x0B, "is coughing", 0x0A, 1);
++    }
++    c->block_192->b[2] = 0;
++    c->block_192->b[1] = 0;
++    recompute_stats(c);
++    if (c->b[0x19D] > 0x34) {
++        add_to_byte(&c->b[0x19D], 0xFFFE);
++    } else {
++        c->b[0x19D] = 0x32;
++    }
++    c->b[0x19C] = c->b[0x19D];
++    if (c == g_current_char) {
++        draw_combat_status(c);
++    }
++}
++
++/* PORT H027+$3916 (effetto $5D): meta' danno da armi coi bit $81. */
++EH(effect_5d)
++{
++    CokItem *w;                         /* -$4(a5) */
++
++    UNUSED_ARGS;
++    w = combat_weapon(g_current_char);
++    if (w != NULL && mask_byte(H005_B(0x336C + w->b[0x30] * 0x12 + 8), 0x81)) {
++        H005_B(0x2474) = (u8)(H005_B(0x2474) >> 1);
++    }
++}
++
++/* PORT H027+$3B34 (effetto $64): meta' danno da armi senza bit o col bit 0. */
++EH(effect_64)
++{
++    CokItem *w;                         /* -$4(a5) */
++    u8 v;
++
++    UNUSED_ARGS;
++    w = combat_weapon(g_current_char);
++    if (w == NULL) {
++        return;
++    }
++    v = H005_B(0x336C + w->b[0x30] * 0x12 + 8);
++    if (v == 0 || mask_byte(v, 1)) {
++        H005_B(0x2474) = (u8)(H005_B(0x2474) >> 1);
++    }
++}
++
++/* PORT H027+$3C2A (effetto $66): solo armi magiche (+$36) o mostri forti feriscono. */
++EH(effect_66)
++{
++    CokItem *w;                         /* -$4(a5) */
++
++    UNUSED_ARGS;
++    w = combat_weapon(g_current_char);
++    if ((w == NULL || COK_GET16(&w->b[0x36]) == 0) &&
++        (g_current_char->b[0x5B] < 7 || g_current_char->b[0xDB] < 4)) {
++        H005_B(0x2474) = 0;
++    }
++}
++
++/* PORT H027+$3C88 (effetto $69): +livello ($102) di danno a distanza 1 sul bit 3. */
++EH(effect_69)
++{
++    (void)obj; (void)flag;
++    g_h005_2a14 = (*cp)->block_192->target;
++    if (mask_byte(g_h005_2a14->b[0x14C], 8) &&
++        combat_distance(*cp, g_h005_2a14) == 1) {
++        add_to_byte(&H005_B(0x2474), (*cp)->b[0x102]);
++    }
++}
++
++/* PORT H027+$3F72 (effetto $70): chi colpisce da vicino "gets zapped" (doppio). */
++EH(effect_70)
++{
++    u8 dmg;                             /* -$1(a5) */
++    u8 kind;                            /* -$2(a5) */
++
++    (void)obj; (void)flag;
++    if (combat_distance(g_current_char, *cp) >= 2) {
++        return;
++    }
++    dmg = H005_B(0x2474);
++    H005_B(0x2474) = (u8)(H005_B(0x2474) << 1);
++    kind = H005_B(0x2473);
++    H005_B(0x2473) = 8;
++    show_char_message(g_current_char, 0x0B, "gets zapped", 0x0A, 1);
++    apply_damage(g_current_char, H005_B(0x2474), 0, 0);
++    H005_B(0x2474) = dmg;
++    H005_B(0x2473) = kind;
++}
++
++/*
++ * PORT H027+$0492 (effetto 7, attacco naturale): da vicino 1d6+2 piu' la
++ * forza, a distanza 1d4+1 piu' la destrezza; +$36 dell'arma si aggiunge.
++ * Senza arma l'originale usa la parola non inizializzata; qui 0.
++ */
++EH(effect_07)
++{
++    Character *c = *cp;
++    Character *t;                       /* -$4(a5) */
++    u16 dist;                           /* -$6(a5) */
++    u16 bonus = 0;                      /* -$8(a5) */
++    u16 dmg;
++
++    (void)obj;
++    if (flag || H005_B(0x3DE3) != 5) {
++        return;
++    }
++    if (c->readied[0] != NULL) {
++        bonus = COK_GET16(&c->readied[0]->b[0x36]);
++    }
++    t = c->block_192->target;
++    dist = combat_distance(c, t);
++    c->b[0x19B] = c->b[0x5A];
++    if (dist < 2) {
++        dmg = roll_damage_dice(1, 6);
++        dmg = (u16)(dmg + str_damage_bonus(c) + 2 + bonus);
++        H005_B(0x2474) = (u8)dmg;
++        c->b[0x19B] = (u8)(c->b[0x19B] + str_hit_bonus(c));
++    } else {
++        dmg = roll_damage_dice(1, 4);
++        H005_B(0x2474) = (u8)(dmg + 1 + bonus);
++        c->b[0x19B] = (u8)(c->b[0x19B] + dex_missile_adj(c));
++    }
++}
++
++/*
++ * PORT H027+$06D4 (effetto $B, charme): passa al lato del lanciatore
++ * (+$4 bit 6/7) e torna al suo alla rimozione.
++ */
++EH(effect_0b)
++{
++    Character *c = *cp;
++
++    if (flag) {
++        c->b[0x199] = (u8)(mask_byte(EFF->b[4], 0x40) >> 6);
++        if (c->b[0xEC] == 0xB3) {
++            c->b[0xEC] = 0;
++            c->b[0x19A] = 0;
++        }
++        return;
++    }
++    if (mask_byte(EFF->b[4], 0x20) == 0) {
++        EFF->b[4] = (u8)(EFF->b[4] + 0x20 + (c->b[0x199] << 6));
++        c->b[0x199] = (u8)(EFF->b[4] >> 7);
++        c->b[0x19A] = 1;
++        if (c->b[0xEC] <= 0x7F) {
++            c->b[0xEC] = 0xB3;
++        }
++        c->block_192->target = NULL;
++        count_sides();
++    }
++    H005_B(0x2478) = 0x64;
++}
++
++/* PORT H027+$080A (effetto $D): rinasce furioso ("goes mad!"), senza incantesimi. */
++EH(effect_0d)
++{
++    Character *c = *cp;
++
++    (void)flag;
++    if (c->b[0x197] == 0) {
++        return;
++    }
++    c->b[0x197] = 0;
++    c->b[0x198] = 1;
++    if (!revive(*cp, 0x14, 9, "goes mad!")) {
++        return;
++    }
++    add_effect(*cp, 0x20, 0, 0xFF, 0);
++    add_effect(*cp, 0x30, 0, 0xFF, 0);
++    add_effect(*cp, 0x39, 0, 0xFF, 0);
++    add_effect(*cp, 0x3A, 6, 0xFF, 1);
++    remove_effect(*cp, 0x0D, EFF);
++    h029_fill_bytes(0x39, &(*cp)->b[0x1E], 0x3A, 0);
++}
++
++/* PORT H027+$0FCE (effetto $20): "Arises in a new form". */
++EH(effect_20)
++{
++    Character *c = *cp;
++
++    (void)obj; (void)flag;
++    if (c->b[0x197] == 0) {
++        return;
++    }
++    c->b[0x197] = 0;
++    c->b[0x198] = 1;
++    if (!revive(*cp, 0x14, 0x14, "Arises in a new form")) {
++        return;
++    }
++    add_effect(*cp, 0x3B, 0, 0xFF, 0);
++    add_effect(*cp, 0x3C, 3, 0xFF, 0);
++    add_effect(*cp, 0x42, 0, 0xFF, 0);
++    remove_effect(*cp, 0x20, NULL);
++    remove_effect(*cp, 4, NULL);
++    remove_effect(*cp, 0x30, NULL);
++    remove_effect(*cp, 0x39, NULL);
++    remove_effect(*cp, 0x3A, NULL);
++}
++
++/*
++ * PORT H027+$1162 (effetto $23, confusione): d10: 1 fugge, 2-6 resta
++ * confuso, 7-8 va in berserk, 9-10 si infuria; poi un tiro salvezza (-2)
++ * puo' togliere la confusione.
++ */
++EH(effect_23)
++{
++    Character *c = *cp;
++    u16 r;                              /* -$2(a5) */
++    u8 saved;                           /* -$3(a5) */
++
++    r = roll_dice(1, 0x0A);
++    switch (r) {
++    case 1:                             /* $1186 */
++        remove_effect(c, 0x23, NULL);
++        c->block_192->b[0x12] = 1;
++        c->b[0x19A] = 1;
++        if (c->b[0xEC] <= 0x7F) {
++            c->b[0xEC] = 0xB3;
++        }
++        c->block_192->target = NULL;
++        apply_spell_effect_on(c, 0x6F, 0x0A, 0, 1, 1, 0, 9, "runs away");
++        break;
++    case 2: case 3: case 4: case 5: case 6:     /* $120C */
++        show_effect_message(c, 1, 0x0B, "is confused");
++        clear_message_area();
++        effect_end_turn(cp, obj, 0);
++        break;
++    case 7: case 8:                     /* $123A */
++        apply_spell_effect_on(c, 0x4D, 1, c->b[0x199], 1, 1, 0, 0x0C,
++                              "goes berserk");
++        call_effect_handler(0x4D, cp, NULL, 0);
++        break;
++    case 9: case 10:                    /* $1282 */
++        show_effect_message(c, 1, 0x0A, "is enraged");
++        clear_message_area();
++        break;
++    default:
++        break;
++    }
++    (void)flag;
++    saved = saving_throw_roll(*cp, 4, -2);
++    if (saved) {
++        remove_effect(*cp, 0x23, NULL);
++    }
++}
++
+ /*
+  * PORT H027+$4276: installa i gestori degli effetti di H027 nella tabella
+  * H005+$2832 (le altre voci le scrive H033+$1A50).
+@@ -926,13 +1194,13 @@ void install_effect_handlers(void)
+     g_handlers_2832[1] = (CokHandler)effect_02;   /* $2836 */
+     g_handlers_2832[2] = (CokHandler)effect_03;   /* $283A */
+     g_handlers_2832[4] = (CokHandler)effect_none;   /* $2842 */
+-    g_handlers_2832[6] = h027_0492;   /* $284A */
++    g_handlers_2832[6] = (CokHandler)effect_07;   /* $284A */
+     g_handlers_2832[7] = (CokHandler)effect_08;   /* $284E */
+     g_handlers_2832[8] = (CokHandler)effect_09;   /* $2852 */
+     g_handlers_2832[9] = (CokHandler)effect_0a;   /* $2856 */
+-    g_handlers_2832[10] = h027_06d4;   /* $285A */
++    g_handlers_2832[10] = (CokHandler)effect_0b;   /* $285A */
+     g_handlers_2832[11] = (CokHandler)effect_nothing;   /* $285E */
+-    g_handlers_2832[12] = h027_080a;   /* $2862 */
++    g_handlers_2832[12] = (CokHandler)effect_0d;   /* $2862 */
+     g_handlers_2832[13] = (CokHandler)effect_nothing;   /* $2866 */
+     g_handlers_2832[14] = (CokHandler)effect_0f;   /* $286A */
+     g_handlers_2832[15] = (CokHandler)effect_nothing;   /* $286E */
+@@ -949,12 +1217,12 @@ void install_effect_handlers(void)
+     g_handlers_2832[26] = (CokHandler)effect_end_turn;   /* $289A */
+     g_handlers_2832[27] = (CokHandler)effect_1c;   /* $289E */
+     g_handlers_2832[28] = (CokHandler)effect_1d;   /* $28A2 */
+-    g_handlers_2832[29] = h027_0efc;   /* $28A6 */
++    g_handlers_2832[29] = (CokHandler)effect_1e;   /* $28A6 */
+     g_handlers_2832[30] = (CokHandler)effect_end_turn;   /* $28AA */
+-    g_handlers_2832[31] = h027_0fce;   /* $28AE */
++    g_handlers_2832[31] = (CokHandler)effect_20;   /* $28AE */
+     g_handlers_2832[32] = (CokHandler)effect_21;   /* $28B2 */
+     g_handlers_2832[33] = (CokHandler)effect_22;   /* $28B6 */
+-    g_handlers_2832[34] = h027_1162;   /* $28BA */
++    g_handlers_2832[34] = (CokHandler)effect_23;   /* $28BA */
+     g_handlers_2832[35] = (CokHandler)effect_24;   /* $28BE */
+     g_handlers_2832[36] = (CokHandler)effect_25;   /* $28C2 */
+     g_handlers_2832[37] = (CokHandler)effect_nothing;   /* $28C6 */
+@@ -1007,25 +1275,25 @@ void install_effect_handlers(void)
+     g_handlers_2832[88] = (CokHandler)effect_59;   /* $2992 */
+     g_handlers_2832[90] = (CokHandler)effect_nothing;   /* $299A */
+     g_handlers_2832[91] = (CokHandler)effect_none;   /* $299E */
+-    g_handlers_2832[92] = h027_3916;   /* $29A2 */
++    g_handlers_2832[92] = (CokHandler)effect_5d;   /* $29A2 */
+     g_handlers_2832[93] = h027_3982;   /* $29A6 */
+     g_handlers_2832[94] = (CokHandler)effect_5f;   /* $29AA */
+     g_handlers_2832[95] = (CokHandler)effect_60;   /* $29AE */
+     g_handlers_2832[96] = (CokHandler)effect_61;   /* $29B2 */
+     g_handlers_2832[97] = (CokHandler)effect_62;   /* $29B6 */
+     g_handlers_2832[98] = (CokHandler)effect_63;   /* $29BA */
+-    g_handlers_2832[99] = h027_3b34;   /* $29BE */
++    g_handlers_2832[99] = (CokHandler)effect_64;   /* $29BE */
+     g_handlers_2832[100] = (CokHandler)effect_65;   /* $29C2 */
+     g_handlers_2832[101] = (CokHandler)effect_nothing;   /* $29C6 */
+-    g_handlers_2832[102] = h027_3c2a;   /* $29CA */
+-    g_handlers_2832[104] = h027_3c88;   /* $29D2 */
++    g_handlers_2832[102] = (CokHandler)effect_66;   /* $29CA */
++    g_handlers_2832[104] = (CokHandler)effect_69;   /* $29D2 */
+     g_handlers_2832[105] = (CokHandler)effect_6a;   /* $29D6 */
+     g_handlers_2832[106] = h027_3d28;   /* $29DA */
+     g_handlers_2832[107] = (CokHandler)effect_6c;   /* $29DE */
+     g_handlers_2832[108] = (CokHandler)effect_nothing;   /* $29E2 */
+     g_handlers_2832[109] = (CokHandler)effect_6e;   /* $29E6 */
+     g_handlers_2832[110] = (CokHandler)effect_6f;   /* $29EA */
+-    g_handlers_2832[111] = h027_3f72;   /* $29EE */
++    g_handlers_2832[111] = (CokHandler)effect_70;   /* $29EE */
+     g_handlers_2832[112] = (CokHandler)effect_nothing;   /* $29F2 */
+     g_handlers_2832[113] = (CokHandler)effect_72;   /* $29F6 */
+     g_handlers_2832[114] = (CokHandler)effect_73;   /* $29FA */
+diff --git a/src_c/readable/h063.c b/src_c/readable/h063.c
+index 16ee529..3874748 100644
+--- a/src_c/readable/h063.c
++++ b/src_c/readable/h063.c
+@@ -54,7 +54,7 @@ void trim_leading_spaces(u16 len, char *s)
+ }
+ 
+ /* PORT H063+$016A: correzione di destrezza (+$17) per le armi da lancio. */
+-static s16 dex_missile_adj(Character *c)
++s16 dex_missile_adj(Character *c)
+ {
+     s16 dex = c->b[0x17];               /* -$2(a5) */
+ 
+@@ -113,7 +113,7 @@ static s16 effective_strength(Character *c)
+ }
+ 
+ /* PORT H063+$0354: bonus della forza per colpire (con +$11B). */
+-static s16 str_hit_bonus(Character *c)
++s16 str_hit_bonus(Character *c)
+ {
+     s16 bonus = 0;                      /* -$4(a5) */
+     s16 s = effective_strength(c);      /* -$2(a5) */
+@@ -176,7 +176,7 @@ static s16 dex_ac_adj(Character *c)
+ }
+ 
+ /* PORT H063+$19B6: bonus della forza ai danni (con +$11B). */
+-static s16 str_damage_bonus(Character *c)
++s16 str_damage_bonus(Character *c)
+ {
+     s16 bonus = 0;                      /* -$2(a5) */
+     s16 s = effective_strength(c);      /* -$4(a5) */
+@@ -1190,3 +1190,113 @@ void count_sides(void)
+         }
+     }
+ }
++
++/* PORT H063+$135A: c ha uno degli effetti H005+$4066..$4069 (indifeso)? */
++u8 is_helpless(Character *c)
++{
++    CokEffect *e;                       /* -$6(a5) */
++    u16 i;                              /* -$2(a5) */
++    u8 found = 0;                       /* -$7(a5) */
++
++    for (i = 1; i <= 4; ++i) {
++        if (find_effect(c, H005_B(0x4066 + i - 1), &e)) {
++            found = 1;
++        }
++    }
++    return found;
++}
++
++/*
++ * PORT H063+$1160: pannello del combattente c a destra (nome, punti
++ * ferita, CA, arma pronta e stato), se $24C7 lo chiede.
++ */
++void draw_combat_status(Character *c)
++{
++    u16 row;                            /* -$4(a5) */
++
++    if (!H005_B(0x24C7)) {
++        return;
++    }
++    H005_B(0x24C7) = 0;
++    clear_text_cells(0x17, 1, 0x26, 0x15);
++    row = 1;
++    show_char_message(c, 1, " ", row, 0);
++    ++row;
++    ui_draw_text(0x17, (u16)(row + 1), 0x0A, 0, 9, "Hitpoints");
++    draw_hit_points(c, 0x21, (u16)(row + 1), 0, 0);
++    row = (u16)(row + 2);
++    ui_draw_text(0x17, (u16)(row + 1), 0x0A, 0, 2, "AC");
++    draw_armor_class(c, 0x1A, (u16)(row + 1));
++    H005_SET_W(0x334C, (u16)(row + 1));
++    if (c->readied[0] != NULL) {
++        row = (u16)(row + 2);
++        build_item_name(c, c->readied[0], 0, 0, 0, 0);
++        word_wrap_text(0x17, (u16)(row + 1), 0x26, (u16)(row + 1 + 2), 0x0A, 0,
++                       1, 0x28, (const char *)c->readied[0]->b);
++    }
++    row = (u16)(H005_W(0x334C) + 1);
++    if (!c->b[0x198]) {
++        ui_draw_text(0x17, (u16)(row + 1), 0x0F, 0, 0x0C,
++                     (const char *)&H005_B(0x4B00 + c->b[0x197] * 0x0E));
++    } else if (is_helpless(c)) {
++        ui_draw_text(0x17, (u16)(row + 1), 0x0F, 0, 0x0A, "(Helpless)");
++    } else if (c->block_192->b[0] > 0) {
++        ui_draw_text(0x17, (u16)(row + 1), 0x0F, 0, 9, "(Casting)");
++    }
++}
++
++/*
++ * PORT H063+$2DC6: distanza (meta' del byte di H005+$2A3E) fra c e t
++ * nell'area di c sulla mappa del combattimento; $2A3E viene ripristinata.
++ */
++u16 combat_distance(Character *c, Character *t)
++{
++    u8 saved[0xA0];                     /* -$3fc(a5) */
++    u16 i;                              /* -$3fe(a5) */
++    u16 d;                              /* -$400(a5) */
++    u16 a;
++    u16 b;
++
++    memcpy(saved, &H005_B(0x2A3E), 0xA0);
++    g_combat_area[8] = 1;
++    a = h048_0f88(c);
++    b = h048_0fba(c);
++    h077_08ac(h048_110c(a, b, 0xFF, 0xFF, c), g_combat_area);
++    g_combat_area[8] = 0;
++    i = 1;
++    while (g_combatants[H005_B(0x2A3E + (i - 1) * 4) - 1] != t &&
++           i < H005_B(0x2479)) {
++        ++i;
++    }
++    d = (u16)(H005_B(0x2A3E + (i - 1) * 4 + 1) >> 1);
++    memcpy(&H005_B(0x2A3E), saved, 0xA0);
++    return d;
++}
++
++/*
++ * PORT H063+$37B2: arma di c in *weapon (dalla mano, +$154, o dalle
++ * munizioni +$180/+$184 secondo i bit di H005+$336C+tipo*$12+$10);
++ * vero se c'e' o se quei bit valgono $A.
++ */
++u8 find_weapon(Character *c, CokItem **weapon)
++{
++    CokItem *it = c->readied[0];        /* -$4(a5) */
++    u16 f = 0;                          /* -$6(a5) */
++
++    *weapon = NULL;
++    if (it != NULL) {
++        f = H005_B(0x336C + it->b[0x30] * 0x12 + 0x10);
++        if (mask_byte((u8)f, 0x10)) {
++            *weapon = it;
++        }
++        if (mask_byte((u8)f, 8)) {
++            if (mask_byte((u8)f, 1)) {
++                *weapon = c->readied[11];       /* +$180 */
++            }
++            if (mask_byte((u8)f, 0x80)) {
++                *weapon = c->readied[12];       /* +$184 */
++            }
++        }
++    }
++    return (u8)(*weapon != NULL || f == 0x0A);
++}
+diff --git a/src_c/readable/h063.h b/src_c/readable/h063.h
+index 47ce43d..2c2f377 100644
+--- a/src_c/readable/h063.h
++++ b/src_c/readable/h063.h
+@@ -42,4 +42,13 @@ void damage_hit_points(Character *c, u16 dmg);          /* H063+$2984 */
+ 
+ void count_sides(void);                                 /* H063+$2B7C */
+ 
++u8   is_helpless(Character *c);                          /* H063+$135A */
++void draw_combat_status(Character *c);                  /* H063+$1160 */
++u16  combat_distance(Character *c, Character *t);       /* H063+$2DC6 */
++u8   find_weapon(Character *c, CokItem **weapon);       /* H063+$37B2 */
++
++s16  dex_missile_adj(Character *c);                     /* H063+$016A */
++s16  str_hit_bonus(Character *c);                       /* H063+$0354 */
++s16  str_damage_bonus(Character *c);                    /* H063+$19B6 */
++
+ #endif
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index 6c8e509..b76c5fd 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -43,12 +43,6 @@ void h012_3150(void) { cok_unported("H012+$3150"); }
+ /* Chiamate da H006+$01AE. */
+ 
+ /* Gestori delle tabelle H005+$25C0 e H005+$2832 (H027+$4276, H033+$1A50). */
+-void h027_0492(void) { cok_unported("H027+$0492"); }
+-void h027_06d4(void) { cok_unported("H027+$06D4"); }
+-void h027_080a(void) { cok_unported("H027+$080A"); }
+-void h027_0efc(void) { cok_unported("H027+$0EFC"); }
+-void h027_0fce(void) { cok_unported("H027+$0FCE"); }
+-void h027_1162(void) { cok_unported("H027+$1162"); }
+ void h027_13f4(void) { cok_unported("H027+$13F4"); }
+ void h027_1836(void) { cok_unported("H027+$1836"); }
+ void h027_1e3c(void) { cok_unported("H027+$1E3C"); }
+@@ -61,13 +55,8 @@ void h027_2fe2(void) { cok_unported("H027+$2FE2"); }
+ void h027_3160(void) { cok_unported("H027+$3160"); }
+ void h027_3292(void) { cok_unported("H027+$3292"); }
+ void h027_3636(void) { cok_unported("H027+$3636"); }
+-void h027_3916(void) { cok_unported("H027+$3916"); }
+ void h027_3982(void) { cok_unported("H027+$3982"); }
+-void h027_3b34(void) { cok_unported("H027+$3B34"); }
+-void h027_3c2a(void) { cok_unported("H027+$3C2A"); }
+-void h027_3c88(void) { cok_unported("H027+$3C88"); }
+ void h027_3d28(void) { cok_unported("H027+$3D28"); }
+-void h027_3f72(void) { cok_unported("H027+$3F72"); }
+ void h033_1a40(void) { cok_unported("H033+$1A40"); }
+ void h085_15fe(void) { cok_unported("H085+$15FE"); }
+ void h085_172a(void) { cok_unported("H085+$172A"); }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index 5bd5e94..afb7c6d 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -22,12 +22,6 @@ void h011_04a6(u16 a, u16 b, u16 c, u16 d);
+ void h012_3150(void);
+ 
+ /* Gestori delle tabelle H005+$25C0 e H005+$2832. */
+-void h027_0492(void);
+-void h027_06d4(void);
+-void h027_080a(void);
+-void h027_0efc(void);
+-void h027_0fce(void);
+-void h027_1162(void);
+ void h027_13f4(void);
+ void h027_1836(void);
+ void h027_1e3c(void);
+@@ -40,13 +34,8 @@ void h027_2fe2(void);
+ void h027_3160(void);
+ void h027_3292(void);
+ void h027_3636(void);
+-void h027_3916(void);
+ void h027_3982(void);
+-void h027_3b34(void);
+-void h027_3c2a(void);
+-void h027_3c88(void);
+ void h027_3d28(void);
+-void h027_3f72(void);
+ void h033_1a40(void);
+ void h085_15fe(void);
+ void h085_172a(void);
+-- 
+2.43.0
+

@@ -1,0 +1,1337 @@
+From 881a9d00da575113a493a6be9082719ff4558e10 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 21:43:37 +0000
+Subject: [PATCH 36/65] Port the remaining H027 effect handlers, H062+$2734 and
+ H029+$0376
+
+Add the acid pool list ($250C) and the dropped weapon list ($3360) as C globals.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md | 220 ++++++-----
+ src_c/readable/backlog.md     |  56 +++
+ src_c/readable/globals.c      |   2 +
+ src_c/readable/globals.h      |  14 +-
+ src_c/readable/h006.c         |   2 +-
+ src_c/readable/h027.c         | 697 +++++++++++++++++++++++++++++++++-
+ src_c/readable/h029_gfx.c     |   6 +
+ src_c/readable/h029_gfx.h     |   1 +
+ src_c/readable/h062.c         |  53 +++
+ src_c/readable/h062.h         |   1 +
+ src_c/readable/unported.c     |  14 -
+ src_c/readable/unported.h     |  14 -
+ 12 files changed, 931 insertions(+), 149 deletions(-)
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index 76d1c1c..9311456 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **642 / 1051**.
++Routine portate: **659 / 1065**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -33,9 +33,9 @@ Routine portate: **642 / 1051**.
+ | H024 | 268 | 2 | 2 |
+ | H025 | 264 | 2 | 2 |
+ | H026 | 1452 | 11 | 11 |
+-| H027 | 18156 | 88 | 87 |
++| H027 | 18156 | 102 | 102 |
+ | H028 | 4488 | 16 | 15 |
+-| H029 | 6084 | 32 | 21 |
++| H029 | 6084 | 32 | 22 |
+ | H030 | 3240 | 18 | 17 |
+ | H031 | 212 | 4 | 3 |
+ | H032 | 9352 | 1 | 1 |
+@@ -68,7 +68,7 @@ Routine portate: **642 / 1051**.
+ | H059 | 6340 | 14 | 1 |
+ | H060 | 396 | 2 | 1 |
+ | H061 | 16936 | 35 | 1 |
+-| H062 | 10496 | 32 | 25 |
++| H062 | 10496 | 32 | 26 |
+ | H063 | 16496 | 52 | 39 |
+ | H064 | 6460 | 7 | 1 |
+ | H065 | 14268 | 27 | 27 |
+@@ -435,94 +435,108 @@ Routine portate: **642 / 1051**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0206` | `module_init_H027` | parziale | h027.c:13 |
+-| `$0214` | `sub_H027_00000214` | parziale | h027.c:532 |
+-| `$0286` | `sub_H027_00000286` | parziale | h027.c:19 |
+-| `$02BE` | `trampoline_H027_0306` | parziale | h027.c:156 |
+-| `$0312` | `sub_H027_00000312` | parziale | h027.c:60 |
+-| `$0338` | `sub_H027_00000338` | parziale | h027.c:544 |
+-| `$0364` | `(senza scheda)` | - | h027.c:69 |
+-| `$0390` | `(senza scheda)` | - | h027.c:77 |
+-| `$03D6` | `(senza scheda)` | - | h027.c:90 |
+-| `$0492` | `(senza scheda)` | - | h027.c:1031 |
+-| `$05C6` | `(senza scheda)` | - | h027.c:118 |
+-| `$0622` | `(senza scheda)` | - | h027.c:128 |
+-| `$067C` | `(senza scheda)` | - | h027.c:138 |
+-| `$06D4` | `(senza scheda)` | - | h027.c:1066 |
+-| `$07F4` | `(senza scheda)` | - | h027.c:148 |
+-| `$080A` | `(senza scheda)` | - | h027.c:1094 |
+-| `$0912` | `(senza scheda)` | - | h027.c:168 |
+-| `$09A4` | `(senza scheda)` | - | h027.c:182 |
+-| `$0A00` | `(senza scheda)` | - | h027.c:30 |
+-| `$0A3E` | `(senza scheda)` | - | h027.c:195 |
+-| `$0A9E` | `(senza scheda)` | - | h027.c:205 |
+-| `$0AFE` | `(senza scheda)` | - | h027.c:727 |
+-| `$0B7A` | `(senza scheda)` | - | h027.c:577 |
+-| `$0D70` | `(senza scheda)` | - | h027.c:218 |
+-| `$0DB8` | `(senza scheda)` | - | h027.c:742 |
+-| `$0E18` | `(senza scheda)` | - | h027.c:231 |
+-| `$0EC6` | `(senza scheda)` | - | h027.c:248 |
+-| `$0EFC` | `(senza scheda)` | - | h027.c:934 |
+-| `$0FCE` | `(senza scheda)` | - | h027.c:1116 |
+-| `$10CC` | `(senza scheda)` | - | h027.c:255 |
+-| `$1120` | `(senza scheda)` | - | h027.c:265 |
+-| `$1162` | `(senza scheda)` | - | h027.c:1141 |
+-| `$1310` | `(senza scheda)` | - | h027.c:272 |
+-| `$133C` | `(senza scheda)` | - | h027.c:280 |
+-| `$1374` | `(senza scheda)` | - | h027.c:290 |
+-| `$174E` | `sub_H027_0000174E` | parziale |  |
+-| `$17DE` | `sub_H027_000017DE` | parziale | h027.c:919 |
+-| `$1878` | `(senza scheda)` | - | h027.c:302 |
+-| `$18A4` | `(senza scheda)` | - | h027.c:631 |
+-| `$1956` | `(senza scheda)` | - | h027.c:648 |
+-| `$1A0A` | `(senza scheda)` | - | h027.c:309 |
+-| `$1A42` | `(senza scheda)` | - | h027.c:669 |
+-| `$1B88` | `(senza scheda)` | - | h027.c:698 |
+-| `$1BFE` | `(senza scheda)` | - | h027.c:318 |
+-| `$1C7A` | `(senza scheda)` | - | h027.c:329 |
+-| `$1D0C` | `(senza scheda)` | - | h027.c:340 |
+-| `$1D3C` | `(senza scheda)` | - | h027.c:347 |
+-| `$1D80` | `(senza scheda)` | - | h027.c:712 |
+-| `$1E1A` | `(senza scheda)` | - | h027.c:356 |
+-| `$2028` | `(senza scheda)` | - | h027.c:753 |
+-| `$20DA` | `(senza scheda)` | - | h027.c:776 |
+-| `$2138` | `(senza scheda)` | - | h027.c:364 |
+-| `$2182` | `sub_H027_00002182` | parziale | h027.c:553 |
+-| `$224C` | `(senza scheda)` | - | h027.c:786 |
+-| `$226C` | `(senza scheda)` | - | h027.c:789 |
+-| `$228E` | `(senza scheda)` | - | h027.c:799 |
+-| `$25BA` | `(senza scheda)` | - | h027.c:835 |
+-| `$2646` | `(senza scheda)` | - | h027.c:855 |
+-| `$2CA6` | `(senza scheda)` | - | h027.c:374 |
+-| `$2CFA` | `(senza scheda)` | - | h027.c:384 |
+-| `$3612` | `(senza scheda)` | - | h027.c:858 |
+-| `$37C2` | `(senza scheda)` | - | h027.c:792 |
+-| `$37E4` | `(senza scheda)` | - | h027.c:795 |
+-| `$3806` | `(senza scheda)` | - | h027.c:861 |
+-| `$3842` | `(senza scheda)` | - | h027.c:394 |
+-| `$3916` | `(senza scheda)` | - | h027.c:957 |
+-| `$3A46` | `(senza scheda)` | - | h027.c:40 |
+-| `$3A84` | `(senza scheda)` | - | h027.c:413 |
+-| `$3AAA` | `(senza scheda)` | - | h027.c:421 |
+-| `$3AC8` | `(senza scheda)` | - | h027.c:428 |
+-| `$3AFC` | `(senza scheda)` | - | h027.c:437 |
+-| `$3B34` | `(senza scheda)` | - | h027.c:969 |
+-| `$3BC0` | `(senza scheda)` | - | h027.c:448 |
+-| `$3C2A` | `(senza scheda)` | - | h027.c:986 |
+-| `$3C88` | `(senza scheda)` | - | h027.c:999 |
+-| `$3D02` | `(senza scheda)` | - | h027.c:458 |
+-| `$3E6C` | `(senza scheda)` | - | h027.c:467 |
+-| `$3EB2` | `(senza scheda)` | - | h027.c:474 |
+-| `$3F1E` | `(senza scheda)` | - | h027.c:486 |
+-| `$3F72` | `(senza scheda)` | - | h027.c:1010 |
+-| `$4028` | `(senza scheda)` | - | h027.c:870 |
+-| `$408A` | `(senza scheda)` | - | h027.c:885 |
+-| `$4104` | `(senza scheda)` | - | h027.c:900 |
+-| `$418E` | `(senza scheda)` | - | h027.c:501 |
+-| `$41AA` | `(senza scheda)` | - | h027.c:508 |
+-| `$41F6` | `(senza scheda)` | - | h027.c:50 |
+-| `$420C` | `(senza scheda)` | - | h027.c:516 |
+-| `$4276` | `sub_H027_00004276` | parziale | h027.c:1188 |
++| `$0206` | `module_init_H027` | parziale | h027.c:14 |
++| `$0214` | `sub_H027_00000214` | parziale | h027.c:534 |
++| `$0286` | `sub_H027_00000286` | parziale | h027.c:20 |
++| `$02BE` | `trampoline_H027_0306` | parziale | h027.c:158 |
++| `$0312` | `sub_H027_00000312` | parziale | h027.c:62 |
++| `$0338` | `sub_H027_00000338` | parziale | h027.c:546 |
++| `$0364` | `(senza scheda)` | - | h027.c:71 |
++| `$0390` | `(senza scheda)` | - | h027.c:79 |
++| `$03D6` | `(senza scheda)` | - | h027.c:92 |
++| `$0492` | `(senza scheda)` | - | h027.c:1033 |
++| `$05C6` | `(senza scheda)` | - | h027.c:120 |
++| `$0622` | `(senza scheda)` | - | h027.c:130 |
++| `$067C` | `(senza scheda)` | - | h027.c:140 |
++| `$06D4` | `(senza scheda)` | - | h027.c:1068 |
++| `$07F4` | `(senza scheda)` | - | h027.c:150 |
++| `$080A` | `(senza scheda)` | - | h027.c:1096 |
++| `$0912` | `(senza scheda)` | - | h027.c:170 |
++| `$09A4` | `(senza scheda)` | - | h027.c:184 |
++| `$0A00` | `(senza scheda)` | - | h027.c:31 |
++| `$0A3E` | `(senza scheda)` | - | h027.c:197 |
++| `$0A9E` | `(senza scheda)` | - | h027.c:207 |
++| `$0AFE` | `(senza scheda)` | - | h027.c:729 |
++| `$0B7A` | `(senza scheda)` | - | h027.c:579 |
++| `$0D70` | `(senza scheda)` | - | h027.c:220 |
++| `$0DB8` | `(senza scheda)` | - | h027.c:744 |
++| `$0E18` | `(senza scheda)` | - | h027.c:233 |
++| `$0EC6` | `(senza scheda)` | - | h027.c:250 |
++| `$0EFC` | `(senza scheda)` | - | h027.c:936 |
++| `$0FCE` | `(senza scheda)` | - | h027.c:1118 |
++| `$10CC` | `(senza scheda)` | - | h027.c:257 |
++| `$1120` | `(senza scheda)` | - | h027.c:267 |
++| `$1162` | `(senza scheda)` | - | h027.c:1143 |
++| `$1310` | `(senza scheda)` | - | h027.c:274 |
++| `$133C` | `(senza scheda)` | - | h027.c:282 |
++| `$1374` | `(senza scheda)` | - | h027.c:292 |
++| `$13F4` | `(senza scheda)` | - | h027.c:1267 |
++| `$174E` | `sub_H027_0000174E` | parziale | h027.c:1424 |
++| `$17DE` | `sub_H027_000017DE` | parziale | h027.c:921 |
++| `$1836` | `(senza scheda)` | - | h027.c:1444 |
++| `$1878` | `(senza scheda)` | - | h027.c:304 |
++| `$18A4` | `(senza scheda)` | - | h027.c:633 |
++| `$1956` | `(senza scheda)` | - | h027.c:650 |
++| `$1A0A` | `(senza scheda)` | - | h027.c:311 |
++| `$1A42` | `(senza scheda)` | - | h027.c:671 |
++| `$1B88` | `(senza scheda)` | - | h027.c:700 |
++| `$1BFE` | `(senza scheda)` | - | h027.c:320 |
++| `$1C7A` | `(senza scheda)` | - | h027.c:331 |
++| `$1D0C` | `(senza scheda)` | - | h027.c:342 |
++| `$1D3C` | `(senza scheda)` | - | h027.c:349 |
++| `$1D80` | `(senza scheda)` | - | h027.c:714 |
++| `$1E1A` | `(senza scheda)` | - | h027.c:358 |
++| `$1E3C` | `(senza scheda)` | - | h027.c:1457 |
++| `$2028` | `(senza scheda)` | - | h027.c:755 |
++| `$20DA` | `(senza scheda)` | - | h027.c:778 |
++| `$2138` | `(senza scheda)` | - | h027.c:366 |
++| `$2182` | `sub_H027_00002182` | parziale | h027.c:555 |
++| `$224C` | `(senza scheda)` | - | h027.c:788 |
++| `$226C` | `(senza scheda)` | - | h027.c:791 |
++| `$228E` | `(senza scheda)` | - | h027.c:801 |
++| `$2400` | `(senza scheda)` | - | h027.c:1497 |
++| `$25BA` | `(senza scheda)` | - | h027.c:837 |
++| `$2646` | `(senza scheda)` | - | h027.c:857 |
++| `$266A` | `(senza scheda)` | - | h027.c:1349 |
++| `$29E2` | `(senza scheda)` | - | h027.c:1547 |
++| `$2B3E` | `(senza scheda)` | - | h027.c:1588 |
++| `$2CA6` | `(senza scheda)` | - | h027.c:376 |
++| `$2CFA` | `(senza scheda)` | - | h027.c:386 |
++| `$2D46` | `(senza scheda)` | - | h027.c:1617 |
++| `$2FE2` | `(senza scheda)` | - | h027.c:1698 |
++| `$3160` | `(senza scheda)` | - | h027.c:1770 |
++| `$3292` | `(senza scheda)` | - | h027.c:1311 |
++| `$3612` | `(senza scheda)` | - | h027.c:860 |
++| `$3636` | `(senza scheda)` | - | h027.c:1799 |
++| `$37C2` | `(senza scheda)` | - | h027.c:794 |
++| `$37E4` | `(senza scheda)` | - | h027.c:797 |
++| `$3806` | `(senza scheda)` | - | h027.c:863 |
++| `$3842` | `(senza scheda)` | - | h027.c:396 |
++| `$3916` | `(senza scheda)` | - | h027.c:959 |
++| `$3982` | `(senza scheda)` | - | h027.c:1827 |
++| `$3A46` | `(senza scheda)` | - | h027.c:41 |
++| `$3A84` | `(senza scheda)` | - | h027.c:415 |
++| `$3AAA` | `(senza scheda)` | - | h027.c:423 |
++| `$3AC8` | `(senza scheda)` | - | h027.c:430 |
++| `$3AFC` | `(senza scheda)` | - | h027.c:439 |
++| `$3B34` | `(senza scheda)` | - | h027.c:971 |
++| `$3BC0` | `(senza scheda)` | - | h027.c:450 |
++| `$3C2A` | `(senza scheda)` | - | h027.c:988 |
++| `$3C88` | `(senza scheda)` | - | h027.c:1001 |
++| `$3D02` | `(senza scheda)` | - | h027.c:460 |
++| `$3D28` | `(senza scheda)` | - | h027.c:1738 |
++| `$3E6C` | `(senza scheda)` | - | h027.c:469 |
++| `$3EB2` | `(senza scheda)` | - | h027.c:476 |
++| `$3F1E` | `(senza scheda)` | - | h027.c:488 |
++| `$3F72` | `(senza scheda)` | - | h027.c:1012 |
++| `$4028` | `(senza scheda)` | - | h027.c:872 |
++| `$408A` | `(senza scheda)` | - | h027.c:887 |
++| `$4104` | `(senza scheda)` | - | h027.c:902 |
++| `$418E` | `(senza scheda)` | - | h027.c:503 |
++| `$41AA` | `(senza scheda)` | - | h027.c:510 |
++| `$41F6` | `(senza scheda)` | - | h027.c:51 |
++| `$420C` | `(senza scheda)` | - | h027.c:518 |
++| `$4276` | `sub_H027_00004276` | parziale | h027.c:1857 |
+ 
+ ### H028
+ 
+@@ -551,30 +565,30 @@ Routine portate: **642 / 1051**.
+ | --- | --- | --- | --- |
+ | `$0118` | `module_init_H029` | parziale | h029_gfx.c:40 |
+ | `$0180` | `sub_H029_00000180` | parziale | h029_gfx.c:82 |
+-| `$01B6` | `sub_H029_000001B6` | parziale | h029_gfx.c:500 |
++| `$01B6` | `sub_H029_000001B6` | parziale | h029_gfx.c:506 |
+ | `$0234` | `sub_H029_00000234` | parziale | h029_gfx.c:92 |
+ | `$0312` | `sub_H029_00000312` | parziale | h029_gfx.c:54 |
+ | `$0354` | `trampoline_H029_036C` | parziale | h029_gfx.c:321 |
+-| `$0376` | `trampoline_H029_0390` | parziale |  |
+-| `$039A` | `trampoline_H029_03B2` | parziale | h029_gfx.c:327 |
+-| `$03E2` | `sub_H029_000003E2` | parziale | h029_gfx.c:523 |
++| `$0376` | `trampoline_H029_0390` | parziale | h029_gfx.c:327 |
++| `$039A` | `trampoline_H029_03B2` | parziale | h029_gfx.c:333 |
++| `$03E2` | `sub_H029_000003E2` | parziale | h029_gfx.c:529 |
+ | `$0408` | `Allocate_GraphicRecord` | verificato | h029_gfx.c:170 |
+ | `$067A` | `Free_GraphicRecord` | parziale | h029_gfx.c:296 |
+-| `$0766` | `sub_H029_00000766` | parziale | h029_gfx.c:334 |
+-| `$091E` | `Populate_GraphicPlanes` | verificato | h029_gfx.c:371 |
+-| `$0A0E` | `Load_IndexedGraphicRecord` | verificato | h029_gfx.c:397 |
++| `$0766` | `sub_H029_00000766` | parziale | h029_gfx.c:340 |
++| `$091E` | `Populate_GraphicPlanes` | verificato | h029_gfx.c:377 |
++| `$0A0E` | `Load_IndexedGraphicRecord` | verificato | h029_gfx.c:403 |
+ | `$0B94` | `Draw_GraphicTile24` | verificato |  |
+ | `$0D58` | `sub_H029_00000D58` | parziale |  |
+ | `$0E26` | `trampoline_H029_0E88` | parziale |  |
+ | `$0E92` | `trampoline_H029_0EF4` | parziale |  |
+-| `$0EFE` | `trampoline_H029_10AC` | parziale | h029_gfx.c:445 |
+-| `$10B8` | `sub_H029_000010B8` | parziale | h029_gfx.c:553 |
++| `$0EFE` | `trampoline_H029_10AC` | parziale | h029_gfx.c:451 |
++| `$10B8` | `sub_H029_000010B8` | parziale | h029_gfx.c:559 |
+ | `$115C` | `sub_H029_0000115C` | parziale | h029_gfx.c:120 |
+ | `$1206` | `sub_H029_00001206` | parziale | h029_gfx.c:136 |
+ | `$12BC` | `sub_H029_000012BC` | parziale | h029_gfx.c:158 |
+ | `$1308` | `sub_H029_00001308` | parziale | h029_gfx.c:227 |
+ | `$1346` | `Prepare_DisplayResources` | parziale | h029_gfx.c:239 |
+-| `$148E` | `sub_H029_0000148E` | parziale | h029_gfx.c:530 |
++| `$148E` | `sub_H029_0000148E` | parziale | h029_gfx.c:536 |
+ | `$14F6` | `sub_H029_000014F6` | parziale |  |
+ | `$1520` | `sub_H029_00001520` | parziale |  |
+ | `$1576` | `sub_H029_00001576` | parziale |  |
+@@ -1065,7 +1079,7 @@ Routine portate: **642 / 1051**.
+ | `$2188` | `sub_H062_00002188` | parziale | h062.c:673 |
+ | `$253C` | `sub_H062_0000253C` | parziale | h062.c:74 |
+ | `$2650` | `sub_H062_00002650` | parziale | h062.c:800 |
+-| `$2734` | `sub_H062_00002734` | parziale |  |
++| `$2734` | `sub_H062_00002734` | parziale | h062.c:827 |
+ 
+ ### H063
+ 
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index 4846787..4fbcc74 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -1545,3 +1545,59 @@ Ti ho mandato **cok-port-28.zip** con le routine di H063 che servivano ai gestor
+ - **Routine di H063 di grafica del combattimento:** $1FDC, $2178, $21D2 e $3CA0. Restano stub.
+ 
+ ---
++
++## 2026-11-10 (cok-port-29)
++
++Ho portato gli ultimi 14 gestori di effetti di H027: la tabella H005+$2832 non punta più a nessuno stub di H027. Routine portate: 659 su 1065.
++
++**Gestori portati**
++- **Nubi e acido:**
++  - $13F4 (effetto $28): "The air clears a little...", la nube si dissolve e le caselle tornano come prima;
++  - $266A (effetto $46): "dissolves into acid!", crea una pozza d'acido;
++  - $3292 (effetto $50): "The acid drains away..", la pozza si asciuga.
++- **Difese:**
++  - $1836 (effetto $29) e $174E: "Avoids it", schiva le armi senza bonus magico;
++  - $29E2 (effetto $47): "reflects the spell", rimanda l'incantesimo al lanciatore;
++  - $2400 (effetto $43): "loses his weapon", l'arma finisce nella lista H005+$3360.
++- **Paura e fetore:**
++  - $2B3E (effetto $48) e $3636 (effetto $52): "is terrified" / "is afraid", il bersaglio fugge;
++  - $3160 (effetto $4F): "emits an evil stench".
++- **Berserk:** $2FE2 (effetto $4D, "goes berserk") e $3D28 (effetto $6B, stessa cosa senza messaggio).
++- **Esplosioni e richiami:**
++  - $1E3C (effetto $3C): "explodes!", 3d6 e stordimento a chi è attorno;
++  - $2D46 (effetto $4C): "gates in", fa entrare in campo i rinforzi.
++- **Costituzione:** $3982 (effetto $5E), bonus da +1 a +5 secondo la costituzione.
++
++**Altre routine nuove**
++- **H062+$2734:** fa esplodere i personaggi a terra della lista H005+$16 ("explodes.", 1d6 a chi è attorno).
++- **H029+$0376:** XOR di un byte (`xor_byte`).
++
++**Nuovi dati globali**
++- `g_acid_pools` ($250C): pozze d'acido, con lo stesso record delle nubi.
++- `g_dropped_items` ($3360): armi perse, con un nuovo struct `CokDropped`.
++- H006 ora azzera `g_dropped_items` al posto della long in H005.
++
++**Dove mi discosto dall'asm (tutto documentato nel codice)**
++- **Dimensione dei record:** nubi, pozze e armi perse sono allocate e liberate con la dimensione del record C. L'asm usa $22 e $50 byte; in C i puntatori sono più grandi.
++- **H062+$2734:** l'asm scrive anche su una voce vuota (NULL) della lista; qui la salto.
++- **$2D46 a fine lista:** l'asm legge un personaggio NULL quando la lista finisce; qui la tratto come il ritorno al lanciatore.
++- **Valori non inizializzati, qui messi a 0:**
++  - in $266A, la direzione usata quando la casella vale $1F;
++  - in $3982, il bonus per una costituzione fuori tabella.
++
++**Comportamenti dell'asm mantenuti così come sono**
++- **$2D46:** con una casella fuori mappa non passa alla direzione successiva. Se il personaggio di riferimento è sul bordo, il ciclo non finisce mai.
++- **$29E2:** l'animazione e il cambio di bersaglio si ripetono per ogni bersaglio, anche per quelli non sostituiti.
++- **$266A:** contando le pozze già esistenti, salta l'ultimo record della lista.
++- **$3160:** l'effetto $76 va a chi emette il fetore, non alla vittima.
++
++**Prove**
++- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
++- **ASan:** pulito in una sessione di prova sul menu principale.
++- **Nuovi gestori:** non provati, perché scattano solo in combattimento, che non è ancora raggiungibile.
++
++**Cosa resta**
++- **Stub del combattimento:** grafica di H048 (posizioni, aree), H077, H063 $2178/$21D2 e H043+$190E.
++- **Allocazione delle nubi:** non è ancora portata. Chi la porterà deve usare `sizeof(CokCloud)`.
++
++---
+diff --git a/src_c/readable/globals.c b/src_c/readable/globals.c
+index 3da9150..775619e 100644
+--- a/src_c/readable/globals.c
++++ b/src_c/readable/globals.c
+@@ -9,6 +9,8 @@ struct Character *g_spell_targets[40];
+ CokItem *g_scroll_item;
+ u8 *g_combat_area;
+ CokCloud *g_clouds;
++CokCloud *g_acid_pools;
++CokDropped *g_dropped_items;
+ struct Character *g_h005_2a14;
+ struct Character *g_combatants[40];
+ struct Character *g_h005_0016[20];
+diff --git a/src_c/readable/globals.h b/src_c/readable/globals.h
+index a2070db..5d560c9 100644
+--- a/src_c/readable/globals.h
++++ b/src_c/readable/globals.h
+@@ -86,9 +86,17 @@ typedef struct CokCloud {
+     u8 b[0x22];                         /* +$08..: posizioni, +$1C/+$1E, +$20, +$21 */
+ } CokCloud;
+ extern CokCloud *g_clouds;              /* $2514 */
+-extern struct Character *g_h005_2a14;
+-extern struct Character *g_combatants[40];
+-extern struct Character *g_h005_0016[20]; /* $16..$65: personaggi a terra ($14 = quanti) */ /* $2B32..$2BD1: combattenti per numero */   /* $2A14: bersaglio del turno in esame */          /* $2770: pergamena in uso */
++extern CokCloud *g_acid_pools;          /* $250C: pozze d'acido (stessi record) */
++extern struct Character *g_h005_2a14;   /* $2A14: bersaglio del turno in esame */
++extern struct Character *g_combatants[40]; /* $2B32..$2BD1: combattenti per numero */
++extern struct Character *g_h005_0016[20]; /* $16..$65: personaggi a terra ($14 = quanti) */
++/* Arma persa in combattimento: copia dei $48 byte dell'oggetto + chi l'ha persa. */
++typedef struct CokDropped {
++    u8 b[0x48];                         /* +$00: copia dell'oggetto */
++    struct Character *owner;            /* +$48 */
++    struct CokDropped *next;            /* +$4C */
++} CokDropped;
++extern CokDropped *g_dropped_items;     /* $3360 */
+ 
+ /*
+  * Tabelle di gestori in H005 (puntatori a codice nell'originale).  Il tipo
+diff --git a/src_c/readable/h006.c b/src_c/readable/h006.c
+index 63aa8ed..c21f1d9 100644
+--- a/src_c/readable/h006.c
++++ b/src_c/readable/h006.c
+@@ -222,7 +222,7 @@ void init_game_environment(void)
+     g_gfx_sky_280c = NULL;
+     g_gfx_sky_2808 = NULL;
+     g_gfx_sky_2804 = NULL;
+-    H005_SET_L(0x3360, 0);
++    g_dropped_items = NULL;             /* $3360 */
+     H005_B(0x24B1) = 0;
+     H005_B(0x24CB) = 0;
+     H005_B(0x24CC) = 0;
+diff --git a/src_c/readable/h027.c b/src_c/readable/h027.c
+index 8a4f796..96de8e3 100644
+--- a/src_c/readable/h027.c
++++ b/src_c/readable/h027.c
+@@ -8,6 +8,7 @@
+ #include "h003_exec.h"
+ #include "h065.h"
+ #include "h030.h"
++#include "h048.h"
+ #include <string.h>
+ 
+ /* PORT H027+$0206: link/unlk, nessun effetto. */
+@@ -56,6 +57,7 @@ static void effect_none(Character **cp, void *obj, u8 flag)
+ #define EH(name) static void name(Character **cp, void *obj, u8 flag)
+ #define UNUSED_ARGS (void)cp; (void)obj; (void)flag
+ #define EFF ((CokEffect *)obj)
++#define SPELL_B(s, k)   H005_B(0x66 + ((int)(s) - 1) * 16 + (k))
+ 
+ /* PORT H027+$0312 (effetti $1B, $1F, $33-$35): fine del turno. */
+ EH(effect_end_turn)
+@@ -1184,6 +1186,673 @@ EH(effect_23)
+     }
+ }
+ 
++/* ---- Nubi ($2514) e pozze d'acido ($250C) sulla mappa del combattimento ---- */
++
++/* Byte della casella (x, y) della mappa H005+$2ADE: +$A + y*$64 + x*2 + 1. */
++static u8 *combat_cell(s16 x, s16 y)
++{
++    return g_combat_area + 0x0A + (s32)y * 0x64 + x * 2 + 1;
++}
++
++/* Casella i (1..4) di una nube: centro +$1C/+$1E piu' la direzione $5022. */
++static s16 cloud_x(CokCloud *p, u16 i)
++{
++    return (s16)(COK_GET16(&p->b[0x1C - 8]) +
++                 H005_W(0x3EE2 + H005_B(0x5022 + i - 1) * 2));
++}
++
++static s16 cloud_y(CokCloud *p, u16 i)
++{
++    return (s16)(COK_GET16(&p->b[0x1E - 8]) +
++                 H005_W(0x3ED0 + H005_B(0x5022 + i - 1) * 2));
++}
++
++/* Una voce della tabella H005+$2AE2 ($247A voci da $A byte) e' su (x, y)? */
++static u8 on_2ae2_table(u16 x, u16 y)
++{
++    u16 k;
++    u8 found = 0;
++
++    for (k = 1; k <= H005_B(0x247A); ++k) {
++        if (H005_L(0x2AE2 + (k - 1) * 0x0A) != 0 &&
++            H005_W(0x2AE2 + (k - 1) * 0x0A + 4) == x &&
++            H005_W(0x2AE2 + (k - 1) * 0x0A + 6) == y) {
++            found = 1;
++        }
++    }
++    return found;
++}
++
++/*
++ * Toglie r dalla lista *head e lo libera ($22 byte nell'originale; qui la
++ * dimensione del record C, con cui va allocato).  Come l'originale, se r e'
++ * in testa la testa avanza e poi r->next = r->next.
++ */
++static void unlink_cloud(CokCloud **head, CokCloud *r)
++{
++    CokCloud *prev;                     /* -$4(a5) */
++
++    prev = *head;
++    if (prev == r) {
++        *head = prev->next;
++    } else {
++        while (prev->next != r) {
++            prev = prev->next;
++        }
++    }
++    prev->next = r->next;
++    exec_free_mem(r, sizeof(CokCloud));
++}
++
++/* Ridisegna le nubi rimaste ($1E) e le pozze d'acido ($1D). */
++static void redraw_clouds_and_pools(void)
++{
++    CokCloud *p;
++    u16 i;
++
++    for (p = g_clouds; p != NULL; p = p->next) {
++        for (i = 1; i <= 4; ++i) {
++            if (p->b[0x12 - 8 + i - 1]) {
++                *combat_cell(cloud_x(p, i), cloud_y(p, i)) = 0x1E;
++            }
++        }
++    }
++    for (p = g_acid_pools; p != NULL; p = p->next) {
++        *combat_cell((s16)COK_GET16(&p->b[0x1C - 8]),
++                     (s16)COK_GET16(&p->b[0x1E - 8])) = 0x1D;
++    }
++}
++
++/*
++ * PORT H027+$13F4 (effetto $28, nube): toglie la nube numero +$4>>4 di
++ * questo personaggio: "The air clears a little...", le sue caselle tornano
++ * al contenuto salvato (+$08..) o $1F se c'e' una voce di $2AE2.
++ */
++EH(effect_28)
++{
++    u16 id;                             /* -$14(a5) */
++    u8 found = 0;                       /* -$D(a5) */
++    CokCloud *p;                        /* -$8(a5) */
++    u16 i;                              /* -$12(a5) */
++    u8 x;                               /* -$E(a5) */
++    u8 y;                               /* -$F(a5) */
++
++    (void)flag;
++    id = (u16)(EFF->b[4] >> 4);
++    p = g_clouds;
++    while (p != NULL && !found) {
++        if (p->owner == *cp && p->b[0x20 - 8] == id) {
++            found = 1;
++        } else {
++            p = p->next;
++        }
++    }
++    if (!found) {
++        return;
++    }
++    show_message_line(0x1A, "The air clears a little...");
++    for (i = 1; i <= 4; ++i) {
++        if (!p->b[0x12 - 8 + i - 1]) {
++            continue;
++        }
++        x = (u8)cloud_x(p, i);
++        y = (u8)cloud_y(p, i);
++        if (on_2ae2_table(x, y)) {
++            *combat_cell(x, y) = 0x1F;
++        } else {
++            *combat_cell(x, y) = p->b[i - 1];
++        }
++    }
++    unlink_cloud(&g_clouds, p);
++    redraw_clouds_and_pools();
++}
++
++/*
++ * PORT H027+$3292 (effetto $50): toglie la pozza d'acido numero +$4 di
++ * questo personaggio: "The acid drains away..", la casella torna al
++ * contenuto salvato (+$08) o $1F se c'e' una voce di $2AE2.
++ */
++EH(effect_50)
++{
++    u16 id;                             /* -$10(a5) */
++    u8 found = 0;                       /* -$D(a5) */
++    CokCloud *r;                        /* -$8(a5) */
++    s16 x;
++    s16 y;
++
++    (void)flag;
++    id = EFF->b[4];
++    r = g_acid_pools;
++    while (r != NULL && !found) {
++        if (r->owner == *cp && r->b[0x20 - 8] == id) {
++            found = 1;
++        } else {
++            r = r->next;
++        }
++    }
++    if (!found) {
++        return;
++    }
++    show_message_line(0x16, "The acid drains away..");
++    x = (s16)COK_GET16(&r->b[0x1C - 8]);
++    y = (s16)COK_GET16(&r->b[0x1E - 8]);
++    if (on_2ae2_table((u16)x, (u16)y)) {
++        *combat_cell(x, y) = 0x1F;
++    } else {
++        *combat_cell(x, y) = r->b[0];
++    }
++    unlink_cloud(&g_acid_pools, r);
++    redraw_clouds_and_pools();
++}
++
++/*
++ * PORT H027+$266A (effetto $46): se a terra senza punti ferita o fuori
++ * combattimento, "dissolves into acid!": una pozza ($1D) nella sua casella,
++ * con l'effetto $50 (1d6 turni) per toglierla.  Nella lista l'originale non
++ * conta l'ultimo record nel numero della pozza.  Con una casella $1F
++ * l'indice di direzione -$10(a5) non e' inizializzato: qui 0.
++ */
++EH(effect_46)
++{
++    u16 count = 0;                      /* -$A(a5) */
++    CokCloud *r;                        /* -$4(a5) */
++    CokCloud *q;                        /* -$8(a5) */
++    u16 value;                          /* -$14(a5) */
++    u16 tile;                           /* -$C(a5) */
++    u16 dir = 0;                        /* -$10(a5) */
++    u16 i;                              /* -$16(a5) */
++    u16 k;
++    s16 x;
++    s16 y;
++
++    (void)obj; (void)flag;
++    if ((*cp)->b[0x1A8] > 0 && (*cp)->b[0x198]) {
++        return;
++    }
++    r = g_acid_pools;
++    if (g_acid_pools == NULL) {
++        g_acid_pools = (CokCloud *)exec_alloc_mem(sizeof(CokCloud), COK_MEMF_CLEAR);
++        r = g_acid_pools;
++    } else {
++        while (r->next != NULL) {
++            if (r->owner == *cp) {
++                ++count;
++            }
++            r = r->next;
++        }
++        r->next = (CokCloud *)exec_alloc_mem(sizeof(CokCloud), COK_MEMF_CLEAR);
++        r = r->next;
++    }
++    add_effect(*cp, 0x50, roll_dice(1, 6), count, 1);
++    /* H029+$0312 su $22 byte: tutto il record. */
++    memset(r, 0, sizeof(CokCloud));
++    r->next = NULL;
++    r->owner = *cp;
++    r->b[0x20 - 8] = (u8)count;
++    COK_PUT16(&r->b[0x1C - 8], h048_0f88(*cp));
++    COK_PUT16(&r->b[0x1E - 8], h048_0fba(*cp));
++    x = (s16)COK_GET16(&r->b[0x1C - 8]);
++    y = (s16)COK_GET16(&r->b[0x1E - 8]);
++    combat_map_cell(x, y, &value, &tile);
++    if (tile == 0x1E) {
++        for (q = g_clouds; q != NULL; q = q->next) {
++            for (i = 1; i <= 4; ++i) {
++                if (q->b[0x12 - 8 + i - 1] &&
++                    cloud_x(q, i) == x && cloud_y(q, i) == y &&
++                    q->b[i - 1] != 0x1E) {
++                    tile = q->b[i - 1];
++                }
++            }
++        }
++    } else if (tile == 0x1F) {
++        for (k = 1; k <= H005_B(0x247A); ++k) {
++            if (H005_W(0x2AE2 + (k - 1) * 0x0A + 4) ==
++                    (u16)(H005_W(0x251A) + H005_W(0x3EE2 + dir * 2)) &&
++                H005_W(0x2AE2 + (k - 1) * 0x0A + 6) ==
++                    (u16)(H005_W(0x2518) + H005_W(0x3ED0 + dir * 2))) {
++                tile = H005_B(0x2AE2 + (k - 1) * 0x0A + 8);
++            }
++        }
++    }
++    r->b[0] = (u8)tile;
++    *combat_cell(x, y) = 0x1D;
++    h048_0df2(h048_0f88(*cp), h048_0fba(*cp), 0xFF, 8);
++    show_char_message(*cp, 0x14, "dissolves into acid!", 0x0A, 0);
++}
++
++/*
++ * PORT H027+$174E: chi combatte con un'arma in mano da distanza > 1 ha
++ * chance% di schivare il colpo ("Avoids it"): danno 0, -1 al tiro.
++ */
++static void avoid_missile(Character **cp, u16 chance)
++{
++    if (g_current_char->readied[0] == NULL) {
++        return;
++    }
++    if (combat_distance(g_current_char, *cp) <= 1) {
++        return;
++    }
++    if (roll_dice(1, 100) > chance) {
++        return;
++    }
++    show_char_message(*cp, 9, "Avoids it", 0x0A, 1);
++    H005_B(0x2474) = 0;
++    H005_SET_W(0x2A1A, 0xFFFF);
++    add_to_byte(&H005_B(0x2A18), 0xFFFF);
++}
++
++/* PORT H027+$1836 (effetto $29): schiva sempre le armi senza bonus (+$36). */
++EH(effect_29)
++{
++    CokItem *w;                         /* -$4(a5) */
++
++    (void)obj; (void)flag;
++    w = combat_weapon(g_current_char);
++    if (w != NULL && COK_GET16(&w->b[0x36]) == 0) {
++        avoid_missile(cp, 100);
++    }
++}
++
++/*
++ * PORT H027+$1E3C (effetto $3C): alla rimozione "explodes!": 3d6 ai
++ * combattenti attivi attorno, stordimento ($6A) senza tiro salvezza; dopo
++ * ogni vicino esplodono i personaggi a terra (H062+$2734).
++ */
++EH(effect_3c)
++{
++    u8 n;                               /* -$1(a5) */
++    u16 list[8];                        /* -$12(a5) */
++    u16 j;                              /* -$14(a5) */
++    u16 a;
++    u16 b;
++    Character *p;
++
++    (void)obj;
++    if (!flag) {
++        return;
++    }
++    a = h048_0f88(*cp);
++    b = h048_0fba(*cp);
++    h077_08ac(h048_110c(a, b, 1, 0xFF, *cp), g_combat_area);
++    knock_out(*cp, 8, 9, "explodes!");
++    n = (u8)(H005_B(0x2479) - 1);
++    for (j = 2; j <= H005_B(0x2479); ++j) {
++        list[j - 2] = H005_B(0x2A3E + (j - 1) * 4);
++    }
++    for (j = 1; j <= n; ++j) {
++        p = g_combatants[list[j - 1] - 1];
++        if (p->b[0x198]) {
++            apply_damage(p, roll_damage_dice(3, 6), 0, 0);
++            if (!saving_throw_roll(g_combatants[list[j - 1] - 1], 4, 0)) {
++                show_char_message(g_combatants[list[j - 1] - 1], 0x0A,
++                                  "is stunned", 0x0A, 1);
++                add_effect(g_combatants[list[j - 1] - 1], 0x6A, 0, 0xFF, 0);
++            }
++        }
++        explode_fallen();
++    }
++}
++
++/*
++ * PORT H027+$2400 (effetto $43): chi attacca da vicino con un'arma non
++ * maledetta (+$3C), su d20 >= FOR-3, "loses his weapon": l'arma passa alla
++ * lista H005+$3360 (copia + chi l'ha persa) e lascia l'inventario.  Il
++ * martello (tipo 6, +$34 = $79) non si perde.
++ */
++EH(effect_43)
++{
++    CokItem *w;                         /* -$4(a5) */
++    CokDropped *d;                      /* -$8(a5) */
++
++    (void)obj; (void)flag;
++    w = combat_weapon(g_current_char);
++    if (roll_dice(1, 0x14) < (u16)(g_current_char->b[0x17] - 3)) {
++        return;
++    }
++    if (H005_B(0x2471) != 0 || w == NULL || w->b[0x3C] || H005_B(0x24AF)) {
++        return;
++    }
++    if (combat_distance(g_current_char, *cp) != 1) {
++        return;
++    }
++    show_char_message(g_current_char, 0x10, "loses his weapon", 0x0A, 1);
++    d = g_dropped_items;
++    if (w->b[0x30] == 6 && w->b[0x34] == 0x79) {
++        return;
++    }
++    ready_item(w);
++    if (d == NULL) {
++        g_dropped_items = (CokDropped *)exec_alloc_mem(sizeof(CokDropped),
++                                                       COK_MEMF_CLEAR);
++        memcpy(g_dropped_items->b, w->b, 0x48);
++        g_dropped_items->owner = g_current_char;
++        g_dropped_items->next = NULL;
++    } else {
++        while (d->next != NULL) {
++            d = d->next;
++        }
++        d->next = (CokDropped *)exec_alloc_mem(sizeof(CokDropped),
++                                               COK_MEMF_CLEAR);
++        d = d->next;
++        memcpy(d->b, w->b, 0x48);
++        d->owner = g_current_char;
++        d->next = NULL;
++    }
++    delete_item(g_current_char, w);
++    g_current_char->readied[0] = NULL;
++    draw_combat_status(g_current_char);
++}
++
++/*
++ * PORT H027+$29E2 (effetto $47): con d10 = 1 su un incantesimo di livello
++ * (+6) < 8, o sempre sopra $E, "reflects the spell" verso il lanciatore.
++ * Come l'originale, animazione e *cp = lanciatore si ripetono per ogni
++ * bersaglio della lista, anche quelli non sostituiti.
++ */
++EH(effect_47)
++{
++    u16 i;                              /* -$2(a5) */
++
++    (void)obj; (void)flag;
++    if (!(roll_dice(1, 0x0A) == 1 && SPELL_B(H005_B(0x2471), 6) < 8) &&
++        SPELL_B(H005_B(0x2471), 6) <= 0x0E) {
++        return;
++    }
++    show_char_message(*cp, 0x12, "reflects the spell", 0x0A, 0);
++    H005_SET_W(0x251A, h048_0f88(g_current_char));
++    H005_SET_W(0x2518, h048_0fba(g_current_char));
++    for (i = 1; i <= H005_B(0x246C); ++i) {
++        if (g_spell_targets[i - 1] == *cp) {
++            g_spell_targets[i - 1] = g_current_char;
++        }
++        h063_2178(0x12);
++        h063_21d2(h048_0f88(*cp), h048_0fba(*cp),
++                  h048_0f88(g_spell_targets[0]), h048_0fba(g_spell_targets[0]),
++                  1, 0x1E);
++        *cp = g_current_char;
++    }
++}
++
++/* Spavento: fugge ($19A, $EC = $B3), niente bersaglio, turno +$12. */
++static void make_flee(Character *p)
++{
++    p->b[0x19A] = 1;
++    if (p->b[0xEC] <= 0x7F) {
++        p->b[0xEC] = 0xB3;
++    }
++    p->block_192->target = NULL;
++    p->block_192->b[0x12] = 1;
++}
++
++/*
++ * PORT H027+$2B3E (effetto $48): i nemici attorno senza $5C che falliscono
++ * il tiro salvezza "is terrified" ($6F) e fuggono.
++ */
++EH(effect_48)
++{
++    Character *p;                       /* -$4(a5) */
++    CokEffect *e;                       /* -$8(a5) */
++    u16 j;                              /* -$A(a5) */
++    u16 a;
++    u16 b;
++
++    (void)obj; (void)flag;
++    a = h048_0f88(*cp);
++    b = h048_0fba(*cp);
++    h077_08ac(h048_110c(a, b, 1, 0xFF, *cp), g_combat_area);
++    for (j = 2; j <= H005_B(0x2479); ++j) {
++        p = g_combatants[H005_B(0x2A3E + (j - 1) * 4) - 1];
++        if (p->b[0x199] == (*cp)->b[0x199] || find_effect(p, 0x5C, &e) ||
++            saving_throw_roll(p, 4, 0)) {
++            continue;
++        }
++        apply_spell_effect_on(p, 0x6F, 0, 0, 1, 1, 0, 0x0C, "is terrified");
++        if (find_effect(p, 0x6F, &e)) {
++            make_flee(p);
++        }
++    }
++}
++
++/*
++ * PORT H027+$2D46 (effetto $4C, "gates in"): finche' ha meno di meta' dei
++ * punti ferita, rimette in campo i personaggi in stato 9 nelle caselle
++ * libere ($17) attorno ai personaggi dell'altro lato, poi toglie l'effetto.
++ * L'originale non avanza la direzione per una casella fuori mappa (ciclo
++ * senza fine al bordo) e legge +$199 di un successivo NULL; qui un NULL
++ * chiude come il ritorno al lanciatore.
++ */
++EH(effect_4c)
++{
++    Character *s;                       /* -$12(a5) */
++    Character *anchor;                  /* -$E(a5) */
++    u8 done = 0;                        /* -$13(a5) */
++    u8 revived;                         /* -$14(a5) */
++    u16 dir = 0;                        /* -$A(a5) */
++    s16 x0;                             /* -$2(a5) */
++    s16 y0;                             /* -$4(a5) */
++    s16 x;                              /* -$6(a5) */
++    s16 y;                              /* -$8(a5) */
++    u16 value;                          /* -$18(a5) */
++    u16 tile;                           /* -$16(a5) */
++    u16 n;                              /* -$1A(a5) */
++
++    (void)obj; (void)flag;
++    if ((*cp)->b[0x1A8] >= (u16)((*cp)->b[0x64] >> 1)) {
++        return;
++    }
++    s = g_party_head;
++    anchor = g_party_head;
++    while (anchor != NULL && anchor->b[0x199] == (*cp)->b[0x199]) {
++        anchor = anchor->next;
++    }
++    while (s != NULL && s->b[0x197] != 9) {
++        s = s->next;
++    }
++    do {
++        if ((s16)dir > 7) {
++            if (anchor == NULL) {
++                anchor = *cp;
++                done = 1;
++            } else {
++                anchor = anchor->next;
++                if (anchor == NULL || anchor->b[0x199] == (*cp)->b[0x199]) {
++                    done = 1;
++                    anchor = *cp;
++                }
++            }
++            dir = 0;
++        }
++        if (s == NULL) {
++            done = 1;
++            continue;
++        }
++        x0 = (s16)h048_0f88(anchor);
++        y0 = (s16)h048_0fba(anchor);
++        revived = 0;
++        do {
++            x = (s16)(x0 + H005_W(0x3EE2 + dir * 2));
++            y = (s16)(y0 + H005_W(0x3ED0 + dir * 2));
++            if (x > 0x31 || x < 0 || y > 0x18 || y < 0) {
++                continue;
++            }
++            combat_map_cell(x, y, &value, &tile);
++            if (value == 0 && tile == 0x17) {
++                n = h048_0aa8(s);
++                H005_B(0x3154 + (n - 1) * 6 + 5) = mask_byte(s->b[0xD3], 7);
++                H005_SET_W(0x3154 + (n - 1) * 6, (u16)x);
++                H005_SET_W(0x3154 + (n - 1) * 6 + 2, (u16)y);
++                h043_190e(0x16);
++                revived = revive(s, s->b[0x64], 8, "gates in");
++                s = s->next;
++                if (s == NULL || s->b[0x197] != 9) {
++                    done = 1;
++                }
++            }
++            ++dir;
++        } while (!revived && (s16)dir <= 7);
++    } while (!done && anchor != *cp);
++    remove_effect(*cp, 0x4C, NULL);
++}
++
++/*
++ * PORT H027+$2FE2 (effetto $4D, berserk): fugge dai compagni ($EC = $B3, o
++ * $B2 per i mostri con IA propria); in combattimento prende per bersaglio
++ * il primo dell'area ($2A42), passa al lato opposto e "goes berserk".  Alla
++ * rimozione torna al lato 0.
++ */
++EH(effect_4d)
++{
++    Character *c = *cp;
++    u16 a;
++    u16 b;
++
++    (void)obj;
++    if (flag) {
++        if (c->b[0xEC] == 0xB3) {
++            c->b[0xEC] = 0;
++            c->b[0x19A] = 0;
++        }
++        c->b[0x199] = 0;
++        return;
++    }
++    c->b[0x19A] = 1;
++    if (c->b[0xEC] <= 0x7F || c->b[0xEC] == 0xB3) {
++        c->b[0xEC] = 0xB3;
++    } else {
++        c->b[0xEC] = 0xB2;
++    }
++    if (H005_B(0x3DE3) != 5) {
++        return;
++    }
++    c->block_192->target = NULL;
++    a = h048_0f88(*cp);
++    b = h048_0fba(*cp);
++    h077_08ac(h048_110c(a, b, 0xFF, 0xFF, *cp), g_combat_area);
++    (*cp)->block_192->target = g_combatants[H005_B(0x2A42) - 1];
++    (*cp)->block_192->b[1] = 0;
++    (*cp)->b[0x199] = xor_byte((*cp)->block_192->target->b[0x199], 1);
++    show_char_message(*cp, 0x0C, "goes berserk", 0x0A, 1);
++}
++
++/*
++ * PORT H027+$3D28 (effetto $6B): come $4D senza il controllo del
++ * combattimento e senza messaggio; alla rimozione il lato torna a +$4
++ * dell'effetto e $19A resta.
++ */
++EH(effect_6b)
++{
++    Character *c = *cp;
++    u16 a;
++    u16 b;
++
++    if (flag) {
++        if (c->b[0xEC] == 0xB3) {
++            c->b[0xEC] = 0;
++        }
++        c->b[0x199] = EFF->b[4];
++        return;
++    }
++    c->b[0x19A] = 1;
++    if (c->b[0xEC] <= 0x7F || c->b[0xEC] == 0xB3) {
++        c->b[0xEC] = 0xB3;
++    } else {
++        c->b[0xEC] = 0xB2;
++    }
++    c->block_192->target = NULL;
++    a = h048_0f88(*cp);
++    b = h048_0fba(*cp);
++    h077_08ac(h048_110c(a, b, 0xFF, 0xFF, *cp), g_combat_area);
++    (*cp)->block_192->target = g_combatants[H005_B(0x2A42) - 1];
++    (*cp)->b[0x199] = xor_byte((*cp)->block_192->target->b[0x199], 1);
++}
++
++/*
++ * PORT H027+$3160 (effetto $4F): "emits an evil stench"; per ogni nemico
++ * attorno che fallisce il tiro salvezza e non ha $76: "is affected" e,
++ * come nell'originale, l'effetto $76 va a chi emette il fetore.
++ */
++EH(effect_4f)
++{
++    Character *p;                       /* -$4(a5) */
++    CokEffect *e;                       /* -$8(a5) */
++    u16 j;                              /* -$A(a5) */
++    u16 a;
++    u16 b;
++
++    (void)obj; (void)flag;
++    show_char_message(*cp, 0x14, "emits an evil stench", 0x0A, 0);
++    a = h048_0f88(*cp);
++    b = h048_0fba(*cp);
++    h077_08ac(h048_110c(a, b, 1, 0xFF, *cp), g_combat_area);
++    for (j = 2; j <= H005_B(0x2479); ++j) {
++        p = g_combatants[H005_B(0x2A3E + (j - 1) * 4) - 1];
++        if (p->b[0x199] == (*cp)->b[0x199] || saving_throw_roll(p, 4, 0) ||
++            find_effect(p, 0x76, &e)) {
++            continue;
++        }
++        show_effect_message(p, 1, 0x0B, "is affected");
++        add_effect(*cp, 0x76, 0, 0xFF, 0);
++    }
++}
++
++/*
++ * PORT H027+$3636 (effetto $52, aura di paura): i personaggi dell'altro
++ * lato senza $5C/$6F/$77: fino a 3 dadi vita (+$DB) "is terrified" ($6F) e
++ * fuggono, oltre "is afraid" ($77) se falliscono il tiro salvezza.
++ */
++EH(effect_52)
++{
++    CokEffect *e = NULL;                /* -$8(a5) */
++    Character *p;                       /* -$4(a5) */
++
++    (void)obj; (void)flag;
++    for (p = g_party_head; p != NULL; p = p->next) {
++        if (p->b[0x199] == (*cp)->b[0x199] || find_effect(p, 0x5C, &e) ||
++            find_effect(p, 0x6F, &e) || find_effect(p, 0x77, &e)) {
++            continue;
++        }
++        if (p->b[0xDB] <= 3) {
++            apply_spell_effect_on(p, 0x6F, 0, 0xFF, 1, 1, 0, 0x0C,
++                                  "is terrified");
++            if (find_effect(p, 0x6F, &e)) {
++                make_flee(p);
++            }
++        } else if (!saving_throw_roll(p, 4, 0)) {
++            apply_spell_effect_on(p, 0x77, 0, 0xFF, 1, 1, 0, 9, "is afraid");
++        }
++    }
++}
++
++/*
++ * PORT H027+$3982 (effetto $5E): con $2A13 = 0, 2 o 4 aggiunge a $2476 un
++ * bonus dalla costituzione (+$19): 4-6 +1, 7-10 +2, 11-13 +3, 14-17 +4,
++ * 18-20 +5.  Fuori tabella l'originale somma un byte non inizializzato:
++ * qui 0.
++ */
++EH(effect_5e)
++{
++    u8 bonus = 0;                       /* -$1(a5) */
++    u8 con;
++
++    (void)obj; (void)flag;
++    if (H005_B(0x2A13) != 4 && H005_B(0x2A13) != 2 && H005_B(0x2A13) != 0) {
++        return;
++    }
++    con = (*cp)->b[0x19];
++    if (con >= 4 && con <= 6) {
++        bonus = 1;
++    } else if (con >= 7 && con <= 10) {
++        bonus = 2;
++    } else if (con >= 11 && con <= 13) {
++        bonus = 3;
++    } else if (con >= 14 && con <= 17) {
++        bonus = 4;
++    } else if (con >= 18 && con <= 20) {
++        bonus = 5;
++    }
++    H005_B(0x2476) = (u8)(H005_B(0x2476) + bonus);
++}
++
+ /*
+  * PORT H027+$4276: installa i gestori degli effetti di H027 nella tabella
+  * H005+$2832 (le altre voci le scrive H033+$1A50).
+@@ -1227,8 +1896,8 @@ void install_effect_handlers(void)
+     g_handlers_2832[36] = (CokHandler)effect_25;   /* $28C2 */
+     g_handlers_2832[37] = (CokHandler)effect_nothing;   /* $28C6 */
+     g_handlers_2832[38] = (CokHandler)effect_27;   /* $28CA */
+-    g_handlers_2832[39] = h027_13f4;   /* $28CE */
+-    g_handlers_2832[40] = h027_1836;   /* $28D2 */
++    g_handlers_2832[39] = (CokHandler)effect_28;   /* $28CE */
++    g_handlers_2832[40] = (CokHandler)effect_29;   /* $28D2 */
+     g_handlers_2832[41] = (CokHandler)effect_2a;   /* $28D6 */
+     g_handlers_2832[42] = (CokHandler)effect_2b;   /* $28DA */
+     g_handlers_2832[43] = (CokHandler)effect_2c;   /* $28DE */
+@@ -1247,28 +1916,28 @@ void install_effect_handlers(void)
+     g_handlers_2832[56] = (CokHandler)effect_39;   /* $2912 */
+     g_handlers_2832[57] = (CokHandler)effect_3a;   /* $2916 */
+     g_handlers_2832[58] = (CokHandler)effect_3b;   /* $291A */
+-    g_handlers_2832[59] = h027_1e3c;   /* $291E */
++    g_handlers_2832[59] = (CokHandler)effect_3c;   /* $291E */
+     g_handlers_2832[60] = (CokHandler)effect_3d;   /* $2922 */
+     g_handlers_2832[61] = (CokHandler)effect_3e;   /* $2926 */
+     g_handlers_2832[62] = (CokHandler)effect_3f;   /* $292A */
+     g_handlers_2832[63] = (CokHandler)effect_40;   /* $292E */
+     g_handlers_2832[64] = (CokHandler)effect_41;   /* $2932 */
+     g_handlers_2832[65] = (CokHandler)effect_42;   /* $2936 */
+-    g_handlers_2832[66] = h027_2400;   /* $293A */
++    g_handlers_2832[66] = (CokHandler)effect_43;   /* $293A */
+     g_handlers_2832[67] = (CokHandler)effect_44;   /* $293E */
+     g_handlers_2832[68] = (CokHandler)effect_45;   /* $2942 */
+-    g_handlers_2832[69] = h027_266a;   /* $2946 */
+-    g_handlers_2832[70] = h027_29e2;   /* $294A */
+-    g_handlers_2832[71] = h027_2b3e;   /* $294E */
++    g_handlers_2832[69] = (CokHandler)effect_46;   /* $2946 */
++    g_handlers_2832[70] = (CokHandler)effect_47;   /* $294A */
++    g_handlers_2832[71] = (CokHandler)effect_48;   /* $294E */
+     g_handlers_2832[72] = (CokHandler)effect_49;   /* $2952 */
+     g_handlers_2832[73] = (CokHandler)effect_4a;   /* $2956 */
+     g_handlers_2832[74] = (CokHandler)effect_nothing;   /* $295A */
+-    g_handlers_2832[75] = h027_2d46;   /* $295E */
+-    g_handlers_2832[76] = h027_2fe2;   /* $2962 */
+-    g_handlers_2832[78] = h027_3160;   /* $296A */
+-    g_handlers_2832[79] = h027_3292;   /* $296E */
++    g_handlers_2832[75] = (CokHandler)effect_4c;   /* $295E */
++    g_handlers_2832[76] = (CokHandler)effect_4d;   /* $2962 */
++    g_handlers_2832[78] = (CokHandler)effect_4f;   /* $296A */
++    g_handlers_2832[79] = (CokHandler)effect_50;   /* $296E */
+     g_handlers_2832[80] = (CokHandler)effect_51;   /* $2972 */
+-    g_handlers_2832[81] = h027_3636;   /* $2976 */
++    g_handlers_2832[81] = (CokHandler)effect_52;   /* $2976 */
+     g_handlers_2832[85] = (CokHandler)effect_56;   /* $2986 */
+     g_handlers_2832[86] = (CokHandler)effect_57;   /* $298A */
+     g_handlers_2832[87] = (CokHandler)effect_58;   /* $298E */
+@@ -1276,7 +1945,7 @@ void install_effect_handlers(void)
+     g_handlers_2832[90] = (CokHandler)effect_nothing;   /* $299A */
+     g_handlers_2832[91] = (CokHandler)effect_none;   /* $299E */
+     g_handlers_2832[92] = (CokHandler)effect_5d;   /* $29A2 */
+-    g_handlers_2832[93] = h027_3982;   /* $29A6 */
++    g_handlers_2832[93] = (CokHandler)effect_5e;   /* $29A6 */
+     g_handlers_2832[94] = (CokHandler)effect_5f;   /* $29AA */
+     g_handlers_2832[95] = (CokHandler)effect_60;   /* $29AE */
+     g_handlers_2832[96] = (CokHandler)effect_61;   /* $29B2 */
+@@ -1288,7 +1957,7 @@ void install_effect_handlers(void)
+     g_handlers_2832[102] = (CokHandler)effect_66;   /* $29CA */
+     g_handlers_2832[104] = (CokHandler)effect_69;   /* $29D2 */
+     g_handlers_2832[105] = (CokHandler)effect_6a;   /* $29D6 */
+-    g_handlers_2832[106] = h027_3d28;   /* $29DA */
++    g_handlers_2832[106] = (CokHandler)effect_6b;   /* $29DA */
+     g_handlers_2832[107] = (CokHandler)effect_6c;   /* $29DE */
+     g_handlers_2832[108] = (CokHandler)effect_nothing;   /* $29E2 */
+     g_handlers_2832[109] = (CokHandler)effect_6e;   /* $29E6 */
+diff --git a/src_c/readable/h029_gfx.c b/src_c/readable/h029_gfx.c
+index 0cf0f5b..c85c81a 100644
+--- a/src_c/readable/h029_gfx.c
++++ b/src_c/readable/h029_gfx.c
+@@ -324,6 +324,12 @@ u8 mask_byte(u8 value, u16 mask)
+     return (u8)(mask & value);
+ }
+ 
++/* PORT H029+$0376: value XOR mask (byte). */
++u8 xor_byte(u8 value, u16 mask)
++{
++    return (u8)(mask ^ value);
++}
++
+ /* PORT H029+$039A: value OR mask (byte). */
+ u8 or_byte(u8 value, u16 mask)
+ {
+diff --git a/src_c/readable/h029_gfx.h b/src_c/readable/h029_gfx.h
+index a4d8618..948fe63 100644
+--- a/src_c/readable/h029_gfx.h
++++ b/src_c/readable/h029_gfx.h
+@@ -12,6 +12,7 @@ void free_pointer_data(void);           /* H029+$0180 */
+ void set_pointer_shape(s16 shape);      /* H029+$01B6 */
+ void add_to_byte(u8 *value, u16 delta); /* H029+$03E2 */
+ u8   mask_byte(u8 value, u16 mask);     /* H029+$0354 */
++u8   xor_byte(u8 value, u16 mask);      /* H029+$0376 */
+ u8   or_byte(u8 value, u16 mask);       /* H029+$039A */
+ void build_gfx_mask(u8 color, struct GfxRecord *r);     /* H029+$0766 */
+ void fill_cells(u16 col, u16 row, u16 width, u16 height, u8 pen,
+diff --git a/src_c/readable/h062.c b/src_c/readable/h062.c
+index e67768c..996d44e 100644
+--- a/src_c/readable/h062.c
++++ b/src_c/readable/h062.c
+@@ -822,3 +822,56 @@ u8 revive(Character *c, u16 hp, u16 len, const char *text)
+     count_sides();
+     return 1;
+ }
++
++/*
++ * PORT H062+$2734: i personaggi a terra della lista H005+$16 ($14 = quanti)
++ * esplodono: "explodes.", 1d6 ai combattenti dell'area non in stato $A,
++ * poi passano allo stato 6 e la lista si svuota.  L'originale scrive +$198,
++ * +$197 e chiama H048+$12F4 anche per una voce vuota (NULL): qui saltato.
++ * Radius 1: al massimo 9 caselle, quindi 8 vicini nella lista.
++ */
++void explode_fallen(void)
++{
++    u16 i;                              /* -$2(a5) */
++    u16 j;                              /* -$4(a5) */
++    Character *p;                       /* -$8(a5) */
++    u16 list[8];                        /* -$18(a5) */
++    u16 n;                              /* -$1A(a5) */
++    u16 a;
++    u16 b;
++    Character *q;
++
++    H005_B(0x2473) = 0;
++    for (i = 1; i <= H005_W(0x14); ++i) {
++        p = g_h005_0016[i - 1];
++        if (p != NULL) {
++            show_char_message(p, 9, "explodes.", 0x0A, 1);
++            a = h048_0f88(p);
++            b = h048_0fba(p);
++            h077_08ac(h048_110c(a, b, 1, 0xFF, p), g_combat_area);
++            if (H005_B(0x2479) > 1) {
++                n = (u16)(H005_B(0x2479) - 1);
++                for (j = 2; j <= H005_B(0x2479); ++j) {
++                    list[j - 2] = H005_B(0x2A3E + (j - 1) * 4);
++                }
++                for (j = 1; j <= n; ++j) {
++                    q = g_combatants[list[j - 1] - 1];
++                    if (q->b[0x197] != 0x0A) {
++                        apply_damage(q, roll_damage_dice(1, 6), 0, 0);
++                    }
++                }
++            }
++        }
++        if (p == NULL) {
++            continue;
++        }
++        p->b[0x198] = 0;
++        p->b[0x197] = 6;
++        h048_12f4(p);
++    }
++    if (H005_W(0x14) > 0) {
++        H005_SET_W(0x14, 0);
++        /* H029+$0312 su $50 byte: i 20 puntatori della lista. */
++        memset(g_h005_0016, 0, sizeof g_h005_0016);
++    }
++}
+diff --git a/src_c/readable/h062.h b/src_c/readable/h062.h
+index 3d7e7b4..8351cbd 100644
+--- a/src_c/readable/h062.h
++++ b/src_c/readable/h062.h
+@@ -36,5 +36,6 @@ u16  roll_damage_dice(u16 count, u16 sides);     /* H062+$15C6 */
+ void knock_out(Character *c, u8 status, u16 len, const char *text);
+                                                 /* H062+$02FA */
+ u8   revive(Character *c, u16 hp, u16 len, const char *text); /* H062+$2650 */
++void explode_fallen(void);                      /* H062+$2734 */
+ 
+ #endif
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index b76c5fd..ef90912 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -43,20 +43,6 @@ void h012_3150(void) { cok_unported("H012+$3150"); }
+ /* Chiamate da H006+$01AE. */
+ 
+ /* Gestori delle tabelle H005+$25C0 e H005+$2832 (H027+$4276, H033+$1A50). */
+-void h027_13f4(void) { cok_unported("H027+$13F4"); }
+-void h027_1836(void) { cok_unported("H027+$1836"); }
+-void h027_1e3c(void) { cok_unported("H027+$1E3C"); }
+-void h027_2400(void) { cok_unported("H027+$2400"); }
+-void h027_266a(void) { cok_unported("H027+$266A"); }
+-void h027_29e2(void) { cok_unported("H027+$29E2"); }
+-void h027_2b3e(void) { cok_unported("H027+$2B3E"); }
+-void h027_2d46(void) { cok_unported("H027+$2D46"); }
+-void h027_2fe2(void) { cok_unported("H027+$2FE2"); }
+-void h027_3160(void) { cok_unported("H027+$3160"); }
+-void h027_3292(void) { cok_unported("H027+$3292"); }
+-void h027_3636(void) { cok_unported("H027+$3636"); }
+-void h027_3982(void) { cok_unported("H027+$3982"); }
+-void h027_3d28(void) { cok_unported("H027+$3D28"); }
+ void h033_1a40(void) { cok_unported("H033+$1A40"); }
+ void h085_15fe(void) { cok_unported("H085+$15FE"); }
+ void h085_172a(void) { cok_unported("H085+$172A"); }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index afb7c6d..185c5b9 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -22,20 +22,6 @@ void h011_04a6(u16 a, u16 b, u16 c, u16 d);
+ void h012_3150(void);
+ 
+ /* Gestori delle tabelle H005+$25C0 e H005+$2832. */
+-void h027_13f4(void);
+-void h027_1836(void);
+-void h027_1e3c(void);
+-void h027_2400(void);
+-void h027_266a(void);
+-void h027_29e2(void);
+-void h027_2b3e(void);
+-void h027_2d46(void);
+-void h027_2fe2(void);
+-void h027_3160(void);
+-void h027_3292(void);
+-void h027_3636(void);
+-void h027_3982(void);
+-void h027_3d28(void);
+ void h033_1a40(void);
+ void h085_15fe(void);
+ void h085_172a(void);
+-- 
+2.43.0
+

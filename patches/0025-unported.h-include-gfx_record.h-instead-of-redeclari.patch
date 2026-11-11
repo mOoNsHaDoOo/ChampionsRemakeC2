@@ -1,0 +1,29 @@
+From e9ffd6f7b56d6ba20b44d04e18bc8103411a5aed Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 19:27:41 +0000
+Subject: [PATCH 25/65] unported.h: include gfx_record.h instead of redeclaring
+ GfxRecord
+
+SAS/C warning 63: struct GfxRecord was already declared by gfx_record.h.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/unported.h | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index cd28d84..60631c4 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -216,7 +216,6 @@ void h043_0840(void);
+ 
+ u16  h065_34fc(u16 a, u16 b, u16 *value, u8 *again); /* scelta di un incantesimo */
+ 
+-struct GfxRecord;
+ void h049_09d6(struct GfxRecord *dst, struct GfxRecord *src); /* immagine ingrandita */
+ void h049_04ae(struct BitMap *src, u16 sx, u16 sy, struct RastPort *rp, u16 dx, u16 dy,
+                u16 w, u16 h, u8 minterm, u8 *mask);  /* disegno con il blitter */
+-- 
+2.43.0
+

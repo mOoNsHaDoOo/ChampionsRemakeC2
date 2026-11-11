@@ -1,0 +1,1699 @@
+From 39528435ab14e42dd08cbbe767caa8e89749f91d Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 11 Nov 2026 07:01:41 +0000
+Subject: [PATCH 44/65] Port dungeon 3D view (H011+$0B78 and helpers),
+ GEO/WALLDEF loaders, H060+$0018, H049+$0014, H010+$0360; make H042 picture
+ stubs non-fatal
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md | 392 +++++++++++++-------------
+ src_c/readable/backlog.md     |  46 +++
+ src_c/readable/h010_input.c   |  20 ++
+ src_c/readable/h010_input.h   |   1 +
+ src_c/readable/h011.c         | 513 ++++++++++++++++++++++++++++++++++
+ src_c/readable/h011.h         |   3 +
+ src_c/readable/h012.c         |  15 +-
+ src_c/readable/h035.c         |   2 +-
+ src_c/readable/h049.c         |  62 ++++
+ src_c/readable/h049.h         |   2 +
+ src_c/readable/h060.c         |  47 ++++
+ src_c/readable/h060.h         |   7 +
+ src_c/readable/h061.c         |   7 +-
+ src_c/readable/h063.c         |   5 +-
+ src_c/readable/h064.c         |  14 +-
+ src_c/readable/h066.c         |   5 +-
+ src_c/readable/h068.c         |   8 +-
+ src_c/readable/unported.c     |  30 +-
+ src_c/readable/unported.h     |   5 -
+ 19 files changed, 940 insertions(+), 244 deletions(-)
+ create mode 100644 src_c/readable/h060.h
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index b9b8e76..c3f9048 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **874 / 1112**.
++Routine portate: **883 / 1112**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -16,8 +16,8 @@ Routine portate: **874 / 1112**.
+ | H007 | 3036 | 11 | 11 |
+ | H008 | 8660 | 21 | 21 |
+ | H009 | 988 | 3 | 3 |
+-| H010 | 2488 | 9 | 6 |
+-| H011 | 7004 | 13 | 7 |
++| H010 | 2488 | 9 | 7 |
++| H011 | 7004 | 13 | 13 |
+ | H012 | 13580 | 33 | 32 |
+ | H013 | 25244 | 22 | 19 |
+ | H014 | 224 | 2 | 2 |
+@@ -55,7 +55,7 @@ Routine portate: **874 / 1112**.
+ | H046 | 724 | 2 | 1 |
+ | H047 | 5224 | 8 | 8 |
+ | H048 | 6636 | 21 | 21 |
+-| H049 | 2992 | 13 | 10 |
++| H049 | 2992 | 13 | 11 |
+ | H050 | 136 | 4 | 4 |
+ | H051 | 256 | 2 | 2 |
+ | H052 | 316 | 1 | 1 |
+@@ -66,7 +66,7 @@ Routine portate: **874 / 1112**.
+ | H057 | 12872 | 33 | 1 |
+ | H058 | 4720 | 16 | 6 |
+ | H059 | 6340 | 14 | 14 |
+-| H060 | 396 | 2 | 1 |
++| H060 | 396 | 2 | 2 |
+ | H061 | 16936 | 35 | 33 |
+ | H062 | 10496 | 32 | 32 |
+ | H063 | 16496 | 52 | 52 |
+@@ -229,71 +229,71 @@ Routine portate: **874 / 1112**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$00B6` | `module_init_H010` | parziale | h010_input.c:22 |
+-| `$00C4` | `sub_H010_000000C4` | parziale | h010_input.c:157 |
+-| `$0332` | `sub_H010_00000332` | parziale | h010_input.c:216 |
+-| `$0360` | `sub_H010_00000360` | parziale |  |
++| `$00B6` | `module_init_H010` | parziale | h010_input.c:23 |
++| `$00C4` | `sub_H010_000000C4` | parziale | h010_input.c:158 |
++| `$0332` | `sub_H010_00000332` | parziale | h010_input.c:217 |
++| `$0360` | `sub_H010_00000360` | parziale | h010_input.c:230 |
+ | `$03AA` | `sub_H010_000003AA` | parziale |  |
+-| `$042E` | `trampoline_H010_0882` | parziale | h010_input.c:111 |
+-| `$043C` | `sub_H010_0000043C` | parziale | h010_input.c:50 |
++| `$042E` | `trampoline_H010_0882` | parziale | h010_input.c:112 |
++| `$043C` | `sub_H010_0000043C` | parziale | h010_input.c:51 |
+ | `$0882` | `Poll_IntuitionEvents` | verificato |  |
+-| `$0974` | `sub_H010_00000974` | parziale | h010_input.c:147 |
++| `$0974` | `sub_H010_00000974` | parziale | h010_input.c:148 |
+ 
+ ### H011
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$00FE` | `module_init_H011` | parziale | h011.c:14 |
+-| `$010C` | `sub_H011_0000010C` | parziale | h011.c:21 |
+-| `$0162` | `sub_H011_00000162` | parziale | h011.c:33 |
+-| `$01AA` | `(senza scheda)` | - | h011.c:66 |
+-| `$0330` | `sub_H011_00000330` | parziale |  |
+-| `$04A6` | `sub_H011_000004A6` | parziale | h011.c:145 |
+-| `$04E2` | `sub_H011_000004E2` | parziale | h011.c:101 |
+-| `$058E` | `sub_H011_0000058E` | parziale |  |
+-| `$0868` | `sub_H011_00000868` | parziale |  |
+-| `$09C8` | `sub_H011_000009C8` | parziale | h011.c:111 |
+-| `$0B78` | `sub_H011_00000B78` | parziale |  |
+-| `$14EA` | `Load_WallDefinitions` | parziale |  |
+-| `$1876` | `Load3DMap_GEO` | verificato |  |
++| `$00FE` | `module_init_H011` | parziale | h011.c:23 |
++| `$010C` | `sub_H011_0000010C` | parziale | h011.c:30 |
++| `$0162` | `sub_H011_00000162` | parziale | h011.c:42 |
++| `$01AA` | `(senza scheda)` | - | h011.c:75 |
++| `$0330` | `sub_H011_00000330` | parziale | h011.c:284 |
++| `$04A6` | `sub_H011_000004A6` | parziale | h011.c:154 |
++| `$04E2` | `sub_H011_000004E2` | parziale | h011.c:110 |
++| `$058E` | `sub_H011_0000058E` | parziale | h011.c:334 |
++| `$0868` | `sub_H011_00000868` | parziale | h011.c:399 |
++| `$09C8` | `sub_H011_000009C8` | parziale | h011.c:120 |
++| `$0B78` | `sub_H011_00000B78` | parziale | h011.c:624 |
++| `$14EA` | `Load_WallDefinitions` | parziale | h011.c:173 |
++| `$1876` | `Load3DMap_GEO` | verificato | h011.c:250 |
+ 
+ ### H012
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0178` | `module_init_H012` | parziale | h012.c:32 |
++| `$0178` | `module_init_H012` | parziale | h012.c:33 |
+ | `$0186` | `trampoline_H012_3004` | parziale |  |
+-| `$018A` | `ECL_RunAtAddress` | verificato | h012.c:104 |
+-| `$01FA` | `(senza scheda)` | - | h012.c:157 |
+-| `$0208` | `sub_H012_00000208` | parziale | h012.c:137 |
+-| `$05D6` | `(senza scheda)` | - | h012.c:252 |
+-| `$0688` | `(senza scheda)` | - | h012.c:270 |
+-| `$0766` | `(senza scheda)` | - | h012.c:305 |
+-| `$0B18` | `(senza scheda)` | - | h012.c:380 |
+-| `$0BEA` | `(senza scheda)` | - | h012.c:507 |
+-| `$15AE` | `(senza scheda)` | - | h012.c:582 |
+-| `$1DDE` | `(senza scheda)` | - | h012.c:809 |
+-| `$1E90` | `(senza scheda)` | - | h012.c:828 |
+-| `$1F4C` | `(senza scheda)` | - | h012.c:851 |
+-| `$1F68` | `(senza scheda)` | - | h012.c:859 |
+-| `$2358` | `(senza scheda)` | - | h012.c:958 |
+-| `$2392` | `(senza scheda)` | - | h012.c:970 |
+-| `$23D6` | `(senza scheda)` | - | h012.c:982 |
+-| `$241C` | `(senza scheda)` | - | h012.c:996 |
+-| `$2486` | `(senza scheda)` | - | h012.c:1012 |
+-| `$2502` | `(senza scheda)` | - | h012.c:1028 |
+-| `$2596` | `(senza scheda)` | - | h012.c:1043 |
+-| `$26D6` | `(senza scheda)` | - | h012.c:1205 |
+-| `$2922` | `sub_H012_00002922` | parziale | h012.c:1270 |
+-| `$29A6` | `(senza scheda)` | - | h012.c:1295 |
+-| `$2AAE` | `(senza scheda)` | - | h012.c:1089 |
+-| `$2ABE` | `(senza scheda)` | - | h012.c:1096 |
+-| `$2AF6` | `(senza scheda)` | - | h012.c:1105 |
+-| `$2B64` | `(senza scheda)` | - | h012.c:1119 |
+-| `$2C28` | `(senza scheda)` | - | h012.c:1150 |
+-| `$2DF2` | `ECL_DispatchOpcode` | verificato | h012.c:38 |
+-| `$3020` | `sub_H012_00003020` | parziale | h012.c:1339 |
+-| `$3150` | `Scenario_MainLoop` | verificato | h012.c:1400 |
++| `$018A` | `ECL_RunAtAddress` | verificato | h012.c:105 |
++| `$01FA` | `(senza scheda)` | - | h012.c:158 |
++| `$0208` | `sub_H012_00000208` | parziale | h012.c:138 |
++| `$05D6` | `(senza scheda)` | - | h012.c:253 |
++| `$0688` | `(senza scheda)` | - | h012.c:271 |
++| `$0766` | `(senza scheda)` | - | h012.c:306 |
++| `$0B18` | `(senza scheda)` | - | h012.c:381 |
++| `$0BEA` | `(senza scheda)` | - | h012.c:508 |
++| `$15AE` | `(senza scheda)` | - | h012.c:583 |
++| `$1DDE` | `(senza scheda)` | - | h012.c:810 |
++| `$1E90` | `(senza scheda)` | - | h012.c:829 |
++| `$1F4C` | `(senza scheda)` | - | h012.c:852 |
++| `$1F68` | `(senza scheda)` | - | h012.c:860 |
++| `$2358` | `(senza scheda)` | - | h012.c:959 |
++| `$2392` | `(senza scheda)` | - | h012.c:971 |
++| `$23D6` | `(senza scheda)` | - | h012.c:983 |
++| `$241C` | `(senza scheda)` | - | h012.c:997 |
++| `$2486` | `(senza scheda)` | - | h012.c:1013 |
++| `$2502` | `(senza scheda)` | - | h012.c:1029 |
++| `$2596` | `(senza scheda)` | - | h012.c:1044 |
++| `$26D6` | `(senza scheda)` | - | h012.c:1206 |
++| `$2922` | `sub_H012_00002922` | parziale | h012.c:1271 |
++| `$29A6` | `(senza scheda)` | - | h012.c:1296 |
++| `$2AAE` | `(senza scheda)` | - | h012.c:1090 |
++| `$2ABE` | `(senza scheda)` | - | h012.c:1097 |
++| `$2AF6` | `(senza scheda)` | - | h012.c:1106 |
++| `$2B64` | `(senza scheda)` | - | h012.c:1120 |
++| `$2C28` | `(senza scheda)` | - | h012.c:1151 |
++| `$2DF2` | `ECL_DispatchOpcode` | verificato | h012.c:39 |
++| `$3020` | `sub_H012_00003020` | parziale | h012.c:1340 |
++| `$3150` | `Scenario_MainLoop` | verificato | h012.c:1401 |
+ 
+ ### H013
+ 
+@@ -879,7 +879,7 @@ Routine portate: **874 / 1112**.
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+ | `$0008` | `sub_H049_00000008` | parziale | h049.c:10 |
+-| `$0014` | `trampoline_H049_0082` | parziale |  |
++| `$0014` | `trampoline_H049_0082` | parziale | h049.c:484 |
+ | `$012A` | `trampoline_H049_0198` | parziale | h049.c:186 |
+ | `$0224` | `Draw_TextWithBlitter` | verificato | h049.c:95 |
+ | `$0438` | `sub_H049_00000438` | parziale | h049.c:35 |
+@@ -1027,48 +1027,48 @@ Routine portate: **874 / 1112**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$000A` | `module_init_H060` | parziale | h060.c:4 |
+-| `$0018` | `sub_H060_00000018` | parziale |  |
++| `$000A` | `module_init_H060` | parziale | h060.c:9 |
++| `$0018` | `sub_H060_00000018` | parziale | h060.c:15 |
+ 
+ ### H061
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$15C2` | `module_init_H061` | parziale | h061.c:33 |
++| `$15C2` | `module_init_H061` | parziale | h061.c:34 |
+ | `$162A` | `trampoline_H061_1F12` | parziale |  |
+-| `$162E` | `sub_H061_0000162E` | parziale | h061.c:44 |
+-| `$1670` | `ECL_ReadOperands` | verificato | h061.c:446 |
+-| `$184E` | `ECL_EvaluateOperand` | parziale | h061.c:498 |
+-| `$1928` | `ECL_ResetExecution` | verificato | h061.c:634 |
+-| `$1ACC` | `ECL_LoadProgram` | verificato | h061.c:684 |
+-| `$1BD6` | `sub_H061_00001BD6` | parziale | h061.c:711 |
+-| `$1C42` | `sub_H061_00001C42` | parziale | h061.c:725 |
+-| `$1D20` | `sub_H061_00001D20` | parziale | h061.c:757 |
+-| `$1D6E` | `sub_H061_00001D6E` | parziale | h061.c:768 |
+-| `$1F12` | `sub_H061_00001F12` | parziale | h061.c:54 |
+-| `$1F3C` | `ECL_DecodeAddress` | verificato | h061.c:60 |
+-| `$1F6A` | `trampoline_H061_1F9A` | parziale | h061.c:66 |
+-| `$1FA4` | `sub_H061_00001FA4` | parziale | h061.c:76 |
+-| `$202C` | `sub_H061_0000202C` | parziale | h061.c:99 |
+-| `$208E` | `sub_H061_0000208E` | parziale | h061.c:119 |
+-| `$27E2` | `sub_H061_000027E2` | parziale | h061.c:280 |
+-| `$2BAA` | `sub_H061_00002BAA` | parziale | h061.c:366 |
+-| `$2E04` | `sub_H061_00002E04` | parziale | h061.c:230 |
+-| `$3012` | `sub_H061_00003012` | parziale | h061.c:1143 |
+-| `$3244` | `sub_H061_00003244` | parziale | h061.c:528 |
+-| `$33F0` | `sub_H061_000033F0` | parziale | h061.c:580 |
+-| `$35E2` | `sub_H061_000035E2` | parziale | h061.c:821 |
+-| `$36E6` | `sub_H061_000036E6` | parziale | h061.c:848 |
+-| `$3860` | `sub_H061_00003860` | parziale | h061.c:1201 |
+-| `$3904` | `sub_H061_00003904` | parziale | h061.c:894 |
+-| `$3A0A` | `sub_H061_00003A0A` | parziale | h061.c:927 |
+-| `$3AAC` | `sub_H061_00003AAC` | parziale | h061.c:952 |
+-| `$3B4E` | `trampoline_H061_3BEE` | parziale | h061.c:972 |
++| `$162E` | `sub_H061_0000162E` | parziale | h061.c:45 |
++| `$1670` | `ECL_ReadOperands` | verificato | h061.c:447 |
++| `$184E` | `ECL_EvaluateOperand` | parziale | h061.c:499 |
++| `$1928` | `ECL_ResetExecution` | verificato | h061.c:635 |
++| `$1ACC` | `ECL_LoadProgram` | verificato | h061.c:685 |
++| `$1BD6` | `sub_H061_00001BD6` | parziale | h061.c:712 |
++| `$1C42` | `sub_H061_00001C42` | parziale | h061.c:726 |
++| `$1D20` | `sub_H061_00001D20` | parziale | h061.c:758 |
++| `$1D6E` | `sub_H061_00001D6E` | parziale | h061.c:769 |
++| `$1F12` | `sub_H061_00001F12` | parziale | h061.c:55 |
++| `$1F3C` | `ECL_DecodeAddress` | verificato | h061.c:61 |
++| `$1F6A` | `trampoline_H061_1F9A` | parziale | h061.c:67 |
++| `$1FA4` | `sub_H061_00001FA4` | parziale | h061.c:77 |
++| `$202C` | `sub_H061_0000202C` | parziale | h061.c:100 |
++| `$208E` | `sub_H061_0000208E` | parziale | h061.c:120 |
++| `$27E2` | `sub_H061_000027E2` | parziale | h061.c:281 |
++| `$2BAA` | `sub_H061_00002BAA` | parziale | h061.c:367 |
++| `$2E04` | `sub_H061_00002E04` | parziale | h061.c:231 |
++| `$3012` | `sub_H061_00003012` | parziale | h061.c:1144 |
++| `$3244` | `sub_H061_00003244` | parziale | h061.c:529 |
++| `$33F0` | `sub_H061_000033F0` | parziale | h061.c:581 |
++| `$35E2` | `sub_H061_000035E2` | parziale | h061.c:822 |
++| `$36E6` | `sub_H061_000036E6` | parziale | h061.c:849 |
++| `$3860` | `sub_H061_00003860` | parziale | h061.c:1202 |
++| `$3904` | `sub_H061_00003904` | parziale | h061.c:895 |
++| `$3A0A` | `sub_H061_00003A0A` | parziale | h061.c:928 |
++| `$3AAC` | `sub_H061_00003AAC` | parziale | h061.c:953 |
++| `$3B4E` | `trampoline_H061_3BEE` | parziale | h061.c:973 |
+ | `$3C4C` | `sub_H061_00003C4C` | parziale |  |
+-| `$3DBE` | `sub_H061_00003DBE` | parziale | h061.c:1017 |
+-| `$3E80` | `ECL_SkipInstruction` | verificato | h061.c:1044 |
+-| `$3FA8` | `sub_H061_00003FA8` | parziale | h061.c:1068 |
+-| `$4092` | `sub_H061_00004092` | parziale | h061.c:1102 |
++| `$3DBE` | `sub_H061_00003DBE` | parziale | h061.c:1018 |
++| `$3E80` | `ECL_SkipInstruction` | verificato | h061.c:1045 |
++| `$3FA8` | `sub_H061_00003FA8` | parziale | h061.c:1069 |
++| `$4092` | `sub_H061_00004092` | parziale | h061.c:1103 |
+ 
+ ### H062
+ 
+@@ -1111,91 +1111,91 @@ Routine portate: **874 / 1112**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0104` | `module_init_H063` | parziale | h063.c:22 |
+-| `$0112` | `sub_H063_00000112` | parziale | h063.c:47 |
+-| `$016A` | `sub_H063_0000016A` | parziale | h063.c:60 |
+-| `$0228` | `trampoline_H063_032C` | parziale | h063.c:84 |
+-| `$0354` | `sub_H063_00000354` | parziale | h063.c:119 |
+-| `$0432` | `sub_H063_00000432` | parziale | h063.c:249 |
+-| `$06AE` | `sub_H063_000006AE` | parziale | h063.c:295 |
+-| `$0758` | `sub_H063_00000758` | parziale | h063.c:314 |
+-| `$08A2` | `sub_H063_000008A2` | parziale | h063.c:346 |
+-| `$0946` | `sub_H063_00000946` | parziale | h063.c:369 |
+-| `$09B2` | `sub_H063_000009B2` | parziale | h063.c:386 |
+-| `$0D80` | `sub_H063_00000D80` | parziale | h063.c:709 |
+-| `$0FA0` | `sub_H063_00000FA0` | parziale | h063.c:461 |
+-| `$103A` | `sub_H063_0000103A` | parziale | h063.c:476 |
+-| `$1160` | `trampoline_H063_1350` | parziale | h063.c:1216 |
+-| `$135A` | `sub_H063_0000135A` | parziale | h063.c:1200 |
+-| `$13BE` | `sub_H063_000013BE` | parziale | h063.c:503 |
+-| `$18F8` | `sub_H063_000018F8` | parziale | h063.c:159 |
+-| `$19B6` | `sub_H063_000019B6` | parziale | h063.c:182 |
+-| `$1A8A` | `trampoline_H063_1B66` | parziale | h063.c:217 |
+-| `$1B90` | `sub_H063_00001B90` | parziale | h063.c:1080 |
+-| `$1BE8` | `sub_H063_00001BE8` | parziale | h063.c:821 |
+-| `$1CC0` | `sub_H063_00001CC0` | parziale | h063.c:987 |
+-| `$1D44` | `sub_H063_00001D44` | parziale | h063.c:690 |
+-| `$1DC2` | `sub_H063_00001DC2` | parziale | h063.c:852 |
+-| `$1EE8` | `sub_H063_00001EE8` | parziale | h063.c:882 |
+-| `$1F34` | `trampoline_H063_1F7E` | parziale | h063.c:620 |
+-| `$1FDC` | `sub_H063_00001FDC` | parziale | h063.c:1311 |
+-| `$2178` | `sub_H063_00002178` | parziale | h063.c:1341 |
+-| `$21D2` | `trampoline_H063_22B4` | parziale | h063.c:1382 |
+-| `$21E0` | `sub_H063_000021E0` | parziale | h063.c:1361 |
+-| `$2760` | `sub_H063_00002760` | parziale | h063.c:1094 |
+-| `$2984` | `sub_H063_00002984` | parziale | h063.c:1149 |
+-| `$2ACC` | `sub_H063_00002ACC` | parziale | h063.c:1007 |
+-| `$2B4C` | `trampoline_H063_2B72` | parziale | h063.c:1526 |
+-| `$2B7C` | `sub_H063_00002B7C` | parziale | h063.c:1186 |
+-| `$2BDE` | `sub_H063_00002BDE` | parziale | h063.c:1533 |
+-| `$2DC6` | `sub_H063_00002DC6` | parziale | h063.c:1255 |
+-| `$2F12` | `sub_H063_00002F12` | parziale | h063.c:892 |
+-| `$2F5A` | `sub_H063_00002F5A` | parziale | h063.c:1774 |
+-| `$2FAA` | `sub_H063_00002FAA` | parziale | h063.c:1024 |
+-| `$321A` | `trampoline_H063_3384` | parziale | h063.c:766 |
+-| `$33A0` | `trampoline_H063_3652` | parziale | h063.c:1581 |
+-| `$3658` | `sub_H063_00003658` | parziale | h063.c:1639 |
+-| `$3698` | `sub_H063_00003698` | parziale | h063.c:1712 |
+-| `$36EE` | `sub_H063_000036EE` | parziale | h063.c:1722 |
+-| `$3734` | `sub_H063_00003734` | parziale | h063.c:1732 |
+-| `$37B2` | `sub_H063_000037B2` | parziale | h063.c:1283 |
+-| `$3980` | `sub_H063_00003980` | parziale | h063.c:1750 |
+-| `$3A26` | `sub_H063_00003A26` | parziale | h063.c:905 |
+-| `$3CA0` | `sub_H063_00003CA0` | parziale | h063.c:1648 |
+-| `$3F72` | `trampoline_H063_4042` | parziale | h063.c:643 |
++| `$0104` | `module_init_H063` | parziale | h063.c:23 |
++| `$0112` | `sub_H063_00000112` | parziale | h063.c:48 |
++| `$016A` | `sub_H063_0000016A` | parziale | h063.c:61 |
++| `$0228` | `trampoline_H063_032C` | parziale | h063.c:85 |
++| `$0354` | `sub_H063_00000354` | parziale | h063.c:120 |
++| `$0432` | `sub_H063_00000432` | parziale | h063.c:250 |
++| `$06AE` | `sub_H063_000006AE` | parziale | h063.c:296 |
++| `$0758` | `sub_H063_00000758` | parziale | h063.c:315 |
++| `$08A2` | `sub_H063_000008A2` | parziale | h063.c:347 |
++| `$0946` | `sub_H063_00000946` | parziale | h063.c:370 |
++| `$09B2` | `sub_H063_000009B2` | parziale | h063.c:387 |
++| `$0D80` | `sub_H063_00000D80` | parziale | h063.c:710 |
++| `$0FA0` | `sub_H063_00000FA0` | parziale | h063.c:462 |
++| `$103A` | `sub_H063_0000103A` | parziale | h063.c:477 |
++| `$1160` | `trampoline_H063_1350` | parziale | h063.c:1217 |
++| `$135A` | `sub_H063_0000135A` | parziale | h063.c:1201 |
++| `$13BE` | `sub_H063_000013BE` | parziale | h063.c:504 |
++| `$18F8` | `sub_H063_000018F8` | parziale | h063.c:160 |
++| `$19B6` | `sub_H063_000019B6` | parziale | h063.c:183 |
++| `$1A8A` | `trampoline_H063_1B66` | parziale | h063.c:218 |
++| `$1B90` | `sub_H063_00001B90` | parziale | h063.c:1081 |
++| `$1BE8` | `sub_H063_00001BE8` | parziale | h063.c:822 |
++| `$1CC0` | `sub_H063_00001CC0` | parziale | h063.c:988 |
++| `$1D44` | `sub_H063_00001D44` | parziale | h063.c:691 |
++| `$1DC2` | `sub_H063_00001DC2` | parziale | h063.c:853 |
++| `$1EE8` | `sub_H063_00001EE8` | parziale | h063.c:883 |
++| `$1F34` | `trampoline_H063_1F7E` | parziale | h063.c:621 |
++| `$1FDC` | `sub_H063_00001FDC` | parziale | h063.c:1312 |
++| `$2178` | `sub_H063_00002178` | parziale | h063.c:1342 |
++| `$21D2` | `trampoline_H063_22B4` | parziale | h063.c:1383 |
++| `$21E0` | `sub_H063_000021E0` | parziale | h063.c:1362 |
++| `$2760` | `sub_H063_00002760` | parziale | h063.c:1095 |
++| `$2984` | `sub_H063_00002984` | parziale | h063.c:1150 |
++| `$2ACC` | `sub_H063_00002ACC` | parziale | h063.c:1008 |
++| `$2B4C` | `trampoline_H063_2B72` | parziale | h063.c:1527 |
++| `$2B7C` | `sub_H063_00002B7C` | parziale | h063.c:1187 |
++| `$2BDE` | `sub_H063_00002BDE` | parziale | h063.c:1534 |
++| `$2DC6` | `sub_H063_00002DC6` | parziale | h063.c:1256 |
++| `$2F12` | `sub_H063_00002F12` | parziale | h063.c:893 |
++| `$2F5A` | `sub_H063_00002F5A` | parziale | h063.c:1775 |
++| `$2FAA` | `sub_H063_00002FAA` | parziale | h063.c:1025 |
++| `$321A` | `trampoline_H063_3384` | parziale | h063.c:767 |
++| `$33A0` | `trampoline_H063_3652` | parziale | h063.c:1582 |
++| `$3658` | `sub_H063_00003658` | parziale | h063.c:1640 |
++| `$3698` | `sub_H063_00003698` | parziale | h063.c:1713 |
++| `$36EE` | `sub_H063_000036EE` | parziale | h063.c:1723 |
++| `$3734` | `sub_H063_00003734` | parziale | h063.c:1733 |
++| `$37B2` | `sub_H063_000037B2` | parziale | h063.c:1284 |
++| `$3980` | `sub_H063_00003980` | parziale | h063.c:1751 |
++| `$3A26` | `sub_H063_00003A26` | parziale | h063.c:906 |
++| `$3CA0` | `sub_H063_00003CA0` | parziale | h063.c:1649 |
++| `$3F72` | `trampoline_H063_4042` | parziale | h063.c:644 |
+ 
+ ### H064
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$00EE` | `module_init_H064` | parziale | h064.c:29 |
+-| `$0156` | `(senza scheda)` | - | h064.c:39 |
+-| `$0202` | `ECL_GOTO` | verificato | h064.c:67 |
+-| `$0234` | `ECL_GOSUB` | parziale | h064.c:74 |
+-| `$0258` | `(senza scheda)` | - | h064.c:81 |
+-| `$0306` | `ECL_Arithmetic` | verificato | h064.c:98 |
+-| `$03FC` | `(senza scheda)` | - | h064.c:137 |
+-| `$0468` | `ECL_SAVE_AssignVariable` | verificato | h064.c:152 |
+-| `$04DC` | `(senza scheda)` | - | h064.c:167 |
+-| `$05E2` | `(senza scheda)` | - | h064.c:306 |
+-| `$06A0` | `(senza scheda)` | - | h064.c:206 |
+-| `$0ABE` | `(senza scheda)` | - | h064.c:326 |
+-| `$0B10` | `(senza scheda)` | - | h064.c:338 |
+-| `$0C62` | `(senza scheda)` | - | h064.c:386 |
+-| `$0CC4` | `(senza scheda)` | - | h064.c:396 |
+-| `$0D4A` | `(senza scheda)` | - | h064.c:412 |
+-| `$0E40` | `ECL_RETURN` | verificato | h064.c:435 |
+-| `$0E9C` | `(senza scheda)` | - | h064.c:449 |
+-| `$0F30` | `(senza scheda)` | - | h064.c:468 |
+-| `$0F90` | `(senza scheda)` | - | h064.c:487 |
+-| `$1004` | `ECL_LOAD_FILES_or_PIECES` | verificato | h064.c:506 |
+-| `$121C` | `(senza scheda)` | - | h064.c:566 |
+-| `$12CA` | `(senza scheda)` | - | h064.c:587 |
+-| `$1346` | `(senza scheda)` | - | h064.c:601 |
+-| `$13AC` | `(senza scheda)` | - | h064.c:616 |
+-| `$1544` | `(senza scheda)` | - | h064.c:664 |
+-| `$1748` | `(senza scheda)` | - | h064.c:719 |
+-| `$17BC` | `(senza scheda)` | - | h064.c:740 |
++| `$00EE` | `module_init_H064` | parziale | h064.c:31 |
++| `$0156` | `(senza scheda)` | - | h064.c:41 |
++| `$0202` | `ECL_GOTO` | verificato | h064.c:69 |
++| `$0234` | `ECL_GOSUB` | parziale | h064.c:76 |
++| `$0258` | `(senza scheda)` | - | h064.c:83 |
++| `$0306` | `ECL_Arithmetic` | verificato | h064.c:100 |
++| `$03FC` | `(senza scheda)` | - | h064.c:139 |
++| `$0468` | `ECL_SAVE_AssignVariable` | verificato | h064.c:154 |
++| `$04DC` | `(senza scheda)` | - | h064.c:169 |
++| `$05E2` | `(senza scheda)` | - | h064.c:308 |
++| `$06A0` | `(senza scheda)` | - | h064.c:208 |
++| `$0ABE` | `(senza scheda)` | - | h064.c:328 |
++| `$0B10` | `(senza scheda)` | - | h064.c:340 |
++| `$0C62` | `(senza scheda)` | - | h064.c:388 |
++| `$0CC4` | `(senza scheda)` | - | h064.c:398 |
++| `$0D4A` | `(senza scheda)` | - | h064.c:414 |
++| `$0E40` | `ECL_RETURN` | verificato | h064.c:437 |
++| `$0E9C` | `(senza scheda)` | - | h064.c:451 |
++| `$0F30` | `(senza scheda)` | - | h064.c:470 |
++| `$0F90` | `(senza scheda)` | - | h064.c:489 |
++| `$1004` | `ECL_LOAD_FILES_or_PIECES` | verificato | h064.c:508 |
++| `$121C` | `(senza scheda)` | - | h064.c:568 |
++| `$12CA` | `(senza scheda)` | - | h064.c:589 |
++| `$1346` | `(senza scheda)` | - | h064.c:603 |
++| `$13AC` | `(senza scheda)` | - | h064.c:618 |
++| `$1544` | `(senza scheda)` | - | h064.c:666 |
++| `$1748` | `(senza scheda)` | - | h064.c:721 |
++| `$17BC` | `(senza scheda)` | - | h064.c:742 |
+ 
+ ### H065
+ 
+@@ -1233,33 +1233,33 @@ Routine portate: **874 / 1112**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$02F0` | `module_init_H066` | parziale | h066.c:23 |
+-| `$03D0` | `trampoline_H066_0780` | parziale | h066.c:596 |
+-| `$03DE` | `sub_H066_000003DE` | parziale | h066.c:501 |
+-| `$0852` | `sub_H066_00000852` | parziale | h066.c:485 |
+-| `$08E4` | `trampoline_H066_0B88` | parziale | h066.c:234 |
+-| `$08F2` | `sub_H066_000008F2` | parziale | h066.c:216 |
+-| `$0BAC` | `sub_H066_00000BAC` | parziale | h066.c:34 |
+-| `$0C34` | `trampoline_H066_0E5A` | parziale | h066.c:104 |
+-| `$0C42` | `sub_H066_00000C42` | parziale | h066.c:46 |
+-| `$0D2A` | `sub_H066_00000D2A` | parziale | h066.c:73 |
+-| `$0DEA` | `sub_H066_00000DEA` | parziale | h066.c:92 |
+-| `$1312` | `Delete_CharacterSidecarFiles` | verificato | h066.c:769 |
+-| `$142E` | `Query_FreeDiskSpace` | parziale | h066.c:282 |
+-| `$14DC` | `Check_SaveWritable` | parziale | h066.c:312 |
+-| `$14EA` | `sub_H066_000014EA` | parziale | h066.c:303 |
+-| `$1640` | `Save_CharacterRecord` | verificato | h066.c:367 |
+-| `$164E` | `sub_H066_0000164E` | parziale | h066.c:355 |
+-| `$1B0E` | `Load_CharacterRecord` | verificato | h066.c:619 |
++| `$02F0` | `module_init_H066` | parziale | h066.c:24 |
++| `$03D0` | `trampoline_H066_0780` | parziale | h066.c:597 |
++| `$03DE` | `sub_H066_000003DE` | parziale | h066.c:502 |
++| `$0852` | `sub_H066_00000852` | parziale | h066.c:486 |
++| `$08E4` | `trampoline_H066_0B88` | parziale | h066.c:235 |
++| `$08F2` | `sub_H066_000008F2` | parziale | h066.c:217 |
++| `$0BAC` | `sub_H066_00000BAC` | parziale | h066.c:35 |
++| `$0C34` | `trampoline_H066_0E5A` | parziale | h066.c:105 |
++| `$0C42` | `sub_H066_00000C42` | parziale | h066.c:47 |
++| `$0D2A` | `sub_H066_00000D2A` | parziale | h066.c:74 |
++| `$0DEA` | `sub_H066_00000DEA` | parziale | h066.c:93 |
++| `$1312` | `Delete_CharacterSidecarFiles` | verificato | h066.c:770 |
++| `$142E` | `Query_FreeDiskSpace` | parziale | h066.c:283 |
++| `$14DC` | `Check_SaveWritable` | parziale | h066.c:313 |
++| `$14EA` | `sub_H066_000014EA` | parziale | h066.c:304 |
++| `$1640` | `Save_CharacterRecord` | verificato | h066.c:368 |
++| `$164E` | `sub_H066_0000164E` | parziale | h066.c:356 |
++| `$1B0E` | `Load_CharacterRecord` | verificato | h066.c:620 |
+ | `$1FDA` | `Load_MonsterRecord` | verificato |  |
+ | `$1FE8` | `sub_H066_00001FE8` | parziale |  |
+ | `$276E` | `trampoline_H066_27E4` | parziale |  |
+-| `$27EE` | `sub_H066_000027EE` | parziale | h066.c:730 |
+-| `$291E` | `Load_GameSlot` | verificato | h066.c:945 |
++| `$27EE` | `sub_H066_000027EE` | parziale | h066.c:731 |
++| `$291E` | `Load_GameSlot` | verificato | h066.c:946 |
+ | `$292C` | `sub_H066_0000292C` | parziale |  |
+-| `$3000` | `Save_GameSlot` | verificato | h066.c:847 |
+-| `$300E` | `sub_H066_0000300E` | parziale | h066.c:794 |
+-| `$30A8` | `sub_H066_000030A8` | parziale | h066.c:818 |
++| `$3000` | `Save_GameSlot` | verificato | h066.c:848 |
++| `$300E` | `sub_H066_0000300E` | parziale | h066.c:795 |
++| `$30A8` | `sub_H066_000030A8` | parziale | h066.c:819 |
+ 
+ ### H067
+ 
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index 0e34f8e..e83381b 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -2109,3 +2109,49 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
+ **Prossimo passo:** la vista 3D del dungeon (H011+$0B78 e aiutanti), il ridisegno H060+$0018 e le immagini di H042.
+ 
+ ---
++
++## 2026-11-11 (cok-port-37)
++
++**Richiesta:** "ok compila su sasc, procedi con la vista 3D del dungeon". Durante il lavoro è arrivata la domanda "ora dovrei essere in grado di fare begin adventuring su mappa non disegnata?".
++- **Risposta:** con cok-port-36 no. Gli stub delle immagini (H042) erano fatali, quindi il gioco si fermava su H042+$10DC subito dopo l'avvio, e la mappa GEO non veniva caricata. Questa consegna risolve entrambe le cose.
++
++**Vista 3D e mappe (H011)**
++- **$1876 `load_geo_map`:** carica la mappa GEOn.dax: quattro piani da $100 byte in $282A, registrata in $3E04+$18A. Se manca: "Unable to load geo in Load3DMap.".
++- **$14EA `load_wall_defs`:**
++  - carica le definizioni WALLDEFn.dax nelle posizioni 1..3 del buffer $282E (blocchi di $30C byte, cinque muri da $9C tessere);
++  - sposta le tessere da $3EBC in su al set della posizione;
++  - carica i set 8x8 (id*10+k se il blocco ne ha più d'uno) e ricorda id e posizione in $2810;
++  - se manca: "Unable to load nnnn from WALLDEFn".
++- **$0B78 `draw_3d_view`:**
++  - con la mappa attiva ($2825) disegna la mappa dall'alto;
++  - altrimenti disegna lo sfondo e i muri delle caselle a distanza 2, 1 e 0, dal fondo verso il party, con i pezzi 0..9 (frontali, laterali e giunti);
++  - alla fine mostra il buffer e ricarica la palette.
++- **Aiutanti:**
++  - $0868: pezzo di muro, rettangolo di tessere 8x8 dalle tabelle del modulo; la tessera 0 è trasparente;
++  - $058E: cielo del colore $2829, sole secondo ora e direzione, immagine verso nord, pavimento;
++  - $0330: mappa dall'alto 11x11.
++- **H049+$0014 `draw_8x8_tile_masked`:** tessera 8x8 con la maschera del set.
++- **H060+$0018 `refresh_view`:** sceglie il colore del cielo dalla tabella locale ($3E04+$1FA/$1FC secondo il bit 7 della casella), toglie la mappa se l'area la vieta ($1F6) e ridisegna la vista; all'aperto ridisegna l'immagine (H042+$10DC).
++- **H010+$0360 `console_writeln`:** il writeln del runtime (H020) sulla console, qui con stdio. Prima era uno stub fatale, usato anche da H035.
++
++**Dove mi discosto dall'asm (tutto documentato nel codice)**
++- **Colore del cielo:** un indice oltre la tabella leggerebbe lo stack; qui 0.
++
++**Immagini (H042) non fatali**
++- **Quali:** $0254, $0406, $0B80, $0D70, $0ED2, $0F50, $1006 e $10DC ora sono saltati con un messaggio sulla console, come già l'audio H043.
++- **Effetto:** si può esplorare senza le immagini degli eventi.
++- **Restano fatali:** le routine non grafiche, per esempio Cast (H057+$0C04), Encamp (H057+$2F3A) e H066+$1FDA.
++
++**Prove con i dati veri** (binario ASan di test, non committato)
++- **Come:** l'ingresso dell'area $30 esce subito senza LOAD FILES (dipende dallo stato del gioco), quindi per la prova si caricano GEO 48, WALLDEF 1 (posizioni 1-2, set 8x8 11 e 12) e WALLDEF 23 (posizione 3).
++- **Vista 3D:**
++  - mostra cielo con nuvole verso nord, pavimento di ciottoli, muri di pietra e porte di legno su tre distanze;
++  - girando e camminando (7,13 → 7,12 → 8,12 → 7,12 → 6,12) cambia coerentemente;
++  - davanti agli edifici scattano gli eventi ECL: "YOU SEE A SIGN. GARGATH INN", "THE TRENCHER TAVERN".
++- **Area:** mostra la mappa dall'alto della città con la freccia del party.
++- **ASan:** pulito.
++- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
++
++**Prossimo passo:** le immagini di H042 (eventi, ritratti, immagine grande e mappa all'aperto), poi Cast (H057+$0C04) ed Encamp (H057+$2F3A).
++
++---
+diff --git a/src_c/readable/h010_input.c b/src_c/readable/h010_input.c
+index 9458c37..43e8c78 100644
+--- a/src_c/readable/h010_input.c
++++ b/src_c/readable/h010_input.c
+@@ -1,4 +1,5 @@
+ /* H010: input Intuition, conversione degli eventi, uscita ed errori. */
++#include <stdio.h>
+ #include "h010_input.h"
+ #include "character.h"
+ #include "h053.h"
+@@ -224,3 +225,22 @@ void quit_game(void)
+     free_game_resources();
+     h015_runtime_exit(0);
+ }
++
++/*
++ * PORT H010+$0360: scrive il testo (copiato, al piu' len caratteri, fino
++ * allo zero) e va a capo sulla console del processo: il writeln del
++ * runtime (H020+$085A e $082E).  Qui con stdio.
++ */
++void console_writeln(u16 len, const char *text)
++{
++    char buf[0x102];
++    u16 i;
++
++    for (i = 0; i < len && i < sizeof(buf) - 1 && text[i] != '\0'; ++i) {
++        buf[i] = text[i];
++    }
++    buf[i] = '\0';
++    fputs(buf, stdout);
++    fputc('\n', stdout);
++    fflush(stdout);
++}
+diff --git a/src_c/readable/h010_input.h b/src_c/readable/h010_input.h
+index 2c43e1a..898887d 100644
+--- a/src_c/readable/h010_input.h
++++ b/src_c/readable/h010_input.h
+@@ -7,5 +7,6 @@
+ void poll_intuition_events(void);       /* H010+$042E (corpo a $0882) */
+ void wait_for_key(void);                /* H010+$0974 */
+ void quit_game(void);                   /* H010+$0332 */
++void console_writeln(u16 len, const char *text); /* H010+$0360 */
+ 
+ #endif
+diff --git a/src_c/readable/h011.c b/src_c/readable/h011.c
+index 2d1f430..4d0ea9b 100644
+--- a/src_c/readable/h011.c
++++ b/src_c/readable/h011.c
+@@ -5,6 +5,15 @@
+ #include "h022_view.h"
+ #include "globals.h"
+ #include "h029_gfx.h"
++#include "h010_input.h"
++#include "h016_gfx.h"
++#include "h026_string.h"
++#include "h028_files.h"
++#include "h034.h"
++#include "h038.h"
++#include "h045.h"
++#include "h049.h"
++#include <string.h>
+ 
+ /* Dati del modulo sotto a4: g_h011_bss[0xAC - off] e' -off(a4). */
+ u8 g_h011_bss[0xAC];
+@@ -152,3 +161,507 @@ void set_view_start(u16 a, u16 b, u16 c, u16 d)
+     H005_B(0x2827) = (u8)c;
+     H005_B(0x2826) = (u8)d;
+ }
++
++/* Tabelle di word del modulo: H011_W(-off) e' -off(a4). */
++#define H011_W(off) ((s16)COK_GET16(&g_h011_bss[0xAC - (off)]))
++#define VIEW_X(k)   H011_W(0x58 - (k) * 2)  /* colonna del pezzo k */
++#define VIEW_Y(k)   H011_W(0x6C - (k) * 2)  /* riga del pezzo k */
++#define DX(d)       ((s16)H005_W(0x3EE2 + (d) * 2))
++#define DY(d)       ((s16)H005_W(0x3ED0 + (d) * 2))
++
++/*
++ * PORT H011+$14EA (Load_WallDefinitions): carica il blocco id di
++ * WALLDEFn.dax nelle posizioni da slot (1..3) del buffer $282E (blocchi
++ * di $30C byte: cinque muri da $9C tessere); le tessere da $3EBC in su
++ * vengono spostate al set della posizione e si caricano i set 8x8
++ * (id*10+k se il blocco ne contiene piu' d'uno).  $2810 ricorda id e
++ * posizione.
++ */
++void load_wall_defs(u16 id, u16 slot)
++{
++    char num[0x12];                     /* -$18(a5) */
++    char name[0x52];                    /* -$6A(a5) */
++    char err[0x52];                     /* -$BC(a5) */
++    u16 size = 0;                       /* -$2(a5) */
++    u8 *buf = NULL;                     /* -$6(a5) */
++    u16 pos;                            /* -$8(a5) */
++    s16 base;                           /* -$A(a5) */
++    u16 j;                              /* -$C(a5) */
++    u16 k;                              /* -$E(a5) */
++    u16 t;                              /* -$10(a5) */
++    u16 n;                              /* -$12(a5) */
++    u16 s;
++    u8 *b;
++
++    if (slot < 1 || slot > 3) {
++        return;
++    }
++    format_number(4, num, (s32)H005_B(0x246E), 0, 0x0A, 1, '0');
++    strcpy(name, "WALLDEF");
++    h026_append(0x50, name, 4, num);
++    dax_load_block(0x50, name, 4, ".dax", id, &size, &buf);
++    if (size == 0 || (u16)(size / 0x30C + slot) > 4) {
++        strcpy(err, "Unable to load ");
++        format_number(4, num, (s32)id, 0, 0x0A, 4, '0');
++        h026_append(0x50, err, 4, num);
++        h026_append(0x50, err, 6, " from ");
++        h026_append(0x50, err, 0x50, name);
++        console_writeln(0x50, err);
++        wait_for_key();
++        quit_game();
++    }
++    base = (s16)(H005_W(0x3EC6 + slot * 2) - H005_W(0x3EC8));
++    pos = 0;
++    k = 1;
++    do {
++        exec_copy_mem(buf + pos,
++                      g_h005_282e + (s32)(s16)(slot + k - 2) * 0x30C, 0x30C);
++        pos = (u16)(pos + 0x30C);
++        ++k;
++    } while (pos < (u16)(size - 0x100));
++    exec_free_mem(buf, size);
++    n = (u16)(k - 1);
++    for (k = 1; k <= n; ++k) {
++        s = (u16)(k + slot - 1);
++        if (s == 0 || s >= 4) {
++            continue;
++        }
++        H005_SET_W(0x2810 + (s - 1) * 4, 0xFFFF);
++        H005_SET_W(0x2812 + (s - 1) * 4, 0xFFFF);
++        for (j = 1; j <= 5; ++j) {
++            for (t = 0; t <= 0x9B; ++t) {
++                b = &g_h005_282e[(s - 1) * 0x30C + (j - 1) * 0x9C + t];
++                if (*b >= H005_W(0x3EBC)) {
++                    *b = (u8)(*b + base);
++                }
++            }
++        }
++        if (n > 1) {
++            load_8x8_set((u8)(id * 10 + k), (u8)s);
++        } else {
++            load_8x8_set((u8)id, (u8)s);
++        }
++    }
++    H005_SET_W(0x2810 + (slot - 1) * 4, id);
++    H005_SET_W(0x2812 + (slot - 1) * 4, slot);
++}
++
++/*
++ * PORT H011+$1876 (Load3DMap_GEO): carica la mappa id di GEOn.dax: i
++ * quattro piani da $100 byte (dopo 2 byte di intestazione) in $282A, e
++ * la registra in $3E04+$18A.
++ */
++void load_geo_map(u16 id)
++{
++    char num[0x0A];                     /* -$5C(a5) */
++    char name[0x52];                    /* -$52(a5) */
++    u16 size = 0;                       /* -$54(a5) */
++    u8 *buf = NULL;                     /* -$58(a5) */
++    u16 pos;                            /* -$5A(a5) */
++
++    format_number(1, num, (s32)H005_B(0x246E), 0, 0x0A, 1, '0');
++    strcpy(name, "GEO");
++    h026_append(0x50, name, 1, num);
++    dax_load_block(0x50, name, 4, ".dax", id, &size, &buf);
++    if (size == 0) {
++        console_writeln(0x20, "Unable to load geo in Load3DMap.");
++        wait_for_key();
++        quit_game();
++    }
++    pos = 2;
++    exec_copy_mem(buf + pos, g_geo_planes, 0x100);
++    pos = (u16)(pos + 0x100);
++    exec_copy_mem(buf + pos, g_geo_planes + 0x100, 0x100);
++    pos = (u16)(pos + 0x100);
++    exec_copy_mem(buf + pos, g_geo_planes + 0x200, 0x100);
++    pos = (u16)(pos + 0x100);
++    exec_copy_mem(buf + pos, g_geo_planes + 0x300, 0x100);
++    exec_free_mem(buf, size);
++    COK_PUT16(g_state_a + 0x18A, id);
++}
++
++/*
++ * PORT H011+$0330: mappa dall'alto 11x11 attorno al party (la finestra
++ * resta nella mappa 16x16): per ogni casella la tessera $104 + le pareti
++ * (N 1, E 2, S 4, O 8), poi il party con la tessera $100 + dir/2.
++ */
++static void draw_area_map(s16 x, s16 y, u16 dir)
++{
++    s16 left;                           /* -$A(a5) */
++    s16 top;                            /* -$C(a5) */
++    s16 px;                             /* -$2(a5) */
++    s16 py;                             /* -$4(a5) */
++    s16 row;                            /* -$8(a5) */
++    s16 col;                            /* -$6(a5) */
++    u16 id;                             /* -$12(a5) */
++
++    left = (s16)(x - 5);
++    if (left < 0) left = 0;
++    if (left > 5) left = 5;
++    px = (s16)(x - left);
++    top = (s16)(y - 5);
++    if (top < 0) top = 0;
++    if (top > 5) top = 5;
++    py = (s16)(y - top);
++    for (row = 0; row <= 0x0A; ++row) {
++        for (col = 0; col <= 0x0A; ++col) {
++            s16 mx = (s16)(col + left);  /* -$E(a5) */
++            s16 my = (s16)(row + top);   /* -$10(a5) */
++
++            id = 0x104;
++            if (map_wall(mx, my, 0) > 0) id = (u16)(id + 1);
++            if (map_wall(mx, my, 2) > 0) id = (u16)(id + 2);
++            if (map_wall(mx, my, 4) > 0) id = (u16)(id + 4);
++            if (map_wall(mx, my, 6) > 0) id = (u16)(id + 8);
++            draw_8x8_tile((u16)(col + 3), (u16)(row + 3), id, 0, 0);
++        }
++    }
++    draw_8x8_tile((u16)(px + 3), (u16)(py + 3), (u16)((dir >> 1) + 0x100),
++                  0, 0);
++}
++
++/* Disegna una delle immagini "sky" mascherata nella cella (cx, cy). */
++static void blit_sky(struct GfxRecord *rec, s16 cx, s16 cy)
++{
++    graphics_blt_mask_bitmap_rastport(rec->image, 0, 0, &g_screen->RastPort,
++                                      (u16)(cx * 8 + 0x18),
++                                      (u16)(cy * 8 + 0x18),
++                                      (u16)(rec->count * 8), rec->rows, 0xE0,
++                                      (u8 *)rec->mask->Planes[0]);
++}
++
++/*
++ * PORT H011+$058E: sfondo della vista: cielo del colore $2829; all'aperto
++ * di giorno (colore $B, casella senza bit 7) il sole secondo l'ora
++ * ($3E04+$192) e la direzione, e verso nord l'immagine $280C; infine il
++ * pavimento ($2804).
++ */
++static void draw_view_background(void)
++{
++    s16 e = 0x3E7;                      /* -$E(a5) */
++    s16 f = 0;                          /* -$10(a5) */
++    s16 h;                              /* -$2(a5) */
++
++    graphics_set_apen(g_rastport, H005_B(0x2829));
++    graphics_rect_fill(g_rastport, 0x17, 0x17, 0x70, 0x50);
++    if (map_flags((s16)H005_W(0x281C), (s16)H005_W(0x281E)) < 0x80 &&
++        H005_B(0x2829) == 0x0B) {
++        h = (s16)COK_GET16(g_state_a + 0x192);
++        switch (h) {
++        case 1: case 2: case 3: case 4: case 5:
++            switch (H005_B(0x2820)) {
++            case 2:
++                e = (s16)(0x0A - 3);
++                f = (s16)(2 + 5 - h);
++                break;
++            case 4:
++                if (h > 2) {
++                    e = (s16)(0 + h - 3);
++                    f = (s16)(2 + 5 - h);
++                }
++                break;
++            default:
++                break;
++            }
++            break;
++        case 0x0D: case 0x0E: case 0x0F: case 0x10: case 0x11: case 0x12:
++            switch (H005_B(0x2820)) {
++            case 6:
++                e = 0;
++                f = (s16)(2 + h - 0x0D);
++                break;
++            case 4:
++                if (h < 0x10) {
++                    e = (s16)(0 + h - 8);
++                    f = (s16)(2 + h - 0x0D);
++                }
++                break;
++            default:
++                break;
++            }
++            break;
++        default:
++            break;
++        }
++        if (e != 0x3E7) {
++            blit_sky(g_gfx_sky_2808, e, f);
++        }
++        if (H005_B(0x2820) == 0) {
++            blit_sky(g_gfx_sky_280c, 0, 2);
++        }
++    }
++    (void)graphics_blt_bitmap(g_gfx_sky_2804->image, 0, 3,
++                              g_screen->RastPort.BitMap, 0x18, 0x43, 0x58,
++                              0x2D, 0xC0, 0xFF, NULL);
++}
++
++/*
++ * PORT H011+$0868: pezzo kind (0..9) del muro wall alla cella (x, y)
++ * della vista 11x11: le tessere del muro (blocchi di $9C da $282E, dalla
++ * posizione della tabella -$1C) per un rettangolo largo -$30[kind] e alto
++ * -$44[kind]; le celle fuori dalla vista si saltano, la tessera 0 e'
++ * trasparente.
++ */
++static void draw_wall_piece(s16 x, s16 y, u16 wall, u16 kind)
++{
++    s16 tile;                           /* -$A(a5) */
++    s16 x_end;                          /* -$2(a5) */
++    s16 y_end;                          /* -$4(a5) */
++    s16 set;                            /* -$C(a5) */
++    s16 sub;                            /* -$E(a5) */
++    s16 r;                              /* -$8(a5) */
++    s16 c;                              /* -$6(a5) */
++    u8 b;
++
++    tile = H011_W(0x1C - kind * 2);
++    x_end = (s16)(H011_W(0x30 - kind * 2) + x - 1);
++    y_end = (s16)(H011_W(0x44 - kind * 2) + y - 1);
++    set = (s16)(wall / 5 + 1);
++    sub = (s16)(wall % 5);
++    for (r = y; r <= y_end; ++r) {
++        for (c = x; c <= x_end; ++c) {
++            if (r >= 0 && r <= 0x0A && c >= 0 && c <= 0x0A) {
++                b = g_h005_282e[(s32)(set - 1) * 0x30C + (s32)(sub - 1) * 0x9C +
++                                tile];
++                if (b > 0) {
++                    draw_8x8_tile_masked((u16)(c + 3), (u16)(r + 3), b,
++                                         g_screen->RastPort.BitMap,
++                                         g_8x8_sets);
++                }
++            }
++            ++tile;
++        }
++    }
++}
++
++/* Celle a distanza 2: muri frontali, giunti (9) e lati (1, 2). */
++static void draw_view_far(s16 vx, s16 vy, u16 dir, u16 left, u16 right)
++{
++    s16 px;                             /* -$12(a5) */
++    s16 py;                             /* -$14(a5) */
++    u16 i;                              /* -$16(a5) */
++    s16 off;                            /* -$18(a5) */
++    u16 prev;                           /* -$20(a5) */
++    u16 w;                              /* -$1A(a5) */
++
++    px = vx; py = vy; i = 0; off = 0; prev = 0;
++    while (i < 4) {
++        w = map_wall(px, py, dir);
++        if (!map_inside(px, py) && map_wall(px, py, right) == 0) {
++            prev = 0;
++        }
++        if (w) {
++            if (prev > 0) {
++                draw_wall_piece((s16)(VIEW_X(9) + off + 1), VIEW_Y(9), prev, 9);
++            }
++            prev = w;
++            draw_wall_piece((s16)(VIEW_X(0) + off), VIEW_Y(0), w, 0);
++        } else {
++            if (prev > 0 &&
++                map_wall((s16)(px - DX(left)), (s16)(py - DY(left)), left)) {
++                draw_wall_piece((s16)(VIEW_X(9) + off + 1), VIEW_Y(9), prev, 9);
++            }
++            prev = 0;
++        }
++        ++i;
++        off = (s16)(off - 2);
++        px = (s16)(px + DX(left));
++        py = (s16)(py + DY(left));
++    }
++    px = vx; py = vy; i = 0; off = 0; prev = 0;
++    while (i < 4) {
++        w = map_wall(px, py, dir);
++        if (!map_inside(px, py) && map_wall(px, py, left) == 0) {
++            prev = 0;
++        }
++        if (w) {
++            if (prev > 0) {
++                draw_wall_piece((s16)(VIEW_X(9) + off - 1), VIEW_Y(9), prev, 9);
++            }
++            prev = w;
++            draw_wall_piece((s16)(VIEW_X(0) + off), VIEW_Y(0), w, 0);
++        } else {
++            if (prev > 0 &&
++                map_wall((s16)(px - DX(right)), (s16)(py - DY(right)), right)) {
++                draw_wall_piece((s16)(VIEW_X(9) + off - 1), VIEW_Y(9), prev, 9);
++            }
++            prev = 0;
++        }
++        ++i;
++        off = (s16)(off + 2);
++        px = (s16)(px + DX(right));
++        py = (s16)(py + DY(right));
++    }
++    px = vx; py = vy; i = 0; off = 0;
++    while (i < 3) {
++        w = map_wall(px, py, left);
++        if (w) {
++            if (i == 0) {
++                draw_wall_piece((s16)(VIEW_X(1) + off), VIEW_Y(1), w, 1);
++            } else {
++                draw_wall_piece((s16)(VIEW_X(1) + off - 1), VIEW_Y(1), w, 1);
++            }
++        }
++        ++i;
++        off = (s16)(off - 2);
++        px = (s16)(px + DX(left));
++        py = (s16)(py + DY(left));
++    }
++    px = vx; py = vy; i = 0; off = 0;
++    while (i < 3) {
++        w = map_wall(px, py, right);
++        if (w) {
++            if (i == 0) {
++                draw_wall_piece((s16)(VIEW_X(2) + off), VIEW_Y(2), w, 2);
++            } else {
++                draw_wall_piece((s16)(VIEW_X(2) + off + 1), VIEW_Y(2), w, 2);
++            }
++        }
++        ++i;
++        off = (s16)(off + 2);
++        px = (s16)(px + DX(right));
++        py = (s16)(py + DY(right));
++    }
++}
++
++/* Celle a distanza 1: muri frontali (3) e lati (4, 5). */
++static void draw_view_mid(s16 vx, s16 vy, u16 dir, u16 left, u16 right)
++{
++    s16 px;
++    s16 py;
++    u16 i;
++    s16 off;
++    u16 w;
++    u16 w2;
++
++    px = (s16)(vx + DX(left) + DX(left));
++    py = (s16)(vy + DY(left) + DY(left));
++    i = 0;
++    off = -6;
++    while (i < 3) {
++        w = map_wall(px, py, dir);
++        if (w) {
++            draw_wall_piece((s16)(VIEW_X(3) + off), VIEW_Y(3), w, 3);
++        }
++        w2 = map_wall(px, py, left);
++        if (w2) {
++            draw_wall_piece((s16)(VIEW_X(4) + off), VIEW_Y(4), w2, 4);
++        }
++        ++i;
++        off = (s16)(off + 3);
++        px = (s16)(px + DX(right));
++        py = (s16)(py + DY(right));
++    }
++    px = (s16)(vx + DX(right) + DX(right));
++    py = (s16)(vy + DY(right) + DY(right));
++    i = 0;
++    off = 6;
++    while (i < 3) {
++        w = map_wall(px, py, dir);
++        if (w) {
++            draw_wall_piece((s16)(VIEW_X(3) + off), VIEW_Y(3), w, 3);
++        }
++        w2 = map_wall(px, py, right);
++        if (w2) {
++            draw_wall_piece((s16)(VIEW_X(5) + off), VIEW_Y(5), w2, 5);
++        }
++        ++i;
++        off = (s16)(off - 3);
++        px = (s16)(px + DX(left));
++        py = (s16)(py + DY(left));
++    }
++}
++
++/* Celle a distanza 0: muri frontali (6) e lati (7, 8). */
++static void draw_view_near(s16 vx, s16 vy, u16 dir, u16 left, u16 right)
++{
++    s16 px;
++    s16 py;
++    u16 i;
++    s16 off;
++    u16 w;
++    u16 w2;
++
++    px = (s16)(vx + DX(left));
++    py = (s16)(vy + DY(left));
++    i = 0;
++    off = -7;
++    while (i < 2) {
++        w = map_wall(px, py, dir);
++        if (w) {
++            draw_wall_piece((s16)(VIEW_X(6) + off), VIEW_Y(6), w, 6);
++        }
++        w2 = map_wall(px, py, left);
++        if (w2) {
++            draw_wall_piece((s16)(VIEW_X(7) + off), VIEW_Y(7), w2, 7);
++        }
++        ++i;
++        off = (s16)(off + 7);
++        px = (s16)(px + DX(right));
++        py = (s16)(py + DY(right));
++    }
++    px = (s16)(vx + DX(right));
++    py = (s16)(vy + DY(right));
++    i = 0;
++    off = 7;
++    while (i < 2) {
++        w = map_wall(px, py, dir);
++        if (w) {
++            draw_wall_piece((s16)(VIEW_X(6) + off), VIEW_Y(6), w, 6);
++        }
++        w2 = map_wall(px, py, right);
++        if (w2) {
++            draw_wall_piece((s16)(VIEW_X(8) + off), VIEW_Y(8), w2, 8);
++        }
++        ++i;
++        off = (s16)(off - 7);
++        px = (s16)(px + DX(left));
++        py = (s16)(py + DY(left));
++    }
++}
++
++/*
++ * PORT H011+$0B78: vista 3D del dungeon dalla casella (x, y) verso dir:
++ * con la mappa attiva ($2825) la mappa dall'alto; altrimenti lo sfondo e
++ * i muri dalle celle a distanza 2 fino a quella del party, dal fondo
++ * verso l'osservatore.  Poi mostra il buffer e ricarica la palette.
++ */
++void draw_3d_view(s16 x, s16 y, u16 dir)
++{
++    u16 left;                           /* -$2(a5) */
++    u16 back;                           /* -$6(a5) */
++    u16 right;                          /* -$4(a5) */
++    s16 vx;                             /* -$A(a5) */
++    s16 vy;                             /* -$C(a5) */
++    s16 dist;                           /* -$8(a5) */
++
++    copy_intuition_colors();
++    begin_screen_update();
++    if (H005_B(0x2825)) {
++        draw_area_map(x, y, dir);
++    } else {
++        H005_B(0x2486) = 0xFF;
++        draw_view_background();
++        left = (u16)((dir + 6) & 7);
++        back = (u16)((dir + 4) & 7);
++        right = (u16)((dir + 2) & 7);
++        vx = x;
++        vy = y;
++        dist = 2;
++        vx = (s16)(vx + DX(dir) * dist);
++        vy = (s16)(vy + DY(dir) * dist);
++        do {
++            switch (dist) {
++            case 2: draw_view_far(vx, vy, dir, left, right); break;
++            case 1: draw_view_mid(vx, vy, dir, left, right); break;
++            case 0: draw_view_near(vx, vy, dir, left, right); break;
++            default: break;
++            }
++            vx = (s16)(vx + DX(back));
++            vy = (s16)(vy + DY(back));
++            --dist;
++        } while (dist > -1);
++    }
++    end_screen_update();
++    load_game_palette();
++}
+diff --git a/src_c/readable/h011.h b/src_c/readable/h011.h
+index 179b409..243734e 100644
+--- a/src_c/readable/h011.h
++++ b/src_c/readable/h011.h
+@@ -9,4 +9,7 @@ u8   map_flags(s16 x, s16 y);           /* H011+$04E2 */
+ u16  map_door(s16 x, s16 y, u16 dir);   /* H011+$09C8 */
+ 
+ void set_view_start(u16 a, u16 b, u16 c, u16 d); /* H011+$04A6 */
++void load_wall_defs(u16 id, u16 slot);  /* H011+$14EA */
++void load_geo_map(u16 id);              /* H011+$1876 */
++void draw_3d_view(s16 x, s16 y, u16 dir); /* H011+$0B78 */
+ #endif
+diff --git a/src_c/readable/h012.c b/src_c/readable/h012.c
+index ab8b4c7..81b6eae 100644
+--- a/src_c/readable/h012.c
++++ b/src_c/readable/h012.c
+@@ -3,6 +3,7 @@
+ #include "h012.h"
+ #include "globals.h"
+ #include "unported.h"
++#include "h060.h"
+ #include "h069.h"
+ #include "h068.h"
+ #include "h061.h"
+@@ -961,7 +962,7 @@ void ecl_clear_picture(void)
+     H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1);
+     if (H005_B(0x24BA)) {
+         H005_B(0x24E1) = 1;
+-        h060_0018();
++        refresh_view();
+         H005_B(0x24BA) = 0;
+         H005_B(0x24BD) = 0;
+     }
+@@ -1225,7 +1226,7 @@ void ecl_special(void)
+             H005_B(0x24B7) || H005_B(0x24B5)) {
+             h029_fill_bytes(1, &H005_B(0x2378), 2, 0);
+             H005_B(0x24E1) = 1;
+-            h060_0018();
++            refresh_view();
+             draw_status_line();
+             H005_B(0x24B5) = 0;
+             H005_B(0x24B8) = 0;
+@@ -1283,7 +1284,7 @@ void ecl_camp_entry(void)
+     }
+     H005_B(0x24E1) = 1;
+     if (COK_GET16(g_state_a + 0x270) == 0) {
+-        h060_0018();
++        refresh_view();
+     }
+     H005_B(0x24A3) = 0;
+     if (COK_GET16(g_state_a + 0x1CC) == 0 && COK_GET16(g_state_a + 0x270) == 0) {
+@@ -1358,7 +1359,7 @@ static void enter_area(void)
+         if (!H064_B(0x0A)) {
+             if ((H005_B(0x3DE2) == 4 && H005_B(0x3DE3) == 4) ||
+                 (H005_B(0x3DE2) != 4 && H064_B(8))) {
+-                h060_0018();
++                refresh_view();
+             }
+             H064_B(0x0A) = 0;
+             run_ecl(H005_W(0x3DF4));
+@@ -1449,7 +1450,7 @@ void explore_loop(void)
+             redraw_game_screen();
+         }
+         H005_B(0x24E1) = 1;
+-        h060_0018();
++        refresh_view();
+     }
+     H005_B(0x24D1) = 0;
+     H005_B(0x24B0) = 0;
+@@ -1468,7 +1469,7 @@ void explore_loop(void)
+                     H005_B(0x2497) = mask_byte((u8)COK_GET16(g_state_b + 0x594), 1);
+                     COK_PUT16(g_state_b + 0x594, 1);
+                     H005_B(0x24E1) = 1;
+-                    h060_0018();
++                    refresh_view();
+                     run_ecl(H005_W(0x3DF2));
+                     if (H064_B(0x0A)) {
+                         enter_area();
+@@ -1489,7 +1490,7 @@ void explore_loop(void)
+             COK_PUT16(g_state_a + 0x1E0, H005_W(0x281C));
+             COK_PUT16(g_state_a + 0x1E2, H005_W(0x281E));
+             explore_move_or_door();
+-            h060_0018();
++            refresh_view();
+             if (H005_W(0x281C) != COK_GET16(g_state_a + 0x1E0) ||
+                 H005_W(0x281E) != COK_GET16(g_state_a + 0x1E2)) {
+                 h043_190e(0x11);
+diff --git a/src_c/readable/h035.c b/src_c/readable/h035.c
+index af2ca48..b231c16 100644
+--- a/src_c/readable/h035.c
++++ b/src_c/readable/h035.c
+@@ -67,7 +67,7 @@ void load_24x24_set(u16 name_len, const char *name, u8 id, u8 first,
+ 
+     h026_copy(0x50, copy, name_len, name);
+     if (first > 0x27) {
+-        h010_0360(0x21, "Start range error in Load24x24Set");
++        console_writeln(0x21, "Start range error in Load24x24Set");
+         quit_game();
+     }
+     color = (first == 0x22) ? 8 : 0;
+diff --git a/src_c/readable/h049.c b/src_c/readable/h049.c
+index 2fe274f..a677358 100644
+--- a/src_c/readable/h049.c
++++ b/src_c/readable/h049.c
+@@ -479,3 +479,65 @@ void mirror_gfx_record(struct GfxRecord *src, struct GfxRecord *dst)
+     host_display_changed();
+ #endif
+ }
++
++/*
++ * PORT H049+$0014: come $012A ma con la maschera del set (piano 0 della
++ * BitMap +$0C): i pixel fuori dalla maschera restano quelli di dest.  Il
++ * byte della maschera usa il passo di riga dell'immagine.
++ */
++void draw_8x8_tile_masked(u16 x, u16 row, u16 id, struct BitMap *dest,
++                          struct GfxRecord **sets)
++{
++    struct GfxRecord *set;
++    struct BitMap *src;
++    const u8 *mask;
++    s16 tile = (s16)id;
++    u16 src_bpr;
++    u16 dst_bpr;
++    u16 dst_off;
++    int n;
++    int plane;
++    int r;
++
++    if (tile < 0x2E) {
++        n = 0;
++        tile = (s16)(tile - 1);
++    } else if (tile < 0x74) {
++        n = 1;
++        tile = (s16)(tile - 0x2E);
++    } else if (tile < 0xBA) {
++        n = 2;
++        tile = (s16)(tile - 0x74);
++    } else if (tile < 0x100) {
++        n = 3;
++        tile = (s16)(tile - 0xBA);
++    } else if (tile < 0x128) {
++        n = 4;
++        tile = (s16)(tile - 0x100);
++    } else {
++        return;
++    }
++    set = sets[n];
++    if (set == NULL) {
++        return;
++    }
++    src = set->image;
++    src_bpr = src->BytesPerRow;
++    mask = (const u8 *)set->mask->Planes[0] + (s16)tile;
++    dst_bpr = dest->BytesPerRow;
++    dst_off = (u16)((u16)(dst_bpr * (u16)(row << 3)) + x);
++    for (plane = 4; plane >= 0; --plane) {
++        const u8 *s = (const u8 *)src->Planes[plane] + (s16)tile;
++        u8 *d = (u8 *)dest->Planes[plane] + dst_off;
++        u16 so = 0;
++        u16 dof = 0;
++
++        for (r = 0; r < 8; ++r) {
++            u8 m = mask[so];
++
++            d[dof] = (u8)((s[so] & m) | (d[dof] & (u8)~m));
++            so = (u16)(so + src_bpr);
++            dof = (u16)(dof + dst_bpr);
++        }
++    }
++}
+diff --git a/src_c/readable/h049.h b/src_c/readable/h049.h
+index 199e1e9..01f43f4 100644
+--- a/src_c/readable/h049.h
++++ b/src_c/readable/h049.h
+@@ -24,6 +24,8 @@ void *queue_bitplane_blit(struct BitMap *src, u16 sx, u16 sy, void *dest,
+                                                         /* H049+$04AE */
+ void mirror_gfx_record(struct GfxRecord *src, struct GfxRecord *dst);
+                                                         /* H049+$09D6 */
++void draw_8x8_tile_masked(u16 x, u16 row, u16 id, struct BitMap *dest,
++                          struct GfxRecord **sets);        /* H049+$0014 */
+ void h049_set_glyph_planes(u8 *glyphs, struct BitMap *dest); /* H049+$0438 */
+ 
+ #endif
+diff --git a/src_c/readable/h060.c b/src_c/readable/h060.c
+index e88d3a0..b60bd83 100644
+--- a/src_c/readable/h060.c
++++ b/src_c/readable/h060.c
+@@ -1,7 +1,54 @@
+ /* H060: inizializzazione di area/vista e transizioni. */
+ #include "cok.h"
++#include "h060.h"
++#include "globals.h"
++#include "unported.h"
++#include "h011.h"
++#include "h056.h"
+ 
+ /* PORT H060+$000A: link/unlk, nessun effetto. */
+ void h060_init(void)
+ {
+ }
++
++/*
++ * PORT H060+$0018: ridisegna la vista dell'esplorazione.  Nel dungeon
++ * ($3E04+$1CC) sceglie il colore del cielo dalla tabella locale con
++ * $3E04+$1FC (casella col bit 7 dei flag) o $1FA, toglie la mappa se
++ * l'area la vieta ($1F6) e disegna la vista 3D; all'aperto, se richiesto
++ * ($24E1), ridisegna l'immagine (H042+$10DC).  Un indice di colore oltre
++ * la tabella leggerebbe lo stack nell'originale: qui 0.
++ */
++void refresh_view(void)
++{
++    static const u8 sky[16] = {         /* -$20(a5) */
++        0x00, 0x0F, 0x04, 0x0B, 0x0D, 0x02, 0x09, 0x0E,
++        0x00, 0x0F, 0x04, 0x0B, 0x0D, 0x02, 0x09, 0x0E
++    };
++    u16 idx;
++
++    if (H005_B(0x2486) == 9) {
++        H005_B(0x24E1) = 0;
++    }
++    if (H005_B(0x24D0)) {
++        return;
++    }
++    if (COK_GET16(g_state_a + 0x1CC)) {
++        H005_B(0x2822) = map_flags((s16)H005_W(0x281C), (s16)H005_W(0x281E));
++        if (H005_B(0x2822) > 0x7F) {
++            idx = COK_GET16(g_state_a + 0x1FC);
++        } else {
++            idx = COK_GET16(g_state_a + 0x1FA);
++        }
++        H005_B(0x2829) = (u8)(idx < 16 ? sky[idx] : 0);
++        H005_B(0x2826) = 8;
++        debug_trace(4, "lost", (u8)COK_GET16(g_state_a + 0x1F6), 0, 0);
++        if (COK_GET16(g_state_a + 0x1F6)) {
++            H005_B(0x2825) = 0;
++        }
++        draw_3d_view((s16)H005_W(0x281C), (s16)H005_W(0x281E), H005_B(0x2820));
++    } else if (H005_B(0x24E1)) {
++        h042_10dc();
++    }
++    H005_B(0x24E1) = 0;
++}
+diff --git a/src_c/readable/h060.h b/src_c/readable/h060.h
+new file mode 100644
+index 0000000..16fea10
+--- /dev/null
++++ b/src_c/readable/h060.h
+@@ -0,0 +1,7 @@
++/* H060: ridisegno della vista dell'esplorazione. */
++#ifndef COK_H060_H
++#define COK_H060_H
++#include "cok.h"
++void h060_init(void);                   /* H060+$000A */
++void refresh_view(void);                /* H060+$0018 */
++#endif
+diff --git a/src_c/readable/h061.c b/src_c/readable/h061.c
+index 7663cbb..33296f3 100644
+--- a/src_c/readable/h061.c
++++ b/src_c/readable/h061.c
+@@ -2,6 +2,7 @@
+ #include "h061.h"
+ #include "globals.h"
+ #include "unported.h"
++#include "h060.h"
+ #include "h026_string.h"
+ #include "h029_gfx.h"
+ #include "h073.h"
+@@ -355,7 +356,7 @@ static void write_state_b_hook(u16 addr, u16 val)
+     case 0x10:
+         if (val > 0x80) {
+             val = mask_byte((u8)val, 0x7F);
+-            h011_14ea(val, (u16)(idx - 0x0D));
++            load_wall_defs(val, (u16)(idx - 0x0D));
+         }
+         break;
+     default:
+@@ -780,7 +781,7 @@ void show_event_picture(u8 spr, u8 pic, u8 idx, u8 *flags)
+             if (H005_B(0x2825)) {
+                 H005_B(0x2825) = 0;
+                 H005_B(0x24E1) = 1;
+-                h060_0018();
++                refresh_view();
+             }
+             if (COK_GET16(g_state_a + 0x1CC)) {
+                 h042_0406(5, "SPRIT", spr, 1, &g_h005[0x27BC]);
+@@ -789,7 +790,7 @@ void show_event_picture(u8 spr, u8 pic, u8 idx, u8 *flags)
+             }
+         } else {
+             H005_B(0x24E1) = 1;
+-            h060_0018();
++            refresh_view();
+         }
+         if (H005_B(0x3DE3) == 4) {
+             h042_0f50(frame, &g_h005[0x27BC]);
+diff --git a/src_c/readable/h063.c b/src_c/readable/h063.c
+index 4dba107..d7fe151 100644
+--- a/src_c/readable/h063.c
++++ b/src_c/readable/h063.c
+@@ -13,6 +13,7 @@
+ #include "globals.h"
+ #include "h044_tiles.h"
+ #include "unported.h"
++#include "h060.h"
+ #include "h016_gfx.h"
+ #include "h049.h"
+ #include "h077.h"
+@@ -796,7 +797,7 @@ void redraw_game_screen(void)
+     case 4:                             /* H063+$32EE */
+         draw_explore_frame();
+         if (COK_GET16(g_state_a + 0x270) == 0) {
+-            h060_0018();
++            refresh_view();
+         }
+         draw_party(g_current_char);
+         draw_status_line();
+@@ -804,7 +805,7 @@ void redraw_game_screen(void)
+         break;
+     case 3:                             /* H063+$3320 */
+         if (H005_B(0x2486) != 9 && COK_GET16(g_state_a + 0x270) == 0) {
+-            h060_0018();
++            refresh_view();
+         }
+         break;
+     case 6:                             /* H063+$3346 */
+diff --git a/src_c/readable/h064.c b/src_c/readable/h064.c
+index bdac90d..b1c1951 100644
+--- a/src_c/readable/h064.c
++++ b/src_c/readable/h064.c
+@@ -2,6 +2,8 @@
+ #include "h064.h"
+ #include "globals.h"
+ #include "unported.h"
++#include "h060.h"
++#include "h011.h"
+ #include "h069.h"
+ #include "h003_exec.h"
+ #include "h008.h"
+@@ -374,7 +376,7 @@ void ecl_picture(void)
+     if ((H005_B(0x3DE2) != 4 || H005_B(0x3DE3) == 4) &&
+         (H005_B(0x24BD) || H005_B(0x24BA))) {
+         H005_B(0x24E1) = 1;
+-        h060_0018();
++        refresh_view();
+         H005_B(0x24BD) = 0;
+         H005_B(0x24BA) = 0;
+         H005_B(0x24BC) = 1;
+@@ -522,22 +524,22 @@ void ecl_load_files(void)
+         H064_B(6) = 1;
+         if (v[0] != 0xFF && v[0] != 0x7F && COK_GET16(g_state_a + 0x1CC)) {
+             COK_PUT16(g_state_a + 0x18A, v[0]);
+-            h011_1876(v[0]);
++            load_geo_map(v[0]);
+             COK_PUT16(g_state_b + 0x592, 0);
+         }
+     } else {
+         H064_B(7) = 1;
+         if (v[0] == 0x7F) {
+-            h011_14ea(0, 1);
++            load_wall_defs(0, 1);
+         } else if (COK_GET16(g_state_a + 0x1CE) && COK_GET16(g_state_a + 0x1D0)) {
+             if (v[0] != 0xFF) {
+-                h011_14ea(v[0], 1);
++                load_wall_defs(v[0], 1);
+             } else {
+                 H005_SET_W(0x2810, 0xFFFF);
+                 H005_SET_W(0x2812, 0xFFFF);
+             }
+             if (v[2] != 0xFF && v[2] != 0x7F) {
+-                h011_14ea(v[2], 3);
++                load_wall_defs(v[2], 3);
+             } else {
+                 H005_SET_W(0x2818, 0xFFFF);
+                 H005_SET_W(0x281A, 0xFFFF);
+@@ -545,7 +547,7 @@ void ecl_load_files(void)
+         } else {
+             for (i = 1; i <= 3; ++i) {
+                 if (v[i - 1] != 0xFF) {
+-                    h011_14ea(v[i - 1], i);
++                    load_wall_defs(v[i - 1], i);
+                 } else {
+                     H005_SET_W(0x2810 + (i - 1) * 4, 0xFFFF);
+                     H005_SET_W(0x2810 + (i - 1) * 4 + 2, 0xFFFF);
+diff --git a/src_c/readable/h066.c b/src_c/readable/h066.c
+index a407b6f..42de767 100644
+--- a/src_c/readable/h066.c
++++ b/src_c/readable/h066.c
+@@ -19,6 +19,7 @@
+ #include "h045.h"
+ #include "h014.h"
+ #include "unported.h"
++#include "h011.h"
+ 
+ /* PORT H066+$02F0: link/unlk, nessun effetto. */
+ void h066_init(void)
+@@ -1058,11 +1059,11 @@ void load_game(void)
+     H005_B(0x246E) = (u8)COK_GET16(g_state_b + 0x624);
+     if (COK_GET16(g_state_a + 0x1CC) != 0) {
+         if ((s16)H005_W(0x2810) > 0) {
+-            h011_1876(COK_GET16(g_state_a + 0x18A));
++            load_geo_map(COK_GET16(g_state_a + 0x18A));
+         }
+         for (i = 1; i <= 3; ++i) {
+             if ((s16)H005_W(0x2810 + (i - 1) * 4) > 0) {
+-                h011_14ea(H005_W(0x2810 + (i - 1) * 4),
++                load_wall_defs(H005_W(0x2810 + (i - 1) * 4),
+                           H005_W(0x2810 + (i - 1) * 4 + 2));
+             }
+         }
+diff --git a/src_c/readable/h068.c b/src_c/readable/h068.c
+index b2eeff0..1206167 100644
+--- a/src_c/readable/h068.c
++++ b/src_c/readable/h068.c
+@@ -353,7 +353,7 @@ static void dungeon_menu(u8 *key, u8 *done, u8 *special)
+                  h026_compare_nocase(0xFF, g_argv[2], 0x14,
+                                      (const char *)&g_h005[0x2358]) == 1)) {
+                 H005_B(0x2825) = (u8)(H005_B(0x2825) == 0);
+-                h011_0b78(POS_X, POS_Y, POS_DIR);
++                draw_3d_view(POS_X, POS_Y, POS_DIR);
+             } else {
+                 show_message(8, "Not Here", 0x0E, 0);
+             }
+@@ -413,7 +413,7 @@ static void dungeon_menu(u8 *key, u8 *done, u8 *special)
+     case 0x50:                          /* freccia giu': dietro-front */
+         POS_DIR = (u8)((POS_DIR + 4) & 7);
+         H005_B(0x2821) = (u8)map_wall(POS_X, POS_Y, POS_DIR);
+-        h011_0b78(POS_X, POS_Y, POS_DIR);
++        draw_3d_view(POS_X, POS_Y, POS_DIR);
+         draw_status_line();
+         *key = 0;
+         break;
+@@ -421,7 +421,7 @@ static void dungeon_menu(u8 *key, u8 *done, u8 *special)
+         POS_DIR = (u8)((POS_DIR + 6) & 7);
+         h043_190e(0x11);
+         H005_B(0x2821) = (u8)map_wall(POS_X, POS_Y, POS_DIR);
+-        h011_0b78(POS_X, POS_Y, POS_DIR);
++        draw_3d_view(POS_X, POS_Y, POS_DIR);
+         draw_status_line();
+         *key = 0;
+         break;
+@@ -429,7 +429,7 @@ static void dungeon_menu(u8 *key, u8 *done, u8 *special)
+         POS_DIR = (u8)((POS_DIR + 2) & 7);
+         h043_190e(0x11);
+         H005_B(0x2821) = (u8)map_wall(POS_X, POS_Y, POS_DIR);
+-        h011_0b78(POS_X, POS_Y, POS_DIR);
++        draw_3d_view(POS_X, POS_Y, POS_DIR);
+         draw_status_line();
+         *key = 0;
+         break;
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index 44f0eb3..83716be 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -60,34 +60,29 @@ static const char s_h043_190e[] = "H043+$190E";
+ void h043_0584(void) { cok_unported_skip(s_h043_0584); }
+ void h043_190e(u16 command) { (void)command; cok_unported_skip(s_h043_190e); }
+ u8 h046_0012(u16 dx, u16 dy, u16 col, u16 row) { (void)dx; (void)dy; (void)col; (void)row; cok_unported("H046+$0012"); return 0; }
+-void *h042_0b80(u16 frame, void *set) { (void)frame; (void)set; cok_unported("H042+$0B80"); return NULL; }
+-void h042_0254(u16 a, u16 b, u8 flag, void *picture) { (void)a; (void)b; (void)flag; (void)picture; cok_unported("H042+$0254"); }
++/*
++ * Immagini (H042): non ancora portate; saltate (con un messaggio sulla
++ * console) per poter esplorare senza le immagini degli eventi.
++ */
++void *h042_0b80(u16 frame, void *set) { (void)frame; (void)set; cok_unported_skip("H042+$0B80"); return NULL; }
++void h042_0254(u16 a, u16 b, u8 flag, void *picture) { (void)a; (void)b; (void)flag; (void)picture; cok_unported_skip("H042+$0254"); }
+ void h043_0840(void) { cok_unported_skip("H043+$0840"); }
+ 
+ 
+-void h042_0d70(u16 a, u16 b) { (void)a; (void)b; cok_unported("H042+$0D70"); }
+-void h042_0ed2(u16 a, u16 b, u8 flag) { (void)a; (void)b; (void)flag; cok_unported("H042+$0ED2"); }
+-void h042_0406(u16 len, const char *name, u16 id, u16 x, void *set) { (void)len; (void)name; (void)id; (void)x; (void)set; cok_unported("H042+$0406"); }
+-void h060_0018(void) { cok_unported("H060+$0018"); }
++void h042_0d70(u16 a, u16 b) { (void)a; (void)b; cok_unported_skip("H042+$0D70"); }
++void h042_0ed2(u16 a, u16 b, u8 flag) { (void)a; (void)b; (void)flag; cok_unported_skip("H042+$0ED2"); }
++void h042_0406(u16 len, const char *name, u16 id, u16 x, void *set) { (void)len; (void)name; (void)id; (void)x; (void)set; cok_unported_skip("H042+$0406"); }
+ 
+ /* Dipendenze del lancio degli incantesimi (H033+$1426, H065+$2F82). */
+ void h044_0492(void) { cok_unported("H044+$0492"); }
+ 
+-/*
+- * Servono solo all'avventura (Begin Adventuring, non portata): Load Saved
+- * Game prosegue senza.
+- */
+-static const char s_h011_1876[] = "H011+$1876";
+-static const char s_h011_14ea[] = "H011+$14EA";
++/* Immagine grande (H042): saltata come le altre immagini. */
+ static const char s_h042_1006[] = "H042+$1006";
+-void h011_1876(u16 map) { (void)map; cok_unported_skip(s_h011_1876); }
+-void h011_14ea(u16 a, u16 b) { (void)a; (void)b; cok_unported_skip(s_h011_14ea); }
+ void h042_1006(u16 picture) { (void)picture; cok_unported_skip(s_h042_1006); }
+ 
+ /* Parti solo da combattimento del motore degli effetti. */
+ 
+ 
+-void h010_0360(u16 len, const char *text) { (void)len; (void)text; cok_unported("H010+$0360"); }
+ 
+ u8 h096_38dc(Character *a, Character *t) { (void)a; (void)t; cok_unported("H096+$38DC"); return 0; }
+ u8 h096_1340(Character *a, Character *t) { (void)a; (void)t; cok_unported("H096+$1340"); return 0; }
+@@ -106,16 +101,15 @@ void h096_2a6c(u8 spell, u8 unused, u8 *ok) { (void)spell; (void)unused; (void)o
+ void h097_1d68(Character *c) { (void)c; cok_unported("H097+$1D68"); }
+ 
+ void h066_1fda(Character *c, u16 idx) { (void)c; (void)idx; cok_unported("H066+$1FDA"); }
+-void h042_0f50(u16 frame, void *set) { (void)frame; (void)set; cok_unported("H042+$0F50"); }
++void h042_0f50(u16 frame, void *set) { (void)frame; (void)set; cok_unported_skip("H042+$0F50"); }
+ 
+ void h012_14c8(void) { cok_unported("H012+$14C8"); }
+ 
+-void h042_10dc(void) { cok_unported("H042+$10DC"); }
++void h042_10dc(void) { cok_unported_skip("H042+$10DC"); }
+ void h070_1958(void) { cok_unported("H070+$1958"); }
+ void h071_092c(void) { cok_unported("H071+$092C"); }
+ void h072_120c(void) { cok_unported("H072+$120C"); }
+ void h066_276e(u16 npc) { (void)npc; cok_unported("H066+$276E"); }
+ void h067_1292(u16 type, CokItem *it) { (void)type; (void)it; cok_unported("H067+$1292"); }
+ void h057_2f3a(u8 *result) { (void)result; cok_unported("H057+$2F3A"); }
+-void h011_0b78(s16 x, s16 y, u8 dir) { (void)x; (void)y; (void)dir; cok_unported("H011+$0B78"); }
+ void h057_0c04(void) { cok_unported("H057+$0C04"); }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index 758d3c3..27e1285 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -45,15 +45,12 @@ void h042_0d70(u16 a, u16 b);           /* Load_HeadBody */
+ void h042_0ed2(u16 a, u16 b, u8 flag);
+ void h042_0406(u16 len, const char *name, u16 id, u16 x, void *set);
+                                         /* Load_Sequence */
+-void h060_0018(void);
+ 
+ 
+ /* Dipendenze del lancio degli incantesimi (H033+$1426, H065+$2F82). */
+ void h044_0492(void);
+ 
+ /* Caricamenti per l'avventura dopo Load Saved Game (H066+$291E). */
+-void h011_1876(u16 map);                 /* mappa 3D (GEO) */
+-void h011_14ea(u16 a, u16 b);            /* definizioni dei muri */
+ void h042_1006(u16 picture);             /* immagine grande */
+ 
+ /* Parti solo da combattimento del motore degli effetti. */
+@@ -66,7 +63,6 @@ void h042_1006(u16 picture);             /* immagine grande */
+ 
+ #endif
+ 
+-void h010_0360(u16 len, const char *text);  /* messaggio sulla console (writeln) */
+ 
+ /* H096/H097: azioni e IA del combattimento (non ancora portate). */
+ u8   h096_38dc(Character *actor, Character *target);
+@@ -100,5 +96,4 @@ void h066_276e(u16 npc);                 /* aggiunge un PNG */
+ void h067_1292(u16 type, CokItem *it);   /* oggetto casuale */
+ void h057_2f3a(u8 *result);              /* accampamento */
+ /* Usati da H068. */
+-void h011_0b78(s16 x, s16 y, u8 dir);    /* vista 3D del dungeon */
+ void h057_0c04(void);                    /* lancio di incantesimi */
+-- 
+2.43.0
+

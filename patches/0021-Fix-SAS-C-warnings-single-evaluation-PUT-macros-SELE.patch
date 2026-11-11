@@ -1,0 +1,177 @@
+From eab2710fb1b19863ad4e525f4ff453210ced18cc Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 18:44:41 +0000
+Subject: [PATCH 21/65] Fix SAS/C warnings: single-evaluation PUT macros,
+ SELECTED, Character
+
+COK_PUT16/COK_PUT32 now evaluate their arguments once (warning 217).
+Rename h008's SELECTED to CHOICE_SELECTED: intuition/iobsolete.h
+defines SELECTED (warning 84). globals.h includes character.h instead
+of redeclaring struct Character (warning 63).
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/cok.h     | 15 +++++++++++----
+ src_c/readable/globals.h |  2 +-
+ src_c/readable/h008.c    | 38 +++++++++++++++++++-------------------
+ 3 files changed, 31 insertions(+), 24 deletions(-)
+
+diff --git a/src_c/readable/cok.h b/src_c/readable/cok.h
+index e168721..13fa017 100644
+--- a/src_c/readable/cok.h
++++ b/src_c/readable/cok.h
+@@ -58,10 +58,17 @@ typedef int32_t  s32;
+ /* Word e long big-endian dentro i blocchi di byte (formato dei file). */
+ #define COK_GET16(p)  ((u16)(((const u8 *)(p))[0] << 8 | ((const u8 *)(p))[1]))
+ #define COK_GET32(p)  ((u32)COK_GET16(p) << 16 | COK_GET16((const u8 *)(p) + 2))
+-#define COK_PUT16(p, v) do { ((u8 *)(p))[0] = (u8)((u16)(v) >> 8); \
+-                             ((u8 *)(p))[1] = (u8)(v); } while (0)
+-#define COK_PUT32(p, v) do { COK_PUT16((p), (u32)(v) >> 16); \
+-                             COK_PUT16((u8 *)(p) + 2, (v)); } while (0)
++/* Argomento valutato una sola volta (puo' essere una chiamata). */
++#define COK_PUT16(p, v) do { u16 cok_w_ = (u16)(v); \
++                             u8 *cok_p_ = (u8 *)(p); \
++                             cok_p_[0] = (u8)(cok_w_ >> 8); \
++                             cok_p_[1] = (u8)cok_w_; } while (0)
++#define COK_PUT32(p, v) do { u32 cok_l_ = (u32)(v); \
++                             u8 *cok_q_ = (u8 *)(p); \
++                             cok_q_[0] = (u8)(cok_l_ >> 24); \
++                             cok_q_[1] = (u8)(cok_l_ >> 16); \
++                             cok_q_[2] = (u8)(cok_l_ >> 8); \
++                             cok_q_[3] = (u8)cok_l_; } while (0)
+ 
+ /* Ferma il programma su una routine non ancora portata (unported.c). */
+ void cok_unported(const char *where);
+diff --git a/src_c/readable/globals.h b/src_c/readable/globals.h
+index f516f77..62eb281 100644
+--- a/src_c/readable/globals.h
++++ b/src_c/readable/globals.h
+@@ -70,7 +70,7 @@ extern struct GfxRecord *g_sprite_sets[29][2]; /* $3244: coppie di set 24x24 */
+ extern struct GfxRecord *g_pic_rec_27c2; /* $27C2: immagine dell'insieme $27BC */
+ extern struct GfxRecord *g_pic_rec_27c6; /* $27C6 */
+ extern u8 *g_pic_buffers[7];            /* $27E8: blocchi 2..8 dell'insieme */
+-struct Character;
++#include "character.h"
+ extern struct Character *g_party_head;  /* $3364: testa della lista del party */
+ extern struct Character *g_current_char;/* $3368: personaggio corrente */
+ 
+diff --git a/src_c/readable/h008.c b/src_c/readable/h008.c
+index f69038a..20dc2cc 100644
+--- a/src_c/readable/h008.c
++++ b/src_c/readable/h008.c
+@@ -135,7 +135,7 @@ static void draw_options(ChoiceFrame *f, u8 selected)
+ }
+ 
+ /* Indice dell'opzione selezionata (H005+$2483, persistente tra le chiamate). */
+-#define SELECTED H005_B(0x2483)
++#define CHOICE_SELECTED H005_B(0x2483)
+ 
+ /* Coordinate di combattimento/mappa del cursore (rami $07F8/$0D8E). */
+ static void map_target(s16 *dx, s16 *dy)
+@@ -194,7 +194,7 @@ static u8 area_view_code(const ChoiceFrame *f)
+ static void enter_or_click(ChoiceFrame *f)
+ {
+     if (!G_MOUSE_CLICK) {
+-        f->key = (u8)f->options[f->item[SELECTED - 1].start];
++        f->key = (u8)f->options[f->item[CHOICE_SELECTED - 1].start];
+         if (f->key == 0) {
+             f->key = 0x0D;
+         }
+@@ -231,7 +231,7 @@ static void enter_or_click(ChoiceFrame *f)
+                 g_h005_2508 = member;
+             } else if (g_current_char == member) {
+                 *f->special = 0;
+-                f->key = (u8)f->options[f->item[SELECTED - 1].start];
++                f->key = (u8)f->options[f->item[CHOICE_SELECTED - 1].start];
+                 if (f->key == 0) {
+                     f->key = 0x0D;
+                 }
+@@ -272,8 +272,8 @@ static void enter_or_click(ChoiceFrame *f)
+             if ((s16)(f->item[i - 1].start + 1) <= f->col &&
+                 (s16)(f->item[i - 1].end + 1) >= f->col) {
+                 f->key = (u8)f->options[f->item[i - 1].start];
+-                SELECTED = (u8)i;
+-                draw_options(f, SELECTED);
++                CHOICE_SELECTED = (u8)i;
++                draw_options(f, CHOICE_SELECTED);
+                 f->done = 1;
+             }
+         }
+@@ -317,7 +317,7 @@ static void enter_or_click(ChoiceFrame *f)
+             }
+             if (!f->done && !(limit > f->row)) {
+                 f->done = 1;
+-                f->key = (u8)f->options[f->item[SELECTED - 1].start];
++                f->key = (u8)f->options[f->item[CHOICE_SELECTED - 1].start];
+             }
+         }
+     }
+@@ -364,8 +364,8 @@ u8 ui_request_choice(u16 title_len, const char *title, u16 options_len,
+     H005_B(0x249D) = 0;
+     f.title_len = h026_strlen(title_len, title);
+     parse_options(&f, options_len, options);
+-    if (SELECTED > f.count || SELECTED == 0) {
+-        SELECTED = 1;
++    if (CHOICE_SELECTED > f.count || CHOICE_SELECTED == 0) {
++        CHOICE_SELECTED = 1;
+     }
+     f.options_len = h026_strlen(options_len, options);
+     f.key = 0;
+@@ -375,7 +375,7 @@ u8 ui_request_choice(u16 title_len, const char *title, u16 options_len,
+     if (title[0] != 0) {
+         ui_draw_text(0, 0x18, title_pen, 0, title_len, title);
+     }
+-    draw_options(&f, SELECTED);
++    draw_options(&f, CHOICE_SELECTED);
+ 
+     do {
+         f.key = 0;
+@@ -476,12 +476,12 @@ u8 ui_request_choice(u16 title_len, const char *title, u16 options_len,
+                 case '4':
+                     *special = 1;
+                     if (f.count > 1) {
+-                        if (SELECTED == 1) {
+-                            SELECTED = (u8)f.count;
++                        if (CHOICE_SELECTED == 1) {
++                            CHOICE_SELECTED = (u8)f.count;
+                         } else {
+-                            SELECTED = (u8)(SELECTED - 1);
++                            CHOICE_SELECTED = (u8)(CHOICE_SELECTED - 1);
+                         }
+-                        draw_options(&f, SELECTED);
++                        draw_options(&f, CHOICE_SELECTED);
+                     } else {
+                         if (digits_map) {
+                             map_digit(&f);
+@@ -492,12 +492,12 @@ u8 ui_request_choice(u16 title_len, const char *title, u16 options_len,
+                 case '6':
+                     *special = 1;
+                     if (f.count > 1) {
+-                        if (SELECTED == f.count) {
+-                            SELECTED = 1;
++                        if (CHOICE_SELECTED == f.count) {
++                            CHOICE_SELECTED = 1;
+                         } else {
+-                            add_to_byte(&SELECTED, 1);
++                            add_to_byte(&CHOICE_SELECTED, 1);
+                         }
+-                        draw_options(&f, SELECTED);
++                        draw_options(&f, CHOICE_SELECTED);
+                     } else {
+                         f.done = 1;
+                         if (digits_map) {
+@@ -529,8 +529,8 @@ u8 ui_request_choice(u16 title_len, const char *title, u16 options_len,
+                                                 f.item[n - 1].start != i; ++n) {
+                                     }
+                                     if (n <= 0x14) {
+-                                        SELECTED = (u8)n;
+-                                        draw_options(&f, SELECTED);
++                                        CHOICE_SELECTED = (u8)n;
++                                        draw_options(&f, CHOICE_SELECTED);
+                                     }
+                                 }
+                             }
+-- 
+2.43.0
+

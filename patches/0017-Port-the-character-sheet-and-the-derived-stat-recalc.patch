@@ -1,0 +1,1293 @@
+From d15667b0f7a07a88fd496a984c1848525e8389f8 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 16:51:26 +0000
+Subject: [PATCH 17/65] Port the character sheet and the derived-stat
+ recalculation
+
+Port H065+$04B8 (character sheet), $0ADE (money), $0BE6 with its
+nested $0BF4 (combat values) and $10DE (one stat line), the frame
+H044+$068E, and from H063 the stat recalculation $13BE with $016A,
+$0228, $0354, $0432, $06AE, $0758, $08A2, $18F8, $19B6 and
+$1A8A, plus $0112, $0946, $09B2, $0FA0, $103A and $1F34 (trim,
+effect lookup, item names, armour class, hit points, name).
+
+Create New Character now draws the sheet and the rolled stats; it
+stops at the unported training screen H013+$58DC.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md |  76 ++---
+ src_c/readable/h013.c         |  11 +-
+ src_c/readable/h044_tiles.c   |  29 ++
+ src_c/readable/h044_tiles.h   |   1 +
+ src_c/readable/h063.c         | 623 +++++++++++++++++++++++++++++++++-
+ src_c/readable/h063.h         |  19 ++
+ src_c/readable/h065.c         | 269 ++++++++++++++-
+ src_c/readable/h065.h         |  12 +
+ src_c/readable/h073.c         |   2 +-
+ src_c/readable/h073.h         |   1 +
+ src_c/readable/unported.c     |   4 -
+ src_c/readable/unported.h     |   4 -
+ 12 files changed, 997 insertions(+), 54 deletions(-)
+ create mode 100644 src_c/readable/h063.h
+ create mode 100644 src_c/readable/h065.h
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index 662cf9f..97f88e3 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **312 / 914**.
++Routine portate: **335 / 914**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -50,7 +50,7 @@ Routine portate: **312 / 914**.
+ | H041 | 240 | 3 | 1 |
+ | H042 | 4420 | 14 | 2 |
+ | H043 | 6680 | 30 | 1 |
+-| H044 | 2668 | 10 | 4 |
++| H044 | 2668 | 10 | 5 |
+ | H045 | 828 | 4 | 2 |
+ | H046 | 724 | 2 | 1 |
+ | H047 | 5224 | 8 | 1 |
+@@ -69,9 +69,9 @@ Routine portate: **312 / 914**.
+ | H060 | 396 | 2 | 1 |
+ | H061 | 16936 | 35 | 1 |
+ | H062 | 10496 | 32 | 3 |
+-| H063 | 16496 | 52 | 1 |
++| H063 | 16496 | 52 | 18 |
+ | H064 | 6460 | 7 | 1 |
+-| H065 | 14268 | 27 | 1 |
++| H065 | 14268 | 27 | 6 |
+ | H066 | 13840 | 27 | 1 |
+ | H067 | 9820 | 22 | 1 |
+ | H068 | 5788 | 14 | 1 |
+@@ -273,15 +273,15 @@ Routine portate: **312 / 914**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0506` | `module_init_H013` | parziale | h013.c:19 |
++| `$0506` | `module_init_H013` | parziale | h013.c:20 |
+ | `$0518` | `trampoline_H013_52E0` | parziale |  |
+ | `$051C` | `trampoline_H013_58DC` | parziale |  |
+ | `$0520` | `trampoline_H013_56CE` | parziale |  |
+-| `$0524` | `sub_H013_00000524` | parziale | h013.c:355 |
+-| `$07B2` | `sub_H013_000007B2` | parziale | h013.c:422 |
+-| `$08C2` | `trampoline_H013_097C` | parziale | h013.c:471 |
+-| `$0982` | `Create_Character` | parziale | h013.c:645 |
+-| `$0990` | `sub_H013_00000990` | parziale | h013.c:503 |
++| `$0524` | `sub_H013_00000524` | parziale | h013.c:356 |
++| `$07B2` | `sub_H013_000007B2` | parziale | h013.c:423 |
++| `$08C2` | `trampoline_H013_097C` | parziale | h013.c:472 |
++| `$0982` | `Create_Character` | parziale | h013.c:646 |
++| `$0990` | `sub_H013_00000990` | parziale | h013.c:504 |
+ | `$2B9A` | `trampoline_H013_2D70` | parziale |  |
+ | `$2D76` | `trampoline_H013_2E1A` | parziale |  |
+ | `$2E44` | `sub_H013_00002E44` | parziale |  |
+@@ -290,10 +290,10 @@ Routine portate: **312 / 914**.
+ | `$31EE` | `trampoline_H013_333C` | parziale |  |
+ | `$43E8` | `sub_H013_000043E8` | parziale |  |
+ | `$4508` | `sub_H013_00004508` | parziale |  |
+-| `$4BFC` | `Party_MainMenu` | verificato | h013.c:91 |
+-| `$4C0A` | `sub_H013_00004C0A` | parziale | h013.c:52 |
++| `$4BFC` | `Party_MainMenu` | verificato | h013.c:92 |
++| `$4C0A` | `sub_H013_00004C0A` | parziale | h013.c:53 |
+ | `$52E0` | `Add_CharacterToParty` | parziale |  |
+-| `$56CE` | `(senza scheda)` | - | h013.c:320 |
++| `$56CE` | `(senza scheda)` | - | h013.c:321 |
+ 
+ ### H014
+ 
+@@ -695,7 +695,7 @@ Routine portate: **312 / 914**.
+ | `$0452` | `sub_H044_00000452` | parziale |  |
+ | `$0492` | `sub_H044_00000492` | parziale |  |
+ | `$0586` | `sub_H044_00000586` | parziale |  |
+-| `$068E` | `sub_H044_0000068E` | parziale |  |
++| `$068E` | `sub_H044_0000068E` | parziale | h044_tiles.c:187 |
+ | `$07DE` | `sub_H044_000007DE` | parziale |  |
+ 
+ ### H045
+@@ -990,33 +990,33 @@ Routine portate: **312 / 914**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0104` | `module_init_H063` | parziale | h063.c:4 |
+-| `$0112` | `sub_H063_00000112` | parziale |  |
+-| `$016A` | `sub_H063_0000016A` | parziale |  |
+-| `$0228` | `trampoline_H063_032C` | parziale |  |
+-| `$0354` | `sub_H063_00000354` | parziale |  |
+-| `$0432` | `sub_H063_00000432` | parziale |  |
+-| `$06AE` | `sub_H063_000006AE` | parziale |  |
+-| `$0758` | `sub_H063_00000758` | parziale |  |
+-| `$08A2` | `sub_H063_000008A2` | parziale |  |
+-| `$0946` | `sub_H063_00000946` | parziale |  |
+-| `$09B2` | `sub_H063_000009B2` | parziale |  |
++| `$0104` | `module_init_H063` | parziale | h063.c:10 |
++| `$0112` | `sub_H063_00000112` | parziale | h063.c:35 |
++| `$016A` | `sub_H063_0000016A` | parziale | h063.c:48 |
++| `$0228` | `trampoline_H063_032C` | parziale | h063.c:72 |
++| `$0354` | `sub_H063_00000354` | parziale | h063.c:107 |
++| `$0432` | `sub_H063_00000432` | parziale | h063.c:237 |
++| `$06AE` | `sub_H063_000006AE` | parziale | h063.c:283 |
++| `$0758` | `sub_H063_00000758` | parziale | h063.c:302 |
++| `$08A2` | `sub_H063_000008A2` | parziale | h063.c:334 |
++| `$0946` | `sub_H063_00000946` | parziale | h063.c:357 |
++| `$09B2` | `sub_H063_000009B2` | parziale | h063.c:374 |
+ | `$0D80` | `sub_H063_00000D80` | parziale |  |
+-| `$0FA0` | `sub_H063_00000FA0` | parziale |  |
+-| `$103A` | `sub_H063_0000103A` | parziale |  |
++| `$0FA0` | `sub_H063_00000FA0` | parziale | h063.c:449 |
++| `$103A` | `sub_H063_0000103A` | parziale | h063.c:464 |
+ | `$1160` | `trampoline_H063_1350` | parziale |  |
+ | `$135A` | `sub_H063_0000135A` | parziale |  |
+-| `$13BE` | `sub_H063_000013BE` | parziale |  |
+-| `$18F8` | `sub_H063_000018F8` | parziale |  |
+-| `$19B6` | `sub_H063_000019B6` | parziale |  |
+-| `$1A8A` | `trampoline_H063_1B66` | parziale |  |
++| `$13BE` | `sub_H063_000013BE` | parziale | h063.c:491 |
++| `$18F8` | `sub_H063_000018F8` | parziale | h063.c:147 |
++| `$19B6` | `sub_H063_000019B6` | parziale | h063.c:170 |
++| `$1A8A` | `trampoline_H063_1B66` | parziale | h063.c:205 |
+ | `$1B90` | `sub_H063_00001B90` | parziale |  |
+ | `$1BE8` | `sub_H063_00001BE8` | parziale |  |
+ | `$1CC0` | `sub_H063_00001CC0` | parziale |  |
+ | `$1D44` | `sub_H063_00001D44` | parziale |  |
+ | `$1DC2` | `sub_H063_00001DC2` | parziale |  |
+ | `$1EE8` | `sub_H063_00001EE8` | parziale |  |
+-| `$1F34` | `trampoline_H063_1F7E` | parziale |  |
++| `$1F34` | `trampoline_H063_1F7E` | parziale | h063.c:608 |
+ | `$1FDC` | `sub_H063_00001FDC` | parziale |  |
+ | `$2178` | `sub_H063_00002178` | parziale |  |
+ | `$21D2` | `trampoline_H063_22B4` | parziale |  |
+@@ -1059,12 +1059,12 @@ Routine portate: **312 / 914**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$04AA` | `module_init_H065` | parziale | h065.c:4 |
+-| `$04B8` | `sub_H065_000004B8` | parziale |  |
+-| `$0ADE` | `sub_H065_00000ADE` | parziale |  |
+-| `$0BE6` | `trampoline_H065_0C34` | parziale |  |
+-| `$0BF4` | `sub_H065_00000BF4` | parziale |  |
+-| `$10DE` | `trampoline_H065_1100` | parziale |  |
++| `$04AA` | `module_init_H065` | parziale | h065.c:12 |
++| `$04B8` | `sub_H065_000004B8` | parziale | h065.c:35 |
++| `$0ADE` | `sub_H065_00000ADE` | parziale | h065.c:142 |
++| `$0BE6` | `trampoline_H065_0C34` | parziale | h065.c:176 |
++| `$0BF4` | `sub_H065_00000BF4` | parziale | h065.c:167 |
++| `$10DE` | `trampoline_H065_1100` | parziale | h065.c:247 |
+ | `$12D6` | `sub_H065_000012D6` | parziale |  |
+ | `$1636` | `sub_H065_00001636` | parziale |  |
+ | `$196E` | `sub_H065_0000196E` | parziale |  |
+diff --git a/src_c/readable/h013.c b/src_c/readable/h013.c
+index 27a9b66..aaa61ee 100644
+--- a/src_c/readable/h013.c
++++ b/src_c/readable/h013.c
+@@ -15,6 +15,7 @@
+ #include "h053.h"
+ #include "h062.h"
+ #include "h073.h"
++#include "h065.h"
+ 
+ /* PORT H013+$0506: link/unlk, nessun effetto. */
+ void h013_init(void)
+@@ -1057,7 +1058,7 @@ void create_character(void)
+ 
+     saved = g_current_char;
+     g_current_char = ch;
+-    h065_04b8();
++    draw_character_sheet();
+     do {
+         for (k = 0; k <= 7; ++k) {
+             if (g_current_char->b[0xFE + k] > 0) {
+@@ -1115,7 +1116,7 @@ void create_character(void)
+             if (s == 0) {
+                 ch->b[0x1D] = ch->b[0x1C];
+             }
+-            h065_10de(s, 0);
++            draw_stat_value(s, 0);
+         }
+ 
+         ch->b[0x1A8] = ch->b[0x64];
+@@ -1216,12 +1217,12 @@ void create_character(void)
+             }
+         }
+         ui_draw_text(7, 7, 0x0F, 0, 0x28, line);
+-        h065_0be6();
+-        h065_0ade();
++        draw_combat_values();
++        draw_character_money();
+         key = ask_yes_no(0x0E, "Reroll stats? ", 0x0D, 0x0A, 0x0F);
+     } while (key != 'N');
+ 
+-    h065_04b8();
++    draw_character_sheet();
+     do {
+         input_line(0x10, "Character name: ", 0x0D, 0, 0x0F, 0x0F,
+                    (char *)ch->b);
+diff --git a/src_c/readable/h044_tiles.c b/src_c/readable/h044_tiles.c
+index ac55930..dde4b33 100644
+--- a/src_c/readable/h044_tiles.c
++++ b/src_c/readable/h044_tiles.c
+@@ -182,3 +182,32 @@ void draw_credits_frame(void)
+         draw_8x8_tile(x, 6, 0x114, 0, 0);
+     }
+ }
++
++/*
++ * PORT H044+$068E: cornice della schermata del personaggio: schermo
++ * cancellato, palette H005+$52AE (16 colori), riga superiore, righe
++ * orizzontali 8, $10, $14 e $17, lati (tabella di -$AA(a4)) e divisorio
++ * verticale alla colonna $13 tra le righe 9 e $13 (tabella di -$B6(a4)).
++ */
++void draw_character_frame(void)
++{
++    u16 x;                              /* -$2(a5) */
++    u16 y;                              /* -$4(a5) */
++
++    clear_text_cells(0, 0, 0x27, 0x17);
++    graphics_load_rgb4(&g_screen->ViewPort, &g_h005[0x52AE], 0x10);
++    for (x = 0; x <= 0x27; ++x) {
++        draw_top_border_cell(x);
++        draw_8x8_tile(x, 8, 0x114, 0, 0);
++        draw_8x8_tile(x, 0x10, 0x114, 0, 0);
++        draw_8x8_tile(x, 0x14, 0x114, 0, 0);
++        draw_8x8_tile(x, 0x17, 0x114, 0, 0);
++    }
++    for (y = 0; y <= 0x16; ++y) {
++        draw_8x8_tile(0, y, (u16)(H044_M(0xAA - y) + 0x114), 0, 0);
++        draw_8x8_tile(0x27, y, (u16)(H044_M(0xAA - y) + 0x114), 0, 0);
++    }
++    for (y = 9; y <= 0x13; ++y) {
++        draw_8x8_tile(0x13, y, (u16)(H044_M(0xB6 - (y - 9)) + 0x114), 0, 0);
++    }
++}
+diff --git a/src_c/readable/h044_tiles.h b/src_c/readable/h044_tiles.h
+index f9051ce..5f0987e 100644
+--- a/src_c/readable/h044_tiles.h
++++ b/src_c/readable/h044_tiles.h
+@@ -6,5 +6,6 @@
+ 
+ void draw_screen_frame(u8 mid);         /* H044+$01C2 */
+ void draw_credits_frame(void);          /* H044+$02D8 */
++void draw_character_frame(void);        /* H044+$068E */
+ 
+ #endif
+diff --git a/src_c/readable/h063.c b/src_c/readable/h063.c
+index 71bf119..d4e820d 100644
+--- a/src_c/readable/h063.c
++++ b/src_c/readable/h063.c
+@@ -1,7 +1,628 @@
+ /* H063: Helper per personaggi, inventario e aggiornamento UI; mappa parziale. */
+-#include "cok.h"
++#include "h063.h"
++#include "h026_string.h"
++#include "h029_gfx.h"
++#include "h030.h"
++#include "h045.h"
++#include "h073.h"
++#include "globals.h"
+ 
+ /* PORT H063+$0104: link/unlk, nessun effetto. */
+ void h063_init(void)
+ {
+ }
++
++/* -$2(a4): peso degli oggetti pronti (H063+$13BE). */
++static u16 s_ready_weight;
++
++/* Copia con dbeq: al massimo max + 1 byte, NUL compreso. */
++static void copy_text(char *dst, const char *src, u16 max)
++{
++    u16 i;
++
++    for (i = 0; i <= max; ++i) {
++        dst[i] = src[i];
++        if (src[i] == 0) {
++            break;
++        }
++    }
++}
++
++/* Riga della tabella dei tipi di oggetto H005+$336C ($12 byte). */
++#define ITEM_TYPE(t, off) H005_B(0x336C + (t) * 0x12 + (off))
++#define ITEM_W(it, off)   ((s16)COK_GET16((it)->b + (off)))
++
++/* PORT H063+$0112: toglie gli spazi iniziali (sul posto). */
++void trim_leading_spaces(u16 len, char *s)
++{
++    u16 i;
++
++    (void)len;
++    while (s[0] == ' ') {
++        for (i = 0; s[i] != 0; ++i) {
++            s[i] = s[i + 1];
++        }
++    }
++}
++
++/* PORT H063+$016A: correzione di destrezza (+$17) per le armi da lancio. */
++static s16 dex_missile_adj(Character *c)
++{
++    s16 dex = c->b[0x17];               /* -$2(a5) */
++
++    switch (dex) {
++    case 0: case 1: case 2:
++        return -4;
++    case 3: case 4: case 5:
++        return (s16)(dex - 6);
++    case 16: case 17: case 18:
++        return (s16)(dex - 0x0F);
++    case 19: case 20:
++        return 3;
++    case 21: case 22: case 23:
++        return 4;
++    case 24: case 25:
++        return 5;
++    default:
++        return 0;
++    }
++}
++
++/*
++ * PORT H063+$0228: forza effettiva: 0..17 come e', 18 secondo la
++ * percentuale (+$1C) in 18..23, 19..25 piu' 5.  Oltre 25 l'originale
++ * restituisce un valore non inizializzato; qui 0.
++ */
++static s16 effective_strength(Character *c)
++{
++    u8 s = c->b[0x11];
++
++    if (s <= 17) {
++        return s;
++    }
++    if (s == 18) {
++        if (c->b[0x1C] == 0) {
++            return 0x12;
++        }
++        if (c->b[0x1C] < 0x33) {
++            return 0x13;
++        }
++        if (c->b[0x1C] < 0x4C) {
++            return 0x14;
++        }
++        if (c->b[0x1C] < 0x5B) {
++            return 0x15;
++        }
++        if (c->b[0x1C] < 0x64) {
++            return 0x16;
++        }
++        return 0x17;
++    }
++    if (s <= 25) {
++        return (s16)(s + 5);
++    }
++    return 0;
++}
++
++/* PORT H063+$0354: bonus della forza per colpire (con +$11B). */
++static s16 str_hit_bonus(Character *c)
++{
++    s16 bonus = 0;                      /* -$4(a5) */
++    s16 s = effective_strength(c);      /* -$2(a5) */
++
++    if (!c->b[0x11B]) {
++        return bonus;
++    }
++    switch (s) {
++    case 1: case 2: case 3:
++        bonus = -3;
++        break;
++    case 4: case 5:
++        bonus = -2;
++        break;
++    case 6: case 7:
++        bonus = -1;
++        break;
++    case 17: case 18: case 19:
++        bonus = 1;
++        break;
++    case 20: case 21: case 22:
++        bonus = 2;
++        break;
++    case 23: case 24: case 25:
++        bonus = 3;
++        break;
++    case 26: case 27:
++        bonus = 4;
++        break;
++    case 28: case 29: case 30:
++        bonus = (s16)(s - 0x17);
++        break;
++    default:
++        break;
++    }
++    return bonus;
++}
++
++/* PORT H063+$18F8: correzione di destrezza alla classe d'armatura. */
++static s16 dex_ac_adj(Character *c)
++{
++    s16 dex = c->b[0x17];               /* -$2(a5) */
++
++    switch (dex) {
++    case 1: case 2: case 3:
++        return -4;
++    case 4: case 5: case 6:
++        return (s16)(dex - 7);
++    case 15: case 16: case 17: case 18:
++        return (s16)(dex - 0x0E);
++    case 19: case 20:
++        return 4;
++    case 21: case 22: case 23:
++        return 5;
++    case 24: case 25:
++        return 6;
++    default:
++        return 0;
++    }
++}
++
++/* PORT H063+$19B6: bonus della forza ai danni (con +$11B). */
++static s16 str_damage_bonus(Character *c)
++{
++    s16 bonus = 0;                      /* -$2(a5) */
++    s16 s = effective_strength(c);      /* -$4(a5) */
++
++    if (!c->b[0x11B]) {
++        return bonus;
++    }
++    switch (s) {
++    case 1: case 2:
++        bonus = -2;
++        break;
++    case 3: case 4: case 5:
++        bonus = -1;
++        break;
++    case 16:
++        bonus = 1;
++        break;
++    case 17: case 18: case 19:
++        bonus = (s16)(s - 0x10);
++        break;
++    case 20: case 21: case 22: case 23: case 24:
++    case 25: case 26: case 27: case 28: case 29:
++        bonus = (s16)(s - 0x11);
++        break;
++    case 30:
++        bonus = 0x0E;
++        break;
++    default:
++        break;
++    }
++    return bonus;
++}
++
++/* PORT H063+$1A8A: peso trasportabile in piu' per la forza. */
++static s16 str_weight_allowance(Character *c)
++{
++    s16 s = effective_strength(c);      /* -$4(a5) */
++
++    switch (s) {
++    case 1: case 2: case 3:
++        return -350;
++    case 4: case 5:
++        return -250;
++    case 6: case 7:
++        return -150;
++    case 12: case 13:
++        return 100;
++    case 14: case 15:
++        return 200;
++    case 16:
++        return 350;
++    case 17: case 18: case 19: case 20: case 21:
++        return (s16)((s - 0x11) * 0xFA + 0x1F4);
++    case 22: case 23: case 24: case 25: case 26:
++        return (s16)((s - 0x16) * 0x3E8 + 0x7D0);
++    case 27:
++        return 0x1D4C;
++    case 28: case 29: case 30:
++        return (s16)((s - 0x1C) * 0xBB8 + 0x2328);
++    default:
++        return 0;
++    }
++}
++
++/*
++ * PORT H063+$0432: valori dell'arma pronta (slot 0): THAC0 base (+$19B da
++ * +$5A) con destrezza o forza secondo i bit di H005+$336C+$10, danno
++ * (+$1A0, +$1A2, +$1A4) e bonus magici, compresi quelli degli oggetti
++ * degli slot 11 e 12 e di razza.
++ */
++static void weapon_stats(Character *c)
++{
++    CokItem *w = c->readied[0];         /* -$4(a5) */
++    u16 t;                              /* -$6(a5) */
++    s16 bonus;                          /* -$8(a5) */
++
++    if (w == NULL) {
++        return;
++    }
++    t = w->b[0x30];
++    c->b[0x19B] = c->b[0x5A];
++    if (mask_byte(ITEM_TYPE(t, 0x10), 2)) {
++        c->b[0x19B] = (u8)(c->b[0x19B] + dex_missile_adj(c));
++    }
++    CH_PUTW(c, 0x1A4, COK_GET16(&g_h005[0x336C + t * 0x12 + 0x0C]));
++    if (mask_byte(ITEM_TYPE(t, 0x10), 4)) {
++        c->b[0x19B] = (u8)(c->b[0x19B] + str_hit_bonus(c));
++        CH_PUTW(c, 0x1A4, (u16)(str_damage_bonus(c) + CH_W(c, 0x1A4)));
++    }
++    bonus = ITEM_W(w, 0x36);
++    if (ITEM_TYPE(t, 0x10) > 0x7F && c->readied[12] != NULL) {
++        bonus = (s16)(bonus + ITEM_W(c->readied[12], 0x36));
++    }
++    if (mask_byte(ITEM_TYPE(t, 0x10), 1) && c->readied[11] != NULL) {
++        bonus = (s16)(bonus + ITEM_W(c->readied[11], 0x36));
++    }
++    CH_PUTW(c, 0x1A4, (u16)(CH_W(c, 0x1A4) + bonus));
++    if (c->b[0x5B] == 0 || c->b[0x5B] == 1) {
++        if ((w->b[0x30] > 0x15 && w->b[0x30] < 0x1B) || w->b[0x30] == 0x13 ||
++            w->b[0x30] == 0x12) {
++            ++bonus;
++        }
++    }
++    if (c->b[0x5B] == 5 && w->b[0x30] == 0x43) {
++        bonus = (s16)(bonus + 2);
++    }
++    c->b[0x19B] = (u8)(c->b[0x19B] + bonus);
++    c->b[0x1A0] = ITEM_TYPE(t, 0x0A);
++    c->b[0x1A2] = ITEM_TYPE(t, 0x0B);
++}
++
++/* PORT H063+$06AE: movimento (+$1A9) con l'armatura indossata. */
++static void armor_movement(Character *c, CokItem *it)
++{
++    if (ITEM_TYPE(it->b[0x30], 0) != 2) {
++        return;
++    }
++    if (COK_GET16(it->b + 0x3E) < 0x97) {
++        c->b[0x1A9] = c->b[0xDA];
++    } else if (COK_GET16(it->b + 0x3E) < 0x190) {
++        c->b[0x1A9] = 9;
++    } else {
++        c->b[0x1A9] = 6;
++    }
++    if (COK_GET16(it->b + 0x36) != 0 && c->b[0x1A9] <= 9) {
++        c->b[0x1A9] = (u8)(c->b[0x1A9] + 3);
++    }
++}
++
++/*
++ * PORT H063+$0758: contributo dell'oggetto pronto alla classe d'armatura
++ * (array ac[0..4] di H063+$13BE) e al peso +$18A.
++ */
++static void armor_class_part(Character *c, CokItem *it, s16 *ac, u8 *flag)
++{
++    u16 v = ITEM_TYPE(it->b[0x30], 7); /* -$2(a5) */
++    u8 kind;                            /* -$3(a5) */
++
++    if (v <= 0x7F) {
++        return;
++    }
++    v = mask_byte((u8)v, 0x7F);
++    kind = ITEM_TYPE(it->b[0x30], 0);
++    if (kind == 1) {
++        ac[1] = (s16)(v + ITEM_W(it, 0x36));
++    } else if (v == 0) {
++        if (kind == 9) {
++            if (ITEM_W(it, 0x36) > ac[3]) {
++                ac[3] = ITEM_W(it, 0x36);
++            }
++        } else {
++            ac[2] = (s16)(ac[2] + ITEM_W(it, 0x36));
++        }
++        CH_PUTW(c, 0x18A, (u16)(CH_W(c, 0x18A) + ITEM_W(it, 0x38)));
++    } else if ((s16)(v + ITEM_W(it, 0x36)) > ac[4]) {
++        ac[4] = (s16)(v + ITEM_W(it, 0x36));
++        if (ITEM_W(it, 0x36) > 0 && kind == 2) {
++            *flag = 1;
++        }
++    }
++}
++
++/* PORT H063+$08A2: movimento ridotto dall'ingombro (+$18C). */
++static void encumbrance_movement(Character *c)
++{
++    s16 extra = (s16)(CH_W(c, 0x18C) - str_weight_allowance(c));
++    u16 move;                           /* -$4(a5) */
++
++    if (extra < 0) {
++        extra = 0;
++    }
++    if (extra < 0x201) {
++        move = c->b[0x1A9];
++    } else if (extra < 0x301) {
++        move = 9;
++    } else if (extra < 0x401) {
++        move = 6;
++    } else {
++        move = 3;
++    }
++    if (move < c->b[0x1A9]) {
++        c->b[0x1A9] = (u8)move;
++    }
++}
++
++/* PORT H063+$0946: cerca nella lista +$E8 un effetto di tipo type. */
++u8 find_effect(Character *c, u16 type, CokEffect **out)
++{
++    u8 found = 0;                       /* -$1(a5) */
++
++    *out = c->effects;
++    while (*out != NULL && !found) {
++        if ((*out)->b[0] == type) {
++            found = 1;
++        } else {
++            *out = (*out)->next;
++        }
++    }
++    return found;
++}
++
++/*
++ * PORT H063+$09B2: compone in it->b[0..] il nome dell'oggetto (" Yes"/
++ * " No" se pronto, "* " per gli oggetti magici quando un membro del party
++ * ha l'effetto 5, quantita', parti del nome da H005+$406E con l'eventuale
++ * plurale) e, con draw, lo scrive a (col, row).  c non e' usato.
++ */
++void build_item_name(Character *c, CokItem *it, u16 col, u16 row,
++                     u8 ready_mark, u8 draw)
++{
++    char tmp[0x51];                     /* -$60(a5) */
++    Character *m;                       /* -$e(a5) */
++    CokEffect *eff;                     /* -$8(a5) */
++    u8 found = 0;                       /* -$9(a5) */
++    u8 plural;                          /* -$a(a5) */
++    u16 mask = 0;                       /* -$4(a5) */
++    u16 i;                              /* -$2(a5) */
++    char *name = (char *)it->b;
++
++    (void)c;
++    copy_text(name, "", 0x28);
++    if (ready_mark) {
++        copy_text(name, it->b[0x3A] ? " Yes  " : " No   ", 0x28);
++    }
++    for (m = g_party_head; m != NULL && !found; m = m->next) {
++        if (find_effect(m, 5, &eff)) {
++            found = 1;
++        }
++    }
++    if (found && (ITEM_W(it, 0x36) > 0 || ITEM_W(it, 0x38) > 0 ||
++                  it->b[0x3C] != 0)) {
++        h026_append(0x28, name, 2, "* ");
++    }
++    if (it->b[0x40] > 0) {
++        format_number(0x50, tmp, it->b[0x40], 0, 0x0A, 4, ' ');
++        for (i = 0; i <= 2; ++i) {
++            if (tmp[0] == ' ') {
++                h026_delete(0x50, tmp, 0, 1);
++            }
++        }
++        h026_append(0x28, name, 0x50, tmp);
++        h026_append(0x28, name, 1, " ");
++    }
++    for (i = 1; i <= 3; ++i) {
++        if (it->b[0x32 + i - 1] != 0 &&
++            !mask_byte((u8)(it->b[0x3B] >> (3 - i)), 1)) {
++            mask = (u16)(mask + (u8)(1 << (i - 1)));
++        }
++    }
++    plural = 0;
++    for (i = 3; i >= 1; --i) {
++        if (!mask_byte((u8)(mask >> (i - 1)), 1)) {
++            continue;
++        }
++        h026_append(0x28, name, 0x14, (const char *)&g_h005[0x406E +
++                    ((s16)it->b[0x32 + i - 1] - 1) * 0x16]);
++        if (it->b[0x40] < 2 || plural) {
++            h026_append(0x28, name, 1, " ");
++            continue;
++        }
++        if ((u16)(u8)(1 << (i - 1)) == mask ||
++            (i == 1 && mask > 4 && it->b[0x30] != 0x37) ||
++            (i == 2 && (mask & 1) == 0) ||
++            (i == 3 && it->b[0x30] == 0x37) ||
++            ((it->b[0x30] == 0x1E || it->b[0x30] == 5 ||
++              it->b[0x30] == 0x0C) && it->b[0x34] != 0x5D)) {
++            h026_append(0x28, name, 2, "s ");
++            plural = 1;
++        } else {
++            h026_append(0x28, name, 1, " ");
++        }
++    }
++    if (draw) {
++        ui_draw_text(col, row, 0x0A, 0, 0x28, name);
++    }
++}
++
++/* PORT H063+$0FA0: classe d'armatura 60 - +$19C (negativa con "-"). */
++void draw_armor_class(Character *c, u16 col, u16 row)
++{
++    char text[0x51];                    /* -$52(a5) */
++    s16 v = (s16)(c->b[0x19C] - 0x3C);
++
++    format_number(0x50, text, v < 0 ? -v : v, 0, 0x0A, 3, ' ');
++    trim_leading_spaces(0x50, text);
++    if (c->b[0x19C] > 0x3C) {
++        h026_insert(0x50, text, 1, "-", 0);
++    }
++    ui_draw_text(col, row, 0x0A, 0, 0x50, text);
++}
++
++/*
++ * PORT H063+$103A: punti ferita attuali (+$1A8; colore $0E se feriti, $0D
++ * con highlight) e, con with_max, "/massimo" (+$64).
++ */
++void draw_hit_points(Character *c, u16 col, u16 row, u8 highlight,
++                     u8 with_max)
++{
++    char text[0x51];                    /* -$52(a5) */
++    u16 pen;                            /* -$54(a5) */
++    u16 n;                              /* -$56(a5) */
++
++    pen = (u16)(c->b[0x1A8] < c->b[0x64] ? 0x0E : 0x0A);
++    if (highlight) {
++        pen = 0x0D;
++    }
++    format_number(0x50, text, c->b[0x1A8], 0, 0x0A, 6, ' ');
++    trim_leading_spaces(0x50, text);
++    ui_draw_text(col, row, pen, 0, 0x50, text);
++    if (with_max) {
++        n = h026_strlen(0x50, text);
++        format_number(0x50, text, c->b[0x64], 0, 0x0A, 6, ' ');
++        trim_leading_spaces(0x50, text);
++        h026_insert(0x50, text, 1, "/", 0);
++        ui_draw_text((u16)(col + n), row, 0x0A, 0, 0x50, text);
++    }
++}
++
++/*
++ * PORT H063+$13BE: ricalcola i valori derivati: oggetti pronti per slot
++ * (H005+$336C), numero di oggetti +$14F, ingombro +$18C, danni, THAC0
++ * +$19B, classe d'armatura +$19C/+$19D, movimento +$1A9 e +$D2.
++ */
++void recompute_stats(Character *c)
++{
++    s16 ac[5];                          /* -$14(a5) */
++    CokItem *it;                        /* -$8(a5) */
++    u16 w;                              /* -$1a(a5) */
++    u16 slot;                           /* -$1c(a5) */
++    u8 flag9 = 0;                       /* -$9(a5) */
++    u8 flag_a = 0;                      /* -$a(a5): mai impostata */
++    u8 i;
++
++    for (i = 0; i <= 0x0C; ++i) {
++        c->readied[i] = NULL;
++    }
++    c->b[0x14F] = 0;
++    it = c->items;
++    c->b[0x188] = 0;
++    CH_PUTW(c, 0x18C, 0);
++    s_ready_weight = 0;
++    while (it != NULL) {
++        add_to_byte(&c->b[0x14F], 1);
++        w = COK_GET16(it->b + 0x3E);
++        if (it->b[0x40] > 0) {
++            w = (u16)(it->b[0x40] * w);
++        }
++        CH_PUTW(c, 0x18C, (u16)(CH_W(c, 0x18C) + w));
++        if (it->b[0x3A]) {
++            s_ready_weight = (u16)(s_ready_weight + w);
++            slot = ITEM_TYPE(it->b[0x30], 0);
++            if (slot <= 8) {
++                c->readied[slot] = it;
++            } else if (slot == 9) {
++                if (c->readied[9] != NULL) {
++                    if (c->readied[10] == NULL) {
++                        c->readied[10] = it;
++                    }
++                } else {
++                    c->readied[9] = it;
++                }
++            }
++            if (it->b[0x30] == 0x1E) {
++                c->readied[11] = it;
++            }
++            if (it->b[0x30] == 0x0C) {
++                c->readied[12] = it;
++            }
++            c->b[0x188] = (u8)(c->b[0x188] + ITEM_TYPE(it->b[0x30], 1));
++        }
++        it = it->next;
++    }
++    for (i = 1; i <= 6; ++i) {
++        CH_PUTW(c, 0x18C, (u16)(CH_W(c, 0x18C) + CH_W(c, 0xF0 + i * 2)));
++    }
++    for (i = 1; i <= 2; ++i) {
++        c->b[0x1A0 + i - 1] = c->b[0x112 + i - 1];
++        c->b[0x1A2 + i - 1] = c->b[0x114 + i - 1];
++        CH_PUTW(c, 0x1A4 + (i - 1) * 2, CH_W(c, 0x116 + (i - 1) * 2));
++    }
++    for (i = 0; i <= 4; ++i) {
++        ac[i] = 0;
++    }
++    CH_PUTW(c, 0x18A, 0);
++    c->b[0x19C] = c->b[0x11A];
++    c->b[0x1A9] = c->b[0xDA];
++    c->b[0x19B] = c->b[0x5A];
++    ac[0] = dex_ac_adj(c);
++    if (c->readied[0] == NULL) {
++        c->b[0x19B] = (u8)(c->b[0x19B] + str_hit_bonus(c));
++        CH_PUTW(c, 0x1A4, (u16)(str_damage_bonus(c) + CH_W(c, 0x1A4)));
++    }
++    weapon_stats(c);
++    for (it = c->items; it != NULL; it = it->next) {
++        if (it->b[0x3A]) {
++            armor_movement(c, it);
++            armor_class_part(c, it, ac, &flag9);
++        }
++    }
++    if (flag9) {
++        ac[3] = 0;
++    }
++    if (flag_a) {
++        if (CH_W(c, 0x18C) < 0x1388) {
++            CH_PUTW(c, 0x18C, 0);
++        } else {
++            CH_PUTW(c, 0x18C, (u16)(CH_W(c, 0x18C) - 0x1388));
++        }
++        if (CH_W(c, 0x18C) < s_ready_weight) {
++            CH_PUTW(c, 0x18C, s_ready_weight);
++        }
++    }
++    encumbrance_movement(c);
++    if (ac[4] < (s16)c->b[0x19C]) {
++        ac[4] = c->b[0x19C];
++    }
++    c->b[0x19C] = 0;
++    for (i = 0; i <= 4; ++i) {
++        c->b[0x19C] = (u8)(c->b[0x19C] + ac[i]);
++    }
++    c->b[0x19D] = (u8)(ac[4] + ac[2] + ac[3] - 2);
++    if ((c->b[0x100] > 0 || (c->b[0x108] > 0 && h073_130a(c)) ||
++         c->b[0x105] > 0 || c->b[0x102] > 0) && c->b[0x5B] < 7) {
++        c->b[0xD2] = c->b[0x100];
++        if (c->b[0x105] > c->b[0xD2]) {
++            c->b[0xD2] = c->b[0x105];
++        }
++        if (c->b[0x102] > c->b[0xD2]) {
++            c->b[0xD2] = c->b[0x102];
++        }
++    } else {
++        c->b[0xD2] = 1;
++    }
++}
++
++/*
++ * PORT H063+$1F34: nome del personaggio a (col, row): colore $0C se
++ * +$198 = 0, $0E se +$199 = 1 durante il combattimento ($3DE3 = 5),
++ * altrimenti $0B; con possessive aggiunge "'s".
++ */
++void draw_character_name(Character *c, u16 col, u16 row, u8 possessive)
++{
++    u16 pen;                            /* -$2(a5) */
++
++    if (c->b[0x198] == 0) {
++        pen = 0x0C;
++    } else if (c->b[0x199] == 1 && H005_B(0x3DE3) == 5) {
++        pen = 0x0E;
++    } else {
++        pen = 0x0B;
++    }
++    ui_draw_text(col, row, pen, 0, 0x0F, (const char *)c->b);
++    if (possessive) {
++        ui_draw_text((u16)(h026_strlen(0x0F, (const char *)c->b) + col), row,
++                     pen, 0, 2, "'s");
++    }
++}
+diff --git a/src_c/readable/h063.h b/src_c/readable/h063.h
+new file mode 100644
+index 0000000..5368f96
+--- /dev/null
++++ b/src_c/readable/h063.h
+@@ -0,0 +1,19 @@
++/* H063: personaggi, inventario e aggiornamento della UI. */
++#ifndef COK_H063_H
++#define COK_H063_H
++
++#include "character.h"
++
++void trim_leading_spaces(u16 len, char *s);             /* H063+$0112 */
++u8   find_effect(Character *c, u16 type, CokEffect **out);
++                                                        /* H063+$0946 */
++void build_item_name(Character *c, CokItem *it, u16 col, u16 row,
++                     u8 ready_mark, u8 draw);           /* H063+$09B2 */
++void draw_armor_class(Character *c, u16 col, u16 row);  /* H063+$0FA0 */
++void draw_hit_points(Character *c, u16 col, u16 row, u8 highlight,
++                     u8 with_max);                      /* H063+$103A */
++void recompute_stats(Character *c);                     /* H063+$13BE */
++void draw_character_name(Character *c, u16 col, u16 row, u8 possessive);
++                                                        /* H063+$1F34 */
++
++#endif
+diff --git a/src_c/readable/h065.c b/src_c/readable/h065.c
+index 33e7806..6f7fc38 100644
+--- a/src_c/readable/h065.c
++++ b/src_c/readable/h065.c
+@@ -1,7 +1,274 @@
+ /* H065: UI dei personaggi, oggetti, equipaggiamento e incantesimi. */
+-#include "cok.h"
++#include "h065.h"
++#include "character.h"
++#include "h026_string.h"
++#include "h030.h"
++#include "h044_tiles.h"
++#include "h045.h"
++#include "h063.h"
++#include "h073.h"
++#include "globals.h"
+ 
+ /* PORT H065+$04AA: link/unlk, nessun effetto. */
+ void h065_init(void)
+ {
+ }
++
++/* Dati del modulo sotto a4. */
++static Character *s_char;               /* -$4(a4): personaggio mostrato */
++static char s_text[0x56];               /* -$5a(a4) */
++
++/* Copia con dbeq: al massimo max + 1 byte, NUL compreso. */
++static void copy_text(char *dst, const char *src, u16 max)
++{
++    u16 i;
++
++    for (i = 0; i <= max; ++i) {
++        dst[i] = src[i];
++        if (src[i] == 0) {
++            break;
++        }
++    }
++}
++
++/*
++ * PORT H065+$04B8: schermata del personaggio corrente: cornice, nome,
++ * stato, sesso ed eta', allineamento, razza, classe (con divinita',
++ * ordine dei cavalieri), livelli, esperienza, caratteristiche, denaro,
++ * valori di combattimento e oggetti degli slot 0 e 2.
++ */
++void draw_character_sheet(void)
++{
++    char line[0x51];                    /* -$5c(a5) */
++    char num[0x51];                     /* -$ae(a5) */
++    u8 sep;                             /* -$af(a5) */
++    u16 pos;                            /* -$8(a5) */
++    u8 k;                               /* -$a(a5) */
++    u8 s;                               /* -$9(a5) */
++    Character *c;
++
++    s_char = g_current_char;
++    c = s_char;
++    draw_character_frame();
++    draw_character_name(c, 1, 1, 0);
++    ui_draw_text(0x14, 1, 0x0F, 0, 9, "Status : ");
++    ui_draw_text(0x1B, 1, 0x0A, 0, 0x0C,
++                 (const char *)&g_h005[0x4B00 + c->b[0x197] * 0x0E]);
++    h026_copy(0x50, line, 6, (const char *)&g_h005[0x4BD2 + c->b[0x10E] * 8]);
++    ui_draw_text(1, 3, 0x0F, 0, 0x50, line);
++    format_number(0x50, line, CH_W(c, 0x62), 0, 0x0A, 4, ' ');
++    h026_append(0x50, line, 6, " years");
++    ui_draw_text(8, 3, 0x0F, 0, 0x50, line);
++    h026_copy(0x50, line, 0x10,
++              (const char *)&g_h005[0x4C62 + c->b[0x10F] * 0x12]);
++    ui_draw_text(1, 4, 0x0F, 0, 0x50, line);
++    h026_copy(0x50, line, 0x0F,
++              (const char *)&g_h005[0x4D04 + c->b[0x5B] * 16]);
++    ui_draw_text(0x14, 4, 0x0F, 0, 0x50, line);
++    h026_copy(0x50, line, 0x1A,
++              (const char *)&g_h005[0x4D84 + c->b[0x5C] * 0x1C]);
++    if (c->b[0xFE] > 0) {
++        h026_insert(0x50, line, 1, " ", 0);
++        h026_insert(0x50, line, 0x0B,
++                    (const char *)&g_h005[0x4C02 + c->b[0x5E] * 0x0C], 0);
++    }
++    if (c->b[0x103] > 0) {
++        /* Prima di "Mage" (o in fondo): l'ordine dei cavalieri. */
++        pos = 0;
++        while (!(line[pos] == 'M' && line[pos + 2] == 'g') &&
++               pos <= h026_strlen(0x50, line)) {
++            ++pos;
++        }
++        h026_insert(0x50, line, 1, " ", pos);
++        h026_insert(0x50, line, 6,
++                    (const char *)&g_h005[0x4BE2 + c->b[0x5F] * 8], pos);
++    }
++    if (c->b[0x105] > 0) {
++        switch (c->b[0x5D]) {
++        case 1:
++            h026_append(0x50, line, 0x0D, " of the Crown");
++            break;
++        case 2:
++            h026_append(0x50, line, 0x0D, " of the Sword");
++            break;
++        case 3:
++            h026_append(0x50, line, 0x0C, " of the Rose");
++            break;
++        default:
++            break;
++        }
++    }
++    ui_draw_text(1, 5, 0x0F, 0, 0x50, line);
++    ui_draw_text(1, 7, 0x0F, 0, 5, "Level");
++
++    sep = 0;
++    copy_text(line, "", 0x50);
++    for (k = 0; k <= 7; ++k) {
++        if (c->b[0xFE + k] > 0 ||
++            (c->b[0x106 + k] < h073_12c8(c) && c->b[0x106 + k] > 0)) {
++            if (sep) {
++                h026_append(0x50, line, 1, "/");
++            }
++            format_number(0x50, num, c->b[0xFE + k], 0, 0x0A, 1, '0');
++            h026_append(0x50, line, 0x50, num);
++            sep = 1;
++        }
++    }
++    ui_draw_text(7, 7, 0x0F, 0, 0x50, line);
++    format_number(0x50, num, (s32)CH_L(c, 0x11E), 0, 0x0A, 6, ' ');
++    h026_insert(0x50, num, 0x0B, "Experience ", 0);
++    ui_draw_text(0x14, 7, 0x0F, 0, 0x50, num);
++
++    for (s = 0; s <= 5; ++s) {
++        static const char *const names[6] = {
++            "STR ", "INT ", "WIS ", "DEX ", "CON ", "CHA "
++        };
++
++        copy_text(line, names[s], 0x50);
++        ui_draw_text(1, (u16)(s + 9), 0x0A, 0, 0x50, line);
++        draw_stat_value(s, 0);
++    }
++    draw_character_money();
++    draw_combat_values();
++    if (s_char->readied[0] != NULL) {
++        build_item_name(s_char, s_char->readied[0], 1, 0x15, 0, 1);
++    }
++    if (s_char->readied[2] != NULL) {
++        build_item_name(s_char, s_char->readied[2], 1, 0x16, 0, 1);
++    }
++}
++
++/*
++ * PORT H065+$0ADE: monete del personaggio corrente (+$F2..+$FC) nella
++ * colonna destra, una riga per tipo posseduto (nomi H005+$4B7E).
++ */
++void draw_character_money(void)
++{
++    char text[0x29];                    /* -$2e(a5) */
++    u16 row = 9;                        /* -$2(a5) */
++    u8 i;                               /* -$3(a5) */
++
++    clear_text_cells(0x14, 9, 0x26, 0x0F);
++    for (i = 1; i <= 6; ++i) {
++        u16 amount = CH_W(g_current_char, 0xF0 + i * 2);
++
++        if (amount == 0) {
++            continue;
++        }
++        h026_copy(0x28, text, 0x0A, (const char *)&g_h005[0x4B7E + i * 0x0C]);
++        ui_draw_text(0x14, row, 0x0A, 0, 0x28, text);
++        format_number(0x28, text, amount, 0, 0x0A, 4, ' ');
++        ui_draw_text((u16)(0x26 - h026_strlen(0x28, text)), row, 0x0A, 0,
++                     0x28, text);
++        ++row;
++    }
++}
++
++/* PORT H065+$0BF4: procedura annidata: spazi a sinistra fino a width. */
++static void pad_left(char *s, u16 width)
++{
++    while (h026_strlen(0x28, s) < width) {
++        h026_insert(0x28, s, 1, " ", 0);
++    }
++}
++
++/*
++ * PORT H065+$0BE6 (corpo a $0C34): ricalcola i valori derivati e mostra
++ * punti ferita, classe d'armatura, ingombro, THAC0, movimento (doppio con
++ * l'effetto $27, dimezzato con $2A) e danno "NdM+K".
++ */
++void draw_combat_values(void)
++{
++    char line[0x29];                    /* -$34(a5) */
++    CokEffect *eff;                     /* -$38(a5) */
++    Character *c = g_current_char;      /* -$4(a5) */
++    u16 col;                            /* -$8(a5) */
++    u16 move;                           /* -$a(a5) */
++    u8 ac;
++
++    recompute_stats(c);
++    ui_draw_text(0x14, 3, 0x0F, 0, 0x0B, "Hit Points ");
++    clear_text_cells(0x1F, 3, 0x25, 3);
++    draw_hit_points(c, 0x1F, 3, 0, 1);
++    ui_draw_text(1, 0x11, 0x0F, 0, 0x0B, "Armor Class");
++    ac = g_current_char->b[0x19C];
++    if (ac >= 1 && ac <= 0x32) {
++        col = 0x10;
++    } else if (ac >= 0x33 && ac <= 0x3C) {
++        col = 0x11;
++    } else if (ac >= 0x3D && ac <= 0x45) {
++        col = 0x10;
++    } else {
++        col = 0x0F;
++    }
++    clear_text_cells(0x0F, 0x11, 0x11, 0x11);
++    draw_armor_class(c, col, 0x11);
++    ui_draw_text(0x14, 0x11, 0x0F, 0, 0x0B, "Encumbrance");
++    format_number(0x28, line, CH_W(c, 0x18C), 0, 0x0A, 5, ' ');
++    ui_draw_text(0x21, 0x11, 0x0A, 0, 0x28, line);
++    ui_draw_text(1, 0x12, 0x0F, 0, 8, "THAC0   ");
++    format_number(0x28, line, (s32)(u16)(0x3C - c->b[0x19B]), 0, 0x0A, 2,
++                  ' ');
++    ui_draw_text(0x10, 0x12, 0x0A, 0, 0x28, line);
++    move = c->b[0x1A9];
++    if (find_effect(c, 0x27, &eff)) {
++        move = (u16)(move * 2);
++    }
++    if (find_effect(c, 0x2A, &eff)) {
++        move = (u16)(move >> 1);
++    }
++    ui_draw_text(0x14, 0x12, 0x0F, 0, 8, "Movement");
++    format_number(0x28, line, move, 0, 0x0A, 3, ' ');
++    ui_draw_text(0x23, 0x12, 0x0A, 0, 0x28, line);
++
++    format_number(0x28, line, c->b[0x1A0], 0, 0x0A, 2, ' ');
++    format_number(0x50, s_text, c->b[0x1A2], 0, 0x0A, 2, ' ');
++    trim_leading_spaces(0x50, s_text);
++    h026_append(0x28, line, 1, "d");
++    h026_append(0x28, line, 0x50, s_text);
++    if ((s16)CH_W(c, 0x1A4) > 0) {
++        format_number(0x50, s_text, (s16)CH_W(c, 0x1A4), 0, 0x0A, 2, ' ');
++        trim_leading_spaces(0x50, s_text);
++        h026_append(0x28, line, 1, "+");
++        h026_append(0x28, line, 0x50, s_text);
++    }
++    if ((s16)CH_W(c, 0x1A4) < 0) {
++        format_number(0x50, s_text, -(s16)CH_W(c, 0x1A4), 0, 0x0A, 2, ' ');
++        trim_leading_spaces(0x50, s_text);
++        h026_append(0x28, line, 1, "-");
++        h026_append(0x28, line, 0x50, s_text);
++    }
++    ui_draw_text(1, 0x13, 0x0F, 0, 6, "Damage");
++    pad_left(line, 7);
++    ui_draw_text(0x0B, 0x13, 0x0A, 0, 0x28, line);
++}
++
++/*
++ * PORT H065+$10DE: valore della caratteristica stat (+$11 + 2*stat) alla
++ * riga stat + 9; per la forza 18 la percentuale tra parentesi ("00" =
++ * 100); "*" se il valore attuale e' diverso dal massimo.
++ */
++void draw_stat_value(u8 stat, u8 highlight)
++{
++    char text[0x29];                    /* -$2a(a5) */
++    u16 pen = (u16)(highlight ? 0x0D : 0x0A);  /* -$2e(a5) */
++    u16 col = 5;                        /* -$2c(a5) */
++    Character *c = g_current_char;
++
++    clear_text_cells(col, (u16)(stat + 9), 0x0B, (u16)(stat + 9));
++    format_number(0x50, s_text, c->b[0x11 + stat * 2], 0, 0x0A, 2, ' ');
++    ui_draw_text(col, (u16)(stat + 9), pen, 0, 0x50, s_text);
++    if (stat == 0 && c->b[0x11] == 0x12 && c->b[0x1C] > 0) {
++        format_number(0x28, text, c->b[0x1C], 0, 0x0A, 2, '0');
++        if (c->b[0x1C] == 0x64) {
++            copy_text(text, "00", 0x28);
++        }
++        h026_insert(0x28, text, 1, "(", 0);
++        h026_append(0x28, text, 1, ")");
++        ui_draw_text(7, 9, pen, 0, 0x28, text);
++    }
++    if (c->b[0x11 + stat * 2] != c->b[0x10 + stat * 2] ||
++        (stat == 0 && c->b[0x1D] != c->b[0x1C])) {
++        ui_draw_text(0x0C, (u16)(stat + 9), pen, 0, 1, "*");
++    }
++}
+diff --git a/src_c/readable/h065.h b/src_c/readable/h065.h
+new file mode 100644
+index 0000000..9562fa4
+--- /dev/null
++++ b/src_c/readable/h065.h
+@@ -0,0 +1,12 @@
++/* H065: schermate dei personaggi, oggetti ed equipaggiamento. */
++#ifndef COK_H065_H
++#define COK_H065_H
++
++#include "cok.h"
++
++void draw_character_sheet(void);        /* H065+$04B8 */
++void draw_character_money(void);        /* H065+$0ADE */
++void draw_combat_values(void);          /* H065+$0BE6 */
++void draw_stat_value(u8 stat, u8 highlight);            /* H065+$10DE */
++
++#endif
+diff --git a/src_c/readable/h073.c b/src_c/readable/h073.c
+index 040a0b7..97af9dc 100644
+--- a/src_c/readable/h073.c
++++ b/src_c/readable/h073.c
+@@ -155,7 +155,7 @@ u8 h073_12c8(Character *c)
+ }
+ 
+ /* PORT H073+$130A: +$DC < H073+$12C8 (cioe' mai: confronto senza segno con 0). */
+-static u8 h073_130a(Character *c)
++u8 h073_130a(Character *c)
+ {
+     return (u8)(c->b[0xDC] < h073_12c8(c));
+ }
+diff --git a/src_c/readable/h073.h b/src_c/readable/h073.h
+index 0acb231..2b6f799 100644
+--- a/src_c/readable/h073.h
++++ b/src_c/readable/h073.h
+@@ -8,5 +8,6 @@ void cleric_spell_slots(Character *c);  /* H073+$09BA */
+ void saving_throws(Character *c);       /* H073+$0BA8 */
+ void thief_skills(Character *c);        /* H073+$0FC8 */
+ u8   h073_12c8(Character *c);           /* H073+$12C8 */
++u8   h073_130a(Character *c);           /* H073+$130A */
+ 
+ #endif
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index 85235e7..1f10c7b 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -249,10 +249,6 @@ void h028_0d74(void) { cok_unported("H028+$0D74"); }
+ void h043_0840(void) { cok_unported_skip("H043+$0840"); }
+ void h041_00be(void *block) { (void)block; cok_unported("H041+$00BE"); }
+ 
+-void h065_04b8(void) { cok_unported("H065+$04B8"); }
+-void h065_10de(u8 stat, u8 flag) { (void)stat; (void)flag; cok_unported("H065+$10DE"); }
+-void h065_0be6(void) { cok_unported("H065+$0BE6"); }
+-void h065_0ade(void) { cok_unported("H065+$0ADE"); }
+ void h013_58dc(void) { cok_unported("H013+$58DC"); }
+ void h028_0d36(void) { cok_unported("H028+$0D36"); }
+ void h047_00e6(void) { cok_unported("H047+$00E6"); }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index 2a14ff7..b750d3d 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -220,10 +220,6 @@ void h028_0d74(void);
+ void h043_0840(void);
+ void h041_00be(void *block);
+ 
+-void h065_04b8(void);                  /* schermata del personaggio */
+-void h065_10de(u8 stat, u8 flag);      /* riga di una caratteristica */
+-void h065_0be6(void);
+-void h065_0ade(void);
+ void h013_58dc(void);                  /* trampolino H013+$051C */
+ void h028_0d36(void);
+ void h047_00e6(void);
+-- 
+2.43.0
+

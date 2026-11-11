@@ -1,0 +1,1380 @@
+From b608a8fdb16ae97ceb279554b23fce41caaf86da Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 11 Nov 2026 09:47:40 +0000
+Subject: [PATCH 48/65] Port H097 monster AI; fix H048 fall frames alias ($3304
+ = sprite slot $18); pad host rasters for blitter overread
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md  | 118 ++---
+ src_c/readable/backlog.md      |  64 +++
+ src_c/readable/globals.c       |   1 -
+ src_c/readable/globals.h       |   1 -
+ src_c/readable/h048.c          |   3 +-
+ src_c/readable/h059.c          |   5 +-
+ src_c/readable/h065.c          |   3 +-
+ src_c/readable/h065.h          |   1 +
+ src_c/readable/h096.c          |  22 +-
+ src_c/readable/h096.h          |   6 +
+ src_c/readable/h097.c          | 841 ++++++++++++++++++++++++++++++++-
+ src_c/readable/h097.h          |   7 +
+ src_c/readable/host/graphics.c |  14 +-
+ src_c/readable/unported.c      |   1 -
+ src_c/readable/unported.h      |   2 -
+ 15 files changed, 1006 insertions(+), 83 deletions(-)
+ create mode 100644 src_c/readable/h097.h
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index f1c8788..a40e10a 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **935 / 1113**.
++Routine portate: **949 / 1113**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -103,7 +103,7 @@ Routine portate: **935 / 1113**.
+ | H094 | 1904 | 11 | 1 |
+ | H095 | 10484 | 21 | 21 |
+ | H096 | 19972 | 36 | 36 |
+-| H097 | 8296 | 15 | 1 |
++| H097 | 8296 | 15 | 15 |
+ | H098 | 844 | 4 | 4 |
+ | H099 | 932 | 2 | 2 |
+ | H100 | 28 | 1 | 1 |
+@@ -871,8 +871,8 @@ Routine portate: **935 / 1113**.
+ | `$110C` | `sub_H048_0000110C` | parziale | h048.c:450 |
+ | `$113E` | `sub_H048_0000113E` | parziale | h048.c:457 |
+ | `$12F4` | `sub_H048_000012F4` | parziale | h048.c:519 |
+-| `$16D4` | `sub_H048_000016D4` | parziale | h048.c:609 |
+-| `$195E` | `sub_H048_0000195E` | parziale | h048.c:669 |
++| `$16D4` | `sub_H048_000016D4` | parziale | h048.c:610 |
++| `$195E` | `sub_H048_0000195E` | parziale | h048.c:670 |
+ 
+ ### H049
+ 
+@@ -1008,20 +1008,20 @@ Routine portate: **935 / 1113**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0122` | `module_init_H059` | parziale | h059.c:30 |
+-| `$0130` | `sub_H059_00000130` | parziale | h059.c:36 |
+-| `$02AA` | `sub_H059_000002AA` | parziale | h059.c:86 |
+-| `$03BE` | `sub_H059_000003BE` | parziale | h059.c:124 |
+-| `$0670` | `sub_H059_00000670` | parziale | h059.c:175 |
+-| `$0726` | `trampoline_H059_07F6` | parziale | h059.c:223 |
+-| `$0734` | `sub_H059_00000734` | parziale | h059.c:209 |
+-| `$0CCA` | `sub_H059_00000CCA` | parziale | h059.c:328 |
+-| `$0E4A` | `sub_H059_00000E4A` | parziale | h059.c:360 |
+-| `$0EA0` | `sub_H059_00000EA0` | parziale | h059.c:371 |
+-| `$1110` | `sub_H059_00001110` | parziale | h059.c:438 |
+-| `$1498` | `Combat_ActorTurn` | parziale | h059.c:555 |
+-| `$15EE` | `sub_H059_000015EE` | parziale | h059.c:592 |
+-| `$1782` | `Combat_MainLoop` | parziale | h059.c:635 |
++| `$0122` | `module_init_H059` | parziale | h059.c:31 |
++| `$0130` | `sub_H059_00000130` | parziale | h059.c:37 |
++| `$02AA` | `sub_H059_000002AA` | parziale | h059.c:87 |
++| `$03BE` | `sub_H059_000003BE` | parziale | h059.c:125 |
++| `$0670` | `sub_H059_00000670` | parziale | h059.c:176 |
++| `$0726` | `trampoline_H059_07F6` | parziale | h059.c:224 |
++| `$0734` | `sub_H059_00000734` | parziale | h059.c:210 |
++| `$0CCA` | `sub_H059_00000CCA` | parziale | h059.c:329 |
++| `$0E4A` | `sub_H059_00000E4A` | parziale | h059.c:361 |
++| `$0EA0` | `sub_H059_00000EA0` | parziale | h059.c:372 |
++| `$1110` | `sub_H059_00001110` | parziale | h059.c:439 |
++| `$1498` | `Combat_ActorTurn` | parziale | h059.c:556 |
++| `$15EE` | `sub_H059_000015EE` | parziale | h059.c:593 |
++| `$1782` | `Combat_MainLoop` | parziale | h059.c:636 |
+ 
+ ### H060
+ 
+@@ -1202,32 +1202,32 @@ Routine portate: **935 / 1113**.
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+ | `$04AA` | `module_init_H065` | parziale | h065.c:20 |
+-| `$04B8` | `sub_H065_000004B8` | parziale | h065.c:44 |
+-| `$0ADE` | `sub_H065_00000ADE` | parziale | h065.c:151 |
+-| `$0BE6` | `trampoline_H065_0C34` | parziale | h065.c:185 |
+-| `$0BF4` | `sub_H065_00000BF4` | parziale | h065.c:176 |
+-| `$10DE` | `trampoline_H065_1100` | parziale | h065.c:256 |
+-| `$12D6` | `sub_H065_000012D6` | parziale | h065.c:420 |
+-| `$1636` | `sub_H065_00001636` | parziale | h065.c:496 |
+-| `$196E` | `sub_H065_0000196E` | parziale | h065.c:556 |
+-| `$1C48` | `sub_H065_00001C48` | parziale | h065.c:645 |
+-| `$1D80` | `sub_H065_00001D80` | parziale | h065.c:676 |
+-| `$1D94` | `sub_H065_00001D94` | parziale | h065.c:951 |
+-| `$1E2C` | `sub_H065_00001E2C` | parziale | h065.c:683 |
+-| `$1EE4` | `sub_H065_00001EE4` | parziale | h065.c:707 |
+-| `$20EC` | `sub_H065_000020EC` | parziale | h065.c:974 |
+-| `$2308` | `sub_H065_00002308` | parziale | h065.c:1023 |
+-| `$255A` | `sub_H065_0000255A` | parziale | h065.c:1074 |
+-| `$2B2E` | `sub_H065_00002B2E` | parziale | h065.c:745 |
+-| `$2C04` | `sub_H065_00002C04` | parziale | h065.c:771 |
+-| `$2F82` | `sub_H065_00002F82` | parziale | h065.c:1230 |
+-| `$32F6` | `sub_H065_000032F6` | parziale | h065.c:912 |
+-| `$3390` | `trampoline_H065_3474` | parziale | h065.c:303 |
+-| `$347E` | `sub_H065_0000347E` | parziale | h065.c:936 |
+-| `$34FC` | `trampoline_H065_35AE` | parziale | h065.c:1306 |
+-| `$36A6` | `trampoline_H065_36B6` | parziale | h065.c:288 |
+-| `$36C0` | `trampoline_H065_36D0` | parziale | h065.c:295 |
+-| `$3702` | `sub_H065_00003702` | parziale | h065.c:341 |
++| `$04B8` | `sub_H065_000004B8` | parziale | h065.c:43 |
++| `$0ADE` | `sub_H065_00000ADE` | parziale | h065.c:150 |
++| `$0BE6` | `trampoline_H065_0C34` | parziale | h065.c:184 |
++| `$0BF4` | `sub_H065_00000BF4` | parziale | h065.c:175 |
++| `$10DE` | `trampoline_H065_1100` | parziale | h065.c:255 |
++| `$12D6` | `sub_H065_000012D6` | parziale | h065.c:419 |
++| `$1636` | `sub_H065_00001636` | parziale | h065.c:495 |
++| `$196E` | `sub_H065_0000196E` | parziale | h065.c:555 |
++| `$1C48` | `sub_H065_00001C48` | parziale | h065.c:644 |
++| `$1D80` | `sub_H065_00001D80` | parziale | h065.c:675 |
++| `$1D94` | `sub_H065_00001D94` | parziale | h065.c:950 |
++| `$1E2C` | `sub_H065_00001E2C` | parziale | h065.c:682 |
++| `$1EE4` | `sub_H065_00001EE4` | parziale | h065.c:706 |
++| `$20EC` | `sub_H065_000020EC` | parziale | h065.c:973 |
++| `$2308` | `sub_H065_00002308` | parziale | h065.c:1022 |
++| `$255A` | `sub_H065_0000255A` | parziale | h065.c:1073 |
++| `$2B2E` | `sub_H065_00002B2E` | parziale | h065.c:744 |
++| `$2C04` | `sub_H065_00002C04` | parziale | h065.c:770 |
++| `$2F82` | `sub_H065_00002F82` | parziale | h065.c:1229 |
++| `$32F6` | `sub_H065_000032F6` | parziale | h065.c:911 |
++| `$3390` | `trampoline_H065_3474` | parziale | h065.c:302 |
++| `$347E` | `sub_H065_0000347E` | parziale | h065.c:935 |
++| `$34FC` | `trampoline_H065_35AE` | parziale | h065.c:1305 |
++| `$36A6` | `trampoline_H065_36B6` | parziale | h065.c:287 |
++| `$36C0` | `trampoline_H065_36D0` | parziale | h065.c:294 |
++| `$3702` | `sub_H065_00003702` | parziale | h065.c:340 |
+ 
+ ### H066
+ 
+@@ -1690,21 +1690,21 @@ Routine portate: **935 / 1113**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$00A2` | `module_init_H097` | parziale | h097.c:9 |
+-| `$00B0` | `sub_H097_000000B0` | parziale |  |
+-| `$0244` | `sub_H097_00000244` | parziale |  |
+-| `$02B2` | `sub_H097_000002B2` | parziale |  |
+-| `$043A` | `sub_H097_0000043A` | parziale |  |
+-| `$0620` | `trampoline_H097_075C` | parziale |  |
+-| `$062E` | `trampoline_H097_0650` | parziale |  |
+-| `$0890` | `sub_H097_00000890` | parziale |  |
+-| `$0A04` | `sub_H097_00000A04` | parziale |  |
+-| `$0A88` | `sub_H097_00000A88` | parziale |  |
+-| `$0C14` | `sub_H097_00000C14` | parziale |  |
+-| `$11EE` | `sub_H097_000011EE` | parziale |  |
+-| `$142C` | `sub_H097_0000142C` | parziale |  |
+-| `$18D2` | `sub_H097_000018D2` | parziale |  |
+-| `$1D68` | `sub_H097_00001D68` | parziale |  |
++| `$00A2` | `module_init_H097` | parziale | h097.c:27 |
++| `$00B0` | `sub_H097_000000B0` | parziale | h097.c:46 |
++| `$0244` | `sub_H097_00000244` | parziale | h097.c:98 |
++| `$02B2` | `sub_H097_000002B2` | parziale | h097.c:111 |
++| `$043A` | `sub_H097_0000043A` | parziale | h097.c:155 |
++| `$0620` | `trampoline_H097_075C` | parziale | h097.c:233 |
++| `$062E` | `trampoline_H097_0650` | parziale | h097.c:209 |
++| `$0890` | `sub_H097_00000890` | parziale | h097.c:270 |
++| `$0A04` | `sub_H097_00000A04` | parziale | h097.c:311 |
++| `$0A88` | `sub_H097_00000A88` | parziale | h097.c:330 |
++| `$0C14` | `sub_H097_00000C14` | parziale | h097.c:380 |
++| `$11EE` | `sub_H097_000011EE` | parziale | h097.c:518 |
++| `$142C` | `sub_H097_0000142C` | parziale | h097.c:569 |
++| `$18D2` | `sub_H097_000018D2` | parziale | h097.c:671 |
++| `$1D68` | `sub_H097_00001D68` | parziale | h097.c:791 |
+ 
+ ### H098
+ 
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index 50eb349..3764f18 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -2298,3 +2298,67 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
+ **Prossimo passo:** H097, l'IA dei mostri (13 routine, circa 2000 righe di asm).
+ 
+ ---
++
++## 2026-11-11 (cok-port-41)
++
++**Richiesta:** "ok compila su sasc, procedi con H097".
++
++**H097 portato per intero** (IA dei combattenti guidati dal computer)
++- **$1D68 `monster_turn`:** il turno del mostro, nell'ordine:
++  - tasti;
++  - sequenza di movimento (+$17);
++  - morale ("flees in panic");
++  - oggetto magico;
++  - incantesimo in corso;
++  - Turn Undead;
++  - incantesimo;
++  - scelta delle armi;
++  - attacco o fine turno.
++- **$00B0 tasti durante il turno dei mostri ($5305):**
++  - '2' "Magic On/Off";
++  - spazio toglie il controllo automatico al party;
++  - 4 chiama H096+$4DE8.
++- **Morale e fine turno:**
++  - $043A: "is forced to flee", tiri contro ferite e forza del gruppo, fuga (togliendo gli effetti $4A/$4B) o "Surrenders";
++  - $0244: fine turno o guardia.
++- **Oggetti e incantesimi:**
++  - $0620 con l'annidata $062E: l'incantesimo è utile? (nemici nella gittata, nessun alleato colpito dall'area);
++  - $0890 oggetto magico;
++  - $0A04 Turn Undead;
++  - $0A88 incantesimo memorizzato.
++- **Armi:** $0C14 scelta (da lancio o a distanza con munizioni, mischia, scudo, mani +$188); $02B2 valore dell'arma.
++- **Movimento:**
++  - $142C passo verso il bersaglio o in fuga, con le sequenze della tabella del modulo; "Move/Attack, Move Left = n";
++  - $11EE il passo è possibile? (costo, nuvole, acido).
++- **$18D2 attacco:** bersaglio nella gittata in vista o un nemico vicino, spazzata o attacco normale.
++- **Esportate per H097:**
++  - da H096: `movement_points`, `can_attack`, `find_undead`, `find_heal_target`, `enemy_distance_points`, `ai_pick_target`;
++  - da H065: `use_item`.
++
++**Correzioni trovate giocando**
++- **H048 `combatant_falls` (bug di porting):** il globale `g_gfx_3304` non veniva mai caricato.
++  - Causa: $3304 è il posto $18 della tabella dei set di sprite $3244, cioè `g_sprite_sets[0x18]`, non un globale separato.
++  - Effetto: ASan segnalava un accesso a NULL quando un combattente cadeva.
++  - Correzione: il globale è stato rimosso e il codice usa la tabella.
++- **Host (`host/graphics.c`):** AllocRaster alloca 4 byte in più.
++  - Causa: il blitter emulato, con una sorgente non allineata alla word, legge una word oltre la fine dell'ultima riga.
++  - Sull'Amiga quella lettura è innocua; qui ASan la segnalava ridisegnando la casella del corpo caduto.
++
++**Dove mi discosto dall'asm (tutto documentato nel codice)**
++- **H097+$0620:** dove l'originale restituisce un registro non impostato, qui 0.
++- **H097+$0A04:** il tipo massimo passato a H096+$1B04 nell'originale non è inizializzato; qui $FF.
++- **H097+$043A:** con il massimo dei punti ferita a 0 l'originale divide per 0; qui il mostro conta come illeso.
++- **H097+$18D2:** il bersaglio NULL non viene letto.
++
++**Prove con i dati veri** (binario ASan di test, non committato)
++- **Battaglia della carovana,** con "Done → Guard" a ogni turno del giocatore:
++  - i Baaz si avvicinano (Move Left 12 → 4);
++  - attaccano ("Baaz attacks L, hitting for 4 points of damage", "and misses", "(from behind) hitting for 5 points");
++  - i punti ferita di L scendono da 12 a 5.
++- **Arresto:** a fine combattimento il gioco si ferma su H070+$1958 (scena dopo il combattimento, non portata).
++- **ASan:** pulito.
++- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
++
++**Prossimo passo:** H070+$1958 (fine del combattimento), poi Encamp (H057+$2F3A) e Cast (H057+$0C04).
++
++---
+diff --git a/src_c/readable/globals.c b/src_c/readable/globals.c
+index 3d22104..c28dcbb 100644
+--- a/src_c/readable/globals.c
++++ b/src_c/readable/globals.c
+@@ -26,7 +26,6 @@ u8 *g_ecl_buffer;
+ u8 *g_h005_282e;
+ u8 *g_geo_planes;
+ struct GfxRecord *g_gfx_332c;
+-struct GfxRecord *g_gfx_3304[2];
+ struct GfxRecord *g_gfx_3334;
+ struct GfxRecord *g_gfx_3348;
+ struct GfxRecord *g_gfx_3d8a;
+diff --git a/src_c/readable/globals.h b/src_c/readable/globals.h
+index 64af5fe..fd22148 100644
+--- a/src_c/readable/globals.h
++++ b/src_c/readable/globals.h
+@@ -50,7 +50,6 @@ extern u8 *g_ecl_buffer;                /* $3DF8: programma ECL, $1E00 */
+ extern u8 *g_h005_282e;                 /* $282E: blocco di $924 byte */
+ extern u8 *g_geo_planes;                /* $282A: quattro piani dati GEO, $400 */
+ extern struct GfxRecord *g_gfx_332c;    /* $332C */
+-extern struct GfxRecord *g_gfx_3304[2]; /* $3304: due fotogrammi della caduta */
+ extern struct GfxRecord *g_gfx_3334;    /* $3334 */
+ extern struct GfxRecord *g_gfx_3348;    /* $3348 */
+ extern struct GfxRecord *g_gfx_3d8a;    /* $3D8A */
+diff --git a/src_c/readable/h048.c b/src_c/readable/h048.c
+index b3e0c4f..78e8c50 100644
+--- a/src_c/readable/h048.c
++++ b/src_c/readable/h048.c
+@@ -574,9 +574,10 @@ void combatant_falls(Character *c)
+         for (i = 0; i <= 3; ++i) {
+             if (shape_cell(POS_SIZE(n), i, &dx, &dy) &&
+                 in_view((s16)(VIEW_X(n) + dx), (s16)(VIEW_Y(n) + dy))) {
++                /* $3304 e' il posto $18 della tabella dei set $3244. */
+                 draw_tile24_saving((u16)((VIEW_X(n) + dx) * 0x18),
+                                    (u16)((VIEW_Y(n) + dy) * 0x18), 0, 5,
+-                                   g_gfx_3304[f & 1], g_gfx_3d8e);
++                                   g_sprite_sets[0x18][f & 1], g_gfx_3d8e);
+             }
+         }
+         dos_delay(1);
+diff --git a/src_c/readable/h059.c b/src_c/readable/h059.c
+index 9d9d4b1..035b3b6 100644
+--- a/src_c/readable/h059.c
++++ b/src_c/readable/h059.c
+@@ -17,6 +17,7 @@
+ #include "h065.h"
+ #include "h095.h"
+ #include "h096.h"
++#include "h097.h"
+ #include <string.h>
+ 
+ /*
+@@ -426,7 +427,7 @@ static void done_menu(Character *c, u8 *done)
+             clear_message_line();
+             dos_delay(0x0A);
+             *done = 1;
+-            h097_1d68(c);
++            monster_turn(c);
+             break;
+         default:
+             break;
+@@ -580,7 +581,7 @@ static void actor_turn(Character *c)
+     }
+     if (COK_GET16(&c->block_192->b[4]) > 0) {
+         if (c->b[0x19A]) {
+-            h097_1d68(c);
++            monster_turn(c);
+         } else {
+             player_turn(c);
+         }
+diff --git a/src_c/readable/h065.c b/src_c/readable/h065.c
+index 8b5c823..6088cc1 100644
+--- a/src_c/readable/h065.c
++++ b/src_c/readable/h065.c
+@@ -24,7 +24,6 @@ void h065_init(void)
+ 
+ /* Dati del modulo sotto a4. */
+ static Character *s_char;               /* -$4(a4): personaggio mostrato */
+-static void use_item(CokItem *it, u8 *redraw);
+ static char s_text[0x56];               /* -$5a(a4) */
+ 
+ /* Copia con dbeq: al massimo max + 1 byte, NUL compreso. */
+@@ -1233,7 +1232,7 @@ void show_items(u8 *redraw)
+  * "oops!"); poi l'incantesimo viene tolto dalla pergamena, o si consuma
+  * una carica (+$40, poi +$44) dell'oggetto.
+  */
+-static void use_item(CokItem *it, u8 *redraw)
++void use_item(CokItem *it, u8 *redraw)
+ {
+     Character *c;
+     s16 index = -1;                     /* -$4(a5) */
+diff --git a/src_c/readable/h065.h b/src_c/readable/h065.h
+index 5ee032d..8755345 100644
+--- a/src_c/readable/h065.h
++++ b/src_c/readable/h065.h
+@@ -18,4 +18,5 @@ u16  choose_spell_of_kind(u16 kind, u16 mode, s16 *spell, u8 *found);
+ void ready_item(CokItem *it);           /* H065+$2C04 */
+ 
+ void select_party_member(u8 key);       /* H065+$3390 */
++void use_item(CokItem *it, u8 *redraw);  /* H065+$2F82 */
+ #endif
+diff --git a/src_c/readable/h096.c b/src_c/readable/h096.c
+index e87b755..f690e86 100644
+--- a/src_c/readable/h096.c
++++ b/src_c/readable/h096.c
+@@ -19,15 +19,15 @@
+ #include "h077.h"
+ 
+ /* Funzioni statiche usate prima della definizione. */
+-static u16 movement_points(Character *c);
+-static u8 can_attack(Character *a, Character *t);
++u16 movement_points(Character *c);
++u8 can_attack(Character *a, Character *t);
+ static u8 is_backstab(Character *a, Character *t);
+ static void attack_damage(Character *a, Character *d, u16 k);
+ static void range_penalty(Character *a, Character *t, s16 *ac);
+ static void missile_attack(Character *a, Character *t, CokItem *item);
+-static u16 enemy_distance_points(Character *c);
+-static u8 find_heal_target(Character *c, Character **out);
+-static u8 ai_pick_target(Character *c, u16 radius, u8 b_any, u8 b0);
++u16 enemy_distance_points(Character *c);
++u8 find_heal_target(Character *c, Character **out);
++u8 ai_pick_target(Character *c, u16 radius, u8 b_any, u8 b0);
+ 
+ /* PORT H096+$01F2: link/unlk, nessun effetto. */
+ void h096_init(void)
+@@ -86,7 +86,7 @@ static u16 half_round(u16 v)
+  * piu' il bonus $3E00+$6E4), fuori da 1..$60 vale 1; il doppio passa
+  * dall'evento $12 (che puo' cambiarlo in $2472) e viene restituito.
+  */
+-static u16 movement_points(Character *c)
++u16 movement_points(Character *c)
+ {
+     u16 v;                              /* -$2(a5) */
+ 
+@@ -600,7 +600,7 @@ u8 combat_sweep(Character *a, Character *t)
+  * eventi 1 (di t) e 0 (di a, col bersaglio provvisorio) non devono
+  * impostare $24AB.
+  */
+-static u8 can_attack(Character *a, Character *t)
++u8 can_attack(Character *a, Character *t)
+ {
+     Character *saved;                   /* -$4(a5) */
+ 
+@@ -655,7 +655,7 @@ static const u16 s_turn_table[0x9C] = {
+  * PORT H096+$1B04: fra i nemici (non fuggiti, +$12 del turno) il non
+  * morto di tipo (+$DF) piu' alto non oltre *max; *max diventa quel tipo.
+  */
+-static u8 find_undead(Character *c, Character **out, u8 *max)
++u8 find_undead(Character *c, Character **out, u8 *max)
+ {
+     u8 best = 0;                        /* -$5(a5) */
+     u8 found = 0;                       /* -$B(a5) */
+@@ -1012,7 +1012,7 @@ static void range_penalty(Character *a, Character *t, s16 *ac)
+  * (o se stesso sotto meta') con meno punti ferita, se non al massimo;
+  * con tutti sopra 7 un corpo caduto ($2AE2) su una casella vicina.
+  */
+-static u8 find_heal_target(Character *c, Character **out)
++u8 find_heal_target(Character *c, Character **out)
+ {
+     Character *best = NULL;             /* -$4(a5) */
+     u16 body = 0;                       /* -$A(a5) */
+@@ -1465,7 +1465,7 @@ static void missile_attack(Character *a, Character *t, CokItem *item)
+  * PORT H096+$3852: il miglior movimento (meta' di H096+$023E) fra gli
+  * avversari in piedi di c.
+  */
+-static u16 enemy_distance_points(Character *c)
++u16 enemy_distance_points(Character *c)
+ {
+     u16 best = 0;                       /* -$2(a5) */
+     u16 v;                              /* -$4(a5) */
+@@ -1944,7 +1944,7 @@ void aim_target(Character *c, u16 range, u16 mode, u8 b16, u8 b14,
+  * preferito $2432 alla prima), scartando i non attaccabili; al secondo
+  * giro (senza b0) anche fuori vista ($2ADE+8).
+  */
+-static u8 ai_pick_target(Character *c, u16 radius, u8 b_any, u8 b0)
++u8 ai_pick_target(Character *c, u16 radius, u8 b_any, u8 b0)
+ {
+     CokEffect *e = NULL;                /* -$12(a5) */
+     u8 retry = 0;                       /* -$9(a5) */
+diff --git a/src_c/readable/h096.h b/src_c/readable/h096.h
+index d94f485..d625519 100644
+--- a/src_c/readable/h096.h
++++ b/src_c/readable/h096.h
+@@ -29,4 +29,10 @@ u8   confirm_attack(Character *a, Character *t);    /* H096+$38DC */
+ void aim_target(Character *c, u16 range, u16 mode, u8 b16, u8 b14,
+                 u8 *found, CokAim *out);            /* H096+$4448 */
+ u8   combat_bandage(void);              /* H096+$4DE8 */
++u16  movement_points(Character *c);     /* H096+$023E */
++u8   can_attack(Character *a, Character *t);    /* H096+$1562 */
++u8   find_undead(Character *c, Character **out, u8 *max); /* H096+$1B04 */
++u8   find_heal_target(Character *c, Character **out); /* H096+$25DA */
++u16  enemy_distance_points(Character *c);       /* H096+$3852 */
++u8   ai_pick_target(Character *c, u16 radius, u8 b_any, u8 b0); /* H096+$4B86 */
+ #endif
+diff --git a/src_c/readable/h097.c b/src_c/readable/h097.c
+index 02c5c07..9505db5 100644
+--- a/src_c/readable/h097.c
++++ b/src_c/readable/h097.c
+@@ -1,5 +1,23 @@
+-/* H097: dati del modulo (tabelle di word). */
++/* H097: IA dei combattenti guidati dal computer. */
++#include <string.h>
+ #include "init_data.h"
++#include "h097.h"
++#include "globals.h"
++#include "unported.h"
++#include "h003_exec.h"
++#include "h008.h"
++#include "h010_input.h"
++#include "h026_string.h"
++#include "h029_gfx.h"
++#include "h030.h"
++#include "h033.h"
++#include "h045.h"
++#include "h048.h"
++#include "h062.h"
++#include "h063.h"
++#include "h065.h"
++#include "h077.h"
++#include "h096.h"
+ 
+ /* Dati del modulo sotto a4: g_h097_bss[0x42 - off] e' -off(a4). */
+ u8 g_h097_bss[0x42];
+@@ -11,3 +29,824 @@ void h097_init(void)
+ {
+     INIT_APPLY(s_init_1fac, g_h097_bss, sizeof(g_h097_bss));
+ }
++
++#define TURN(c)         ((c)->block_192)
++#define TURN_W(c, o)    COK_GET16(TURN(c)->b + (o))
++#define TURN_PUTW(c, o, v) COK_PUT16(TURN(c)->b + (o), (v))
++#define NEAR(i)         H005_B(0x2444 + (i) - 1)
++#define COMBATANT(n)    g_combatants[(n) - 1]
++#define POS_X(n)        H005_W(0x3154 + ((n) - 1) * 6)
++#define POS_Y(n)        H005_W(0x3154 + ((n) - 1) * 6 + 2)
++#define SPELL_B(s, o)   H005_B(0x66 + ((s) - 1) * 16 + (o))
++#define WTAB(t, o)      H005_B(0x336C + (t) * 0x12 + (o))
++#define H097_W(off)     COK_GET16(&g_h097_bss[0x42 - (off)])
++#define H097_SETW(off, v) COK_PUT16(&g_h097_bss[0x42 - (off)], (v))
++
++/*
++ * PORT H097+$00B0: tasto premuto durante il turno di un mostro ($5305):
++ * '2' magia on/off, spazio toglie il controllo del computer al party
++ * (e il turno corrente finisce), 4 (H096+$4DE8).  Restituisce se un
++ * tasto e' stato gestito.
++ */
++static u8 monster_keys(Character *c)
++{
++    u8 handled = 0;                     /* -$6(a5) */
++    u8 key;                             /* -$5(a5) */
++    u8 unused;                          /* -$7(a5) */
++    Character *p;                       /* -$4(a5) */
++
++    poll_intuition_events();
++    if (!G_KEY) {
++        return 0;
++    }
++    key = G_KEY;
++    handled = 1;
++    switch (key) {
++    case '2':
++        H005_B(0x24A0) = (u8)(H005_B(0x24A0) == 0);
++        if (H005_B(0x24A0)) {
++            show_message_line(8, "Magic On");
++        } else {
++            show_message_line(9, "Magic Off");
++        }
++        break;
++    case ' ':
++        for (p = g_party_head; p != NULL; p = p->next) {
++            if (p->b[0xEC] < 0x80 && p->b[0x197] != 1) {
++                p->b[0x19A] = 0;
++            }
++        }
++        if (!c->b[0x19A]) {
++            TURN_PUTW(c, 4, 0x14);
++            if (TURN(c)->b[8] > 0) {
++                add_to_byte(&H005_B(0x2480), 0xFFFF);
++            }
++            handled = 1;
++        }
++        break;
++    case 4:
++        unused = combat_bandage();
++        (void)unused;
++        break;
++    default:
++        break;
++    }
++    return handled;
++}
++
++/*
++ * PORT H097+$0244: fine del turno del mostro: in guardia (H063+$2F5A) se
++ * puo' ancora agire e non e' inerme ne' armato a distanza.
++ */
++static u8 monster_end(Character *c)
++{
++    clear_message_area();
++    if (is_helpless(c) || has_ranged_weapon(c) || TURN_W(c, 4) == 0) {
++        return end_combat_turn(c);
++    }
++    return guard_turn(c);
++}
++
++/*
++ * PORT H097+$02B2: valore dell'arma it per c (tabella $336C): danno
++ * medio, bonus, gittata, piu' 3 se a una mano; 0 se le mani non bastano,
++ * se e' di un altro allineamento (+$46 = $84), del tipo $53 o
++ * maledetta (+$3C).  La lancia $36 contro un non morto vale 8.
++ */
++static u16 weapon_value(Character *c, CokItem *it)
++{
++    u8 tab[0x12];                       /* -$14(a5) */
++    u16 v;                              /* -$2(a5) */
++
++    exec_copy_mem(&g_h005[0x336C + it->b[0x30] * 0x12], tab, 0x12);
++    v = (u16)(tab[0x0B] * tab[0x0A]);
++    if ((s16)COK_GET16(it->b + 0x36) > 0) {
++        v = (u16)(v + COK_GET16(it->b + 0x36) * 8);
++    }
++    if ((s16)COK_GET16(tab + 0x0C) > 0) {
++        v = (u16)(v + COK_GET16(tab + 0x0C) * 2);
++    }
++    if (it->b[0x30] == 0x36 && TURN(c)->target != NULL &&
++        TURN(c)->target->b[0xDF] > 0) {
++        v = 8;
++    }
++    if (mask_byte(tab[0x10], 8)) {
++        v = (u16)(v + (tab[6] - 1) * 2);
++    }
++    if (tab[1] <= 1) {
++        v = (u16)(v + 3);
++    }
++    if ((u16)(tab[1] + c->b[0x188]) > 3) {
++        v = 0;
++    }
++    if (it->b[0x46] == 0x84 && mask_byte(it->b[0x45], 0x0F) != c->b[0x10F]) {
++        v = 0;
++    }
++    if (it->b[0x45] == 0x53) {
++        v = 0;
++    }
++    if (it->b[0x3C]) {
++        v = 0;
++    }
++    return v;
++}
++
++/*
++ * PORT H097+$043A: morale del mostro: costretto a fuggire (+$12 del
++ * turno), o per i mostri (+$EC > $7F) tiri contro le ferite e la forza
++ * del gruppo ($2481): fugge se e' piu' veloce dei nemici (togliendo gli
++ * effetti $4A e $4B), altrimenti con +$13 > 5 si arrende.  Con il massimo
++ * dei punti ferita a 0 l'originale divide per 0: qui conta come illeso.
++ */
++static u8 monster_morale(Character *c)
++{
++    u16 saved;                          /* -$4(a5) */
++    u16 best;                           /* -$2(a5) */
++    u16 hurt;
++
++    TURN(c)->b[0x16] = 0;
++    h062_nop_1898();
++    if (TURN(c)->b[0x12]) {
++        TURN(c)->b[0x16] = 1;
++        show_char_message(c, 0x11, "is forced to flee", 0x0A, 1);
++        return 0;
++    }
++    if (c->b[0xEC] <= 0x7F) {
++        return 0;
++    }
++    H005_B(0x2478) = (u8)(mask_byte(c->b[0xEC], 0x7F) * 2);
++    if (H005_B(0x2478) > 0x66) {
++        H005_B(0x2478) = 0;
++    }
++    trigger_event(&c, 0x11);
++    hurt = (u16)(c->b[0x64] ? (u16)(c->b[0x1A8] * 0x64) / c->b[0x64] : 0x64);
++    if (!(H005_B(0x2478) < (u16)(0x64 - hurt)) && H005_B(0x2478) != 0) {
++        return 0;
++    }
++    saved = H005_B(0x2478);
++    (void)saved;
++    H005_B(0x2478) = H005_B(0x2481);
++    trigger_event(&c, 0x11);
++    if (!(H005_B(0x2478) < (u16)(0x64 - COK_GET16(g_state_b + 0x58C))) &&
++        H005_B(0x2478) != 0 && c->b[0x199]) {
++        return 0;
++    }
++    best = enemy_distance_points(c);
++    if ((u16)(movement_points(c) >> 1) >= best) {
++        TURN(c)->b[0x16] = 1;
++        remove_effect(c, 0x4A, NULL);
++        remove_effect(c, 0x4B, NULL);
++        return 0;
++    }
++    if (c->b[0x13] > 5) {
++        fall_down(c, 4, 0x0A, "Surrenders");
++        return end_combat_turn(c);
++    }
++    return 0;
++}
++
++/*
++ * PORT H097+$062E: annidata: un alleato nell'area dell'incantesimo
++ * attorno a (x, y) che fallisce il tiro salvezza (bonus -2 per il party,
++ * 8 per i mostri) sarebbe colpito?
++ */
++static u8 spell_hits_ally(u16 spell, s16 x, s16 y)
++{
++    s16 bonus;                          /* -$4(a5) */
++    u16 i;                              /* -$2(a5) */
++    Character *e;
++
++    bonus = (s16)(g_current_char->b[0x199] == 0 ? -2 : 8);
++    find_in_area(x, y, SPELL_B(spell, 0x0F), 0xFF, 1, g_combat_area);
++    for (i = 1; i <= H005_B(0x2479); ++i) {
++        e = COMBATANT(H005_B(0x2A3E + (i - 1) * 4));
++        if (e->b[0x199] != other_side(g_current_char) &&
++            SPELL_B(spell, 8) != 1 &&
++            !saving_throw_roll(e, SPELL_B(spell, 9), bonus)) {
++            return 1;
++        }
++    }
++    return 0;
++}
++
++/*
++ * PORT H097+$0620 (corpo a $075C): l'incantesimo spell (livello +$D
++ * almeno level) e' utile a c?  Senza bersaglio o di cura (se c'e' un
++ * ferito) si'; altrimenti servono nemici nella gittata e, per un'area
++ * (+$F), che nessun alleato attorno a loro ne sia colpito.  Dove
++ * l'originale restituisce un registro non impostato qui 0.
++ */
++static u8 spell_useful(Character *c, u16 spell, u16 level)
++{
++    Character *tmp;                     /* -$4(a5) */
++    u16 n;                              /* -$6(a5) */
++    u16 i;                              /* -$8(a5) */
++
++    if (SPELL_B(spell, 0x0D) < level) {
++        return 0;
++    }
++    if (spell != 3 && SPELL_B(spell, 0x0E) == 0) {
++        return 1;
++    }
++    if (spell == 3 && find_heal_target(c, &tmp)) {
++        return 1;
++    }
++    n = count_enemies_near(c, spell_range(spell));
++    if (n == 0) {
++        return 0;
++    }
++    if (SPELL_B(spell, 0x0F) == 0) {
++        return 1;
++    }
++    for (i = 1; i <= n; ++i) {
++        if (spell_hits_ally(spell, (s16)POS_X(NEAR(i)), (s16)POS_Y(NEAR(i)))) {
++            return 0;
++        }
++    }
++    return 1;
++}
++
++/*
++ * PORT H097+$0890: il mostro usa un oggetto magico pronto (non una
++ * pergamena, +$46 < $80) con un incantesimo utile: 1d7 tentativi con
++ * livello minimo da 7 in giu'.  Gli incantesimi oltre $38 valgono -$17.
++ */
++static u8 monster_use_item(Character *c)
++{
++    CokItem *found = NULL;              /* -$1A(a5) */
++    CokItem *it;                        /* -$16(a5) */
++    u16 level = 7;                      /* -$2(a5) */
++    u16 tries;                          /* -$4(a5) */
++    u16 i;                              /* -$6(a5) */
++    u16 sp;                             /* -$E(a5) */
++    u8 redraw;                          /* -$1B(a5) */
++
++    tries = roll_dice(1, 7);
++    if (TURN(c)->b[2] && H005_B(0x2A1C + other_side(c)) > 0 &&
++        COK_GET16(g_state_a + 0x1CA) == 0) {
++        for (i = 1; i <= tries; ++i) {
++            for (it = c->items; it != NULL && found == NULL; it = it->next) {
++                sp = it->b[0x45];
++                if (!is_scroll(it) && it->b[0x46] < 0x80 && it->b[0x3A] &&
++                    sp > 0) {
++                    if (sp > 0x38) {
++                        sp = (u16)(sp - 0x17);
++                    }
++                    if (spell_useful(c, sp, level)) {
++                        found = it;
++                    }
++                }
++            }
++            --level;
++        }
++    }
++    if (found != NULL) {
++        use_item(found, &redraw);
++        return 1;
++    }
++    return 0;
++}
++
++/*
++ * PORT H097+$0A04: il mostro chierico scaccia i non morti se ne vede e
++ * non l'ha gia' fatto $248F volte.  Il tipo massimo passato a H096+$1B04
++ * nell'originale non e' inizializzato: qui $FF.
++ */
++static u8 monster_turn_undead(Character *c)
++{
++    Character *t;                       /* -$4(a5) */
++    u8 max = 0xFF;                      /* -$5(a5) */
++
++    if (TURN(c)->b[0x13] < H005_B(0x248F) &&
++        (c->b[0xFE] > 0 || c->b[0x106] > c->b[0xDC]) &&
++        find_undead(c, &t, &max)) {
++        turn_undead(c);
++        return 1;
++    }
++    return 0;
++}
++
++/*
++ * PORT H097+$0A88: il mostro lancia un incantesimo memorizzato utile
++ * (con la magia attiva per il party): 1d7 giri da 3 estrazioni, livello
++ * minimo da 7 in giu'.
++ */
++static u8 monster_cast(Character *c)
++{
++    u16 list[0x3A];                     /* -$74(a5) */
++    u16 n = 0;                          /* -$84(a5) */
++    u16 k;                              /* -$86(a5) */
++    u16 chosen = 0;                     /* -$8A(a5) */
++    u16 level = 7;                      /* -$7A(a5) */
++    u16 tries;                          /* -$7C(a5) */
++    u16 i;                              /* -$80(a5) */
++    u16 j;                              /* -$82(a5) */
++    u16 sp;                             /* -$88(a5) */
++    u8 done;                            /* -$7D(a5) */
++
++    if (TURN(c)->b[1]) {
++        for (k = 1; k <= 0x39; ++k) {
++            if (c->b[0x1E + k] > 0) {
++                list[n] = c->b[0x1E + k];
++                ++n;
++            }
++        }
++    }
++    tries = roll_dice(1, 7);
++    i = 1;
++    if (n > 0 && (c->b[0xEC] > 0x7F || H005_B(0x24A0)) &&
++        H005_B(0x2A1C + other_side(c)) > 0) {
++        while (i <= tries && chosen == 0) {
++            for (j = 1; j < 4 && chosen == 0; ++j) {
++                k = (u16)(roll_dice(1, n) - 1);
++                sp = list[k];
++                if (spell_useful(c, sp, level)) {
++                    chosen = sp;
++                }
++            }
++            --level;
++            ++i;
++        }
++    }
++    if (chosen > 0) {
++        combat_cast(chosen, 1, &done);
++    } else {
++        done = 0;
++    }
++    return done;
++}
++
++/*
++ * PORT H097+$0C14: il mostro sceglie le armi: la migliore da lancio o a
++ * distanza (con munizioni), la migliore da mischia, lo scudo migliore
++ * (classe d'armatura +$36); le prepara (H065+$2C04) se diverse da quelle
++ * pronte e non maledette, rispettando le mani (+$188).
++ */
++static void monster_choose_weapons(Character *c)
++{
++    CokItem *best = NULL;               /* -$4(a5) */
++    CokItem *melee = NULL;              /* -$8(a5) */
++    CokItem *shield = NULL;             /* -$C(a5) */
++    CokItem *it;                        /* -$10(a5) */
++    CokItem *ammo = NULL;               /* -$14(a5) */
++    CokItem *chosen;                    /* -$10(a5) */
++    u16 s1 = 1;                         /* -$16(a5) */
++    u16 s2;                             /* -$18(a5) */
++    u16 s3 = 0;                         /* -$1A(a5) */
++    u16 v;                              /* -$1C(a5) */
++    u16 t;                              /* -$1E(a5) */
++    u16 f = 0;                          /* -$20(a5) */
++    u8 changed = 0;                     /* -$23(a5) */
++    u8 need;                            /* -$22(a5) */
++    u8 ranged;                          /* -$24(a5) */
++    u8 ammo_ok = 0;                     /* -$25(a5) */
++
++    if (c->readied[0] != NULL) {
++        c->b[0x188] = (u8)(c->b[0x188] - WTAB(c->readied[0]->b[0x30], 1));
++    }
++    if (c->readied[1] != NULL) {
++        c->b[0x188] = (u8)(c->b[0x188] - WTAB(c->readied[1]->b[0x30], 1));
++    }
++    s2 = (u16)(c->b[0x114] * c->b[0x112]);
++    if ((s16)CH_W(c, 0x116) > 0) {
++        s2 = (u16)(s2 + CH_W(c, 0x116) * 2);
++    }
++    for (it = c->items; it != NULL; it = it->next) {
++        t = it->b[0x30];
++        if (WTAB(t, 0) == 0 && mask_byte(WTAB(t, 0x0F), c->b[0x122])) {
++            v = weapon_value(c, it);
++            if (mask_byte(WTAB(t, 0x10), 8) || mask_byte(WTAB(t, 0x10), 0x10)) {
++                if (v > s1) {
++                    best = it;
++                    s1 = v;
++                }
++            }
++            if (!mask_byte(WTAB(t, 0x10), 8) && v > s2) {
++                melee = it;
++                s2 = v;
++            }
++        }
++        if (WTAB(t, 0) == 1 && mask_byte(WTAB(t, 0x0F), c->b[0x122]) > 0) {
++            if ((s16)COK_GET16(it->b + 0x36) >= 0) {
++                v = (u16)(COK_GET16(it->b + 0x36) + 1);
++            } else {
++                v = 0;
++            }
++            if (v > s3) {
++                shield = it;
++                s3 = v;
++            }
++        }
++    }
++    ranged = (u8)(best != NULL && WTAB(best->b[0x30], 0x0E) > 1 &&
++                  mask_byte(WTAB(best->b[0x30], 0x10), 0x14) == 0x14);
++    if (best != NULL) {
++        f = WTAB(best->b[0x30], 0x10);
++        if (mask_byte((u8)f, 0x10)) {
++            ammo = best;
++        }
++        if (mask_byte((u8)f, 8)) {
++            if (mask_byte((u8)f, 1)) {
++                ammo = c->readied[11];
++            }
++            if (mask_byte((u8)f, 0x80)) {
++                ammo = c->readied[12];
++            }
++        }
++    }
++    if (ammo != NULL || f == 0x0A) {
++        ammo_ok = 1;
++    }
++    if (best != NULL && s1 > (u16)(s2 >> 1) && ammo_ok &&
++        (ranged || count_enemies_near(c, 1) == 0)) {
++        chosen = best;
++    } else {
++        chosen = melee;
++    }
++    need = 1;
++    if (c->readied[0] != NULL &&
++        (c->readied[0] == chosen || c->readied[0]->b[0x3C])) {
++        need = 0;
++    }
++    if (need) {
++        if (c->readied[0] != NULL) {
++            ready_item(c->readied[0]);
++        }
++        recompute_stats(c);
++        if (c->readied[1] != NULL && !c->readied[1]->b[0x3C]) {
++            c->b[0x188] = (u8)(c->b[0x188] - WTAB(c->readied[1]->b[0x30], 1));
++        }
++        if (chosen != NULL) {
++            ready_item(chosen);
++        }
++        changed = 1;
++    }
++    recompute_stats(c);
++    combat_attacks(c);
++    need = 1;
++    if (c->readied[1] != NULL &&
++        (c->readied[1] == shield || c->readied[1]->b[0x3C])) {
++        need = 0;
++    }
++    if (c->b[0x188] > 2) {
++        if (c->readied[1] == NULL || c->readied[1]->b[0x3C]) {
++            if (chosen != NULL) {
++                ready_item(chosen);
++            }
++            changed = 1;
++        } else {
++            ready_item(c->readied[1]);
++            changed = 1;
++        }
++    } else if (c->b[0x188] < 2 && need) {
++        if (c->readied[1] != NULL) {
++            ready_item(c->readied[1]);
++        }
++        recompute_stats(c);
++        if (shield != NULL) {
++            ready_item(shield);
++        }
++        changed = 1;
++    }
++    recompute_stats(c);
++    if (changed) {
++        draw_combat_status(c);
++    }
++}
++
++/*
++ * PORT H097+$11EE: il passo k (della sequenza +$17 del turno nella
++ * tabella del modulo) dalla direzione dir e' possibile?  Il costo del
++ * terreno (x3 in diagonale) deve stare nei punti movimento; nuvole e
++ * acido lo rendono impossibile senza protezione.  *edge = 1 fuori mappa.
++ */
++static u8 monster_step_ok(Character *c, u16 k, u16 dir, u8 *edge)
++{
++    u8 ok = 0;                          /* -$11(a5) */
++    u16 d;                              /* -$8(a5) */
++    u16 blk;                            /* -$A(a5) */
++    u16 tile;                           /* -$C(a5) */
++    u16 cost;                           /* -$E(a5) */
++    u8 cloud;                           /* -$F(a5) */
++    u8 acid;                            /* -$10(a5) */
++    CokEffect *e;                       /* -$4(a5) */
++
++    *edge = 0;
++    d = (u16)((dir + H097_W(0x3C - (TURN(c)->b[0x17] - 1) * 10 - (k - 1) * 2))
++              & 7);
++    probe_move(c, d, &blk, &tile, &cloud, &acid);
++    if (tile == 0) {
++        *edge = 1;
++        return ok;
++    }
++    if (H005_B(0x3EF4 + (tile - 1) * 4) == 0xFF) {
++        return 0;
++    }
++    if (d & 1) {
++        cost = (u16)(H005_B(0x3EF4 + (tile - 1) * 4) * 3);
++    } else {
++        cost = (u16)(H005_B(0x3EF4 + (tile - 1) * 4) * 2);
++    }
++    if (blk != 0 || !(cost < TURN(c)->b[8])) {
++        return ok;
++    }
++    if (cloud && !find_effect(c, 0x20, &e) && !find_effect(c, 0x1E, &e) &&
++        !find_effect(c, 0x63, &e) && !find_effect(c, 0x3F, &e) &&
++        !TURN(c)->b[0x12] && !saving_throw_roll(c, 0, 0)) {
++        cost = (u16)(TURN(c)->b[8] + 1);
++    }
++    if (acid && c->b[0xDB] < 7 && !find_effect(c, 0x63, &e) &&
++        !TURN(c)->b[0x12]) {
++        cost = (u16)(TURN(c)->b[8] + 1);
++    }
++    if (TURN(c)->b[8] >= cost) {
++        ok = 1;
++    }
++    return ok;
++}
++
++/*
++ * PORT H097+$142C: un passo del mostro verso il bersaglio (o in fuga,
++ * lontano dal party) provando fino a 5 direzioni della sequenza +$17;
++ * tornare indietro o non trovare passi cambia sequenza e alla lunga
++ * bersaglio o turno.  Mostra "Move/Attack, Move Left = n".
++ */
++static u8 monster_move(Character *c)
++{
++    char num[0x52];                     /* -$60(a5) */
++    u16 dir = 0;                        /* -$2(a5) */
++    u16 ndir = 0;                       /* -$4(a5) */
++    u16 k;                              /* -$6(a5) */
++    u8 edge = 0;                        /* -$7(a5) */
++    u8 done = 0;                        /* -$8(a5) */
++
++    strcpy((char *)&g_h005[0x3C82], "Move/Attack, Move Left = ");
++    format_number(0x50, num, (s32)(TURN(c)->b[8] >> 1), 0, 0x0A, 2, ' ');
++    h026_append(0x50, num, 1, " ");
++    h026_append(0x50, (char *)&g_h005[0x3C82], 0x50, num);
++    ui_draw_text(0, 0x18, 0x0A, 0, 0x50, (const char *)&g_h005[0x3C82]);
++    if (monster_keys(c)) {
++        return done;
++    }
++    if (!((TURN(c)->b[8] >> 1) > 0 && (s16)TURN_W(c, 4) > 0)) {
++        return monster_end(c);
++    }
++    if (c->b[0xEC] >= 0x80 &&
++        (u16)(roll_dice(1, 0x64) + H005_B(0x2478)) < H005_B(0x2481) &&
++        c->b[0x199] != 1) {
++        return monster_end(c);
++    }
++    if (!TURN(c)->b[0x16] && c->readied[2] == NULL && c->b[0x5C] == 5) {
++        return monster_end(c);
++    }
++    if (!TURN(c)->b[0x16]) {
++        dir = direction_toward(c, TURN(c)->target);
++    } else {
++        TURN(c)->b[0x17] = (u8)roll_dice(1, 2);
++        dir = (u16)(H005_B(0x2820) - (((H005_B(0x2820) + 2) & 3) >> 1));
++        if (!c->b[0x199]) {
++            dir = (u16)(dir + 4);
++        }
++        dir &= 7;
++    }
++    k = 1;
++    while (k < 6 && !done) {
++        if (monster_step_ok(c, k, dir, &edge)) {
++            break;
++        }
++        if (TURN(c)->b[0x16] && edge) {
++            done = combat_flee(c);
++        } else {
++            ++k;
++        }
++    }
++    if (done) {
++        TURN(c)->b[8] = 0;
++        TURN(c)->b[0x16] = 0;
++        return end_combat_turn(c);
++    }
++    if (k < 6) {
++        ndir = (u16)((dir + H097_W(0x3C - (TURN(c)->b[0x17] - 1) * 10 -
++                                   (k - 1) * 2)) & 7);
++    }
++    if (k == 6 || ((ndir + 4) & 7) == H097_W(0x3E)) {
++        H097_SETW(0x40, (u16)(H097_W(0x40) + 1));
++        TURN(c)->b[0x17] = (u8)(TURN(c)->b[0x17] % 6 + 1);
++        if (H097_W(0x40) > 1) {
++            TURN(c)->target = NULL;
++            if (H097_W(0x40) > 2) {
++                TURN(c)->b[8] = 0;
++                done = 1;
++            } else if (!ai_pick_target(c, 0xFF, 1, 0)) {
++                done = monster_end(c);
++            }
++        }
++    }
++    if (k < 6) {
++        H097_SETW(0x3E, ndir);
++    } else {
++        done = 1;
++    }
++    if (done) {
++        return done;
++    }
++    H005_B(0x24C6) = (u8)(H005_B(0x24C8) || combatant_visible(c, 0) ||
++                          c->b[0x199] == 0);
++    set_combatant_frame(c, (u8)ndir, 0, 0);
++    combat_leave_attacks(c, TURN(c)->b[0x0B]);
++    if (!c->b[0x198]) {
++        return end_combat_turn(c);
++    }
++    if (TURN(c)->b[8] > 0) {
++        combat_step(c, TURN(c)->b[0x0B]);
++    }
++    if (!c->b[0x198] || is_helpless(c)) {
++        done = end_combat_turn(c);
++    }
++    check_cloud(c, 1);
++    return done;
++}
++
++/*
++ * PORT H097+$18D2: il mostro attacca: fugge se deve, poi finche' ha
++ * azioni (al massimo 20 giri) cerca il bersaglio nella gittata
++ * dell'arma (in vista) o un nemico vicino; altrimenti si avvicina
++ * (H097+$142C).  Attacco a spazzata o normale, con l'arma a distanza se
++ * non e' accanto.  Restituisce 1 se il turno e' finito.
++ */
++static u8 monster_attack(Character *c)
++{
++    u16 iter = 0;                       /* -$18(a5) */
++    u8 cont = 1;                        /* -$2(a5) */
++    u8 done = 0;                        /* -$1(a5) */
++    u16 range;                          /* -$4(a5) */
++    u16 dist;                           /* -$6(a5) */
++    u16 n;                              /* -$8(a5) */
++    s16 tx;                             /* -$14(a5) */
++    s16 ty;                             /* -$16(a5) */
++    Character *t = NULL;                /* -$12(a5) */
++    CokItem *w;                         /* -$E(a5) */
++
++    H097_SETW(0x3E, 8);
++    H097_SETW(0x40, 0);
++    H097_SETW(0x42, 0);
++    trigger_event(&c, 0x0E);
++    if (!c->b[0x199] && bandage_dying(1)) {
++        TURN_PUTW(c, 4, 0);
++    }
++    if (TURN_W(c, 4) == 0) {
++        cont = 0;
++    }
++    while (!done && cont) {
++        while (TURN(c)->b[0x16] && TURN(c)->b[8] > 0 &&
++               (s16)TURN_W(c, 4) > 0 && (s16)TURN_W(c, 4) < 0x14) {
++            (void)monster_move(c);
++        }
++        if (TURN_W(c, 4) == 0 || TURN_W(c, 4) == 0x14) {
++            cont = 0;
++        } else {
++            done = 0;
++        }
++        if (done || !cont) {
++            continue;
++        }
++        ++iter;
++        if (iter > 0x14) {
++            done = 1;
++            cont = (u8)(monster_end(c) == 0);
++        }
++        H005_B(0x24C8) = 0;
++        range = 1;
++        if (c->readied[0] != NULL) {
++            range = (u16)(WTAB(c->readied[0]->b[0x30], 0x0E) - 1);
++        }
++        if (range == 0 || range >= 0xFF) {
++            range = 1;
++        }
++        t = TURN(c)->target;
++        if (t != NULL && (!t->b[0x198] || !t->b[0x199])) {
++            t = NULL;
++        }
++        if (t != NULL && can_attack(c, t)) {
++            tx = (s16)combatant_x(t);
++            ty = (s16)combatant_y(t);
++            dist = range;
++            g_combat_area[8] = 0;
++            if (line_of_sight((s16)combatant_x(c), (s16)combatant_y(c), &tx,
++                              &ty, &dist, g_combat_area) &&
++                (u16)(dist >> 1) <= range) {
++                H005_B(0x24C8) = 1;
++            }
++        }
++        if (!H005_B(0x24C8)) {
++            n = count_enemies_near(c, range);
++            if (n == 0) {
++                if (ai_pick_target(c, 0xFF, 0, 0)) {
++                    (void)monster_move(c);
++                } else {
++                    done = monster_end(c);
++                }
++            } else {
++                t = COMBATANT(NEAR(roll_dice(1, n)));
++                if (has_ranged_weapon(c) && !weapon_melee_ok(c) &&
++                    count_enemies_near(c, 1) > 0) {
++                    monster_choose_weapons(c);
++                    done = 1;
++                } else if (combat_distance(c, t) == 1 || can_attack(c, t)) {
++                    H005_B(0x24C8) = 1;
++                }
++            }
++        }
++        if (H005_B(0x24C8)) {
++            center_view((s16)combatant_x(c), (s16)combatant_y(c), 2,
++                        direction_toward(c, t));
++        }
++        if (!H005_B(0x24C8)) {
++            continue;
++        }
++        if (combat_sweep(c, t)) {
++            done = end_combat_turn(c);
++            continue;
++        }
++        record_attack(c, t);
++        w = NULL;
++        if (has_ranged_weapon(c)) {
++            H005_B(0x24C8) = find_weapon(c, &w);
++            if (weapon_melee_ok(c) && combat_distance(c, t) == 1) {
++                w = NULL;
++            }
++        }
++        combat_attack(c, t, 0, w, &done);
++        if (done) {
++            TURN(c)->b[8] = 0;
++            cont = 0;
++        } else if (!t->b[0x198]) {
++            done = 1;
++        }
++    }
++    return (u8)(cont == 0);
++}
++
++/*
++ * PORT H097+$1D68: turno di un combattente guidato dal computer: tasti,
++ * sequenza di movimento (+$17), morale ("flees in panic"), poi nell'ordine
++ * oggetto magico, incantesimo in corso, Turn Undead, incantesimo, e
++ * infine scelta delle armi e attacco o fine turno.
++ */
++void monster_turn(Character *c)
++{
++    u8 done;                            /* -$3(a5) */
++    u16 m;                              /* -$2(a5) */
++
++    done = monster_keys(c);
++    clear_message_line();
++    clear_message_area();
++    if (!c->b[0x198]) {
++        done = end_combat_turn(c);
++    }
++    m = TURN(c)->b[0x17];
++    if (m == 0 || m > 4 || roll_dice(1, 4) == 1) {
++        m = roll_dice(1, 8);
++        if (m == 8) {
++            m = (u16)(roll_dice(1, 2) + 4);
++        } else {
++            m = roll_dice(1, 4);
++        }
++    }
++    TURN(c)->b[0x17] = (u8)m;
++    if (!done) {
++        done = monster_morale(c);
++    }
++    if (TURN(c)->b[0x16] && !TURN(c)->b[0x12]) {
++        show_char_message(c, 0x0E, "flees in panic", 0x0A, 1);
++    }
++    if (done) {
++        return;
++    }
++    if (monster_use_item(c)) {
++        (void)end_combat_turn(c);
++        return;
++    }
++    if (TURN(c)->b[0] > 0) {
++        cast_spell(TURN(c)->b[0], 1, 1, &done);
++        (void)end_combat_turn(c);
++        return;
++    }
++    if (monster_turn_undead(c)) {
++        (void)end_combat_turn(c);
++        return;
++    }
++    if (monster_cast(c)) {
++        return;
++    }
++    monster_choose_weapons(c);
++    done = monster_keys(c);
++    while (!done) {
++        if (ai_pick_target(c, 0xFF, 1, 0) && (s16)TURN_W(c, 4) > 0 &&
++            c->b[0x198]) {
++            done = monster_attack(c);
++        } else {
++            done = monster_end(c);
++        }
++    }
++}
+diff --git a/src_c/readable/h097.h b/src_c/readable/h097.h
+new file mode 100644
+index 0000000..42f6863
+--- /dev/null
++++ b/src_c/readable/h097.h
+@@ -0,0 +1,7 @@
++/* H097: IA dei combattenti guidati dal computer. */
++#ifndef COK_H097_H
++#define COK_H097_H
++#include "character.h"
++void h097_init(void);                   /* H097+$00A2 */
++void monster_turn(Character *c);        /* H097+$1D68 */
++#endif
+diff --git a/src_c/readable/host/graphics.c b/src_c/readable/host/graphics.c
+index 149c3ac..adec578 100644
+--- a/src_c/readable/host/graphics.c
++++ b/src_c/readable/host/graphics.c
+@@ -58,10 +58,20 @@ void InitBitMap(struct BitMap *bm, LONG depth, LONG width, LONG height)
+     bm->pad = 0;
+ }
+ 
+-/* Memoria chip: sull'host memoria normale, non azzerata come sull'Amiga. */
++/*
++ * Memoria chip: sull'host memoria normale, non azzerata come sull'Amiga.
++ * Due word in piu' in coda: il blitter, con una sorgente non allineata alla
++ * word, legge una word oltre la fine della riga (sull'ultima riga, oltre
++ * il piano); sull'Amiga e' una lettura innocua, qui deve restare nel blocco.
++ */
+ PLANEPTR AllocRaster(ULONG width, ULONG height)
+ {
+-    return (PLANEPTR)malloc(RASSIZE(width, height));
++    PLANEPTR p = (PLANEPTR)malloc(RASSIZE(width, height) + 4);
++
++    if (p != NULL) {
++        memset((UBYTE *)p + RASSIZE(width, height), 0, 4);
++    }
++    return p;
+ }
+ 
+ void FreeRaster(PLANEPTR p, ULONG width, ULONG height)
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index 97fe747..93c76c7 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -70,7 +70,6 @@ void h044_0492(void) { cok_unported("H044+$0492"); }
+ 
+ 
+ 
+-void h097_1d68(Character *c) { (void)c; cok_unported("H097+$1D68"); }
+ 
+ 
+ void h012_14c8(void) { cok_unported("H012+$14C8"); }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index 0a45a85..56e7dd0 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -57,8 +57,6 @@ void h044_0492(void);
+ #endif
+ 
+ 
+-/* H097: IA del combattimento (non ancora portata). */
+-void h097_1d68(Character *c);           /* turno automatico (IA) */
+ 
+ 
+ /* Gestori dei comandi ECL (H064, H012) non ancora portati. */
+-- 
+2.43.0
+

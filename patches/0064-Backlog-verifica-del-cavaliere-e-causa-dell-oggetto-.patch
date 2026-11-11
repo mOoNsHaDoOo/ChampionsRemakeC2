@@ -1,0 +1,37 @@
+From 4ae9e94a34a87268fcc74ecd961ae17d91491f89 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 11 Nov 2026 13:25:43 +0000
+Subject: [PATCH 64/65] Backlog: verifica del cavaliere e causa dell'oggetto
+ Plate Mail 3 Spells (dati di prova)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/backlog.md | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index 86c44dc..b72963a 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -2763,3 +2763,17 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
+ - **Da fare:** creare un personaggio nuovo con la build attuale (cavaliere, che riceve la Plate Mail), salvarlo e controllare il .swg; confronto con salvataggi creati dal gioco originale.
+ 
+ ---
++
++## v56: verifica del cavaliere e causa di "Plate Mail 3 Spells" (nessuna modifica al codice)
++
++**Cavaliere creato con la build attuale** (ASan)
++- **Creazione:** Create New Character, Human, maschio, Knight, allineamento, "Reroll stats?" No, nome KTST, editor dell'icona, "Save KTST?" Yes.
++- **KTST.swg:** tre oggetti coerenti, byte per byte come CHRDATA1.swg: Plate Mail (tipo $24, nome 00 2F 24, peso 450), scudo ($25, peso 60), spada ($12, peso 50).
++- **ASan:** pulito.
++
++**Causa dell'oggetto "Plate Mail 3 Spells": dati di prova fabbricati in una sessione precedente, non un bug del port**
++- **Origine:** il 10/11 alle 19:54 UTC, per collaudare l'uso delle pergamene, uno script di prova ha preso il record della Plate Mail di KNT e ci ha scritto sopra tipo $27, +$32 = $66, +$44 = 1, +$45 = 3 (+$3A = 1). Poi lo ha salvato come unico oggetto di TAS, BOB, L e KNT.
++- **Verifica:** e' esattamente l'ibrido trovato; data e contenuto coincidono.
++- **Dati di prova corretti** (fuori dal repository): in L, BOB e TAS l'oggetto ora e' una pergamena da chierico coerente (tipo $28, nome $66/$27/$26, peso 25, incantesimi 1 e 3, pronta). Nella scheda di L appare "Cler Scroll 3 Spells", con Use disponibile.
++
++---
+-- 
+2.43.0
+

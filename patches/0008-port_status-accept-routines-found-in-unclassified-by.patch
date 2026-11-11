@@ -1,0 +1,91 @@
+From 73fa6eaa490826b16eed9ffbb87e398810685af4 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 15:24:35 +0000
+Subject: [PATCH 08/65] port_status: accept routines found in unclassified
+ bytes
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ scripts/port_status.py        | 20 ++++++++++++++++++++
+ src_c/readable/PORT_STATUS.md |  8 +++-----
+ 2 files changed, 23 insertions(+), 5 deletions(-)
+
+diff --git a/scripts/port_status.py b/scripts/port_status.py
+index 9bff83d..2f2ab14 100644
+--- a/scripts/port_status.py
++++ b/scripts/port_status.py
+@@ -28,6 +28,18 @@ def labels():
+                 out.setdefault(hunk, set()).add(int(m.group(2), 16))
+     return out
+ 
++def preserved():
++    """Intervalli 'Preserved bytes' (codice non classificato) per hunk."""
++    out = {}
++    for path in sorted(glob.glob(os.path.join(ASM, "H[0-9][0-9][0-9].asm"))):
++        hunk = int(os.path.basename(path)[1:4])
++        for line in open(path, encoding="utf-8", errors="replace"):
++            m = re.search(r"Preserved bytes H\d{3}\+\$([0-9A-F]+)\.\.\$([0-9A-F]+)", line)
++            if m:
++                out.setdefault(hunk, []).append((int(m.group(1), 16),
++                                                 int(m.group(2), 16)))
++    return out
++
+ def routines():
+     out = {}
+     for path in sorted(glob.glob(os.path.join(ASM, "H[0-9][0-9][0-9].asm"))):
+@@ -73,6 +85,14 @@ def main():
+             rs[h]["routines"].append((off, "(senza scheda)", "-"))
+             rs[h]["routines"].sort()
+             known.add((h, off))
++    # Routine trovate dentro byte che l'analisi non ha classificato
++    # (disassemblate a mano nel port).
++    pres = preserved()
++    for (h, off) in sorted(marks):
++        if (h, off) not in known and any(a <= off < b for a, b in pres.get(h, [])):
++            rs[h]["routines"].append((off, "(byte non classificati)", "-"))
++            rs[h]["routines"].sort()
++            known.add((h, off))
+     unknown = sorted(k for k in marks if k not in known)
+     total = sum(len(d["routines"]) for d in rs.values())
+     done = sum(1 for k in marks if k in known)
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index 2b4869b..0b9edda 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **201 / 911**.
++Routine portate: **202 / 912**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -36,7 +36,7 @@ Routine portate: **201 / 911**.
+ | H027 | 18156 | 10 | 1 |
+ | H028 | 4488 | 16 | 6 |
+ | H029 | 6084 | 32 | 10 |
+-| H030 | 3240 | 17 | 2 |
++| H030 | 3240 | 18 | 3 |
+ | H031 | 212 | 4 | 2 |
+ | H032 | 9352 | 1 | 1 |
+ | H033 | 8140 | 15 | 1 |
+@@ -520,6 +520,7 @@ Routine portate: **201 / 911**.
+ | `$0AD2` | `sub_H030_00000AD2` | parziale |  |
+ | `$0B4A` | `sub_H030_00000B4A` | parziale |  |
+ | `$0B6C` | `sub_H030_00000B6C` | parziale |  |
++| `$0BDA` | `(byte non classificati)` | - | h030.c:19 |
+ | `$0C10` | `sub_H030_00000C10` | parziale | h030.c:29 |
+ | `$0C84` | `sub_H030_00000C84` | parziale |  |
+ 
+@@ -1526,6 +1527,3 @@ Routine portate: **201 / 911**.
+ | --- | --- | --- | --- |
+ | `$0008` | `sub_H100_00000008` | parziale | h100_custom.c:7 |
+ 
+-## Marcatori senza routine nell'asm
+-
+-- `H030+$0BDA` (h030.c:19)
+-- 
+2.43.0
+

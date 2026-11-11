@@ -1,0 +1,1697 @@
+From 4a46ad2971a9afcc37820f0721e5778bdcb4b76c Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 20:03:55 +0000
+Subject: [PATCH 28/65] Port the Use command of the Items screen and spell
+ casting
+
+H065+$2F82 (Use) and +$34FC (spell choice); H033 spell lists
+($0366, $056E, $06C0, $07A4, $084C, $0C64, $0D7C), spell menu ($00EE),
+target selection ($12D4), casting ($1426), scroll spell removal ($1836)
+and announcement ($18EE); H063 $1DC2, $1EE8, $2F12 and the party member
+picker $3A26; H062+$1780; H073 $1294 and $12AE.  H085 data used by
+H033 get their own variables; H005 pointers $2508, $251C, $2520 and
+$2770 become C globals.  Combat-only callees stay unported.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md | 159 ++++----
+ src_c/readable/globals.c      |   4 +
+ src_c/readable/globals.h      |   4 +
+ src_c/readable/h013.c         |   6 +-
+ src_c/readable/h033.c         | 668 +++++++++++++++++++++++++++++++++-
+ src_c/readable/h033.h         |  11 +-
+ src_c/readable/h062.c         |  12 +
+ src_c/readable/h062.h         |   2 +
+ src_c/readable/h063.c         | 139 +++++++
+ src_c/readable/h063.h         |   6 +
+ src_c/readable/h065.c         | 129 ++++++-
+ src_c/readable/h065.h         |   2 +
+ src_c/readable/h073.c         |  14 +
+ src_c/readable/h073.h         |   2 +
+ src_c/readable/h085.c         |   6 +
+ src_c/readable/h085.h         |  27 ++
+ src_c/readable/unported.c     |  31 +-
+ src_c/readable/unported.h     |  18 +-
+ 18 files changed, 1140 insertions(+), 100 deletions(-)
+ create mode 100644 src_c/readable/h085.h
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index 4747c37..417da71 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **407 / 916**.
++Routine portate: **428 / 917**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -39,7 +39,7 @@ Routine portate: **407 / 916**.
+ | H030 | 3240 | 18 | 17 |
+ | H031 | 212 | 4 | 3 |
+ | H032 | 9352 | 1 | 1 |
+-| H033 | 8140 | 15 | 3 |
++| H033 | 8140 | 16 | 15 |
+ | H034 | 472 | 3 | 3 |
+ | H035 | 1760 | 6 | 4 |
+ | H036 | 144 | 2 | 2 |
+@@ -68,10 +68,10 @@ Routine portate: **407 / 916**.
+ | H059 | 6340 | 14 | 1 |
+ | H060 | 396 | 2 | 1 |
+ | H061 | 16936 | 35 | 1 |
+-| H062 | 10496 | 32 | 3 |
+-| H063 | 16496 | 52 | 23 |
++| H062 | 10496 | 32 | 4 |
++| H063 | 16496 | 52 | 27 |
+ | H064 | 6460 | 7 | 1 |
+-| H065 | 14268 | 27 | 18 |
++| H065 | 14268 | 27 | 20 |
+ | H066 | 13840 | 27 | 18 |
+ | H067 | 9820 | 22 | 1 |
+ | H068 | 5788 | 14 | 1 |
+@@ -79,7 +79,7 @@ Routine portate: **407 / 916**.
+ | H070 | 6940 | 13 | 1 |
+ | H071 | 3132 | 5 | 1 |
+ | H072 | 5404 | 12 | 1 |
+-| H073 | 4928 | 10 | 8 |
++| H073 | 4928 | 10 | 10 |
+ | H074 | 1216 | 4 | 1 |
+ | H075 | 392 | 4 | 1 |
+ | H076 | 8 | 1 | 1 |
+@@ -546,21 +546,22 @@ Routine portate: **407 / 916**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$00E0` | `module_init_H033` | parziale | h033.c:5 |
+-| `$00EE` | `trampoline_H033_0164` | parziale |  |
+-| `$0366` | `sub_H033_00000366` | parziale |  |
+-| `$056E` | `sub_H033_0000056E` | parziale |  |
+-| `$06C0` | `sub_H033_000006C0` | parziale |  |
+-| `$07A4` | `sub_H033_000007A4` | parziale |  |
+-| `$084C` | `sub_H033_0000084C` | parziale |  |
+-| `$0C64` | `sub_H033_00000C64` | parziale |  |
+-| `$0D7C` | `sub_H033_00000D7C` | parziale |  |
++| `$00E0` | `module_init_H033` | parziale | h033.c:481 |
++| `$00EE` | `trampoline_H033_0164` | parziale | h033.c:29 |
++| `$0366` | `sub_H033_00000366` | parziale | h033.c:102 |
++| `$056E` | `sub_H033_0000056E` | parziale | h033.c:149 |
++| `$06C0` | `sub_H033_000006C0` | parziale | h033.c:187 |
++| `$07A4` | `sub_H033_000007A4` | parziale | h033.c:211 |
++| `$084C` | `sub_H033_0000084C` | parziale | h033.c:237 |
++| `$0C64` | `sub_H033_00000C64` | parziale | h033.c:330 |
++| `$0D7C` | `sub_H033_00000D7C` | parziale | h033.c:366 |
+ | `$11FC` | `sub_H033_000011FC` | parziale |  |
+-| `$1426` | `sub_H033_00001426` | parziale |  |
+-| `$17E6` | `sub_H033_000017E6` | parziale | h033.c:139 |
+-| `$1836` | `sub_H033_00001836` | parziale |  |
+-| `$18EE` | `sub_H033_000018EE` | parziale |  |
+-| `$1A50` | `sub_H033_00001A50` | parziale | h033.c:11 |
++| `$12D4` | `(senza scheda)` | - | h033.c:625 |
++| `$1426` | `sub_H033_00001426` | parziale | h033.c:668 |
++| `$17E6` | `sub_H033_000017E6` | parziale | h033.c:615 |
++| `$1836` | `sub_H033_00001836` | parziale | h033.c:761 |
++| `$18EE` | `sub_H033_000018EE` | parziale | h033.c:787 |
++| `$1A50` | `sub_H033_00001A50` | parziale | h033.c:487 |
+ 
+ ### H034
+ 
+@@ -955,7 +956,7 @@ Routine portate: **407 / 916**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0106` | `module_init_H062` | parziale | h062.c:6 |
++| `$0106` | `module_init_H062` | parziale | h062.c:8 |
+ | `$0114` | `sub_H062_00000114` | parziale |  |
+ | `$021E` | `sub_H062_0000021E` | parziale |  |
+ | `$02FA` | `sub_H062_000002FA` | parziale |  |
+@@ -969,11 +970,11 @@ Routine portate: **407 / 916**.
+ | `$126C` | `sub_H062_0000126C` | parziale |  |
+ | `$12F6` | `sub_H062_000012F6` | parziale |  |
+ | `$142C` | `sub_H062_0000142C` | parziale |  |
+-| `$156C` | `sub_H062_0000156C` | parziale | h062.c:11 |
++| `$156C` | `sub_H062_0000156C` | parziale | h062.c:13 |
+ | `$15C6` | `sub_H062_000015C6` | parziale |  |
+-| `$15F2` | `sub_H062_000015F2` | parziale | h062.c:29 |
++| `$15F2` | `sub_H062_000015F2` | parziale | h062.c:31 |
+ | `$1694` | `sub_H062_00001694` | parziale |  |
+-| `$1780` | `sub_H062_00001780` | parziale |  |
++| `$1780` | `sub_H062_00001780` | parziale | h062.c:56 |
+ | `$17C0` | `sub_H062_000017C0` | parziale |  |
+ | `$1898` | `sub_H062_00001898` | parziale |  |
+ | `$18AC` | `sub_H062_000018AC` | parziale |  |
+@@ -992,33 +993,33 @@ Routine portate: **407 / 916**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0104` | `module_init_H063` | parziale | h063.c:14 |
+-| `$0112` | `sub_H063_00000112` | parziale | h063.c:39 |
+-| `$016A` | `sub_H063_0000016A` | parziale | h063.c:52 |
+-| `$0228` | `trampoline_H063_032C` | parziale | h063.c:76 |
+-| `$0354` | `sub_H063_00000354` | parziale | h063.c:111 |
+-| `$0432` | `sub_H063_00000432` | parziale | h063.c:241 |
+-| `$06AE` | `sub_H063_000006AE` | parziale | h063.c:287 |
+-| `$0758` | `sub_H063_00000758` | parziale | h063.c:306 |
+-| `$08A2` | `sub_H063_000008A2` | parziale | h063.c:338 |
+-| `$0946` | `sub_H063_00000946` | parziale | h063.c:361 |
+-| `$09B2` | `sub_H063_000009B2` | parziale | h063.c:378 |
+-| `$0D80` | `sub_H063_00000D80` | parziale | h063.c:701 |
+-| `$0FA0` | `sub_H063_00000FA0` | parziale | h063.c:453 |
+-| `$103A` | `sub_H063_0000103A` | parziale | h063.c:468 |
++| `$0104` | `module_init_H063` | parziale | h063.c:17 |
++| `$0112` | `sub_H063_00000112` | parziale | h063.c:42 |
++| `$016A` | `sub_H063_0000016A` | parziale | h063.c:55 |
++| `$0228` | `trampoline_H063_032C` | parziale | h063.c:79 |
++| `$0354` | `sub_H063_00000354` | parziale | h063.c:114 |
++| `$0432` | `sub_H063_00000432` | parziale | h063.c:244 |
++| `$06AE` | `sub_H063_000006AE` | parziale | h063.c:290 |
++| `$0758` | `sub_H063_00000758` | parziale | h063.c:309 |
++| `$08A2` | `sub_H063_000008A2` | parziale | h063.c:341 |
++| `$0946` | `sub_H063_00000946` | parziale | h063.c:364 |
++| `$09B2` | `sub_H063_000009B2` | parziale | h063.c:381 |
++| `$0D80` | `sub_H063_00000D80` | parziale | h063.c:704 |
++| `$0FA0` | `sub_H063_00000FA0` | parziale | h063.c:456 |
++| `$103A` | `sub_H063_0000103A` | parziale | h063.c:471 |
+ | `$1160` | `trampoline_H063_1350` | parziale |  |
+ | `$135A` | `sub_H063_0000135A` | parziale |  |
+-| `$13BE` | `sub_H063_000013BE` | parziale | h063.c:495 |
+-| `$18F8` | `sub_H063_000018F8` | parziale | h063.c:151 |
+-| `$19B6` | `sub_H063_000019B6` | parziale | h063.c:174 |
+-| `$1A8A` | `trampoline_H063_1B66` | parziale | h063.c:209 |
++| `$13BE` | `sub_H063_000013BE` | parziale | h063.c:498 |
++| `$18F8` | `sub_H063_000018F8` | parziale | h063.c:154 |
++| `$19B6` | `sub_H063_000019B6` | parziale | h063.c:177 |
++| `$1A8A` | `trampoline_H063_1B66` | parziale | h063.c:212 |
+ | `$1B90` | `sub_H063_00001B90` | parziale |  |
+-| `$1BE8` | `sub_H063_00001BE8` | parziale | h063.c:813 |
++| `$1BE8` | `sub_H063_00001BE8` | parziale | h063.c:816 |
+ | `$1CC0` | `sub_H063_00001CC0` | parziale |  |
+-| `$1D44` | `sub_H063_00001D44` | parziale | h063.c:682 |
+-| `$1DC2` | `sub_H063_00001DC2` | parziale |  |
+-| `$1EE8` | `sub_H063_00001EE8` | parziale |  |
+-| `$1F34` | `trampoline_H063_1F7E` | parziale | h063.c:612 |
++| `$1D44` | `sub_H063_00001D44` | parziale | h063.c:685 |
++| `$1DC2` | `sub_H063_00001DC2` | parziale | h063.c:847 |
++| `$1EE8` | `sub_H063_00001EE8` | parziale | h063.c:877 |
++| `$1F34` | `trampoline_H063_1F7E` | parziale | h063.c:615 |
+ | `$1FDC` | `sub_H063_00001FDC` | parziale |  |
+ | `$2178` | `sub_H063_00002178` | parziale |  |
+ | `$21D2` | `trampoline_H063_22B4` | parziale |  |
+@@ -1030,10 +1031,10 @@ Routine portate: **407 / 916**.
+ | `$2B7C` | `sub_H063_00002B7C` | parziale |  |
+ | `$2BDE` | `sub_H063_00002BDE` | parziale |  |
+ | `$2DC6` | `sub_H063_00002DC6` | parziale |  |
+-| `$2F12` | `sub_H063_00002F12` | parziale |  |
++| `$2F12` | `sub_H063_00002F12` | parziale | h063.c:887 |
+ | `$2F5A` | `sub_H063_00002F5A` | parziale |  |
+ | `$2FAA` | `sub_H063_00002FAA` | parziale |  |
+-| `$321A` | `trampoline_H063_3384` | parziale | h063.c:758 |
++| `$321A` | `trampoline_H063_3384` | parziale | h063.c:761 |
+ | `$33A0` | `trampoline_H063_3652` | parziale |  |
+ | `$3658` | `sub_H063_00003658` | parziale |  |
+ | `$3698` | `sub_H063_00003698` | parziale |  |
+@@ -1041,9 +1042,9 @@ Routine portate: **407 / 916**.
+ | `$3734` | `sub_H063_00003734` | parziale |  |
+ | `$37B2` | `sub_H063_000037B2` | parziale |  |
+ | `$3980` | `sub_H063_00003980` | parziale |  |
+-| `$3A26` | `sub_H063_00003A26` | parziale |  |
++| `$3A26` | `sub_H063_00003A26` | parziale | h063.c:900 |
+ | `$3CA0` | `sub_H063_00003CA0` | parziale |  |
+-| `$3F72` | `trampoline_H063_4042` | parziale | h063.c:635 |
++| `$3F72` | `trampoline_H063_4042` | parziale | h063.c:638 |
+ 
+ ### H064
+ 
+@@ -1061,33 +1062,33 @@ Routine portate: **407 / 916**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$04AA` | `module_init_H065` | parziale | h065.c:17 |
+-| `$04B8` | `sub_H065_000004B8` | parziale | h065.c:40 |
+-| `$0ADE` | `sub_H065_00000ADE` | parziale | h065.c:147 |
+-| `$0BE6` | `trampoline_H065_0C34` | parziale | h065.c:181 |
+-| `$0BF4` | `sub_H065_00000BF4` | parziale | h065.c:172 |
+-| `$10DE` | `trampoline_H065_1100` | parziale | h065.c:252 |
++| `$04AA` | `module_init_H065` | parziale | h065.c:18 |
++| `$04B8` | `sub_H065_000004B8` | parziale | h065.c:42 |
++| `$0ADE` | `sub_H065_00000ADE` | parziale | h065.c:149 |
++| `$0BE6` | `trampoline_H065_0C34` | parziale | h065.c:183 |
++| `$0BF4` | `sub_H065_00000BF4` | parziale | h065.c:174 |
++| `$10DE` | `trampoline_H065_1100` | parziale | h065.c:254 |
+ | `$12D6` | `sub_H065_000012D6` | parziale |  |
+ | `$1636` | `sub_H065_00001636` | parziale |  |
+-| `$196E` | `sub_H065_0000196E` | parziale | h065.c:362 |
+-| `$1C48` | `sub_H065_00001C48` | parziale | h065.c:451 |
+-| `$1D80` | `sub_H065_00001D80` | parziale | h065.c:482 |
++| `$196E` | `sub_H065_0000196E` | parziale | h065.c:364 |
++| `$1C48` | `sub_H065_00001C48` | parziale | h065.c:453 |
++| `$1D80` | `sub_H065_00001D80` | parziale | h065.c:484 |
+ | `$1D94` | `sub_H065_00001D94` | parziale |  |
+-| `$1E2C` | `sub_H065_00001E2C` | parziale | h065.c:489 |
+-| `$1EE4` | `sub_H065_00001EE4` | parziale | h065.c:513 |
++| `$1E2C` | `sub_H065_00001E2C` | parziale | h065.c:491 |
++| `$1EE4` | `sub_H065_00001EE4` | parziale | h065.c:515 |
+ | `$20EC` | `sub_H065_000020EC` | parziale |  |
+ | `$2308` | `sub_H065_00002308` | parziale |  |
+-| `$255A` | `sub_H065_0000255A` | parziale | h065.c:718 |
+-| `$2B2E` | `sub_H065_00002B2E` | parziale | h065.c:551 |
+-| `$2C04` | `sub_H065_00002C04` | parziale | h065.c:577 |
+-| `$2F82` | `sub_H065_00002F82` | parziale |  |
++| `$255A` | `sub_H065_0000255A` | parziale | h065.c:720 |
++| `$2B2E` | `sub_H065_00002B2E` | parziale | h065.c:553 |
++| `$2C04` | `sub_H065_00002C04` | parziale | h065.c:579 |
++| `$2F82` | `sub_H065_00002F82` | parziale | h065.c:876 |
+ | `$32F6` | `sub_H065_000032F6` | parziale |  |
+-| `$3390` | `trampoline_H065_3474` | parziale | h065.c:299 |
++| `$3390` | `trampoline_H065_3474` | parziale | h065.c:301 |
+ | `$347E` | `sub_H065_0000347E` | parziale |  |
+-| `$34FC` | `trampoline_H065_35AE` | parziale |  |
+-| `$36A6` | `trampoline_H065_36B6` | parziale | h065.c:284 |
+-| `$36C0` | `trampoline_H065_36D0` | parziale | h065.c:291 |
+-| `$3702` | `sub_H065_00003702` | parziale | h065.c:337 |
++| `$34FC` | `trampoline_H065_35AE` | parziale | h065.c:952 |
++| `$36A6` | `trampoline_H065_36B6` | parziale | h065.c:286 |
++| `$36C0` | `trampoline_H065_36D0` | parziale | h065.c:293 |
++| `$3702` | `sub_H065_00003702` | parziale | h065.c:339 |
+ 
+ ### H066
+ 
+@@ -1225,15 +1226,15 @@ Routine portate: **407 / 916**.
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+ | `$0004` | `module_init_H073` | parziale | h073.c:6 |
+-| `$0012` | `sub_H073_00000012` | parziale | h073.c:282 |
+-| `$05AE` | `sub_H073_000005AE` | parziale | h073.c:397 |
++| `$0012` | `sub_H073_00000012` | parziale | h073.c:296 |
++| `$05AE` | `sub_H073_000005AE` | parziale | h073.c:411 |
+ | `$09BA` | `sub_H073_000009BA` | parziale | h073.c:12 |
+ | `$0BA8` | `sub_H073_00000BA8` | parziale | h073.c:70 |
+-| `$0FC8` | `sub_H073_00000FC8` | parziale | h073.c:164 |
+-| `$1294` | `trampoline_H073_12A4` | parziale |  |
+-| `$12AE` | `trampoline_H073_12BE` | parziale |  |
+-| `$12C8` | `trampoline_H073_12D8` | parziale | h073.c:150 |
+-| `$130A` | `sub_H073_0000130A` | parziale | h073.c:157 |
++| `$0FC8` | `sub_H073_00000FC8` | parziale | h073.c:178 |
++| `$1294` | `trampoline_H073_12A4` | parziale | h073.c:150 |
++| `$12AE` | `trampoline_H073_12BE` | parziale | h073.c:157 |
++| `$12C8` | `trampoline_H073_12D8` | parziale | h073.c:164 |
++| `$130A` | `sub_H073_0000130A` | parziale | h073.c:171 |
+ 
+ ### H074
+ 
+@@ -1324,7 +1325,7 @@ Routine portate: **407 / 916**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0664` | `module_init_H085` | parziale | h085.c:9 |
++| `$0664` | `module_init_H085` | parziale | h085.c:15 |
+ | `$0672` | `trampoline_H085_078A` | parziale |  |
+ | `$07B6` | `sub_H085_000007B6` | parziale |  |
+ | `$0A1A` | `sub_H085_00000A1A` | parziale |  |
+diff --git a/src_c/readable/globals.c b/src_c/readable/globals.c
+index 4e68a6f..2f74dd2 100644
+--- a/src_c/readable/globals.c
++++ b/src_c/readable/globals.c
+@@ -3,6 +3,10 @@
+ 
+ u8  g_h005[H005_SIZE];
+ u16 g_distribution_check;
++struct Character *g_h005_2508;
++struct Character *g_spell_target;
++struct Character *g_spell_targets[40];
++CokItem *g_scroll_item;
+ 
+ u8 *g_state_a;
+ u8 *g_state_b;
+diff --git a/src_c/readable/globals.h b/src_c/readable/globals.h
+index 62eb281..aea07f4 100644
+--- a/src_c/readable/globals.h
++++ b/src_c/readable/globals.h
+@@ -73,6 +73,10 @@ extern u8 *g_pic_buffers[7];            /* $27E8: blocchi 2..8 dell'insieme */
+ #include "character.h"
+ extern struct Character *g_party_head;  /* $3364: testa della lista del party */
+ extern struct Character *g_current_char;/* $3368: personaggio corrente */
++extern struct Character *g_h005_2508;   /* $2508: personaggio scelto */
++extern struct Character *g_spell_target;/* $251C: bersaglio scelto */
++extern struct Character *g_spell_targets[40]; /* $2520..$25BF: bersagli */
++extern CokItem *g_scroll_item;          /* $2770: pergamena in uso */
+ 
+ /*
+  * Tabelle di gestori in H005 (puntatori a codice nell'originale).  Il tipo
+diff --git a/src_c/readable/h013.c b/src_c/readable/h013.c
+index 1317016..738b27b 100644
+--- a/src_c/readable/h013.c
++++ b/src_c/readable/h013.c
+@@ -1282,7 +1282,7 @@ void train_character(void)
+     u16 nclasses;                       /* -$12(a5) */
+     u16 row;                            /* -$1e(a5) */
+     u16 spell;                          /* -$24(a5) */
+-    u16 spell_value;                    /* -$26(a5) */
++    s16 spell_value;                    /* -$26(a5) */
+     u16 allowed;                        /* -$2a(a5) */
+     u8 again = 0;                       /* -$27(a5) */
+     u8 blocked;                         /* -$1(a5) */
+@@ -1426,9 +1426,9 @@ void train_character(void)
+     }
+     level_derived_values(g_current_char);
+     if (!H005_B(0x24CF) && (c->b[0x103] > old_103 || c->b[0x102] > 8)) {
+-        spell_value = 0xFFFF;
++        spell_value = -1;               /* $FFFF */
+         do {
+-            spell = h065_34fc(4, 4, &spell_value, &again);
++            spell = choose_spell_of_kind(4, 4, &spell_value, &again);
+         } while (spell == 0 && again);
+         if (spell > 0) {
+             c->b[0x66 + spell - 1] = 1;
+diff --git a/src_c/readable/h033.c b/src_c/readable/h033.c
+index 2fece58..7977d69 100644
+--- a/src_c/readable/h033.c
++++ b/src_c/readable/h033.c
+@@ -1,7 +1,483 @@
+ /* H033: Vettori e servizi condivisi di azioni/oggetti; dettaglio parziale. */
++#include <string.h>
++
++#include "h033.h"
+ #include "globals.h"
++#include "h003_exec.h"
++#include "h008.h"
++#include "h026_string.h"
++#include "h029_gfx.h"
++#include "h030.h"
++#include "h045.h"
++#include "h062.h"
++#include "h063.h"
++#include "h085.h"
+ #include "unported.h"
+ 
++/* Tabella degli incantesimi H005+$66: 16 byte per incantesimo (1..). */
++#define SPELL_B(s, k)   H005_B(0x66 + ((int)(s) - 1) * 16 + (k))
++/* Nomi degli incantesimi H005+$716: 32 byte per incantesimo. */
++#define SPELL_NAME(s)   ((const char *)&H005_B(0x716 + ((int)(s) - 1) * 32))
++
++static CokMenuItem *new_menu_item(void)
++{
++    /* AllocMem($30, MEMF_CLEAR) */
++    return (CokMenuItem *)exec_alloc_mem(sizeof(CokMenuItem), COK_MEMF_CLEAR);
++}
++
++/*
++ * PORT H033+$00EE: menu degli incantesimi dell'elenco H085+$1B2.  mode
++ * 1 Cast, 2 Memorize, 3 Scribe, 4 Learn.  Restituisce l'incantesimo scelto
++ * (0 con Exit); con Scribe la pergamena della riga va in $2770.  L'elenco
++ * viene liberato.
++ */
++u16 choose_spell(u16 mode, s16 *index)
++{
++    char command[0x2A];                 /* -$5c(a5) */
++    char prompt[0x2A];                  /* -$32(a5) */
++    u8 redraw;                          /* -$67(a5) */
++    u8 with_exit;                       /* -$66(a5) */
++    u8 key;                             /* -$65(a5) */
++    u16 result;                         /* -$64(a5) */
++    u16 last_row;                       /* -$62(a5) */
++    u16 count;                          /* -$60(a5) */
++    CokMenuItem *node;                  /* -$8(a5) */
++    CokMenuItem *chosen;                /* -$4(a5) */
++
++    switch (mode) {
++    case 1:  strcpy(command, "Cast");     break;
++    case 2:  strcpy(command, "Memorize"); break;
++    case 3:  strcpy(command, "Scribe");   break;
++    case 4:  strcpy(command, "Learn");    break;
++    default: strcpy(command, "");         break;
++    }
++    redraw = 0;
++    if (mode == 1 || mode == 2 || mode == 3 || mode == 4) {
++        strcpy(prompt, "Choose Spell :  ");
++    } else {
++        strcpy(prompt, "");
++    }
++    if (mode == 2) {
++        last_row = 0x0F;
++        redraw = H005_B(0x24DD);
++    } else {
++        last_row = 0x16;
++    }
++    with_exit = (u8)(mode != 4);
++    if (*index < 0) {
++        redraw = 1;
++        *index = 0;
++    }
++    if (mode == 4 || mode == 1) {
++        redraw = 1;
++    }
++    chosen = NULL;
++    do {
++        key = list_menu(0x28, prompt, 0x28, command, 0x0D, 0x0A, 0x0F, 1, 5,
++                        0x26, last_row, g_h085_spell_list, with_exit, &redraw,
++                        (u16 *)index, &chosen);
++    } while (key != 'E' && key != 0 && key != '\r' && key != 'C' &&
++             key != 'M' && key != 'S' && key != 'L');
++    node = g_h085_spell_list;
++    count = 0;
++    while (node != chosen) {
++        if (!node->header) {
++            ++count;
++        }
++        node = node->next;
++    }
++    if (key == 'E' || key == 0) {
++        result = 0;
++    } else {
++        result = g_h085_spell_ids[count];
++    }
++    if (mode == 3) {
++        g_scroll_item = g_h085_scroll_items[count];
++    }
++    menu_free(&g_h085_spell_list);
++    return result;
++}
++
++/*
++ * PORT H033+$0366: accoda all'elenco la riga della pergamena per spell (bit
++ * 7: " *"), preceduta dal nome del livello quando il livello cambia.
++ */
++static void add_scroll_line(u16 spell)
++{
++    CokMenuItem *node = g_h085_spell_list;      /* -$4(a5) */
++    u16 lines;                                  /* -$6(a5) */
++    u8 level;                                   /* -$7(a5) */
++
++    if (g_h085_spell_list == NULL) {
++        node = new_menu_item();
++        g_h085_spell_list = node;
++        level = 0;
++        lines = 0;
++    } else {
++        lines = 1;
++        while (node->next != NULL) {
++            if (!node->header) {
++                ++lines;
++            }
++            node = node->next;
++        }
++        level = SPELL_B(g_h085_spell_ids[lines - 1], 1);
++        node->next = new_menu_item();
++        node = node->next;
++    }
++    node->next = NULL;
++    if (level != SPELL_B(mask_byte((u8)spell, 0x7F), 1)) {
++        h026_copy(0x28, node->text, 0x14,
++                  H085_LEVEL_NAME(SPELL_B(mask_byte((u8)spell, 0x7F), 1)));
++        node->header = 1;
++        node->next = new_menu_item();
++        node = node->next;
++        node->next = NULL;
++    }
++    if (spell > 0x7F) {
++        strcpy(node->text, " *");
++    } else {
++        strcpy(node->text, "  ");
++    }
++    h026_append(0x28, node->text, 0x1F,
++                SPELL_NAME(mask_byte((u8)spell, 0x7F)));
++    node->header = 0;
++    g_h085_spell_ids[lines] = mask_byte((u8)spell, 0x7F);
++}
++
++/*
++ * PORT H033+$056E: righe degli incantesimi della pergamena $2770 (+$44..
++ * +$46); usable: solo quelli con il bit 7 (> $80).
++ */
++static void scroll_item_spells(u8 usable)
++{
++    CokEffect *effect;                  /* -$6(a5) */
++    Character *c = g_current_char;
++    CokItem *it;
++    u16 k;                              /* -$2(a5) */
++    u8 v;
++
++    if (find_effect(c, 0x10, &effect) ||
++        ((c->b[0xFE] > 0 || c->b[0x106] > c->b[0xDC]) &&
++         H005_B(0x336C + g_scroll_item->b[0x30] * 0x12) == 0x0C)) {
++        g_scroll_item->b[0x3B] = mask_byte(g_scroll_item->b[0x3B], 0xF8);
++    }
++    it = g_scroll_item;
++    if (mask_byte(it->b[0x3B], 7) != 0) {
++        return;
++    }
++    for (k = 1; k <= 3; ++k) {
++        v = it->b[0x44 + k - 1];
++        if ((usable && v > 0x80) || (!usable && v > 0)) {
++            add_scroll_line(v);
++            /*
++             * Nell'originale il contatore non ha limite e oltre $31 voci
++             * scrive sulle tabelle seguenti di H085; qui la scrittura si
++             * ferma alla fine della tabella.
++             */
++            if (g_h085_scroll_count < 0x31) {
++                g_h085_scroll_items[g_h085_scroll_count] = g_scroll_item;
++            }
++            ++g_h085_scroll_count;
++        }
++    }
++}
++
++/*
++ * PORT H033+$06C0: righe di tutte le pergamene del personaggio corrente
++ * leggibili dalla sua classe di incantesimi (+$5F: 1 bit $20, 2 bit $10).
++ */
++static void collect_scroll_spells(u8 usable)
++{
++    u16 i;
++
++    for (i = 0; i <= 0x30; ++i) {
++        g_h085_scroll_items[i] = NULL;
++    }
++    g_h085_scroll_count = 0;
++    for (g_scroll_item = g_current_char->items; g_scroll_item != NULL;
++         g_scroll_item = g_scroll_item->next) {
++        if (is_scroll(g_scroll_item) &&
++            ((g_current_char->b[0x5F] == 1 &&
++              mask_byte(g_scroll_item->b[0x3B], 0x20)) ||
++             (g_current_char->b[0x5F] == 2 &&
++              mask_byte(g_scroll_item->b[0x3B], 0x10)))) {
++            scroll_item_spells(usable);
++        }
++    }
++}
++
++/*
++ * PORT H033+$07A4: per un incantesimo della classe 2, e' gia' fra quelli
++ * in memoria (+$1F..+$57)?
++ */
++static u8 spell_in_memory(Character *c, u16 spell)
++{
++    u16 i;                              /* -$2(a5) */
++    u8 found;                           /* -$3(a5) */
++    u8 result;                          /* -$4(a5) */
++
++    spell = mask_byte((u8)spell, 0x7F);
++    result = 0;
++    if (SPELL_B(spell, 0) == 2) {
++        i = 1;
++        found = 0;
++        while (!found && i <= 0x39) {
++            if (mask_byte(c->b[0x1E + i], 0x7F) == spell) {
++                found = 1;
++            }
++            ++i;
++        }
++        result = found;
++    }
++    return result;
++}
++
++/*
++ * PORT H033+$084C: inserisce spell nell'elenco ordinato per livello; se
++ * c'e' gia' ne conta le copie (" (n)").
++ */
++static void add_spell(u16 spell)
++{
++    CokMenuItem *node = g_h085_spell_list;      /* -$5a(a5) */
++    CokMenuItem *prev;                          /* -$5e(a5) */
++    CokMenuItem *fresh;                         /* -$62(a5) */
++    char number[0x52];                          /* -$52(a5) */
++    u16 carry;                                  /* -$54(a5) */
++    u16 saved;                                  /* -$56(a5) */
++    u16 i;                                      /* -$64(a5) */
++    u16 j;                                      /* -$66(a5) */
++    u8 found = 0;                               /* -$67(a5) */
++    u8 level = SPELL_B(mask_byte((u8)spell, 0x7F), 1);  /* -$68(a5) */
++    u16 masked;
++
++    if (g_h085_spell_list == NULL) {
++        h029_fill_bytes(0x73, (u8 *)g_h085_spell_counts, 0x74, 0);
++        node = new_menu_item();
++        node->next = NULL;
++        g_h085_spell_list = node;
++        i = 0;
++        g_h085_spell_counts[i] = 1;
++    } else {
++        i = 0;
++        while (node != NULL && !found) {
++            if (!node->header) {
++                if (level < SPELL_B(g_h085_spell_ids[i], 1) ||
++                    g_h085_spell_ids[i] == mask_byte((u8)spell, 0x7F)) {
++                    found = 1;
++                } else {
++                    ++i;
++                    node = node->next;
++                }
++            } else {
++                node = node->next;
++                ++i;
++            }
++        }
++        if (g_h085_spell_ids[i] != mask_byte((u8)spell, 0x7F)) {
++            prev = g_h085_spell_list;
++            if (prev != node) {
++                while (prev->next != node) {
++                    prev = prev->next;
++                }
++                fresh = new_menu_item();
++                fresh->next = prev->next;
++                prev->next = fresh;
++                node = fresh;
++            } else {
++                fresh = new_menu_item();
++                fresh->next = node;
++                g_h085_spell_list = fresh;
++                node = fresh;
++            }
++            carry = 1;
++            for (j = i; j <= 0x39; ++j) {
++                saved = g_h085_spell_counts[j];
++                g_h085_spell_counts[j] = carry;
++                carry = saved;
++            }
++        } else {
++            ++g_h085_spell_counts[i];
++        }
++    }
++    if (spell > 0x7F) {
++        strcpy(node->text, " *");
++    } else {
++        strcpy(node->text, "  ");
++    }
++    h026_append(0x28, node->text, 0x1F,
++                SPELL_NAME(mask_byte((u8)spell, 0x7F)));
++    node->header = 0;
++    if (g_h085_spell_counts[i] > 1) {
++        format_number(0x50, number, g_h085_spell_counts[i], 0, 0x0A, 2, ' ');
++        h026_append(0x28, node->text, 2, " (");
++        h026_append(0x28, node->text, 0x50, number);
++        h026_append(0x28, node->text, 1, ")");
++    }
++    masked = mask_byte((u8)spell, 0x7F);
++    if (g_h085_spell_ids[i] != masked) {
++        carry = g_h085_spell_ids[i];
++        g_h085_spell_ids[i] = masked;
++        for (j = (u16)(i + 1); j <= 0x39; ++j) {
++            saved = g_h085_spell_ids[j];
++            g_h085_spell_ids[j] = carry;
++            carry = saved;
++        }
++    }
++}
++
++/*
++ * PORT H033+$0C64: la classe dell'incantesimo (byte 0 della tabella) e'
++ * utilizzabile dal personaggio?
++ */
++static u8 spell_class_usable(Character *c, u16 spell)
++{
++    u8 result = 0;                      /* -$1(a5) */
++
++    spell = mask_byte((u8)spell, 0x7F);
++    switch (SPELL_B(spell, 0)) {
++    case 0:
++    case 2:
++        result = (u8)(c->b[0x15] > 8 &&
++                      (c->b[0xFE] > 0 || c->b[0x105] > 5));
++        break;
++    case 1:
++        result = 0;
++        break;
++    case 3:
++        if (c->b[0x13] > 8 &&
++            !(c->b[0x5B] == 6 && c->readied[2] != NULL &&
++              H005_B(0x3DE3) == 5)) {
++            result = (u8)(c->b[0x102] > 8 || c->b[0x103] > 0);
++        } else {
++            result = 0;
++        }
++        break;
++    case 4:
++        result = 0;
++        break;
++    default:
++        break;
++    }
++    return result;
++}
++
++/*
++ * PORT H033+$0D7C: costruisce in H085+$1B2 l'elenco degli incantesimi del
++ * personaggio corrente: kind 0 in memoria, 1 nel grimorio, 2 sulla
++ * pergamena $2770, 3 su tutte le pergamene, 4 da scegliere, 5 da
++ * memorizzare, 6 sulle pergamene leggibili.  Tranne che per le pergamene
++ * aggiunge le intestazioni dei livelli.  Restituisce 1 se l'elenco non e'
++ * vuoto.
++ */
++u8 build_spell_list(u16 kind)
++{
++    Character *c = g_current_char;
++    CokMenuItem *node;                  /* -$c(a5) */
++    CokMenuItem *p;                     /* -$8(a5) */
++    u16 i;                              /* -$2(a5) */
++    u16 s;                              /* -$4(a5) */
++    u16 row;                            /* -$12(a5) */
++    u8 level;                           /* -$e(a5) */
++    u8 prev_level;                      /* -$d(a5) */
++    u8 headers = 1;                     /* -$f(a5) */
++    u8 result = 0;                      /* -$10(a5) */
++
++    g_h085_spell_list = NULL;
++    for (i = 0; i <= 0x39; ++i) {
++        g_h085_spell_ids[i] = 0;
++    }
++    switch (kind) {
++    case 0:                             /* $0DC2 */
++        for (i = 0; i <= 0x39; ++i) {
++            if (c->b[0x1E + i] > 0 &&
++                spell_class_usable(c, mask_byte(c->b[0x1E + i], 0x7F)) &&
++                c->b[0x1E + i] < 0x80) {
++                add_spell(c->b[0x1E + i]);
++            }
++        }
++        break;
++    case 1:                             /* $0EE2 */
++        for (i = 1; i <= 0x6B; ++i) {
++            if (c->b[0x66 + i - 1] && spell_class_usable(c, i) &&
++                !spell_in_memory(c, i)) {
++                add_spell(i);
++            }
++        }
++        break;
++    case 2:                             /* $0F46 */
++        scroll_item_spells(0);
++        headers = 0;
++        break;
++    case 3:                             /* $0F52 */
++        collect_scroll_spells(0);
++        headers = 0;
++        break;
++    case 4:                             /* $0F6C */
++        row = (c->b[0x5F] == 1) ? 2 : 3;
++        for (level = 1; level <= 4; ++level) {
++            if (c->b[0x136 + level - 1] > 0) {
++                i = 1;
++                s = 0xFF;
++                while (i <= 0x0A && s != 0) {
++                    s = H005_W(0x1476 + (row - 1) * 0x50 +
++                               (level - 1) * 0x14 + (i - 1) * 2);
++                    if (s != 0 && c->b[0x66 + s - 1] == 0) {
++                        add_spell(s);
++                    }
++                    ++i;
++                }
++            }
++        }
++        break;
++    case 5:                             /* $0E60 */
++        for (i = 0; i <= 0x39; ++i) {
++            if (c->b[0x1E + i] > 0x7F &&
++                spell_class_usable(c, mask_byte(c->b[0x1E + i], 0x7F))) {
++                add_spell(c->b[0x1E + i]);
++            }
++        }
++        break;
++    case 6:                             /* $0F5E */
++        collect_scroll_spells(1);
++        headers = 0;
++        break;
++    default:
++        break;
++    }
++    if (g_h085_spell_list != NULL) {
++        if (headers) {
++            i = 0;
++            level = SPELL_B(g_h085_spell_ids[i], 1);
++            node = new_menu_item();
++            node->next = g_h085_spell_list;
++            g_h085_spell_list = node;
++            h026_copy(0x28, g_h085_spell_list->text, 0x14,
++                      H085_LEVEL_NAME(SPELL_B(g_h085_spell_ids[i], 1)));
++            g_h085_spell_list->header = 1;
++            p = g_h085_spell_list;
++            do {
++                prev_level = level;
++                if (g_h085_spell_ids[i] != 0) {
++                    level = SPELL_B(g_h085_spell_ids[i], 1);
++                }
++                if (prev_level < level) {
++                    node = new_menu_item();
++                    node->next = p->next;
++                    p->next = node;
++                    p = p->next;
++                    h026_copy(0x28, p->text, 0x14, H085_LEVEL_NAME(level));
++                    p->header = 1;
++                }
++                ++i;
++                p = p->next;
++            } while (p != NULL);
++        }
++        result = 1;
++    }
++    return result;
++}
++
+ /* PORT H033+$00E0: link/unlk, nessun effetto. */
+ void h033_init(void)
+ {
+@@ -14,10 +490,10 @@ void h033_init(void)
+  */
+ void install_action_handlers(void)
+ {
+-    g_handlers_25c0[107] = h033_12d4;   /* $276C */
++    g_handlers_25c0[107] = (CokHandler)select_spell_target;   /* $276C */
+     H005_B(0x24AA) = 0;
+     H005_B(0x24D9) = 0;
+-    H005_SET_L(0x251C, 0);
++    g_spell_target = NULL;              /* $251C */
+     H005_B(0x24A8) = 1;
+     g_handlers_25c0[0] = h085_1c60;   /* $25C0 */
+     g_handlers_25c0[1] = h085_1c86;   /* $25C4 */
+@@ -144,3 +620,191 @@ u8 is_scroll(const CokItem *it)
+     }
+     return 0;
+ }
++
++/*
++ * PORT H033+$12D4 (vettore $276C): bersagli dell'incantesimo in $2520
++ * (quanti in $246C) secondo il byte 7 della tabella: 1 chi lancia, 2 da
++ * scegliere, 4 tutto il party; altrimenti *ok = 0.
++ */
++void select_spell_target(u8 spell, u8 unused, u8 *ok)
++{
++    (void)unused;
++    if (g_spell_target == NULL) {
++        g_spell_target = g_current_char;
++    }
++    g_spell_targets[0] = g_current_char;
++    H005_B(0x246C) = 1;
++    *ok = 1;
++    switch (SPELL_B(spell, 7)) {
++    case 1:                             /* $1326 */
++        break;
++    case 2:                             /* $1328 */
++        redraw_game_screen();
++        choose_party_member(0x13, "Cast Spell on whom ", 1, 1,
++                            &g_spell_target);
++        if (g_spell_target == NULL) {
++            g_spell_targets[0] = NULL;
++            H005_B(0x246C) = 0;
++            *ok = 0;
++        } else {
++            g_spell_targets[0] = g_spell_target;
++        }
++        break;
++    case 4:                             /* $1376 */
++        g_spell_targets[H005_B(0x246C) - 1] = g_party_head;
++        while (g_spell_targets[H005_B(0x246C) - 1]->next != NULL) {
++            g_spell_targets[H005_B(0x246C)] =
++                g_spell_targets[H005_B(0x246C) - 1]->next;
++            add_to_byte(&H005_B(0x246C), 1);
++        }
++        break;
++    default:                            /* $13F2 */
++        *ok = 0;
++        break;
++    }
++}
++
++/*
++ * PORT H033+$1426: lancia spell per il personaggio corrente.  Fuori dal
++ * combattimento gli incantesimi solo da combattimento (byte 7 = 0) si
++ * possono solo perdere (o, da un oggetto, usare comunque).  announce:
++ * mostra "casts".  Sceglie i bersagli (vettore $276C) ed esegue il gestore
++ * dell'incantesimo ($25C0 + (spell-1)*4); *redraw = bersagli scelti.
++ */
++void cast_spell(u16 spell, u8 auto_abort, u8 announce, u8 *redraw)
++{
++    Character *c = g_current_char;      /* -$e(a5) */
++    u8 go = 1;                          /* -$1(a5) */
++    u16 a;                              /* -$4(a5) */
++    u16 b;                              /* -$6(a5) */
++    u16 n;                              /* -$8(a5) */
++
++    if (H005_B(0x3DE3) != 5 && SPELL_B(spell, 7) == 0) {
++        if (!H005_B(0x24D9)) {
++            ui_draw_text(1, 0x13, 0x0A, 0, 0x1F, SPELL_NAME(spell));
++            ui_draw_text(1, 0x14, 0x0A, 0, 0x15, "can't be cast here...");
++            if (ask_yes_no(9, "Lose it? ", 0x0D, 0x0A, 0x0F) == 'Y') {
++                h063_1b90(c, spell);
++            }
++        } else {
++            ui_draw_text(1, 0x13, 0x0A, 0, 9, "That Item");
++            ui_draw_text(1, 0x14, 0x0A, 0, 0x18, "is a combat-only item...");
++            if (ask_yes_no(8, "Use it? ", 0x0D, 0x0A, 0x0F) == 'Y') {
++                *redraw = 1;
++            }
++        }
++        announce = 0;
++        go = 0;
++    }
++    if (announce && !H005_B(0x24D9)) {
++        announce_spell(c, 5, "casts", spell);
++    }
++    while (go) {
++        ((void (*)(u8, u8, u8 *))g_handlers_25c0[107])((u8)spell, auto_abort,
++                                                       redraw);
++        if (*redraw) {
++            go = 0;
++            if (H005_B(0x3DE3) == 5) {
++                h063_2178(0x12);
++                a = h048_0f88(c);
++                b = h048_0fba(c);
++                n = 0;
++                while (!h077_0508(a, b, H005_W(0x251A), H005_W(0x2518), n)) {
++                    ++n;
++                }
++                H005_B(0x24C6) = 1;
++                h048_0fec(c, (u8)n, 1, 0);
++                switch (spell) {
++                case 0x2F:
++                    h043_190e(0x13);
++                    break;
++                case 0x33:
++                    h043_190e(0x0F);
++                    break;
++                default:
++                    h043_190e(2);
++                    break;
++                }
++                h063_21d2(a, b, H005_W(0x251A), H005_W(0x2518), 4, 1);
++                if (h048_0230(c, 0)) {
++                    h048_0fec(c, ((u8 *)c->block_192)[0x0B], 1, 1);
++                    h048_0fec(c, ((u8 *)c->block_192)[0x0B], 0, 0);
++                }
++            }
++            remove_effects_19(c);
++            if (!H005_B(0x24D9)) {
++                h063_1b90(c, spell);
++            }
++            H005_B(0x2471) = (u8)spell;
++            g_handlers_25c0[H005_B(0x2471) - 1]();
++            H005_B(0x2471) = 0;
++            H005_B(0x24A9) = 0;
++        } else if (H005_B(0x3DE3) != 5) {
++            go = 0;
++        } else if (auto_abort ||
++                   ask_yes_no(0x0D, "Abort Spell? ", 0x0E, 0x0A, 0x0F) ==
++                   'Y') {
++            show_message_line(0x0D, "Spell Aborted");
++            if (!H005_B(0x24D9)) {
++                h063_1b90(c, spell);
++            }
++            go = 0;
++        }
++    }
++    clear_message_area();
++    if (H005_B(0x3DE3) == 5) {
++        clear_text_cells(0, 0x17, 0x27, 0x17);
++    }
++}
++
++/*
++ * PORT H033+$1836: toglie spell (l'ultima delle tre posizioni +$44..+$46
++ * che lo contiene) dalla pergamena; +$32 cala di 1 e sotto 100 la
++ * pergamena viene eliminata.
++ */
++void remove_scroll_spell(Character *c, CokItem *it, u16 spell)
++{
++    u16 wanted = spell;                 /* -$2(a5) */
++    u16 k;                              /* -$4(a5) */
++    u16 slot = 0;                       /* -$6(a5) */
++
++    for (k = 1; k <= 3; ++k) {
++        if (mask_byte(it->b[0x44 + k - 1], 0x7F) == wanted) {
++            slot = k;
++        }
++    }
++    if (slot == 0) {
++        return;
++    }
++    it->b[0x44 + slot - 1] = 0;
++    it->b[0x32] = (u8)(it->b[0x32] - 1);
++    if (it->b[0x32] < 0x64) {
++        delete_item(c, it);
++    }
++}
++
++/*
++ * PORT H033+$18EE: annuncia l'incantesimo: in combattimento "Casts a
++ * Spell" e "Spell  :  nome" in basso; altrimenti nome, testo e nome
++ * dell'incantesimo alle righe $13-$14, poi l'attesa.
++ */
++void announce_spell(Character *c, u16 len, const char *text, u16 spell)
++{
++    char line[0x52];                    /* -$52(a5) */
++
++    if (H005_B(0x3DE3) == 5) {
++        show_char_message(c, 0x0D, "Casts a Spell", 0x0A, 1);
++        clear_text_cells(0, 0x17, 0x27, 0x17);
++        strcpy(line, "Spell  :  ");
++        h026_append(0x50, line, 0x1F, SPELL_NAME(spell));
++        ui_draw_text(0, 0x17, 0x0A, 0, 0x50, line);
++    } else {
++        clear_text_cells(1, 0x12, 0x26, 0x16);
++        draw_character_name(c, 1, 0x13, 0);
++        ui_draw_text((u16)(h026_strlen(0x0F, (const char *)c->b) + 1 + 1),
++                     0x13, 0x0A, 0, len, text);
++        ui_draw_text(1, 0x14, 0x0A, 0, 0x1F, SPELL_NAME(spell));
++        message_delay();
++        clear_message_area();
++    }
++}
+diff --git a/src_c/readable/h033.h b/src_c/readable/h033.h
+index 0b18661..184e6c6 100644
+--- a/src_c/readable/h033.h
++++ b/src_c/readable/h033.h
+@@ -1,4 +1,4 @@
+-/* H033: vettori e servizi condivisi di azioni/oggetti. */
++/* H033: vettori e servizi condivisi di azioni/oggetti e incantesimi. */
+ #ifndef COK_H033_H
+ #define COK_H033_H
+ 
+@@ -6,5 +6,14 @@
+ 
+ void install_action_handlers(void);     /* H033+$1A50 */
+ u8   is_scroll(const CokItem *it);      /* H033+$17E6 */
++u16  choose_spell(u16 mode, s16 *index);                /* H033+$00EE */
++u8   build_spell_list(u16 kind);                        /* H033+$0D7C */
++void select_spell_target(u8 spell, u8 unused, u8 *ok);  /* H033+$12D4 */
++void cast_spell(u16 spell, u8 auto_abort, u8 announce, u8 *redraw);
++                                                        /* H033+$1426 */
++void remove_scroll_spell(Character *c, CokItem *it, u16 spell);
++                                                        /* H033+$1836 */
++void announce_spell(Character *c, u16 len, const char *text, u16 spell);
++                                                        /* H033+$18EE */
+ 
+ #endif
+diff --git a/src_c/readable/h062.c b/src_c/readable/h062.c
+index 3e13876..c39b726 100644
+--- a/src_c/readable/h062.c
++++ b/src_c/readable/h062.c
+@@ -2,6 +2,8 @@
+ #include "h062.h"
+ #include "h003_exec.h"
+ #include "h023_shared.h"
++#include "h063.h"
++#include "unported.h"
+ 
+ /* PORT H062+$0106: link/unlk, nessun effetto. */
+ void h062_init(void)
+@@ -50,3 +52,13 @@ void add_effect(Character *c, u16 type, u16 value, u16 b4, u8 b5)
+     node->b[5] = b5;
+     node->b[4] = (u8)b4;
+ }
++
++/* PORT H062+$1780: toglie (H062+$0452) tutti gli effetti di tipo $19. */
++void remove_effects_19(Character *c)
++{
++    CokEffect *e;                       /* -$4(a5) */
++
++    while (find_effect(c, 0x19, &e)) {
++        h062_0452(c, 0x19, e);
++    }
++}
+diff --git a/src_c/readable/h062.h b/src_c/readable/h062.h
+index acb5d2f..19e67f1 100644
+--- a/src_c/readable/h062.h
++++ b/src_c/readable/h062.h
+@@ -8,4 +8,6 @@ u16  roll_dice(u16 count, u16 sides);           /* H062+$156C */
+ void add_effect(Character *c, u16 type, u16 value, u16 b4, u8 b5);
+                                                 /* H062+$15F2 */
+ 
++void remove_effects_19(Character *c);           /* H062+$1780 */
++
+ #endif
+diff --git a/src_c/readable/h063.c b/src_c/readable/h063.c
+index 95e58da..c959cbe 100644
+--- a/src_c/readable/h063.c
++++ b/src_c/readable/h063.c
+@@ -1,5 +1,8 @@
+ /* H063: Helper per personaggi, inventario e aggiornamento UI; mappa parziale. */
++#include <string.h>
++
+ #include "h063.h"
++#include "h008.h"
+ #include "h003_exec.h"
+ #include "h056.h"
+ #include "h026_string.h"
+@@ -839,3 +842,139 @@ void delete_item(Character *c, CokItem *it)
+     it->next = NULL;
+     exec_free_mem(it, sizeof(CokItem));
+ }
++
++/*
++ * PORT H063+$1DC2: nome del personaggio e testo (a capo automatico) nella
++ * zona dei messaggi: in combattimento a destra da ($17, row), altrimenti
++ * in basso dalla riga $11 ($12 con $24E2); wait: attesa e pulizia.
++ */
++void show_char_message(Character *c, u16 len, const char *text, u16 row,
++                       u8 wait)
++{
++    u16 top;                            /* -$2(a5) */
++
++    if (H005_B(0x3DE3) == 5) {
++        clear_text_cells(0x17, row, 0x26, 0x15);
++        draw_character_name(c, 0x17, row, 0);
++        word_wrap_text(0x17, (u16)(row + 1), 0x26, 0x15, 0x0A, 0, 1, len,
++                       text);
++    } else {
++        if (H005_B(0x24E2)) {
++            top = 0x12;
++        } else {
++            top = 0x11;
++        }
++        clear_text_cells(1, top, 0x26, 0x16);
++        draw_character_name(c, 1, (u16)(top + 1), 0);
++        word_wrap_text(1, (u16)(top + 2), 0x26, 0x16, 0x0A, 0, 1, len, text);
++    }
++    if (wait) {
++        message_delay();
++        clear_message_area();
++    }
++}
++
++/* PORT H063+$1EE8: cancella la zona dei messaggi. */
++void clear_message_area(void)
++{
++    if (H005_B(0x3DE3) == 5) {
++        clear_text_cells(0x17, 0x0A, 0x26, 0x15);
++    } else {
++        clear_text_cells(1, 0x12, 0x26, 0x16);
++    }
++}
++
++/* PORT H063+$2F12: azzera il turno di combattimento (blocco +$192). */
++u8 end_combat_turn(Character *c)
++{
++    u8 *turn = (u8 *)c->block_192;
++
++    COK_PUT16(&turn[4], 0);
++    turn[0] = 0;
++    turn[9] = 0;
++    turn[8] = 0;
++    return 1;
++}
++
++/*
++ * PORT H063+$3A26: sceglie un membro del party in *out con
++ * "Select [Exit]": le frecce (codici speciali 'H' su, 'P' giu') cambiano
++ * personaggio; with_exit: Exit o 0 annullano (*out = NULL).
++ */
++void choose_party_member(u16 len, const char *text, u8 with_exit,
++                         u8 mode, Character **out)
++{
++    char prompt[0x52];                  /* testo per valore + " " */
++    char options[0x2A];                 /* -$5c(a5) */
++    char tail[0x2A];                    /* -$32(a5) */
++    Character *node;                    /* -$8(a5) */
++    u8 saved = H005_B(0x24A2);          /* -$5d(a5) */
++    u8 animate;                         /* -$3(a5) */
++    u8 special;                         /* -$2(a5) */
++    u8 key;                             /* -$1(a5) */
++
++    h026_copy(sizeof(prompt) - 1, prompt, len, text);
++    H005_B(0x24D8) = mode;
++    g_h005_2508 = g_current_char;
++    key = ' ';
++    strcpy(tail, "");
++    h026_append(len, prompt, 1, " ");
++    if (with_exit) {
++        strcpy(tail, " Exit");
++    }
++    while (key != 'E' && key != 0x1B && key != 'S' && key != '\r') {
++        draw_party(*out);
++        if (H005_B(0x3DE3) == 2 || H005_B(0x3DE3) == 6) {
++            animate = 1;
++        } else {
++            animate = 0;
++        }
++        if (H005_B(0x3DE3) == 0) {
++            H005_B(0x24A2) = 1;
++        }
++        strcpy(options, "Select");
++        h026_append(0x28, options, 0x28, tail);
++        key = ui_request_choice(len, prompt, 0x28, options, 0x0D, 0x0A, 0x0F,
++                                1, animate, &special);
++        H005_B(0x24A2) = saved;
++        node = *out;
++        if (special) {
++            switch (key) {
++            case 'P':                   /* $3B94: freccia giu' */
++                node = node->next;
++                if (node == NULL) {
++                    node = g_party_head;
++                }
++                break;
++            case 'H':                   /* $3BB0: freccia su */
++                if (H005_B(0x249E)) {
++                    if (H005_B(0x24D8)) {
++                        node = g_h005_2508;
++                    } else {
++                        node = g_current_char;
++                    }
++                } else {
++                    node = g_party_head;
++                    if (*out == g_party_head) {
++                        while (node->next != NULL) {
++                            node = node->next;
++                        }
++                    } else {
++                        while (node->next != *out) {
++                            node = node->next;
++                        }
++                    }
++                }
++                break;
++            default:
++                break;
++            }
++        } else if (with_exit) {
++            if (key == 'E' || key == 0) {
++                node = NULL;
++            }
++        }
++        *out = node;
++    }
++    H005_B(0x24D8) = 0;
++}
+diff --git a/src_c/readable/h063.h b/src_c/readable/h063.h
+index 02aee56..500764c 100644
+--- a/src_c/readable/h063.h
++++ b/src_c/readable/h063.h
+@@ -20,5 +20,11 @@ void show_message_line(u16 len, const char *text);     /* H063+$1D44 */
+ void draw_party(Character *current);                   /* H063+$0D80 */
+ void redraw_game_screen(void);                         /* H063+$321A */
+ void delete_item(Character *c, CokItem *it);           /* H063+$1BE8 */
++void show_char_message(Character *c, u16 len, const char *text, u16 row,
++                       u8 wait);                        /* H063+$1DC2 */
++void clear_message_area(void);                          /* H063+$1EE8 */
++u8   end_combat_turn(Character *c);                     /* H063+$2F12 */
++void choose_party_member(u16 len, const char *text, u8 with_exit,
++                         u8 mode, Character **out);     /* H063+$3A26 */
+ 
+ #endif
+diff --git a/src_c/readable/h065.c b/src_c/readable/h065.c
+index 61c0d06..fc1ff77 100644
+--- a/src_c/readable/h065.c
++++ b/src_c/readable/h065.c
+@@ -10,6 +10,7 @@
+ #include "h030.h"
+ #include "h044_tiles.h"
+ #include "h045.h"
++#include "h062.h"
+ #include "h063.h"
+ #include "h073.h"
+ #include "globals.h"
+@@ -21,6 +22,7 @@ void h065_init(void)
+ 
+ /* Dati del modulo sotto a4. */
+ static Character *s_char;               /* -$4(a4): personaggio mostrato */
++static void use_item(CokItem *it, u8 *redraw);
+ static char s_text[0x56];               /* -$5a(a4) */
+ 
+ /* Copia con dbeq: al massimo max + 1 byte, NUL compreso. */
+@@ -372,7 +374,7 @@ void view_character(u8 *redraw)
+     u8 has_spells;                      /* -$2e(a5) */
+     u8 has_money;                       /* -$2d(a5) */
+     u8 special;                         /* -$2f(a5) */
+-    u16 spell;                          /* -$36(a5) */
++    s16 spell;                          /* -$36(a5) */
+     u16 i;                              /* -$32(a5) */
+     u8 saved_choice;                    /* -$37(a5) */
+     Character *c;
+@@ -417,14 +419,14 @@ void view_character(u8 *redraw)
+         h026_append(0x28, menu, 4, "Exit");
+         key = ui_request_choice(0, "", 0x28, menu, 0x0D, 0x0A, 0x0F, 0, 0,
+                                 &special);
+-        spell = 0xFFFF;
++        spell = -1;                     /* $FFFF */
+         saved_choice = H005_B(0x2483);
+         switch (key) {
+         case 'I':                       /* H065+$1B8C */
+             show_items(redraw);
+             break;
+         case 'S':                       /* H065+$1B98 */
+-            i = h065_34fc(0, 0, &spell, &has_spells);
++            i = choose_spell_of_kind(0, 0, &spell, &has_spells);
+             break;
+         case 'T':                       /* H065+$1BB0 */
+             h065_12d6();
+@@ -565,7 +567,7 @@ static void magic_item_ready(CokItem *it, u8 readying)
+         break;
+     case 9:
+         if (!readying) {
+-            h062_0452(c, 0x17, 0);
++            h062_0452(c, 0x17, NULL);
+         }
+         break;
+     default:
+@@ -842,7 +844,7 @@ void show_items(u8 *redraw)
+                         key = ' ';
+                     } else if (is_scroll(it) ||
+                                (it->b[0x45] > 0 && it->b[0x46] < 0x80)) {
+-                        h065_2f82(it, redraw);
++                        use_item(it, redraw);
+                         if (H005_B(0x3DE3) != 5) {
+                             *redraw = 0;
+                         }
+@@ -869,3 +871,120 @@ void show_items(u8 *redraw)
+         }
+     }
+ }
++
++/*
++ * PORT H065+$2F82: Use di un oggetto: lancia l'incantesimo della pergamena
++ * (scelto dal menu) o quello dell'oggetto magico (+$45, se +$46 < $80).
++ * Le pergamene si leggono con successo secondo la classe (altrimenti
++ * "oops!"); poi l'incantesimo viene tolto dalla pergamena, o si consuma
++ * una carica (+$40, poi +$44) dell'oggetto.
++ */
++static void use_item(CokItem *it, u8 *redraw)
++{
++    Character *c;
++    s16 index = -1;                     /* -$4(a5) */
++    u8 found;                           /* -$5(a5) */
++    u16 spell;                          /* -$2(a5) */
++
++    H005_B(0x24D9) = 0;
++    spell = 0;
++    if (is_scroll(it)) {
++        g_scroll_item = it;
++        spell = choose_spell_of_kind(2, 1, &index, &found);
++    } else if (it->b[0x45] > 0 && it->b[0x46] < 0x80) {
++        H005_B(0x24D9) = 1;
++        spell = mask_byte(it->b[0x45], 0x7F);
++    }
++    if (spell == 0) {
++        *redraw = 0;
++        return;
++    }
++    if (H005_B(0x3DE3) == 5 && !g_current_char->b[0x19A]) {
++        h063_3658();
++    }
++    if (H005_B(0x24D9)) {
++        show_char_message(g_current_char, 0x0C, "uses an item", 0x0A, 0);
++        if (H005_B(0x3DE3) == 5) {
++            ui_draw_text(0, 0x17, 0x0A, 0, 7, "Item : ");
++            build_item_name(g_current_char, it, 5, 0x17, 0, 1);
++        } else {
++            build_item_name(g_current_char, it, 1, 0x16, 0, 1);
++        }
++        message_delay();
++        clear_message_area();
++    }
++    H005_B(0x24D9) = 1;
++    c = g_current_char;
++    if (is_scroll(it)) {
++        if (h073_1294(c) == 5 || h073_12ae(c) == 5 ||
++            (h073_1294(c) && h073_12ae(c) &&
++             (c->b[0x103] > 0 || c->b[0xFE] > 0))) {
++            cast_spell(spell, c->b[0x19A], 0, redraw);
++        } else if (c->b[0x104] > 9 && roll_dice(1, 0x64) <= 0x4B) {
++            cast_spell(spell, c->b[0x19A], 0, redraw);
++        } else {
++            show_char_message(c, 5, "oops!", (u16)(H005_W(0x334C) + 1), 1);
++        }
++    } else {
++        cast_spell(spell, g_current_char->b[0x19A], 0, redraw);
++    }
++    H005_B(0x24D9) = 0;
++    if (H005_B(0x3DE3) == 5 && H005_B(0x66 + (spell - 1) * 16 + 0x0B)) {
++        *redraw = end_combat_turn(g_current_char);
++    }
++    if (*redraw) {
++        if (is_scroll(it)) {
++            remove_scroll_spell(g_current_char, it, spell);
++        } else if (it->b[0x44] > 0) {
++            if (it->b[0x40] > 1) {
++                it->b[0x40] = (u8)(it->b[0x40] - 1);
++            } else {
++                it->b[0x44] = (u8)(it->b[0x44] - 1);
++                if (it->b[0x44] == 0) {
++                    delete_item(g_current_char, it);
++                }
++            }
++        }
++    }
++}
++
++/*
++ * PORT H065+$34FC: "Spells <kind>": costruisce l'elenco degli incantesimi
++ * (H033+$0D7C; *found = non vuoto) e lo mostra (H033+$00EE).  La cornice
++ * si ridisegna con *spell < 0 o mode 1.  Restituisce l'incantesimo scelto.
++ */
++u16 choose_spell_of_kind(u16 kind, u16 mode, s16 *spell, u8 *found)
++{
++    char title[0x2A];                   /* -$2a(a5) */
++    u16 result;                         /* -$2c(a5) */
++
++    switch (kind) {
++    case 0:  strcpy(title, "in Memory");   break;
++    case 1:  strcpy(title, "in Grimoire"); break;
++    case 2:  strcpy(title, "on Scroll");   break;
++    case 3:  strcpy(title, "on Scrolls");  break;
++    case 4:  strcpy(title, "to Choose");   break;
++    case 5:  strcpy(title, "to Memorize"); break;
++    case 6:  strcpy(title, "to Scribe");   break;
++    default: strcpy(title, "");            break;
++    }
++    *found = build_spell_list(kind);
++    if (*found) {
++        if (*spell < 0 || mode == 1) {
++            if (mode == 2) {
++                h044_0492();
++            } else {
++                draw_items_frame();
++            }
++        }
++        draw_character_name(g_current_char, 1, 1, 1);
++        copy_text(s_text, "Spells ", 0x50);
++        h026_append(0x50, s_text, 0x28, title);
++        ui_draw_text((u16)(h026_strlen(0x0F, (const char *)g_current_char->b)
++                           + 4), 1, 0x0A, 0, 0x50, s_text);
++        result = choose_spell(mode, spell);
++    } else {
++        result = 0;
++    }
++    return result;
++}
+diff --git a/src_c/readable/h065.h b/src_c/readable/h065.h
+index f1b069e..a6d295e 100644
+--- a/src_c/readable/h065.h
++++ b/src_c/readable/h065.h
+@@ -11,5 +11,7 @@ void draw_stat_value(u8 stat, u8 highlight);            /* H065+$10DE */
+ u8   pick_character(void);              /* H065+$3702 */
+ void view_character(u8 *redraw);        /* H065+$196E */
+ void show_items(u8 *redraw);            /* H065+$255A */
++u16  choose_spell_of_kind(u16 kind, u16 mode, s16 *spell, u8 *found);
++                                        /* H065+$34FC */
+ 
+ #endif
+diff --git a/src_c/readable/h073.c b/src_c/readable/h073.c
+index 462211b..924831b 100644
+--- a/src_c/readable/h073.c
++++ b/src_c/readable/h073.c
+@@ -147,6 +147,20 @@ void saving_throws(Character *c)
+     }
+ }
+ 
++/* PORT H073+$1294: restituisce sempre $11. */
++u8 h073_1294(Character *c)
++{
++    (void)c;
++    return 0x11;
++}
++
++/* PORT H073+$12AE: restituisce sempre $11. */
++u8 h073_12ae(Character *c)
++{
++    (void)c;
++    return 0x11;
++}
++
+ /* PORT H073+$12C8: restituisce sempre 0. */
+ u8 h073_12c8(Character *c)
+ {
+diff --git a/src_c/readable/h073.h b/src_c/readable/h073.h
+index 789433b..4077f61 100644
+--- a/src_c/readable/h073.h
++++ b/src_c/readable/h073.h
+@@ -7,6 +7,8 @@
+ void cleric_spell_slots(Character *c);  /* H073+$09BA */
+ void saving_throws(Character *c);       /* H073+$0BA8 */
+ void thief_skills(Character *c);        /* H073+$0FC8 */
++u8   h073_1294(Character *c);           /* H073+$1294 */
++u8   h073_12ae(Character *c);           /* H073+$12AE */
+ u8   h073_12c8(Character *c);           /* H073+$12C8 */
+ u8   h073_130a(Character *c);           /* H073+$130A */
+ void level_derived_values(Character *c); /* H073+$05AE */
+diff --git a/src_c/readable/h085.c b/src_c/readable/h085.c
+index 0170457..f2b4bf1 100644
+--- a/src_c/readable/h085.c
++++ b/src_c/readable/h085.c
+@@ -1,8 +1,14 @@
+ /* H085: dati del modulo (nomi dei livelli di incantesimo). */
+ #include "init_data.h"
++#include "h085.h"
+ 
+ /* Dati del modulo sotto a4: g_h085_bss[0x292 - off] e' -off(a4). */
+ u8 g_h085_bss[0x292];
++u16 g_h085_scroll_count;
++CokItem *g_h085_scroll_items[0x31];
++u16 g_h085_spell_ids[0x3A];
++u16 g_h085_spell_counts[0x3A];
++CokMenuItem *g_h085_spell_list;
+ 
+ #include "h085_init_data.h"
+ 
+diff --git a/src_c/readable/h085.h b/src_c/readable/h085.h
+new file mode 100644
+index 0000000..6f141f1
+--- /dev/null
++++ b/src_c/readable/h085.h
+@@ -0,0 +1,27 @@
++/* H085: dati del modulo usati da H033 (elenchi degli incantesimi). */
++#ifndef COK_H085_H
++#define COK_H085_H
++
++#include "cok.h"
++#include "character.h"
++#include "h008.h"
++
++/*
++ * I primi $292 byte di H085 sono i dati del modulo (a4 = H085+$292).  H033
++ * li usa con indirizzi assoluti; parole e puntatori stanno in variabili C,
++ * il resto (nomi dei livelli a H085+$1B6) in g_h085_bss[H085 + off].
++ */
++extern u8 g_h085_bss[0x292];
++extern u16 g_h085_scroll_count;              /* H085+$0004 */
++extern CokItem *g_h085_scroll_items[0x31];   /* H085+$0006..$00C9 */
++extern u16 g_h085_spell_ids[0x3A];           /* H085+$00CA..$013D */
++extern u16 g_h085_spell_counts[0x3A];        /* H085+$013E..$01B1 */
++extern CokMenuItem *g_h085_spell_list;       /* H085+$01B2 */
++
++/* H085+$1B6 + livello * $16: "Special", "1st Level", ... "9th Level". */
++#define H085_LEVEL_NAME(level) \
++    ((const char *)&g_h085_bss[0x1B6 + (level) * 0x16])
++
++void h085_init(void);                        /* H085+$0664 */
++
++#endif
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index 97073ab..175345f 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -145,7 +145,6 @@ void h027_418e(void) { cok_unported("H027+$418E"); }
+ void h027_41aa(void) { cok_unported("H027+$41AA"); }
+ void h027_41f6(void) { cok_unported("H027+$41F6"); }
+ void h027_420c(void) { cok_unported("H027+$420C"); }
+-void h033_12d4(void) { cok_unported("H033+$12D4"); }
+ void h033_1a40(void) { cok_unported("H033+$1A40"); }
+ void h085_15fe(void) { cok_unported("H085+$15FE"); }
+ void h085_172a(void) { cok_unported("H085+$172A"); }
+@@ -229,7 +228,6 @@ u16 h048_0aa8(void *character) { (void)character; cok_unported("H048+$0AA8"); re
+ void *h042_0b80(u16 frame, void *set) { (void)frame; (void)set; cok_unported("H042+$0B80"); return NULL; }
+ void h042_0254(u16 a, u16 b, u8 flag, void *picture) { (void)a; (void)b; (void)flag; (void)picture; cok_unported("H042+$0254"); }
+ const u8 *g_h005_2ade_area(void) { cok_unported("H005+$2ADE (area della mappa)"); return NULL; }
+-void *g_h005_2508;
+ void h013_2b9a(void) { cok_unported("H013+$2B9A"); }
+ void h013_31e0(void) { cok_unported("H013+$31E0"); }
+ void h013_4508(void) { cok_unported("H013+$4508"); }
+@@ -242,7 +240,6 @@ void h028_0d74(void) { cok_unported("H028+$0D74"); }
+ void h043_0840(void) { cok_unported_skip("H043+$0840"); }
+ 
+ 
+-u16 h065_34fc(u16 a, u16 b, u16 *value, u8 *again) { (void)a; (void)b; (void)value; (void)again; cok_unported("H065+$34FC"); return 0; }
+ void h049_09d6(struct GfxRecord *dst, struct GfxRecord *src) { (void)dst; (void)src; cok_unported("H049+$09D6"); }
+ void h049_04ae(struct BitMap *src, u16 sx, u16 sy, struct RastPort *rp, u16 dx, u16 dy, u16 w, u16 h, u8 minterm, u8 *mask) { (void)src; (void)sx; (void)sy; (void)rp; (void)dx; (void)dy; (void)w; (void)h; (void)minterm; (void)mask; cok_unported("H049+$04AE"); }
+ void h042_0d70(u16 a, u16 b) { (void)a; (void)b; cok_unported("H042+$0D70"); }
+@@ -254,8 +251,32 @@ void h065_12d6(void) { cok_unported("H065+$12D6"); }
+ void h065_1636(void) { cok_unported("H065+$1636"); }
+ void h062_03f2(u16 type, Character **c, CokItem *it, u8 unready) { (void)type; (void)c; (void)it; (void)unready; cok_unported("H062+$03F2"); }
+ void h062_1a32(Character *c, u8 flag) { (void)c; (void)flag; cok_unported("H062+$1A32"); }
+-void h062_0452(Character *c, u16 a, u32 b) { (void)c; (void)a; (void)b; cok_unported("H062+$0452"); }
++void h062_0452(Character *c, u16 type, CokEffect *e) { (void)c; (void)type; (void)e; cok_unported("H062+$0452"); }
+ void h065_2308(CokItem *it) { (void)it; cok_unported("H065+$2308"); }
+ void h065_20ec(CokItem *it) { (void)it; cok_unported("H065+$20EC"); }
+ void h065_1d94(CokItem *it) { (void)it; cok_unported("H065+$1D94"); }
+-void h065_2f82(CokItem *it, u8 *redraw) { (void)it; (void)redraw; cok_unported("H065+$2F82"); }
++
++/* Dipendenze del lancio degli incantesimi (H033+$1426, H065+$2F82). */
++void h063_1b90(Character *c, u16 spell) { (void)c; (void)spell; cok_unported("H063+$1B90"); }
++void h063_2178(u16 a) { (void)a; cok_unported("H063+$2178"); }
++void h063_21d2(u16 a, u16 b, u16 c, u16 d, u16 e, u16 f)
++{
++    (void)a; (void)b; (void)c; (void)d; (void)e; (void)f;
++    cok_unported("H063+$21D2");
++}
++void h063_3658(void) { cok_unported("H063+$3658"); }
++void h044_0492(void) { cok_unported("H044+$0492"); }
++u16 h048_0f88(Character *c) { (void)c; cok_unported("H048+$0F88"); return 0; }
++u16 h048_0fba(Character *c) { (void)c; cok_unported("H048+$0FBA"); return 0; }
++void h048_0fec(Character *c, u8 a, u8 b, u8 d)
++{
++    (void)c; (void)a; (void)b; (void)d;
++    cok_unported("H048+$0FEC");
++}
++u8 h048_0230(Character *c, u8 a) { (void)c; (void)a; cok_unported("H048+$0230"); return 0; }
++u8 h077_0508(u16 a, u16 b, u16 c, u16 d, u16 e)
++{
++    (void)a; (void)b; (void)c; (void)d; (void)e;
++    cok_unported("H077+$0508");
++    return 1;
++}
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index 00bd30b..5375187 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -16,7 +16,6 @@ u16  h048_0aa8(void *character);
+ void *h042_0b80(u16 frame, void *set);  /* fotogramma dell'insieme (H005+$27BC) */
+ void h042_0254(u16 a, u16 b, u8 flag, void *picture);
+ const u8 *g_h005_2ade_area(void);        /* H005+$2ADE: area della mappa */
+-extern void *g_h005_2508;                /* H005+$2508: personaggio scelto */
+ void h043_0584(void);
+ void h043_190e(u16 command);
+ void h010_03aa(void);
+@@ -127,7 +126,6 @@ void h027_418e(void);
+ void h027_41aa(void);
+ void h027_41f6(void);
+ void h027_420c(void);
+-void h033_12d4(void);
+ void h033_1a40(void);
+ void h085_15fe(void);
+ void h085_172a(void);
+@@ -213,7 +211,6 @@ void h044_0452(void);
+ void h028_0d74(void);
+ void h043_0840(void);
+ 
+-u16  h065_34fc(u16 a, u16 b, u16 *value, u8 *again); /* scelta di un incantesimo */
+ 
+ void h049_09d6(struct GfxRecord *dst, struct GfxRecord *src); /* immagine ingrandita */
+ void h049_04ae(struct BitMap *src, u16 sx, u16 sy, struct RastPort *rp, u16 dx, u16 dy,
+@@ -230,10 +227,21 @@ void h065_1636(void);                   /* View: Drop */
+ 
+ void h062_03f2(u16 type, Character **c, CokItem *it, u8 unready);
+ void h062_1a32(Character *c, u8 flag);
+-void h062_0452(Character *c, u16 a, u32 b);
++void h062_0452(Character *c, u16 type, CokEffect *e); /* toglie l'effetto */
+ void h065_2308(CokItem *it);     /* Items: Id */
+ void h065_20ec(CokItem *it);     /* Items: Sell */
+ void h065_1d94(CokItem *it);     /* Items: Trade */
+-void h065_2f82(CokItem *it, u8 *redraw);  /* Items: Use */
++
++/* Dipendenze del lancio degli incantesimi (H033+$1426, H065+$2F82). */
++void h063_1b90(Character *c, u16 spell);  /* toglie l'incantesimo lanciato */
++void h063_2178(u16 a);
++void h063_21d2(u16 a, u16 b, u16 c, u16 d, u16 e, u16 f);
++void h063_3658(void);
++void h044_0492(void);
++u16  h048_0f88(Character *c);
++u16  h048_0fba(Character *c);
++void h048_0fec(Character *c, u8 a, u8 b, u8 d);
++u8   h048_0230(Character *c, u8 a);
++u8   h077_0508(u16 a, u16 b, u16 c, u16 d, u16 e);
+ 
+ #endif
+-- 
+2.43.0
+

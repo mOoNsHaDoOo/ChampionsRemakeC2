@@ -1,0 +1,1209 @@
+From 361de020dc62d4f8b0b87480b0439a7a38de7bfe Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 15:35:15 +0000
+Subject: [PATCH 10/65] Load graphics resources: DAX blocks, graphic records,
+ 8x8 sets
+
+Ports DAX_LoadBlock (H028+$0DD8) with its container open ($0B80) and
+RLE decompressor ($09DC), H029 Load_IndexedGraphicRecord ($0A0E),
+Free_GraphicRecord ($067A), plane transfer ($091E) and mask building
+($0766, $0354), H034+$0032 (8x8 tile sets), H045+$01D6 (number
+formatting), H031+$003E, and the BltBitMap/FreeRaster adapters with a
+host BltBitMap. Pointer slots $3338 and $3C7E of H005 become C
+variables.
+
+tests/dax_test.c with scripts/check_dax.py (independent reader) gives
+identical data for all 526 blocks of the game's containers. Two reads
+and writes one byte past AllocMem buffers in the original are kept
+inside the C buffers.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ scripts/check_dax.py            |  70 +++++++++++++
+ src_c/readable/CMakeLists.txt   |  11 ++
+ src_c/readable/PORT_STATUS.md   |  82 +++++++--------
+ src_c/readable/globals.c        |   2 +
+ src_c/readable/globals.h        |   2 +
+ src_c/readable/h006.c           |  13 +--
+ src_c/readable/h016_gfx.c       |  10 ++
+ src_c/readable/h016_gfx.h       |   4 +
+ src_c/readable/h028_files.c     | 175 ++++++++++++++++++++++++++++++++
+ src_c/readable/h028_files.h     |   3 +
+ src_c/readable/h029_gfx.c       | 156 ++++++++++++++++++++++++++++
+ src_c/readable/h029_gfx.h       |   4 +
+ src_c/readable/h031.c           |  16 +++
+ src_c/readable/h031.h           |   1 +
+ src_c/readable/h034.c           |  40 +++++++-
+ src_c/readable/h034.h           |   9 ++
+ src_c/readable/h045.c           |  48 ++++++++-
+ src_c/readable/h045.h           |  10 ++
+ src_c/readable/h055.c           |   6 ++
+ src_c/readable/h055.h           |   1 +
+ src_c/readable/host/graphics.c  |  67 ++++++++++++
+ src_c/readable/host/ndk.h       |   3 +
+ src_c/readable/tests/dax_test.c |  44 ++++++++
+ src_c/readable/unported.c       |   3 +-
+ src_c/readable/unported.h       |   3 +-
+ 25 files changed, 730 insertions(+), 53 deletions(-)
+ create mode 100644 scripts/check_dax.py
+ create mode 100644 src_c/readable/h034.h
+ create mode 100644 src_c/readable/h045.h
+ create mode 100644 src_c/readable/tests/dax_test.c
+
+diff --git a/scripts/check_dax.py b/scripts/check_dax.py
+new file mode 100644
+index 0000000..606cefb
+--- /dev/null
++++ b/scripts/check_dax.py
+@@ -0,0 +1,70 @@
++#!/usr/bin/env python3
++"""Lettore DAX indipendente: elenca i blocchi di un contenitore o ne
++estrae uno, per verificare DAX_LoadBlock (H028+$0DD8) del port.
++
++  check_dax.py file.daa                 elenca gli id
++  check_dax.py file.daa id uscita.bin   confronta con l'uscita del port
++
++Formato: word dimensione della directory, voci da 9 byte (id, offset long,
++dimensione, dimensione compressa), poi i blocchi.  ".dax" e' little-endian
++e la directory comprende la sua word.  RLE: 0..$7E n+1 letterali,
++$7F..$FE byte ripetuto $100-n volte, $FF ripete il tipo del controllo
++precedente (all'inizio: salta il byte).  Il buffer e' dimensione+$100;
++le scritture oltre il buffer sono errori (H014) e vengono saltate.
++"""
++import struct, sys
++
++def entries(path):
++    data = open(path, 'rb').read()
++    le = path.lower().endswith('.dax')
++    fmt = '<' if le else '>'
++    dsize = struct.unpack(fmt + 'H', data[:2])[0] + (2 if le else 0)
++    pos, out = 2, []
++    while True:
++        i, off, raw, comp = struct.unpack(fmt + 'BIHH', data[pos:pos + 9])
++        out.append((i, off, raw, comp))
++        pos += 9
++        if pos >= dsize:
++            break
++    return data, dsize, out
++
++def block(path, want):
++    data, dsize, es = entries(path)
++    for i, off, raw, comp in es:
++        if i == want:
++            src = data[dsize + off: dsize + off + comp] + b'\0\0'
++            size = raw + 0x100
++            dst = bytearray(size)
++            si = di = 0
++            kind = -1
++            while True:
++                n = src[si]
++                if n <= 0x7E:
++                    kind = 0
++                elif n <= 0xFE:
++                    kind = 1
++                if kind == 0:
++                    if di + n + 1 <= size:
++                        dst[di:di + n + 1] = src[si + 1:si + n + 2]
++                    si += n + 2; di += n + 1
++                elif kind == 1:
++                    for j in range(0x100 - n):
++                        if di + j < size:
++                            dst[di + j] = src[si + 1]
++                    si += 2; di += 0x100 - n
++                else:
++                    si += 1
++                si &= 0xFFFF; di &= 0xFFFF
++                if not si < comp:
++                    break
++            return bytes(dst)
++    return None
++
++if len(sys.argv) == 2:
++    print(' '.join(str(e[0]) for e in entries(sys.argv[1])[2]))
++    sys.exit(0)
++exp = block(sys.argv[1], int(sys.argv[2]))
++got = open(sys.argv[3], 'rb').read()
++diff = sum(1 for a, b in zip(exp, got) if a != b) + abs(len(exp) - len(got))
++print('%s #%s: %d byte, %d differenze' % (sys.argv[1], sys.argv[2], len(exp), diff))
++sys.exit(1 if diff else 0)
+diff --git a/src_c/readable/CMakeLists.txt b/src_c/readable/CMakeLists.txt
+index 1b6f50b..07c3d9b 100644
+--- a/src_c/readable/CMakeLists.txt
++++ b/src_c/readable/CMakeLists.txt
+@@ -112,6 +112,17 @@ if(COK_BUILD_TESTS)
+     if(MSVC)
+         target_compile_definitions(ilbm_test PRIVATE _CRT_SECURE_NO_WARNINGS)
+     endif()
++    # DAX_LoadBlock (H028): dax_test nome .ext id out.bin, poi
++    # scripts/check_dax.py file id out.bin (lettore indipendente).
++    add_executable(dax_test tests/dax_test.c h028_files.c h026_string.c
++                   h031.c h021_intuition.c h002_dos.c h003_exec.c globals.c
++                   ${COK_HOST_SOURCES})
++    target_include_directories(dax_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
++    target_link_libraries(dax_test PRIVATE ${COK_SDL2_TARGET})
++    if(MSVC)
++        target_compile_definitions(dax_test PRIVATE _CRT_SECURE_NO_WARNINGS)
++    endif()
++
+     # Con -DCOK_TEST_DATA=<cartella dei file del gioco> anche ctest lo usa.
+     set(COK_TEST_DATA "" CACHE PATH "Cartella dei file del gioco per i test")
+     find_package(Python3 COMPONENTS Interpreter QUIET)
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index 32d74fb..e3dc655 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **212 / 912**.
++Routine portate: **225 / 912**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -22,7 +22,7 @@ Routine portate: **212 / 912**.
+ | H013 | 25244 | 20 | 1 |
+ | H014 | 224 | 2 | 1 |
+ | H015 | 1016 | 11 | 5 |
+-| H016 | 436 | 5 | 2 |
++| H016 | 436 | 5 | 3 |
+ | H017 | 56 | 1 | 1 |
+ | H018 | 192 | 3 | 3 |
+ | H019 | 240 | 1 | 1 |
+@@ -34,13 +34,13 @@ Routine portate: **212 / 912**.
+ | H025 | 264 | 2 | 2 |
+ | H026 | 1452 | 11 | 10 |
+ | H027 | 18156 | 10 | 1 |
+-| H028 | 4488 | 16 | 6 |
+-| H029 | 6084 | 32 | 10 |
++| H028 | 4488 | 16 | 9 |
++| H029 | 6084 | 32 | 15 |
+ | H030 | 3240 | 18 | 5 |
+-| H031 | 212 | 4 | 2 |
++| H031 | 212 | 4 | 3 |
+ | H032 | 9352 | 1 | 1 |
+ | H033 | 8140 | 15 | 1 |
+-| H034 | 472 | 3 | 1 |
++| H034 | 472 | 3 | 2 |
+ | H035 | 1760 | 6 | 1 |
+ | H036 | 144 | 2 | 1 |
+ | H037 | 52 | 2 | 2 |
+@@ -51,7 +51,7 @@ Routine portate: **212 / 912**.
+ | H042 | 4420 | 14 | 1 |
+ | H043 | 6680 | 30 | 1 |
+ | H044 | 2668 | 10 | 1 |
+-| H045 | 828 | 4 | 1 |
++| H045 | 828 | 4 | 2 |
+ | H046 | 724 | 2 | 1 |
+ | H047 | 5224 | 8 | 1 |
+ | H048 | 6636 | 21 | 1 |
+@@ -61,7 +61,7 @@ Routine portate: **212 / 912**.
+ | H052 | 316 | 1 | 1 |
+ | H053 | 504 | 3 | 1 |
+ | H054 | 52 | 2 | 2 |
+-| H055 | 180 | 4 | 3 |
++| H055 | 180 | 4 | 4 |
+ | H056 | 2528 | 2 | 1 |
+ | H057 | 12872 | 33 | 1 |
+ | H058 | 4720 | 16 | 1 |
+@@ -170,9 +170,9 @@ Routine portate: **212 / 912**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$00EC` | `module_init_H006` | parziale | h006.c:30 |
++| `$00EC` | `module_init_H006` | parziale | h006.c:31 |
+ | `$00FA` | `sub_H006_000000FA` | parziale |  |
+-| `$01AE` | `Initialize_GameEnvironment` | verificato | h006.c:71 |
++| `$01AE` | `Initialize_GameEnvironment` | verificato | h006.c:72 |
+ | `$0914` | `sub_H006_00000914` | parziale |  |
+ 
+ ### H007
+@@ -321,7 +321,7 @@ Routine portate: **212 / 912**.
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+ | `$0008` | `sub_H016_00000008` | parziale | h016_gfx.c:5 |
+-| `$0014` | `wrapper_BltBitMap` | parziale |  |
++| `$0014` | `wrapper_BltBitMap` | parziale | h016_gfx.c:22 |
+ | `$0084` | `wrapper_BltClear` | parziale | h016_gfx.c:16 |
+ | `$00A0` | `wrapper_BltMaskBitMapRastPort` | parziale |  |
+ | `$01AC` | `wrapper_WaitTOF` | parziale |  |
+@@ -447,52 +447,52 @@ Routine portate: **212 / 912**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$01B8` | `module_init_H028` | parziale | h028_files.c:14 |
+-| `$01C6` | `Open_WithRetry` | parziale | h028_files.c:42 |
+-| `$02D0` | `sub_H028_000002D0` | parziale | h028_files.c:23 |
++| `$01B8` | `module_init_H028` | parziale | h028_files.c:17 |
++| `$01C6` | `Open_WithRetry` | parziale | h028_files.c:45 |
++| `$02D0` | `sub_H028_000002D0` | parziale | h028_files.c:26 |
+ | `$033E` | `sub_H028_0000033E` | parziale |  |
+-| `$0408` | `sub_H028_00000408` | parziale | h028_files.c:82 |
+-| `$0576` | `sub_H028_00000576` | parziale | h028_files.c:124 |
+-| `$05FA` | `Open_ResourceFile` | parziale | h028_files.c:141 |
++| `$0408` | `sub_H028_00000408` | parziale | h028_files.c:85 |
++| `$0576` | `sub_H028_00000576` | parziale | h028_files.c:127 |
++| `$05FA` | `Open_ResourceFile` | parziale | h028_files.c:144 |
+ | `$07E0` | `sub_H028_000007E0` | parziale |  |
+ | `$08F0` | `sub_H028_000008F0` | parziale |  |
+-| `$09DC` | `DAX_DecompressRLE` | verificato |  |
+-| `$0B80` | `sub_H028_00000B80` | parziale |  |
++| `$09DC` | `DAX_DecompressRLE` | verificato | h028_files.c:193 |
++| `$0B80` | `sub_H028_00000B80` | parziale | h028_files.c:254 |
+ | `$0C68` | `sub_H028_00000C68` | parziale |  |
+ | `$0D36` | `sub_H028_00000D36` | parziale |  |
+ | `$0D74` | `sub_H028_00000D74` | parziale |  |
+-| `$0DD8` | `DAX_LoadBlock` | verificato |  |
++| `$0DD8` | `DAX_LoadBlock` | verificato | h028_files.c:276 |
+ | `$1098` | `sub_H028_00001098` | parziale |  |
+ 
+ ### H029
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0118` | `module_init_H029` | parziale | h029_gfx.c:35 |
+-| `$0180` | `sub_H029_00000180` | parziale | h029_gfx.c:77 |
++| `$0118` | `module_init_H029` | parziale | h029_gfx.c:37 |
++| `$0180` | `sub_H029_00000180` | parziale | h029_gfx.c:79 |
+ | `$01B6` | `sub_H029_000001B6` | parziale |  |
+-| `$0234` | `sub_H029_00000234` | parziale | h029_gfx.c:87 |
+-| `$0312` | `sub_H029_00000312` | parziale | h029_gfx.c:49 |
+-| `$0354` | `trampoline_H029_036C` | parziale |  |
++| `$0234` | `sub_H029_00000234` | parziale | h029_gfx.c:89 |
++| `$0312` | `sub_H029_00000312` | parziale | h029_gfx.c:51 |
++| `$0354` | `trampoline_H029_036C` | parziale | h029_gfx.c:318 |
+ | `$0376` | `trampoline_H029_0390` | parziale |  |
+ | `$039A` | `trampoline_H029_03B2` | parziale |  |
+ | `$03E2` | `sub_H029_000003E2` | parziale |  |
+-| `$0408` | `Allocate_GraphicRecord` | verificato | h029_gfx.c:165 |
+-| `$067A` | `Free_GraphicRecord` | parziale |  |
+-| `$0766` | `sub_H029_00000766` | parziale |  |
+-| `$091E` | `Populate_GraphicPlanes` | verificato |  |
+-| `$0A0E` | `Load_IndexedGraphicRecord` | verificato |  |
++| `$0408` | `Allocate_GraphicRecord` | verificato | h029_gfx.c:167 |
++| `$067A` | `Free_GraphicRecord` | parziale | h029_gfx.c:293 |
++| `$0766` | `sub_H029_00000766` | parziale | h029_gfx.c:325 |
++| `$091E` | `Populate_GraphicPlanes` | verificato | h029_gfx.c:362 |
++| `$0A0E` | `Load_IndexedGraphicRecord` | verificato | h029_gfx.c:388 |
+ | `$0B94` | `Draw_GraphicTile24` | verificato |  |
+ | `$0D58` | `sub_H029_00000D58` | parziale |  |
+ | `$0E26` | `trampoline_H029_0E88` | parziale |  |
+ | `$0E92` | `trampoline_H029_0EF4` | parziale |  |
+ | `$0EFE` | `trampoline_H029_10AC` | parziale |  |
+ | `$10B8` | `sub_H029_000010B8` | parziale |  |
+-| `$115C` | `sub_H029_0000115C` | parziale | h029_gfx.c:115 |
+-| `$1206` | `sub_H029_00001206` | parziale | h029_gfx.c:131 |
+-| `$12BC` | `sub_H029_000012BC` | parziale | h029_gfx.c:153 |
+-| `$1308` | `sub_H029_00001308` | parziale | h029_gfx.c:222 |
+-| `$1346` | `Prepare_DisplayResources` | parziale | h029_gfx.c:234 |
++| `$115C` | `sub_H029_0000115C` | parziale | h029_gfx.c:117 |
++| `$1206` | `sub_H029_00001206` | parziale | h029_gfx.c:133 |
++| `$12BC` | `sub_H029_000012BC` | parziale | h029_gfx.c:155 |
++| `$1308` | `sub_H029_00001308` | parziale | h029_gfx.c:224 |
++| `$1346` | `Prepare_DisplayResources` | parziale | h029_gfx.c:236 |
+ | `$148E` | `sub_H029_0000148E` | parziale |  |
+ | `$14F6` | `sub_H029_000014F6` | parziale |  |
+ | `$1520` | `sub_H029_00001520` | parziale |  |
+@@ -530,7 +530,7 @@ Routine portate: **212 / 912**.
+ | --- | --- | --- | --- |
+ | `$0004` | `module_init_H031` | parziale | h031.c:4 |
+ | `$0012` | `sub_H031_00000012` | parziale | h031.c:10 |
+-| `$003E` | `sub_H031_0000003E` | parziale |  |
++| `$003E` | `sub_H031_0000003E` | parziale | h031.c:23 |
+ | `$008A` | `sub_H031_0000008A` | parziale |  |
+ 
+ ### H032
+@@ -563,8 +563,8 @@ Routine portate: **212 / 912**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0024` | `module_init_H034` | parziale | h034.c:4 |
+-| `$0032` | `sub_H034_00000032` | parziale |  |
++| `$0024` | `module_init_H034` | parziale | h034.c:9 |
++| `$0032` | `sub_H034_00000032` | parziale | h034.c:15 |
+ | `$0178` | `trampoline_H034_01A8` | parziale |  |
+ 
+ ### H035
+@@ -700,10 +700,10 @@ Routine portate: **212 / 912**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0004` | `trampoline_H045_0336` | parziale | h045.c:4 |
++| `$0004` | `trampoline_H045_0336` | parziale | h045.c:5 |
+ | `$000C` | `trampoline_H045_01CC` | parziale |  |
+ | `$0014` | `sub_H045_00000014` | parziale |  |
+-| `$01D6` | `sub_H045_000001D6` | parziale |  |
++| `$01D6` | `sub_H045_000001D6` | parziale | h045.c:11 |
+ 
+ ### H046
+ 
+@@ -812,7 +812,7 @@ Routine portate: **212 / 912**.
+ | --- | --- | --- | --- |
+ | `$0008` | `sub_H055_00000008` | parziale | h055.c:5 |
+ | `$0014` | `wrapper_AllocRaster` | parziale | h055.c:16 |
+-| `$002A` | `wrapper_FreeRaster` | parziale |  |
++| `$002A` | `wrapper_FreeRaster` | parziale | h055.c:28 |
+ | `$0044` | `wrapper_InitRastPort` | parziale | h055.c:22 |
+ 
+ ### H056
+diff --git a/src_c/readable/globals.c b/src_c/readable/globals.c
+index 592ae4e..5798ee4 100644
+--- a/src_c/readable/globals.c
++++ b/src_c/readable/globals.c
+@@ -21,5 +21,7 @@ struct GfxRecord *g_gfx_sky_280c;
+ struct Screen *g_screen;
+ struct Window *g_window;
+ struct RastPort *g_rastport;
++u8 *g_dax_buffer;
++struct GfxRecord *g_8x8_sets[5];
+ void *g_party_head;
+ void *g_current_char;
+diff --git a/src_c/readable/globals.h b/src_c/readable/globals.h
+index 2cf8804..6c22827 100644
+--- a/src_c/readable/globals.h
++++ b/src_c/readable/globals.h
+@@ -58,6 +58,8 @@ extern struct GfxRecord *g_gfx_sky_280c; /* $280C: "sky" $FA */
+ extern struct Screen *g_screen;         /* $52F2: schermo del gioco */
+ extern struct Window *g_window;         /* $52F6: finestra del gioco */
+ extern struct RastPort *g_rastport;     /* $52EE: RastPort della finestra */
++extern u8 *g_dax_buffer;                /* $3C7E: blocco DAX compresso */
++extern struct GfxRecord *g_8x8_sets[5]; /* $3338: set 8x8 caricati da H034 */
+ extern void *g_party_head;              /* $3364: testa della lista del party */
+ extern void *g_current_char;            /* $3368: personaggio corrente */
+ 
+diff --git a/src_c/readable/h006.c b/src_c/readable/h006.c
+index bb7cb2c..8bfcb1c 100644
+--- a/src_c/readable/h006.c
++++ b/src_c/readable/h006.c
+@@ -19,6 +19,7 @@
+ #include "h029_gfx.h"
+ #include "h030.h"
+ #include "h031.h"
++#include "h034.h"
+ #include "globals.h"
+ #include "unported.h"
+ 
+@@ -215,10 +216,10 @@ void init_game_environment(void)
+     ui_draw_text(0, 0x18, 0x0A, 0, 0x15, "Loading...Please Wait");
+ 
+     for (s_i = 0; s_i <= 4; ++s_i) {
+-        H005_SET_L(0x3338 + s_i * 4, 0);
++        g_8x8_sets[s_i] = NULL;
+     }
+-    h034_0032(0xCA, 4);
+-    h034_0032(0xCB, 0);
++    load_8x8_set(0xCA, 4);
++    load_8x8_set(0xCB, 0);
+     h006_00fa();
+ 
+     for (s_i = 0; s_i <= 0x0B; ++s_i) {
+@@ -227,9 +228,9 @@ void init_game_environment(void)
+     for (s_i = 0x19; s_i <= 0x1C; ++s_i) {
+         h035_0246(6, "COMSPR", s_i, s_i);
+     }
+-    h029_0a0e(3, "sky", 0xFA, 1, 0, &g_gfx_sky_280c);
+-    h029_0a0e(3, "sky", 0xFB, 1, 0, &g_gfx_sky_2808);
+-    h029_0a0e(3, "sky", 0xFC, 1, 0x0D, &g_gfx_sky_2804);
++    load_indexed_gfx_record(3, "sky", 0xFA, 1, 0, &g_gfx_sky_280c);
++    load_indexed_gfx_record(3, "sky", 0xFB, 1, 0, &g_gfx_sky_2808);
++    load_indexed_gfx_record(3, "sky", 0xFC, 1, 0x0D, &g_gfx_sky_2804);
+ 
+     load_items_table();
+     h027_4276();
+diff --git a/src_c/readable/h016_gfx.c b/src_c/readable/h016_gfx.c
+index 0149ad9..3fce435 100644
+--- a/src_c/readable/h016_gfx.c
++++ b/src_c/readable/h016_gfx.c
+@@ -18,3 +18,13 @@ void graphics_blt_clear(void *memory, u32 count, u32 flags)
+ {
+     BltClear((PLANEPTR)memory, count, flags);
+ }
++
++/* PORT H016+$0014: coordinate a word, minterm e maschera dei piani a byte. */
++s32 graphics_blt_bitmap(struct BitMap *src, u16 src_x, u16 src_y,
++                        struct BitMap *dst, u16 dst_x, u16 dst_y,
++                        u16 width, u16 height, u8 minterm, u8 mask, u8 *temp)
++{
++    return (s32)BltBitMap(src, (s16)src_x, (s16)src_y, dst, (s16)dst_x,
++                          (s16)dst_y, (s16)width, (s16)height, minterm, mask,
++                          (PLANEPTR)temp);
++}
+diff --git a/src_c/readable/h016_gfx.h b/src_c/readable/h016_gfx.h
+index 738fef8..5606743 100644
+--- a/src_c/readable/h016_gfx.h
++++ b/src_c/readable/h016_gfx.h
+@@ -4,6 +4,10 @@
+ 
+ #include "cok.h"
+ 
++s32  graphics_blt_bitmap(struct BitMap *src, u16 src_x, u16 src_y,
++                         struct BitMap *dst, u16 dst_x, u16 dst_y,
++                         u16 width, u16 height, u8 minterm, u8 mask,
++                         u8 *temp);                     /* H016+$0014 */
+ void graphics_blt_clear(void *memory, u32 count, u32 flags);  /* H016+$0084 */
+ 
+ #endif
+diff --git a/src_c/readable/h028_files.c b/src_c/readable/h028_files.c
+index a54170d..5aaedda 100644
+--- a/src_c/readable/h028_files.c
++++ b/src_c/readable/h028_files.c
+@@ -3,6 +3,9 @@
+ #include "h002_dos.h"
+ #include "h021_intuition.h"
+ #include "h026_string.h"
++#include "h003_exec.h"
++#include "h031.h"
++#include "unported.h"
+ #include "globals.h"
+ 
+ u8  g_h028_mf9;                 /* -$F9(a4) */
+@@ -185,3 +188,175 @@ u8 open_resource_file(u16 name_len, const char *name, u16 msg_len,
+         disk_request(0x0E, 0, 0x50, text);
+     }
+ }
++
++/*
++ * PORT H028+$09DC (DAX_DecompressRLE): decomprime *comp_size byte di src
++ * in dst (al massimo *raw_size byte, altrimenti errore H014 "uncompress
++ * overuns buffer>").  Byte n di controllo: 0..$7E = n+1 byte letterali;
++ * $7F..$FE = il byte seguente ripetuto $100-n volte; $FF ripete il tipo
++ * dell'ultimo controllo.  All'inizio quel tipo non e' inizializzato
++ * nell'originale (word sullo stack); qui vale -1, cioe' "salta il byte",
++ * il ramo predefinito della tabella.
++ */
++static void dax_decompress_rle(const u8 *src, u8 *dst, u16 *comp_size,
++                               u16 *raw_size)
++{
++    static const char overrun[] = "uncompress overuns buffer>";
++    u16 si = 0;                 /* -$2 */
++    u16 di = 0;                 /* -$4 */
++    u16 n;                      /* -$8 */
++    s16 kind = -1;              /* -$A */
++    u16 j;                      /* -$6 */
++
++    do {
++        n = src[si];
++        if (n <= 0x7E) {
++            kind = 0;
++        } else if (n >= 0x7F && n <= 0xFE) {
++            kind = 1;
++        }
++        if (kind == 0) {
++            if ((u16)(di + n + 1) <= *raw_size) {
++                exec_copy_mem(src + (u16)(si + 1), dst + di, (u32)(u16)(n + 1));
++            } else {
++                h014_0018(0x1A, overrun, (u16)(di + n + 1 - *raw_size));
++            }
++            si = (u16)(si + n + 2);
++            di = (u16)(di + n + 1);
++        } else if (kind == 1) {
++            n = (u16)(0x100 - n);
++            for (j = 0; j <= (u16)(n - 1); ++j) {
++                if ((u16)(di + j) < *raw_size) {
++                    dst[(u16)(di + j)] = src[(u16)(si + 1)];
++                } else if ((u16)(di + j) == *raw_size) {
++                    /*
++                     * L'originale ammette l'indice *raw_size (<=) e scrive un
++                     * byte oltre il buffer, nel margine di arrotondamento di
++                     * AllocMem; in C quel byte non esiste e la scrittura si
++                     * salta.
++                     */
++                } else {
++                    h014_0018(0x1A, overrun, (u16)(di + j - *raw_size));
++                }
++                if (j == 0xFFFF) {
++                    break;
++                }
++            }
++            si = (u16)(si + 2);
++            di = (u16)(di + n);
++        } else {
++            ++si;
++        }
++    } while (si < *comp_size);
++}
++
++/*
++ * PORT H028+$0B80: apre name+ext con Open_ResourceFile (messaggio del disco
++ * del gruppo di risorse corrente, H005+$3E08 + 30 * (gruppo - 1)) e legge
++ * la word della dimensione della directory (byte come nel file).
++ */
++static u8 dax_open(u16 name_len, const char *name, u16 ext_len,
++                   const char *ext, u8 *dir_size, cok_bptr *file)
++{
++    char path[0x52];
++
++    h026_copy(0x50, path, name_len, name);
++    h026_append(0x50, path, ext_len, ext);
++    if (!open_resource_file(0x50, path, 0x1D,
++                            (const char *)&g_h005[0x3E08 +
++                                (s32)((s16)(G_RESOURCE_GROUP - 1) * 0x1E)],
++                            H005_B(0x24A4), file)) {
++        return 0;
++    }
++    (void)dos_read(*file, dir_size, 2);
++    return 1;
++}
++
++/*
++ * PORT H028+$0DD8 (DAX_LoadBlock): cerca id nella directory del contenitore
++ * name+ext (voci da 9 byte: id, offset long, dimensione, dimensione
++ * compressa), legge il blocco e lo decomprime in *data (*size byte, $100
++ * in piu' della dimensione dichiarata).  I file ".dax" sono little-endian:
++ * directory e voci vengono girate (H031).  Blocco non trovato: *size = 0 e
++ * *data = NULL.  Un blocco compresso oltre $A000 byte e' un errore fatale
++ * (H010+$0332).
++ *
++ * Differenza: l'originale legge i campi direttamente nelle variabili
++ * (memoria big-endian); qui si leggono in buffer di byte decodificati con
++ * COK_GET16/32, identico sull'Amiga e corretto sull'host.
++ */
++void dax_load_block(u16 name_len, const char *name, u16 ext_len,
++                    const char *ext, u16 id, u16 *size, u8 **data)
++{
++    cok_bptr file;              /* -$14 */
++    u8 dir_raw[2];              /* -$16 */
++    u16 dir_size;
++    u8 entry_id = 0;            /* -$B */
++    u8 offset_raw[4];           /* -$A */
++    u8 size_raw[2];
++    u8 comp_raw[2];             /* -$2 */
++    u16 comp_size;
++    u16 comp_saved;             /* -$4 */
++    u16 count = 0;              /* -$78 */
++    int little = h026_compare_nocase(ext_len, ext, 4, ".dax") == 1;
++
++    if (!dax_open(name_len, name, ext_len, ext, dir_raw, &file)) {
++        h014_0018(0x13, "could not open file", 0);
++        *size = 0;
++        *data = NULL;
++        return;
++    }
++    if (little) {
++        h031_swap_word(dir_raw);
++    }
++    dir_size = COK_GET16(dir_raw);
++    if (little) {
++        dir_size = (u16)(dir_size + 2);
++    }
++    for (;;) {
++        ++count;
++        (void)dos_read(file, &entry_id, 1);
++        (void)dos_read(file, offset_raw, 4);
++        (void)dos_read(file, size_raw, 2);
++        (void)dos_read(file, comp_raw, 2);
++        if (h026_compare_nocase(ext_len, ext, 4, ".dax") == 1) {
++            h031_swap_word(size_raw);
++            h031_swap_word(comp_raw);
++            h031_swap_long(offset_raw);
++        }
++        *size = (u16)(COK_GET16(size_raw) + 0x100);
++        comp_size = COK_GET16(comp_raw);
++        if (comp_size > 0xA000 && entry_id == id) {
++            dos_close(file);
++            h010_0332();
++        }
++        if (count > 0x3E7) {
++            h014_0018(0x1C, "large limit in getdatablock>", count);
++        }
++        if (entry_id == id) {
++            break;
++        }
++        if (!(dos_seek(file, 0, OFFSET_CURRENT) < (s32)dir_size)) {
++            break;
++        }
++    }
++    if (entry_id != id) {
++        *size = 0;
++        *data = NULL;
++        dos_close(file);
++        return;
++    }
++    /*
++     * Due byte in piu' (azzerati): la decompressione puo' leggere il byte
++     * dopo l'ultimo controllo, che nell'originale e' il margine di AllocMem.
++     */
++    g_dax_buffer = (u8 *)exec_alloc_mem((u32)comp_size + 2, COK_MEMF_CLEAR);
++    *data = (u8 *)exec_alloc_mem(*size, COK_MEMF_CLEAR);
++    (void)dos_seek(file, (s32)(dir_size + COK_GET32(offset_raw)),
++                   OFFSET_BEGINNING);
++    (void)dos_read(file, g_dax_buffer, comp_size);
++    dos_close(file);
++    comp_saved = comp_size;
++    dax_decompress_rle(g_dax_buffer, *data, &comp_size, size);
++    exec_free_mem(g_dax_buffer, (u32)comp_saved + 2);
++}
+diff --git a/src_c/readable/h028_files.h b/src_c/readable/h028_files.h
+index d08a43f..ee98f8d 100644
+--- a/src_c/readable/h028_files.h
++++ b/src_c/readable/h028_files.h
+@@ -10,5 +10,8 @@ u8 file_exists(u16 len, const char *name);      /* H028+$02D0 */
+ u8 open_resource_file(u16 name_len, const char *name, u16 msg_len,
+                       const char *msg, u8 unused, cok_bptr *file);
+                                                 /* H028+$05FA */
++void dax_load_block(u16 name_len, const char *name, u16 ext_len,
++                    const char *ext, u16 id, u16 *size, u8 **data);
++                                                /* H028+$0DD8 */
+ 
+ #endif
+diff --git a/src_c/readable/h029_gfx.c b/src_c/readable/h029_gfx.c
+index 6a0c00f..653735a 100644
+--- a/src_c/readable/h029_gfx.c
++++ b/src_c/readable/h029_gfx.c
+@@ -7,6 +7,8 @@
+ #include "h024_screen.h"
+ #include "h025_window.h"
+ #include "h051.h"
++#include "h026_string.h"
++#include "h028_files.h"
+ #include "h018_libs.h"
+ #include "h084.h"
+ #include "h016_gfx.h"
+@@ -275,3 +277,157 @@ void prepare_display_resources(void)
+     g_saved_view = ((struct GfxBase *)gfx)->ActiView;
+     exec_close_library(gfx);
+ }
++
++/* Larghezza in pixel del record (unita' * 8 * byte), allineata a 16. */
++static u16 gfx_record_width(const struct GfxRecord *r)
++{
++    u16 width = (u16)((u16)(r->count << 3) * r->width8);
++
++    if ((width & 0x0F) > 0) {
++        width = (u16)(width + (0x10 - (width & 0x0F)));
++    }
++    return width;
++}
++
++/*
++ * PORT H029+$067A (Free_GraphicRecord): libera raster, maschera, BitMap e
++ * record; *rec diventa NULL.
++ */
++void free_gfx_record(struct GfxRecord **rec)
++{
++    struct GfxRecord *r = *rec;
++    u16 width;
++    u16 i;
++
++    if (r == NULL) {
++        return;
++    }
++    width = gfx_record_width(r);
++    for (i = 0; i <= 4; ++i) {
++        graphics_free_raster(r->image->Planes[i], width, r->rows);
++    }
++    if (r->mask != NULL) {
++        graphics_free_raster(r->mask->Planes[0], width, r->rows);
++        exec_free_mem(r->mask, sizeof(struct BitMap));
++    }
++    exec_free_mem(r->image, sizeof(struct BitMap));
++    exec_free_mem(*rec, sizeof(struct GfxRecord));
++    *rec = NULL;
++}
++
++/* PORT H029+$0354: il bit plane_bit e' presente nel colore? */
++static u8 color_has_bit(u8 color, u16 plane_bit)
++{
++    return (u8)(plane_bit & color);
++}
++
++/*
++ * PORT H029+$0766: costruisce la maschera (un solo raster ripetuto nei 5
++ * piani) dell'immagine.  Con un colore trasparente: per ogni piano OR
++ * ($E0) del piano dove il bit del colore e' 0, OR del complemento ($B0)
++ * dove e' 1, cioe' maschera = pixel diversi dal colore; con meno di 3
++ * unita' l'immagine viene poi ridotta alla maschera (AND, $80).  Senza
++ * colore (0): maschera = OR di tutti i piani.
++ */
++static void build_gfx_mask(u8 color, struct GfxRecord *r)
++{
++    u16 width = gfx_record_width(r);
++    u16 i;
++    u8 minterm;
++
++    if (color != 0) {
++        graphics_blt_clear(r->mask->Planes[0],
++                           (u32)(width >> 3) * r->rows, 1);
++        for (i = 0; i <= 4; ++i) {
++            minterm = color_has_bit(color, (u16)(1u << i)) ? 0xB0 : 0xE0;
++            (void)graphics_blt_bitmap(r->image, 0, 0, r->mask, 0, 0,
++                                      (u16)((u16)(r->count * r->width8) << 3),
++                                      r->rows, minterm, (u8)(1u << i), NULL);
++        }
++        if (r->count < 3) {
++            (void)graphics_blt_bitmap(r->mask, 0, 0, r->image, 0, 0,
++                                      (u16)((u16)(r->count * r->width8) << 3),
++                                      r->rows, 0x80, 0xFF, NULL);
++        }
++    } else {
++        graphics_blt_clear(r->mask->Planes[0],
++                           (u32)(width >> 3) * r->rows, 1);
++        (void)graphics_blt_bitmap(r->image, 0, 0, r->mask, 0, 0,
++                                  (u16)((u16)(r->count * r->width8) << 3),
++                                  r->rows, 0xE0, 0xFF, NULL);
++    }
++}
++
++/*
++ * PORT H029+$091E: copia i piani 0..last_plane dal blocco caricato
++ * (a partire da offset, un piano dopo l'altro) nell'immagine, poi
++ * costruisce la maschera se il record ne ha una.
++ */
++static void transfer_gfx_planes(const u8 *data, u16 offset, u16 last_plane,
++                                u8 mask_color, struct GfxRecord **rec)
++{
++    struct GfxRecord *r = *rec;
++    u16 plane_bytes;
++    u16 i;
++
++    if (r == NULL) {
++        h014_0018(0x0B, "thegrafrec-", 0);
++        return;
++    }
++    plane_bytes = (u16)((u16)(r->rows * gfx_record_width(r)) >> 3);
++    for (i = 0; i <= last_plane; ++i) {
++        exec_copy_mem(data + (u16)(plane_bytes * i + offset),
++                      r->image->Planes[i], plane_bytes);
++    }
++    if ((*rec)->mask != NULL) {
++        build_gfx_mask(mask_color, *rec);
++    }
++}
++
++/*
++ * PORT H029+$0A0E (Load_IndexedGraphicRecord): carica il blocco id di
++ * name.daa e ne fa un record grafico in *rec (liberando il precedente).
++ * Intestazione di 9 byte: righe, unita', due word, larghezza unitaria;
++ * i set "8x8..." hanno 4 piani dopo l'intestazione, gli altri una palette
++ * di 32 colori (copiata in H005+$522E) e 5 piani.
++ */
++void load_indexed_gfx_record(u16 name_len, const char *name, u16 id,
++                             u16 with_mask, u8 mask_color,
++                             struct GfxRecord **rec)
++{
++    char prefix[0x52];          /* -$5C */
++    u16 last_plane;             /* -$62 */
++    u16 offset;                 /* -$60 */
++    u16 size;                   /* -$5E */
++    u8 *data;                   /* -$66 */
++    u8 header[9];               /* -$A */
++
++    if (*rec != NULL) {
++        free_gfx_record(rec);
++    }
++    h026_substr(0x50, prefix, name_len, name, 0, 3);
++    if (h026_compare_nocase(0x50, prefix, 3, "8x8") == 1) {
++        last_plane = 3;
++        offset = 9;
++    } else {
++        last_plane = 4;
++        offset = 0x49;
++    }
++    dax_load_block(name_len, name, 4, ".daa", id, &size, &data);
++    if (size == 0) {
++        h014_0018(0x14, "loadgrafrec:tbufsize", 0);
++        h014_0018(name_len, name, id);
++        return;
++    }
++    exec_copy_mem(data, header, 9);
++    if (last_plane == 4) {
++        exec_copy_mem(data + 9, &g_h005[0x522E], 0x40);
++    }
++    allocate_gfx_record(COK_GET16(header), COK_GET16(header + 2), header[8],
++                        with_mask, rec);
++    /* Come l'originale: entrambe le word vanno nel campo +$04. */
++    (*rec)->w4 = COK_GET16(header + 4);
++    (*rec)->w4 = COK_GET16(header + 6);
++    transfer_gfx_planes(data, offset, last_plane, mask_color, rec);
++    exec_free_mem(data, size);
++}
+diff --git a/src_c/readable/h029_gfx.h b/src_c/readable/h029_gfx.h
+index 576bd9b..e968ee2 100644
+--- a/src_c/readable/h029_gfx.h
++++ b/src_c/readable/h029_gfx.h
+@@ -9,6 +9,10 @@
+ void allocate_gfx_record(u16 rows, u16 count, u16 width8, u16 with_mask,
+                          struct GfxRecord **rec);       /* H029+$0408 */
+ void free_pointer_data(void);           /* H029+$0180 */
++void free_gfx_record(struct GfxRecord **rec);           /* H029+$067A */
++void load_indexed_gfx_record(u16 name_len, const char *name, u16 id,
++                             u16 with_mask, u8 mask_color,
++                             struct GfxRecord **rec);   /* H029+$0A0E */
+ void prepare_display_resources(void);   /* H029+$1346 */
+ void open_game_display(void);           /* H029+$1206 */
+ void close_game_display(void);          /* H029+$12BC */
+diff --git a/src_c/readable/h031.c b/src_c/readable/h031.c
+index de3c366..4520153 100644
+--- a/src_c/readable/h031.c
++++ b/src_c/readable/h031.c
+@@ -18,3 +18,19 @@ void h031_swap_word(u8 *word)
+     word[0] = word[1];
+     word[1] = hi;
+ }
++
++/*
++ * PORT H031+$003E: inverte i quattro byte del long (scambia le due word e
++ * i byte di ciascuna).  Come per H031+$0012 il long e' in memoria
++ * big-endian, quindi l'operazione sui byte e' quella dell'originale.
++ */
++void h031_swap_long(u8 *value)
++{
++    u8 t = value[0];
++
++    value[0] = value[3];
++    value[3] = t;
++    t = value[1];
++    value[1] = value[2];
++    value[2] = t;
++}
+diff --git a/src_c/readable/h031.h b/src_c/readable/h031.h
+index 004c488..0298588 100644
+--- a/src_c/readable/h031.h
++++ b/src_c/readable/h031.h
+@@ -5,5 +5,6 @@
+ #include "cok.h"
+ 
+ void h031_swap_word(u8 *word);          /* H031+$0012 */
++void h031_swap_long(u8 *value);         /* H031+$003E */
+ 
+ #endif
+diff --git a/src_c/readable/h034.c b/src_c/readable/h034.c
+index d96fac6..8c16fee 100644
+--- a/src_c/readable/h034.c
++++ b/src_c/readable/h034.c
+@@ -1,7 +1,45 @@
+ /* H034: caricamento risorse 8x8 (8X8D) e messaggi di errore. */
+-#include "cok.h"
++#include "h034.h"
++#include "h026_string.h"
++#include "h029_gfx.h"
++#include "h045.h"
++#include "globals.h"
++#include "unported.h"
+ 
+ /* PORT H034+$0024: link/unlk, nessun effetto. */
+ void h034_init(void)
+ {
+ }
++
++/*
++ * PORT H034+$0032: carica il set di tile 8x8 id dal contenitore
++ * "8x8d<gruppo>.daa" nel posto slot (0..4) di g_8x8_sets, con maschera
++ * (colore trasparente 13).  Se non riesce compone il messaggio "Unable to
++ * load <id> from 8x8D<gruppo>" (che l'originale non mostra: nessuna
++ * routine lo riceve), poi H010+$0974 e l'uscita H010+$0332.
++ */
++void load_8x8_set(u8 id, u8 slot)
++{
++    char name[0x52];            /* -$F8 */
++    char group[2];              /* -$2 */
++    char message[0x52];         /* -$54 */
++    char number[0x52];          /* -$A6 */
++
++    if (slot > 4) {
++        return;
++    }
++    h026_copy(0x50, name, 4, "8x8d");
++    format_number(1, group, (s32)G_RESOURCE_GROUP, 0, 0x0A, 1, '0');
++    h026_append(0x50, name, 1, group);
++    load_indexed_gfx_record(0x50, name, id, 1, 0x0D, &g_8x8_sets[slot]);
++    if (g_8x8_sets[slot] != NULL) {
++        return;
++    }
++    h026_copy(0x50, message, 0x0F, "Unable to load ");
++    format_number(0x50, number, (s32)id, 0, 0x0A, 3, '0');
++    h026_append(0x50, message, 0x50, number);
++    h026_append(0x50, message, 0x0A, " from 8x8D");
++    h026_append(0x50, message, 1, group);
++    h010_0974();
++    h010_0332();
++}
+diff --git a/src_c/readable/h034.h b/src_c/readable/h034.h
+new file mode 100644
+index 0000000..5edb283
+--- /dev/null
++++ b/src_c/readable/h034.h
+@@ -0,0 +1,9 @@
++/* H034: caricamento risorse 8x8 (8X8D) e messaggi di errore. */
++#ifndef COK_H034_H
++#define COK_H034_H
++
++#include "cok.h"
++
++void load_8x8_set(u8 id, u8 slot);      /* H034+$0032 */
++
++#endif
+diff --git a/src_c/readable/h045.c b/src_c/readable/h045.c
+index 780283b..5fd3d8d 100644
+--- a/src_c/readable/h045.c
++++ b/src_c/readable/h045.c
+@@ -1,7 +1,53 @@
+ /* H045: helper aritmetici e di supporto condivisi. */
+-#include "cok.h"
++#include "h045.h"
++#include "h015_runtime.h"
+ 
+ /* PORT H045+$0004: link/unlk, nessun effetto. */
+ void h045_init(void)
+ {
+ }
++
++/*
++ * PORT H045+$01D6: scrive value in base nel buffer out (al massimo max_len
++ * caratteri prima del NUL), con il segno '-' se is_signed e negativo.  Le
++ * cifre sono riempite a sinistra con pad fino a width; cifre e
++ * riempimento insieme non superano width (le cifre meno significative in
++ * piu' sono tagliate).
++ */
++void format_number(u16 max_len, char *out, s32 value, u8 is_signed,
++                   u16 base, u16 width, u8 pad)
++{
++    char digits[0x50];          /* -$50 */
++    s16 n = 0;                  /* -$58 */
++    u16 j = 0;                  /* -$5A */
++    u16 written = 0;            /* -$5E */
++    u16 fill;                   /* -$5C */
++    u32 v = (u32)value;         /* -$56 */
++    u32 rem;
++
++    if (is_signed && value < 0) {
++        out[j++] = '-';
++        v = (u32)-value;
++    }
++    do {
++        (void)h015_divu32(v, base, &rem);
++        digits[n] = (char)((u16)rem < 10 ? '0' + (u16)rem
++                                         : 'A' + (u16)rem - 10);
++        ++n;
++        v = h015_divu32(v, base, NULL);
++    } while (v != 0);
++
++    if (width > (u16)n) {
++        fill = (u16)(width - n);
++        while (j < max_len && fill > 0) {
++            out[j++] = (char)pad;
++            --fill;
++            ++written;
++        }
++    }
++    while (--n >= 0 && written < width && j < max_len) {
++        out[j++] = digits[n];
++        ++written;
++    }
++    out[j] = 0;
++}
+diff --git a/src_c/readable/h045.h b/src_c/readable/h045.h
+new file mode 100644
+index 0000000..b5b80df
+--- /dev/null
++++ b/src_c/readable/h045.h
+@@ -0,0 +1,10 @@
++/* H045: helper aritmetici e di supporto condivisi. */
++#ifndef COK_H045_H
++#define COK_H045_H
++
++#include "cok.h"
++
++void format_number(u16 max_len, char *out, s32 value, u8 is_signed,
++                   u16 base, u16 width, u8 pad);        /* H045+$01D6 */
++
++#endif
+diff --git a/src_c/readable/h055.c b/src_c/readable/h055.c
+index 4e595ce..b19784b 100644
+--- a/src_c/readable/h055.c
++++ b/src_c/readable/h055.c
+@@ -24,3 +24,9 @@ void graphics_init_rastport(struct RastPort *rp)
+ {
+     InitRastPort(rp);
+ }
++
++/* PORT H055+$002A */
++void graphics_free_raster(PLANEPTR p, u16 width, u16 height)
++{
++    FreeRaster(p, (ULONG)width, (ULONG)height);
++}
+diff --git a/src_c/readable/h055.h b/src_c/readable/h055.h
+index 1cfa9aa..f66d451 100644
+--- a/src_c/readable/h055.h
++++ b/src_c/readable/h055.h
+@@ -6,5 +6,6 @@
+ 
+ void graphics_init_rastport(struct RastPort *rp);       /* H055+$0044 */
+ PLANEPTR graphics_alloc_raster(u16 width, u16 height);  /* H055+$0014 */
++void     graphics_free_raster(PLANEPTR p, u16 width, u16 height); /* H055+$002A */
+ 
+ #endif
+diff --git a/src_c/readable/host/graphics.c b/src_c/readable/host/graphics.c
+index ff66710..484bda1 100644
+--- a/src_c/readable/host/graphics.c
++++ b/src_c/readable/host/graphics.c
+@@ -186,3 +186,70 @@ void RectFill(struct RastPort *rp, LONG xmin, LONG ymin, LONG xmax, LONG ymax)
+     }
+     host_display_changed();
+ }
++
++static int get_pixel_bit(const UBYTE *plane, UWORD bpr, LONG x, LONG y)
++{
++    return (plane[(size_t)y * bpr + (x >> 3)] >> (7 - (x & 7))) & 1;
++}
++
++static void put_pixel_bit(UBYTE *plane, UWORD bpr, LONG x, LONG y, int v)
++{
++    UBYTE *p = plane + (size_t)y * bpr + (x >> 3);
++    UBYTE m = (UBYTE)(0x80 >> (x & 7));
++
++    if (v) {
++        *p |= m;
++    } else {
++        *p &= (UBYTE)~m;
++    }
++}
++
++/*
++ * Copia un rettangolo piano per piano (piani con il bit di mask) con la
++ * funzione logica minterm su B = sorgente e C = destinazione (A sempre 1,
++ * come in BltBitMap: contano i bit 4..7 del minterm).  I piani sono
++ * elaborati in ordine: se la destinazione ripete lo stesso raster in piu'
++ * piani, ogni piano lavora sul risultato del precedente, come sull'Amiga.
++ * La sorgente di ogni riga e' letta prima di scrivere, per le
++ * sovrapposizioni.  Restituisce il numero di piani elaborati.
++ */
++LONG BltBitMap(struct BitMap *src, LONG src_x, LONG src_y,
++               struct BitMap *dst, LONG dst_x, LONG dst_y, LONG width,
++               LONG height, ULONG minterm, ULONG mask, PLANEPTR temp)
++{
++    int depth = src->Depth < dst->Depth ? src->Depth : dst->Depth;
++    UBYTE row[4096];
++    LONG planes = 0;
++    LONG x;
++    LONG y;
++    int p;
++
++    (void)temp;
++    if (width <= 0 || height <= 0 || width > (LONG)sizeof(row)) {
++        return 0;
++    }
++    for (p = 0; p < depth; ++p) {
++        if (!(mask & (1u << p)) || src->Planes[p] == NULL ||
++            dst->Planes[p] == NULL) {
++            continue;
++        }
++        ++planes;
++        for (y = 0; y < height; ++y) {
++            for (x = 0; x < width; ++x) {
++                row[x] = (UBYTE)get_pixel_bit(src->Planes[p], src->BytesPerRow,
++                                              src_x + x, src_y + y);
++            }
++            for (x = 0; x < width; ++x) {
++                int b = row[x];
++                int c = get_pixel_bit(dst->Planes[p], dst->BytesPerRow,
++                                      dst_x + x, dst_y + y);
++                int d = (int)(minterm >> (4 + b * 2 + c)) & 1;
++
++                put_pixel_bit(dst->Planes[p], dst->BytesPerRow, dst_x + x,
++                              dst_y + y, d);
++            }
++        }
++    }
++    host_display_changed();
++    return planes;
++}
+diff --git a/src_c/readable/host/ndk.h b/src_c/readable/host/ndk.h
+index 74a1e89..bd24976 100644
+--- a/src_c/readable/host/ndk.h
++++ b/src_c/readable/host/ndk.h
+@@ -137,6 +137,9 @@ void     InitBitMap(struct BitMap *bm, LONG depth, LONG width, LONG height);
+ PLANEPTR AllocRaster(ULONG width, ULONG height);
+ void     FreeRaster(PLANEPTR p, ULONG width, ULONG height);
+ void     BltClear(void *memory, ULONG count, ULONG flags);
++LONG     BltBitMap(struct BitMap *src, LONG src_x, LONG src_y,
++                   struct BitMap *dst, LONG dst_x, LONG dst_y, LONG width,
++                   LONG height, ULONG minterm, ULONG mask, PLANEPTR temp);
+ 
+ /* intuition */
+ struct TextAttr;
+diff --git a/src_c/readable/tests/dax_test.c b/src_c/readable/tests/dax_test.c
+new file mode 100644
+index 0000000..046020b
+--- /dev/null
++++ b/src_c/readable/tests/dax_test.c
+@@ -0,0 +1,44 @@
++/*
++ * Estrae il blocco id dal contenitore name+ext con DAX_LoadBlock (H028) e
++ * lo scrive in out (byte decompressi, dimensione dichiarata + $100).
++ * Confronto: scripts/check_dax.py.
++ *   ./dax_test 8x8d1 .daa 202 out.bin
++ */
++#include <stdio.h>
++#include <stdlib.h>
++#include "../h028_files.h"
++#include "../globals.h"
++
++/* Le routine di errore e uscita non portate: qui segnalano e proseguono. */
++void h014_0018(u16 len, const char *msg, u16 value)
++{
++    (void)len;
++    printf("errore H014: %s %u\n", msg, value);
++}
++
++void h010_0332(void)
++{
++    printf("uscita H010+$0332\n");
++    exit(3);
++}
++
++int main(int argc, char **argv)
++{
++    u16 size = 0;
++    u8 *data = NULL;
++    FILE *out;
++
++    if (argc < 5) {
++        printf("uso: dax_test nome .ext id out.bin\n");
++        return 2;
++    }
++    G_RESOURCE_GROUP = 1;
++    dax_load_block((u16)strlen(argv[1]), argv[1], (u16)strlen(argv[2]),
++                   argv[2], (u16)atoi(argv[3]), &size, &data);
++    out = fopen(argv[4], "wb");
++    if (data != NULL) {
++        fwrite(data, 1, size, out);
++    }
++    fclose(out);
++    return data != NULL ? 0 : 1;
++}
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index 67c10b7..3cb5e8b 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -40,7 +40,6 @@ void h013_4bfc(void) { cok_unported("H013+$4BFC"); }
+ void h006_00fa(void) { cok_unported("H006+$00FA"); }
+ void h027_4276(void) { cok_unported("H027+$4276"); }
+ void h014_0018(u16 len, const char *msg, u16 value) { (void)len; (void)msg; (void)value; cok_unported("H014+$0018"); }
+-void h029_0a0e(u16 a, const char *name, u16 id, u16 b, u8 c, struct GfxRecord **rec) { (void)a; (void)name; (void)id; (void)b; (void)c; (void)rec; cok_unported("H029+$0A0E"); }
+ void h033_1a50(void) { cok_unported("H033+$1A50"); }
+-void h034_0032(u8 a, u8 b) { (void)a; (void)b; cok_unported("H034+$0032"); }
+ void h035_0246(u16 a, const char *name, u16 b, u16 c) { (void)a; (void)name; (void)b; (void)c; cok_unported("H035+$0246"); }
++void h010_0974(void) { cok_unported("H010+$0974"); }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index f5d71a4..84d36bd 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -10,12 +10,11 @@
+ #include "gfx_record.h"
+ 
+ void h006_0914(void);
++void h010_0974(void);
+ void h006_00fa(void);
+ void h027_4276(void);
+ void h014_0018(u16 len, const char *msg, u16 value);
+-void h029_0a0e(u16 a, const char *name, u16 id, u16 b, u8 c, struct GfxRecord **rec);
+ void h033_1a50(void);
+-void h034_0032(u8 a, u8 b);
+ void h035_0246(u16 a, const char *name, u16 b, u16 c);
+ void h007_09d8(void);
+ u8   h008_01fc(u8 *special, u8 cycle, u8 numeric, u16 sel_pen,
+-- 
+2.43.0
+

@@ -1,0 +1,16 @@
+/*
+ * Generato da scripts/gen_init_data.py 57 3202 3242: costanti
+ * dell'inizializzazione H057 nell'ordine dell'originale.  Non modificare a mano.
+ */
+#ifndef COK_H057_INIT_DATA_H_H
+#define COK_H057_INIT_DATA_H_H
+
+/* H057+$3202 */
+static const InitOp s_init_3202[] = {
+    { INIT_STR, INIT_BSS, 0x00A8, 41, "Save View Magic Rest Alter Fix Exit" },
+    { INIT_STR, INIT_BSS, 0x007E, 41, "Cast Memorize Scribe Display Rest Exit" },
+    { INIT_STR, INIT_BSS, 0x0054, 41, "Order Drop Speed Icon Pics Level Exit" },
+    { INIT_STR, INIT_BSS, 0x002A, 41, "Novice Squire Veteran Adept Champion" },
+};
+
+#endif

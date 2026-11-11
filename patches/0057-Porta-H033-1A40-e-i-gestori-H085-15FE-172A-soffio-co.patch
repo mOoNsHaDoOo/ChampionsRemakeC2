@@ -1,0 +1,767 @@
+From f95cf0dcc02e2379dae20db786e7bb37578f0131 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 11 Nov 2026 11:27:49 +0000
+Subject: [PATCH 57/65] Porta H033+$1A40 e i gestori H085 $15FE, $172A (soffio,
+ con $0BB2), $363E, $38AA; mathffp senza FLOAT per SAS/C
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/backlog.md     |  32 ++++
+ src_c/readable/h015_runtime.c |  45 ++---
+ src_c/readable/h033.c         |  55 +++---
+ src_c/readable/h033.h         |   1 +
+ src_c/readable/h077.c         |  25 +--
+ src_c/readable/h077.h         |  24 +++
+ src_c/readable/h085.c         | 340 ++++++++++++++++++++++++++++++++++
+ src_c/readable/h085.h         |   4 +
+ src_c/readable/unported.c     |   5 -
+ src_c/readable/unported.h     |   5 -
+ 10 files changed, 452 insertions(+), 84 deletions(-)
+
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index b1ff9a5..7a60769 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -2560,3 +2560,35 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
+ - **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
+ 
+ ---
++
++## v49: H033+$1A40 e gestori di H085 ($15FE, $172A con $0BB2, $363E, $38AA)
++
++**Correzione per SAS/C (warning 625, "proper math library has not been included")**
++- **Causa:** in v48 i salti a mathffp di h015_runtime.c usavano una union con FLOAT.
++- **Correzione:** ora usano prototipi propri con LONG e `#pragma libcall MathBase`, agli stessi offset e registri del NDK (SPFix $1E 001, SPFlt $24 001, SPMul $4E 0102, SPDiv $54 0102). Nel C per Amiga non resta nessun tipo float.
++
++**Portato**
++- **H033+$1A40 `spell_no_effect`:** azione vuota di 18 incantesimi della tabella $25C0.
++- **H085+$15FE `spell_fireball`:** dadi da 6 pari al livello del lanciatore (per $40: 1d3*2+1) su chi e' entro 2 caselle dal punto scelto.
++- **H085+$172A `effect_breath`** (effetti $06/$53 freddo, $68 fuoco): soffio del drago.
++  - Cariche in +$4; scelta del bersaglio.
++  - Solo se tutti i colpiti sono avversari: messaggio "breathes cold/Fire", animazione, danno pari ai punti ferita massimi del drago (tiro salvezza 3).
++- **H085+$0BB2 (con le annidate $0BC0, $0C04, $0C62):** area del soffio.
++  - La linea verso il bersaglio si prolunga fino alla lunghezza (8/7/9) e si ferma alla linea di vista.
++  - Raccoglie i combattenti lungo la linea; con larghezza 3 anche lungo le due linee verso i lati della punta, con $FF quelli entro 3 caselle.
++- **H085+$363E `spell_event_9`:** effetto sul bersaglio del turno ed evento 9, poi il gestore dell'effetto $40 se l'effetto non e' stato annullato.
++- **H085+$38AA `spell_teleport`:** "teleports" sul punto scelto.
++- **Esportati da H077:** `CokLine`, `line_init` ($01CC) e `line_step` ($0242).
++
++**Dove mi discosto dall'asm (documentato nel codice)**
++- **$0BB2, distanza -$114(a5):** non e' inizializzata nell'originale ma viene passata alla linea di vista; qui $FFFF, cioe' nessun limite, perche' la lunghezza e' gia' limitata dal prolungamento.
++- **$0BB2, direzione -$112(a5):** non inizializzata se la linea non incontra nessuno; qui 0.
++- **$0C62:** con l'elenco dei colpiti pieno l'originale scriverebbe oltre le 30 voci; qui si ferma.
++- **$363E:** l'oggetto passato al gestore dell'effetto $40 e' -$4(a5), non inizializzato; qui NULL.
++
++**Prove**
++- **Battaglia della carovana** (ASan): nessun errore; le tabelle dei gestori sono a posto.
++- **Non provato:** il soffio, la palla di fuoco e il teletrasporto, che non compaiono nella prima battaglia.
++- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
++
++---
+diff --git a/src_c/readable/h015_runtime.c b/src_c/readable/h015_runtime.c
+index bfeae1f..fae104c 100644
+--- a/src_c/readable/h015_runtime.c
++++ b/src_c/readable/h015_runtime.c
+@@ -16,7 +16,6 @@
+ #include <proto/graphics.h>
+ #include <proto/intuition.h>
+ #include <proto/layers.h>
+-#include <proto/mathffp.h>
+ 
+ /* Basi aperte da H015+$01B0..$01F2 (versione 0). */
+ struct GfxBase       *GfxBase;
+@@ -83,50 +82,44 @@ s32 h015_divs32(s32 dividend, s32 divisor, u32 *remainder)
+ }
+ 
+ #if COK_AMIGA
+-/* Su Amiga si chiama mathffp.library come l'originale (MathBase sopra). */
+-typedef union FfpBits {
+-    u32 u;
+-    FLOAT f;
+-} FfpBits;
++/*
++ * Su Amiga si chiama mathffp.library come l'originale (MathBase sopra).
++ * Prototipi e pragma propri con LONG al posto di FLOAT, agli stessi
++ * offset e registri del NDK (SPFix -$1E, SPFlt -$24, SPMul -$4E, SPDiv
++ * -$54): nessun tipo float nel C, quindi SAS/C non chiede una libreria
++ * matematica (warning 625).
++ */
++LONG cok_spfix(LONG fnum);
++LONG cok_spflt(LONG inum);
++LONG cok_spmul(LONG fnum1, LONG fnum2);
++LONG cok_spdiv(LONG fnum1, LONG fnum2);
++#pragma libcall MathBase cok_spfix 1e 001
++#pragma libcall MathBase cok_spflt 24 001
++#pragma libcall MathBase cok_spmul 4e 0102
++#pragma libcall MathBase cok_spdiv 54 0102
+ 
+ /* PORT H015+$010C: SPMul(d1, d0); d0 = primo argomento sulla pila. */
+ CokReal h015_spmul(CokReal a, CokReal b)
+ {
+-    FfpBits x, y, r;
+-
+-    x.u = a;
+-    y.u = b;
+-    r.f = SPMul(y.f, x.f);
+-    return r.u;
++    return (CokReal)cok_spmul((LONG)b, (LONG)a);
+ }
+ 
+ /* PORT H015+$0122: SPDiv(d1 divisore, d0 dividendo) = dividend / divisor. */
+ CokReal h015_spdiv(CokReal dividend, CokReal divisor)
+ {
+-    FfpBits x, y, r;
+-
+-    x.u = dividend;
+-    y.u = divisor;
+-    r.f = SPDiv(y.f, x.f);
+-    return r.u;
++    return (CokReal)cok_spdiv((LONG)divisor, (LONG)dividend);
+ }
+ 
+ /* PORT H015+$0172: SPFlt, da intero con segno. */
+ CokReal h015_spflt(s32 n)
+ {
+-    FfpBits r;
+-
+-    r.f = SPFlt(n);
+-    return r.u;
++    return (CokReal)cok_spflt((LONG)n);
+ }
+ 
+ /* PORT H015+$0184: SPFix, parte intera troncata. */
+ s32 h015_spfix(CokReal f)
+ {
+-    FfpBits x;
+-
+-    x.u = f;
+-    return (s32)SPFix(x.f);
++    return (s32)cok_spfix((LONG)f);
+ }
+ #else
+ /*
+diff --git a/src_c/readable/h033.c b/src_c/readable/h033.c
+index 84fa17c..75be0e5 100644
+--- a/src_c/readable/h033.c
++++ b/src_c/readable/h033.c
+@@ -532,7 +532,7 @@ void install_action_handlers(void)
+     g_handlers_25c0[32] = spell_ray_of_enfeeblement;   /* $2640 */
+     g_handlers_25c0[33] = h085_26c0;   /* $2644 */
+     g_handlers_25c0[34] = strength_spell;   /* $2648 */
+-    g_handlers_25c0[35] = h033_1a40;   /* $264C */
++    g_handlers_25c0[35] = spell_no_effect;   /* $264C */
+     g_handlers_25c0[36] = spell_cure_blindness;   /* $2650 */
+     g_handlers_25c0[37] = spell_cause_blindness;   /* $2654 */
+     g_handlers_25c0[38] = cure_disease;   /* $2658 */
+@@ -543,7 +543,7 @@ void install_action_handlers(void)
+     g_handlers_25c0[43] = spell_bestow_curse;   /* $266C */
+     g_handlers_25c0[44] = spell_blink;   /* $2670 */
+     g_handlers_25c0[45] = spell_dispel_magic;   /* $2674 */
+-    g_handlers_25c0[46] = h085_15fe;   /* $2678 */
++    g_handlers_25c0[46] = spell_fireball;   /* $2678 */
+     g_handlers_25c0[47] = spell_haste;   /* $267C */
+     g_handlers_25c0[48] = h085_2338;   /* $2680 */
+     g_handlers_25c0[49] = spell_invisibility;   /* $2684 */
+@@ -552,7 +552,7 @@ void install_action_handlers(void)
+     g_handlers_25c0[52] = spell_protected;   /* $2690 */
+     g_handlers_25c0[53] = spell_protected;   /* $2694 */
+     g_handlers_25c0[54] = spell_slow;   /* $2698 */
+-    g_handlers_25c0[55] = h033_1a40;   /* $269C */
++    g_handlers_25c0[55] = spell_no_effect;   /* $269C */
+     g_handlers_25c0[56] = spell_speedy;   /* $26A0 */
+     g_handlers_25c0[57] = cure_serious_wounds;   /* $26A4 */
+     g_handlers_25c0[58] = spell_strength_21;   /* $26A8 */
+@@ -560,41 +560,41 @@ void install_action_handlers(void)
+     g_handlers_25c0[60] = spell_paralyze;   /* $26B0 */
+     g_handlers_25c0[61] = spell_heal_3430;   /* $26B4 */
+     g_handlers_25c0[62] = spell_invisible;   /* $26B8 */
+-    g_handlers_25c0[63] = h085_15fe;   /* $26BC */
++    g_handlers_25c0[63] = spell_fireball;   /* $26BC */
+     g_handlers_25c0[64] = spell_damage_2d4;   /* $26C0 */
+     g_handlers_25c0[65] = spell_cause_serious_wounds;   /* $26C4 */
+     g_handlers_25c0[66] = neutralize_poison;   /* $26C8 */
+-    g_handlers_25c0[67] = h085_363e;   /* $26CC */
++    g_handlers_25c0[67] = spell_event_9;   /* $26CC */
+     g_handlers_25c0[68] = spell_protected;   /* $26D0 */
+     g_handlers_25c0[69] = spell_sticks_to_snakes;   /* $26D4 */
+-    g_handlers_25c0[70] = h033_1a40;   /* $26D8 */
+-    g_handlers_25c0[71] = h033_1a40;   /* $26DC */
+-    g_handlers_25c0[72] = h033_1a40;   /* $26E0 */
+-    g_handlers_25c0[73] = h033_1a40;   /* $26E4 */
+-    g_handlers_25c0[74] = h033_1a40;   /* $26E8 */
+-    g_handlers_25c0[75] = h033_1a40;   /* $26EC */
+-    g_handlers_25c0[76] = h033_1a40;   /* $26F0 */
+-    g_handlers_25c0[77] = h033_1a40;   /* $26F4 */
+-    g_handlers_25c0[78] = h033_1a40;   /* $26F8 */
+-    g_handlers_25c0[79] = h033_1a40;   /* $26FC */
++    g_handlers_25c0[70] = spell_no_effect;   /* $26D8 */
++    g_handlers_25c0[71] = spell_no_effect;   /* $26DC */
++    g_handlers_25c0[72] = spell_no_effect;   /* $26E0 */
++    g_handlers_25c0[73] = spell_no_effect;   /* $26E4 */
++    g_handlers_25c0[74] = spell_no_effect;   /* $26E8 */
++    g_handlers_25c0[75] = spell_no_effect;   /* $26EC */
++    g_handlers_25c0[76] = spell_no_effect;   /* $26F0 */
++    g_handlers_25c0[77] = spell_no_effect;   /* $26F4 */
++    g_handlers_25c0[78] = spell_no_effect;   /* $26F8 */
++    g_handlers_25c0[79] = spell_no_effect;   /* $26FC */
+     g_handlers_25c0[80] = h085_3758;   /* $2700 */
+     g_handlers_25c0[81] = spell_confusion;   /* $2704 */
+-    g_handlers_25c0[82] = h085_38aa;   /* $2708 */
++    g_handlers_25c0[82] = spell_teleport;   /* $2708 */
+     g_handlers_25c0[83] = h085_3936;   /* $270C */
+     g_handlers_25c0[84] = spell_fire_shield;   /* $2710 */
+     g_handlers_25c0[85] = spell_fumble;   /* $2714 */
+     g_handlers_25c0[86] = spell_ice_storm;   /* $2718 */
+     g_handlers_25c0[87] = spell_minor_globe;   /* $271C */
+     g_handlers_25c0[88] = spell_remove_curse;   /* $2720 */
+-    g_handlers_25c0[89] = h033_1a40;   /* $2724 */
+-    g_handlers_25c0[90] = h033_1a40;   /* $2728 */
+-    g_handlers_25c0[91] = h033_1a40;   /* $272C */
+-    g_handlers_25c0[92] = h033_1a40;   /* $2730 */
+-    g_handlers_25c0[93] = h033_1a40;   /* $2734 */
++    g_handlers_25c0[89] = spell_no_effect;   /* $2724 */
++    g_handlers_25c0[90] = spell_no_effect;   /* $2728 */
++    g_handlers_25c0[91] = spell_no_effect;   /* $272C */
++    g_handlers_25c0[92] = spell_no_effect;   /* $2730 */
++    g_handlers_25c0[93] = spell_no_effect;   /* $2734 */
+     g_handlers_25c0[94] = spell_silent_3d74;   /* $2738 */
+     g_handlers_25c0[95] = spell_silent_3da0;   /* $273C */
+     g_handlers_25c0[96] = spell_silent_3dcc;   /* $2740 */
+-    g_handlers_25c0[97] = h033_1a40;   /* $2744 */
++    g_handlers_25c0[97] = spell_no_effect;   /* $2744 */
+     g_handlers_25c0[98] = spell_heal_3df8;   /* $2748 */
+     g_handlers_25c0[99] = spell_bestow_curse;   /* $274C */
+     g_handlers_25c0[100] = spell_protected;   /* $2750 */
+@@ -605,15 +605,20 @@ void install_action_handlers(void)
+     g_handlers_25c0[105] = spell_charm_person;   /* $2764 */
+     g_handlers_25c0[106] = spell_burning_hands;   /* $2768 */
+     g_handlers_2832[3] = h085_4a02;   /* $283E */
+-    g_handlers_2832[5] = h085_172a;   /* $2846 */
+-    g_handlers_2832[103] = h085_172a;   /* $29CE */
+-    g_handlers_2832[82] = h085_172a;   /* $297A */
++    g_handlers_2832[5] = (CokHandler)effect_breath;   /* $2846 */
++    g_handlers_2832[103] = (CokHandler)effect_breath;   /* $29CE */
++    g_handlers_2832[82] = (CokHandler)effect_breath;   /* $297A */
+     g_handlers_2832[83] = h085_442e;   /* $297E */
+     g_handlers_2832[84] = h085_4628;   /* $2982 */
+     g_handlers_2832[89] = h085_4798;   /* $2996 */
+     g_handlers_2832[77] = h085_431a;   /* $2966 */
+ }
+ 
++/* PORT H033+$1A40: azione degli incantesimi senza effetto (link/unlk). */
++void spell_no_effect(void)
++{
++}
++
+ /* PORT H033+$17E6: l'oggetto e' una pergamena (tipo $27 o $28)? */
+ u8 is_scroll(const CokItem *it)
+ {
+diff --git a/src_c/readable/h033.h b/src_c/readable/h033.h
+index 049f87b..2ef035b 100644
+--- a/src_c/readable/h033.h
++++ b/src_c/readable/h033.h
+@@ -17,4 +17,5 @@ void announce_spell(Character *c, u16 len, const char *text, u16 spell);
+                                                         /* H033+$18EE */
+ 
+ u16  spell_range(u16 spell);              /* H033+$11FC */
++void spell_no_effect(void);              /* H033+$1A40 */
+ #endif
+diff --git a/src_c/readable/h077.c b/src_c/readable/h077.c
+index 04381a5..d47d01e 100644
+--- a/src_c/readable/h077.c
++++ b/src_c/readable/h077.c
+@@ -9,27 +9,6 @@ void h077_init(void)
+ {
+ }
+ 
+-/*
+- * Linea fra due caselle (Bresenham), record di $18 byte nell'originale:
+- * estremi, errore, differenze, posizione, passi, costo (2 per passo, +1
+- * in diagonale) e direzione dell'ultimo passo (tabella H005+$3DD2).
+- */
+-typedef struct CokLine {
+-    s16 x0;                             /* +$00 */
+-    s16 y0;                             /* +$02 */
+-    s16 x1;                             /* +$04 */
+-    s16 y1;                             /* +$06 */
+-    s16 err;                            /* +$08 */
+-    s16 dx;                             /* +$0A */
+-    s16 dy;                             /* +$0C */
+-    s16 cx;                             /* +$0E */
+-    s16 cy;                             /* +$10 */
+-    s16 sx;                             /* +$12 */
+-    s16 sy;                             /* +$14 */
+-    u8 cost;                            /* +$16 */
+-    u8 dir;                             /* +$17 */
+-} CokLine;
+-
+ /* PORT H077+$0012: segno di v (-1, 0, 1). */
+ static s16 sign_of(s16 v)
+ {
+@@ -43,7 +22,7 @@ static s16 sign_of(s16 v)
+ }
+ 
+ /* PORT H077+$01CC: prepara la linea da (x0, y0) a (x1, y1). */
+-static void line_init(CokLine *l)
++void line_init(CokLine *l)
+ {
+     s16 d;
+ 
+@@ -60,7 +39,7 @@ static void line_init(CokLine *l)
+ }
+ 
+ /* PORT H077+$0242: un passo della linea; 0 se era gia' alla fine. */
+-static u8 line_step(CokLine *l)
++u8 line_step(CokLine *l)
+ {
+     u8 moved = 0;                       /* -$5(a5) */
+     s16 ix = 1;                         /* -$2(a5) */
+diff --git a/src_c/readable/h077.h b/src_c/readable/h077.h
+index d0968ba..f5a3cb0 100644
+--- a/src_c/readable/h077.h
++++ b/src_c/readable/h077.h
+@@ -4,6 +4,30 @@
+ 
+ #include "cok.h"
+ 
++/*
++ * Linea fra due caselle (Bresenham), record di $18 byte nell'originale:
++ * estremi, errore, differenze, posizione, passi, costo (2 per passo, +1
++ * in diagonale) e direzione dell'ultimo passo (tabella H005+$3DD2).
++ */
++typedef struct CokLine {
++    s16 x0;                             /* +$00 */
++    s16 y0;                             /* +$02 */
++    s16 x1;                             /* +$04 */
++    s16 y1;                             /* +$06 */
++    s16 err;                            /* +$08 */
++    s16 dx;                             /* +$0A */
++    s16 dy;                             /* +$0C */
++    s16 cx;                             /* +$0E */
++    s16 cy;                             /* +$10 */
++    s16 sx;                             /* +$12 */
++    s16 sy;                             /* +$14 */
++    u8 cost;                            /* +$16 */
++    u8 dir;                             /* +$17 */
++} CokLine;
++
++void line_init(CokLine *l);             /* H077+$01CC */
++u8   line_step(CokLine *l);             /* H077+$0242 */
++
+ u8   line_of_sight(s16 ox, s16 oy, s16 *tx, s16 *ty, u16 *dist, u8 *area);
+                                                         /* H077+$0378 */
+ u8   in_direction(s16 x0, s16 y0, s16 x1, s16 y1, u16 dir); /* H077+$0508 */
+diff --git a/src_c/readable/h085.c b/src_c/readable/h085.c
+index ed50618..123f8fe 100644
+--- a/src_c/readable/h085.c
++++ b/src_c/readable/h085.c
+@@ -9,6 +9,7 @@
+ #include "unported.h"
+ #include "h077.h"
+ #include "h048.h"
++#include "h026_string.h"
+ 
+ /* Dati del modulo sotto a4: g_h085_bss[0x292 - off] e' -off(a4). */
+ u8 g_h085_bss[0x292];
+@@ -1012,3 +1013,342 @@ void spell_dispel_magic(void)
+         center_view(H005_W(0x251A), H005_W(0x2518), 3, 8);
+     }
+ }
++
++/*
++ * PORT H085+$15FE: palla di fuoco: tanti dadi da 6 quanto il livello del
++ * lanciatore (per l'incantesimo $40: 1d3 * 2 + 1) su chi e' entro 2
++ * caselle dal punto scelto (in combattimento), vista centrata sul punto.
++ */
++void spell_fireball(void)
++{
++    u16 level;                          /* -$2(a5) */
++    u16 k;                              /* -$4(a5) */
++
++    H005_B(0x24A9) = 1;
++    if (H005_B(0x2471) == 0x40) {
++        level = (u16)(roll_dice(1, 3) * 2 + 1);
++    } else {
++        level = (u16)caster_level(H005_B(0x2471));
++    }
++    if (COK_GET16(g_state_a + 0x1CC) == 0) {
++        find_in_area((s16)H005_W(0x251A), (s16)H005_W(0x2518), 2, 0xFF, 1,
++                     g_combat_area);
++        for (k = 1; k <= H005_B(0x2479); ++k) {
++            g_spell_targets[k - 1] =
++                g_combatants[H005_B(0x2A3E + (k - 1) * 4) - 1];
++        }
++        H005_B(0x246C) = H005_B(0x2479);
++    }
++    center_view((s16)H005_W(0x251A), (s16)H005_W(0x2518), 0, 8);
++    apply_spell_effect(H005_B(0x2471), 0, 0, roll_damage_dice(level, 6), 9,
++                       0, "");
++}
++
++/* Frame di H085+$0BB2 visto dalle procedure annidate. */
++typedef struct BreathFrame {
++    CokLine line;                       /* -$60(a5) */
++    u16 hit[0x1E];                      /* -$100(a5): combattenti colpiti */
++    u16 who;                            /* -$10A(a5) */
++    u16 tile;                           /* -$10C(a5) */
++    u8 done;                            /* -$115(a5) */
++} BreathFrame;
++
++/* PORT H085+$0BC0 (annidata): prepara la linea da (x0, y0) a (x1, y1). */
++static void breath_line(BreathFrame *f, s16 x0, s16 y0, s16 x1, s16 y1)
++{
++    f->line.x0 = x0;
++    f->line.y0 = y0;
++    f->line.x1 = x1;
++    f->line.y1 = y1;
++    line_init(&f->line);
++}
++
++/* PORT H085+$0C04 (annidata): x in 0..$31, y in 0..$18. */
++static void breath_clamp(s16 *x, s16 *y)
++{
++    if (*x > 0x31) {
++        *x = 0x31;
++    } else if (*x < 0) {
++        *x = 0;
++    }
++    if (*y > 0x18) {
++        *y = 0x18;
++    } else if (*y < 0) {
++        *y = 0;
++    }
++}
++
++/*
++ * PORT H085+$0C62 (annidata): percorre la linea e aggiunge all'elenco
++ * dei colpiti i combattenti incontrati che non ci sono gia'.  Con
++ * l'elenco pieno l'originale scriverebbe oltre le 30 voci; qui si ferma.
++ */
++static void breath_trace(BreathFrame *f)
++{
++    u16 i;                              /* -$2(a5) */
++    u8 placed;                          /* -$3(a5) */
++
++    do {
++        f->done = (u8)(line_step(&f->line) == 0);
++        if (f->done) {
++            continue;
++        }
++        combat_map_cell(f->line.cx, f->line.cy, &f->who, &f->tile);
++        i = 1;
++        placed = 0;
++        while (f->who > 0 && !placed && i <= 0x1E) {
++            if (f->hit[i - 1] == f->who) {
++                placed = 1;
++            } else if (f->hit[i - 1] == 0) {
++                f->hit[i - 1] = f->who;
++                placed = 1;
++            } else {
++                ++i;
++            }
++        }
++    } while (!f->done);
++}
++
++/*
++ * PORT H085+$0BB2: area di un soffio da (ax, ay) verso (tx, ty): la linea
++ * si prolunga fino alla lunghezza length (in mezzi passi), si ferma alla
++ * linea di vista, e raccoglie i combattenti incontrati; con width 2 o 3
++ * anche le linee verso i lati della punta (tabelle -$10..-$40), con $FF
++ * chi e' entro 3 caselle dalla punta.  I colpiti (tranne il personaggio
++ * corrente) diventano i bersagli (g_spell_targets, $246C).
++ * Non inizializzati nell'originale: la distanza -$114(a5) passata alla
++ * linea di vista (qui $FFFF, cioe' nessun limite: la lunghezza e' gia'
++ * limitata dal prolungamento) e la direzione -$112(a5) se la linea non
++ * incontra nessuno (qui 0).
++ */
++static void breath_area(s16 ax, s16 ay, s16 tx, s16 ty, u16 width,
++                        u16 length)
++{
++    static const s16 side1_x[8] = { -1, 0, 0, 1, 1, 0, 0, -1 };  /* -$10 */
++    static const s16 side1_y[8] = { 0, -1, -1, 0, 0, 1, 1, 0 };  /* -$20 */
++    static const s16 side2_x[8] = { 1, 1, 0, 0, -1, -1, 0, 0 };  /* -$30 */
++    static const s16 side2_y[8] = { 0, 0, 1, 1, 0, 0, -1, -1 };  /* -$40 */
++    BreathFrame f;
++    s16 p1x, p1y;                       /* -$42, -$44(a5) */
++    s16 p2x, p2y;                       /* -$46, -$48(a5) */
++    u16 dirs[0x31];                     /* -$C4(a5) */
++    u16 k;                              /* -$102(a5) */
++    u16 cost;                           /* -$104(a5) */
++    u16 n = 0;                          /* -$106(a5) */
++    u16 last;                           /* -$108(a5) */
++    u16 count;                          /* -$10E(a5) */
++    u16 slot;                           /* -$110(a5) */
++    u16 last_dir = 0;                   /* -$112(a5) */
++    u16 dist = 0xFFFF;                  /* -$114(a5) */
++    u8 dup = 0;                         /* -$117(a5) */
++
++    memset(&f, 0, sizeof(f));
++    breath_line(&f, ax, ay, tx, ty);
++    do {
++        f.done = (u8)(line_step(&f.line) == 0);
++        if (!f.done && n < 0x31) {
++            dirs[n] = f.line.dir;
++            ++n;
++        }
++    } while (!f.done);
++    last = (u16)(n - 1);
++    n = 0;
++    length = (u16)(length * 2);
++    cost = f.line.cost;
++    f.done = 0;
++    while (cost < length && !f.done) {
++        if (tx < 0x31 && tx > 0 && ty < 0x18 && ty > 0) {
++            if (dirs[n] & 1) {
++                cost = (u16)(cost + 2);
++            } else {
++                cost = (u16)(cost + 3);
++            }
++            tx = (s16)(tx + (s16)H005_W(0x3EE2 + dirs[n] * 2));
++            ty = (s16)(ty + (s16)H005_W(0x3ED0 + dirs[n] * 2));
++            if (n == last) {
++                n = 0;
++            } else {
++                ++n;
++            }
++        } else {
++            f.done = 1;
++        }
++    }
++    breath_clamp(&tx, &ty);
++    (void)line_of_sight(ax, ay, &tx, &ty, &dist, g_combat_area);
++    breath_line(&f, ax, ay, tx, ty);
++    h029_fill_bytes(0x3B, (u8 *)f.hit, 0x3C, 0);
++    count = 1;
++    do {
++        f.done = (u8)(line_step(&f.line) == 0);
++        if (f.done) {
++            continue;
++        }
++        combat_map_cell(f.line.cx, f.line.cy, &f.who, &f.tile);
++        if (f.who == 0) {
++            continue;
++        }
++        if (count > 1) {
++            for (k = 1; k <= (u16)(count - 1); ++k) {
++                if (f.hit[k - 1] == f.who) {
++                    dup = 1;
++                }
++            }
++        } else {
++            dup = 0;
++        }
++        if (!dup) {
++            f.hit[count - 1] = f.who;
++            ++count;
++        }
++        last_dir = f.line.dir;
++    } while (!f.done);
++    if (width > 1 && width != 0xFF) {
++        p1x = (s16)(tx + side1_x[last_dir & 7]);
++        p1y = (s16)(ty + side1_y[last_dir & 7]);
++        breath_clamp(&p1x, &p1y);
++        p2x = (s16)(tx + side2_x[last_dir & 7]);
++        p2y = (s16)(ty + side2_y[last_dir & 7]);
++        breath_clamp(&p2x, &p2y);
++        breath_line(&f, ax, ay, p2x, p2y);
++        breath_trace(&f);
++        if (width > 2) {
++            breath_line(&f, ax, ay, p1x, p1y);
++            breath_trace(&f);
++        }
++    }
++    if (width == 0xFF) {
++        find_in_area(tx, ty, 3, 0xFF, 1, g_combat_area);
++        for (k = 1; k <= H005_B(0x2479); ++k) {
++            f.hit[k - 1] = H005_B(0x2A3E + (k - 1) * 4);
++        }
++    }
++    count = 1;
++    slot = 1;
++    H005_B(0x246C) = 0;
++    while (count <= 0x1E && f.hit[count - 1] != 0) {
++        if (g_combatants[f.hit[count - 1] - 1] != g_current_char) {
++            add_to_byte(&H005_B(0x246C), 1);
++            g_spell_targets[slot - 1] = g_combatants[f.hit[count - 1] - 1];
++            ++slot;
++        }
++        ++count;
++    }
++}
++
++/*
++ * PORT H085+$172A (effetti $06, $53: freddo; $68: fuoco): soffio del
++ * drago.  Le cariche (+$4) si fissano a 1 ($06) o 3 se $247C e' acceso o
++ * sono piu' di 3; si sceglie il bersaglio, l'area si calcola con
++ * H085+$0BB2 e se colpisce solo avversari ognuno subisce i punti ferita
++ * massimi del drago (tiro salvezza 3, danno di tipo 2).
++ */
++void effect_breath(Character **cp, void *obj, u8 flag)
++{
++    CokEffect *e = (CokEffect *)obj;    /* $E(a5) */
++    u8 r;                               /* -$1(a5) */
++    s16 ax;                             /* -$4(a5) */
++    s16 ay;                             /* -$6(a5) */
++    u16 k;                              /* -$8(a5) */
++    Character *t;                       /* -$C(a5) */
++    u8 saved;                           /* -$D(a5) */
++    u16 width = 0;                      /* -$10(a5) */
++    u16 length = 0;                     /* -$12(a5) */
++    char what[6];                       /* -$18(a5) */
++    u16 dir;                            /* -$1A(a5) */
++    char text[0x52];                    /* -$6C(a5) */
++
++    (void)flag;
++    what[0] = 0;
++    if (H005_B(0x247C) == 0 || e->b[4] > 3) {
++        e->b[4] = (u8)(e->b[0] == 6 ? 1 : 3);
++    }
++    if (e->b[4] == 0) {
++        return;
++    }
++    if (e->b[0] == 6 || e->b[0] == 0x53) {
++        H005_B(0x2473) = 0x22;
++        width = 3;
++        length = (u16)(e->b[0] == 6 ? 8 : 7);
++        h026_copy(5, what, 4, "cold");
++    }
++    if (e->b[0] == 0x68) {
++        H005_B(0x2473) = 0x21;
++        width = 3;
++        length = 9;
++        h026_copy(5, what, 4, "Fire");
++    }
++    ax = (s16)combatant_x(*cp);
++    ay = (s16)combatant_y(*cp);
++    ((void (*)(u8, u8, u8 *))g_handlers_25c0[107])(0x3D, 1, &H005_B(0x24C5));
++    if (!H005_B(0x24C5)) {
++        return;
++    }
++    breath_area(ax, ay, (s16)H005_W(0x251A), (s16)H005_W(0x2518), width,
++                length);
++    for (k = 1; k <= H005_B(0x246C); ++k) {
++        if (g_spell_targets[k - 1]->b[0x199] != other_side(*cp)) {
++            H005_B(0x24C5) = 0;
++        }
++    }
++    if (H005_B(0x246C) == 0 || !H005_B(0x24C5)) {
++        return;
++    }
++    h026_copy(0x50, text, 9, "breathes ");
++    h026_append(0x50, text, 5, what);
++    show_char_message(*cp, 0x50, text, 0x0A, 1);
++    dir = direction_toward(*cp, g_spell_targets[0]);
++    draw_combat_status(*cp);
++    set_combatant_frame(*cp, (u8)dir, 1, 0);
++    load_missile_frames(0x12);
++    animate_missile((s16)combatant_x(*cp), (s16)combatant_y(*cp),
++                    (s16)combatant_x(g_spell_targets[0]),
++                    (s16)combatant_y(g_spell_targets[0]), 1, 1);
++    for (k = 1; k <= H005_B(0x246C); ++k) {
++        if (g_spell_targets[k - 1] != NULL) {
++            t = g_spell_targets[k - 1];
++            saved = saving_throw_roll(t, 3, 0);
++            apply_damage(t, (*cp)->b[0x64], 2, saved);
++        }
++    }
++    e->b[4] = (u8)(e->b[4] - 1);
++    r = end_combat_turn(*cp);
++    (void)r;
++}
++
++/*
++ * PORT H085+$363E: effetto dell'incantesimo sul bersaglio del turno
++ * (+$192 +$C), poi l'evento 9; se nessun gestore lo ha annullato ($2475
++ * ancora $40) il gestore dell'effetto $40 sul personaggio corrente.
++ * L'oggetto passato al gestore e' -$4(a5), non inizializzato
++ * nell'originale: qui NULL.
++ */
++void spell_event_9(void)
++{
++    Character *target;                  /* -$8(a5) */
++
++    apply_spell_effect(H005_B(0x2471), 0, 0, 0, 8, 0, "");
++    target = g_current_char->block_192->target;
++    H005_B(0x2475) = 0x40;
++    trigger_event(&target, 9);
++    if (H005_B(0x2475) == 0x40) {
++        call_effect_handler(0x40, &g_current_char, NULL, 0);
++    }
++}
++
++/*
++ * PORT H085+$38AA: teletrasporto del personaggio corrente sul punto
++ * scelto ($251A, $2518): ridisegna il terreno dov'era, lo piazza, centra
++ * la vista e "teleports".
++ */
++void spell_teleport(void)
++{
++    Character *c = g_current_char;      /* -$4(a5) */
++    u8 ok;                              /* -$9(a5) */
++
++    redraw_ground(0, 0, combatant_index(c));
++    ok = place_combatant(c, (u8)H005_W(0x251A), (u8)H005_W(0x2518), 0);
++    (void)ok;
++    center_view((s16)combatant_x(c), (s16)combatant_y(c), 0, 8);
++    show_char_message(c, 9, "teleports", 0x0A, 1);
++}
+diff --git a/src_c/readable/h085.h b/src_c/readable/h085.h
+index 4b46839..54aeafc 100644
+--- a/src_c/readable/h085.h
++++ b/src_c/readable/h085.h
+@@ -82,4 +82,8 @@ void neutralize_poison(void);                /* H085+$3552 */
+ void enlarge(void);                          /* H085+$1EBA */
+ void strength_spell(void);                   /* H085+$2BD4 */                        /* H085+$0664 */
+ 
++void spell_fireball(void);                   /* H085+$15FE */
++void effect_breath(Character **cp, void *obj, u8 flag); /* H085+$172A */
++void spell_event_9(void);                    /* H085+$363E */
++void spell_teleport(void);                   /* H085+$38AA */
+ #endif
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index 0804d2a..2fb1597 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -36,16 +36,11 @@ void cok_unported(const char *where)
+ /* Chiamate da H006+$01AE. */
+ 
+ /* Gestori delle tabelle H005+$25C0 e H005+$2832 (H027+$4276, H033+$1A50). */
+-void h033_1a40(void) { cok_unported("H033+$1A40"); }
+-void h085_15fe(void) { cok_unported("H085+$15FE"); }
+-void h085_172a(void) { cok_unported("H085+$172A"); }
+ void h085_2338(void) { cok_unported("H085+$2338"); }
+ void h085_26c0(void) { cok_unported("H085+$26C0"); }
+ void h085_31b4(void) { cok_unported("H085+$31B4"); }
+ void h085_33a8(void) { cok_unported("H085+$33A8"); }
+-void h085_363e(void) { cok_unported("H085+$363E"); }
+ void h085_3758(void) { cok_unported("H085+$3758"); }
+-void h085_38aa(void) { cok_unported("H085+$38AA"); }
+ void h085_3936(void) { cok_unported("H085+$3936"); }
+ void h085_431a(void) { cok_unported("H085+$431A"); }
+ void h085_442e(void) { cok_unported("H085+$442E"); }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index 834c48e..cd7db32 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -15,16 +15,11 @@ void h043_190e(u16 command);
+ void h010_03aa(void);
+ 
+ /* Gestori delle tabelle H005+$25C0 e H005+$2832. */
+-void h033_1a40(void);
+-void h085_15fe(void);
+-void h085_172a(void);
+ void h085_2338(void);
+ void h085_26c0(void);
+ void h085_31b4(void);
+ void h085_33a8(void);
+-void h085_363e(void);
+ void h085_3758(void);
+-void h085_38aa(void);
+ void h085_3936(void);
+ void h085_431a(void);
+ void h085_442e(void);
+-- 
+2.43.0
+

@@ -1,0 +1,2098 @@
+From 2e9e2465293d33391a3047b6c5285fb7c743feca Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 15:00:55 +0000
+Subject: [PATCH 04/65] Open the game display; add an SDL2 host backend
+
+Ports H029+$1206 (screen, window, palette, mouse pointers), H029+$0408
+(Allocate_GraphicRecord), H029+$1346 (offscreen View), H029+$12BC, and
+the H016/H018/H021/H022/H037/H051/H055/H084 library adapters they use,
+plus H024 Open_GameScreen and H025 Open_GameWindow.
+
+On the host, src_c/readable/host emulates the NDK subset the game uses
+with the same structure and function names, so the adapters are the same
+on both targets, and shows the screen with SDL2.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/Makefile         |  14 +-
+ src_c/readable/PORT_STATUS.md   | 100 +++++++-------
+ src_c/readable/README.md        |  11 +-
+ src_c/readable/cok.h            |   4 +
+ src_c/readable/globals.c        |   4 +
+ src_c/readable/globals.h        |   4 +
+ src_c/readable/h006.c           |  12 +-
+ src_c/readable/h016_gfx.c       |  12 +-
+ src_c/readable/h016_gfx.h       |   9 ++
+ src_c/readable/h018_libs.c      |  14 +-
+ src_c/readable/h018_libs.h      |  10 ++
+ src_c/readable/h021_intuition.c |  59 ++++++++
+ src_c/readable/h021_intuition.h |   9 ++
+ src_c/readable/h022_view.c      |  52 ++++++-
+ src_c/readable/h022_view.h      |  15 ++
+ src_c/readable/h024_screen.c    |  47 ++++++-
+ src_c/readable/h024_screen.h    |  10 ++
+ src_c/readable/h025_window.c    |  36 ++++-
+ src_c/readable/h025_window.h    |  11 ++
+ src_c/readable/h029_gfx.c       | 235 +++++++++++++++++++++++++++++++-
+ src_c/readable/h029_gfx.h       |  22 +++
+ src_c/readable/h037.c           |  12 +-
+ src_c/readable/h037.h           |  10 ++
+ src_c/readable/h051.c           |   8 +-
+ src_c/readable/h051.h           |   9 ++
+ src_c/readable/h055.c           |  18 ++-
+ src_c/readable/h055.h           |  10 ++
+ src_c/readable/h084.c           |  12 +-
+ src_c/readable/h084.h           |   9 ++
+ src_c/readable/host/display.c   | 213 +++++++++++++++++++++++++++++
+ src_c/readable/host/graphics.c  | 125 +++++++++++++++++
+ src_c/readable/host/intuition.c | 165 ++++++++++++++++++++++
+ src_c/readable/host/ndk.h       | 211 ++++++++++++++++++++++++++++
+ src_c/readable/unported.c       |   4 +-
+ src_c/readable/unported.h       |   4 +-
+ 35 files changed, 1417 insertions(+), 83 deletions(-)
+ create mode 100644 src_c/readable/h016_gfx.h
+ create mode 100644 src_c/readable/h018_libs.h
+ create mode 100644 src_c/readable/h022_view.h
+ create mode 100644 src_c/readable/h024_screen.h
+ create mode 100644 src_c/readable/h025_window.h
+ create mode 100644 src_c/readable/h037.h
+ create mode 100644 src_c/readable/h051.h
+ create mode 100644 src_c/readable/h055.h
+ create mode 100644 src_c/readable/h084.h
+ create mode 100644 src_c/readable/host/display.c
+ create mode 100644 src_c/readable/host/graphics.c
+ create mode 100644 src_c/readable/host/intuition.c
+ create mode 100644 src_c/readable/host/ndk.h
+
+diff --git a/src_c/readable/Makefile b/src_c/readable/Makefile
+index cc03ace..1084110 100644
+--- a/src_c/readable/Makefile
++++ b/src_c/readable/Makefile
+@@ -1,15 +1,17 @@
+ # Champions of Krynn - port asm -> C, build host.
+ #
+-#   make          compila build/cok
++#   make          compila build/cok (richiede SDL2: libsdl2-dev, brew sdl2, ...)
+ #   make status   aggiorna PORT_STATUS.md
+ #   make clean    rimuove build/
+ 
+ CC        ?= cc
+ CFLAGS    ?= -std=c99 -O2 -Wall -Wextra -pedantic
++SDL_CFLAGS := $(shell pkg-config --cflags sdl2 2>/dev/null || sdl2-config --cflags)
++SDL_LIBS   := $(shell pkg-config --libs sdl2 2>/dev/null || sdl2-config --libs)
+ BUILD_DIR ?= build
+ TARGET    := $(BUILD_DIR)/cok
+ 
+-SRCS := $(wildcard *.c)
++SRCS := $(wildcard *.c) $(wildcard host/*.c)
+ OBJS := $(SRCS:%.c=$(BUILD_DIR)/%.o)
+ 
+ .PHONY: all status clean
+@@ -17,12 +19,12 @@ OBJS := $(SRCS:%.c=$(BUILD_DIR)/%.o)
+ all: $(TARGET)
+ 
+ $(TARGET): $(OBJS)
+-	$(CC) $(OBJS) -o $@
++	$(CC) $(OBJS) $(SDL_LIBS) -o $@
+ 
+-$(BUILD_DIR)/%.o: %.c $(wildcard *.h) | $(BUILD_DIR)
+-	$(CC) $(CFLAGS) -c $< -o $@
++$(BUILD_DIR)/%.o: %.c $(wildcard *.h) $(wildcard host/*.h) | $(BUILD_DIR)/host
++	$(CC) $(CFLAGS) $(SDL_CFLAGS) -c $< -o $@
+ 
+-$(BUILD_DIR):
++$(BUILD_DIR)/host:
+ 	mkdir -p $@
+ 
+ status:
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index 7cac69b..b632827 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **125 / 910**.
++Routine portate: **159 / 910**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -22,20 +22,20 @@ Routine portate: **125 / 910**.
+ | H013 | 25244 | 20 | 1 |
+ | H014 | 224 | 2 | 1 |
+ | H015 | 1016 | 11 | 5 |
+-| H016 | 436 | 5 | 1 |
++| H016 | 436 | 5 | 2 |
+ | H017 | 56 | 1 | 1 |
+-| H018 | 192 | 3 | 1 |
++| H018 | 192 | 3 | 3 |
+ | H019 | 240 | 1 | 1 |
+ | H020 | 2884 | 6 | 1 |
+-| H021 | 1632 | 14 | 2 |
+-| H022 | 328 | 10 | 1 |
++| H021 | 1632 | 14 | 11 |
++| H022 | 328 | 10 | 8 |
+ | H023 | 140 | 2 | 1 |
+-| H024 | 268 | 2 | 1 |
+-| H025 | 264 | 2 | 1 |
++| H024 | 268 | 2 | 2 |
++| H025 | 264 | 2 | 2 |
+ | H026 | 1452 | 11 | 4 |
+ | H027 | 18156 | 10 | 1 |
+ | H028 | 4488 | 16 | 2 |
+-| H029 | 6084 | 32 | 2 |
++| H029 | 6084 | 32 | 10 |
+ | H030 | 3240 | 17 | 1 |
+ | H031 | 212 | 4 | 2 |
+ | H032 | 9352 | 1 | 1 |
+@@ -43,7 +43,7 @@ Routine portate: **125 / 910**.
+ | H034 | 472 | 3 | 1 |
+ | H035 | 1760 | 6 | 1 |
+ | H036 | 144 | 2 | 1 |
+-| H037 | 52 | 2 | 1 |
++| H037 | 52 | 2 | 2 |
+ | H038 | 504 | 5 | 1 |
+ | H039 | 104 | 2 | 1 |
+ | H040 | 1632 | 5 | 1 |
+@@ -57,11 +57,11 @@ Routine portate: **125 / 910**.
+ | H048 | 6636 | 21 | 1 |
+ | H049 | 2992 | 13 | 1 |
+ | H050 | 136 | 4 | 1 |
+-| H051 | 256 | 2 | 1 |
++| H051 | 256 | 2 | 2 |
+ | H052 | 316 | 1 | 1 |
+ | H053 | 504 | 3 | 1 |
+ | H054 | 52 | 2 | 1 |
+-| H055 | 180 | 4 | 1 |
++| H055 | 180 | 4 | 3 |
+ | H056 | 2528 | 2 | 1 |
+ | H057 | 12872 | 33 | 1 |
+ | H058 | 4720 | 16 | 1 |
+@@ -90,7 +90,7 @@ Routine portate: **125 / 910**.
+ | H081 | 76 | 1 | 1 |
+ | H082 | 156 | 2 | 1 |
+ | H083 | 92 | 1 | 1 |
+-| H084 | 92 | 2 | 1 |
++| H084 | 92 | 2 | 2 |
+ | H085 | 19904 | 14 | 1 |
+ | H086 | 2088 | 13 | 1 |
+ | H087 | 1132 | 4 | 1 |
+@@ -322,7 +322,7 @@ Routine portate: **125 / 910**.
+ | --- | --- | --- | --- |
+ | `$0008` | `sub_H016_00000008` | parziale | h016_gfx.c:5 |
+ | `$0014` | `wrapper_BltBitMap` | parziale |  |
+-| `$0084` | `wrapper_BltClear` | parziale |  |
++| `$0084` | `wrapper_BltClear` | parziale | h016_gfx.c:16 |
+ | `$00A0` | `wrapper_BltMaskBitMapRastPort` | parziale |  |
+ | `$01AC` | `wrapper_WaitTOF` | parziale |  |
+ 
+@@ -337,8 +337,8 @@ Routine portate: **125 / 910**.
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+ | `$0004` | `sub_H018_00000004` | parziale | h018_libs.c:4 |
+-| `$0018` | `wrapper_CloseLibrary` | parziale |  |
+-| `$006A` | `wrapper_OpenLibrary` | parziale |  |
++| `$0018` | `wrapper_CloseLibrary` | parziale | h018_libs.c:9 |
++| `$006A` | `wrapper_OpenLibrary` | parziale | h018_libs.c:15 |
+ 
+ ### H019
+ 
+@@ -363,16 +363,16 @@ Routine portate: **125 / 910**.
+ | --- | --- | --- | --- |
+ | `$0008` | `sub_H021_00000008` | parziale | h021_intuition.c:4 |
+ | `$0030` | `wrapper_CurrentTime` | parziale | h021_intuition.c:15 |
+-| `$010C` | `wrapper_CloseScreen` | parziale |  |
+-| `$011E` | `wrapper_CloseWorkBench` | parziale |  |
+-| `$0184` | `wrapper_OpenScreen` | parziale |  |
+-| `$0196` | `wrapper_OpenWorkBench` | parziale |  |
+-| `$01D2` | `wrapper_ShowTitle` | parziale |  |
+-| `$01FA` | `wrapper_ActivateWindow` | parziale |  |
+-| `$0230` | `wrapper_ClearPointer` | parziale |  |
+-| `$0242` | `wrapper_CloseWindow` | parziale |  |
++| `$010C` | `wrapper_CloseScreen` | parziale | h021_intuition.c:32 |
++| `$011E` | `wrapper_CloseWorkBench` | parziale | h021_intuition.c:38 |
++| `$0184` | `wrapper_OpenScreen` | parziale | h021_intuition.c:44 |
++| `$0196` | `wrapper_OpenWorkBench` | parziale | h021_intuition.c:50 |
++| `$01D2` | `wrapper_ShowTitle` | parziale | h021_intuition.c:56 |
++| `$01FA` | `wrapper_ActivateWindow` | parziale | h021_intuition.c:62 |
++| `$0230` | `wrapper_ClearPointer` | parziale | h021_intuition.c:68 |
++| `$0242` | `wrapper_CloseWindow` | parziale | h021_intuition.c:74 |
+ | `$026C` | `wrapper_ModifyIDCMP` | parziale |  |
+-| `$029C` | `wrapper_OpenWindow` | parziale |  |
++| `$029C` | `wrapper_OpenWindow` | parziale | h021_intuition.c:80 |
+ | `$02EE` | `wrapper_SetPointer` | parziale |  |
+ | `$03AE` | `wrapper_AutoRequest` | parziale |  |
+ 
+@@ -383,13 +383,13 @@ Routine portate: **125 / 910**.
+ | `$0008` | `sub_H022_00000008` | parziale | h022_view.c:4 |
+ | `$0014` | `wrapper_FreeColorMap` | parziale |  |
+ | `$0026` | `wrapper_FreeVPortCopLists` | parziale |  |
+-| `$0038` | `wrapper_GetColorMap` | parziale |  |
+-| `$0060` | `wrapper_InitView` | parziale |  |
+-| `$0072` | `wrapper_InitVPort` | parziale |  |
+-| `$0084` | `wrapper_LoadRGB4` | parziale |  |
+-| `$00A0` | `wrapper_LoadView` | parziale |  |
+-| `$00B2` | `wrapper_MakeVPort` | parziale |  |
+-| `$00C8` | `wrapper_MrgCop` | parziale |  |
++| `$0038` | `wrapper_GetColorMap` | parziale | h022_view.c:23 |
++| `$0060` | `wrapper_InitView` | parziale | h022_view.c:29 |
++| `$0072` | `wrapper_InitVPort` | parziale | h022_view.c:35 |
++| `$0084` | `wrapper_LoadRGB4` | parziale | h022_view.c:14 |
++| `$00A0` | `wrapper_LoadView` | parziale | h022_view.c:41 |
++| `$00B2` | `wrapper_MakeVPort` | parziale | h022_view.c:47 |
++| `$00C8` | `wrapper_MrgCop` | parziale | h022_view.c:53 |
+ 
+ ### H023
+ 
+@@ -402,15 +402,15 @@ Routine portate: **125 / 910**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$001C` | `module_init_H024` | parziale | h024_screen.c:15 |
+-| `$002A` | `Open_GameScreen` | verificato |  |
++| `$001C` | `module_init_H024` | parziale | h024_screen.c:22 |
++| `$002A` | `Open_GameScreen` | verificato | h024_screen.c:38 |
+ 
+ ### H025
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$001A` | `module_init_H025` | parziale | h025_window.c:17 |
+-| `$0028` | `Open_GameWindow` | verificato |  |
++| `$001A` | `module_init_H025` | parziale | h025_window.c:20 |
++| `$0028` | `Open_GameWindow` | verificato | h025_window.c:37 |
+ 
+ ### H026
+ 
+@@ -468,16 +468,16 @@ Routine portate: **125 / 910**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0118` | `module_init_H029` | parziale | h029_gfx.c:14 |
+-| `$0180` | `sub_H029_00000180` | parziale |  |
++| `$0118` | `module_init_H029` | parziale | h029_gfx.c:35 |
++| `$0180` | `sub_H029_00000180` | parziale | h029_gfx.c:77 |
+ | `$01B6` | `sub_H029_000001B6` | parziale |  |
+-| `$0234` | `sub_H029_00000234` | parziale |  |
+-| `$0312` | `sub_H029_00000312` | parziale | h029_gfx.c:28 |
++| `$0234` | `sub_H029_00000234` | parziale | h029_gfx.c:87 |
++| `$0312` | `sub_H029_00000312` | parziale | h029_gfx.c:49 |
+ | `$0354` | `trampoline_H029_036C` | parziale |  |
+ | `$0376` | `trampoline_H029_0390` | parziale |  |
+ | `$039A` | `trampoline_H029_03B2` | parziale |  |
+ | `$03E2` | `sub_H029_000003E2` | parziale |  |
+-| `$0408` | `Allocate_GraphicRecord` | verificato |  |
++| `$0408` | `Allocate_GraphicRecord` | verificato | h029_gfx.c:165 |
+ | `$067A` | `Free_GraphicRecord` | parziale |  |
+ | `$0766` | `sub_H029_00000766` | parziale |  |
+ | `$091E` | `Populate_GraphicPlanes` | verificato |  |
+@@ -488,11 +488,11 @@ Routine portate: **125 / 910**.
+ | `$0E92` | `trampoline_H029_0EF4` | parziale |  |
+ | `$0EFE` | `trampoline_H029_10AC` | parziale |  |
+ | `$10B8` | `sub_H029_000010B8` | parziale |  |
+-| `$115C` | `sub_H029_0000115C` | parziale |  |
+-| `$1206` | `sub_H029_00001206` | parziale |  |
+-| `$12BC` | `sub_H029_000012BC` | parziale |  |
+-| `$1308` | `sub_H029_00001308` | parziale |  |
+-| `$1346` | `Prepare_DisplayResources` | parziale |  |
++| `$115C` | `sub_H029_0000115C` | parziale | h029_gfx.c:115 |
++| `$1206` | `sub_H029_00001206` | parziale | h029_gfx.c:131 |
++| `$12BC` | `sub_H029_000012BC` | parziale | h029_gfx.c:153 |
++| `$1308` | `sub_H029_00001308` | parziale | h029_gfx.c:222 |
++| `$1346` | `Prepare_DisplayResources` | parziale | h029_gfx.c:229 |
+ | `$148E` | `sub_H029_0000148E` | parziale |  |
+ | `$14F6` | `sub_H029_000014F6` | parziale |  |
+ | `$1520` | `sub_H029_00001520` | parziale |  |
+@@ -589,7 +589,7 @@ Routine portate: **125 / 910**.
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+ | `$0008` | `sub_H037_00000008` | parziale | h037.c:5 |
+-| `$0014` | `wrapper_InitBitMap` | parziale |  |
++| `$0014` | `wrapper_InitBitMap` | parziale | h037.c:16 |
+ 
+ ### H038
+ 
+@@ -782,7 +782,7 @@ Routine portate: **125 / 910**.
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+ | `$0004` | `sub_H051_00000004` | parziale | h051.c:4 |
+-| `$004A` | `wrapper_FindTask` | parziale |  |
++| `$004A` | `wrapper_FindTask` | parziale | h051.c:9 |
+ 
+ ### H052
+ 
+@@ -810,9 +810,9 @@ Routine portate: **125 / 910**.
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+ | `$0008` | `sub_H055_00000008` | parziale | h055.c:5 |
+-| `$0014` | `wrapper_AllocRaster` | parziale |  |
++| `$0014` | `wrapper_AllocRaster` | parziale | h055.c:16 |
+ | `$002A` | `wrapper_FreeRaster` | parziale |  |
+-| `$0044` | `wrapper_InitRastPort` | parziale |  |
++| `$0044` | `wrapper_InitRastPort` | parziale | h055.c:22 |
+ 
+ ### H056
+ 
+@@ -1313,7 +1313,7 @@ Routine portate: **125 / 910**.
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+ | `$0008` | `sub_H084_00000008` | parziale | h084.c:5 |
+-| `$002A` | `wrapper_GetPrefs` | parziale |  |
++| `$002A` | `wrapper_GetPrefs` | parziale | h084.c:16 |
+ 
+ ### H085
+ 
+diff --git a/src_c/readable/README.md b/src_c/readable/README.md
+index 1604ef4..319b9df 100644
+--- a/src_c/readable/README.md
++++ b/src_c/readable/README.md
+@@ -38,13 +38,22 @@ programma avanza un modulo alla volta.
+ 
+ ## Build
+ 
+-Host (gcc o clang):
++Host (gcc o clang, con SDL2: `libsdl2-dev` su Debian/Ubuntu, `brew install
++sdl2` su macOS, MSYS2 `mingw-w64-x86_64-SDL2` su Windows):
+ 
+ ```sh
+ make
+ ./build/cok
+ ```
+ 
++Sull'host le librerie di AmigaOS usate dal gioco sono emulate in `host/`
++(`host/ndk.h` riproduce strutture e funzioni dell'NDK con gli stessi nomi,
++così gli adattatori del gioco sono identici sui due target); lo schermo
++è mostrato con SDL2. Variabili utili: `COK_SCALE=n` (ingrandimento),
++`COK_SCREENSHOT=file.bmp` (salva l'ultimo fotogramma all'uscita),
++`SDL_VIDEODRIVER=dummy` (senza finestra). I file dati del gioco vanno
++nella directory corrente.
++
+ AmigaOS con SAS/C 6.x: `smake` (ogni nuovo file va aggiunto a `OBJS` nello
+ `smakefile`).
+ 
+diff --git a/src_c/readable/cok.h b/src_c/readable/cok.h
+index fc46944..2b0f3eb 100644
+--- a/src_c/readable/cok.h
++++ b/src_c/readable/cok.h
+@@ -32,6 +32,9 @@
+ #include <dos/dos.h>
+ #include <proto/exec.h>
+ #include <proto/dos.h>
++#include <intuition/intuition.h>
++#include <graphics/gfx.h>
++#include <dos/dosextens.h>
+ typedef unsigned char  u8;
+ typedef signed char    s8;
+ typedef unsigned short u16;
+@@ -40,6 +43,7 @@ typedef unsigned long  u32;
+ typedef signed long    s32;
+ #else
+ #include <stdint.h>
++#include "host/ndk.h"
+ typedef uint8_t  u8;
+ typedef int8_t   s8;
+ typedef uint16_t u16;
+diff --git a/src_c/readable/globals.c b/src_c/readable/globals.c
+index b73006c..592ae4e 100644
+--- a/src_c/readable/globals.c
++++ b/src_c/readable/globals.c
+@@ -14,8 +14,12 @@ struct GfxRecord *g_gfx_332c;
+ struct GfxRecord *g_gfx_3334;
+ struct GfxRecord *g_gfx_3348;
+ struct GfxRecord *g_gfx_3d8a;
++struct GfxRecord *g_gfx_3d8e;
+ struct GfxRecord *g_gfx_sky_2804;
+ struct GfxRecord *g_gfx_sky_2808;
+ struct GfxRecord *g_gfx_sky_280c;
++struct Screen *g_screen;
++struct Window *g_window;
++struct RastPort *g_rastport;
+ void *g_party_head;
+ void *g_current_char;
+diff --git a/src_c/readable/globals.h b/src_c/readable/globals.h
+index 4ce0980..8296a95 100644
+--- a/src_c/readable/globals.h
++++ b/src_c/readable/globals.h
+@@ -51,9 +51,13 @@ extern struct GfxRecord *g_gfx_332c;    /* $332C */
+ extern struct GfxRecord *g_gfx_3334;    /* $3334 */
+ extern struct GfxRecord *g_gfx_3348;    /* $3348 */
+ extern struct GfxRecord *g_gfx_3d8a;    /* $3D8A */
++extern struct GfxRecord *g_gfx_3d8e;    /* $3D8E: bitmap 320x200 fuori schermo */
+ extern struct GfxRecord *g_gfx_sky_2804; /* $2804: "sky" $FC */
+ extern struct GfxRecord *g_gfx_sky_2808; /* $2808: "sky" $FB */
+ extern struct GfxRecord *g_gfx_sky_280c; /* $280C: "sky" $FA */
++extern struct Screen *g_screen;         /* $52F2: schermo del gioco */
++extern struct Window *g_window;         /* $52F6: finestra del gioco */
++extern struct RastPort *g_rastport;     /* $52EE: RastPort della finestra */
+ extern void *g_party_head;              /* $3364: testa della lista del party */
+ extern void *g_current_char;            /* $3368: personaggio corrente */
+ 
+diff --git a/src_c/readable/h006.c b/src_c/readable/h006.c
+index 020f652..c23a244 100644
+--- a/src_c/readable/h006.c
++++ b/src_c/readable/h006.c
+@@ -87,7 +87,7 @@ void init_game_environment(void)
+     if (file_exists(0x0A, "NormIsKing") == 0) {
+         intuition_current_time(&s_time_seconds, &g_h023_0000);
+     }
+-    h029_1206();
++    open_game_display();
+ 
+     H005_B(0x24A2) = 1;
+     H005_B(0x2489) = 0;
+@@ -103,11 +103,11 @@ void init_game_environment(void)
+     g_h005_282e = (u8 *)exec_alloc_mem(0x924, COK_MEMF_CLEAR);
+     g_geo_planes = (u8 *)exec_alloc_mem(0x400, COK_MEMF_CLEAR);
+ 
+-    h029_0408(8, 1, 1, 0, &g_gfx_3334);
+-    h029_0408(0x30, 3, 1, 0, &g_gfx_3d8a);
+-    h029_0408(0x18, 3, 0x28, 1, &g_gfx_332c);
+-    H005_SET_L(0x3D8E, 0);
+-    h029_1346();
++    allocate_gfx_record(8, 1, 1, 0, &g_gfx_3334);
++    allocate_gfx_record(0x30, 3, 1, 0, &g_gfx_3d8a);
++    allocate_gfx_record(0x18, 3, 0x28, 1, &g_gfx_332c);
++    g_gfx_3d8e = NULL;
++    prepare_display_resources();
+ 
+     COK_PUT16(g_state_a + 0x3E8, 3);
+     COK_PUT16(g_state_a + 0x1CC, 1);
+diff --git a/src_c/readable/h016_gfx.c b/src_c/readable/h016_gfx.c
+index 9319fd0..0149ad9 100644
+--- a/src_c/readable/h016_gfx.c
++++ b/src_c/readable/h016_gfx.c
+@@ -1,5 +1,5 @@
+ /* H016: adattatori graphics.library per blit, attesa e cancellazione raster. */
+-#include "cok.h"
++#include "h016_gfx.h"
+ 
+ /*
+  * PORT H016+$0008: copia GfxBase (-$14(a4) del runtime H015) nella cella
+@@ -8,3 +8,13 @@
+ void h016_init(void)
+ {
+ }
++
++#if COK_AMIGA
++#include <proto/graphics.h>
++#endif
++
++/* PORT H016+$0084 */
++void graphics_blt_clear(void *memory, u32 count, u32 flags)
++{
++    BltClear((PLANEPTR)memory, count, flags);
++}
+diff --git a/src_c/readable/h016_gfx.h b/src_c/readable/h016_gfx.h
+new file mode 100644
+index 0000000..738fef8
+--- /dev/null
++++ b/src_c/readable/h016_gfx.h
+@@ -0,0 +1,9 @@
++/* H016: adattatori graphics.library per blit, attesa e cancellazione raster. */
++#ifndef COK_H016_GFX_H
++#define COK_H016_GFX_H
++
++#include "cok.h"
++
++void graphics_blt_clear(void *memory, u32 count, u32 flags);  /* H016+$0084 */
++
++#endif
+diff --git a/src_c/readable/h018_libs.c b/src_c/readable/h018_libs.c
+index 5d0f66a..c42369a 100644
+--- a/src_c/readable/h018_libs.c
++++ b/src_c/readable/h018_libs.c
+@@ -1,7 +1,19 @@
+ /* H018: adattatori exec.library per apertura e chiusura delle librerie. */
+-#include "cok.h"
++#include "h018_libs.h"
+ 
+ /* PORT H018+$0004: rts. */
+ void h018_init(void)
+ {
+ }
++
++/* PORT H018+$0018 */
++void exec_close_library(struct Library *library)
++{
++    CloseLibrary(library);
++}
++
++/* PORT H018+$006A */
++struct Library *exec_open_library(const char *name, u32 version)
++{
++    return OpenLibrary((STRPTR)name, version);
++}
+diff --git a/src_c/readable/h018_libs.h b/src_c/readable/h018_libs.h
+new file mode 100644
+index 0000000..3d64fc8
+--- /dev/null
++++ b/src_c/readable/h018_libs.h
+@@ -0,0 +1,10 @@
++/* H018: adattatori exec.library per apertura e chiusura delle librerie. */
++#ifndef COK_H018_LIBS_H
++#define COK_H018_LIBS_H
++
++#include "cok.h"
++
++void            exec_close_library(struct Library *library);   /* H018+$0018 */
++struct Library *exec_open_library(const char *name, u32 version); /* H018+$006A */
++
++#endif
+diff --git a/src_c/readable/h021_intuition.c b/src_c/readable/h021_intuition.c
+index 3a04923..847bceb 100644
+--- a/src_c/readable/h021_intuition.c
++++ b/src_c/readable/h021_intuition.c
+@@ -23,3 +23,62 @@ void intuition_current_time(u32 *seconds, u32 *micros)
+     *micros = (u32)(clock() % 1000000);
+ #endif
+ }
++
++/*
++ * Adattatori semplici: argomenti dallo stack ai registri e salto nella
++ * libreria (sull'host la libreria e' emulata in host/intuition.c).
++ */
++
++/* PORT H021+$010C */
++void intuition_close_screen(struct Screen *screen)
++{
++    CloseScreen(screen);
++}
++
++/* PORT H021+$011E: restituisce d0 cosi' com'e' (nessun neg.b). */
++u32 intuition_close_workbench(void)
++{
++    return (u32)CloseWorkBench();
++}
++
++/* PORT H021+$0184 */
++struct Screen *intuition_open_screen(struct NewScreen *ns)
++{
++    return OpenScreen(ns);
++}
++
++/* PORT H021+$0196 */
++u32 intuition_open_workbench(void)
++{
++    return (u32)OpenWorkBench();
++}
++
++/* PORT H021+$01D2: il flag e' un byte esteso a long (moveq #0 / move.b). */
++void intuition_show_title(struct Screen *screen, u8 show)
++{
++    ShowTitle(screen, (LONG)show);
++}
++
++/* PORT H021+$01FA */
++void intuition_activate_window(struct Window *window)
++{
++    ActivateWindow(window);
++}
++
++/* PORT H021+$0230 */
++void intuition_clear_pointer(struct Window *window)
++{
++    ClearPointer(window);
++}
++
++/* PORT H021+$0242 */
++void intuition_close_window(struct Window *window)
++{
++    CloseWindow(window);
++}
++
++/* PORT H021+$029C */
++struct Window *intuition_open_window(struct NewWindow *nw)
++{
++    return OpenWindow(nw);
++}
+diff --git a/src_c/readable/h021_intuition.h b/src_c/readable/h021_intuition.h
+index a52406f..0e3b839 100644
+--- a/src_c/readable/h021_intuition.h
++++ b/src_c/readable/h021_intuition.h
+@@ -5,5 +5,14 @@
+ #include "cok.h"
+ 
+ void intuition_current_time(u32 *seconds, u32 *micros);   /* H021+$0030 */
++void intuition_close_screen(struct Screen *screen);       /* H021+$010C */
++u32  intuition_close_workbench(void);                     /* H021+$011E */
++struct Screen *intuition_open_screen(struct NewScreen *ns); /* H021+$0184 */
++u32  intuition_open_workbench(void);                      /* H021+$0196 */
++void intuition_show_title(struct Screen *screen, u8 show); /* H021+$01D2 */
++void intuition_activate_window(struct Window *window);    /* H021+$01FA */
++void intuition_clear_pointer(struct Window *window);      /* H021+$0230 */
++void intuition_close_window(struct Window *window);       /* H021+$0242 */
++struct Window *intuition_open_window(struct NewWindow *nw); /* H021+$029C */
+ 
+ #endif
+diff --git a/src_c/readable/h022_view.c b/src_c/readable/h022_view.c
+index ff7b7e3..a20bfb8 100644
+--- a/src_c/readable/h022_view.c
++++ b/src_c/readable/h022_view.c
+@@ -1,7 +1,57 @@
+ /* H022: adattatori graphics.library per view, palette e viewport. */
+-#include "cok.h"
++#include "h022_view.h"
+ 
+ /* PORT H022+$0008: copia GfxBase nella cella del modulo (vedi H016). */
+ void h022_init(void)
+ {
+ }
++
++#if COK_AMIGA
++#include <proto/graphics.h>
++#endif
++
++/*
++ * PORT H022+$0084.  colors sono word RGB4 big-endian (dati del gioco): su
++ * Amiga e' gia' il formato di LoadRGB4; sull'host LoadRGB4 emulata le
++ * legge a byte (vedi host/ndk.h).
++ */
++void graphics_load_rgb4(struct ViewPort *vp, const u8 *colors, u16 count)
++{
++    LoadRGB4(vp, (UWORD *)colors, (LONG)count);
++}
++
++/* PORT H022+$0038 */
++struct ColorMap *graphics_get_color_map(u32 entries)
++{
++    return GetColorMap((LONG)entries);
++}
++
++/* PORT H022+$0060 */
++void graphics_init_view(struct View *view)
++{
++    InitView(view);
++}
++
++/* PORT H022+$0072 */
++void graphics_init_vport(struct ViewPort *vp)
++{
++    InitVPort(vp);
++}
++
++/* PORT H022+$00A0 */
++void graphics_load_view(struct View *view)
++{
++    LoadView(view);
++}
++
++/* PORT H022+$00B2 */
++void graphics_make_vport(struct View *view, struct ViewPort *vp)
++{
++    MakeVPort(view, vp);
++}
++
++/* PORT H022+$00C8 */
++void graphics_mrg_cop(struct View *view)
++{
++    MrgCop(view);
++}
+diff --git a/src_c/readable/h022_view.h b/src_c/readable/h022_view.h
+new file mode 100644
+index 0000000..08f5ba8
+--- /dev/null
++++ b/src_c/readable/h022_view.h
+@@ -0,0 +1,15 @@
++/* H022: adattatori graphics.library per view, palette e viewport. */
++#ifndef COK_H022_VIEW_H
++#define COK_H022_VIEW_H
++
++#include "cok.h"
++
++struct ColorMap *graphics_get_color_map(u32 entries);   /* H022+$0038 */
++void graphics_init_view(struct View *view);             /* H022+$0060 */
++void graphics_init_vport(struct ViewPort *vp);          /* H022+$0072 */
++void graphics_load_view(struct View *view);             /* H022+$00A0 */
++void graphics_make_vport(struct View *view, struct ViewPort *vp); /* H022+$00B2 */
++void graphics_mrg_cop(struct View *view);               /* H022+$00C8 */
++void graphics_load_rgb4(struct ViewPort *vp, const u8 *colors, u16 count);
++                                                        /* H022+$0084 */
++#endif
+diff --git a/src_c/readable/h024_screen.c b/src_c/readable/h024_screen.c
+index 2ace2a0..97d56ba 100644
+--- a/src_c/readable/h024_screen.c
++++ b/src_c/readable/h024_screen.c
+@@ -1,5 +1,6 @@
+ /* H024: costruzione di NewScreen e OpenScreen. */
+-#include "cok.h"
++#include "h024_screen.h"
++#include "h021_intuition.h"
+ 
+ #if COK_AMIGA
+ #include <graphics/gfxbase.h>
+@@ -9,7 +10,13 @@ extern struct GfxBase *GfxBase;
+ /* Dati del modulo (offset rispetto ad a4). */
+ u16 g_h024_m2;                  /* -$2: GfxBase->NormalDisplayColumns */
+ u16 g_h024_m4;                  /* -$4: GfxBase->NormalDisplayRows */
+-u8  g_h024_m6;                  /* -$6 */
++u8  g_h024_m5;                  /* -$5: DetailPen (mai scritto, 0) */
++u8  g_h024_m6;                  /* -$6: BlockPen */
++u16 g_h024_m8;                  /* -$8: LeftEdge (0) */
++u16 g_h024_ma;                  /* -$A: TopEdge (0) */
++struct TextAttr *g_h024_me;     /* -$E: Font (NULL) */
++struct BitMap *g_h024_m12;      /* -$12: CustomBitMap (NULL) */
++u16 g_h024_m14;                 /* -$14: bit di Type oltre CUSTOMSCREEN (0) */
+ 
+ /*
+  * PORT H024+$001C.  Sull'host non c'e' GfxBase: si usano i valori NTSC
+@@ -26,3 +33,39 @@ void h024_init(void)
+ #endif
+     g_h024_m6 = 1;
+ }
++
++/*
++ * PORT H024+$002A (Open_GameScreen): HIRES se la larghezza supera meta'
++ * delle colonne del display, LACE se l'altezza supera le righe, HAM con
++ * profondita' 6.  Il confronto della larghezza e' con segno (ble).
++ */
++struct Screen *open_game_screen(u16 width, u16 height, u16 depth,
++                                const char *title)
++{
++    struct NewScreen ns;
++    u16 modes = 0;
++
++    if ((s16)width > (s16)((s16)g_h024_m2 / 2)) {
++        modes |= 0x8000;        /* HIRES */
++    }
++    if ((s16)height > (s16)g_h024_m4) {
++        modes |= 0x0004;        /* LACE */
++    }
++    if (depth == 6) {
++        modes |= 0x0800;        /* HAM */
++    }
++    ns.LeftEdge = (WORD)g_h024_m8;
++    ns.TopEdge = (WORD)g_h024_ma;
++    ns.Width = (WORD)width;
++    ns.Height = (WORD)height;
++    ns.Depth = (WORD)depth;
++    ns.DetailPen = g_h024_m5;
++    ns.BlockPen = g_h024_m6;
++    ns.ViewModes = modes;
++    ns.Type = (UWORD)(g_h024_m14 | 0x000F);     /* CUSTOMSCREEN */
++    ns.Font = g_h024_me;
++    ns.DefaultTitle = (UBYTE *)title;
++    ns.Gadgets = NULL;
++    ns.CustomBitMap = g_h024_m12;
++    return intuition_open_screen(&ns);
++}
+diff --git a/src_c/readable/h024_screen.h b/src_c/readable/h024_screen.h
+new file mode 100644
+index 0000000..0d0e2b8
+--- /dev/null
++++ b/src_c/readable/h024_screen.h
+@@ -0,0 +1,10 @@
++/* H024: costruzione di NewScreen e OpenScreen. */
++#ifndef COK_H024_SCREEN_H
++#define COK_H024_SCREEN_H
++
++#include "cok.h"
++
++struct Screen *open_game_screen(u16 width, u16 height, u16 depth,
++                                const char *title);     /* H024+$002A */
++
++#endif
+diff --git a/src_c/readable/h025_window.c b/src_c/readable/h025_window.c
+index 154772e..2f360a5 100644
+--- a/src_c/readable/h025_window.c
++++ b/src_c/readable/h025_window.c
+@@ -1,5 +1,6 @@
+ /* H025: costruzione di NewWindow e OpenWindow. */
+-#include "cok.h"
++#include "h025_window.h"
++#include "h021_intuition.h"
+ 
+ #if COK_AMIGA
+ #include <graphics/gfxbase.h>
+@@ -9,6 +10,8 @@ extern struct GfxBase *GfxBase;
+ /* Dati del modulo (offset rispetto ad a4). */
+ u8  g_h025_m1;                  /* -$1 */
+ u8  g_h025_m2;                  /* -$2 */
++struct Image *g_h025_m6;        /* -$6: CheckMark (NULL) */
++struct BitMap *g_h025_ma;       /* -$A: BitMap (NULL) */
+ u16 g_h025_mc;                  /* -$C */
+ u16 g_h025_me;                  /* -$E: GfxBase->NormalDisplayColumns */
+ u16 g_h025_m10;                 /* -$10 */
+@@ -29,3 +32,34 @@ void h025_init(void)
+ #endif
+     g_h025_m10 = 0x28;
+ }
++
++/*
++ * PORT H025+$0028 (Open_GameWindow): Type WBENCHSCREEN senza schermo,
++ * altrimenti CUSTOMSCREEN.
++ */
++struct Window *open_game_window(u16 left, u16 top, u16 width, u16 height,
++                                u32 idcmp, u32 flags, struct Gadget *gadgets,
++                                struct Screen *screen, const char *title)
++{
++    struct NewWindow nw;
++
++    nw.LeftEdge = (WORD)left;
++    nw.TopEdge = (WORD)top;
++    nw.Width = (WORD)width;
++    nw.Height = (WORD)height;
++    nw.DetailPen = g_h025_m1;
++    nw.BlockPen = g_h025_m2;
++    nw.IDCMPFlags = idcmp;
++    nw.Flags = flags;
++    nw.FirstGadget = gadgets;
++    nw.CheckMark = g_h025_m6;
++    nw.Title = (UBYTE *)title;
++    nw.Screen = screen;
++    nw.BitMap = g_h025_ma;
++    nw.MinWidth = (WORD)g_h025_mc;
++    nw.MinHeight = (WORD)g_h025_m10;
++    nw.MaxWidth = g_h025_me;
++    nw.MaxHeight = g_h025_m12;
++    nw.Type = screen == NULL ? 0x0001 : 0x000F;
++    return intuition_open_window(&nw);
++}
+diff --git a/src_c/readable/h025_window.h b/src_c/readable/h025_window.h
+new file mode 100644
+index 0000000..7256c19
+--- /dev/null
++++ b/src_c/readable/h025_window.h
+@@ -0,0 +1,11 @@
++/* H025: costruzione di NewWindow e OpenWindow. */
++#ifndef COK_H025_WINDOW_H
++#define COK_H025_WINDOW_H
++
++#include "cok.h"
++
++struct Window *open_game_window(u16 left, u16 top, u16 width, u16 height,
++                                u32 idcmp, u32 flags, struct Gadget *gadgets,
++                                struct Screen *screen, const char *title);
++                                                        /* H025+$0028 */
++#endif
+diff --git a/src_c/readable/h029_gfx.c b/src_c/readable/h029_gfx.c
+index d7baa49..c62ad14 100644
+--- a/src_c/readable/h029_gfx.c
++++ b/src_c/readable/h029_gfx.c
+@@ -1,13 +1,34 @@
+ /* H029: record grafici, bitplane, maschere e disegno dei tile. */
+ #include "h029_gfx.h"
++#include "h002_dos.h"
++#include "h003_exec.h"
++#include "h021_intuition.h"
++#include "h022_view.h"
++#include "h024_screen.h"
++#include "h025_window.h"
++#include "h051.h"
++#include "h018_libs.h"
++#include "h084.h"
++#include "h016_gfx.h"
++#include "h037.h"
++#include "h055.h"
++#include "unported.h"
++#include "globals.h"
+ 
+ /* Dati del modulo (offset rispetto ad a4). */
+-u32 g_h029_m4;                  /* -$4 */
++struct RastPort *g_offscreen_rp;   /* -$4: RastPort sulla bitmap di $3D8E */
+ u8  g_h029_m5;                  /* -$5 */
+ u8  g_h029_m6;                  /* -$6 */
+ u8  g_h029_m9;                  /* -$9 */
+ u16 g_h029_m10;                 /* -$10 */
+-u32 g_h029_m14;                 /* -$14 */
++u8 *g_pointer_data;             /* -$14: contenuto di pointers.daa */
++u32 g_pointer_size;             /* -$18: sua dimensione */
++struct Task *g_h029_task;       /* -$20: task del gioco */
++struct View *g_saved_view;      /* -$24: GfxBase->ActiView all'avvio */
++struct View g_offscreen_view;   /* -$36: View della bitmap di $3D8E */
++struct ViewPort g_offscreen_vp; /* -$5E */
++struct RasInfo g_offscreen_ri;  /* -$6A */
++struct Library *g_h029_intuition; /* -$E: intuition.library aperta qui */
+ u16 g_h029_m1a;                 /* -$1A */
+ u16 g_h029_m1c;                 /* -$1C */
+ 
+@@ -15,8 +36,8 @@ u16 g_h029_m1c;                 /* -$1C */
+ void h029_init(void)
+ {
+     g_h029_m10 = 0xFFFF;
+-    g_h029_m14 = 0;
+-    g_h029_m4 = 0;
++    g_pointer_data = NULL;
++    g_offscreen_rp = NULL;
+     g_h029_m1a = 0;
+     g_h029_m1c = 0;
+     g_h029_m5 = 0;
+@@ -43,3 +64,209 @@ void h029_fill_bytes(u16 unused, u8 *dst, u16 count, u8 value)
+         ++i;
+     }
+ }
++
++/*
++ * Le 12 voci da $A byte all'inizio di pointers.daa iniziano con l'offset
++ * (long) dei dati del puntatore.  L'originale lo trasforma sul posto in un
++ * indirizzo assoluto (offset + base); qui l'indirizzo va in questa tabella,
++ * perche' sull'host un puntatore non sta in 32 bit, e il buffer resta come
++ * e' stato letto.  Chi legge la voce i usa g_pointer_image[i].
++ */
++u8 *g_pointer_image[12];
++
++/* PORT H029+$0180: libera pointers.daa e toglie il puntatore del mouse. */
++void free_pointer_data(void)
++{
++    if (g_pointer_data != NULL) {
++        exec_free_mem(g_pointer_data, g_pointer_size);
++        g_pointer_data = NULL;
++        intuition_clear_pointer(g_window);
++    }
++}
++
++/* PORT H029+$0234: carica pointers.daa (memoria chip). */
++static void load_pointer_data(void)
++{
++    cok_bptr file;
++    s16 i;
++
++    file = dos_open("pointers.daa", MODE_OLDFILE);
++    if (file == 0) {
++        return;
++    }
++    /* Seek restituisce la posizione precedente: la seconda da' la lunghezza. */
++    g_pointer_size = (u32)dos_seek(file, 0, OFFSET_END);
++    g_pointer_size = (u32)dos_seek(file, 0, OFFSET_BEGINNING);
++    g_pointer_data = (u8 *)exec_alloc_mem(g_pointer_size, COK_MEMF_CHIP);
++    if (g_pointer_data != NULL) {
++        if ((u32)dos_read(file, g_pointer_data, (s32)g_pointer_size) ==
++            g_pointer_size) {
++            for (i = 0; i <= 0x0B; ++i) {
++                g_pointer_image[i] = g_pointer_data +
++                                     COK_GET32(g_pointer_data + i * 0x0A);
++            }
++        } else {
++            free_pointer_data();
++        }
++    }
++    dos_close(file);
++}
++
++/* PORT H029+$115C: palette iniziale di 16 colori RGB4 in H005+$52AE. */
++static void set_game_palette(void)
++{
++    static const u16 colors[16] = {
++        0x000, 0x00A, 0x0A0, 0x0AA, 0xA00, 0xA0A, 0xA50, 0xAAA,
++        0x555, 0x55F, 0x5F5, 0x5FF, 0xF55, 0xF5F, 0xFF5, 0xFFF
++    };
++    unsigned i;
++
++    for (i = 0; i < 16; ++i) {
++        H005_SET_W(0x52AE + i * 2, colors[i]);
++    }
++    graphics_load_rgb4(&g_screen->ViewPort, &g_h005[0x52AE], 0x10);
++}
++
++/*
++ * PORT H029+$1206: apre lo schermo 320x200 a 5 piani senza titolo e la
++ * finestra a schermo intero (BACKDROP|BORDERLESS|ACTIVATE|RMBTRAP, IDCMP
++ * MOUSEBUTTONS|RAWKEY), indirizza le richieste di sistema alla finestra,
++ * imposta la palette e carica i puntatori del mouse.
++ */
++void open_game_display(void)
++{
++    H005_SET_W(0x0004, 0x010F);
++    g_screen = open_game_screen(0x140, 0xC8, 5, NULL);
++    intuition_show_title(g_screen, 0);
++    g_window = open_game_window(0, 0, 0x140, 0xC8, 0x408, 0x11900, NULL,
++                                g_screen, NULL);
++    g_rastport = g_window->RPort;
++    if ((u8)intuition_close_workbench() != 0) {
++        intuition_activate_window(g_window);
++    }
++    g_h029_task = exec_find_task(NULL);
++    ((struct Process *)g_h029_task)->pr_WindowPtr = (APTR)g_window;
++    set_game_palette();
++    load_pointer_data();
++}
++
++/* PORT H029+$12BC: chiude finestra e schermo e riapre il Workbench. */
++void close_game_display(void)
++{
++    free_pointer_data();
++    g_h029_task = exec_find_task(NULL);
++    ((struct Process *)g_h029_task)->pr_WindowPtr = NULL;
++    intuition_close_window(g_window);
++    intuition_close_screen(g_screen);
++    g_screen = (struct Screen *)(size_t)intuition_open_workbench();
++}
++
++/*
++ * PORT H029+$0408 (Allocate_GraphicRecord): larghezza = width8 * 8 * count
++ * pixel, allineata a 16; record e BitMap a 5 piani, ogni piano allocato e
++ * azzerato.  Con with_mask = 1 anche una BitMap di maschera con un solo
++ * raster, ripetuto nei 5 piani.  Gli errori di allocazione vanno a
++ * H014+$0018 con il numero del piano e "plane alloc problem".
++ */
++void allocate_gfx_record(u16 rows, u16 count, u16 width8, u16 with_mask,
++                         struct GfxRecord **rec)
++{
++    static const char plane_error[] = "plane alloc problem";
++    u16 width = (u16)((u16)(width8 << 3) * count);
++    u16 bytes;
++    struct GfxRecord *r;
++    struct BitMap *bm;
++    u16 i;
++
++    if ((width & 0x0F) > 0) {
++        width = (u16)(width + (0x10 - (width & 0x0F)));
++    }
++    bytes = (u16)((u32)(width >> 3) * rows * 5);
++
++    *rec = r = (struct GfxRecord *)exec_alloc_mem(sizeof(struct GfxRecord),
++                                                  COK_MEMF_CLEAR);
++    r->image = bm = (struct BitMap *)exec_alloc_mem(sizeof(struct BitMap),
++                                                    COK_MEMF_CLEAR);
++    graphics_init_bitmap(bm, 5, width, rows);
++    for (i = 0; i <= 4; ++i) {
++        bm->Planes[i] = graphics_alloc_raster(width, rows);
++        if (bm->Planes[i] == NULL) {
++            h014_0018(0x13, plane_error, i);
++        } else {
++            graphics_blt_clear(bm->Planes[i], (u32)(width >> 3) * rows, 0);
++        }
++    }
++
++    if (with_mask == 1) {
++        r->mask = bm = (struct BitMap *)exec_alloc_mem(sizeof(struct BitMap),
++                                                       COK_MEMF_CLEAR);
++        graphics_init_bitmap(bm, 5, width, rows);
++        bm->Planes[0] = graphics_alloc_raster(width, rows);
++        if (bm->Planes[0] == NULL) {
++            h014_0018(0x13, plane_error, 0);
++        } else {
++            graphics_blt_clear(bm->Planes[0], (u32)(width >> 3) * rows, 0);
++        }
++        for (i = 1; i <= 4; ++i) {
++            bm->Planes[i] = bm->Planes[0];
++        }
++    } else {
++        r->mask = NULL;
++    }
++    r->rows = rows;
++    r->count = count;
++    r->plane_bytes = bytes;
++    r->width8 = width8;
++}
++
++/* PORT H029+$1308: byte con segno esteso a word. */
++static s16 signed_byte(u8 b)
++{
++    return b < 0x80 ? (s16)b : (s16)(b - 0x100);
++}
++
++/*
++ * PORT H029+$1346 (Prepare_DisplayResources), solo la prima volta
++ * ($3D8E nullo): record grafico 320x200 a 5 piani in $3D8E con un suo
++ * RastPort, una View con un ViewPort che lo mostra (spostamenti presi
++ * dalle Preferences, ColorMap da 32 colori, liste Copper costruite),
++ * apertura di intuition.library e salvataggio di GfxBase->ActiView.
++ */
++void prepare_display_resources(void)
++{
++    struct Preferences prefs;
++    struct Library *gfx;
++
++    if (g_gfx_3d8e != NULL) {
++        return;
++    }
++    allocate_gfx_record(0xC8, 0x28, 1, 0, &g_gfx_3d8e);
++    g_offscreen_rp = (struct RastPort *)exec_alloc_mem(sizeof(struct RastPort),
++                                                       COK_MEMF_CLEAR);
++    graphics_init_rastport(g_offscreen_rp);
++    g_offscreen_rp->BitMap = g_gfx_3d8e->image;
++
++    graphics_init_view(&g_offscreen_view);
++    (void)intuition_get_prefs(&prefs, 0x7C);
++    g_offscreen_view.DxOffset = (WORD)(signed_byte((u8)prefs.ViewXOffset) +
++                                       prefs.ViewInitX);
++    g_offscreen_view.DyOffset = (WORD)(signed_byte((u8)prefs.ViewYOffset) +
++                                       prefs.ViewInitY);
++    g_offscreen_view.ViewPort = &g_offscreen_vp;
++    graphics_init_vport(&g_offscreen_vp);
++    g_offscreen_ri.BitMap = g_gfx_3d8e->image;
++    g_offscreen_ri.RxOffset = 0;
++    g_offscreen_ri.RyOffset = 0;
++    g_offscreen_ri.Next = NULL;
++    g_offscreen_vp.DWidth = 0x140;
++    g_offscreen_vp.DHeight = 0xC8;
++    g_offscreen_vp.RasInfo = &g_offscreen_ri;
++    g_offscreen_vp.ColorMap = graphics_get_color_map(0x20);
++    graphics_make_vport(&g_offscreen_view, &g_offscreen_vp);
++    graphics_mrg_cop(&g_offscreen_view);
++
++    g_h029_intuition = exec_open_library("intuition.library", 0);
++    gfx = exec_open_library("graphics.library", 0);
++    g_saved_view = ((struct GfxBase *)gfx)->ActiView;
++    exec_close_library(gfx);
++}
+diff --git a/src_c/readable/h029_gfx.h b/src_c/readable/h029_gfx.h
+index cc47747..c8f5dc6 100644
+--- a/src_c/readable/h029_gfx.h
++++ b/src_c/readable/h029_gfx.h
+@@ -4,6 +4,28 @@
+ 
+ #include "cok.h"
+ 
++/*
++ * Record grafico (20 byte nell'originale, MEMF_CLEAR): un'immagine a 5
++ * piani e la sua eventuale maschera.  Sull'host i puntatori sono a 64 bit,
++ * quindi la struttura e' piu' grande, con gli stessi campi.
++ */
++struct GfxRecord {
++    u16 rows;                   /* +$00: righe */
++    u16 count;                  /* +$02: 3o argomento di H029+$0408 */
++    u16 w4;                     /* +$04 */
++    u16 w6;                     /* +$06 */
++    u16 width8;                 /* +$08: larghezza unitaria in byte (8 px) */
++    u16 plane_bytes;            /* +$0A: byte dei 5 piani (word) */
++    struct BitMap *mask;        /* +$0C: maschera, un piano ripetuto 5 volte */
++    struct BitMap *image;       /* +$10: immagine a 5 piani */
++};
++
++void allocate_gfx_record(u16 rows, u16 count, u16 width8, u16 with_mask,
++                         struct GfxRecord **rec);       /* H029+$0408 */
++void free_pointer_data(void);           /* H029+$0180 */
++void prepare_display_resources(void);   /* H029+$1346 */
++void open_game_display(void);           /* H029+$1206 */
++void close_game_display(void);          /* H029+$12BC */
+ void h029_fill_bytes(u16 unused, u8 *dst, u16 count, u8 value); /* H029+$0312 */
+ 
+ #endif
+diff --git a/src_c/readable/h037.c b/src_c/readable/h037.c
+index 1606fcb..68fbb85 100644
+--- a/src_c/readable/h037.c
++++ b/src_c/readable/h037.c
+@@ -1,5 +1,5 @@
+ /* H037: Adattatore graphics.library/InitBitMap. */
+-#include "cok.h"
++#include "h037.h"
+ 
+ /*
+  * PORT H037+$0008: copia GfxBase del runtime H015 nella cella del modulo.
+@@ -8,3 +8,13 @@
+ void h037_init(void)
+ {
+ }
++
++#if COK_AMIGA
++#include <proto/graphics.h>
++#endif
++
++/* PORT H037+$0014 */
++void graphics_init_bitmap(struct BitMap *bm, u16 depth, u16 width, u16 height)
++{
++    InitBitMap(bm, (LONG)depth, (LONG)width, (LONG)height);
++}
+diff --git a/src_c/readable/h037.h b/src_c/readable/h037.h
+new file mode 100644
+index 0000000..786ea92
+--- /dev/null
++++ b/src_c/readable/h037.h
+@@ -0,0 +1,10 @@
++/* H037: adattatore graphics.library/InitBitMap. */
++#ifndef COK_H037_H
++#define COK_H037_H
++
++#include "cok.h"
++
++void graphics_init_bitmap(struct BitMap *bm, u16 depth, u16 width,
++                          u16 height);                  /* H037+$0014 */
++
++#endif
+diff --git a/src_c/readable/h051.c b/src_c/readable/h051.c
+index 75a6399..2869acf 100644
+--- a/src_c/readable/h051.c
++++ b/src_c/readable/h051.c
+@@ -1,7 +1,13 @@
+ /* H051: Adattatore Exec/FindTask. */
+-#include "cok.h"
++#include "h051.h"
+ 
+ /* PORT H051+$0004: rts. */
+ void h051_init(void)
+ {
+ }
++
++/* PORT H051+$004A */
++struct Task *exec_find_task(const char *name)
++{
++    return FindTask((STRPTR)name);
++}
+diff --git a/src_c/readable/h051.h b/src_c/readable/h051.h
+new file mode 100644
+index 0000000..3bbfb96
+--- /dev/null
++++ b/src_c/readable/h051.h
+@@ -0,0 +1,9 @@
++/* H051: adattatore exec FindTask. */
++#ifndef COK_H051_H
++#define COK_H051_H
++
++#include "cok.h"
++
++struct Task *exec_find_task(const char *name);  /* H051+$004A */
++
++#endif
+diff --git a/src_c/readable/h055.c b/src_c/readable/h055.c
+index 6096907..4e595ce 100644
+--- a/src_c/readable/h055.c
++++ b/src_c/readable/h055.c
+@@ -1,5 +1,5 @@
+ /* H055: Adattatori AllocRaster, FreeRaster e InitRastPort. */
+-#include "cok.h"
++#include "h055.h"
+ 
+ /*
+  * PORT H055+$0008: copia GfxBase del runtime H015 nella cella del modulo.
+@@ -8,3 +8,19 @@
+ void h055_init(void)
+ {
+ }
++
++#if COK_AMIGA
++#include <proto/graphics.h>
++#endif
++
++/* PORT H055+$0014 */
++PLANEPTR graphics_alloc_raster(u16 width, u16 height)
++{
++    return AllocRaster((ULONG)width, (ULONG)height);
++}
++
++/* PORT H055+$0044 */
++void graphics_init_rastport(struct RastPort *rp)
++{
++    InitRastPort(rp);
++}
+diff --git a/src_c/readable/h055.h b/src_c/readable/h055.h
+new file mode 100644
+index 0000000..1cfa9aa
+--- /dev/null
++++ b/src_c/readable/h055.h
+@@ -0,0 +1,10 @@
++/* H055: adattatori AllocRaster, FreeRaster e InitRastPort. */
++#ifndef COK_H055_H
++#define COK_H055_H
++
++#include "cok.h"
++
++void graphics_init_rastport(struct RastPort *rp);       /* H055+$0044 */
++PLANEPTR graphics_alloc_raster(u16 width, u16 height);  /* H055+$0014 */
++
++#endif
+diff --git a/src_c/readable/h084.c b/src_c/readable/h084.c
+index 17cefc5..09f1805 100644
+--- a/src_c/readable/h084.c
++++ b/src_c/readable/h084.c
+@@ -1,5 +1,5 @@
+ /* H084: Adattatore intuition.library/GetPrefs. */
+-#include "cok.h"
++#include "h084.h"
+ 
+ /*
+  * PORT H084+$0008: copia IntuitionBase del runtime H015 nella cella del modulo.
+@@ -8,3 +8,13 @@
+ void h084_init(void)
+ {
+ }
++
++#if COK_AMIGA
++#include <proto/intuition.h>
++#endif
++
++/* PORT H084+$002A */
++struct Preferences *intuition_get_prefs(struct Preferences *prefs, u16 size)
++{
++    return GetPrefs(prefs, (LONG)size);
++}
+diff --git a/src_c/readable/h084.h b/src_c/readable/h084.h
+new file mode 100644
+index 0000000..97da60f
+--- /dev/null
++++ b/src_c/readable/h084.h
+@@ -0,0 +1,9 @@
++/* H084: adattatore intuition.library/GetPrefs. */
++#ifndef COK_H084_H
++#define COK_H084_H
++
++#include "cok.h"
++
++struct Preferences *intuition_get_prefs(struct Preferences *prefs, u16 size);
++                                                        /* H084+$002A */
++#endif
+diff --git a/src_c/readable/host/display.c b/src_c/readable/host/display.c
+new file mode 100644
+index 0000000..b64bd98
+--- /dev/null
++++ b/src_c/readable/host/display.c
+@@ -0,0 +1,213 @@
++/*
++ * Build host: visualizzazione dello schermo Amiga con SDL2.
++ *
++ * Si mostra la BitMap planare dello schermo aperto con OpenScreen oppure,
++ * dopo LoadView di una View del gioco, quella del suo ViewPort (RasInfo):
++ * i pixel sono convertiti in RGB con la ColorMap (RGB4) e mostrati in una
++ * finestra SDL ingrandita.
++ *
++ * Variabili d'ambiente:
++ *   COK_SCALE=n          ingrandimento della finestra (predefinito 3);
++ *   COK_SCREENSHOT=f.bmp all'uscita salva l'ultimo fotogramma in f.bmp;
++ *   SDL_VIDEODRIVER=dummy  esecuzione senza finestra (test).
++ */
++#include <stdio.h>
++#include <stdlib.h>
++#include <SDL.h>
++#include "ndk.h"
++
++static struct Screen *s_screen;
++static struct View *s_view;             /* View caricata con LoadView */
++static SDL_Window *s_window;
++static SDL_Renderer *s_renderer;
++static SDL_Texture *s_texture;
++static Uint32 *s_pixels;
++static int s_tex_w;
++static int s_tex_h;
++static int s_dirty;
++static Uint32 s_last_present;
++static int s_sdl_ready;
++
++/* ViewPort mostrato: quello della View caricata o quello dello schermo. */
++static struct ViewPort *shown_viewport(void)
++{
++    if (s_view != NULL && s_view->ViewPort != NULL) {
++        return s_view->ViewPort;
++    }
++    return s_screen != NULL ? &s_screen->ViewPort : NULL;
++}
++
++/* Converte la bitmap planare mostrata in s_pixels (ARGB8888). */
++static void convert(void)
++{
++    const struct ViewPort *vp = shown_viewport();
++    const struct BitMap *bm;
++    Uint32 palette[256];
++    int x;
++    int y;
++    int i;
++
++    if (vp == NULL || vp->RasInfo == NULL || vp->RasInfo->BitMap == NULL ||
++        s_pixels == NULL) {
++        return;
++    }
++    bm = vp->RasInfo->BitMap;
++    for (i = 0; i < 256; ++i) {
++        UWORD c = 0;
++
++        if (vp->ColorMap != NULL && vp->ColorMap->Count > 0) {
++            c = vp->ColorMap->ColorTable[i % vp->ColorMap->Count];
++        }
++        palette[i] = 0xFF000000u | (Uint32)((c >> 8) & 15) * 0x110000u |
++                     (Uint32)((c >> 4) & 15) * 0x001100u |
++                     (Uint32)(c & 15) * 0x000011u;
++    }
++    for (y = 0; y < s_tex_h && y < bm->Rows; ++y) {
++        for (x = 0; x < s_tex_w && x < bm->BytesPerRow * 8; ++x) {
++            size_t at = (size_t)y * bm->BytesPerRow + (size_t)(x >> 3);
++            UBYTE mask = (UBYTE)(0x80 >> (x & 7));
++            unsigned pen = 0;
++
++            for (i = 0; i < bm->Depth; ++i) {
++                if (bm->Planes[i] != NULL && (bm->Planes[i][at] & mask)) {
++                    pen |= 1u << i;
++                }
++            }
++            s_pixels[(size_t)y * s_tex_w + x] = palette[pen];
++        }
++    }
++}
++
++static void save_screenshot(void)
++{
++    const char *path = getenv("COK_SCREENSHOT");
++    SDL_Surface *surface;
++
++    if (path == NULL || s_pixels == NULL) {
++        return;
++    }
++    surface = SDL_CreateRGBSurfaceFrom(s_pixels, s_tex_w, s_tex_h, 32,
++                                       s_tex_w * 4, 0x00FF0000, 0x0000FF00,
++                                       0x000000FF, 0xFF000000);
++    if (surface != NULL) {
++        if (SDL_SaveBMP(surface, path) != 0) {
++            fprintf(stderr, "COK_SCREENSHOT: %s\n", SDL_GetError());
++        }
++        SDL_FreeSurface(surface);
++    }
++}
++
++static void at_exit(void)
++{
++    convert();
++    save_screenshot();
++    if (s_sdl_ready) {
++        SDL_Quit();
++    }
++}
++
++static int open_sdl(int w, int h)
++{
++    const char *env = getenv("COK_SCALE");
++    int scale = env != NULL ? atoi(env) : 3;
++
++    if (scale < 1) {
++        scale = 1;
++    }
++    if (!s_sdl_ready) {
++        if (SDL_Init(SDL_INIT_VIDEO) != 0) {
++            fprintf(stderr, "SDL_Init: %s\n", SDL_GetError());
++            return 0;
++        }
++        s_sdl_ready = 1;
++        atexit(at_exit);
++    }
++    if (s_window == NULL) {
++        s_window = SDL_CreateWindow("Champions of Krynn",
++                                    SDL_WINDOWPOS_CENTERED,
++                                    SDL_WINDOWPOS_CENTERED,
++                                    w * scale, h * scale, 0);
++        if (s_window == NULL) {
++            fprintf(stderr, "SDL_CreateWindow: %s\n", SDL_GetError());
++            return 0;
++        }
++        s_renderer = SDL_CreateRenderer(s_window, -1, 0);
++        if (s_renderer == NULL) {
++            s_renderer = SDL_CreateRenderer(s_window, -1,
++                                            SDL_RENDERER_SOFTWARE);
++        }
++    }
++    if (s_texture != NULL && (s_tex_w != w || s_tex_h != h)) {
++        SDL_DestroyTexture(s_texture);
++        s_texture = NULL;
++    }
++    if (s_texture == NULL && s_renderer != NULL) {
++        s_texture = SDL_CreateTexture(s_renderer, SDL_PIXELFORMAT_ARGB8888,
++                                      SDL_TEXTUREACCESS_STREAMING, w, h);
++        SDL_RenderSetLogicalSize(s_renderer, w, h);
++    }
++    free(s_pixels);
++    s_pixels = (Uint32 *)calloc((size_t)w * h, sizeof(Uint32));
++    s_tex_w = w;
++    s_tex_h = h;
++    return s_pixels != NULL;
++}
++
++void host_display_attach(struct Screen *screen)
++{
++    if (open_sdl(screen->Width, screen->Height)) {
++        s_screen = screen;
++        s_dirty = 1;
++        host_display_refresh(1);
++    }
++}
++
++void host_display_detach(struct Screen *screen)
++{
++    if (s_screen == screen) {
++        convert();              /* l'ultimo fotogramma resta per lo screenshot */
++        s_screen = NULL;
++    }
++}
++
++void host_display_view(struct View *view)
++{
++    s_view = view;
++    s_dirty = 1;
++}
++
++void host_display_changed(void)
++{
++    s_dirty = 1;
++}
++
++/*
++ * Mostra lo schermo (al massimo ~60 volte al secondo, oppure subito con
++ * force) e smaltisce gli eventi della finestra.
++ */
++void host_display_refresh(int force)
++{
++    SDL_Event ev;
++    Uint32 now;
++
++    if (!s_sdl_ready) {
++        return;
++    }
++    while (SDL_PollEvent(&ev)) {
++        if (ev.type == SDL_QUIT) {
++            exit(0);
++        }
++    }
++    now = SDL_GetTicks();
++    if (shown_viewport() == NULL || s_texture == NULL ||
++        (!force && (!s_dirty || now - s_last_present < 16))) {
++        return;
++    }
++    convert();
++    SDL_UpdateTexture(s_texture, NULL, s_pixels, s_tex_w * 4);
++    SDL_RenderClear(s_renderer);
++    SDL_RenderCopy(s_renderer, s_texture, NULL, NULL);
++    SDL_RenderPresent(s_renderer);
++    s_last_present = now;
++    s_dirty = 0;
++}
+diff --git a/src_c/readable/host/graphics.c b/src_c/readable/host/graphics.c
+new file mode 100644
+index 0000000..ff330ac
+--- /dev/null
++++ b/src_c/readable/host/graphics.c
+@@ -0,0 +1,125 @@
++/* Build host: graphics.library emulata (solo quanto usa il port). */
++#include <stdlib.h>
++#include <string.h>
++#include "ndk.h"
++
++/*
++ * I colori arrivano dai dati del gioco (H005), quindi sono word
++ * big-endian: si leggono a byte.
++ */
++void LoadRGB4(struct ViewPort *vp, const UWORD *colors, LONG count)
++{
++    const UBYTE *p = (const UBYTE *)colors;
++    LONG i;
++
++    if (vp->ColorMap == NULL) {
++        return;
++    }
++    for (i = 0; i < count && i < vp->ColorMap->Count; ++i) {
++        vp->ColorMap->ColorTable[i] =
++            (UWORD)((p[i * 2] << 8 | p[i * 2 + 1]) & 0x0FFF);
++    }
++    host_display_changed();
++}
++
++void InitBitMap(struct BitMap *bm, LONG depth, LONG width, LONG height)
++{
++    bm->BytesPerRow = (UWORD)(((width + 15) >> 3) & 0xFFFE);
++    bm->Rows = (UWORD)height;
++    bm->Flags = 0;
++    bm->Depth = (UBYTE)depth;
++    bm->pad = 0;
++}
++
++/* Memoria chip: sull'host memoria normale, non azzerata come sull'Amiga. */
++PLANEPTR AllocRaster(ULONG width, ULONG height)
++{
++    return (PLANEPTR)malloc(RASSIZE(width, height));
++}
++
++void FreeRaster(PLANEPTR p, ULONG width, ULONG height)
++{
++    (void)width;
++    (void)height;
++    free(p);
++}
++
++/*
++ * flags bit 1 = 0: count e' un numero di byte; bit 1 = 1: count e'
++ * righe << 16 | byte per riga.  Il bit 0 (attesa del blitter) non conta.
++ */
++void BltClear(void *memory, ULONG count, ULONG flags)
++{
++    if (flags & 2) {
++        count = (count >> 16) * (count & 0xFFFF);
++    }
++    memset(memory, 0, count);
++    host_display_changed();
++}
++
++static struct GfxBase s_gfx = { { "graphics.library", 34 }, NULL };
++
++struct Library *host_graphics_base(void)
++{
++    return &s_gfx.LibNode;
++}
++
++void InitView(struct View *view)
++{
++    memset(view, 0, sizeof(*view));
++}
++
++void InitVPort(struct ViewPort *vp)
++{
++    memset(vp, 0, sizeof(*vp));
++}
++
++struct ColorMap *GetColorMap(LONG entries)
++{
++    struct ColorMap *cm = (struct ColorMap *)calloc(1, sizeof(*cm));
++
++    if (cm == NULL) {
++        return NULL;
++    }
++    cm->Count = (UWORD)entries;
++    cm->ColorTable = (UWORD *)calloc((size_t)entries, sizeof(UWORD));
++    if (cm->ColorTable == NULL) {
++        free(cm);
++        return NULL;
++    }
++    return cm;
++}
++
++void FreeColorMap(struct ColorMap *cm)
++{
++    if (cm != NULL) {
++        free(cm->ColorTable);
++        free(cm);
++    }
++}
++
++/* Le liste Copper non esistono sull'host: MakeVPort e MrgCop non fanno nulla. */
++void MakeVPort(struct View *view, struct ViewPort *vp)
++{
++    (void)view;
++    (void)vp;
++}
++
++void MrgCop(struct View *view)
++{
++    (void)view;
++}
++
++void LoadView(struct View *view)
++{
++    s_gfx.ActiView = view;
++    host_display_view(view);
++}
++
++void InitRastPort(struct RastPort *rp)
++{
++    memset(rp, 0, sizeof(*rp));
++    rp->FgPen = -1;             /* come InitRastPort di AmigaOS: FgPen e */
++    rp->AOlPen = -1;            /* AOlPen a -1, DrawMode JAM2 */
++    rp->DrawMode = 1;
++}
+diff --git a/src_c/readable/host/intuition.c b/src_c/readable/host/intuition.c
+new file mode 100644
+index 0000000..e418ae5
+--- /dev/null
++++ b/src_c/readable/host/intuition.c
+@@ -0,0 +1,165 @@
++/*
++ * Build host: intuition.library ed exec emulati (solo quanto usa il port).
++ * Lo schermo e' una BitMap planare in memoria, mostrata da host/display.c.
++ */
++#include <stdlib.h>
++#include <string.h>
++#include "ndk.h"
++
++struct Library *host_graphics_base(void);
++
++static struct Library s_intuition = { "intuition.library", 34 };
++static struct Library s_dos = { "dos.library", 34 };
++static struct Library s_exec = { "exec.library", 34 };
++
++struct Library *OpenLibrary(STRPTR name, ULONG version)
++{
++    const char *n = (const char *)name;
++
++    (void)version;
++    if (strcmp(n, "graphics.library") == 0) {
++        return host_graphics_base();
++    }
++    if (strcmp(n, "intuition.library") == 0) {
++        return &s_intuition;
++    }
++    if (strcmp(n, "dos.library") == 0) {
++        return &s_dos;
++    }
++    if (strcmp(n, "exec.library") == 0) {
++        return &s_exec;
++    }
++    return NULL;
++}
++
++void CloseLibrary(struct Library *library)
++{
++    (void)library;
++}
++
++/*
++ * Preferences: sull'host non ci sono preferenze di sistema; gli
++ * spostamenti del display (usati solo per la View personalizzata) sono 0.
++ */
++struct Preferences *GetPrefs(struct Preferences *prefs, LONG size)
++{
++    (void)size;
++    memset(prefs, 0, sizeof(*prefs));
++    return prefs;
++}
++
++static struct Process s_process = { { "Champions of Krynn" }, NULL };
++
++struct Task *FindTask(STRPTR name)
++{
++    (void)name;                 /* il gioco chiede solo il proprio task */
++    return &s_process.pr_Task;
++}
++
++struct Screen *OpenScreen(struct NewScreen *ns)
++{
++    struct Screen *s = (struct Screen *)calloc(1, sizeof(*s));
++    UWORD bpr;
++    int i;
++
++    if (s == NULL) {
++        return NULL;
++    }
++    s->LeftEdge = ns->LeftEdge;
++    s->TopEdge = ns->TopEdge;
++    s->Width = ns->Width;
++    s->Height = ns->Height;
++    s->Title = ns->DefaultTitle;
++    s->ViewPort.DWidth = ns->Width;
++    s->ViewPort.DHeight = ns->Height;
++    s->ViewPort.Modes = ns->ViewModes;
++    s->ViewPort.ColorMap = GetColorMap(32);
++    s->ViewPort.RasInfo = &s->RasInfo;
++    s->RasInfo.BitMap = &s->BitMap;
++
++    bpr = (UWORD)(((ns->Width + 15) / 16) * 2);
++    s->BitMap.BytesPerRow = bpr;
++    s->BitMap.Rows = (UWORD)ns->Height;
++    s->BitMap.Depth = (UBYTE)ns->Depth;
++    for (i = 0; i < ns->Depth && i < 8; ++i) {
++        s->BitMap.Planes[i] = (PLANEPTR)calloc(1, (size_t)bpr * ns->Height);
++        if (s->BitMap.Planes[i] == NULL) {
++            CloseScreen(s);
++            return NULL;
++        }
++    }
++    s->RastPort.BitMap = &s->BitMap;
++    s->RastPort.FgPen = (BYTE)ns->DetailPen;
++    s->RastPort.BgPen = (BYTE)ns->BlockPen;
++    s->ShowTitle = TRUE;
++    host_display_attach(s);
++    return s;
++}
++
++void CloseScreen(struct Screen *screen)
++{
++    int i;
++
++    if (screen == NULL) {
++        return;
++    }
++    host_display_detach(screen);
++    for (i = 0; i < 8; ++i) {
++        free(screen->BitMap.Planes[i]);
++    }
++    FreeColorMap(screen->ViewPort.ColorMap);
++    free(screen);
++}
++
++struct Window *OpenWindow(struct NewWindow *nw)
++{
++    struct Window *w;
++
++    if (nw->Screen == NULL) {
++        return NULL;            /* nessun Workbench sull'host */
++    }
++    w = (struct Window *)calloc(1, sizeof(*w));
++    if (w == NULL) {
++        return NULL;
++    }
++    w->LeftEdge = nw->LeftEdge;
++    w->TopEdge = nw->TopEdge;
++    w->Width = nw->Width;
++    w->Height = nw->Height;
++    w->IDCMPFlags = nw->IDCMPFlags;
++    w->Flags = nw->Flags;
++    w->WScreen = nw->Screen;
++    /* Finestra BACKDROP|BORDERLESS a schermo intero: disegna sullo schermo. */
++    w->RPort = &nw->Screen->RastPort;
++    return w;
++}
++
++void CloseWindow(struct Window *window)
++{
++    free(window);
++}
++
++void ShowTitle(struct Screen *screen, LONG show)
++{
++    screen->ShowTitle = (BOOL)(show != 0);
++}
++
++LONG CloseWorkBench(void)
++{
++    return TRUE;                /* nessun Workbench da chiudere */
++}
++
++ULONG OpenWorkBench(void)
++{
++    return 0;                   /* nessun Workbench: schermo nullo */
++}
++
++void ActivateWindow(struct Window *window)
++{
++    (void)window;
++}
++
++void ClearPointer(struct Window *window)
++{
++    (void)window;
++}
+diff --git a/src_c/readable/host/ndk.h b/src_c/readable/host/ndk.h
+new file mode 100644
+index 0000000..bf5b2e7
+--- /dev/null
++++ b/src_c/readable/host/ndk.h
+@@ -0,0 +1,211 @@
++/*
++ * Build host: sottoinsieme dell'NDK di AmigaOS usato dal port.
++ *
++ * Le strutture hanno gli stessi nomi di campo dell'NDK, cosi' il codice
++ * del gioco e' lo stesso sui due target; contengono solo i campi che il
++ * port usa (non hanno la disposizione in memoria dell'originale).  Le
++ * funzioni di libreria omonime sono emulate nei file .c di host/, sopra SDL2.
++ *
++ * Convenzione: la memoria che arriva dai dati del gioco (H005, file) e'
++ * nell'ordine dei byte dell'Amiga; le funzioni emulate che leggono word da
++ * quella memoria (per esempio LoadRGB4) le leggono big-endian.
++ */
++#ifndef COK_HOST_NDK_H
++#define COK_HOST_NDK_H
++
++#include <stdint.h>
++#include <stddef.h>
++
++typedef void          *APTR;
++typedef int32_t        LONG;
++typedef uint32_t       ULONG;
++typedef int16_t        WORD;
++typedef uint16_t       UWORD;
++typedef int8_t         BYTE;
++typedef uint8_t        UBYTE;
++typedef int16_t        BOOL;
++typedef unsigned char *STRPTR;
++typedef unsigned char *PLANEPTR;
++
++#ifndef TRUE
++#define TRUE  1
++#define FALSE 0
++#endif
++
++/* exec */
++struct Task {
++    const char *tc_Name;
++};
++
++struct Process {
++    struct Task pr_Task;
++    APTR pr_WindowPtr;          /* finestra delle richieste di sistema */
++};
++
++struct Library {
++    const char *lib_Name;
++    UWORD lib_Version;
++};
++
++struct Task    *FindTask(STRPTR name);
++struct Library *OpenLibrary(STRPTR name, ULONG version);
++void            CloseLibrary(struct Library *library);
++
++/* graphics */
++struct BitMap {
++    UWORD BytesPerRow;
++    UWORD Rows;
++    UBYTE Flags;
++    UBYTE Depth;
++    UWORD pad;
++    PLANEPTR Planes[8];
++};
++
++struct TextFont;
++
++struct RastPort {
++    struct BitMap *BitMap;
++    struct TextFont *Font;
++    BYTE FgPen;
++    BYTE BgPen;
++    BYTE AOlPen;
++    BYTE DrawMode;
++    WORD cp_x;
++    WORD cp_y;
++};
++
++struct ColorMap {
++    UBYTE Flags;
++    UBYTE Type;
++    UWORD Count;
++    UWORD *ColorTable;          /* Count colori RGB4 */
++};
++
++struct RasInfo {
++    struct RasInfo *Next;
++    struct BitMap *BitMap;
++    WORD RxOffset;
++    WORD RyOffset;
++};
++
++struct ViewPort {
++    struct ViewPort *Next;
++    struct ColorMap *ColorMap;
++    WORD DWidth;
++    WORD DHeight;
++    WORD DxOffset;
++    WORD DyOffset;
++    UWORD Modes;
++    struct RasInfo *RasInfo;
++};
++
++struct View {
++    struct ViewPort *ViewPort;
++    WORD DyOffset;
++    WORD DxOffset;
++    UWORD Modes;
++};
++
++struct GfxBase {
++    struct Library LibNode;
++    struct View *ActiView;      /* View mostrata (NULL: schermo Intuition) */
++};
++
++#define RASSIZE(w, h) ((ULONG)(h) * ((((ULONG)(w) + 15) >> 3) & 0xFFFE))
++
++void     LoadRGB4(struct ViewPort *vp, const UWORD *colors, LONG count);
++void     InitView(struct View *view);
++void     InitVPort(struct ViewPort *vp);
++struct ColorMap *GetColorMap(LONG entries);
++void     FreeColorMap(struct ColorMap *cm);
++void     MakeVPort(struct View *view, struct ViewPort *vp);
++void     MrgCop(struct View *view);
++void     LoadView(struct View *view);
++void     InitRastPort(struct RastPort *rp);
++void     InitBitMap(struct BitMap *bm, LONG depth, LONG width, LONG height);
++PLANEPTR AllocRaster(ULONG width, ULONG height);
++void     FreeRaster(PLANEPTR p, ULONG width, ULONG height);
++void     BltClear(void *memory, ULONG count, ULONG flags);
++
++/* intuition */
++struct TextAttr;
++struct Gadget;
++struct Image;
++
++#define CUSTOMSCREEN  0x000F
++#define WBENCHSCREEN  0x0001
++#define HIRES         0x8000
++#define LACE          0x0004
++#define HAM           0x0800
++
++struct NewScreen {
++    WORD LeftEdge, TopEdge, Width, Height, Depth;
++    UBYTE DetailPen, BlockPen;
++    UWORD ViewModes;
++    UWORD Type;
++    struct TextAttr *Font;
++    UBYTE *DefaultTitle;
++    struct Gadget *Gadgets;
++    struct BitMap *CustomBitMap;
++};
++
++struct Screen {
++    WORD LeftEdge, TopEdge, Width, Height;
++    UBYTE *Title;
++    struct ViewPort ViewPort;
++    struct RastPort RastPort;
++    struct BitMap BitMap;
++    struct RasInfo RasInfo;     /* (host) RasInfo del ViewPort */
++    BOOL ShowTitle;
++};
++
++struct NewWindow {
++    WORD LeftEdge, TopEdge, Width, Height;
++    UBYTE DetailPen, BlockPen;
++    ULONG IDCMPFlags;
++    ULONG Flags;
++    struct Gadget *FirstGadget;
++    struct Image *CheckMark;
++    UBYTE *Title;
++    struct Screen *Screen;
++    struct BitMap *BitMap;
++    WORD MinWidth, MinHeight;
++    UWORD MaxWidth, MaxHeight;
++    UWORD Type;
++};
++
++struct Window {
++    WORD LeftEdge, TopEdge, Width, Height;
++    ULONG IDCMPFlags;
++    ULONG Flags;
++    struct RastPort *RPort;
++    struct Screen *WScreen;
++};
++
++/* Solo i campi di Preferences letti dal gioco. */
++struct Preferences {
++    BYTE ViewXOffset;
++    BYTE ViewYOffset;
++    WORD ViewInitX;
++    WORD ViewInitY;
++};
++
++struct Preferences *GetPrefs(struct Preferences *prefs, LONG size);
++struct Screen *OpenScreen(struct NewScreen *ns);
++void           CloseScreen(struct Screen *screen);
++struct Window *OpenWindow(struct NewWindow *nw);
++void           CloseWindow(struct Window *window);
++void           ShowTitle(struct Screen *screen, LONG show);
++LONG           CloseWorkBench(void);
++ULONG          OpenWorkBench(void);
++void           ActivateWindow(struct Window *window);
++void           ClearPointer(struct Window *window);
++
++/* Display SDL2 (host/display.c). */
++void host_display_attach(struct Screen *screen);   /* schermo visibile */
++void host_display_detach(struct Screen *screen);
++void host_display_changed(void);   /* bitmap o colori modificati */
++void host_display_view(struct View *view);   /* LoadView */
++void host_display_refresh(int force);
++
++#endif
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index 912e377..293bd0b 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -40,10 +40,8 @@ void h013_4bfc(void) { cok_unported("H013+$4BFC"); }
+ void h006_00fa(void) { cok_unported("H006+$00FA"); }
+ void h008_139e(void) { cok_unported("H008+$139E"); }
+ void h027_4276(void) { cok_unported("H027+$4276"); }
+-void h029_0408(u16 a, u16 b, u16 c, u16 d, struct GfxRecord **rec) { (void)a; (void)b; (void)c; (void)d; (void)rec; cok_unported("H029+$0408"); }
++void h014_0018(u16 len, const char *msg, u16 value) { (void)len; (void)msg; (void)value; cok_unported("H014+$0018"); }
+ void h029_0a0e(u16 a, const char *name, u16 id, u16 b, u8 c, struct GfxRecord **rec) { (void)a; (void)name; (void)id; (void)b; (void)c; (void)rec; cok_unported("H029+$0A0E"); }
+-void h029_1206(void) { cok_unported("H029+$1206"); }
+-void h029_1346(void) { cok_unported("H029+$1346"); }
+ void h030_0256(u16 a, u16 b, u16 c, u16 d, u16 len, const char *text) { (void)a; (void)b; (void)c; (void)d; (void)len; (void)text; cok_unported("H030+$0256"); }
+ void h030_0c10(void) { cok_unported("H030+$0C10"); }
+ void h033_1a50(void) { cok_unported("H033+$1A50"); }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index bac966b..b57f7ba 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -14,10 +14,8 @@ void h006_0914(void);
+ void h006_00fa(void);
+ void h008_139e(void);
+ void h027_4276(void);
+-void h029_0408(u16 a, u16 b, u16 c, u16 d, struct GfxRecord **rec);
++void h014_0018(u16 len, const char *msg, u16 value);
+ void h029_0a0e(u16 a, const char *name, u16 id, u16 b, u8 c, struct GfxRecord **rec);
+-void h029_1206(void);
+-void h029_1346(void);
+ void h030_0256(u16 a, u16 b, u16 c, u16 d, u16 len, const char *text);
+ void h030_0c10(void);
+ void h033_1a50(void);
+-- 
+2.43.0
+

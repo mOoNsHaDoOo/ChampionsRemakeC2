@@ -1,0 +1,47 @@
+From 109b137036c531149c1ed116162b9aed7900cb88 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 11 Nov 2026 10:55:30 +0000
+Subject: [PATCH 54/65] h070: toglie la variabile special mai assegnata (SAS/C
+ warning 94)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/backlog.md | 2 ++
+ src_c/readable/h070.c     | 2 --
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index d8ae1dc..6154ec8 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -2503,4 +2503,6 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
+ - **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
+ - **Non provato:** Appraise con gemme vere, uscita con denaro nella cassa.
+ 
++**Correzione per SAS/C (warning 94 in h070.c, riga 754):** in `combat_end` la variabile `special` non era mai assegnata e serviva solo al `(void)`; tolte la dichiarazione e il `(void)`.
++
+ ---
+diff --git a/src_c/readable/h070.c b/src_c/readable/h070.c
+index 008e1ce..e92c127 100644
+--- a/src_c/readable/h070.c
++++ b/src_c/readable/h070.c
+@@ -716,7 +716,6 @@ static void return_dropped_items(void)
+ void combat_end(void)
+ {
+     Character *p;                       /* -$C(a5) */
+-    u8 special;
+ 
+     return_dropped_items();
+     COK_PUT16(g_state_b + 0x58E, 0);
+@@ -751,7 +750,6 @@ void combat_end(void)
+                        "The monsters rejoice for the party has been destroyed.");
+         show_message_wait(0x0D, 0, 0x19, "Press any key to continue");
+     }
+-    (void)special;
+     H005_B(0x24CE) = 1;
+     COK_PUT16(g_state_b + 0x6E0, 0);
+     COK_PUT16(g_state_b + 0x6E2, 0);
+-- 
+2.43.0
+

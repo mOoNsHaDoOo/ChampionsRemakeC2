@@ -1,0 +1,366 @@
+From fb3680fe952fdb21e8475b570a136206e086c840 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 11 Nov 2026 11:15:55 +0000
+Subject: [PATCH 56/65] Porta il comando ECL ROB (H012+$14C8), H061+$3C4C e i
+ salti mathffp di H015
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/backlog.md     |  23 ++++++
+ src_c/readable/h012.c         |  34 +++++++-
+ src_c/readable/h012.h         |   1 +
+ src_c/readable/h015_runtime.c | 143 ++++++++++++++++++++++++++++++++++
+ src_c/readable/h015_runtime.h |  13 ++++
+ src_c/readable/h061.c         |  18 +++++
+ src_c/readable/h061.h         |   2 +
+ src_c/readable/unported.c     |   1 -
+ src_c/readable/unported.h     |   2 -
+ 9 files changed, 233 insertions(+), 4 deletions(-)
+
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index d7f008e..b1ff9a5 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -2537,3 +2537,26 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
+ - **Non provato:** le cure pagate su un personaggio che ne ha bisogno.
+ 
+ ---
++
++## v48: H012+$14C8 (comando ECL $28, ROB)
++
++**Portato**
++- **H012+$14C8 `ecl_rob`:** tre operandi.
++  - Il personaggio corrente (primo operando 0) o tutto il party perde il secondo operando per cento di monete, gemme e gioielli.
++  - Ogni oggetto ha il terzo operando per cento di andare distrutto (H061+$3DBE, gia' portata).
++- **H061+$3C4C `scale_money`:** moltiplica +$F0..+$FC per la quota che resta, (100 - p) / 100, troncando.
++- **H015+$010C/$0122/$0172/$0184:** i salti del runtime a mathffp.library (SPMul, SPDiv, SPFlt, SPFix), con i numeri FFP tenuti come u32 (`CokReal`).
++  - Su Amiga chiamano la libreria, gia' aperta da H015 (MathBase): niente aritmetica float in C, quindi lo smakefile non ha bisogno di librerie matematiche.
++  - Sull'host convertono da e verso FFP e calcolano in singola precisione IEEE (stessi 24 bit di mantissa).
++  - Ordine dei registri di SPDiv (D1 divisore, D0 dividendo) dalla documentazione di kb.marrani.lol.
++- **Dispatcher:** il comando $28 del dispatcher di H012 chiama `ecl_rob`; tolto lo stub h012_14c8.
++
++**Dove mi discosto dall'asm**
++- **Arrotondamento sull'host:** la documentazione non dice come arrotonda mathffp, quindi una differenza dalla libreria Amiga e' possibile solo nell'ultimo bit dei risultati.
++
++**Prove**
++- **FFP sull'host** (programma di prova): 1,0 = $80000041, 100 = $C8000047, 70/100 = $B3333340; il 70% di 0, 5, 10, 15, 20 da' 0, 3, 7, 10, 14; il 25% di 1234 da' 308.
++- **Non provato in gioco:** serve uno script ECL che usi ROB.
++- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
++
++---
+diff --git a/src_c/readable/h012.c b/src_c/readable/h012.c
+index a33f73f..e0e7485 100644
+--- a/src_c/readable/h012.c
++++ b/src_c/readable/h012.c
+@@ -79,7 +79,7 @@ static void ecl_execute(void)
+     case 0x24: ecl_combat(); break;
+     case 0x25: case 0x26: ecl_on_goto(); break;
+     case 0x27: ecl_treasure(); break;
+-    case 0x28: h012_14c8(); break;
++    case 0x28: ecl_rob(); break;
+     case 0x29: ecl_encounter(); break;
+     case 0x2A: ecl_get_table(); break;
+     case 0x2B: ecl_horizontal_menu(); break;
+@@ -862,6 +862,38 @@ void ecl_delay(void)
+     message_delay();
+ }
+ 
++/*
++ * PORT H012+$14C8 (comando $28, ROB): il personaggio corrente (primo
++ * operando 0) o tutto il party perde il secondo operando per cento di
++ * monete, gemme e gioielli (H061+$3C4C, con (100 - p) / 100 in FFP:
++ * SPFlt e SPDiv) e ogni oggetto ha il terzo operando per cento di
++ * andare distrutto (H061+$3DBE).
++ */
++void ecl_rob(void)
++{
++    u16 who;                            /* -$2(a5) */
++    u16 percent;                        /* -$4(a5) */
++    u16 chance;                         /* -$6(a5) */
++    Character *p;                       /* -$A(a5) */
++    CokReal keep;                       /* -$12(a5) */
++
++    read_operands(3);
++    who = eval_operand(1);
++    percent = eval_operand(2);
++    keep = h015_spdiv(h015_spflt((s32)(u16)(0x64 - percent)),
++                      h015_spflt(0x64));
++    chance = eval_operand(3);
++    if (who == 0) {
++        scale_money(keep, g_current_char);
++        destroy_items(chance, g_current_char);
++    } else {
++        for (p = g_party_head; p != NULL; p = p->next) {
++            scale_money(keep, p);
++            destroy_items(chance, p);
++        }
++    }
++}
++
+ /*
+  * PORT H012+$1F68 (comando $2E, DAMAGE): danno nd(s)+b a uno o a tutti
+  * (bit 6), con tiro salvezza (bit 7: tipo dal 5o operando, danno pieno
+diff --git a/src_c/readable/h012.h b/src_c/readable/h012.h
+index 98b9716..25d05d5 100644
+--- a/src_c/readable/h012.h
++++ b/src_c/readable/h012.h
+@@ -30,4 +30,5 @@ void ecl_remove_items(void); /* H012+$2B64 */
+ void ecl_experience(void);   /* H012+$2C28 */
+ void ecl_camp_entry(void);              /* H012+$2922 */
+ void explore_loop(void);                /* H012+$3150 */
++void ecl_rob(void);          /* H012+$14C8 */
+ #endif
+diff --git a/src_c/readable/h015_runtime.c b/src_c/readable/h015_runtime.c
+index 76955cf..bfeae1f 100644
+--- a/src_c/readable/h015_runtime.c
++++ b/src_c/readable/h015_runtime.c
+@@ -81,3 +81,146 @@ s32 h015_divs32(s32 dividend, s32 divisor, u32 *remainder)
+ 
+     return negative ? -(s32)q : (s32)q;
+ }
++
++#if COK_AMIGA
++/* Su Amiga si chiama mathffp.library come l'originale (MathBase sopra). */
++typedef union FfpBits {
++    u32 u;
++    FLOAT f;
++} FfpBits;
++
++/* PORT H015+$010C: SPMul(d1, d0); d0 = primo argomento sulla pila. */
++CokReal h015_spmul(CokReal a, CokReal b)
++{
++    FfpBits x, y, r;
++
++    x.u = a;
++    y.u = b;
++    r.f = SPMul(y.f, x.f);
++    return r.u;
++}
++
++/* PORT H015+$0122: SPDiv(d1 divisore, d0 dividendo) = dividend / divisor. */
++CokReal h015_spdiv(CokReal dividend, CokReal divisor)
++{
++    FfpBits x, y, r;
++
++    x.u = dividend;
++    y.u = divisor;
++    r.f = SPDiv(y.f, x.f);
++    return r.u;
++}
++
++/* PORT H015+$0172: SPFlt, da intero con segno. */
++CokReal h015_spflt(s32 n)
++{
++    FfpBits r;
++
++    r.f = SPFlt(n);
++    return r.u;
++}
++
++/* PORT H015+$0184: SPFix, parte intera troncata. */
++s32 h015_spfix(CokReal f)
++{
++    FfpBits x;
++
++    x.u = f;
++    return (s32)SPFix(x.f);
++}
++#else
++/*
++ * Sull'host non c'e' mathffp: i numeri FFP si convertono in double, il
++ * risultato si arrotonda alla singola precisione IEEE (stessi 24 bit di
++ * mantissa di FFP) e si riconverte.  Un'eventuale differenza dalla
++ * libreria Amiga e' solo nell'arrotondamento dell'ultimo bit.
++ */
++static double ffp_value(CokReal f)
++{
++    double v;
++    int e;
++
++    if ((f & 0xFFFFFF00UL) == 0) {
++        return 0.0;
++    }
++    v = (double)(f >> 8);               /* mantissa intera, 24 bit */
++    e = (int)(f & 0x7F) - 64 - 24;
++    while (e > 0) {
++        v *= 2.0;
++        --e;
++    }
++    while (e < 0) {
++        v /= 2.0;
++        ++e;
++    }
++    return (f & 0x80) ? -v : v;
++}
++
++static CokReal ffp_make(double d)
++{
++    volatile float f = (float)d;        /* singola precisione */
++    double v = f;
++    u32 sign = 0;
++    int e = 64 + 24;
++
++    if (v == 0.0) {
++        return 0;
++    }
++    if (v < 0) {
++        sign = 0x80;
++        v = -v;
++    }
++    while (v >= 16777216.0) {           /* 2^24 */
++        v /= 2.0;
++        ++e;
++    }
++    while (v < 8388608.0) {             /* 2^23 */
++        v *= 2.0;
++        --e;
++    }
++    if (e > 0x7F) {
++        return 0xFFFFFF7FUL | sign;     /* il massimo */
++    }
++    if (e < 0) {
++        return 0;
++    }
++    return ((u32)v << 8) | sign | (u32)e;
++}
++
++/* PORT H015+$010C (SPMul) */
++CokReal h015_spmul(CokReal a, CokReal b)
++{
++    return ffp_make(ffp_value(a) * ffp_value(b));
++}
++
++/* PORT H015+$0122 (SPDiv): dividend / divisor; divisore 0, il massimo. */
++CokReal h015_spdiv(CokReal dividend, CokReal divisor)
++{
++    double b = ffp_value(divisor);
++
++    if (b == 0.0) {
++        return 0xFFFFFF7FUL | ((dividend ^ divisor) & 0x80);
++    }
++    return ffp_make(ffp_value(dividend) / b);
++}
++
++/* PORT H015+$0172 (SPFlt) */
++CokReal h015_spflt(s32 n)
++{
++    return ffp_make((double)n);
++}
++
++/* PORT H015+$0184 (SPFix): troncamento verso zero. */
++s32 h015_spfix(CokReal f)
++{
++    double v = ffp_value(f);
++
++    if (v >= 2147483647.0) {
++        return 0x7FFFFFFFL;
++    }
++    if (v <= -2147483648.0) {
++        return (s32)(-0x7FFFFFFFL - 1);
++    }
++    return (s32)v;
++}
++#endif
+diff --git a/src_c/readable/h015_runtime.h b/src_c/readable/h015_runtime.h
+index 00d2556..233ba54 100644
+--- a/src_c/readable/h015_runtime.h
++++ b/src_c/readable/h015_runtime.h
+@@ -10,4 +10,17 @@ u32  h015_mulu32(u32 a, u32 b);                   /* H015+$004A */
+ u32  h015_divu32(u32 dividend, u32 divisor, u32 *remainder); /* H015+$006E */
+ s32  h015_divs32(s32 dividend, s32 divisor, u32 *remainder); /* H015+$00BC */
+ 
++
++/*
++ * Numero reale in formato Motorola Fast Floating Point (mathffp): bit
++ * 31..8 mantissa (24 bit, normalizzata), bit 7 segno, bit 6..0 esponente
++ * in eccesso 64.  0 vale zero.
++ */
++typedef u32 CokReal;
++
++CokReal h015_spmul(CokReal a, CokReal b);         /* H015+$010C (SPMul) */
++CokReal h015_spdiv(CokReal dividend, CokReal divisor); /* H015+$0122 (SPDiv) */
++CokReal h015_spflt(s32 n);                        /* H015+$0172 (SPFlt) */
++s32  h015_spfix(CokReal f);                       /* H015+$0184 (SPFix) */
++
+ #endif
+diff --git a/src_c/readable/h061.c b/src_c/readable/h061.c
+index 3bbc9cc..d9ed395 100644
+--- a/src_c/readable/h061.c
++++ b/src_c/readable/h061.c
+@@ -1,5 +1,6 @@
+ /* H061: servizi della VM ECL: operandi, variabili, stringhe e aree. */
+ #include "h061.h"
++#include "h015_runtime.h"
+ #include "globals.h"
+ #include "unported.h"
+ #include "h066.h"
+@@ -1016,6 +1017,23 @@ void step_forward(void)
+     H005_B(0x24B7) = 1;
+ }
+ 
++/*
++ * PORT H061+$3C4C: moltiplica per keep (numero reale FFP: SPFlt, SPMul,
++ * SPFix con troncamento) le monete, le gemme e i gioielli di c
++ * (+$F0..+$FC).
++ */
++void scale_money(CokReal keep, Character *c)
++{
++    u16 k;
++
++    for (k = 0; k <= 6; ++k) {
++        COK_PUT16(&c->b[0xF0 + k * 2],
++                  (u16)h015_spfix(h015_spmul(
++                      h015_spflt((s32)COK_GET16(&c->b[0xF0 + k * 2])),
++                      keep)));
++    }
++}
++
+ /*
+  * PORT H061+$3DBE: ogni oggetto di c ha chance% di andare distrutto; la
+  * probabilita' cala di $5A per gli oggetti di valore +$3E oltre $FF e di
+diff --git a/src_c/readable/h061.h b/src_c/readable/h061.h
+index 54d8ff3..3be4778 100644
+--- a/src_c/readable/h061.h
++++ b/src_c/readable/h061.h
+@@ -2,6 +2,7 @@
+ #ifndef COK_H061_H
+ #define COK_H061_H
+ #include "character.h"
++#include "h015_runtime.h"
+ #include "h008.h"
+ char *ecl_string(u16 n);                        /* stringhe -$14C0(a4) */
+ void append_char(u16 len, char *s, u8 ch);      /* H061+$162E */
+@@ -41,6 +42,7 @@ void compare_strings(u16 len_a, const char *a, u16 len_b, const char *b);
+ void compare_words(u16 a, u16 b);               /* H061+$3A0A */
+ void ecl_gosub(u16 i);                          /* H061+$3AAC */
+ void step_forward(void);                        /* H061+$3B4E */
++void scale_money(CokReal keep, Character *c);   /* H061+$3C4C */
+ void destroy_items(u16 chance, Character *c);   /* H061+$3DBE */
+ void ecl_skip_command(void);                    /* H061+$3E80 */
+ void party_speed_range(u16 *maxv, u16 *minv);   /* H061+$3FA8 */
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index a6bea0f..0804d2a 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -70,5 +70,4 @@ void h043_0840(void) { cok_unported_skip("H043+$0840"); }
+ 
+ 
+ 
+-void h012_14c8(void) { cok_unported("H012+$14C8"); }
+ 
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index 1a817af..834c48e 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -57,7 +57,5 @@ void h043_0840(void);
+ 
+ 
+ 
+-/* Gestori dei comandi ECL (H064, H012) non ancora portati. */
+-void h012_14c8(void);
+ 
+ /* Usati dai comandi ECL di H012. */
+-- 
+2.43.0
+

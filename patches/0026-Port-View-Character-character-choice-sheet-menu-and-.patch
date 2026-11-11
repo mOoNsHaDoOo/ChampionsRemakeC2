@@ -1,0 +1,563 @@
+From 59813d0e9c3db128521b44430e8771150cdb816d Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 19:32:53 +0000
+Subject: [PATCH 26/65] Port View Character: character choice, sheet menu and
+ screen redraw
+
+Port H065+$196E View Character (menu Items/Spells/Trade/Drop/Heal/Cure/
+Exit built from what the character has), H065+$3702 Pick Character with
+$3390 (previous/next party member), $36A6/$36C0 (always 0), and
+H063+$321A (redraw the screen for the game mode, case 0 is the menu
+frame). Items ($255A), Trade ($12D6) and Drop ($1636) stay stubs.
+Fix the H042+$0254/$0B80 stub signatures to match the assembly.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md |  72 +++++++--------
+ src_c/readable/h008.c         |   2 +-
+ src_c/readable/h013.c         |   8 +-
+ src_c/readable/h063.c         |  57 ++++++++++++
+ src_c/readable/h063.h         |   1 +
+ src_c/readable/h065.c         | 168 ++++++++++++++++++++++++++++++++++
+ src_c/readable/h065.h         |   2 +
+ src_c/readable/unported.c     |  14 ++-
+ src_c/readable/unported.h     |  16 +++-
+ 9 files changed, 291 insertions(+), 49 deletions(-)
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index 971dac3..ffb62e8 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **386 / 916**.
++Routine portate: **392 / 916**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -69,9 +69,9 @@ Routine portate: **386 / 916**.
+ | H060 | 396 | 2 | 1 |
+ | H061 | 16936 | 35 | 1 |
+ | H062 | 10496 | 32 | 3 |
+-| H063 | 16496 | 52 | 21 |
++| H063 | 16496 | 52 | 22 |
+ | H064 | 6460 | 7 | 1 |
+-| H065 | 14268 | 27 | 6 |
++| H065 | 14268 | 27 | 11 |
+ | H066 | 13840 | 27 | 18 |
+ | H067 | 9820 | 22 | 1 |
+ | H068 | 5788 | 14 | 1 |
+@@ -992,33 +992,33 @@ Routine portate: **386 / 916**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0104` | `module_init_H063` | parziale | h063.c:10 |
+-| `$0112` | `sub_H063_00000112` | parziale | h063.c:35 |
+-| `$016A` | `sub_H063_0000016A` | parziale | h063.c:48 |
+-| `$0228` | `trampoline_H063_032C` | parziale | h063.c:72 |
+-| `$0354` | `sub_H063_00000354` | parziale | h063.c:107 |
+-| `$0432` | `sub_H063_00000432` | parziale | h063.c:237 |
+-| `$06AE` | `sub_H063_000006AE` | parziale | h063.c:283 |
+-| `$0758` | `sub_H063_00000758` | parziale | h063.c:302 |
+-| `$08A2` | `sub_H063_000008A2` | parziale | h063.c:334 |
+-| `$0946` | `sub_H063_00000946` | parziale | h063.c:357 |
+-| `$09B2` | `sub_H063_000009B2` | parziale | h063.c:374 |
+-| `$0D80` | `sub_H063_00000D80` | parziale | h063.c:697 |
+-| `$0FA0` | `sub_H063_00000FA0` | parziale | h063.c:449 |
+-| `$103A` | `sub_H063_0000103A` | parziale | h063.c:464 |
++| `$0104` | `module_init_H063` | parziale | h063.c:12 |
++| `$0112` | `sub_H063_00000112` | parziale | h063.c:37 |
++| `$016A` | `sub_H063_0000016A` | parziale | h063.c:50 |
++| `$0228` | `trampoline_H063_032C` | parziale | h063.c:74 |
++| `$0354` | `sub_H063_00000354` | parziale | h063.c:109 |
++| `$0432` | `sub_H063_00000432` | parziale | h063.c:239 |
++| `$06AE` | `sub_H063_000006AE` | parziale | h063.c:285 |
++| `$0758` | `sub_H063_00000758` | parziale | h063.c:304 |
++| `$08A2` | `sub_H063_000008A2` | parziale | h063.c:336 |
++| `$0946` | `sub_H063_00000946` | parziale | h063.c:359 |
++| `$09B2` | `sub_H063_000009B2` | parziale | h063.c:376 |
++| `$0D80` | `sub_H063_00000D80` | parziale | h063.c:699 |
++| `$0FA0` | `sub_H063_00000FA0` | parziale | h063.c:451 |
++| `$103A` | `sub_H063_0000103A` | parziale | h063.c:466 |
+ | `$1160` | `trampoline_H063_1350` | parziale |  |
+ | `$135A` | `sub_H063_0000135A` | parziale |  |
+-| `$13BE` | `sub_H063_000013BE` | parziale | h063.c:491 |
+-| `$18F8` | `sub_H063_000018F8` | parziale | h063.c:147 |
+-| `$19B6` | `sub_H063_000019B6` | parziale | h063.c:170 |
+-| `$1A8A` | `trampoline_H063_1B66` | parziale | h063.c:205 |
++| `$13BE` | `sub_H063_000013BE` | parziale | h063.c:493 |
++| `$18F8` | `sub_H063_000018F8` | parziale | h063.c:149 |
++| `$19B6` | `sub_H063_000019B6` | parziale | h063.c:172 |
++| `$1A8A` | `trampoline_H063_1B66` | parziale | h063.c:207 |
+ | `$1B90` | `sub_H063_00001B90` | parziale |  |
+ | `$1BE8` | `sub_H063_00001BE8` | parziale |  |
+ | `$1CC0` | `sub_H063_00001CC0` | parziale |  |
+-| `$1D44` | `sub_H063_00001D44` | parziale | h063.c:678 |
++| `$1D44` | `sub_H063_00001D44` | parziale | h063.c:680 |
+ | `$1DC2` | `sub_H063_00001DC2` | parziale |  |
+ | `$1EE8` | `sub_H063_00001EE8` | parziale |  |
+-| `$1F34` | `trampoline_H063_1F7E` | parziale | h063.c:608 |
++| `$1F34` | `trampoline_H063_1F7E` | parziale | h063.c:610 |
+ | `$1FDC` | `sub_H063_00001FDC` | parziale |  |
+ | `$2178` | `sub_H063_00002178` | parziale |  |
+ | `$21D2` | `trampoline_H063_22B4` | parziale |  |
+@@ -1033,7 +1033,7 @@ Routine portate: **386 / 916**.
+ | `$2F12` | `sub_H063_00002F12` | parziale |  |
+ | `$2F5A` | `sub_H063_00002F5A` | parziale |  |
+ | `$2FAA` | `sub_H063_00002FAA` | parziale |  |
+-| `$321A` | `trampoline_H063_3384` | parziale |  |
++| `$321A` | `trampoline_H063_3384` | parziale | h063.c:756 |
+ | `$33A0` | `trampoline_H063_3652` | parziale |  |
+ | `$3658` | `sub_H063_00003658` | parziale |  |
+ | `$3698` | `sub_H063_00003698` | parziale |  |
+@@ -1043,7 +1043,7 @@ Routine portate: **386 / 916**.
+ | `$3980` | `sub_H063_00003980` | parziale |  |
+ | `$3A26` | `sub_H063_00003A26` | parziale |  |
+ | `$3CA0` | `sub_H063_00003CA0` | parziale |  |
+-| `$3F72` | `trampoline_H063_4042` | parziale | h063.c:631 |
++| `$3F72` | `trampoline_H063_4042` | parziale | h063.c:633 |
+ 
+ ### H064
+ 
+@@ -1061,15 +1061,15 @@ Routine portate: **386 / 916**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$04AA` | `module_init_H065` | parziale | h065.c:12 |
+-| `$04B8` | `sub_H065_000004B8` | parziale | h065.c:35 |
+-| `$0ADE` | `sub_H065_00000ADE` | parziale | h065.c:142 |
+-| `$0BE6` | `trampoline_H065_0C34` | parziale | h065.c:176 |
+-| `$0BF4` | `sub_H065_00000BF4` | parziale | h065.c:167 |
+-| `$10DE` | `trampoline_H065_1100` | parziale | h065.c:247 |
++| `$04AA` | `module_init_H065` | parziale | h065.c:14 |
++| `$04B8` | `sub_H065_000004B8` | parziale | h065.c:37 |
++| `$0ADE` | `sub_H065_00000ADE` | parziale | h065.c:144 |
++| `$0BE6` | `trampoline_H065_0C34` | parziale | h065.c:178 |
++| `$0BF4` | `sub_H065_00000BF4` | parziale | h065.c:169 |
++| `$10DE` | `trampoline_H065_1100` | parziale | h065.c:249 |
+ | `$12D6` | `sub_H065_000012D6` | parziale |  |
+ | `$1636` | `sub_H065_00001636` | parziale |  |
+-| `$196E` | `sub_H065_0000196E` | parziale |  |
++| `$196E` | `sub_H065_0000196E` | parziale | h065.c:359 |
+ | `$1C48` | `sub_H065_00001C48` | parziale |  |
+ | `$1D80` | `sub_H065_00001D80` | parziale |  |
+ | `$1D94` | `sub_H065_00001D94` | parziale |  |
+@@ -1082,12 +1082,12 @@ Routine portate: **386 / 916**.
+ | `$2C04` | `sub_H065_00002C04` | parziale |  |
+ | `$2F82` | `sub_H065_00002F82` | parziale |  |
+ | `$32F6` | `sub_H065_000032F6` | parziale |  |
+-| `$3390` | `trampoline_H065_3474` | parziale |  |
++| `$3390` | `trampoline_H065_3474` | parziale | h065.c:296 |
+ | `$347E` | `sub_H065_0000347E` | parziale |  |
+ | `$34FC` | `trampoline_H065_35AE` | parziale |  |
+-| `$36A6` | `trampoline_H065_36B6` | parziale |  |
+-| `$36C0` | `trampoline_H065_36D0` | parziale |  |
+-| `$3702` | `sub_H065_00003702` | parziale |  |
++| `$36A6` | `trampoline_H065_36B6` | parziale | h065.c:281 |
++| `$36C0` | `trampoline_H065_36D0` | parziale | h065.c:288 |
++| `$3702` | `sub_H065_00003702` | parziale | h065.c:334 |
+ 
+ ### H066
+ 
+diff --git a/src_c/readable/h008.c b/src_c/readable/h008.c
+index 20dc2cc..043b063 100644
+--- a/src_c/readable/h008.c
++++ b/src_c/readable/h008.c
+@@ -397,7 +397,7 @@ u8 ui_request_choice(u16 title_len, const char *title, u16 options_len,
+             if (COK_GET16(g_state_a + 0x3FE) != 0 ||
+                 !(now - last_time < (s32)wait)) {
+                 H005_SET_W(0x27BE, frame);
+-                h042_0254(h042_0b80(3, 3, animate, frame));
++                h042_0254(3, 3, animate, h042_0b80(frame, &g_h005[0x27BC]));
+                 last_time = now;
+             }
+         }
+diff --git a/src_c/readable/h013.c b/src_c/readable/h013.c
+index e3ccc5a..1317016 100644
+--- a/src_c/readable/h013.c
++++ b/src_c/readable/h013.c
+@@ -205,8 +205,8 @@ void main_menu(void)
+             }
+             break;
+         case 'V':
+-            if (items[MM_VIEW].enabled && h065_3702()) {
+-                h065_196e(&redraw);
++            if (items[MM_VIEW].enabled && pick_character()) {
++                view_character(&redraw);
+             }
+             break;
+         case 'A':
+@@ -216,7 +216,7 @@ void main_menu(void)
+             break;
+         case 'R':
+             if (items[MM_REMOVE].enabled && g_current_char != NULL &&
+-                h065_3702()) {
++                pick_character()) {
+                 if (g_current_char->b[0xEC] < 0x80) {
+                     save_character(g_current_char, 0, "");
+                     h053_00ca(0, 1);
+@@ -1293,7 +1293,7 @@ void train_character(void)
+     u8 best_k = 0;                      /* -$2f(a5) */
+     u8 xp_row = 0;                      /* -$30(a5) */
+ 
+-    if (!H005_B(0x24CF) && !h065_3702()) {
++    if (!H005_B(0x24CF) && !pick_character()) {
+         return;
+     }
+     if (g_current_char->b[0x197] != 0 && !H005_B(0x24DE)) {
+diff --git a/src_c/readable/h063.c b/src_c/readable/h063.c
+index 417a327..d648380 100644
+--- a/src_c/readable/h063.c
++++ b/src_c/readable/h063.c
+@@ -6,6 +6,8 @@
+ #include "h045.h"
+ #include "h073.h"
+ #include "globals.h"
++#include "h044_tiles.h"
++#include "unported.h"
+ 
+ /* PORT H063+$0104: link/unlk, nessun effetto. */
+ void h063_init(void)
+@@ -749,3 +751,58 @@ void draw_party(Character *current)
+     }
+     clear_text_cells(col, row, 0x26, row);
+ }
++
++/*
++ * PORT H063+$321A (corpo a $3384): ridisegna la schermata secondo il modo
++ * di gioco $3DE3 (0 cornice del menu, 1 vista, 2 e 6 immagini "PIC" $3B e
++ * $3C, 3 e 4 combattimento/accampamento) e il party; $24E1 = 1.
++ */
++void redraw_game_screen(void)
++{
++    H005_B(0x24E1) = 1;
++    switch (H005_B(0x3DE3)) {
++    case 0:                             /* H063+$3238 */
++        draw_screen_frame(1);
++        break;
++    case 1:                             /* H063+$3244 */
++        if (H005_B(0x24C2)) {
++            h044_0330();
++        }
++        if (COK_GET16(g_state_a + 0x1CC) == 0) {
++            h042_0254(3, 3, 1, g_pic_rec_27c2);
++        } else {
++            h042_0d70(H005_B(0x2488), H005_B(0x2487));
++            h042_0ed2(3, 3, 1);
++        }
++        draw_party(g_current_char);
++        h063_33a0();
++        break;
++    case 2:                             /* H063+$32BC */
++        h044_0330();
++        h042_0406(3, "PIC", 0x3B, 0, &g_h005[0x27BC]);
++        draw_party(g_current_char);
++        h063_33a0();
++        break;
++    case 4:                             /* H063+$32EE */
++        h044_0330();
++        if (COK_GET16(g_state_a + 0x270) == 0) {
++            h060_0018();
++        }
++        draw_party(g_current_char);
++        h063_33a0();
++        H005_B(0x24B2) = 0;
++        break;
++    case 3:                             /* H063+$3320 */
++        if (H005_B(0x2486) != 9 && COK_GET16(g_state_a + 0x270) == 0) {
++            h060_0018();
++        }
++        break;
++    case 6:                             /* H063+$3346 */
++        h044_0330();
++        h042_0406(3, "PIC", 0x3C, 0, &g_h005[0x27BC]);
++        draw_party(g_current_char);
++        break;
++    default:
++        break;
++    }
++}
+diff --git a/src_c/readable/h063.h b/src_c/readable/h063.h
+index f6177b4..2f5885f 100644
+--- a/src_c/readable/h063.h
++++ b/src_c/readable/h063.h
+@@ -18,5 +18,6 @@ void draw_character_name(Character *c, u16 col, u16 row, u8 possessive);
+ u8   class_xp_row(Character *c, u8 cls);            /* H063+$3F72 */
+ void show_message_line(u16 len, const char *text);     /* H063+$1D44 */
+ void draw_party(Character *current);                   /* H063+$0D80 */
++void redraw_game_screen(void);                         /* H063+$321A */
+ 
+ #endif
+diff --git a/src_c/readable/h065.c b/src_c/readable/h065.c
+index 6f7fc38..a056aa6 100644
+--- a/src_c/readable/h065.c
++++ b/src_c/readable/h065.c
+@@ -1,5 +1,7 @@
+ /* H065: UI dei personaggi, oggetti, equipaggiamento e incantesimi. */
+ #include "h065.h"
++#include "h008.h"
++#include "unported.h"
+ #include "character.h"
+ #include "h026_string.h"
+ #include "h030.h"
+@@ -272,3 +274,169 @@ void draw_stat_value(u8 stat, u8 highlight)
+         ui_draw_text(0x0C, (u16)(stat + 9), pen, 0, 1, "*");
+     }
+ }
++
++/* -$8(a4): personaggio della schermata di View Character. */
++static Character *s_view_char;
++
++/* PORT H065+$36A6: il personaggio puo' curare?  Sempre 0. */
++static u8 can_heal(Character *c)
++{
++    (void)c;
++    return 0;
++}
++
++/* PORT H065+$36C0: il personaggio puo' guarire?  Sempre 0. */
++static u8 can_cure(Character *c)
++{
++    (void)c;
++    return 0;
++}
++
++/*
++ * PORT H065+$3390: tasti speciali della scelta del personaggio: 'H' il
++ * precedente nel party (dal primo si va all'ultimo), 'P' il successivo
++ * (dall'ultimo al primo); ogni altro tasto sceglie il primo.  Niente con
++ * un clic del mouse.
++ */
++static void select_party_member(u8 key)
++{
++    Character *m;                       /* -$4(a5) */
++
++    if (G_MOUSE_CLICK) {
++        return;
++    }
++    m = g_party_head;
++    if (m != NULL) {
++        switch (key) {
++        case 'H':
++            if (m == g_current_char) {
++                while (m->next != NULL) {
++                    m = m->next;
++                }
++            } else {
++                while (m != NULL && m->next != g_current_char) {
++                    m = m->next;
++                }
++            }
++            break;
++        case 'P':
++            m = g_current_char->next != NULL ? g_current_char->next :
++                                               g_party_head;
++            break;
++        default:
++            break;
++        }
++    }
++    g_current_char = m;
++}
++
++/*
++ * PORT H065+$3702: "Pick Character": sceglie il personaggio corrente con i
++ * tasti (o il clic su un nome, H008+$01FC con $24A2 = 1) aggiornando
++ * l'elenco del party.  1 se scelto con Select.
++ */
++u8 pick_character(void)
++{
++    u8 saved = H005_B(0x24A2);          /* -$3(a5) */
++    u8 key;                             /* -$1(a5) */
++    u8 special;                         /* -$2(a5) */
++
++    H005_B(0x24A2) = 1;
++    do {
++        key = ui_request_choice(0x0F, "Pick Character ", 0x0B, "Select Exit",
++                                0x0D, 0x0A, 0x0F, 1, 0, &special);
++        if (special) {
++            select_party_member(key);
++            draw_party(g_current_char);
++        }
++    } while (special || !(key == 'S' || key == 'E' || key == 0));
++    draw_party(g_current_char);
++    H005_B(0x24A2) = saved;
++    return (u8)(key == 'S');
++}
++
++/*
++ * PORT H065+$196E: View Character: scheda del personaggio corrente e menu
++ * con le funzioni disponibili (Items se ha oggetti, Spells se ha
++ * incantesimi memorizzati +$1E.., Trade e Drop con del denaro, Heal e
++ * Cure, Exit).  *redraw = 1 da Items chiude la schermata.  Alla fine la
++ * schermata del gioco e' ridisegnata (H063+$321A).
++ */
++void view_character(u8 *redraw)
++{
++    char menu[0x2A];                    /* -$2c(a5) */
++    u8 key = ' ';                       /* -$1(a5) */
++    u8 has_spells;                      /* -$2e(a5) */
++    u8 has_money;                       /* -$2d(a5) */
++    u8 special;                         /* -$2f(a5) */
++    u16 spell;                          /* -$36(a5) */
++    u16 i;                              /* -$32(a5) */
++    u8 saved_choice;                    /* -$37(a5) */
++    Character *c;
++
++    *redraw = 0;
++    s_view_char = g_current_char;
++    draw_character_sheet();
++    while (key != 'E' && key != 0 && !*redraw) {
++        c = s_char;
++        copy_text(menu, "", 0x28);
++        has_spells = 0;
++        has_money = 0;
++        for (i = 0; i <= 0x39; ++i) {
++            if (c->b[0x1E + i] > 0) {
++                has_spells = 1;
++            }
++        }
++        for (i = 1; i <= 6; ++i) {
++            if (CH_W(c, 0xF0 + i * 2) > 0) {
++                has_money = 1;
++            }
++        }
++        if (c->items != NULL) {
++            h026_append(0x28, menu, 6, "Items ");
++        }
++        if (has_spells) {
++            h026_append(0x28, menu, 7, "Spells ");
++        }
++        if ((c->b[0xEC] < 0x80 || (c->b[0x198] != 0 && c->b[0x197] == 1)) &&
++            has_money && H005_B(0x3DE3) != 5) {
++            h026_append(0x28, menu, 6, "Trade ");
++        }
++        if (has_money) {
++            h026_append(0x28, menu, 5, "Drop ");
++        }
++        if (can_heal(g_current_char)) {
++            h026_append(0x28, menu, 5, "Heal ");
++        }
++        if (can_cure(g_current_char)) {
++            h026_append(0x28, menu, 5, "Cure ");
++        }
++        h026_append(0x28, menu, 4, "Exit");
++        key = ui_request_choice(0, "", 0x28, menu, 0x0D, 0x0A, 0x0F, 0, 0,
++                                &special);
++        spell = 0xFFFF;
++        saved_choice = H005_B(0x2483);
++        switch (key) {
++        case 'I':                       /* H065+$1B8C */
++            h065_255a(redraw);
++            break;
++        case 'S':                       /* H065+$1B98 */
++            i = h065_34fc(0, 0, &spell, &has_spells);
++            break;
++        case 'T':                       /* H065+$1BB0 */
++            h065_12d6();
++            break;
++        case 'D':                       /* H065+$1BB6 */
++            h065_1636();
++            draw_character_money();
++            break;
++        default:
++            break;
++        }
++        H005_B(0x2483) = saved_choice;
++        if (!*redraw && (key == 'I' || key == 'T' || key == 'S')) {
++            draw_character_sheet();
++        }
++    }
++    redraw_game_screen();
++}
+diff --git a/src_c/readable/h065.h b/src_c/readable/h065.h
+index 9562fa4..18fbcff 100644
+--- a/src_c/readable/h065.h
++++ b/src_c/readable/h065.h
+@@ -8,5 +8,7 @@ void draw_character_sheet(void);        /* H065+$04B8 */
+ void draw_character_money(void);        /* H065+$0ADE */
+ void draw_combat_values(void);          /* H065+$0BE6 */
+ void draw_stat_value(u8 stat, u8 highlight);            /* H065+$10DE */
++u8   pick_character(void);              /* H065+$3702 */
++void view_character(u8 *redraw);        /* H065+$196E */
+ 
+ #endif
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index effe265..4f28b32 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -226,15 +226,13 @@ void h043_0584(void) { cok_unported_skip(s_h043_0584); }
+ void h043_190e(u16 command) { (void)command; cok_unported_skip(s_h043_190e); }
+ u8 h046_0012(u16 dx, u16 dy, u16 col, u16 row) { (void)dx; (void)dy; (void)col; (void)row; cok_unported("H046+$0012"); return 0; }
+ u16 h048_0aa8(void *character) { (void)character; cok_unported("H048+$0AA8"); return 0; }
+-s32 h042_0b80(u16 a, u16 b, u8 animate, u16 frame) { (void)a; (void)b; (void)animate; (void)frame; cok_unported("H042+$0B80"); return 0; }
+-void h042_0254(s32 handle) { (void)handle; cok_unported("H042+$0254"); }
++void *h042_0b80(u16 frame, void *set) { (void)frame; (void)set; cok_unported("H042+$0B80"); return NULL; }
++void h042_0254(u16 a, u16 b, u8 flag, void *picture) { (void)a; (void)b; (void)flag; (void)picture; cok_unported("H042+$0254"); }
+ const u8 *g_h005_2ade_area(void) { cok_unported("H005+$2ADE (area della mappa)"); return NULL; }
+ void *g_h005_2508;
+ void h013_2b9a(void) { cok_unported("H013+$2B9A"); }
+ void h013_31e0(void) { cok_unported("H013+$31E0"); }
+ void h013_4508(void) { cok_unported("H013+$4508"); }
+-u8 h065_3702(void) { cok_unported("H065+$3702"); return 0; }
+-void h065_196e(u8 *redraw) { (void)redraw; cok_unported("H065+$196E"); }
+ void h053_00ca(u8 a, u8 b) { (void)a; (void)b; cok_unported("H053+$00CA"); }
+ void h066_291e(void) { cok_unported("H066+$291E"); }
+ void h066_3000(void) { cok_unported("H066+$3000"); }
+@@ -247,3 +245,11 @@ void h043_0840(void) { cok_unported_skip("H043+$0840"); }
+ u16 h065_34fc(u16 a, u16 b, u16 *value, u8 *again) { (void)a; (void)b; (void)value; (void)again; cok_unported("H065+$34FC"); return 0; }
+ void h049_09d6(struct GfxRecord *dst, struct GfxRecord *src) { (void)dst; (void)src; cok_unported("H049+$09D6"); }
+ void h049_04ae(struct BitMap *src, u16 sx, u16 sy, struct RastPort *rp, u16 dx, u16 dy, u16 w, u16 h, u8 minterm, u8 *mask) { (void)src; (void)sx; (void)sy; (void)rp; (void)dx; (void)dy; (void)w; (void)h; (void)minterm; (void)mask; cok_unported("H049+$04AE"); }
++void h042_0d70(u16 a, u16 b) { (void)a; (void)b; cok_unported("H042+$0D70"); }
++void h042_0ed2(u16 a, u16 b, u8 flag) { (void)a; (void)b; (void)flag; cok_unported("H042+$0ED2"); }
++void h042_0406(u16 len, const char *name, u16 id, u16 x, void *set) { (void)len; (void)name; (void)id; (void)x; (void)set; cok_unported("H042+$0406"); }
++void h060_0018(void) { cok_unported("H060+$0018"); }
++void h063_33a0(void) { cok_unported("H063+$33A0"); }
++void h065_255a(u8 *redraw) { (void)redraw; cok_unported("H065+$255A"); }
++void h065_12d6(void) { cok_unported("H065+$12D6"); }
++void h065_1636(void) { cok_unported("H065+$1636"); }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index 60631c4..be48ecf 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -12,8 +12,8 @@
+ void h006_0914(void);
+ u8   h046_0012(u16 dx, u16 dy, u16 col, u16 row);
+ u16  h048_0aa8(void *character);
+-s32  h042_0b80(u16 a, u16 b, u8 animate, u16 frame); /* insieme $27BC */
+-void h042_0254(s32 handle);
++void *h042_0b80(u16 frame, void *set);  /* fotogramma dell'insieme (H005+$27BC) */
++void h042_0254(u16 a, u16 b, u8 flag, void *picture);
+ const u8 *g_h005_2ade_area(void);        /* H005+$2ADE: area della mappa */
+ extern void *g_h005_2508;                /* H005+$2508: personaggio scelto */
+ void h043_0584(void);
+@@ -204,8 +204,6 @@ void h085_4a02(void);
+ void h013_2b9a(void);
+ void h013_31e0(void);
+ void h013_4508(void);
+-u8   h065_3702(void);
+-void h065_196e(u8 *redraw);
+ void h053_00ca(u8 a, u8 b);
+ void h066_291e(void);
+ void h066_3000(void);
+@@ -220,4 +218,14 @@ void h049_09d6(struct GfxRecord *dst, struct GfxRecord *src); /* immagine ingran
+ void h049_04ae(struct BitMap *src, u16 sx, u16 sy, struct RastPort *rp, u16 dx, u16 dy,
+                u16 w, u16 h, u8 minterm, u8 *mask);  /* disegno con il blitter */
+ 
++void h042_0d70(u16 a, u16 b);           /* Load_HeadBody */
++void h042_0ed2(u16 a, u16 b, u8 flag);
++void h042_0406(u16 len, const char *name, u16 id, u16 x, void *set);
++                                        /* Load_Sequence */
++void h060_0018(void);
++void h063_33a0(void);
++void h065_255a(u8 *redraw);             /* View: Items */
++void h065_12d6(void);                   /* View: Trade */
++void h065_1636(void);                   /* View: Drop */
++
+ #endif
+-- 
+2.43.0
+

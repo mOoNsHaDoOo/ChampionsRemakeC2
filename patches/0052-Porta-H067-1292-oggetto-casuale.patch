@@ -1,0 +1,445 @@
+From 2abea91bdd2910b04855aea4a25a6d9ab503233d Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 11 Nov 2026 10:47:07 +0000
+Subject: [PATCH 52/65] Porta H067+$1292: oggetto casuale
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/backlog.md |  18 ++
+ src_c/readable/h012.c     |   3 +-
+ src_c/readable/h067.c     | 336 ++++++++++++++++++++++++++++++++++++++
+ src_c/readable/h067.h     |   1 +
+ src_c/readable/unported.c |   1 -
+ src_c/readable/unported.h |   1 -
+ 6 files changed, 357 insertions(+), 3 deletions(-)
+
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index d135c9f..960ff45 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -2460,3 +2460,21 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
+ - **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
+ 
+ ---
++
++## v45: H067+$1292 (oggetto casuale)
++
++**Portato**
++- **H067+$1292 `random_item`:** crea un oggetto casuale del tipo dato per il tesoro casuale dei comandi ECL.
++  - **Armi, armature e simili** (tipi $01..$25, $32, $3B, $46, $47; parte $144E): bonus +1 (90%) o +2 da $125A, nome, peso (+$3E) e valore (+$42) per tipo.
++  - **Pergamene $27 (MU, rosse o bianche) e $28 (da chierico)** (parte $17FA): 1..3 incantesimi dalle tabelle di word di H005 ($1476..$1552).
++  - **Oggetti speciali** dal modello locale di 7 record (-$7C(a5)): pozioni ($30, $35), bacchetta ($34), e il giavellotto speciale (tipo 7, 1 su 5).
++- **Chiamante:** il tesoro casuale dei comandi ECL (H012) chiama `random_item`; tolto lo stub h067_1292.
++
++**Prove con i dati veri** (binario ASan di test con un aggancio temporaneo, non committato, che genera ogni tipo da 1 a $47 tre volte e ne costruisce il nome)
++- Armi e armature con peso e valore per tipo (Plate Mail 450/2500, Arrows 4/75, Bracers bonus 4 e 6000).
++- "Red MU Scroll" e "White MU Scroll" con 2-3 incantesimi; "Cler Scroll 1/2/3 Spells"; Potion; Wand; Ring; il giavellotto speciale (valore 1500).
++- I tipi senza ramo restano vuoti, come nell'originale.
++- **ASan:** pulito.
++- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
++
++---
+diff --git a/src_c/readable/h012.c b/src_c/readable/h012.c
+index ae43f3a..382b2a7 100644
+--- a/src_c/readable/h012.c
++++ b/src_c/readable/h012.c
+@@ -27,6 +27,7 @@
+ #include "h056.h"
+ #include "h057.h"
+ #include "h066.h"
++#include "h067.h"
+ #include "h058.h"
+ #include "h059.h"
+ #include "h062.h"
+@@ -573,7 +574,7 @@ void ecl_treasure(void)
+         k = (u16)(k - 0x80);
+         for (j = 1; j <= k; ++j) {
+             memset(&it, 0, sizeof it);
+-            h067_1292(random_treasure_type(), &it);
++            random_item(random_treasure_type(), &it);
+             push_treasure(&it);
+         }
+         for (p = g_treasure_items; p != NULL; p = p->next) {
+diff --git a/src_c/readable/h067.c b/src_c/readable/h067.c
+index 615d13a..1671871 100644
+--- a/src_c/readable/h067.c
++++ b/src_c/readable/h067.c
+@@ -13,6 +13,7 @@
+ #include "h044_tiles.h"
+ #include "h003_exec.h"
+ #include "h015_runtime.h"
++#include "h062.h"
+ 
+ /* PORT H067+$01BA: link/unlk, nessun effetto. */
+ void h067_init(void)
+@@ -479,3 +480,338 @@ void has_treasure(u8 *money, u8 *items)
+         *items = 1;
+     }
+ }
++
++/* PORT H067+$125A: bonus magico di un oggetto casuale, +1 (90%) o +2. */
++static u16 random_bonus(void)
++{
++    if (roll_dice(1, 0x0A) < 0x0A) {
++        return 1;
++    }
++    return 2;
++}
++
++/* Lettura/scrittura delle word dell'oggetto (+$36 bonus, +$3E peso, ...). */
++#define IT_W(it, o)         COK_GET16(&(it)->b[(o)])
++#define IT_SET_W(it, o, v)  COK_PUT16(&(it)->b[(o)], (u16)(v))
++
++/*
++ * Modelli degli oggetti speciali (-$7C(a5), 7 record di 8 word): nome
++ * (3 byte +$32..+$34), peso (+$3E), valore (+$42), proprieta' (+$44..+$46).
++ * Si scelgono col numero della word iniziale + 1 (1, 9, $11, ...).
++ */
++static const u16 s_special_items[56] = {
++    0x5F, 0x5E, 0x35, 0x0001, 0x0190, 0x03, 0x63, 0x00,
++    0x50, 0x5A, 0x35, 0x0001, 0x0226, 0x01, 0x3B, 0x00,
++    0x5F, 0x5A, 0x35, 0x0001, 0x00C8, 0x01, 0x03, 0x00,
++    0x5C, 0x5A, 0x35, 0x0001, 0x00E1, 0x01, 0x30, 0x00,
++    0x62, 0x5A, 0x33, 0x0001, 0x157C, 0x1E, 0x41, 0x00,
++    0x4E, 0x5A, 0x48, 0x000A, 0x1D4C, 0x00, 0x26, 0x83,
++    0x58, 0x5A, 0x07, 0x0014, 0x05DC, 0x01, 0x33, 0x00
++};
++
++/* Tabella di word di H005 (incantesimi delle bacchette e pergamene). */
++static u16 spell_pick(u16 table, u16 sides)
++{
++    u16 r = roll_dice(1, sides);
++
++    return H005_W(table + (r - 1) * 2);
++}
++
++/*
++ * PORT H067+$1292 (parte $144E): arma, armatura o altro oggetto magico
++ * di tipo +$30 con bonus +$36: nome, peso (+$3E) e valore (+$42).
++ */
++static void random_magic_item(CokItem *it, u16 *special)
++{
++    u16 r;                              /* -$2(a5) */
++    u16 type = it->b[0x30];
++
++    IT_SET_W(it, 0x36, random_bonus());
++    switch (type) {
++    case 0x07:
++        r = roll_dice(1, 5);
++        if (r == 5) {
++            *special = 0x31;
++        }
++        it->b[0x34] = 7;
++        it->b[0x33] = (u8)(IT_W(it, 0x36) + 0x6E);
++        break;
++    case 0x0C:
++        it->b[0x34] = 0x0C;
++        it->b[0x33] = (u8)(IT_W(it, 0x36) + 0x6E);
++        break;
++    case 0x1F:
++        it->b[0x34] = it->b[0x30];
++        it->b[0x33] = 0x30;
++        it->b[0x32] = (u8)(IT_W(it, 0x36) + 0x6E);
++        it->b[0x3B] = 4;
++        break;
++    case 0x20: case 0x21: case 0x22: case 0x23: case 0x24:
++        it->b[0x34] = it->b[0x30];
++        it->b[0x33] = 0x2F;
++        it->b[0x32] = (u8)(IT_W(it, 0x36) + 0x6E);
++        it->b[0x3B] = 4;
++        break;
++    case 0x1E:
++        it->b[0x34] = 0x1E;
++        it->b[0x33] = (u8)(IT_W(it, 0x36) + 0x6E);
++        break;
++    case 0x32:
++        it->b[0x34] = 0x32;
++        it->b[0x33] = 0x5A;
++        IT_SET_W(it, 0x36, 4);
++        it->b[0x32] = 0x6B;
++        break;
++    case 0x3B:
++        it->b[0x34] = 0x2E;
++        it->b[0x33] = 0x31;
++        it->b[0x32] = (u8)(IT_W(it, 0x36) + 0x6E);
++        break;
++    default:
++        it->b[0x34] = it->b[0x30];
++        it->b[0x33] = (u8)(IT_W(it, 0x36) + 0x6E);
++        break;
++    }
++    IT_SET_W(it, 0x38, 0);
++    it->b[0x40] = 0;
++    switch (it->b[0x30]) {
++    case 0x01: case 0x11:
++        IT_SET_W(it, 0x3E, 0x4B);
++        break;
++    case 0x06: case 0x0E: case 0x0F: case 0x17: case 0x19: case 0x1D:
++    case 0x25: case 0x43:
++        IT_SET_W(it, 0x3E, 0x32);
++        break;
++    case 0x09:
++        IT_SET_W(it, 0x3E, 0x7D);
++        break;
++    case 0x08: case 0x10: case 0x18:
++        IT_SET_W(it, 0x3E, 0x64);
++        break;
++    case 0x1F: case 0x46:
++        IT_SET_W(it, 0x3E, 0x96);
++        break;
++    case 0x47:
++        IT_SET_W(it, 0x3E, 0xAF);
++        break;
++    case 0x04: case 0x32:
++        IT_SET_W(it, 0x3E, 0x0A);
++        break;
++    case 0x05:
++        IT_SET_W(it, 0x3E, 5);
++        it->b[0x40] = 0x14;
++        break;
++    case 0x0A: case 0x12:
++        IT_SET_W(it, 0x3E, 0x3C);
++        break;
++    case 0x16:
++        IT_SET_W(it, 0x3E, 0x50);
++        break;
++    case 0x07:
++        IT_SET_W(it, 0x3E, 0x14);
++        break;
++    case 0x0D:
++        IT_SET_W(it, 0x3E, 0x28);
++        break;
++    case 0x13:
++        IT_SET_W(it, 0x3E, 0x23);
++        break;
++    case 0x14: case 0x20:
++        IT_SET_W(it, 0x3E, 0xFA);
++        break;
++    case 0x21:
++        IT_SET_W(it, 0x3E, 0x190);
++        break;
++    case 0x22:
++        IT_SET_W(it, 0x3E, 0x12C);
++        break;
++    case 0x23:
++        IT_SET_W(it, 0x3E, 0x15E);
++        break;
++    case 0x24:
++        IT_SET_W(it, 0x3E, 0x1C2);
++        break;
++    case 0x1C: case 0x3B:
++        IT_SET_W(it, 0x3E, 1);
++        break;
++    default:
++        IT_SET_W(it, 0x3E, 4);
++        it->b[0x40] = 0x14;
++        break;
++    }
++    switch (it->b[0x30]) {
++    case 0x25:
++        IT_SET_W(it, 0x42, IT_W(it, 0x36) * 0x4E2);
++        break;
++    case 0x1E:
++        IT_SET_W(it, 0x42, IT_W(it, 0x36) * 0x4B);
++        break;
++    case 0x20: case 0x21: case 0x32:
++        IT_SET_W(it, 0x42, IT_W(it, 0x36) * 0x5DC);
++        break;
++    case 0x22:
++        IT_SET_W(it, 0x42, IT_W(it, 0x36) * 0x6D6);
++        break;
++    case 0x23:
++        IT_SET_W(it, 0x42, IT_W(it, 0x36) * 0x7D0);
++        break;
++    case 0x24:
++        IT_SET_W(it, 0x42, IT_W(it, 0x36) * 0x9C4);
++        break;
++    default:
++        IT_SET_W(it, 0x42, IT_W(it, 0x36) * 0x3E8);
++        break;
++    }
++}
++
++/*
++ * PORT H067+$1292 (parte $17FA): pergamena ($27, da chierico o da mago)
++ * o tipo $28 con 1..3 incantesimi a caso dalle tabelle di H005; il valore
++ * cresce di $96 per il numero estratto per ogni incantesimo.
++ */
++static void random_scroll(CokItem *it)
++{
++    u16 roll;                           /* -$2(a5) */
++    u16 count;                          /* -$4(a5) */
++    u16 k;                              /* -$6(a5) */
++    u16 spell = 0;                      /* -$A(a5) */
++    u16 kind;                           /* -$C(a5) */
++
++    it->b[0x3B] = 4;
++    count = roll_dice(1, 3);
++    if (it->b[0x30] == 0x27) {
++        if (roll_dice(1, 2) == 1) {
++            kind = 3;
++            it->b[0x34] = 0x78;
++            it->b[0x33] = 0x28;
++        } else {
++            kind = 2;
++            it->b[0x34] = 0x77;
++            it->b[0x33] = 0x28;
++        }
++    } else {
++        kind = 0;
++        it->b[0x34] = 0x26;
++        it->b[0x33] = 0x27;
++    }
++    it->b[0x32] = (u8)(count + 0x63);
++    IT_SET_W(it, 0x36, 1);
++    IT_SET_W(it, 0x3E, 0x19);
++    it->b[0x40] = 0;
++    for (k = 1; k <= count; ++k) {
++        roll = roll_dice(1, 4);
++        if (it->b[0x30] == 0x27) {
++            switch (roll) {
++            case 1:
++                spell = (kind == 2) ? spell_pick(0x14C6, 8)
++                                    : spell_pick(0x1516, 7);
++                break;
++            case 2:
++                spell = (kind == 2) ? spell_pick(0x14DA, 3)
++                                    : spell_pick(0x152A, 6);
++                break;
++            case 3:
++                spell = (kind == 2) ? spell_pick(0x14EE, 6)
++                                    : spell_pick(0x153E, 6);
++                break;
++            case 4:
++                spell = (kind == 2) ? spell_pick(0x1502, 7)
++                                    : spell_pick(0x1552, 4);
++                break;
++            default:
++                break;
++            }
++        } else {
++            switch (roll) {
++            case 1:
++                spell = spell_pick(0x1476, 4);
++                break;
++            case 2:
++                spell = spell_pick(0x148A, 7);
++                break;
++            case 3:
++                spell = spell_pick(0x149E, 4);
++                break;
++            case 4:
++                spell = spell_pick(0x14B2, 4);
++                break;
++            default:
++                break;
++            }
++        }
++        it->b[0x44 + k - 1] = (u8)spell;
++        IT_SET_W(it, 0x42, IT_W(it, 0x42) + roll * 0x96);
++    }
++    switch (kind) {
++    case 2:
++        it->b[0x3B] = or_byte(it->b[0x3B], 0x20);
++        break;
++    case 3:
++        it->b[0x3B] = or_byte(it->b[0x3B], 0x10);
++        break;
++    default:
++        it->b[0x3B] = 0;
++        break;
++    }
++}
++
++/*
++ * PORT H067+$1292: crea in it un oggetto casuale del tipo type (tesoro
++ * casuale dei comandi ECL).  Alcuni tipi (e la spada 7 con 1 su 5)
++ * diventano uno degli oggetti speciali del modello locale.
++ */
++void random_item(u16 type, CokItem *it)
++{
++    u16 roll;                           /* -$2(a5) */
++    u16 k;                              /* -$6(a5) */
++    u16 special = 0;                    /* -$8(a5) */
++
++    h029_fill_bytes(0x47, it->b, 0x47, 0);
++    h029_fill_bytes(2, &it->b[0x44], 3, 0);
++    it->next = NULL;
++    it->b[0x3A] = 0;
++    it->b[0x3B] = 6;
++    it->b[0x3C] = 0;
++    it->b[0x30] = (u8)type;
++    h029_fill_bytes(2, &it->b[0x32], 3, 0);
++    switch (it->b[0x30]) {
++    case 0x27: case 0x28:
++        random_scroll(it);
++        break;
++    case 0x30:
++        roll = roll_dice(1, 8);
++        if (roll >= 1 && roll <= 5) {
++            special = 0x11;
++        } else if (roll >= 6 && roll <= 8) {
++            special = 1;
++        }
++        break;
++    case 0x34:
++        special = 0x21;
++        break;
++    case 0x35:
++        special = 9;
++        break;
++    default:
++        if ((it->b[0x30] >= 0x01 && it->b[0x30] <= 0x25) ||
++            it->b[0x30] == 0x32 || it->b[0x30] == 0x3B ||
++            it->b[0x30] == 0x46 || it->b[0x30] == 0x47) {
++            random_magic_item(it, &special);
++        }
++        break;
++    }
++    if (special == 0) {
++        return;
++    }
++    for (k = 0; k <= 2; ++k) {
++        it->b[0x32 + k] = (u8)s_special_items[special + k - 1];
++    }
++    IT_SET_W(it, 0x36, 1);
++    IT_SET_W(it, 0x38, 1);
++    IT_SET_W(it, 0x3E, s_special_items[special + 2]);
++    it->b[0x40] = 0;
++    IT_SET_W(it, 0x42, s_special_items[special + 3]);
++    for (k = 1; k <= 3; ++k) {
++        it->b[0x44 + k - 1] = (u8)s_special_items[special + 3 + k];
++    }
++}
+diff --git a/src_c/readable/h067.h b/src_c/readable/h067.h
+index 063fdcb..2d40852 100644
+--- a/src_c/readable/h067.h
++++ b/src_c/readable/h067.h
+@@ -22,4 +22,5 @@ void pool_party_money(void);             /* H067+$0794 */
+ void share_money(void);                  /* H067+$08CC */
+ void take_money_menu(void);              /* H067+$0F72 */
+ void has_treasure(u8 *money, u8 *items); /* H067+$11F4 */
++void random_item(u16 type, CokItem *it); /* H067+$1292 */
+ #endif
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index bfdfeca..7629f57 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -74,4 +74,3 @@ void h012_14c8(void) { cok_unported("H012+$14C8"); }
+ 
+ void h071_092c(void) { cok_unported("H071+$092C"); }
+ void h072_120c(void) { cok_unported("H072+$120C"); }
+-void h067_1292(u16 type, CokItem *it) { (void)type; (void)it; cok_unported("H067+$1292"); }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index 9e6471e..721cc80 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -63,4 +63,3 @@ void h012_14c8(void);
+ /* Usati dai comandi ECL di H012. */
+ void h071_092c(void);                    /* scena speciale ($6D8) */
+ void h072_120c(void);                    /* scena speciale ($5C4) */
+-void h067_1292(u16 type, CokItem *it);   /* oggetto casuale */
+-- 
+2.43.0
+

@@ -1,0 +1,549 @@
+From 4f08813c4f50e3c27b6f54140462638e06b4119f Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 21:13:20 +0000
+Subject: [PATCH 33/65] Port Dispel Magic (H085+$3ED4) and the combat map cell
+ lookup
+
+Dispel Magic removes the timed effects of the target and the caster's
+clouds around $2518/$251A; H048+$0154 reads a cell of the combat map.
+H005+$2ADE (combat map) and H005+$2514 (cloud list) become C globals;
+without a combat map a cell reads as 0.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md | 135 +++++++++++++++++-----------------
+ src_c/readable/globals.c      |   2 +
+ src_c/readable/globals.h      |  10 ++-
+ src_c/readable/h008.c         |   2 +-
+ src_c/readable/h033.c         |   4 +-
+ src_c/readable/h048.c         |  24 +++++-
+ src_c/readable/h048.h         |   9 +++
+ src_c/readable/h062.c         |   2 +-
+ src_c/readable/h085.c         | 111 ++++++++++++++++++++++++++++
+ src_c/readable/h085.h         |   1 +
+ src_c/readable/unported.c     |   4 +-
+ src_c/readable/unported.h     |   4 +-
+ 12 files changed, 229 insertions(+), 79 deletions(-)
+ create mode 100644 src_c/readable/h048.h
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index 454c420..b55af19 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **596 / 1017**.
++Routine portate: **598 / 1018**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -54,7 +54,7 @@ Routine portate: **596 / 1017**.
+ | H045 | 828 | 4 | 3 |
+ | H046 | 724 | 2 | 1 |
+ | H047 | 5224 | 8 | 8 |
+-| H048 | 6636 | 21 | 1 |
++| H048 | 6636 | 21 | 2 |
+ | H049 | 2992 | 13 | 7 |
+ | H050 | 136 | 4 | 4 |
+ | H051 | 256 | 2 | 2 |
+@@ -91,7 +91,7 @@ Routine portate: **596 / 1017**.
+ | H082 | 156 | 2 | 2 |
+ | H083 | 92 | 1 | 1 |
+ | H084 | 92 | 2 | 2 |
+-| H085 | 19904 | 69 | 61 |
++| H085 | 19904 | 70 | 62 |
+ | H086 | 2088 | 14 | 14 |
+ | H087 | 1132 | 4 | 4 |
+ | H088 | 328 | 2 | 2 |
+@@ -779,10 +779,10 @@ Routine portate: **596 / 1017**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0008` | `module_init_H048` | parziale | h048.c:6 |
++| `$0008` | `module_init_H048` | parziale | h048.c:7 |
+ | `$0044` | `trampoline_H048_00B6` | parziale |  |
+ | `$00C2` | `sub_H048_000000C2` | parziale |  |
+-| `$0154` | `sub_H048_00000154` | parziale |  |
++| `$0154` | `sub_H048_00000154` | parziale | h048.c:14 |
+ | `$01E8` | `sub_H048_000001E8` | parziale |  |
+ | `$0230` | `sub_H048_00000230` | parziale |  |
+ | `$0334` | `sub_H048_00000334` | parziale |  |
+@@ -1072,7 +1072,7 @@ Routine portate: **596 / 1017**.
+ | `$2760` | `sub_H063_00002760` | parziale | h063.c:1090 |
+ | `$2984` | `sub_H063_00002984` | parziale | h063.c:1143 |
+ | `$2ACC` | `sub_H063_00002ACC` | parziale | h063.c:1003 |
+-| `$2B4C` | `trampoline_H063_2B72` | parziale | h085.c:301 |
++| `$2B4C` | `trampoline_H063_2B72` | parziale | h085.c:302 |
+ | `$2B7C` | `sub_H063_00002B7C` | parziale |  |
+ | `$2BDE` | `sub_H063_00002BDE` | parziale |  |
+ | `$2DC6` | `sub_H063_00002DC6` | parziale |  |
+@@ -1370,11 +1370,11 @@ Routine portate: **596 / 1017**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0664` | `module_init_H085` | parziale | h085.c:21 |
+-| `$0672` | `trampoline_H085_078A` | parziale | h085.c:117 |
+-| `$07B6` | `sub_H085_000007B6` | parziale | h085.c:234 |
+-| `$0A1A` | `sub_H085_00000A1A` | parziale | h085.c:59 |
+-| `$0AB2` | `sub_H085_00000AB2` | parziale | h085.c:308 |
++| `$0664` | `module_init_H085` | parziale | h085.c:22 |
++| `$0672` | `trampoline_H085_078A` | parziale | h085.c:118 |
++| `$07B6` | `sub_H085_000007B6` | parziale | h085.c:235 |
++| `$0A1A` | `sub_H085_00000A1A` | parziale | h085.c:60 |
++| `$0AB2` | `sub_H085_00000AB2` | parziale | h085.c:309 |
+ | `$0BB2` | `trampoline_H085_0D50` | parziale |  |
+ | `$0BC0` | `sub_H085_00000BC0` | parziale |  |
+ | `$0C04` | `trampoline_H085_0C58` | parziale |  |
+@@ -1382,62 +1382,63 @@ Routine portate: **596 / 1017**.
+ | `$1234` | `sub_H085_00001234` | parziale |  |
+ | `$1306` | `sub_H085_00001306` | parziale |  |
+ | `$1A6C` | `sub_H085_00001A6C` | parziale |  |
+-| `$1C60` | `(senza scheda)` | - | h085.c:328 |
+-| `$1C86` | `(senza scheda)` | - | h085.c:334 |
+-| `$1CB8` | `(senza scheda)` | - | h085.c:46 |
+-| `$1D3C` | `(senza scheda)` | - | h085.c:341 |
+-| `$1D78` | `(senza scheda)` | - | h085.c:347 |
+-| `$1DA6` | `(senza scheda)` | - | h085.c:353 |
+-| `$1DE4` | `(senza scheda)` | - | h085.c:360 |
+-| `$1EBA` | `(senza scheda)` | - | h085.c:155 |
+-| `$1FFA` | `(senza scheda)` | - | h085.c:382 |
+-| `$2090` | `(senza scheda)` | - | h085.c:401 |
+-| `$20DE` | `(senza scheda)` | - | h085.c:409 |
+-| `$2144` | `(senza scheda)` | - | h085.c:418 |
+-| `$2172` | `(senza scheda)` | - | h085.c:424 |
+-| `$21C8` | `(senza scheda)` | - | h085.c:437 |
+-| `$23B8` | `(senza scheda)` | - | h085.c:478 |
+-| `$23E6` | `(senza scheda)` | - | h085.c:484 |
+-| `$2414` | `(senza scheda)` | - | h085.c:490 |
+-| `$24C6` | `(senza scheda)` | - | h085.c:512 |
+-| `$25B8` | `(senza scheda)` | - | h085.c:533 |
+-| `$25FA` | `(senza scheda)` | - | h085.c:540 |
+-| `$2628` | `(senza scheda)` | - | h085.c:546 |
+-| `$2692` | `(senza scheda)` | - | h085.c:556 |
+-| `$2BD4` | `(senza scheda)` | - | h085.c:190 |
+-| `$2DBA` | `(senza scheda)` | - | h085.c:562 |
+-| `$2DFA` | `(senza scheda)` | - | h085.c:570 |
+-| `$2E28` | `(senza scheda)` | - | h085.c:80 |
+-| `$2E40` | `(senza scheda)` | - | h085.c:576 |
+-| `$2E70` | `(senza scheda)` | - | h085.c:582 |
+-| `$2EC4` | `(senza scheda)` | - | h085.c:592 |
+-| `$2FCE` | `(senza scheda)` | - | h085.c:626 |
+-| `$2FFC` | `(senza scheda)` | - | h085.c:632 |
+-| `$302A` | `sub_H085_0000302A` | parziale | h085.c:639 |
+-| `$318A` | `(senza scheda)` | - | h085.c:668 |
+-| `$3224` | `(senza scheda)` | - | h085.c:674 |
+-| `$3252` | `(senza scheda)` | - | h085.c:680 |
+-| `$3298` | `(senza scheda)` | - | h085.c:52 |
+-| `$331E` | `(senza scheda)` | - | h085.c:689 |
+-| `$3402` | `(senza scheda)` | - | h085.c:704 |
+-| `$3430` | `(senza scheda)` | - | h085.c:898 |
+-| `$3482` | `(senza scheda)` | - | h085.c:718 |
+-| `$34B0` | `(senza scheda)` | - | h085.c:724 |
+-| `$34F0` | `(senza scheda)` | - | h085.c:731 |
+-| `$3552` | `(senza scheda)` | - | h085.c:87 |
+-| `$36B8` | `(senza scheda)` | - | h085.c:745 |
+-| `$37E2` | `(senza scheda)` | - | h085.c:762 |
+-| `$3A5E` | `(senza scheda)` | - | h085.c:783 |
+-| `$3C06` | `(senza scheda)` | - | h085.c:827 |
+-| `$3D0A` | `(senza scheda)` | - | h085.c:850 |
+-| `$3D46` | `(senza scheda)` | - | h085.c:856 |
+-| `$3D74` | `(senza scheda)` | - | h085.c:862 |
+-| `$3DA0` | `(senza scheda)` | - | h085.c:868 |
+-| `$3DCC` | `(senza scheda)` | - | h085.c:874 |
+-| `$3DF8` | `(senza scheda)` | - | h085.c:904 |
+-| `$3E4A` | `(senza scheda)` | - | h085.c:880 |
+-| `$3E78` | `(senza scheda)` | - | h085.c:886 |
+-| `$3EA6` | `(senza scheda)` | - | h085.c:892 |
++| `$1C60` | `(senza scheda)` | - | h085.c:329 |
++| `$1C86` | `(senza scheda)` | - | h085.c:335 |
++| `$1CB8` | `(senza scheda)` | - | h085.c:47 |
++| `$1D3C` | `(senza scheda)` | - | h085.c:342 |
++| `$1D78` | `(senza scheda)` | - | h085.c:348 |
++| `$1DA6` | `(senza scheda)` | - | h085.c:354 |
++| `$1DE4` | `(senza scheda)` | - | h085.c:361 |
++| `$1EBA` | `(senza scheda)` | - | h085.c:156 |
++| `$1FFA` | `(senza scheda)` | - | h085.c:383 |
++| `$2090` | `(senza scheda)` | - | h085.c:402 |
++| `$20DE` | `(senza scheda)` | - | h085.c:410 |
++| `$2144` | `(senza scheda)` | - | h085.c:419 |
++| `$2172` | `(senza scheda)` | - | h085.c:425 |
++| `$21C8` | `(senza scheda)` | - | h085.c:438 |
++| `$23B8` | `(senza scheda)` | - | h085.c:479 |
++| `$23E6` | `(senza scheda)` | - | h085.c:485 |
++| `$2414` | `(senza scheda)` | - | h085.c:491 |
++| `$24C6` | `(senza scheda)` | - | h085.c:513 |
++| `$25B8` | `(senza scheda)` | - | h085.c:534 |
++| `$25FA` | `(senza scheda)` | - | h085.c:541 |
++| `$2628` | `(senza scheda)` | - | h085.c:547 |
++| `$2692` | `(senza scheda)` | - | h085.c:557 |
++| `$2BD4` | `(senza scheda)` | - | h085.c:191 |
++| `$2DBA` | `(senza scheda)` | - | h085.c:563 |
++| `$2DFA` | `(senza scheda)` | - | h085.c:571 |
++| `$2E28` | `(senza scheda)` | - | h085.c:81 |
++| `$2E40` | `(senza scheda)` | - | h085.c:577 |
++| `$2E70` | `(senza scheda)` | - | h085.c:583 |
++| `$2EC4` | `(senza scheda)` | - | h085.c:593 |
++| `$2FCE` | `(senza scheda)` | - | h085.c:627 |
++| `$2FFC` | `(senza scheda)` | - | h085.c:633 |
++| `$302A` | `sub_H085_0000302A` | parziale | h085.c:640 |
++| `$318A` | `(senza scheda)` | - | h085.c:669 |
++| `$3224` | `(senza scheda)` | - | h085.c:675 |
++| `$3252` | `(senza scheda)` | - | h085.c:681 |
++| `$3298` | `(senza scheda)` | - | h085.c:53 |
++| `$331E` | `(senza scheda)` | - | h085.c:690 |
++| `$3402` | `(senza scheda)` | - | h085.c:705 |
++| `$3430` | `(senza scheda)` | - | h085.c:899 |
++| `$3482` | `(senza scheda)` | - | h085.c:719 |
++| `$34B0` | `(senza scheda)` | - | h085.c:725 |
++| `$34F0` | `(senza scheda)` | - | h085.c:732 |
++| `$3552` | `(senza scheda)` | - | h085.c:88 |
++| `$36B8` | `(senza scheda)` | - | h085.c:746 |
++| `$37E2` | `(senza scheda)` | - | h085.c:763 |
++| `$3A5E` | `(senza scheda)` | - | h085.c:784 |
++| `$3C06` | `(senza scheda)` | - | h085.c:828 |
++| `$3D0A` | `(senza scheda)` | - | h085.c:851 |
++| `$3D46` | `(senza scheda)` | - | h085.c:857 |
++| `$3D74` | `(senza scheda)` | - | h085.c:863 |
++| `$3DA0` | `(senza scheda)` | - | h085.c:869 |
++| `$3DCC` | `(senza scheda)` | - | h085.c:875 |
++| `$3DF8` | `(senza scheda)` | - | h085.c:905 |
++| `$3E4A` | `(senza scheda)` | - | h085.c:881 |
++| `$3E78` | `(senza scheda)` | - | h085.c:887 |
++| `$3EA6` | `(senza scheda)` | - | h085.c:893 |
++| `$3ED4` | `(senza scheda)` | - | h085.c:930 |
+ | `$3EE2` | `sub_H085_00003EE2` | parziale |  |
+ 
+ ### H086
+diff --git a/src_c/readable/globals.c b/src_c/readable/globals.c
+index b32f32e..63e1ebe 100644
+--- a/src_c/readable/globals.c
++++ b/src_c/readable/globals.c
+@@ -7,6 +7,8 @@ struct Character *g_h005_2508;
+ struct Character *g_spell_target;
+ struct Character *g_spell_targets[40];
+ CokItem *g_scroll_item;
++u8 *g_combat_area;
++CokCloud *g_clouds;
+ 
+ u8 *g_state_a;
+ u8 *g_state_b;
+diff --git a/src_c/readable/globals.h b/src_c/readable/globals.h
+index 696d39e..7da8126 100644
+--- a/src_c/readable/globals.h
++++ b/src_c/readable/globals.h
+@@ -77,7 +77,15 @@ extern struct Character *g_current_char;/* $3368: personaggio corrente */
+ extern struct Character *g_h005_2508;   /* $2508: personaggio scelto */
+ extern struct Character *g_spell_target;/* $251C: bersaglio scelto */
+ extern struct Character *g_spell_targets[40]; /* $2520..$25BF: bersagli */
+-extern CokItem *g_scroll_item;          /* $2770: pergamena in uso */
++extern CokItem *g_scroll_item;
++extern u8 *g_combat_area;               /* $2ADE: mappa del combattimento ($9CE byte) */
++/* Nube (Stinking Cloud e simili), record di $22 byte della lista $2514. */
++typedef struct CokCloud {
++    struct Character *owner;            /* +$00 */
++    struct CokCloud *next;              /* +$04 */
++    u8 b[0x22];                         /* +$08..: posizioni, +$1C/+$1E, +$20, +$21 */
++} CokCloud;
++extern CokCloud *g_clouds;              /* $2514 */          /* $2770: pergamena in uso */
+ 
+ /*
+  * Tabelle di gestori in H005 (puntatori a codice nell'originale).  Il tipo
+diff --git a/src_c/readable/h008.c b/src_c/readable/h008.c
+index 043b063..8e9ced1 100644
+--- a/src_c/readable/h008.c
++++ b/src_c/readable/h008.c
+@@ -140,7 +140,7 @@ static void draw_options(ChoiceFrame *f, u8 selected)
+ /* Coordinate di combattimento/mappa del cursore (rami $07F8/$0D8E). */
+ static void map_target(s16 *dx, s16 *dy)
+ {
+-    const u8 *area = g_h005_2ade_area();
++    const u8 *area = g_combat_area;
+ 
+     if (H005_B(0x24CC)) {
+         *dx = (s16)(H005_W(0x2438) - COK_GET16(area + 2) + 1);
+diff --git a/src_c/readable/h033.c b/src_c/readable/h033.c
+index 83fcdf7..93e9ed2 100644
+--- a/src_c/readable/h033.c
++++ b/src_c/readable/h033.c
+@@ -535,12 +535,12 @@ void install_action_handlers(void)
+     g_handlers_25c0[37] = spell_cause_blindness;   /* $2654 */
+     g_handlers_25c0[38] = cure_disease;   /* $2658 */
+     g_handlers_25c0[39] = spell_cause_disease;   /* $265C */
+-    g_handlers_25c0[40] = h085_3ed4;   /* $2660 */
++    g_handlers_25c0[40] = spell_dispel_magic;   /* $2660 */
+     g_handlers_25c0[41] = spell_prayer;   /* $2664 */
+     g_handlers_25c0[42] = spell_remove_curse;   /* $2668 */
+     g_handlers_25c0[43] = spell_bestow_curse;   /* $266C */
+     g_handlers_25c0[44] = spell_blink;   /* $2670 */
+-    g_handlers_25c0[45] = h085_3ed4;   /* $2674 */
++    g_handlers_25c0[45] = spell_dispel_magic;   /* $2674 */
+     g_handlers_25c0[46] = h085_15fe;   /* $2678 */
+     g_handlers_25c0[47] = spell_haste;   /* $267C */
+     g_handlers_25c0[48] = h085_2338;   /* $2680 */
+diff --git a/src_c/readable/h048.c b/src_c/readable/h048.c
+index a0087c6..1cadc91 100644
+--- a/src_c/readable/h048.c
++++ b/src_c/readable/h048.c
+@@ -1,5 +1,6 @@
+ /* H048: dati del modulo. */
+-#include "cok.h"
++#include "h048.h"
++#include "globals.h"
+ 
+ u32 g_h048_0004;                /* -$4(a4) */
+ 
+@@ -8,3 +9,24 @@ void h048_init(void)
+ {
+     g_h048_0004 = 0;
+ }
++
++/*
++ * PORT H048+$0154: casella (x, y) della mappa del combattimento: in *tile
++ * il byte $2ADE+$A+y*100+x*2+1, in *value H005+$2BD2+y*$32+x; fuori dalla
++ * mappa 0.  Senza mappa (fuori dal combattimento l'originale legge da
++ * $2ADE = 0, cioe' la memoria bassa) qui vale 0.
++ */
++void combat_map_cell(s16 x, s16 y, u16 *value, u16 *tile)
++{
++    if (x >= 0 && x <= 0x31 && y >= 0 && y <= 0x18) {
++        if (g_combat_area != NULL) {
++            *tile = g_combat_area[0x0A + y * 100 + x * 2 + 1];
++        } else {
++            *tile = 0;
++        }
++        *value = H005_B(0x2BD2 + y * 0x32 + x);
++    } else {
++        *value = 0;
++        *tile = 0;
++    }
++}
+diff --git a/src_c/readable/h048.h b/src_c/readable/h048.h
+new file mode 100644
+index 0000000..01dbcf8
+--- /dev/null
++++ b/src_c/readable/h048.h
+@@ -0,0 +1,9 @@
++/* H048: mappa e figure del combattimento. */
++#ifndef COK_H048_H
++#define COK_H048_H
++
++#include "cok.h"
++
++void combat_map_cell(s16 x, s16 y, u16 *value, u16 *tile);  /* H048+$0154 */
++
++#endif
+diff --git a/src_c/readable/h062.c b/src_c/readable/h062.c
+index 4944cde..d370ea3 100644
+--- a/src_c/readable/h062.c
++++ b/src_c/readable/h062.c
+@@ -445,7 +445,7 @@ static void trigger_effect(Character **cp, u16 type)
+                     a = h048_0f88(p);
+                     b = h048_0fba(p);
+                     h077_08ac(h048_110c(a, b, radius, 0xFF, p),
+-                              g_h005_2ade_area());
++                              g_combat_area);
+                     for (i = 1; i <= H005_B(0x2479); ++i) {
+                         if (H005_B(0x2A3E + (i - 1) * 4) == h048_0aa8(*cp)) {
+                             found = 1;
+diff --git a/src_c/readable/h085.c b/src_c/readable/h085.c
+index 44c9cc1..ac1b078 100644
+--- a/src_c/readable/h085.c
++++ b/src_c/readable/h085.c
+@@ -7,6 +7,7 @@
+ #include "h008.h"
+ #include "h029_gfx.h"
+ #include "unported.h"
++#include "h048.h"
+ 
+ /* Dati del modulo sotto a4: g_h085_bss[0x292 - off] e' -off(a4). */
+ u8 g_h085_bss[0x292];
+@@ -906,3 +907,113 @@ void spell_heal_3df8(void)
+ {
+     heal_2d4();
+ }
++
++/*
++ * Probabilita' (in H085+$2) di dissolvere un effetto di livello level
++ * (H085+$0) con il livello d'incantatore caster: +5% per livello sopra,
++ * -2% per livello sotto, 50% alla pari.  Poi il tiro d100.
++ */
++static u8 dispel_roll(s16 caster, u16 level)
++{
++    H085SETW(0, level);
++    if ((u16)caster > H085W(0)) {
++        H085SETW(2, (u16)(((u16)caster - H085W(0)) * 5 + 0x32));
++    } else if ((u16)caster < H085W(0)) {
++        H085SETW(2, (u16)(0x32 - (H085W(0) - (u16)caster) * 2));
++    } else {
++        H085SETW(2, 0x32);
++    }
++    return (u8)(roll_dice(1, 0x64) <= H085W(2));
++}
++
++/*
++ * PORT H085+$3ED4: Dispel Magic: toglie gli effetti con durata del primo
++ * bersaglio (una volta per bersaglio), poi dissolve le nubi ($28) del
++ * lanciatore nelle 9 caselle attorno a $2518/$251A.
++ */
++void spell_dispel_magic(void)
++{
++    Character *t;                       /* -$8(a5) */
++    CokEffect *e;                       /* -$e(a5) */
++    CokEffect *next;                    /* -$12(a5) */
++    CokCloud *p;                        /* -$24(a5) */
++    CokCloud *p_next;                   /* -$28(a5) */
++    s16 caster;                         /* -$4(a5) */
++    s16 x = 0;                          /* -$14(a5) */
++    s16 y = 0;                          /* -$16(a5) */
++    u16 tile;                           /* -$18(a5) */
++    u16 count;                          /* -$1a(a5) */
++    u16 i;                              /* -$2(a5) */
++    u16 k;                              /* -$1c(a5) */
++    u16 dir;
++    u8 dispelled;                       /* -$9(a5) */
++    u8 found;                           /* -$a(a5) */
++
++    H005_B(0x24A9) = 1;
++    caster = caster_level(SPELL_NOW);
++    for (i = 1; i <= H005_B(0x246C); ++i) {
++        dispelled = 0;
++        t = g_spell_targets[0];
++        for (e = t->effects; e != NULL; e = next) {
++            next = e->next;
++            if (e->b[4] < 0xFF &&
++                dispel_roll(caster, mask_byte(e->b[4], 0x0F))) {
++                remove_effect(t, e->b[0], e);
++                dispelled = 1;
++            }
++        }
++        if (dispelled) {
++            show_effect_message(t, 1, 0x0B, "is affected");
++        }
++    }
++    for (k = 0; k <= 8; ++k) {
++        switch (k) {
++        case 0: x = (s16)H005_W(0x251A); y = (s16)H005_W(0x2518); break;
++        case 1: y = (s16)(H005_W(0x2518) - 1); break;
++        case 2: x = (s16)(H005_W(0x251A) + 1); break;
++        case 3: y = (s16)H005_W(0x2518); break;
++        case 4: y = (s16)(H005_W(0x2518) + 1); break;
++        case 5: x = (s16)H005_W(0x251A); break;
++        case 6: x = (s16)(H005_W(0x251A) - 1); break;
++        case 7: y = (s16)H005_W(0x2518); break;
++        case 8: y = (s16)(H005_W(0x2518) - 1); break;
++        }
++        combat_map_cell(x, y, &count, &tile);
++        if (tile != 0x1E) {
++            continue;
++        }
++        p = g_clouds;
++        count = 4;
++        while (p != NULL) {
++            p_next = p->next;
++            for (i = 1; i <= count; ++i) {
++                dir = H005_B(0x5022 + i - 1);
++                if ((s16)(COK_GET16(&p->b[0x1C - 8]) +
++                          H005_W(0x3EE2 + dir * 2)) == x &&
++                    (s16)(COK_GET16(&p->b[0x1E - 8]) +
++                          H005_W(0x3ED0 + dir * 2)) == y &&
++                    !p->b[0x21 - 8]) {
++                    if (dispel_roll(caster, p->owner->b[0x103])) {
++                        found = 0;
++                        e = p->owner->effects;
++                        while (e != NULL && !found) {
++                            if (e->b[0] == 0x28 && tile == 0x1E &&
++                                (e->b[4] >> 4) == p->b[0x20 - 8]) {
++                                found = 1;
++                            } else {
++                                e = e->next;
++                            }
++                        }
++                        if (found) {
++                            remove_effect(p->owner, 0x28, e);
++                        }
++                    } else {
++                        p->b[0x21 - 8] = 1;
++                    }
++                }
++            }
++            p = p_next;
++        }
++        h048_0df2(H005_W(0x251A), H005_W(0x2518), 3, 8);
++    }
++}
+diff --git a/src_c/readable/h085.h b/src_c/readable/h085.h
+index 3c48ddd..4b46839 100644
+--- a/src_c/readable/h085.h
++++ b/src_c/readable/h085.h
+@@ -74,6 +74,7 @@ void spell_heal_3df8(void);               /* H085+$3DF8 */
+ void spell_affected(void);                /* H085+$3E4A */
+ void spell_protected(void);               /* H085+$3E78 */
+ void spell_invisibility(void);            /* H085+$3EA6 */
++void spell_dispel_magic(void);                 /* H085+$3ED4 */
+ void cure_light_wounds(void);                /* H085+$1CB8 */
+ void cure_serious_wounds(void);              /* H085+$3298 */
+ void cure_disease(void);                     /* H085+$2E28 */
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index 10d613d..c2482b2 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -100,7 +100,6 @@ void h085_363e(void) { cok_unported("H085+$363E"); }
+ void h085_3758(void) { cok_unported("H085+$3758"); }
+ void h085_38aa(void) { cok_unported("H085+$38AA"); }
+ void h085_3936(void) { cok_unported("H085+$3936"); }
+-void h085_3ed4(void) { cok_unported("H085+$3ED4"); }
+ void h085_431a(void) { cok_unported("H085+$431A"); }
+ void h085_442e(void) { cok_unported("H085+$442E"); }
+ void h085_4628(void) { cok_unported("H085+$4628"); }
+@@ -116,7 +115,6 @@ u8 h046_0012(u16 dx, u16 dy, u16 col, u16 row) { (void)dx; (void)dy; (void)col;
+ u16 h048_0aa8(void *character) { (void)character; cok_unported("H048+$0AA8"); return 0; }
+ void *h042_0b80(u16 frame, void *set) { (void)frame; (void)set; cok_unported("H042+$0B80"); return NULL; }
+ void h042_0254(u16 a, u16 b, u8 flag, void *picture) { (void)a; (void)b; (void)flag; (void)picture; cok_unported("H042+$0254"); }
+-const u8 *g_h005_2ade_area(void) { cok_unported("H005+$2ADE (area della mappa)"); return NULL; }
+ void h044_0330(void) { cok_unported("H044+$0330"); }
+ void h044_0452(void) { cok_unported("H044+$0452"); }
+ void h028_0d74(void) { cok_unported("H028+$0D74"); }
+@@ -173,7 +171,7 @@ u8 h048_110c(u16 a, u16 b, u16 radius, u16 d, Character *c)
+     cok_unported("H048+$110C");
+     return 0;
+ }
+-void h077_08ac(u16 value, const u8 *area) { (void)value; (void)area; cok_unported("H077+$08AC"); }
++void h077_08ac(u16 value, u8 *area) { (void)value; (void)area; cok_unported("H077+$08AC"); }
+ void h048_12f4(Character *c) { (void)c; cok_unported("H048+$12F4"); }
+ void h048_0df2(u16 a, u16 b, u16 c, u16 d) { (void)a; (void)b; (void)c; (void)d; cok_unported("H048+$0DF2"); }
+ void h029_0d58(u16 x, u16 y, u8 frame, u8 mode, struct GfxRecord *src,
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index 43226c9..4c8d582 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -15,7 +15,6 @@ u8   h046_0012(u16 dx, u16 dy, u16 col, u16 row);
+ u16  h048_0aa8(void *character);
+ void *h042_0b80(u16 frame, void *set);  /* fotogramma dell'insieme (H005+$27BC) */
+ void h042_0254(u16 a, u16 b, u8 flag, void *picture);
+-const u8 *g_h005_2ade_area(void);        /* H005+$2ADE: area della mappa */
+ void h043_0584(void);
+ void h043_190e(u16 command);
+ void h010_03aa(void);
+@@ -81,7 +80,6 @@ void h085_363e(void);
+ void h085_3758(void);
+ void h085_38aa(void);
+ void h085_3936(void);
+-void h085_3ed4(void);
+ void h085_431a(void);
+ void h085_442e(void);
+ void h085_4628(void);
+@@ -125,7 +123,7 @@ void h042_1006(u16 picture);             /* immagine grande */
+ 
+ /* Parti solo da combattimento del motore degli effetti. */
+ u8   h048_110c(u16 a, u16 b, u16 radius, u16 d, Character *c);
+-void h077_08ac(u16 value, const u8 *area);
++void h077_08ac(u16 value, u8 *area);
+ void h048_12f4(Character *c);
+ void h048_0df2(u16 a, u16 b, u16 c, u16 d);
+ void h029_0d58(u16 x, u16 y, u8 frame, u8 mode, struct GfxRecord *src,
+-- 
+2.43.0
+

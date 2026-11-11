@@ -1,0 +1,2083 @@
+From 5d6320bb3b073c1012574ca85ff9f794bb8017e1 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 15:52:54 +0000
+Subject: [PATCH 12/65] Port the intro with input, timing and the credits
+ screen
+
+Ports H007 (intro: picture loading with fades, credits, $02CE..$09D8),
+H010 event polling ($0882), RAWKEY conversion ($043C) and wait for key
+($0974), H042+$0300, H011+$010C, H044 screen frame ($00C8, $01C2,
+$02D8), H034+$0178 and H049+$012A (8x8 tiles), H030+$0B6C, and the
+GetMsg/ReplyMsg/WaitPort, Delay, WaitTOF, SetPointer and AvailMem
+adapters.
+
+On the host, SDL keyboard and mouse events become IDCMP messages with
+Amiga raw key codes, Delay and WaitTOF pace the program, and
+COK_SCREENSHOT_AT saves frames at given times. Audio (H043) is not
+ported yet: its two calls are skipped with a warning. The intro now
+plays fully and the program reaches the Play/Demo prompt.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md   | 107 +++++------
+ src_c/readable/README.md        |   9 +
+ src_c/readable/cok.h            |   5 +
+ src_c/readable/globals.c        |   3 +
+ src_c/readable/globals.h        |   5 +
+ src_c/readable/h001_main.c      |   5 +-
+ src_c/readable/h003_exec.c      |   6 +
+ src_c/readable/h003_exec.h      |   1 +
+ src_c/readable/h006.c           |   6 +-
+ src_c/readable/h007.c           | 308 +++++++++++++++++++++++++++++++-
+ src_c/readable/h007.h           |   7 +
+ src_c/readable/h010_input.c     | 131 +++++++++++++-
+ src_c/readable/h010_input.h     |  10 ++
+ src_c/readable/h011.c           |  17 ++
+ src_c/readable/h011.h           |   7 +
+ src_c/readable/h016_gfx.c       |   6 +
+ src_c/readable/h016_gfx.h       |   1 +
+ src_c/readable/h021_intuition.c |   8 +
+ src_c/readable/h021_intuition.h |   3 +
+ src_c/readable/h030.c           |  13 ++
+ src_c/readable/h030.h           |   2 +
+ src_c/readable/h034.c           |  18 +-
+ src_c/readable/h034.h           |   2 +
+ src_c/readable/h036.c           |   8 +-
+ src_c/readable/h036.h           |   9 +
+ src_c/readable/h042_seq.c       |  29 ++-
+ src_c/readable/h042_seq.h       |   7 +
+ src_c/readable/h044_tiles.c     |  90 +++++++++-
+ src_c/readable/h044_tiles.h     |   7 +
+ src_c/readable/h049.c           |  62 +++++++
+ src_c/readable/h049.h           |   3 +
+ src_c/readable/h050.c           |  20 ++-
+ src_c/readable/h050.h           |  11 ++
+ src_c/readable/host/display.c   | 107 +++++++++++
+ src_c/readable/host/input.c     | 212 ++++++++++++++++++++++
+ src_c/readable/host/intuition.c |  30 ++++
+ src_c/readable/host/ndk.h       |  49 ++++-
+ src_c/readable/unported.c       |  25 ++-
+ src_c/readable/unported.h       |   5 +-
+ 39 files changed, 1284 insertions(+), 70 deletions(-)
+ create mode 100644 src_c/readable/h007.h
+ create mode 100644 src_c/readable/h010_input.h
+ create mode 100644 src_c/readable/h011.h
+ create mode 100644 src_c/readable/h036.h
+ create mode 100644 src_c/readable/h042_seq.h
+ create mode 100644 src_c/readable/h044_tiles.h
+ create mode 100644 src_c/readable/h050.h
+ create mode 100644 src_c/readable/host/input.c
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index 3dcbe5a..236a553 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,32 +2,32 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **230 / 912**.
++Routine portate: **258 / 913**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+ | H000 | 600 | 1 | 1 |
+ | H001 | 664 | 2 | 2 |
+ | H002 | 572 | 15 | 10 |
+-| H003 | 316 | 5 | 4 |
++| H003 | 316 | 5 | 5 |
+ | H004 | 24284 | 2 | 2 |
+ | H005 | 21276 | 1 | 1 |
+ | H006 | 3020 | 4 | 3 |
+-| H007 | 3036 | 10 | 1 |
++| H007 | 3036 | 11 | 11 |
+ | H008 | 8660 | 21 | 2 |
+ | H009 | 988 | 3 | 1 |
+-| H010 | 2488 | 9 | 1 |
+-| H011 | 7004 | 12 | 1 |
++| H010 | 2488 | 9 | 4 |
++| H011 | 7004 | 12 | 2 |
+ | H012 | 13580 | 8 | 1 |
+ | H013 | 25244 | 20 | 1 |
+ | H014 | 224 | 2 | 1 |
+ | H015 | 1016 | 11 | 5 |
+-| H016 | 436 | 5 | 3 |
++| H016 | 436 | 5 | 4 |
+ | H017 | 56 | 1 | 1 |
+ | H018 | 192 | 3 | 3 |
+ | H019 | 240 | 1 | 1 |
+ | H020 | 2884 | 6 | 1 |
+-| H021 | 1632 | 14 | 12 |
++| H021 | 1632 | 14 | 13 |
+ | H022 | 328 | 10 | 8 |
+ | H023 | 140 | 2 | 1 |
+ | H024 | 268 | 2 | 2 |
+@@ -36,27 +36,27 @@ Routine portate: **230 / 912**.
+ | H027 | 18156 | 10 | 2 |
+ | H028 | 4488 | 16 | 9 |
+ | H029 | 6084 | 32 | 16 |
+-| H030 | 3240 | 18 | 5 |
++| H030 | 3240 | 18 | 6 |
+ | H031 | 212 | 4 | 3 |
+ | H032 | 9352 | 1 | 1 |
+ | H033 | 8140 | 15 | 2 |
+-| H034 | 472 | 3 | 2 |
++| H034 | 472 | 3 | 3 |
+ | H035 | 1760 | 6 | 2 |
+-| H036 | 144 | 2 | 1 |
++| H036 | 144 | 2 | 2 |
+ | H037 | 52 | 2 | 2 |
+ | H038 | 504 | 5 | 5 |
+ | H039 | 104 | 2 | 2 |
+ | H040 | 1632 | 5 | 5 |
+ | H041 | 240 | 3 | 1 |
+-| H042 | 4420 | 14 | 1 |
++| H042 | 4420 | 14 | 2 |
+ | H043 | 6680 | 30 | 1 |
+-| H044 | 2668 | 10 | 1 |
++| H044 | 2668 | 10 | 4 |
+ | H045 | 828 | 4 | 2 |
+ | H046 | 724 | 2 | 1 |
+ | H047 | 5224 | 8 | 1 |
+ | H048 | 6636 | 21 | 1 |
+-| H049 | 2992 | 13 | 5 |
+-| H050 | 136 | 4 | 1 |
++| H049 | 2992 | 13 | 6 |
++| H050 | 136 | 4 | 4 |
+ | H051 | 256 | 2 | 2 |
+ | H052 | 316 | 1 | 1 |
+ | H053 | 504 | 3 | 1 |
+@@ -120,8 +120,8 @@ Routine portate: **230 / 912**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0058` | `Game_Main` | verificato | h001_main.c:61 |
+-| `$0066` | `Select_DataPrefix` | verificato | h001_main.c:28 |
++| `$0058` | `Game_Main` | verificato | h001_main.c:62 |
++| `$0066` | `Select_DataPrefix` | verificato | h001_main.c:29 |
+ 
+ ### H002
+ 
+@@ -149,8 +149,8 @@ Routine portate: **230 / 912**.
+ | --- | --- | --- | --- |
+ | `$0004` | `sub_H003_00000004` | parziale | h003_exec.c:11 |
+ | `$0068` | `wrapper_AllocMem` | parziale | h003_exec.c:16 |
+-| `$007E` | `wrapper_AvailMem` | parziale |  |
+-| `$0090` | `wrapper_CopyMem` | parziale | h003_exec.c:43 |
++| `$007E` | `wrapper_AvailMem` | parziale | h003_exec.c:42 |
++| `$0090` | `wrapper_CopyMem` | parziale | h003_exec.c:49 |
+ | `$00F6` | `wrapper_FreeMem` | parziale | h003_exec.c:31 |
+ 
+ ### H004
+@@ -179,16 +179,17 @@ Routine portate: **230 / 912**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$02C0` | `module_init_H007` | parziale | h007.c:4 |
+-| `$0304` | `sub_H007_00000304` | parziale |  |
+-| `$0348` | `sub_H007_00000348` | parziale |  |
+-| `$03CA` | `sub_H007_000003CA` | parziale |  |
+-| `$04A0` | `sub_H007_000004A0` | parziale |  |
+-| `$04F2` | `Intro_LoadLBM` | parziale |  |
+-| `$064E` | `sub_H007_0000064E` | parziale |  |
+-| `$06B4` | `sub_H007_000006B4` | parziale |  |
+-| `$06EA` | `sub_H007_000006EA` | parziale |  |
+-| `$09D8` | `Intro_LoadAndShow` | verificato |  |
++| `$02C0` | `module_init_H007` | parziale | h007.c:19 |
++| `$02CE` | `(byte non classificati)` | - | h007.c:40 |
++| `$0304` | `sub_H007_00000304` | parziale | h007.c:47 |
++| `$0348` | `sub_H007_00000348` | parziale | h007.c:55 |
++| `$03CA` | `sub_H007_000003CA` | parziale | h007.c:80 |
++| `$04A0` | `sub_H007_000004A0` | parziale | h007.c:119 |
++| `$04F2` | `Intro_LoadLBM` | parziale | h007.c:132 |
++| `$064E` | `sub_H007_0000064E` | parziale | h007.c:178 |
++| `$06B4` | `sub_H007_000006B4` | parziale | h007.c:197 |
++| `$06EA` | `sub_H007_000006EA` | parziale | h007.c:241 |
++| `$09D8` | `Intro_LoadAndShow` | verificato | h007.c:254 |
+ 
+ ### H008
+ 
+@@ -228,22 +229,22 @@ Routine portate: **230 / 912**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$00B6` | `module_init_H010` | parziale | h010_input.c:9 |
++| `$00B6` | `module_init_H010` | parziale | h010_input.c:12 |
+ | `$00C4` | `sub_H010_000000C4` | parziale |  |
+ | `$0332` | `sub_H010_00000332` | parziale |  |
+ | `$0360` | `sub_H010_00000360` | parziale |  |
+ | `$03AA` | `sub_H010_000003AA` | parziale |  |
+-| `$042E` | `trampoline_H010_0882` | parziale |  |
+-| `$043C` | `sub_H010_0000043C` | parziale |  |
++| `$042E` | `trampoline_H010_0882` | parziale | h010_input.c:101 |
++| `$043C` | `sub_H010_0000043C` | parziale | h010_input.c:40 |
+ | `$0882` | `Poll_IntuitionEvents` | verificato |  |
+-| `$0974` | `sub_H010_00000974` | parziale |  |
++| `$0974` | `sub_H010_00000974` | parziale | h010_input.c:137 |
+ 
+ ### H011
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$00FE` | `module_init_H011` | parziale | h011.c:9 |
+-| `$010C` | `sub_H011_0000010C` | parziale |  |
++| `$00FE` | `module_init_H011` | parziale | h011.c:13 |
++| `$010C` | `sub_H011_0000010C` | parziale | h011.c:20 |
+ | `$0162` | `sub_H011_00000162` | parziale |  |
+ | `$0330` | `sub_H011_00000330` | parziale |  |
+ | `$04A6` | `sub_H011_000004A6` | parziale |  |
+@@ -324,7 +325,7 @@ Routine portate: **230 / 912**.
+ | `$0014` | `wrapper_BltBitMap` | parziale | h016_gfx.c:22 |
+ | `$0084` | `wrapper_BltClear` | parziale | h016_gfx.c:16 |
+ | `$00A0` | `wrapper_BltMaskBitMapRastPort` | parziale |  |
+-| `$01AC` | `wrapper_WaitTOF` | parziale |  |
++| `$01AC` | `wrapper_WaitTOF` | parziale | h016_gfx.c:32 |
+ 
+ ### H017
+ 
+@@ -373,7 +374,7 @@ Routine portate: **230 / 912**.
+ | `$0242` | `wrapper_CloseWindow` | parziale | h021_intuition.c:74 |
+ | `$026C` | `wrapper_ModifyIDCMP` | parziale |  |
+ | `$029C` | `wrapper_OpenWindow` | parziale | h021_intuition.c:80 |
+-| `$02EE` | `wrapper_SetPointer` | parziale |  |
++| `$02EE` | `wrapper_SetPointer` | parziale | h021_intuition.c:96 |
+ | `$03AE` | `wrapper_AutoRequest` | parziale | h021_intuition.c:86 |
+ 
+ ### H022
+@@ -519,9 +520,9 @@ Routine portate: **230 / 912**.
+ | `$0A40` | `sub_H030_00000A40` | parziale |  |
+ | `$0AD2` | `sub_H030_00000AD2` | parziale |  |
+ | `$0B4A` | `sub_H030_00000B4A` | parziale |  |
+-| `$0B6C` | `sub_H030_00000B6C` | parziale |  |
+-| `$0BDA` | `(byte non classificati)` | - | h030.c:48 |
+-| `$0C10` | `sub_H030_00000C10` | parziale | h030.c:58 |
++| `$0B6C` | `sub_H030_00000B6C` | parziale | h030.c:44 |
++| `$0BDA` | `(byte non classificati)` | - | h030.c:61 |
++| `$0C10` | `sub_H030_00000C10` | parziale | h030.c:71 |
+ | `$0C84` | `sub_H030_00000C84` | parziale |  |
+ 
+ ### H031
+@@ -563,9 +564,9 @@ Routine portate: **230 / 912**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0024` | `module_init_H034` | parziale | h034.c:9 |
+-| `$0032` | `sub_H034_00000032` | parziale | h034.c:15 |
+-| `$0178` | `trampoline_H034_01A8` | parziale |  |
++| `$0024` | `module_init_H034` | parziale | h034.c:11 |
++| `$0032` | `sub_H034_00000032` | parziale | h034.c:17 |
++| `$0178` | `trampoline_H034_01A8` | parziale | h034.c:50 |
+ 
+ ### H035
+ 
+@@ -583,7 +584,7 @@ Routine portate: **230 / 912**.
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+ | `$0008` | `sub_H036_00000008` | parziale | h036.c:5 |
+-| `$0034` | `wrapper_Delay` | parziale |  |
++| `$0034` | `wrapper_Delay` | parziale | h036.c:12 |
+ 
+ ### H037
+ 
+@@ -631,12 +632,12 @@ Routine portate: **230 / 912**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0146` | `module_init_H042` | parziale | h042_seq.c:7 |
++| `$0146` | `module_init_H042` | parziale | h042_seq.c:10 |
+ | `$01AE` | `sub_H042_000001AE` | parziale |  |
+ | `$0254` | `sub_H042_00000254` | parziale |  |
+ | `$02B2` | `sub_H042_000002B2` | parziale |  |
+ | `$02D6` | `sub_H042_000002D6` | parziale |  |
+-| `$0300` | `Free_Sequence` | verificato |  |
++| `$0300` | `Free_Sequence` | verificato | h042_seq.c:18 |
+ | `$03BC` | `sub_H042_000003BC` | parziale |  |
+ | `$0406` | `Load_Sequence` | parziale |  |
+ | `$0B80` | `sub_H042_00000B80` | parziale |  |
+@@ -685,10 +686,10 @@ Routine portate: **230 / 912**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$00BA` | `module_init_H044` | parziale | h044_tiles.c:17 |
+-| `$00C8` | `trampoline_H044_016C` | parziale |  |
+-| `$01C2` | `sub_H044_000001C2` | parziale |  |
+-| `$02D8` | `sub_H044_000002D8` | parziale |  |
++| `$00BA` | `module_init_H044` | parziale | h044_tiles.c:21 |
++| `$00C8` | `trampoline_H044_016C` | parziale | h044_tiles.c:103 |
++| `$01C2` | `sub_H044_000001C2` | parziale | h044_tiles.c:143 |
++| `$02D8` | `sub_H044_000002D8` | parziale | h044_tiles.c:174 |
+ | `$0330` | `sub_H044_00000330` | parziale |  |
+ | `$0452` | `sub_H044_00000452` | parziale |  |
+ | `$0492` | `sub_H044_00000492` | parziale |  |
+@@ -757,7 +758,7 @@ Routine portate: **230 / 912**.
+ | --- | --- | --- | --- |
+ | `$0008` | `sub_H049_00000008` | parziale | h049.c:10 |
+ | `$0014` | `trampoline_H049_0082` | parziale |  |
+-| `$012A` | `trampoline_H049_0198` | parziale |  |
++| `$012A` | `trampoline_H049_0198` | parziale | h049.c:186 |
+ | `$0224` | `Draw_TextWithBlitter` | verificato | h049.c:95 |
+ | `$0438` | `sub_H049_00000438` | parziale | h049.c:35 |
+ | `$044E` | `trampoline_H049_0450` | parziale | h049.c:45 |
+@@ -774,9 +775,9 @@ Routine portate: **230 / 912**.
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+ | `$0004` | `sub_H050_00000004` | parziale | h050.c:4 |
+-| `$002A` | `wrapper_GetMsg` | parziale |  |
+-| `$0064` | `wrapper_ReplyMsg` | parziale |  |
+-| `$0076` | `wrapper_WaitPort` | parziale |  |
++| `$002A` | `wrapper_GetMsg` | parziale | h050.c:9 |
++| `$0064` | `wrapper_ReplyMsg` | parziale | h050.c:15 |
++| `$0076` | `wrapper_WaitPort` | parziale | h050.c:21 |
+ 
+ ### H051
+ 
+diff --git a/src_c/readable/README.md b/src_c/readable/README.md
+index 1a96c6a..0b132fb 100644
+--- a/src_c/readable/README.md
++++ b/src_c/readable/README.md
+@@ -72,11 +72,20 @@ Sull'host le librerie di AmigaOS usate dal gioco sono emulate in `host/`
+ così gli adattatori del gioco sono identici sui due target); lo schermo
+ è mostrato con SDL2. Variabili utili: `COK_SCALE=n` (ingrandimento),
+ `COK_SCREENSHOT=file.bmp` (salva l'ultimo fotogramma all'uscita),
++`COK_SCREENSHOT_AT=t1,t2,...` (con `COK_SCREENSHOT=base`: salva anche
++`base-1.bmp`, `base-2.bmp`, ... ai millisecondi indicati),
+ `SDL_VIDEODRIVER=dummy` (senza finestra), `COK_DATA=dir` (directory dei
+ file del gioco, altrimenti quella corrente). Come su AmigaDOS i nomi dei file
+ non distinguono maiuscole e minuscole e il volume ("df0:", "Disk Two:") è
+ ignorato. Le richieste di sistema (es. "inserisci il disco") si chiudono con
+ Invio/R (Retry) o Esc/C (Cancel); senza finestra il programma termina.
++Tastiera e mouse arrivano al gioco come eventi IDCMP (RAWKEY con i codici
++della tastiera Amiga, MOUSEBUTTONS); il pulsante destro vale come quello
++del menu (la finestra ha RMBTRAP).
++
++L'audio (H043) non è ancora portato: le sue routine chiamate finora sono
++saltate con un avviso ("routine non ancora portata (saltata)") invece di
++fermare il programma.
+ 
+ AmigaOS con SAS/C 6.x: `smake` (ogni nuovo file va aggiunto a `OBJS` nello
+ `smakefile`).
+diff --git a/src_c/readable/cok.h b/src_c/readable/cok.h
+index de346b7..b67030a 100644
+--- a/src_c/readable/cok.h
++++ b/src_c/readable/cok.h
+@@ -63,5 +63,10 @@ typedef int32_t  s32;
+ 
+ /* Ferma il programma su una routine non ancora portata (unported.c). */
+ void cok_unported(const char *where);
++/*
++ * Routine non ancora portata che si puo' saltare senza fermare il gioco
++ * (solo audio): stampa un avviso la prima volta e prosegue.
++ */
++void cok_unported_skip(const char *where);
+ 
+ #endif
+diff --git a/src_c/readable/globals.c b/src_c/readable/globals.c
+index 56435b6..46a6862 100644
+--- a/src_c/readable/globals.c
++++ b/src_c/readable/globals.c
+@@ -24,6 +24,9 @@ struct RastPort *g_rastport;
+ u8 *g_dax_buffer;
+ struct GfxRecord *g_8x8_sets[5];
+ struct GfxRecord *g_sprite_sets[29][2];
++struct GfxRecord *g_pic_rec_27c2;
++struct GfxRecord *g_pic_rec_27c6;
++u8 *g_pic_buffers[7];
+ void *g_party_head;
+ void *g_current_char;
+ 
+diff --git a/src_c/readable/globals.h b/src_c/readable/globals.h
+index 0ab476f..893240c 100644
+--- a/src_c/readable/globals.h
++++ b/src_c/readable/globals.h
+@@ -34,6 +34,8 @@ extern u8 g_h005[H005_SIZE];
+ #define G_VIEW_START(i)    H005_B(0x2826 + (i))  /* argomenti di H011+$04A6 */
+ #define G_DATA_PREFIX      ((char *)&g_h005[0x3D26]) /* "df0:" o "", $51 byte */
+ #define G_PROMPT_KEY       H005_B(0x52FB)  /* tasto al termine dell'attesa */
++#define G_KEY              H005_B(0x5305)  /* tasto/azione pendente (H010) */
++#define G_MOUSE_CLICK      H005_B(0x249E)  /* 1 se il tasto viene dal mouse */
+ 
+ /*
+  * Puntatori tenuti in H005 (long nell'originale): variabili C, perche' sul
+@@ -61,6 +63,9 @@ extern struct RastPort *g_rastport;     /* $52EE: RastPort della finestra */
+ extern u8 *g_dax_buffer;                /* $3C7E: blocco DAX compresso */
+ extern struct GfxRecord *g_8x8_sets[5]; /* $3338: set 8x8 caricati da H034 */
+ extern struct GfxRecord *g_sprite_sets[29][2]; /* $3244: coppie di set 24x24 */
++extern struct GfxRecord *g_pic_rec_27c2; /* $27C2: immagine dell'insieme $27BC */
++extern struct GfxRecord *g_pic_rec_27c6; /* $27C6 */
++extern u8 *g_pic_buffers[7];            /* $27E8: blocchi 2..8 dell'insieme */
+ extern void *g_party_head;              /* $3364: testa della lista del party */
+ extern void *g_current_char;            /* $3368: personaggio corrente */
+ 
+diff --git a/src_c/readable/h001_main.c b/src_c/readable/h001_main.c
+index 30c9fea..89abe6d 100644
+--- a/src_c/readable/h001_main.c
++++ b/src_c/readable/h001_main.c
+@@ -15,6 +15,7 @@
+ #include "h003_exec.h"
+ #include "h004_init.h"
+ #include "h006.h"
++#include "h007.h"
+ #include "globals.h"
+ #include "unported.h"
+ 
+@@ -64,7 +65,7 @@ void game_main(void)
+     h004_0c28();
+     select_data_prefix();
+     init_game_environment();
+-    h007_09d8();
++    play_intro();
+     ask_play_or_demo(3000);
+ 
+     for (;;) {
+@@ -96,7 +97,7 @@ void game_main(void)
+ 
+         if (G_DEMO_FLAG) {
+             G_RESOURCE_GROUP = 0;
+-            h007_09d8();
++            play_intro();
+             ask_play_or_demo(1000);
+         }
+     }
+diff --git a/src_c/readable/h003_exec.c b/src_c/readable/h003_exec.c
+index 923293f..5575c7b 100644
+--- a/src_c/readable/h003_exec.c
++++ b/src_c/readable/h003_exec.c
+@@ -39,6 +39,12 @@ void exec_free_mem(void *block, u32 size)
+ #endif
+ }
+ 
++/* PORT H003+$007E */
++u32 exec_avail_mem(u32 requirements)
++{
++    return (u32)AvailMem(requirements);
++}
++
+ /*
+  * PORT H003+$0090.  CopyMem non ammette sovrapposizioni (EA usava movmem):
+  * sull'host si usa memmove, che da' lo stesso risultato senza
+diff --git a/src_c/readable/h003_exec.h b/src_c/readable/h003_exec.h
+index a3e57f5..4e6e106 100644
+--- a/src_c/readable/h003_exec.h
++++ b/src_c/readable/h003_exec.h
+@@ -8,6 +8,7 @@
+ #define COK_MEMF_CLEAR 0x00010000UL
+ 
+ void *exec_alloc_mem(u32 size, u32 flags);   /* H003+$0068 */
++u32   exec_avail_mem(u32 requirements);         /* H003+$007E */
+ void  exec_copy_mem(const void *src, void *dst, u32 size); /* H003+$0090 */
+ void  exec_free_mem(void *block, u32 size);  /* H003+$00F6 */
+ 
+diff --git a/src_c/readable/h006.c b/src_c/readable/h006.c
+index 52ceb2d..5e0dedf 100644
+--- a/src_c/readable/h006.c
++++ b/src_c/readable/h006.c
+@@ -150,12 +150,12 @@ void init_game_environment(void)
+         H005_B(0x27B0 + (s_i - 1) * 6) = 0xFF;
+         H005_SET_L(0x27B0 + (s_i - 1) * 6 + 2, 0);
+     }
+-    H005_SET_L(0x27C2, 0);
+-    H005_SET_L(0x27C6, 0);
++    g_pic_rec_27c2 = NULL;
++    g_pic_rec_27c6 = NULL;
+     /* H006+$0468 */
+     for (s_i = 2; s_i <= 8; ++s_i) {
+         H005_SET_W(0x27DA + (s_i - 2) * 2, 0);
+-        H005_SET_L(0x27E8 + (s_i - 2) * 4, 0);
++        g_pic_buffers[s_i - 2] = NULL;
+     }
+     H005_SET_W(0x27BC, 0);
+     H005_SET_L(0x2798, 0);
+diff --git a/src_c/readable/h007.c b/src_c/readable/h007.c
+index b3bd819..039b37b 100644
+--- a/src_c/readable/h007.c
++++ b/src_c/readable/h007.c
+@@ -1,7 +1,313 @@
+ /* H007: Introduzione: immagini LBM, crediti e avvio audio. */
+-#include "cok.h"
++#include "h007.h"
++#include "h003_exec.h"
++#include "h010_input.h"
++#include "h011.h"
++#include "h016_gfx.h"
++#include "h021_intuition.h"
++#include "h022_view.h"
++#include "h028_files.h"
++#include "h030.h"
++#include "h036.h"
++#include "h038.h"
++#include "h040.h"
++#include "h042_seq.h"
++#include "h044_tiles.h"
++#include "globals.h"
++#include "unported.h"
+ 
+ /* PORT H007+$02C0: link/unlk, nessun effetto. */
+ void h007_init(void)
+ {
+ }
++
++/*
++ * Dati del modulo (a4 = H007+$72):
++ *   +$000 "Insert Disk One in drive df0" (richiesta del disco)
++ *   +$01D..+$1EA testi dei crediti   +$1F8.. nomi delle immagini
++ *   -$6C  palette di 32 colori RGB4 (word)
++ *   -$6D  risultato di Open_ResourceFile    -$72 file aperto
++ *   -$28  BitMap dell'immagine caricata      -$2C dimensione dei piani
++ */
++static u16 s_palette[32];               /* -$6C(a4) */
++static u8 s_open_result;                /* -$6D(a4) */
++static cok_bptr s_file;                 /* -$72(a4) */
++static struct BitMap s_bitmap;          /* -$28(a4) */
++static u32 s_alloc_size;                /* -$2C(a4) */
++
++static const char s_insert_disk[] = "Insert Disk One in drive df0";
++
++/* PORT H007+$02CE: allocatore dei piani per Read_ILBM (chip, azzerata). */
++static u8 *alloc_picture_planes(u32 size)
++{
++    s_alloc_size = size;
++    return (u8 *)exec_alloc_mem(size, COK_MEMF_CHIP | COK_MEMF_CLEAR);
++}
++
++/* PORT H007+$0304: separa un colore RGB4 nelle tre componenti. */
++static void split_rgb4(s16 *blue, s16 *green, s16 *red, u16 color)
++{
++    *blue = (s16)(color & 0x0F);
++    *green = (s16)((s16)(color & 0xF0) >> 4);
++    *red = (s16)((s16)(color & 0xF00) >> 8);
++}
++
++/* PORT H007+$0348: ricompone un colore RGB4 limitando le componenti a 0..15. */
++static u16 make_rgb4(s16 red, s16 green, s16 blue)
++{
++    if (red < 0) {
++        red = 0;
++    }
++    if (green < 0) {
++        green = 0;
++    }
++    if (blue < 0) {
++        blue = 0;
++    }
++    if (red > 0x0F) {
++        red = 0x0F;
++    }
++    if (green > 0x0F) {
++        green = 0x0F;
++    }
++    if (blue > 0x0F) {
++        blue = 0x0F;
++    }
++    return (u16)((red << 8) + (green << 4) + blue);
++}
++
++/*
++ * PORT H007+$03CA: dissolvenza della palette in 16 passi, uno per quadro:
++ * fade_in = 0 verso il nero, 1 dal nero.
++ */
++static void fade_palette(u8 fade_in)
++{
++    u8 colors[64];                      /* -$4C(a5): RGB4 big-endian */
++    s16 step;
++    s16 amount;
++    s16 i;
++    s16 blue;
++    s16 green;
++    s16 red;
++
++    for (step = 0; step <= 0x0F; ++step) {
++        amount = fade_in ? (s16)(0x0F - step) : step;
++        for (i = 0; i <= 0x1F; ++i) {
++            split_rgb4(&blue, &green, &red, s_palette[i]);
++            red = (s16)(red - amount);
++            blue = (s16)(blue - amount);
++            green = (s16)(green - amount);
++            COK_PUT16(&colors[i * 2], make_rgb4(red, green, blue));
++        }
++        graphics_wait_tof();
++        graphics_load_rgb4(&g_screen->ViewPort, colors, 0x20);
++    }
++}
++
++/* Carica s_palette (32 colori) nel ViewPort dello schermo. */
++static void load_palette(void)
++{
++    u8 colors[64];
++    int i;
++
++    for (i = 0; i < 32; ++i) {
++        COK_PUT16(&colors[i * 2], s_palette[i]);
++    }
++    graphics_load_rgb4(&g_screen->ViewPort, colors, 0x20);
++}
++
++/* PORT H007+$04A0: palette tutta nera. */
++static void black_palette(void)
++{
++    s16 i;
++
++    for (i = 0; i <= 0x1F; ++i) {
++        s_palette[i] = 0;
++    }
++    load_palette();
++    graphics_wait_tof();
++}
++
++/*
++ * PORT H007+$04F2 (Intro_LoadLBM): legge un'immagine ILBM e la copia nello
++ * schermo da (dx, dy) per width x height.  fade_out: prima dissolve verso
++ * il nero la palette attuale; fade_in: parte dal nero e dissolve verso
++ * quella dell'immagine (altrimenti la carica subito).
++ */
++static void load_intro_picture(u16 dx, u16 dy, u16 width, u16 height,
++                               u16 name_len, const char *name, u8 fade_out,
++                               u8 fade_in)
++{
++    ILBMFrame frame;                    /* -$6C(a5) */
++    s32 iffp;                           /* -$4(a5) */
++    s16 i;
++
++    s_open_result = open_resource_file(name_len, name, 0x1C, s_insert_disk,
++                                       1, &s_file);
++    if (s_file == 0) {
++        return;
++    }
++    /* Il frame dell'originale e' sullo stack non inizializzato: qui a zero. */
++    memset(&frame, 0, sizeof(frame));
++    for (i = 0; i <= 4; ++i) {
++        s_bitmap.Planes[i] = NULL;
++    }
++    iffp = read_ilbm(s_file, &s_bitmap, &frame, alloc_picture_planes);
++    dos_close(s_file);
++    if (iffp >= IFF_DONE) {
++        if (fade_out) {
++            fade_palette(0);
++        } else if (fade_in) {
++            black_palette();
++        }
++        for (i = 0; i < 32; ++i) {
++            s_palette[i] = frame.color_map[i];
++        }
++        (void)graphics_blt_bitmap(&s_bitmap, 0, 0, &g_screen->BitMap, dx, dy,
++                                  width, height, 0xCA, 0xFF, NULL);
++        if (fade_in) {
++            fade_palette(1);
++        } else {
++            load_palette();
++        }
++    }
++    exec_free_mem(s_bitmap.Planes[0], s_alloc_size);
++}
++
++/*
++ * PORT H007+$064E: attende seconds secondi (passi di Delay(5), un decimo
++ * di secondo) leggendo l'input; restituisce 1 se un tasto l'ha interrotta.
++ */
++static u8 intro_wait(u16 seconds)
++{
++    u16 count = 0;
++    u16 limit = (u16)(seconds * 10);
++
++    do {
++        dos_delay(5);
++        ++count;
++        poll_intuition_events();
++        if (G_KEY != 0) {
++            break;
++        }
++    } while (count < limit);
++    return (u8)(count < limit);
++}
++
++/* PORT H007+$06B4: cancella lo schermo (penna 0, 320x200). */
++static void clear_screen(void)
++{
++    graphics_set_apen(g_rastport, 0);
++    graphics_rect_fill(g_rastport, 0, 0, 0x140, 0xC8);
++}
++
++/* Testi dei crediti (H007+$06EA): colonna, riga, penna, sfondo, lunghezza. */
++static const struct {
++    u8 col;
++    u8 row;
++    u8 fg;
++    u8 bg;
++    u8 len;
++    const char *text;
++} s_credits[] = {
++    { 5, 1, 5, 0, 0x1E, "based on an original story by:" },
++    { 15, 2, 14, 0, 0x08, "Jim Ward" },
++    { 4, 3, 14, 0, 0x0E, "Victor Penman," },
++    { 19, 3, 5, 0, 0x03, "and" },
++    { 24, 3, 14, 0, 0x0C, "Dave Shelley" },
++    { 2, 5, 5, 0, 0x10, "game created by:" },
++    { 18, 5, 12, 0, 0x14, "SSI Special Projects" },
++    { 2, 7, 12, 0, 0x11, "Project Director:" },
++    { 20, 7, 14, 0, 0x0D, "Victor Penman" },
++    { 2, 9, 12, 0, 0x0B, "Programming" },
++    { 2, 10, 14, 0, 0x0A, "Norm Koger" },
++    { 2, 11, 14, 0, 0x0A, "Russ Brown" },
++    { 2, 12, 14, 0, 0x0F, "Michael McNally" },
++    { 20, 9, 12, 0, 0x10, "Encounter Design" },
++    { 20, 10, 14, 0, 0x0C, "Dave Shelley" },
++    { 20, 11, 14, 0, 0x0F, "Michael Mancuso" },
++    { 20, 12, 14, 0, 0x0D, "Ken Humphries" },
++    { 2, 14, 12, 0, 0x0D, "Graphic Arts:" },
++    { 2, 15, 14, 0, 0x21, "Laura Bowen, Tom Wahl, Fred Butts" },
++    { 2, 16, 14, 0, 0x25, "Mark Johnson, Cyrus Lum, Susan Manley" },
++    { 2, 18, 12, 0, 0x09, "playtest:" },
++    { 12, 18, 14, 0, 0x1A, "Rick White, Tom Schumacher" },
++    { 2, 19, 14, 0, 0x21, "Erik Flom, John Kirk, Dave Lucca," },
++    { 2, 20, 14, 0, 0x24, "Don McClure, L.S.Webber, Rick Wilson" },
++    { 2, 22, 12, 0, 0x0E, "Musical score:" },
++    { 20, 22, 14, 0, 0x0D, "john halblieb" },
++};
++
++/* PORT H007+$06EA: pagina dei crediti dentro la cornice. */
++static void show_credits(void)
++{
++    size_t i;
++
++    draw_credits_frame();
++    for (i = 0; i < sizeof(s_credits) / sizeof(s_credits[0]); ++i) {
++        ui_draw_text(s_credits[i].col, s_credits[i].row, s_credits[i].fg,
++                     s_credits[i].bg, s_credits[i].len, s_credits[i].text);
++    }
++}
++
++/*
++ * PORT H007+$09D8 (Intro_LoadAndShow): introduzione.  Dopo un secondo (se
++ * nessun tasto) avvia la musica, nasconde il puntatore, verifica il disco
++ * uno, poi per tre volte: "scrn1b", "scrn2", i due testi e i crediti, con
++ * tre secondi ciascuno; un tasto interrompe.  Alla fine prepara la palette
++ * del gioco e i comandi audio $FE e $FD.
++ */
++void play_intro(void)
++{
++    u8 interrupted;                     /* -$1(a5) */
++    u8 *pointer;                        /* -$8(a5) */
++    s16 round;                          /* -$4(a5) */
++
++    interrupted = intro_wait(1);
++    h043_0584();
++    if (!interrupted) {
++        release_picture_set();
++        pointer = (u8 *)exec_alloc_mem(8, COK_MEMF_CHIP | COK_MEMF_CLEAR);
++        intuition_set_pointer(g_window, pointer, 1, 1, 0, 0);
++        s_open_result = open_resource_file(0x0A, "scrn1b.lbm", 0x1C,
++                                           s_insert_disk, 1, &s_file);
++        dos_close(s_file);
++        if (H005_B(0x3D79) != 2) {
++            h043_190e(0x17);
++        }
++        black_palette();
++        round = 0;
++        while (round != 3 && !interrupted) {
++            ++round;
++            if (!interrupted) {
++                load_intro_picture(0, 0, 0x140, 0xC8, 0x0A, "scrn1b.LBM", 1, 1);
++                interrupted = intro_wait(3);
++            }
++            if (!interrupted) {
++                load_intro_picture(0, 0, 0x140, 0xC8, 9, "scrn2.LBM", 1, 1);
++                interrupted = intro_wait(3);
++            }
++            if (!interrupted) {
++                load_intro_picture(0x28, 8, 0xF0, 0x58, 9, "text1.LBM", 0, 0);
++                interrupted = intro_wait(3);
++            }
++            if (!interrupted) {
++                load_intro_picture(0, 8, 0x140, 0x58, 9, "text2.LBM", 0, 0);
++                interrupted = intro_wait(3);
++            }
++            if (!interrupted) {
++                fade_palette(0);
++                clear_screen();
++                show_credits();
++                interrupted = intro_wait(3);
++            }
++        }
++        intuition_clear_pointer(g_window);
++        exec_free_mem(pointer, 8);
++    }
++    clear_screen();
++    load_game_palette();
++    h043_190e(0xFE);
++    h043_190e(0xFD);
++    H005_B(0x24C9) = 1;
++}
+diff --git a/src_c/readable/h007.h b/src_c/readable/h007.h
+new file mode 100644
+index 0000000..7212f85
+--- /dev/null
++++ b/src_c/readable/h007.h
+@@ -0,0 +1,7 @@
++/* H007: introduzione (immagini LBM, crediti) e avvio dell'audio. */
++#ifndef COK_H007_H
++#define COK_H007_H
++
++void play_intro(void);                  /* H007+$09D8 */
++
++#endif
+diff --git a/src_c/readable/h010_input.c b/src_c/readable/h010_input.c
+index a10b895..1ac8409 100644
+--- a/src_c/readable/h010_input.c
++++ b/src_c/readable/h010_input.c
+@@ -1,5 +1,8 @@
+ /* H010: input Intuition, conversione degli eventi, uscita ed errori. */
+-#include "cok.h"
++#include "h010_input.h"
++#include "h050.h"
++#include "globals.h"
++#include "unported.h"
+ 
+ /* Modificatori tenuti premuti (H010+$043C). */
+ u8 g_input_alt;                 /* -$53(a4) */
+@@ -13,3 +16,129 @@ void h010_init(void)
+     g_input_shift = 0;
+     g_input_ctrl = 0;
+ }
++
++/*
++ * Conversione dei codici RAWKEY 1..$4F (tabella di salto H010+$0712): il
++ * carattere ASCII, 0 per i tasti senza significato.  Tastierino e frecce
++ * danno le cifre delle direzioni (su 8, giu' 2, destra 6, sinistra 4).
++ */
++static const u8 s_rawkey_ascii[0x4F] = {
++    '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',   /* $01..$0A */
++    0, 0, 0, 0, '0',                                    /* $0B..$0F */
++    'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p',   /* $10..$19 */
++    0, 0, 0, '1', '2', '3',                             /* $1A..$1F */
++    'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';',   /* $20..$29 */
++    '\'', 0, 0, '4', '5', '6', 0,                        /* $2A..$30 */
++    'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.',        /* $31..$39 */
++    0, 0, 0, '7', '8', '9',                             /* $3A..$3F */
++    ' ', 0x08, 0, 0x0D, 0x0D, 0x1B, 0x10,               /* $40..$46 */
++    0, 0, 0, 0, 0,                                      /* $47..$4B */
++    '8', '2', '6', '4'                                  /* $4C..$4F */
++};
++
++/*
++ * PORT H010+$043C: converte il codice RAWKEY in G_KEY.  Shift, Ctrl e Alt
++ * (premuti $60/$61, $63, $64/$65; rilasciati con il bit 7) aggiornano i
++ * flag e azzerano il tasto; i rilasci degli altri tasti danno 0.  Con Alt
++ * premuto (e senza Shift/Ctrl) il flag si azzera e a, m, q, x diventano
++ * 1..4, c mostra la memoria libera (H010+$03AA); gli altri tasti lo
++ * rimettono.
++ */
++static void convert_rawkey(void)
++{
++    u8 key = G_KEY;
++
++    if (key == 0x60 || key == 0x61) {
++        g_input_shift = 1;
++        G_KEY = 0;
++    } else if (key == 0xE0 || key == 0xE1) {
++        g_input_shift = 0;
++        G_KEY = 0;
++    } else if (key == 0x64 || key == 0x65) {
++        g_input_alt = 1;
++        G_KEY = 0;
++    } else if (key == 0xE4 || key == 0xE5) {
++        g_input_alt = 0;
++        G_KEY = 0;
++    } else if (key == 0x63) {
++        g_input_ctrl = 1;
++        G_KEY = 0;
++    } else if (key == 0xE3) {
++        g_input_ctrl = 0;
++        G_KEY = 0;
++    } else {
++        u16 index = (u16)(key - 1);
++
++        G_KEY = index <= 0x4E ? s_rawkey_ascii[index] : 0;
++    }
++    if (g_input_shift || g_input_ctrl || !g_input_alt) {
++        return;
++    }
++    g_input_alt = 0;
++    switch (G_KEY) {
++    case 'a':
++        G_KEY = 1;
++        break;
++    case 'm':
++        G_KEY = 2;
++        break;
++    case 'q':
++        G_KEY = 3;
++        break;
++    case 'x':
++        G_KEY = 4;
++        break;
++    case 'c':
++        h010_03aa();
++        break;
++    default:
++        g_input_alt = 1;
++        break;
++    }
++}
++
++/*
++ * PORT H010+$042E (corpo a H010+$0882, Poll_IntuitionEvents): svuota la
++ * porta IDCMP della finestra.  Il primo tasto (RAWKEY) va in G_KEY e viene
++ * convertito; un clic (MOUSEBUTTONS) aggiorna la posizione del mouse
++ * (H005+$2356/$2354) e il pulsante sinistro vale Invio, il destro Esc, con
++ * G_MOUSE_CLICK = 1.
++ */
++void poll_intuition_events(void)
++{
++    struct IntuiMessage *msg;
++
++    G_KEY = 0;
++    G_MOUSE_CLICK = 0;
++    do {
++        msg = (struct IntuiMessage *)exec_get_msg(g_window->UserPort);
++        if (msg != NULL) {
++            if (msg->Class == 0x400) {             /* RAWKEY */
++                if (G_KEY == 0) {
++                    G_KEY = (u8)msg->Code;
++                    convert_rawkey();
++                }
++            } else if (msg->Class == 0x8) {        /* MOUSEBUTTONS */
++                H005_SET_W(0x2356, (u16)msg->MouseX);
++                H005_SET_W(0x2354, (u16)msg->MouseY);
++                if (msg->Code == 0x68) {           /* SELECTDOWN */
++                    G_KEY = 0x0D;
++                    G_MOUSE_CLICK = 1;
++                } else if (msg->Code == 0x69) {    /* MENUDOWN */
++                    G_KEY = 0x1B;
++                    G_MOUSE_CLICK = 1;
++                }
++            }
++            exec_reply_msg(&msg->ExecMessage);
++        }
++    } while (msg != NULL);
++}
++
++/* PORT H010+$0974: aspetta sulla porta IDCMP finche' arriva un tasto. */
++void wait_for_key(void)
++{
++    do {
++        (void)exec_wait_port(g_window->UserPort);
++        poll_intuition_events();
++    } while (G_KEY == 0);
++}
+diff --git a/src_c/readable/h010_input.h b/src_c/readable/h010_input.h
+new file mode 100644
+index 0000000..05707ee
+--- /dev/null
++++ b/src_c/readable/h010_input.h
+@@ -0,0 +1,10 @@
++/* H010: input Intuition, conversione degli eventi, uscita ed errori. */
++#ifndef COK_H010_INPUT_H
++#define COK_H010_INPUT_H
++
++#include "cok.h"
++
++void poll_intuition_events(void);       /* H010+$042E (corpo a $0882) */
++void wait_for_key(void);                /* H010+$0974 */
++
++#endif
+diff --git a/src_c/readable/h011.c b/src_c/readable/h011.c
+index a78444e..b636aae 100644
+--- a/src_c/readable/h011.c
++++ b/src_c/readable/h011.c
+@@ -1,5 +1,9 @@
+ /* H011: dati del modulo (tabelle di word e byte). */
+ #include "init_data.h"
++#include "h011.h"
++#include "h003_exec.h"
++#include "h022_view.h"
++#include "globals.h"
+ 
+ /* Dati del modulo sotto a4: g_h011_bss[0xAC - off] e' -off(a4). */
+ u8 g_h011_bss[0xAC];
+@@ -11,3 +15,16 @@ void h011_init(void)
+ {
+     INIT_APPLY(s_init_1a02, g_h011_bss, sizeof(g_h011_bss));
+ }
++
++/*
++ * PORT H011+$010C: copia la palette di H005+$52AE in -$AC(a4), imposta i
++ * colori 17..19 a $AAA, $555, $FFF e carica i primi 20 colori.
++ */
++void load_game_palette(void)
++{
++    exec_copy_mem(&g_h005[0x52AE], g_h011_bss, 0x40);
++    COK_PUT16(&g_h011_bss[0xAC - 0x8A], 0x0AAA);
++    COK_PUT16(&g_h011_bss[0xAC - 0x88], 0x0555);
++    COK_PUT16(&g_h011_bss[0xAC - 0x86], 0x0FFF);
++    graphics_load_rgb4(&g_screen->ViewPort, g_h011_bss, 0x14);
++}
+diff --git a/src_c/readable/h011.h b/src_c/readable/h011.h
+new file mode 100644
+index 0000000..69484d0
+--- /dev/null
++++ b/src_c/readable/h011.h
+@@ -0,0 +1,7 @@
++/* H011: palette e servizi del modulo. */
++#ifndef COK_H011_H
++#define COK_H011_H
++
++void load_game_palette(void);           /* H011+$010C */
++
++#endif
+diff --git a/src_c/readable/h016_gfx.c b/src_c/readable/h016_gfx.c
+index 3fce435..9c99c1f 100644
+--- a/src_c/readable/h016_gfx.c
++++ b/src_c/readable/h016_gfx.c
+@@ -28,3 +28,9 @@ s32 graphics_blt_bitmap(struct BitMap *src, u16 src_x, u16 src_y,
+                           (s16)dst_y, (s16)width, (s16)height, minterm, mask,
+                           (PLANEPTR)temp);
+ }
++
++/* PORT H016+$01AC */
++void graphics_wait_tof(void)
++{
++    WaitTOF();
++}
+diff --git a/src_c/readable/h016_gfx.h b/src_c/readable/h016_gfx.h
+index 5606743..7f0ad5d 100644
+--- a/src_c/readable/h016_gfx.h
++++ b/src_c/readable/h016_gfx.h
+@@ -9,5 +9,6 @@ s32  graphics_blt_bitmap(struct BitMap *src, u16 src_x, u16 src_y,
+                          u16 width, u16 height, u8 minterm, u8 mask,
+                          u8 *temp);                     /* H016+$0014 */
+ void graphics_blt_clear(void *memory, u32 count, u32 flags);  /* H016+$0084 */
++void graphics_wait_tof(void);                                 /* H016+$01AC */
+ 
+ #endif
+diff --git a/src_c/readable/h021_intuition.c b/src_c/readable/h021_intuition.c
+index 68e086e..51dbc4b 100644
+--- a/src_c/readable/h021_intuition.c
++++ b/src_c/readable/h021_intuition.c
+@@ -92,3 +92,11 @@ u32 intuition_auto_request(struct Window *window, struct IntuiText *body,
+     return (u32)AutoRequest(window, body, pos, neg, pos_flags, neg_flags,
+                             (LONG)width, (LONG)height);
+ }
++
++/* PORT H021+$02EE: le misure sono word estese con segno (move.w). */
++void intuition_set_pointer(struct Window *window, u8 *data, u16 height,
++                           u16 width, u16 x_offset, u16 y_offset)
++{
++    SetPointer(window, (UWORD *)data, (s16)height, (s16)width, (s16)x_offset,
++               (s16)y_offset);
++}
+diff --git a/src_c/readable/h021_intuition.h b/src_c/readable/h021_intuition.h
+index 90c863e..8d9f1ca 100644
+--- a/src_c/readable/h021_intuition.h
++++ b/src_c/readable/h021_intuition.h
+@@ -14,6 +14,9 @@ void intuition_activate_window(struct Window *window);    /* H021+$01FA */
+ void intuition_clear_pointer(struct Window *window);      /* H021+$0230 */
+ void intuition_close_window(struct Window *window);       /* H021+$0242 */
+ struct Window *intuition_open_window(struct NewWindow *nw); /* H021+$029C */
++void intuition_set_pointer(struct Window *window, u8 *data, u16 height,
++                           u16 width, u16 x_offset, u16 y_offset);
++                                                          /* H021+$02EE */
+ u32  intuition_auto_request(struct Window *window, struct IntuiText *body,
+                             struct IntuiText *pos, struct IntuiText *neg,
+                             u32 pos_flags, u32 neg_flags, u16 width,
+diff --git a/src_c/readable/h030.c b/src_c/readable/h030.c
+index 7661dfb..4a7c80c 100644
+--- a/src_c/readable/h030.c
++++ b/src_c/readable/h030.c
+@@ -40,6 +40,19 @@ void ui_draw_text(u16 col, u16 row, u16 fg, u16 bg, u16 len,
+     draw_text_blitter(col, row, fg, bg, len, text);
+ }
+ 
++/*
++ * PORT H030+$0B6C: cancella (penne 0) il rettangolo di celle 8x8 da
++ * (col1, row1) a (col2, row2) compresi.
++ */
++void clear_text_cells(u16 col1, u16 row1, u16 col2, u16 row2)
++{
++    graphics_set_apen(g_rastport, 0);
++    graphics_set_bpen(g_rastport, 0);
++    graphics_set_open(g_rastport, 0);
++    graphics_rect_fill(g_rastport, (u16)(col1 << 3), (u16)(row1 << 3),
++                       (u16)((col2 << 3) + 7), (u16)((row2 << 3) + 7));
++}
++
+ /* Dati del modulo (sotto a4). */
+ struct BitMap g_gothic_bitmap;          /* -$2C: font "gothic.lbm" */
+ u32 g_h030_alloc_size;                  /* -$4: ultima allocazione */
+diff --git a/src_c/readable/h030.h b/src_c/readable/h030.h
+index 6217880..fbdb870 100644
+--- a/src_c/readable/h030.h
++++ b/src_c/readable/h030.h
+@@ -7,6 +7,8 @@
+ void fill_text_cells(u16 col, u16 row, u16 pen, u16 width); /* H030+$019A */
+ void ui_draw_text(u16 col, u16 row, u16 fg, u16 bg, u16 len,
+                   const char *text);                    /* H030+$0256 */
++void clear_text_cells(u16 col1, u16 row1, u16 col2, u16 row2);
++                                        /* H030+$0B6C */
+ void load_gothic_font(void);            /* H030+$0C10 */
+ 
+ #endif
+diff --git a/src_c/readable/h034.c b/src_c/readable/h034.c
+index 8c16fee..548bc23 100644
+--- a/src_c/readable/h034.c
++++ b/src_c/readable/h034.c
+@@ -3,7 +3,9 @@
+ #include "h026_string.h"
+ #include "h029_gfx.h"
+ #include "h045.h"
++#include "h049.h"
+ #include "globals.h"
++#include "h010_input.h"
+ #include "unported.h"
+ 
+ /* PORT H034+$0024: link/unlk, nessun effetto. */
+@@ -40,6 +42,20 @@ void load_8x8_set(u8 id, u8 slot)
+     h026_append(0x50, message, 0x50, number);
+     h026_append(0x50, message, 0x0A, " from 8x8D");
+     h026_append(0x50, message, 1, group);
+-    h010_0974();
++    wait_for_key();
+     h010_0332();
+ }
++
++/*
++ * PORT H034+$0178: disegna la tile 8x8 id nella cella (x, row): sullo
++ * schermo, oppure (offscreen) nell'immagine fuori schermo di H005+$27C2.
++ * L'ultimo argomento non e' letto.
++ */
++void draw_8x8_tile(u16 x, u16 row, u16 id, u8 offscreen, u16 unused)
++{
++    struct BitMap *dest;
++
++    (void)unused;
++    dest = offscreen ? g_pic_rec_27c2->image : &g_screen->BitMap;
++    draw_8x8_tile_raw(x, row, id, dest, g_8x8_sets);
++}
+diff --git a/src_c/readable/h034.h b/src_c/readable/h034.h
+index 5edb283..c903acd 100644
+--- a/src_c/readable/h034.h
++++ b/src_c/readable/h034.h
+@@ -5,5 +5,7 @@
+ #include "cok.h"
+ 
+ void load_8x8_set(u8 id, u8 slot);      /* H034+$0032 */
++void draw_8x8_tile(u16 x, u16 row, u16 id, u8 offscreen, u16 unused);
++                                        /* H034+$0178 */
+ 
+ #endif
+diff --git a/src_c/readable/h036.c b/src_c/readable/h036.c
+index 701ac5a..16cc815 100644
+--- a/src_c/readable/h036.c
++++ b/src_c/readable/h036.c
+@@ -1,5 +1,5 @@
+ /* H036: Adattatore dos.library/Delay. */
+-#include "cok.h"
++#include "h036.h"
+ 
+ /*
+  * PORT H036+$0008: copia DOSBase del runtime H015 nella cella del modulo.
+@@ -8,3 +8,9 @@
+ void h036_init(void)
+ {
+ }
++
++/* PORT H036+$0034 */
++void dos_delay(u32 ticks)
++{
++    Delay((LONG)ticks);
++}
+diff --git a/src_c/readable/h036.h b/src_c/readable/h036.h
+new file mode 100644
+index 0000000..5825866
+--- /dev/null
++++ b/src_c/readable/h036.h
+@@ -0,0 +1,9 @@
++/* H036: adattatore dos.library/Delay. */
++#ifndef COK_H036_H
++#define COK_H036_H
++
++#include "cok.h"
++
++void dos_delay(u32 ticks);              /* H036+$0034: 50 tick al secondo */
++
++#endif
+diff --git a/src_c/readable/h042_seq.c b/src_c/readable/h042_seq.c
+index bde1527..c877d11 100644
+--- a/src_c/readable/h042_seq.c
++++ b/src_c/readable/h042_seq.c
+@@ -1,5 +1,8 @@
+ /* H042: sequenze grafiche, cache, HEAD/BODY e BIGPIC. */
+-#include "cok.h"
++#include "h042_seq.h"
++#include "h003_exec.h"
++#include "h029_gfx.h"
++#include "globals.h"
+ 
+ u8 g_h042_m1;                   /* -$1(a4) */
+ u8 g_h042_m2;                   /* -$2(a4) */
+@@ -10,3 +13,27 @@ void h042_init(void)
+     g_h042_m1 = 0;
+     g_h042_m2 = 0;
+ }
++
++/*
++ * PORT H042+$0300: libera l'insieme di immagini di H005+$27BC (sempre
++ * quello: l'argomento dell'originale e' sempre H005+$27BC).  Le due
++ * immagini, i blocchi 2..conteggio (dimensioni a $27DA), azzera il
++ * conteggio, svuota il nome a $27A6 e mette $FF in $2486.
++ */
++void release_picture_set(void)
++{
++    u16 i;
++
++    g_h042_m1 = 0;
++    free_gfx_record(&g_pic_rec_27c2);
++    free_gfx_record(&g_pic_rec_27c6);
++    for (i = 2; i <= H005_W(0x27BC); ++i) {
++        if (g_pic_buffers[i - 2] != NULL) {
++            exec_free_mem(g_pic_buffers[i - 2], H005_W(0x27DA + (i - 2) * 2));
++            g_pic_buffers[i - 2] = NULL;
++        }
++    }
++    H005_SET_W(0x27BC, 0);
++    H005_B(0x27A6) = 0;                 /* stringa vuota (dbeq con $8) */
++    H005_B(0x2486) = 0xFF;
++}
+diff --git a/src_c/readable/h042_seq.h b/src_c/readable/h042_seq.h
+new file mode 100644
+index 0000000..e5285fb
+--- /dev/null
++++ b/src_c/readable/h042_seq.h
+@@ -0,0 +1,7 @@
++/* H042: sequenze di immagini. */
++#ifndef COK_H042_SEQ_H
++#define COK_H042_SEQ_H
++
++void release_picture_set(void);         /* H042+$0300 */
++
++#endif
+diff --git a/src_c/readable/h044_tiles.c b/src_c/readable/h044_tiles.c
+index 60049e3..57aa89b 100644
+--- a/src_c/readable/h044_tiles.c
++++ b/src_c/readable/h044_tiles.c
+@@ -1,5 +1,9 @@
+ /* H044: disegno di elementi 8x8 (glifi o tile) e servizi grafici/UI. */
+-#include "cok.h"
++#include "h044_tiles.h"
++#include "h022_view.h"
++#include "h030.h"
++#include "h034.h"
++#include "globals.h"
+ 
+ /*
+  * Dati del modulo: $B6 byte sotto a4 (da -$B6 a -$1).  H044_M(off) e' il
+@@ -94,3 +98,87 @@ void h044_init(void)
+     H044_M(0x02) = 0x00;
+     H044_M(0x01) = 0x14;
+ }
++
++/*
++ * PORT H044+$00C8: tile della cornice superiore nella colonna x (riga 0).
++ * Di norma dalla tabella di -$2A(a4); le colonne 8, $13 e $1E (giunzioni)
++ * prendono la tile dallo stato persistente A ($3F2 + $A, $3F4 + 6,
++ * $3F6 + $E).  Per x < 8 vale comunque la tabella: la tabella di salto
++ * dell'originale usa x stesso come indice, quindi x = 0..2 passano dai
++ * rami delle giunzioni prima di essere corretti.
++ */
++static void draw_top_border_cell(u16 x)
++{
++    u16 index = x;
++    u16 tile = 0;
++
++    if (x == 8) {
++        index = 0;
++    } else if (x == 0x13) {
++        index = 1;
++    } else if (x == 0x1E) {
++        index = 2;
++    }
++    switch (index) {
++    case 0:
++        tile = (u16)(COK_GET16(g_state_a + 0x3F2) + 0x0A);
++        break;
++    case 1:
++        tile = (u16)(COK_GET16(g_state_a + 0x3F4) + 6);
++        break;
++    case 2:
++        tile = (u16)(COK_GET16(g_state_a + 0x3F6) + 0x0E);
++        break;
++    default:
++        tile = H044_M(0x2A - x);
++        break;
++    }
++    if (x < 8) {
++        tile = H044_M(0x2A - x);
++    }
++    draw_8x8_tile(x, 0, (u16)(tile + 0x114), 0, 0);
++}
++
++/*
++ * PORT H044+$01C2: cornice a tutto schermo.  Colore 13 a $F0F (palette
++ * H005+$52AE, 16 colori), interno cancellato, riga superiore, lati (dalla
++ * tabella di -$42(a4); con mid le righe $F..$11 usano la tile 4) e riga
++ * inferiore.
++ */
++static void draw_screen_frame(u8 mid)
++{
++    u16 x;
++    u16 y;
++    u16 tile;
++
++    H005_SET_W(0x52C8, 0x0F0F);
++    graphics_load_rgb4(&g_screen->ViewPort, &g_h005[0x52AE], 0x10);
++    clear_text_cells(1, 1, 0x26, 0x16);
++    for (x = 0; x <= 0x27; ++x) {
++        draw_top_border_cell(x);
++    }
++    for (y = 0; y <= 0x17; ++y) {
++        if (y > 0x0E && y < 0x12 && mid) {
++            tile = 4;
++        } else {
++            tile = H044_M(0x42 - y);
++        }
++        draw_8x8_tile(0, y, (u16)(tile + 0x114), 0, 0);
++        draw_8x8_tile(0x27, y, (u16)(tile + 0x114), 0, 0);
++    }
++    for (x = 0; x <= 0x27; ++x) {
++        draw_8x8_tile(x, 0x17, 0x114, 0, 0);
++    }
++}
++
++/* PORT H044+$02D8: cornice dei crediti, con due linee alle righe 4 e 6. */
++void draw_credits_frame(void)
++{
++    u16 x;
++
++    draw_screen_frame(1);
++    for (x = 0; x <= 0x27; ++x) {
++        draw_8x8_tile(x, 4, 0x114, 0, 0);
++        draw_8x8_tile(x, 6, 0x114, 0, 0);
++    }
++}
+diff --git a/src_c/readable/h044_tiles.h b/src_c/readable/h044_tiles.h
+new file mode 100644
+index 0000000..9677e23
+--- /dev/null
++++ b/src_c/readable/h044_tiles.h
+@@ -0,0 +1,7 @@
++/* H044: disegno di elementi 8x8 (glifi o tile) e servizi grafici/UI. */
++#ifndef COK_H044_TILES_H
++#define COK_H044_TILES_H
++
++void draw_credits_frame(void);          /* H044+$02D8 */
++
++#endif
+diff --git a/src_c/readable/h049.c b/src_c/readable/h049.c
+index b45b330..cace7f1 100644
+--- a/src_c/readable/h049.c
++++ b/src_c/readable/h049.c
+@@ -181,3 +181,65 @@ void draw_text_blitter(u16 col, u16 row, u16 fg, u16 bg, u16 len,
+     }
+     DisownBlitter();
+ }
++
++/*
++ * PORT H049+$012A: copia la tile 8x8 id (dai cinque set: id 1..$2D nel set
++ * 0, poi $2E.., $74.., $BA.., $100..$127) nella cella (x, row) della
++ * griglia 40x25 della bitmap dest, piano per piano (dal 4 allo 0).  Il
++ * numero della tile nel set e' la colonna di 8 pixel nell'immagine.
++ */
++void draw_8x8_tile_raw(u16 x, u16 row, u16 id, struct BitMap *dest,
++                       struct GfxRecord **sets)
++{
++    struct GfxRecord *set;
++    struct BitMap *src;
++    s16 tile = (s16)id;
++    u16 src_bpr;
++    u16 dst_bpr;
++    u16 dst_off;
++    int n;
++    int plane;
++    int r;
++
++    if (tile < 0x2E) {
++        n = 0;
++        tile = (s16)(tile - 1);
++    } else if (tile < 0x74) {
++        n = 1;
++        tile = (s16)(tile - 0x2E);
++    } else if (tile < 0xBA) {
++        n = 2;
++        tile = (s16)(tile - 0x74);
++    } else if (tile < 0x100) {
++        n = 3;
++        tile = (s16)(tile - 0xBA);
++    } else if (tile < 0x128) {
++        n = 4;
++        tile = (s16)(tile - 0x100);
++    } else {
++        return;
++    }
++    set = sets[n];
++    if (set == NULL) {
++        return;
++    }
++    src = set->image;
++    src_bpr = src->BytesPerRow;
++    dst_bpr = dest->BytesPerRow;
++    dst_off = (u16)((u16)(dst_bpr * (u16)(row << 3)) + x);
++    for (plane = 4; plane >= 0; --plane) {
++        const u8 *s = (const u8 *)src->Planes[plane] + (s16)tile;
++        u8 *d = (u8 *)dest->Planes[plane] + dst_off;
++        u16 so = 0;
++        u16 dof = 0;
++
++        for (r = 0; r < 8; ++r) {
++            d[dof] = s[so];
++            so = (u16)(so + src_bpr);
++            dof = (u16)(dof + dst_bpr);
++        }
++    }
++    #if !COK_AMIGA
++    host_display_changed();
++#endif
++}
+diff --git a/src_c/readable/h049.h b/src_c/readable/h049.h
+index 469403f..9f169e1 100644
+--- a/src_c/readable/h049.h
++++ b/src_c/readable/h049.h
+@@ -3,9 +3,12 @@
+ #define COK_H049_H
+ 
+ #include "cok.h"
++#include "gfx_record.h"
+ 
+ void draw_text_blitter(u16 col, u16 row, u16 fg, u16 bg, u16 len,
+                        const char *text);               /* H049+$0224 */
++void draw_8x8_tile_raw(u16 x, u16 row, u16 id, struct BitMap *dest,
++                       struct GfxRecord **sets);        /* H049+$012A */
+ void h049_set_glyph_planes(u8 *glyphs, struct BitMap *dest); /* H049+$0438 */
+ 
+ #endif
+diff --git a/src_c/readable/h050.c b/src_c/readable/h050.c
+index de8781e..8d6a3b7 100644
+--- a/src_c/readable/h050.c
++++ b/src_c/readable/h050.c
+@@ -1,7 +1,25 @@
+ /* H050: Adattatori Exec per i messaggi. */
+-#include "cok.h"
++#include "h050.h"
+ 
+ /* PORT H050+$0004: rts. */
+ void h050_init(void)
+ {
+ }
++
++/* PORT H050+$002A */
++struct Message *exec_get_msg(struct MsgPort *port)
++{
++    return GetMsg(port);
++}
++
++/* PORT H050+$0064 */
++void exec_reply_msg(struct Message *msg)
++{
++    ReplyMsg(msg);
++}
++
++/* PORT H050+$0076 */
++struct Message *exec_wait_port(struct MsgPort *port)
++{
++    return WaitPort(port);
++}
+diff --git a/src_c/readable/h050.h b/src_c/readable/h050.h
+new file mode 100644
+index 0000000..d324527
+--- /dev/null
++++ b/src_c/readable/h050.h
+@@ -0,0 +1,11 @@
++/* H050: adattatori exec per i messaggi. */
++#ifndef COK_H050_H
++#define COK_H050_H
++
++#include "cok.h"
++
++struct Message *exec_get_msg(struct MsgPort *port);     /* H050+$002A */
++void exec_reply_msg(struct Message *msg);               /* H050+$0064 */
++struct Message *exec_wait_port(struct MsgPort *port);   /* H050+$0076 */
++
++#endif
+diff --git a/src_c/readable/host/display.c b/src_c/readable/host/display.c
+index c7bbbf2..ca4157d 100644
+--- a/src_c/readable/host/display.c
++++ b/src_c/readable/host/display.c
+@@ -9,10 +9,13 @@
+  * Variabili d'ambiente:
+  *   COK_SCALE=n          ingrandimento della finestra (predefinito 3);
+  *   COK_SCREENSHOT=f.bmp all'uscita salva l'ultimo fotogramma in f.bmp;
++ *   COK_SCREENSHOT_AT=t1,t2,...  salva anche f-1.bmp, f-2.bmp, ... ai
++ *                        millisecondi indicati dall'avvio del display;
+  *   SDL_VIDEODRIVER=dummy  esecuzione senza finestra (test).
+  */
+ #include <stdio.h>
+ #include <stdlib.h>
++#include <string.h>
+ /*
+  * Il main e' quello del gioco (h000_entry.c): niente SDL2main, che su
+  * Windows sostituirebbe il punto d'ingresso.
+@@ -102,6 +105,55 @@ static void save_screenshot(void)
+     }
+ }
+ 
++/* Salva s_pixels in path (BMP). */
++static void save_bmp(const char *path)
++{
++    SDL_Surface *surface;
++
++    if (s_pixels == NULL) {
++        return;
++    }
++    surface = SDL_CreateRGBSurfaceFrom(s_pixels, s_tex_w, s_tex_h, 32,
++                                       s_tex_w * 4, 0x00FF0000, 0x0000FF00,
++                                       0x000000FF, 0xFF000000);
++    if (surface != NULL) {
++        if (SDL_SaveBMP(surface, path) != 0) {
++            fprintf(stderr, "COK_SCREENSHOT: %s\n", SDL_GetError());
++        }
++        SDL_FreeSurface(surface);
++    }
++}
++
++/* COK_SCREENSHOT_AT: salvataggi ai tempi indicati. */
++static void timed_screenshots(Uint32 now)
++{
++    static int s_done;
++    const char *path = getenv("COK_SCREENSHOT");
++    const char *list = getenv("COK_SCREENSHOT_AT");
++    const char *p = list;
++    char name[600];
++    int index = 0;
++
++    if (path == NULL || list == NULL) {
++        return;
++    }
++    while (p != NULL && *p != 0) {
++        unsigned long t = strtoul(p, NULL, 10);
++
++        ++index;
++        if (index > s_done && now >= t) {
++            s_done = index;
++            convert();
++            sprintf(name, "%.500s-%d.bmp", path, index);
++            save_bmp(name);
++        }
++        p = strchr(p, ',');
++        if (p != NULL) {
++            ++p;
++        }
++    }
++}
++
+ static void at_exit(void)
+ {
+     convert();
+@@ -203,8 +255,10 @@ void host_display_refresh(int force)
+         if (ev.type == SDL_QUIT) {
+             exit(0);
+         }
++        host_input_event(&ev);
+     }
+     now = SDL_GetTicks();
++    timed_screenshots(now);
+     if (shown_viewport() == NULL || s_texture == NULL ||
+         (!force && (!s_dirty || now - s_last_present < 16))) {
+         return;
+@@ -239,3 +293,56 @@ int host_display_wait_key(void)
+     }
+     return -1;
+ }
++
++unsigned long host_ticks_ms(void)
++{
++    return s_sdl_ready ? (unsigned long)SDL_GetTicks() : 0;
++}
++
++/* Attende al massimo timeout_ms un evento, poi aggiorna lo schermo. */
++void host_display_wait_event(int timeout_ms)
++{
++    SDL_Event ev;
++
++    if (!s_sdl_ready) {
++        return;
++    }
++    if (SDL_WaitEventTimeout(&ev, timeout_ms)) {
++        if (ev.type == SDL_QUIT) {
++            exit(0);
++        }
++        host_input_event(&ev);
++    }
++    host_display_refresh(0);
++}
++
++/*
++ * graphics.library WaitTOF: aspetta il prossimo quadro (60 Hz, display
++ * NTSC a 200 righe) e mostra lo schermo.
++ */
++void WaitTOF(void)
++{
++    static Uint32 s_next;
++    Uint32 now;
++
++    host_display_refresh(1);
++    if (!s_sdl_ready) {
++        return;
++    }
++    now = SDL_GetTicks();
++    if (s_next == 0 || now > s_next + 100) {
++        s_next = now;
++    }
++    s_next += 1000 / 60;
++    while ((now = SDL_GetTicks()) < s_next) {
++        host_display_wait_event((int)(s_next - now));
++    }
++}
++
++/* Puntatore del mouse: un'immagine vuota nasconde il cursore di sistema. */
++void host_display_show_cursor(int show)
++{
++    if (s_sdl_ready) {
++        SDL_ShowCursor(show ? SDL_ENABLE : SDL_DISABLE);
++    }
++}
+diff --git a/src_c/readable/host/input.c b/src_c/readable/host/input.c
+new file mode 100644
+index 0000000..a8b5184
+--- /dev/null
++++ b/src_c/readable/host/input.c
+@@ -0,0 +1,212 @@
++/*
++ * Build host: input e tempo.  Gli eventi SDL diventano messaggi IDCMP
++ * (IntuiMessage) nella porta della finestra aperta, come li consegnerebbe
++ * Intuition: tasti come RAWKEY con il codice della tastiera Amiga (bit 7 =
++ * rilascio), pulsanti del mouse come MOUSEBUTTONS (SELECTDOWN/UP, e con
++ * RMBTRAP MENUDOWN/UP) con la posizione nello schermo 320x200.
++ */
++#include <stdlib.h>
++#include <string.h>
++#include <SDL.h>
++#include "ndk.h"
++
++#define QUEUE_SIZE 64
++
++static struct Window *s_window;         /* finestra con la porta IDCMP */
++static struct MsgPort s_port;
++static struct IntuiMessage s_queue[QUEUE_SIZE];
++static unsigned s_head;                 /* prossimo da consegnare */
++static unsigned s_count;
++static struct IntuiMessage s_current;   /* messaggio consegnato da GetMsg */
++static int s_mouse_x;
++static int s_mouse_y;
++
++/* Codici RAWKEY della tastiera Amiga per gli scancode SDL. */
++static int amiga_rawkey(SDL_Scancode sc)
++{
++    static const struct { SDL_Scancode sc; int raw; } map[] = {
++        { SDL_SCANCODE_GRAVE, 0x00 }, { SDL_SCANCODE_1, 0x01 },
++        { SDL_SCANCODE_2, 0x02 }, { SDL_SCANCODE_3, 0x03 },
++        { SDL_SCANCODE_4, 0x04 }, { SDL_SCANCODE_5, 0x05 },
++        { SDL_SCANCODE_6, 0x06 }, { SDL_SCANCODE_7, 0x07 },
++        { SDL_SCANCODE_8, 0x08 }, { SDL_SCANCODE_9, 0x09 },
++        { SDL_SCANCODE_0, 0x0A }, { SDL_SCANCODE_MINUS, 0x0B },
++        { SDL_SCANCODE_EQUALS, 0x0C }, { SDL_SCANCODE_BACKSLASH, 0x0D },
++        { SDL_SCANCODE_KP_0, 0x0F }, { SDL_SCANCODE_Q, 0x10 },
++        { SDL_SCANCODE_W, 0x11 }, { SDL_SCANCODE_E, 0x12 },
++        { SDL_SCANCODE_R, 0x13 }, { SDL_SCANCODE_T, 0x14 },
++        { SDL_SCANCODE_Y, 0x15 }, { SDL_SCANCODE_U, 0x16 },
++        { SDL_SCANCODE_I, 0x17 }, { SDL_SCANCODE_O, 0x18 },
++        { SDL_SCANCODE_P, 0x19 }, { SDL_SCANCODE_LEFTBRACKET, 0x1A },
++        { SDL_SCANCODE_RIGHTBRACKET, 0x1B }, { SDL_SCANCODE_KP_1, 0x1D },
++        { SDL_SCANCODE_KP_2, 0x1E }, { SDL_SCANCODE_KP_3, 0x1F },
++        { SDL_SCANCODE_A, 0x20 }, { SDL_SCANCODE_S, 0x21 },
++        { SDL_SCANCODE_D, 0x22 }, { SDL_SCANCODE_F, 0x23 },
++        { SDL_SCANCODE_G, 0x24 }, { SDL_SCANCODE_H, 0x25 },
++        { SDL_SCANCODE_J, 0x26 }, { SDL_SCANCODE_K, 0x27 },
++        { SDL_SCANCODE_L, 0x28 }, { SDL_SCANCODE_SEMICOLON, 0x29 },
++        { SDL_SCANCODE_APOSTROPHE, 0x2A }, { SDL_SCANCODE_KP_4, 0x2D },
++        { SDL_SCANCODE_KP_5, 0x2E }, { SDL_SCANCODE_KP_6, 0x2F },
++        { SDL_SCANCODE_Z, 0x31 }, { SDL_SCANCODE_X, 0x32 },
++        { SDL_SCANCODE_C, 0x33 }, { SDL_SCANCODE_V, 0x34 },
++        { SDL_SCANCODE_B, 0x35 }, { SDL_SCANCODE_N, 0x36 },
++        { SDL_SCANCODE_M, 0x37 }, { SDL_SCANCODE_COMMA, 0x38 },
++        { SDL_SCANCODE_PERIOD, 0x39 }, { SDL_SCANCODE_SLASH, 0x3A },
++        { SDL_SCANCODE_KP_PERIOD, 0x3C }, { SDL_SCANCODE_KP_7, 0x3D },
++        { SDL_SCANCODE_KP_8, 0x3E }, { SDL_SCANCODE_KP_9, 0x3F },
++        { SDL_SCANCODE_SPACE, 0x40 }, { SDL_SCANCODE_BACKSPACE, 0x41 },
++        { SDL_SCANCODE_TAB, 0x42 }, { SDL_SCANCODE_KP_ENTER, 0x43 },
++        { SDL_SCANCODE_RETURN, 0x44 }, { SDL_SCANCODE_ESCAPE, 0x45 },
++        { SDL_SCANCODE_DELETE, 0x46 }, { SDL_SCANCODE_KP_MINUS, 0x4A },
++        { SDL_SCANCODE_UP, 0x4C }, { SDL_SCANCODE_DOWN, 0x4D },
++        { SDL_SCANCODE_RIGHT, 0x4E }, { SDL_SCANCODE_LEFT, 0x4F },
++        { SDL_SCANCODE_F1, 0x50 }, { SDL_SCANCODE_F2, 0x51 },
++        { SDL_SCANCODE_F3, 0x52 }, { SDL_SCANCODE_F4, 0x53 },
++        { SDL_SCANCODE_F5, 0x54 }, { SDL_SCANCODE_F6, 0x55 },
++        { SDL_SCANCODE_F7, 0x56 }, { SDL_SCANCODE_F8, 0x57 },
++        { SDL_SCANCODE_F9, 0x58 }, { SDL_SCANCODE_F10, 0x59 },
++        { SDL_SCANCODE_KP_DIVIDE, 0x5C }, { SDL_SCANCODE_KP_MULTIPLY, 0x5D },
++        { SDL_SCANCODE_KP_PLUS, 0x5E }, { SDL_SCANCODE_F11, 0x5F },
++        { SDL_SCANCODE_LSHIFT, 0x60 }, { SDL_SCANCODE_RSHIFT, 0x61 },
++        { SDL_SCANCODE_CAPSLOCK, 0x62 }, { SDL_SCANCODE_LCTRL, 0x63 },
++        { SDL_SCANCODE_RCTRL, 0x63 }, { SDL_SCANCODE_LALT, 0x64 },
++        { SDL_SCANCODE_RALT, 0x65 }, { SDL_SCANCODE_LGUI, 0x66 },
++        { SDL_SCANCODE_RGUI, 0x67 }
++    };
++    size_t i;
++
++    for (i = 0; i < sizeof(map) / sizeof(map[0]); ++i) {
++        if (map[i].sc == sc) {
++            return map[i].raw;
++        }
++    }
++    return -1;
++}
++
++static void enqueue(ULONG cls, UWORD code)
++{
++    struct IntuiMessage *m;
++
++    if (s_window == NULL || !(s_window->IDCMPFlags & cls) ||
++        s_count == QUEUE_SIZE) {
++        return;
++    }
++    m = &s_queue[(s_head + s_count) % QUEUE_SIZE];
++    memset(m, 0, sizeof(*m));
++    m->Class = cls;
++    m->Code = code;
++    m->MouseX = (WORD)(s_mouse_x - s_window->LeftEdge);
++    m->MouseY = (WORD)(s_mouse_y - s_window->TopEdge);
++    m->IDCMPWindow = s_window;
++    m->Seconds = (ULONG)(SDL_GetTicks() / 1000);
++    m->Micros = (ULONG)(SDL_GetTicks() % 1000) * 1000;
++    ++s_count;
++}
++
++void host_input_event(const union SDL_Event *ev)
++{
++    int raw;
++
++    switch (ev->type) {
++    case SDL_KEYDOWN:
++    case SDL_KEYUP:
++        if (ev->key.repeat) {
++            break;
++        }
++        raw = amiga_rawkey(ev->key.keysym.scancode);
++        if (raw >= 0) {
++            enqueue(IDCMP_RAWKEY,
++                    (UWORD)(raw | (ev->type == SDL_KEYUP ? 0x80 : 0)));
++        }
++        break;
++    case SDL_MOUSEMOTION:
++        s_mouse_x = ev->motion.x;
++        s_mouse_y = ev->motion.y;
++        break;
++    case SDL_MOUSEBUTTONDOWN:
++    case SDL_MOUSEBUTTONUP:
++        s_mouse_x = ev->button.x;
++        s_mouse_y = ev->button.y;
++        if (ev->button.button == SDL_BUTTON_LEFT) {
++            enqueue(IDCMP_MOUSEBUTTONS, ev->type == SDL_MOUSEBUTTONDOWN ?
++                                        SELECTDOWN : SELECTUP);
++        } else if (ev->button.button == SDL_BUTTON_RIGHT && s_window != NULL &&
++                   (s_window->Flags & 0x00010000UL)) {     /* RMBTRAP */
++            enqueue(IDCMP_MOUSEBUTTONS, ev->type == SDL_MOUSEBUTTONDOWN ?
++                                        MENUDOWN : MENUUP);
++        }
++        break;
++    default:
++        break;
++    }
++}
++
++void host_input_open_window(struct Window *window)
++{
++    s_window = window;
++    window->UserPort = &s_port;
++    s_head = 0;
++    s_count = 0;
++}
++
++void host_input_close_window(struct Window *window)
++{
++    if (s_window == window) {
++        s_window = NULL;
++        s_count = 0;
++    }
++}
++
++int host_input_pending(void)
++{
++    return s_count != 0;
++}
++
++/* exec: la porta IDCMP dell'unica finestra. */
++struct Message *GetMsg(struct MsgPort *port)
++{
++    if (port != &s_port) {
++        return NULL;
++    }
++    host_display_refresh(0);
++    if (s_count == 0) {
++        return NULL;
++    }
++    s_current = s_queue[s_head];
++    s_head = (s_head + 1) % QUEUE_SIZE;
++    --s_count;
++    return &s_current.ExecMessage;
++}
++
++void ReplyMsg(struct Message *msg)
++{
++    (void)msg;
++}
++
++struct Message *WaitPort(struct MsgPort *port)
++{
++    while (port == &s_port && s_count == 0) {
++        host_display_wait_event(20);
++    }
++    return port == &s_port ? &s_queue[s_head].ExecMessage : NULL;
++}
++
++/* Memoria libera: sull'host non ha significato; valore fisso di 512K. */
++ULONG AvailMem(ULONG requirements)
++{
++    (void)requirements;
++    return 0x80000UL;
++}
++
++/* dos.library Delay: ticks a 50 Hz, elaborando gli eventi nel frattempo. */
++void Delay(LONG ticks)
++{
++    unsigned long end = host_ticks_ms() + (unsigned long)ticks * 20UL;
++
++    host_display_refresh(0);
++    while (ticks > 0 && host_ticks_ms() < end) {
++        unsigned long left = end - host_ticks_ms();
++
++        host_display_wait_event(left < 10 ? (int)left : 10);
++    }
++}
+diff --git a/src_c/readable/host/intuition.c b/src_c/readable/host/intuition.c
+index 3ada20b..0c1545a 100644
+--- a/src_c/readable/host/intuition.c
++++ b/src_c/readable/host/intuition.c
+@@ -132,11 +132,15 @@ struct Window *OpenWindow(struct NewWindow *nw)
+     w->WScreen = nw->Screen;
+     /* Finestra BACKDROP|BORDERLESS a schermo intero: disegna sullo schermo. */
+     w->RPort = &nw->Screen->RastPort;
++    host_input_open_window(w);
+     return w;
+ }
+ 
+ void CloseWindow(struct Window *window)
+ {
++    if (window != NULL) {
++        host_input_close_window(window);
++    }
+     free(window);
+ }
+ 
+@@ -163,6 +167,32 @@ void ActivateWindow(struct Window *window)
+ void ClearPointer(struct Window *window)
+ {
+     (void)window;
++    host_display_show_cursor(1);
++}
++
++/*
++ * Il cursore di sistema sostituisce lo sprite del puntatore: un puntatore
++ * di dati tutti a zero (come quello dell'intro) lo nasconde, gli altri lo
++ * mostrano.  L'immagine del puntatore non e' riprodotta.
++ */
++void SetPointer(struct Window *window, UWORD *data, LONG height, LONG width,
++                LONG x_offset, LONG y_offset)
++{
++    const UBYTE *p = (const UBYTE *)data;
++    LONG i;
++    int blank = 1;
++
++    (void)window;
++    (void)width;
++    (void)x_offset;
++    (void)y_offset;
++    for (i = 0; i < (height + 2) * 4 && p != NULL; ++i) {
++        if (p[i] != 0) {
++            blank = 0;
++            break;
++        }
++    }
++    host_display_show_cursor(!blank);
+ }
+ 
+ /*
+diff --git a/src_c/readable/host/ndk.h b/src_c/readable/host/ndk.h
+index bd24976..00644dc 100644
+--- a/src_c/readable/host/ndk.h
++++ b/src_c/readable/host/ndk.h
+@@ -47,7 +47,19 @@ struct Library {
+     UWORD lib_Version;
+ };
+ 
++struct Message {
++    struct MsgPort *mn_ReplyPort;
++};
++
++struct MsgPort {
++    UBYTE mp_SigBit;
++};
++
+ struct Task    *FindTask(STRPTR name);
++struct Message *GetMsg(struct MsgPort *port);
++void            ReplyMsg(struct Message *msg);
++struct Message *WaitPort(struct MsgPort *port);
++ULONG           AvailMem(ULONG requirements);
+ struct Library *OpenLibrary(STRPTR name, ULONG version);
+ void            CloseLibrary(struct Library *library);
+ 
+@@ -123,6 +135,7 @@ void     MakeVPort(struct View *view, struct ViewPort *vp);
+ void     MrgCop(struct View *view);
+ void     LoadView(struct View *view);
+ void     InitRastPort(struct RastPort *rp);
++void     WaitTOF(void);
+ void     OwnBlitter(void);
+ void     DisownBlitter(void);
+ void     WaitBlit(void);
+@@ -194,6 +207,25 @@ struct Window {
+     ULONG Flags;
+     struct RastPort *RPort;
+     struct Screen *WScreen;
++    struct MsgPort *UserPort;   /* porta IDCMP (eventi da SDL) */
++};
++
++#define IDCMP_MOUSEBUTTONS 0x00000008
++#define IDCMP_RAWKEY       0x00000400
++#define SELECTDOWN 0x68
++#define SELECTUP   0xE8
++#define MENUDOWN   0x69
++#define MENUUP     0xE9
++
++struct IntuiMessage {
++    struct Message ExecMessage;
++    ULONG Class;
++    UWORD Code;
++    UWORD Qualifier;
++    APTR IAddress;
++    WORD MouseX, MouseY;
++    ULONG Seconds, Micros;
++    struct Window *IDCMPWindow;
+ };
+ 
+ /* Solo i campi di Preferences letti dal gioco. */
+@@ -227,6 +259,18 @@ LONG           CloseWorkBench(void);
+ ULONG          OpenWorkBench(void);
+ void           ActivateWindow(struct Window *window);
+ void           ClearPointer(struct Window *window);
++void           SetPointer(struct Window *window, UWORD *data, LONG height,
++                          LONG width, LONG x_offset, LONG y_offset);
++
++/* dos.library (le altre funzioni DOS sono in h002_dos.c). */
++void Delay(LONG ticks);
++
++/* Input (host/input.c): eventi SDL -> messaggi IDCMP. */
++union SDL_Event;
++void host_input_open_window(struct Window *window);
++void host_input_close_window(struct Window *window);
++void host_input_event(const union SDL_Event *ev);
++int  host_input_pending(void);
+ 
+ /* Display SDL2 (host/display.c). */
+ void host_display_attach(struct Screen *screen);   /* schermo visibile */
+@@ -234,6 +278,9 @@ void host_display_detach(struct Screen *screen);
+ void host_display_changed(void);   /* bitmap o colori modificati */
+ void host_display_view(struct View *view);   /* LoadView */
+ void host_display_refresh(int force);
+-int  host_display_wait_key(void);  /* tasto premuto (SDL_Keycode), -1 se nessun display */
++int  host_display_wait_key(void);
++void host_display_wait_event(int timeout_ms);  /* attende ed elabora eventi */
++unsigned long host_ticks_ms(void);
++void host_display_show_cursor(int show);  /* tasto premuto (SDL_Keycode), -1 se nessun display */
+ 
+ #endif
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index 207f541..ff3d956 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -7,6 +7,23 @@
+ 
+ #include "unported.h"
+ 
++void cok_unported_skip(const char *where)
++{
++    static const char *s_reported[32];
++    static int s_count;
++    int i;
++
++    for (i = 0; i < s_count; ++i) {
++        if (s_reported[i] == where) {
++            return;
++        }
++    }
++    if (s_count < 32) {
++        s_reported[s_count++] = where;
++    }
++    fprintf(stderr, "routine non ancora portata (saltata): %s\n", where);
++}
++
+ void cok_unported(const char *where)
+ {
+     printf("routine non ancora portata: %s\n", where);
+@@ -15,7 +32,6 @@ void cok_unported(const char *where)
+ }
+ 
+ void h006_0914(void) { cok_unported("H006+$0914"); }
+-void h007_09d8(void) { cok_unported("H007+$09D8"); }
+ u8 h008_01fc(u8 *special, u8 cycle, u8 numeric, u16 sel_pen,
+              u16 normal_pen, u16 title_pen, const char *option,
+              u16 option_len, const char *title, u16 title_len)
+@@ -38,7 +54,6 @@ void h013_4bfc(void) { cok_unported("H013+$4BFC"); }
+ 
+ /* Chiamate da H006+$01AE. */
+ void h014_0018(u16 len, const char *msg, u16 value) { (void)len; (void)msg; (void)value; cok_unported("H014+$0018"); }
+-void h010_0974(void) { cok_unported("H010+$0974"); }
+ 
+ /* Gestori delle tabelle H005+$25C0 e H005+$2832 (H027+$4276, H033+$1A50). */
+ void h027_0312(void) { cok_unported("H027+$0312"); }
+@@ -216,3 +231,9 @@ void h085_442e(void) { cok_unported("H085+$442E"); }
+ void h085_4628(void) { cok_unported("H085+$4628"); }
+ void h085_4798(void) { cok_unported("H085+$4798"); }
+ void h085_4a02(void) { cok_unported("H085+$4A02"); }
++void h010_03aa(void) { cok_unported("H010+$03AA"); }
++/* Audio (H043): non ancora portato; saltato per far proseguire il gioco. */
++static const char s_h043_0584[] = "H043+$0584";
++static const char s_h043_190e[] = "H043+$190E";
++void h043_0584(void) { cok_unported_skip(s_h043_0584); }
++void h043_190e(u16 command) { (void)command; cok_unported_skip(s_h043_190e); }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index 711a293..7afa0f8 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -10,9 +10,10 @@
+ #include "gfx_record.h"
+ 
+ void h006_0914(void);
+-void h010_0974(void);
++void h043_0584(void);
++void h043_190e(u16 command);
++void h010_03aa(void);
+ void h014_0018(u16 len, const char *msg, u16 value);
+-void h007_09d8(void);
+ u8   h008_01fc(u8 *special, u8 cycle, u8 numeric, u16 sel_pen,
+                u16 normal_pen, u16 title_pen, const char *option,
+                u16 option_len, const char *title, u16 title_len);
+-- 
+2.43.0
+

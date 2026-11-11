@@ -1,0 +1,1913 @@
+From a03d003c9cc2c1dbb1d5ba3083faa2de378c756a Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 16:43:26 +0000
+Subject: [PATCH 16/65] Port Create New Character with its character-record
+ helpers
+
+Port H013+$0982 Create_Character from the assembly: race, gender,
+class, god and alignment menus, starting levels and experience, age,
+the stat rolls with age, race and class limits, hit points, gold and
+the save prompt. Also port the local routines H013+$0524, $07B2,
+$08C2, $0990 and $56CE, and the helpers they call: H053+$0012
+(free a character), H062+$156C and $15F2 (dice, effects), H073+$09BA,
+$0BA8, $0FC8 and $12C8 (cleric spells, saving throws, thief skills).
+
+Add character.h: the $1AA-byte record keeps the original offsets, and
+its pointer fields are separate members because host pointers are
+eight bytes. The character sheet (H065), training (H013+$58DC), the
+icon editor (H047) and saving (H066) are still unported stubs.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md | 103 ++--
+ src_c/readable/character.h    |  41 ++
+ src_c/readable/cok.h          |   2 +
+ src_c/readable/globals.c      |   4 +-
+ src_c/readable/globals.h      |   5 +-
+ src_c/readable/h008.c         |   5 +-
+ src_c/readable/h010_input.c   |   6 +-
+ src_c/readable/h013.c         | 960 +++++++++++++++++++++++++++++++++-
+ src_c/readable/h013.h         |   1 +
+ src_c/readable/h029_gfx.c     |   8 +-
+ src_c/readable/h029_gfx.h     |   1 +
+ src_c/readable/h053.c         |  34 +-
+ src_c/readable/h053.h         |   9 +
+ src_c/readable/h062.c         |  47 +-
+ src_c/readable/h062.h         |  11 +
+ src_c/readable/h073.c         | 236 ++++++++-
+ src_c/readable/h073.h         |  12 +
+ src_c/readable/unported.c     |  12 +-
+ src_c/readable/unported.h     |  12 +-
+ 19 files changed, 1433 insertions(+), 76 deletions(-)
+ create mode 100644 src_c/readable/character.h
+ create mode 100644 src_c/readable/h053.h
+ create mode 100644 src_c/readable/h062.h
+ create mode 100644 src_c/readable/h073.h
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index ae02c99..662cf9f 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **298 / 913**.
++Routine portate: **312 / 914**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -19,7 +19,7 @@ Routine portate: **298 / 913**.
+ | H010 | 2488 | 9 | 6 |
+ | H011 | 7004 | 12 | 2 |
+ | H012 | 13580 | 8 | 1 |
+-| H013 | 25244 | 20 | 3 |
++| H013 | 25244 | 21 | 9 |
+ | H014 | 224 | 2 | 1 |
+ | H015 | 1016 | 11 | 5 |
+ | H016 | 436 | 5 | 4 |
+@@ -59,7 +59,7 @@ Routine portate: **298 / 913**.
+ | H050 | 136 | 4 | 4 |
+ | H051 | 256 | 2 | 2 |
+ | H052 | 316 | 1 | 1 |
+-| H053 | 504 | 3 | 1 |
++| H053 | 504 | 3 | 2 |
+ | H054 | 52 | 2 | 2 |
+ | H055 | 180 | 4 | 4 |
+ | H056 | 2528 | 2 | 1 |
+@@ -68,7 +68,7 @@ Routine portate: **298 / 913**.
+ | H059 | 6340 | 14 | 1 |
+ | H060 | 396 | 2 | 1 |
+ | H061 | 16936 | 35 | 1 |
+-| H062 | 10496 | 32 | 1 |
++| H062 | 10496 | 32 | 3 |
+ | H063 | 16496 | 52 | 1 |
+ | H064 | 6460 | 7 | 1 |
+ | H065 | 14268 | 27 | 1 |
+@@ -79,7 +79,7 @@ Routine portate: **298 / 913**.
+ | H070 | 6940 | 13 | 1 |
+ | H071 | 3132 | 5 | 1 |
+ | H072 | 5404 | 12 | 1 |
+-| H073 | 4928 | 10 | 1 |
++| H073 | 4928 | 10 | 6 |
+ | H074 | 1216 | 4 | 1 |
+ | H075 | 392 | 4 | 1 |
+ | H076 | 8 | 1 | 1 |
+@@ -195,27 +195,27 @@ Routine portate: **298 / 913**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$009A` | `module_init_H008` | parziale | h008.c:12 |
+-| `$0102` | `sub_H008_00000102` | parziale | h008.c:561 |
+-| `$0162` | `sub_H008_00000162` | parziale | h008.c:574 |
+-| `$01A0` | `sub_H008_000001A0` | parziale | h008.c:23 |
+-| `$01FC` | `UI_RequestChoice` | parziale | h008.c:333 |
+-| `$020A` | `sub_H008_0000020A` | parziale | h008.c:56 |
+-| `$03C8` | `sub_H008_000003C8` | parziale | h008.c:105 |
+-| `$139E` | `sub_H008_0000139E` | parziale | h008.c:17 |
+-| `$13C0` | `trampoline_H008_1AF4` | parziale | h008.c:803 |
+-| `$13CE` | `sub_H008_000013CE` | parziale | h008.c:613 |
+-| `$1448` | `sub_H008_00001448` | parziale | h008.c:636 |
+-| `$15DC` | `sub_H008_000015DC` | parziale | h008.c:670 |
+-| `$164E` | `sub_H008_0000164E` | parziale | h008.c:683 |
+-| `$16BA` | `sub_H008_000016BA` | parziale | h008.c:707 |
+-| `$176A` | `sub_H008_0000176A` | parziale | h008.c:716 |
+-| `$188A` | `sub_H008_0000188A` | parziale | h008.c:728 |
+-| `$19A8` | `sub_H008_000019A8` | parziale | h008.c:762 |
+-| `$1A60` | `sub_H008_00001A60` | parziale | h008.c:785 |
+-| `$203C` | `sub_H008_0000203C` | parziale | h008.c:968 |
+-| `$20C2` | `sub_H008_000020C2` | parziale | h008.c:985 |
+-| `$2178` | `sub_H008_00002178` | parziale | h008.c:1006 |
++| `$009A` | `module_init_H008` | parziale | h008.c:13 |
++| `$0102` | `sub_H008_00000102` | parziale | h008.c:562 |
++| `$0162` | `sub_H008_00000162` | parziale | h008.c:575 |
++| `$01A0` | `sub_H008_000001A0` | parziale | h008.c:24 |
++| `$01FC` | `UI_RequestChoice` | parziale | h008.c:334 |
++| `$020A` | `sub_H008_0000020A` | parziale | h008.c:57 |
++| `$03C8` | `sub_H008_000003C8` | parziale | h008.c:106 |
++| `$139E` | `sub_H008_0000139E` | parziale | h008.c:18 |
++| `$13C0` | `trampoline_H008_1AF4` | parziale | h008.c:804 |
++| `$13CE` | `sub_H008_000013CE` | parziale | h008.c:614 |
++| `$1448` | `sub_H008_00001448` | parziale | h008.c:637 |
++| `$15DC` | `sub_H008_000015DC` | parziale | h008.c:671 |
++| `$164E` | `sub_H008_0000164E` | parziale | h008.c:684 |
++| `$16BA` | `sub_H008_000016BA` | parziale | h008.c:708 |
++| `$176A` | `sub_H008_0000176A` | parziale | h008.c:717 |
++| `$188A` | `sub_H008_0000188A` | parziale | h008.c:729 |
++| `$19A8` | `sub_H008_000019A8` | parziale | h008.c:763 |
++| `$1A60` | `sub_H008_00001A60` | parziale | h008.c:786 |
++| `$203C` | `sub_H008_0000203C` | parziale | h008.c:969 |
++| `$20C2` | `sub_H008_000020C2` | parziale | h008.c:986 |
++| `$2178` | `sub_H008_00002178` | parziale | h008.c:1007 |
+ 
+ ### H009
+ 
+@@ -229,15 +229,15 @@ Routine portate: **298 / 913**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$00B6` | `module_init_H010` | parziale | h010_input.c:20 |
+-| `$00C4` | `sub_H010_000000C4` | parziale | h010_input.c:155 |
+-| `$0332` | `sub_H010_00000332` | parziale | h010_input.c:214 |
++| `$00B6` | `module_init_H010` | parziale | h010_input.c:22 |
++| `$00C4` | `sub_H010_000000C4` | parziale | h010_input.c:157 |
++| `$0332` | `sub_H010_00000332` | parziale | h010_input.c:216 |
+ | `$0360` | `sub_H010_00000360` | parziale |  |
+ | `$03AA` | `sub_H010_000003AA` | parziale |  |
+-| `$042E` | `trampoline_H010_0882` | parziale | h010_input.c:109 |
+-| `$043C` | `sub_H010_0000043C` | parziale | h010_input.c:48 |
++| `$042E` | `trampoline_H010_0882` | parziale | h010_input.c:111 |
++| `$043C` | `sub_H010_0000043C` | parziale | h010_input.c:50 |
+ | `$0882` | `Poll_IntuitionEvents` | verificato |  |
+-| `$0974` | `sub_H010_00000974` | parziale | h010_input.c:145 |
++| `$0974` | `sub_H010_00000974` | parziale | h010_input.c:147 |
+ 
+ ### H011
+ 
+@@ -273,15 +273,15 @@ Routine portate: **298 / 913**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0506` | `module_init_H013` | parziale | h013.c:10 |
++| `$0506` | `module_init_H013` | parziale | h013.c:19 |
+ | `$0518` | `trampoline_H013_52E0` | parziale |  |
+ | `$051C` | `trampoline_H013_58DC` | parziale |  |
+ | `$0520` | `trampoline_H013_56CE` | parziale |  |
+-| `$0524` | `sub_H013_00000524` | parziale |  |
+-| `$07B2` | `sub_H013_000007B2` | parziale |  |
+-| `$08C2` | `trampoline_H013_097C` | parziale |  |
+-| `$0982` | `Create_Character` | parziale |  |
+-| `$0990` | `sub_H013_00000990` | parziale |  |
++| `$0524` | `sub_H013_00000524` | parziale | h013.c:355 |
++| `$07B2` | `sub_H013_000007B2` | parziale | h013.c:422 |
++| `$08C2` | `trampoline_H013_097C` | parziale | h013.c:471 |
++| `$0982` | `Create_Character` | parziale | h013.c:645 |
++| `$0990` | `sub_H013_00000990` | parziale | h013.c:503 |
+ | `$2B9A` | `trampoline_H013_2D70` | parziale |  |
+ | `$2D76` | `trampoline_H013_2E1A` | parziale |  |
+ | `$2E44` | `sub_H013_00002E44` | parziale |  |
+@@ -290,9 +290,10 @@ Routine portate: **298 / 913**.
+ | `$31EE` | `trampoline_H013_333C` | parziale |  |
+ | `$43E8` | `sub_H013_000043E8` | parziale |  |
+ | `$4508` | `sub_H013_00004508` | parziale |  |
+-| `$4BFC` | `Party_MainMenu` | verificato | h013.c:82 |
+-| `$4C0A` | `sub_H013_00004C0A` | parziale | h013.c:43 |
++| `$4BFC` | `Party_MainMenu` | verificato | h013.c:91 |
++| `$4C0A` | `sub_H013_00004C0A` | parziale | h013.c:52 |
+ | `$52E0` | `Add_CharacterToParty` | parziale |  |
++| `$56CE` | `(senza scheda)` | - | h013.c:320 |
+ 
+ ### H014
+ 
+@@ -796,8 +797,8 @@ Routine portate: **298 / 913**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0004` | `module_init_H053` | parziale | h053.c:4 |
+-| `$0012` | `sub_H053_00000012` | parziale |  |
++| `$0004` | `module_init_H053` | parziale | h053.c:5 |
++| `$0012` | `sub_H053_00000012` | parziale | h053.c:11 |
+ | `$00CA` | `trampoline_H053_01E8` | parziale |  |
+ 
+ ### H054
+@@ -952,7 +953,7 @@ Routine portate: **298 / 913**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0106` | `module_init_H062` | parziale | h062.c:4 |
++| `$0106` | `module_init_H062` | parziale | h062.c:6 |
+ | `$0114` | `sub_H062_00000114` | parziale |  |
+ | `$021E` | `sub_H062_0000021E` | parziale |  |
+ | `$02FA` | `sub_H062_000002FA` | parziale |  |
+@@ -966,9 +967,9 @@ Routine portate: **298 / 913**.
+ | `$126C` | `sub_H062_0000126C` | parziale |  |
+ | `$12F6` | `sub_H062_000012F6` | parziale |  |
+ | `$142C` | `sub_H062_0000142C` | parziale |  |
+-| `$156C` | `sub_H062_0000156C` | parziale |  |
++| `$156C` | `sub_H062_0000156C` | parziale | h062.c:11 |
+ | `$15C6` | `sub_H062_000015C6` | parziale |  |
+-| `$15F2` | `sub_H062_000015F2` | parziale |  |
++| `$15F2` | `sub_H062_000015F2` | parziale | h062.c:29 |
+ | `$1694` | `sub_H062_00001694` | parziale |  |
+ | `$1780` | `sub_H062_00001780` | parziale |  |
+ | `$17C0` | `sub_H062_000017C0` | parziale |  |
+@@ -1221,16 +1222,16 @@ Routine portate: **298 / 913**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0004` | `module_init_H073` | parziale | h073.c:4 |
++| `$0004` | `module_init_H073` | parziale | h073.c:6 |
+ | `$0012` | `sub_H073_00000012` | parziale |  |
+ | `$05AE` | `sub_H073_000005AE` | parziale |  |
+-| `$09BA` | `sub_H073_000009BA` | parziale |  |
+-| `$0BA8` | `sub_H073_00000BA8` | parziale |  |
+-| `$0FC8` | `sub_H073_00000FC8` | parziale |  |
++| `$09BA` | `sub_H073_000009BA` | parziale | h073.c:12 |
++| `$0BA8` | `sub_H073_00000BA8` | parziale | h073.c:70 |
++| `$0FC8` | `sub_H073_00000FC8` | parziale | h073.c:164 |
+ | `$1294` | `trampoline_H073_12A4` | parziale |  |
+ | `$12AE` | `trampoline_H073_12BE` | parziale |  |
+-| `$12C8` | `trampoline_H073_12D8` | parziale |  |
+-| `$130A` | `sub_H073_0000130A` | parziale |  |
++| `$12C8` | `trampoline_H073_12D8` | parziale | h073.c:150 |
++| `$130A` | `sub_H073_0000130A` | parziale | h073.c:157 |
+ 
+ ### H074
+ 
+diff --git a/src_c/readable/character.h b/src_c/readable/character.h
+new file mode 100644
+index 0000000..d42af20
+--- /dev/null
++++ b/src_c/readable/character.h
+@@ -0,0 +1,41 @@
++/*
++ * Record del personaggio ($1AA byte, AllocMem MEMF_CLEAR) e nodi collegati.
++ *
++ * I campi dati restano un blocco di byte con gli offset dell'originale
++ * (word e long big-endian, come in H005 e nei file): CH_W/CH_L li leggono.
++ * I campi puntatore dell'originale (4 byte nel blocco) sono membri a parte,
++ * perche' sull'host i puntatori sono di 8 byte; i loro 4 byte nel blocco
++ * restano inutilizzati.
++ */
++#ifndef COK_CHARACTER_H
++#define COK_CHARACTER_H
++
++#include "cok.h"
++
++/* Oggetto posseduto ($48 byte): successivo a +$2C. */
++typedef struct CokItem {
++    u8 b[0x48];
++    struct CokItem *next;       /* +$2C */
++} CokItem;
++
++/* Effetto/abilita' ($0A byte, H062+$15F2): successivo a +$06. */
++typedef struct CokEffect {
++    u8 b[0x0A];
++    struct CokEffect *next;     /* +$06 */
++} CokEffect;
++
++typedef struct Character {
++    u8 b[0x1AA];
++    CokEffect *effects;         /* +$0E8 */
++    CokItem *items;             /* +$150 */
++    CokItem *readied[13];       /* +$154..+$184: oggetti pronti all'uso */
++    struct Character *next;     /* +$18E: personaggio seguente nel party */
++    void *block_192;            /* +$192: blocco di $18 byte */
++} Character;
++
++#define CH_W(c, o)        COK_GET16((c)->b + (o))
++#define CH_PUTW(c, o, v)  COK_PUT16((c)->b + (o), (v))
++#define CH_L(c, o)        COK_GET32((c)->b + (o))
++#define CH_PUTL(c, o, v)  COK_PUT32((c)->b + (o), (v))
++
++#endif
+diff --git a/src_c/readable/cok.h b/src_c/readable/cok.h
+index b67030a..e168721 100644
+--- a/src_c/readable/cok.h
++++ b/src_c/readable/cok.h
+@@ -60,6 +60,8 @@ typedef int32_t  s32;
+ #define COK_GET32(p)  ((u32)COK_GET16(p) << 16 | COK_GET16((const u8 *)(p) + 2))
+ #define COK_PUT16(p, v) do { ((u8 *)(p))[0] = (u8)((u16)(v) >> 8); \
+                              ((u8 *)(p))[1] = (u8)(v); } while (0)
++#define COK_PUT32(p, v) do { COK_PUT16((p), (u32)(v) >> 16); \
++                             COK_PUT16((u8 *)(p) + 2, (v)); } while (0)
+ 
+ /* Ferma il programma su una routine non ancora portata (unported.c). */
+ void cok_unported(const char *where);
+diff --git a/src_c/readable/globals.c b/src_c/readable/globals.c
+index 589879c..4e68a6f 100644
+--- a/src_c/readable/globals.c
++++ b/src_c/readable/globals.c
+@@ -31,8 +31,8 @@ struct GfxRecord *g_sprite_sets[29][2];
+ struct GfxRecord *g_pic_rec_27c2;
+ struct GfxRecord *g_pic_rec_27c6;
+ u8 *g_pic_buffers[7];
+-void *g_party_head;
+-void *g_current_char;
++struct Character *g_party_head;
++struct Character *g_current_char;
+ 
+ CokHandler g_handlers_25c0[108];
+ CokHandler g_handlers_2832[120];
+diff --git a/src_c/readable/globals.h b/src_c/readable/globals.h
+index e6463a4..f516f77 100644
+--- a/src_c/readable/globals.h
++++ b/src_c/readable/globals.h
+@@ -70,8 +70,9 @@ extern struct GfxRecord *g_sprite_sets[29][2]; /* $3244: coppie di set 24x24 */
+ extern struct GfxRecord *g_pic_rec_27c2; /* $27C2: immagine dell'insieme $27BC */
+ extern struct GfxRecord *g_pic_rec_27c6; /* $27C6 */
+ extern u8 *g_pic_buffers[7];            /* $27E8: blocchi 2..8 dell'insieme */
+-extern void *g_party_head;              /* $3364: testa della lista del party */
+-extern void *g_current_char;            /* $3368: personaggio corrente */
++struct Character;
++extern struct Character *g_party_head;  /* $3364: testa della lista del party */
++extern struct Character *g_current_char;/* $3368: personaggio corrente */
+ 
+ /*
+  * Tabelle di gestori in H005 (puntatori a codice nell'originale).  Il tipo
+diff --git a/src_c/readable/h008.c b/src_c/readable/h008.c
+index 4601243..c2643f6 100644
+--- a/src_c/readable/h008.c
++++ b/src_c/readable/h008.c
+@@ -7,6 +7,7 @@
+ #include "h029_gfx.h"
+ #include "h003_exec.h"
+ #include "globals.h"
++#include "character.h"
+ #include "unported.h"
+ 
+ /* PORT H008+$009A: link/unlk, nessun effetto. */
+@@ -214,12 +215,12 @@ static void enter_or_click(ChoiceFrame *f)
+         f->row >= H005_B(0x248B) && f->row <= H005_B(0x248A)) {
+         /* Clic su un personaggio del party. */
+         u16 index = (u16)(f->row - H005_B(0x248B));
+-        void *member = g_party_head;
++        Character *member = g_party_head;
+         u16 i;
+ 
+         for (i = 1; i <= index; ++i) {
+             if (member != NULL) {
+-                member = h008_party_next(member);
++                member = member->next;
+             }
+         }
+         if (member != NULL) {
+diff --git a/src_c/readable/h010_input.c b/src_c/readable/h010_input.c
+index 3ffafd3..9458c37 100644
+--- a/src_c/readable/h010_input.c
++++ b/src_c/readable/h010_input.c
+@@ -1,5 +1,7 @@
+ /* H010: input Intuition, conversione degli eventi, uscita ed errori. */
+ #include "h010_input.h"
++#include "character.h"
++#include "h053.h"
+ #include "h050.h"
+ #include "h002_dos.h"
+ #include "h003_exec.h"
+@@ -192,8 +194,8 @@ static void free_game_resources(void)
+     }
+     release_picture_set();
+     while (g_party_head != NULL) {
+-        g_current_char = h008_party_next(g_party_head);
+-        h053_0012(&g_party_head);
++        g_current_char = g_party_head->next;
++        free_character(&g_party_head);
+         g_party_head = g_current_char;
+     }
+     if (g_h005_52fc != NULL) {
+diff --git a/src_c/readable/h013.c b/src_c/readable/h013.c
+index d96dd8f..27a9b66 100644
+--- a/src_c/readable/h013.c
++++ b/src_c/readable/h013.c
+@@ -6,6 +6,15 @@
+ #include "globals.h"
+ #include "h010_input.h"
+ #include "unported.h"
++#include "character.h"
++#include "h003_exec.h"
++#include "h023_shared.h"
++#include "h029_gfx.h"
++#include "h030.h"
++#include "h045.h"
++#include "h053.h"
++#include "h062.h"
++#include "h073.h"
+ 
+ /* PORT H013+$0506: link/unlk, nessun effetto. */
+ void h013_init(void)
+@@ -167,7 +176,7 @@ void main_menu(void)
+         switch (key) {
+         case 'C':
+             if (items[MM_CREATE].enabled) {
+-                h013_0982();
++                create_character();
+             }
+             break;
+         case 'D':
+@@ -203,7 +212,7 @@ void main_menu(void)
+         case 'R':
+             if (items[MM_REMOVE].enabled && g_current_char != NULL &&
+                 h065_3702()) {
+-                if (h013_character_byte(g_current_char, 0xEC) < 0x80) {
++                if (g_current_char->b[0xEC] < 0x80) {
+                     h066_1640(g_current_char, 0, "");
+                     h053_00ca(0, 1);
+                 } else {
+@@ -293,3 +302,950 @@ void main_menu(void)
+         }
+     }
+ }
++
++/* Copia con dbeq: al massimo max + 1 byte, NUL compreso. */
++static void copy_text(char *dst, const char *src, u16 max)
++{
++    u16 i;
++
++    for (i = 0; i <= max; ++i) {
++        dst[i] = src[i];
++        if (src[i] == 0) {
++            break;
++        }
++    }
++}
++
++/*
++ * PORT H013+$56CE (trampolino H013+$0520): bonus ai punti ferita per la
++ * costituzione (+$19) dalla tabella H005+$1F4A; le classi 2, 4 e 7 hanno
++ * un bonus in piu' oltre 16.
++ */
++static s16 con_hp_bonus(Character *c, u8 cls)
++{
++    s16 bonus = 0;
++
++    bonus = (s16)(bonus + (s16)H005_W((u16)(0x1F4A +
++                                            ((s16)c->b[0x19] - 3) * 2)));
++    if (cls == 2 || cls == 7 || cls == 4) {
++        switch (c->b[0x19]) {
++        case 17:
++            bonus += 1;
++            break;
++        case 18:
++            bonus += 2;
++            break;
++        case 19: case 20:
++            bonus += 3;
++            break;
++        case 21: case 22: case 23:
++            bonus += 4;
++            break;
++        case 24: case 25:
++            bonus += 5;
++            break;
++        default:
++            break;
++        }
++    }
++    return bonus;
++}
++
++/*
++ * PORT H013+$0524: punti ferita iniziali.  Per ogni classe del personaggio
++ * selezionata da mask (H005+$5038): sotto il livello massimo dei dadi
++ * (H005+$5026) il migliore di due tiri e il bonus di costituzione, sopra un
++ * valore fisso (assegnato, non sommato, come nell'originale).  Il totale e
++ * il bonus sono divisi per il numero di classi; +$123 riceve i dadi, +$64
++ * dadi e bonus, +$1A8 conserva la differenza con +$64.
++ */
++static void roll_hit_points(Character *c, u16 mask, u16 nclasses)
++{
++    static const u16 dice[8] = { 2, 1, 1, 1, 2, 1, 1, 2 };     /* -$1C */
++    static const u16 sides[8] = { 8, 8, 10, 10, 8, 4, 6, 10 }; /* -$2C */
++    s16 hp = 0;                         /* -$6(a5) */
++    s16 bonus = 0;                      /* -$a(a5) */
++    s16 n = 0;                          /* -$8(a5) */
++    s16 r1;                             /* -$2(a5) */
++    s16 r2;                             /* -$4(a5) */
++    s16 diff;
++    u8 k;                               /* -$b(a5) */
++
++    for (k = 0; k <= 7; ++k) {
++        if (c->b[0xFE + k] == 0 ||
++            mask_byte((u8)mask, H005_B(0x5038 + k)) == 0) {
++            continue;
++        }
++        if (c->b[0xFE + k] < H005_B(0x5026 + k)) {
++            if (c->b[0xFE + k] > 1) {
++                n = 1;
++            } else if (k == 0 && c->b[0x5E] > 4) {
++                n = 1;
++            } else {
++                n = (s16)dice[k];
++            }
++            r1 = (s16)roll_dice((u16)n, sides[k]);
++            r2 = (s16)roll_dice((u16)n, sides[k]);
++            if (r2 > r1) {
++                r1 = r2;
++            }
++            hp = (s16)(hp + r1);
++            bonus = (s16)(bonus + con_hp_bonus(c, k) * n);
++        } else {
++            switch (k) {
++            case 2: case 7:
++                hp = 3;
++                break;
++            case 0: case 4: case 6:
++                hp = 2;
++                break;
++            case 5:
++                hp = 1;
++                break;
++            default:
++                break;
++            }
++        }
++    }
++    hp = (s16)(hp / (s16)nclasses);
++    if (hp < 1) {
++        hp = 1;
++    }
++    add_to_byte(&c->b[0x123], (u16)hp);
++    bonus = (s16)(bonus / (s16)nclasses);
++    diff = (s16)(c->b[0x64] - c->b[0x1A8]);
++    add_to_byte(&c->b[0x64], (u16)(hp + bonus));
++    c->b[0x1A8] = (u8)(c->b[0x64] - diff);
++}
++
++/*
++ * PORT H013+$07B2: tre oggetti iniziali ($48 byte) inseriti dopo il primo
++ * della lista +$150; +$14F = 3.
++ */
++static void add_starting_items(Character *c)
++{
++    u16 i;                              /* -$6(a5) */
++
++    for (i = 1; i <= 3; ++i) {
++        CokItem *it = (CokItem *)exec_alloc_mem(sizeof(CokItem),
++                                                COK_MEMF_CLEAR);
++
++        it->next = NULL;
++        it->b[0x2A] = 0;
++        it->b[0x3A] = 0;
++        it->b[0x3C] = 0;
++        switch (i) {
++        case 1:
++            it->b[0x30] = 0x24;
++            it->b[0x34] = 0x24;
++            it->b[0x33] = 0x2F;
++            COK_PUT16(it->b + 0x3E, 0x1C2);
++            COK_PUT16(it->b + 0x42, 0);
++            break;
++        case 2:
++            it->b[0x30] = 0x12;
++            it->b[0x34] = 0x12;
++            COK_PUT16(it->b + 0x3E, 0x32);
++            COK_PUT16(it->b + 0x42, 0);
++            break;
++        case 3:
++            it->b[0x30] = 0x25;
++            it->b[0x34] = 0x25;
++            COK_PUT16(it->b + 0x3E, 0x3C);
++            COK_PUT16(it->b + 0x42, 0);
++            break;
++        default:
++            break;
++        }
++        if (c->items == NULL) {
++            c->items = it;
++        } else {
++            it->next = c->items->next;
++            c->items->next = it;
++        }
++    }
++    c->b[0x14F] = 3;
++}
++
++/*
++ * PORT H013+$08C2 (corpo a H013+$097C): figura predefinita del personaggio
++ * corrente: +$141 secondo razza, sesso e +$10E, +$142 secondo la classe.
++ */
++static void set_default_figure(void)
++{
++    Character *c = g_current_char;
++
++    if (c->b[0x5B] == 5) {
++        c->b[0x141] = 3;
++    } else if (c->b[0x10E] == 1) {
++        if (c->b[0x144] == 2) {
++            c->b[0x141] = 9;
++        } else {
++            c->b[0x141] = 7;
++        }
++    } else if (c->b[0x144] == 2) {
++        c->b[0x141] = 5;
++    }
++    if (c->b[0xFE] > 0) {
++        c->b[0x142] = 0x17;
++    } else if (c->b[0x102] > 0) {
++        c->b[0x142] = 1;
++    } else if (c->b[0x105] > 0 || c->b[0x100] > 0) {
++        c->b[0x142] = 0x18;
++    } else if (c->b[0x103] > 0) {
++        c->b[0x142] = 0x1D;
++    } else {
++        c->b[0x142] = 5;
++    }
++}
++
++/*
++ * PORT H013+$0990: procedura annidata di Create_Character: eta' massima
++ * della razza per la riga cls della tabella H005+$20AC ($30 byte per
++ * razza, 6 per riga): base + dadi * facce.
++ */
++static u16 max_age(u8 race, u8 cls)
++{
++    u16 row = (u16)(0x20AC + race * 0x30 + cls * 6);
++
++    return (u16)(H005_W(row + 4) * H005_W(row + 2) + H005_W(row));
++}
++
++/* Menu a elenco di Create_Character (H008+$13C0), con gli stessi argomenti. */
++static u8 create_menu(MenuItem *list, u8 with_exit, u8 *redraw, u16 *index,
++                      MenuItem **chosen)
++{
++    return list_menu(0, "", 6, "Select", 0x0D, 0x0A, 0x0F, 1, 2, 0x26, 0x16,
++                     list, with_exit, redraw, index, chosen);
++}
++
++/* Limiti di eta' della razza (H005+$2066, 5 word per razza). */
++static u16 age_limit(const Character *c, u16 n)
++{
++    return H005_W(0x2066 + c->b[0x5B] * 0x0A + n * 2);
++}
++
++/* Limiti delle caratteristiche della razza (H005+$226C, $20 byte). */
++static u16 race_limit(const Character *c, u16 off)
++{
++    return H005_W(0x226C + c->b[0x5B] * 0x20 + off);
++}
++
++/* Minimo della classe per la caratteristica s (H005+$1F9A, 12 byte). */
++static u16 class_min(const Character *c, u8 s)
++{
++    return H005_W(0x1F9A + c->b[0x5C] * 0x0C + s * 2);
++}
++
++/* Riporta *v tra il minimo e il massimo della razza e il minimo di classe. */
++static void clamp_stat(Character *c, u8 s, u8 *v, u16 min_off, u16 max_off)
++{
++    if (*v < race_limit(c, min_off)) {
++        *v = (u8)race_limit(c, min_off);
++    }
++    if (*v > race_limit(c, max_off)) {
++        *v = (u8)race_limit(c, max_off);
++    }
++    if (*v < class_min(c, s)) {
++        *v = (u8)class_min(c, s);
++    }
++}
++
++/*
++ * Procedure annidate H013+$1B2E, $1E28, $1F98, $21DA, $234A, $24F4:
++ * correzioni per eta' (+$62) e limiti di razza/sesso/classe della
++ * caratteristica s appena tirata (+$11 + 2s).
++ */
++static void adjust_stat(Character *c, u8 s)
++{
++    u8 *v = &c->b[0x11 + s * 2];
++    u16 age = CH_W(c, 0x62);
++    u16 g = (u16)(c->b[0x10E] * 2);
++
++    switch (s) {
++    case 0:                     /* H013+$1B2E: forza */
++        if (*v > 0 && age > age_limit(c, 0)) {
++            add_to_byte(v, 1);
++        }
++        if (*v > 0 && age > age_limit(c, 1)) {
++            add_to_byte(v, 0xFFFF);
++        }
++        if (*v > 0 && age > age_limit(c, 2)) {
++            add_to_byte(v, 0xFFFE);
++        }
++        if (*v > 0 && age > age_limit(c, 3)) {
++            add_to_byte(v, 0xFFFF);
++        }
++        clamp_stat(c, s, v, g, (u16)(4 + g));
++        if (c->b[0x11] == 18 &&
++            (c->b[0x100] > 0 || c->b[0x102] > 0 || c->b[0x105] > 0)) {
++            c->b[0x1C] = (u8)(random_below(0x64) + 1);
++            if (c->b[0x1C] > race_limit(c, (u16)(8 + g))) {
++                c->b[0x1C] = (u8)race_limit(c, (u16)(8 + g));
++            }
++        }
++        break;
++    case 1:                     /* H013+$1E28 */
++        if (age > age_limit(c, 1)) {
++            add_to_byte(v, 1);
++        }
++        if (age > age_limit(c, 3)) {
++            add_to_byte(v, 1);
++        }
++        clamp_stat(c, s, v, 0x0C, 0x0E);
++        break;
++    case 2:                     /* H013+$1F98 */
++        if (age <= age_limit(c, 0)) {
++            add_to_byte(v, 0xFFFF);
++        }
++        if (age > age_limit(c, 1)) {
++            add_to_byte(v, 1);
++        }
++        if (age > age_limit(c, 2)) {
++            add_to_byte(v, 1);
++        }
++        if (age > age_limit(c, 3)) {
++            add_to_byte(v, 1);
++        }
++        clamp_stat(c, s, v, 0x10, 0x12);
++        if (*v < 13 && c->b[0x5C] >= 8 && c->b[0x5C] <= 12) {
++            *v = 13;
++        }
++        break;
++    case 3:                     /* H013+$21DA */
++        if (age > age_limit(c, 2)) {
++            add_to_byte(v, 0xFFFE);
++        }
++        if (age > age_limit(c, 3)) {
++            add_to_byte(v, 0xFFFF);
++        }
++        clamp_stat(c, s, v, 0x14, 0x16);
++        break;
++    case 4:                     /* H013+$234A */
++        if (age > age_limit(c, 1)) {
++            add_to_byte(v, 0xFFFF);
++        }
++        if (age > age_limit(c, 2)) {
++            add_to_byte(v, 0xFFFF);
++        }
++        if (age > age_limit(c, 3)) {
++            add_to_byte(v, 0xFFFF);
++        }
++        clamp_stat(c, s, v, 0x18, 0x1A);
++        break;
++    case 5:                     /* H013+$24F4 */
++        clamp_stat(c, s, v, 0x1C, 0x1E);
++        break;
++    default:
++        break;
++    }
++}
++
++/*
++ * PORT H013+$0982: Create New Character.  Menu di razza, sesso, classe,
++ * divinita' (solo chierici) e allineamento, poi eta', caratteristiche
++ * (con nuovo tiro a richiesta), punti ferita, denaro, nome, figura e
++ * salvataggio su disco (H066+$1640).  Esc in un menu annulla tutto.
++ */
++void create_character(void)
++{
++    static const u8 align_values[6] = { 0, 1, 3, 4, 6, 7 };    /* -$6 */
++    Character *ch;                      /* -$a(a5) */
++    Character *saved;                   /* -$e(a5) */
++    MenuItem *list = NULL;              /* -$12(a5) */
++    MenuItem *node;                     /* -$16(a5) */
++    u16 index;                          /* -$18(a5) */
++    u16 i;                              /* -$1a(a5) */
++    u16 j;                              /* -$1c(a5) */
++    u16 roll;                           /* -$1e(a5) */
++    u8 key;                             /* -$1f(a5) */
++    u8 race_i;                          /* -$20(a5) */
++    u8 g;                               /* -$21(a5) */
++    u8 k;                               /* -$22(a5) */
++    u8 s;                               /* -$23(a5) */
++    u16 class_count;                    /* -$26(a5) */
++    u16 nclasses;                       /* -$2c(a5) */
++    u8 with_exit;                       /* -$2f(a5) */
++    u8 redraw;                          /* -$30(a5) */
++    u8 sep;                             /* -$32(a5) */
++    char line[0x29];                    /* -$5c(a5) */
++    u16 saved_550;                      /* -$5e(a5) */
++    u8 align_ids[6];                    /* -$64(a5) */
++    u16 god_mask;                       /* -$66(a5) */
++    u16 bits;                           /* -$68(a5) */
++    u16 gold;                           /* -$6a(a5) */
++    u8 race;
++
++    ch = (Character *)exec_alloc_mem(sizeof(Character), COK_MEMF_CLEAR);
++    ch->items = NULL;
++    ch->effects = NULL;
++    for (i = 1; i <= 6; ++i) {
++        u8 v = H005_B(0x5228 + i - 1);
++
++        ch->b[0x146 + i - 1] = (u8)(v + ((v + 8) << 4));
++    }
++    ch->b[0x11A] = 0x32;
++    ch->b[0x5A] = 0x28;
++    ch->b[0x197] = 0;
++    ch->b[0x198] = 1;
++    ch->b[0xD3] = 1;
++    ch->b[0x11C] = (u8)random_below(0x100);
++    ch->b[0x143] = 0x0A;
++
++    /* Razza. */
++    menu_alloc(8, &list);
++    list->header = 1;
++    copy_text(list->text, "Pick Race", 0x28);
++    for (race_i = 0; race_i <= 6; ++race_i) {
++        node = menu_nth(list, (u16)(race_i + 1));
++        copy_text(node->text, "  ", 0x28);
++        h026_append(0x28, node->text, 0x0F,
++                    (const char *)&g_h005[0x4D04 + race_i * 16]);
++    }
++    node = list;
++    index = 1;
++    redraw = 1;
++    with_exit = 1;
++    do {
++        key = create_menu(list, with_exit, &redraw, &index, &node);
++        if (key == 0) {
++            menu_free(&list);
++            free_character(&ch);
++            return;
++        }
++    } while (key != 'S');
++    ch->b[0x5B] = (u8)(index - 1);
++    switch (ch->b[0x5B]) {
++    case 5:                     /* H013+$0C0A */
++        ch->b[0x144] = 1;
++        add_effect(ch, 0x5C, 0, 0xFF, 0);
++        add_effect(ch, 0x5E, 0, 0xFF, 0);
++        break;
++    case 3: case 4:             /* H013+$0C46 */
++        ch->b[0x144] = 1;
++        add_effect(ch, 0x5E, 0, 0xFF, 0);
++        add_effect(ch, 0x1A, 0, 0xFF, 0);
++        add_effect(ch, 0x2F, 0, 0xFF, 0);
++        break;
++    case 0: case 1:             /* H013+$0C9C */
++        ch->b[0x144] = 2;
++        add_effect(ch, 0x5F, 0, 0xFF, 0);
++        break;
++    case 2:                     /* H013+$0CBE */
++        ch->b[0x144] = 2;
++        add_effect(ch, 0x12, 0, 0xFF, 0);
++        break;
++    default:                    /* H013+$0CE0 */
++        ch->b[0x144] = 2;
++        break;
++    }
++    menu_free(&list);
++
++    /* Sesso. */
++    menu_alloc(3, &list);
++    list->header = 1;
++    copy_text(list->text, "Pick Gender", 0x28);
++    for (g = 0; g <= 1; ++g) {
++        node = menu_nth(list, (u16)(g + 1));
++        copy_text(node->text, "  ", 0x28);
++        h026_append(0x28, node->text, 6,
++                    (const char *)&g_h005[0x4BD2 + g * 8]);
++    }
++    node = list;
++    index = 1;
++    with_exit = 1;
++    redraw = 1;
++    do {
++        key = create_menu(list, with_exit, &redraw, &index, &node);
++        if (key == 0) {
++            menu_free(&list);
++            free_character(&ch);
++            return;
++        }
++    } while (key != 'S');
++    ch->b[0x10E] = (u8)(index - 1);
++    menu_free(&list);
++
++    /* Classe: le classi ammesse dalla razza (H005+$21FC). */
++    race = ch->b[0x5B];
++    class_count = H005_W(0x21FC + race * 16);
++    menu_alloc((u16)(class_count + 1), &list);
++    list->header = 1;
++    copy_text(list->text, "Pick Class", 0x28);
++    for (i = 1; i <= class_count; ++i) {
++        node = menu_nth(list, i);
++        copy_text(node->text, "  ", 0x28);
++        h026_append(0x28, node->text, 0x1A, (const char *)&g_h005[0x4D84 +
++                    H005_B(0x21FC + race * 16 + 2 + i - 1) * 0x1C]);
++        if (i == 0xFFFF) {
++            break;
++        }
++    }
++    node = list;
++    index = 1;
++    with_exit = 1;
++    redraw = 1;
++    do {
++        key = create_menu(list, with_exit, &redraw, &index, &node);
++        if (key == 0) {
++            menu_free(&list);
++            free_character(&ch);
++            return;
++        }
++    } while (key != 'S');
++    CH_PUTL(ch, 0x11E, 0);
++    ch->b[0x5C] = H005_B(0x21FC + ch->b[0x5B] * 16 + 2 + index - 1);
++    switch (ch->b[0x5C]) {      /* livelli iniziali ed esperienza */
++    case 0:                     /* H013+$0FBC */
++        ch->b[0xFE] = 1;
++        break;
++    case 6:                     /* H013+$0FC4 */
++        ch->b[0x104] = 2;
++        CH_PUTL(ch, 0x11E, 0x4E3);
++        break;
++    case 2:                     /* H013+$0FD6 */
++        ch->b[0x100] = 2;
++        CH_PUTL(ch, 0x11E, 0x7D1);
++        break;
++    case 5:                     /* H013+$0FE8 */
++        ch->b[0x103] = 2;
++        CH_PUTL(ch, 0x11E, 0x1388);
++        break;
++    case 4:                     /* H013+$0FFA */
++        ch->b[0x102] = 2;
++        CH_PUTL(ch, 0x11E, 0x8CB);
++        add_effect(ch, 0x69, 0, 0xFF, 0);
++        break;
++    case 7:                     /* H013+$1026 */
++        ch->b[0x105] = 1;
++        CH_PUTL(ch, 0x11E, 0x9C4);
++        ch->b[0x5D] = 1;
++        break;
++    case 8:                     /* H013+$103E */
++        ch->b[0xFE] = 1;
++        ch->b[0x100] = 1;
++        CH_PUTL(ch, 0x11E, 0x7D1);
++        break;
++    case 9:                     /* H013+$1056 */
++        ch->b[0xFE] = 1;
++        ch->b[0x100] = 1;
++        ch->b[0x103] = 1;
++        CH_PUTL(ch, 0x11E, 0x1388);
++        break;
++    case 10:                    /* H013+$1074 */
++        ch->b[0xFE] = 1;
++        ch->b[0x102] = 1;
++        add_effect(ch, 0x69, 0, 0xFF, 0);
++        CH_PUTL(ch, 0x11E, 0x8CB);
++        break;
++    case 11:                    /* H013+$10A6 */
++        ch->b[0xFE] = 1;
++        ch->b[0x103] = 1;
++        CH_PUTL(ch, 0x11E, 0x1388);
++        break;
++    case 12:                    /* H013+$10BE */
++        ch->b[0xFE] = 1;
++        ch->b[0x104] = 1;
++        break;
++    case 13:                    /* H013+$10CC */
++        ch->b[0x100] = 1;
++        ch->b[0x103] = 1;
++        CH_PUTL(ch, 0x11E, 0x1388);
++        break;
++    case 14:                    /* H013+$10E4 */
++        ch->b[0x100] = 1;
++        ch->b[0x104] = 1;
++        CH_PUTL(ch, 0x11E, 0x7D1);
++        break;
++    case 15:                    /* H013+$10FC */
++        ch->b[0x100] = 1;
++        ch->b[0x103] = 1;
++        ch->b[0x104] = 1;
++        CH_PUTL(ch, 0x11E, 0x1388);
++        break;
++    case 16:                    /* H013+$111A */
++        ch->b[0x103] = 1;
++        ch->b[0x104] = 1;
++        CH_PUTL(ch, 0x11E, 0x1388);
++        break;
++    default:
++        break;
++    }
++    if (ch->b[0x104] > 0) {
++        thief_skills(ch);
++    }
++    ch->b[0x122] = 0;
++    ch->b[0x5A] = 0;
++    for (k = 0; k <= 7; ++k) {
++        if (ch->b[0xFE + k] > 0) {
++            u16 t = H005_W(0x5158 + k * 0x1A + ch->b[0xFE + k] * 2);
++
++            if (t > ch->b[0x5A]) {
++                ch->b[0x5A] = (u8)t;
++            }
++            add_to_byte(&ch->b[0x122], H005_B(0x5040 + k));
++        }
++    }
++    saving_throws(ch);
++
++    /* Divinita' (solo con livelli da chierico). */
++    if (ch->b[0xFE] > 0) {
++        menu_free(&list);
++        if (ch->b[0x5B] == 3 || ch->b[0x5B] == 4) {
++            menu_alloc(2, &list);
++            list->header = 1;
++            copy_text(list->text, "Pick God", 0x28);
++            node = menu_nth(list, 1);
++            copy_text(node->text, "  ", 0x28);
++            h026_append(0x28, node->text, 0x0B,
++                        (const char *)&g_h005[0x4C4A]);
++        } else {
++            menu_alloc(8, &list);
++            list->header = 1;
++            copy_text(list->text, "Pick God", 0x28);
++            for (i = 1; i <= 7; ++i) {
++                node = menu_nth(list, i);
++                copy_text(node->text, "  ", 0x28);
++                h026_append(0x28, node->text, 0x0B,
++                            (const char *)&g_h005[0x4C02 + (i & 0xFF) * 0x0C]);
++            }
++        }
++        node = list;
++        index = 1;
++        with_exit = 1;
++        redraw = 1;
++        do {
++            key = create_menu(list, with_exit, &redraw, &index, &node);
++            if (key == 0) {
++                menu_free(&list);
++                free_character(&ch);
++                return;
++            }
++        } while (key != 'S');
++        if (ch->b[0x5B] == 3 || ch->b[0x5B] == 4) {
++            ch->b[0x5E] = 6;
++        } else {
++            ch->b[0x5E] = (u8)index;
++        }
++        switch (ch->b[0x5E]) {  /* allineamenti ammessi e poteri */
++        case 1:                 /* H013+$1430 */
++            god_mask = 0x15;
++            ch->b[0xCA] = 1;
++            break;
++        case 2:                 /* H013+$1442 */
++            god_mask = 0x15;
++            ch->b[0xCB] = 1;
++            break;
++        case 3:                 /* H013+$1454 */
++            god_mask = 0x15;
++            ch->b[0xCC] = 1;
++            add_to_byte(&ch->b[0x5A], 1);
++            break;
++        case 4:                 /* H013+$1478 */
++            god_mask = 0x15;
++            ch->b[0xCD] = 1;
++            ch->b[0xCE] = 1;
++            ch->b[0xCF] = 1;
++            break;
++        case 5:                 /* H013+$149E */
++            god_mask = 0x2E;
++            ch->b[0xD0] = 1;
++            break;
++        case 6:                 /* H013+$14B0 */
++            god_mask = 0x2E;
++            if (ch->b[0x5B] == 3 || ch->b[0x5B] == 4) {
++                add_to_byte(&ch->b[0x5A], 1);
++            }
++            break;
++        case 7:                 /* H013+$14E6 */
++            god_mask = 0x2E;
++            ch->b[0xCF] = 1;
++            break;
++        default:
++            /*
++             * Valore non previsto: l'originale lascia -$66(a5) com'era
++             * nello stack.  Qui 0 (nessun allineamento ammesso).
++             */
++            god_mask = 0;
++            break;
++        }
++    } else {
++        ch->b[0x5E] = 0;
++        god_mask = 0xFF;
++    }
++    menu_free(&list);
++
++    /* Allineamento: quelli ammessi da classe (H005+$1F78) e divinita'. */
++    list = (MenuItem *)exec_alloc_mem(sizeof(MenuItem), COK_MEMF_CLEAR);
++    list->next = NULL;
++    list->header = 1;
++    copy_text(list->text, "Pick Alignment", 0x28);
++    node = list;
++    j = 0;
++    for (i = 0; i <= 5; ++i) {
++        bits = (u16)(u8)(mask_byte((u8)god_mask,
++                                   H005_W(0x1F78 + ch->b[0x5C] * 2)) >> i);
++        if (mask_byte((u8)bits, 1)) {
++            node->next = (MenuItem *)exec_alloc_mem(sizeof(MenuItem),
++                                                    COK_MEMF_CLEAR);
++            node = node->next;
++            node->next = NULL;
++            node->header = 0;
++            copy_text(node->text, "  ", 0x28);
++            h026_append(0x28, node->text, 0x10, (const char *)&g_h005[0x4C62 +
++                        align_values[i] * 0x12]);
++            align_ids[j] = align_values[i];
++            ++j;
++        }
++    }
++    node = list;
++    index = 1;
++    with_exit = 1;
++    redraw = 1;
++    do {
++        key = create_menu(list, with_exit, &redraw, &index, &node);
++        if (key == 0) {
++            menu_free(&list);
++            free_character(&ch);
++            return;
++        }
++    } while (key != 'S');
++    ch->b[0x10F] = align_ids[index - 1];
++    switch (ch->b[0x10F]) {
++    case 0: case 3: case 6:     /* H013+$171E */
++        if (CH_L(ch, 0x11E) == 0 && ch->b[0xFE] > 0) {
++            CH_PUTL(ch, 0x11E, 0x7D0);
++        }
++        if (ch->b[0x103] > 0) {
++            ch->b[0x5F] = 1;
++        }
++        break;
++    case 1: case 4: case 7:     /* H013+$175C */
++        if (CH_L(ch, 0x11E) == 0 && ch->b[0xFE] > 0) {
++            CH_PUTL(ch, 0x11E, 0x5DC);
++        }
++        if (ch->b[0x103] > 0) {
++            ch->b[0x5F] = 2;
++        }
++        break;
++    default:
++        break;
++    }
++    menu_free(&list);
++
++    /* Eta' (+$62): tirata per una classe, massima per le multiclasse. */
++    if (ch->b[0x5C] <= 7) {
++        u16 row = (u16)(0x20AC + ch->b[0x5B] * 0x30 + ch->b[0x5C] * 6);
++
++        CH_PUTW(ch, 0x62, roll_dice(H005_W(row + 2), H005_W(row + 4)) +
++                          H005_W(row));
++    } else {
++        switch (ch->b[0x5C]) {
++        case 8: case 9: case 10: case 11: case 12:
++            CH_PUTW(ch, 0x62, max_age(ch->b[0x5B], 0));
++            break;
++        case 13: case 15: case 16:
++            CH_PUTW(ch, 0x62, max_age(ch->b[0x5B], 5));
++            break;
++        case 14:
++            CH_PUTW(ch, 0x62, max_age(ch->b[0x5B], 2));
++            break;
++        default:
++            break;
++        }
++    }
++
++    saved = g_current_char;
++    g_current_char = ch;
++    h065_04b8();
++    do {
++        for (k = 0; k <= 7; ++k) {
++            if (g_current_char->b[0xFE + k] > 0) {
++                g_current_char->b[0xFE + k] = 1;
++            }
++        }
++        ch->b[0x1C] = 0;
++
++        /*
++         * Caratteristiche: il migliore di 6 tiri di 3d6+1 per ognuna.  Le
++         * correzioni di razza dipendono da -$20(a5), che qui vale sempre 7
++         * (il contatore del menu delle razze): nell'originale non si
++         * applicano mai.
++         */
++        for (s = 0; s <= 5; ++s) {
++            ch->b[0x10 + s * 2 + 1] = 0;
++            for (j = 1; j <= 6; ++j) {
++                roll = (u16)(roll_dice(3, 6) + 1);
++                switch (race_i) {
++                case 0: case 1:
++                    if (s == 3) {
++                        ++roll;
++                    } else if (s == 4) {
++                        --roll;
++                    }
++                    break;
++                case 2:
++                    if (s == 3) {
++                        roll = (u16)(roll + 2);
++                    }
++                    break;
++                case 3: case 4:
++                    if (s == 4) {
++                        ++roll;
++                    } else if (s == 5) {
++                        --roll;
++                    }
++                    break;
++                case 5:
++                    if (s == 0) {
++                        --roll;
++                    } else if (s == 3) {
++                        roll = (u16)(roll + 2);
++                    }
++                    break;
++                default:
++                    break;
++                }
++                if (ch->b[0x11 + s * 2] < roll) {
++                    ch->b[0x11 + s * 2] = (u8)roll;
++                }
++            }
++            adjust_stat(ch, s);
++            ch->b[0x10 + s * 2] = ch->b[0x11 + s * 2];
++            if (s == 0) {
++                ch->b[0x1D] = ch->b[0x1C];
++            }
++            h065_10de(s, 0);
++        }
++
++        ch->b[0x1A8] = ch->b[0x64];
++        ch->b[0x110] = 2;
++        ch->b[0x112] = 1;
++        ch->b[0x114] = 2;
++        ch->b[0x11B] = 1;
++        ch->b[0xDA] = 0x0C;
++        nclasses = 0;           /* -$2e(a5) e' azzerata ma non usata */
++        gold = 0;
++        h029_fill_bytes(0x17, &ch->b[0x124], 0x17, 0);
++        for (k = 0; k <= 7; ++k) {
++            if (ch->b[0xFE + k] == 0) {
++                continue;
++            }
++            switch (k) {
++            case 0:             /* H013+$26DC */
++                ch->b[0x124] = (u8)(ch->b[0x5E] <= 4 ? 1 : 2);
++                break;
++            case 5:             /* H013+$26FC */
++                ch->b[0x136] = 1;
++                break;
++            default:
++                break;
++            }
++            switch (k) {        /* denaro iniziale */
++            case 0:             /* H013+$2766 */
++                gold = (u16)(gold + roll_dice(3, 6));
++                cleric_spell_slots(ch);
++                i = 1;
++                j = 0xFF;
++                while (i <= 0x0A && j != 0) {
++                    j = H005_W(0x1476 + (i - 1) * 2);
++                    if (j != 0) {
++                        ch->b[0x66 + j - 1] = 1;
++                    }
++                    ++i;
++                }
++                break;
++            case 2: case 4:     /* H013+$274C */
++                gold = (u16)(gold + roll_dice(5, 4));
++                break;
++            case 5:             /* H013+$27DE */
++                gold = (u16)(gold + roll_dice(2, 4));
++                ch->b[0x70] = 1;
++                ch->b[0x77] = 1;
++                ch->b[0x71] = 1;
++                ch->b[0x74] = 1;
++                ch->b[0x7A] = 1;
++                break;
++            case 6:             /* H013+$2816 */
++                gold = (u16)(gold + roll_dice(2, 6));
++                break;
++            case 7:             /* H013+$2734 */
++                gold = roll_dice(1, 4);
++                break;
++            default:
++                break;
++            }
++            ++nclasses;
++        }
++        /* All'uscita dal ciclo k vale 8: la divisione si fa sempre. */
++        if (k != 7) {
++            gold = (u16)((gold / nclasses) * 5);
++        }
++        CH_PUTW(ch, 0xF8, gold);
++        ch->b[0x64] = 0;
++        ch->b[0x123] = 0;
++        ch->b[0x1A8] = 0;
++        roll_hit_points(ch, 0xFF, nclasses);
++
++        saved_550 = COK_GET16(g_state_b + 0x550);
++        COK_PUT16(g_state_b + 0x550, 0xFF);
++        H005_B(0x24DF) = 0;
++        H005_B(0x24CF) = 1;
++        do {
++            h013_58dc();
++        } while (!H005_B(0x24DF));
++        COK_PUT16(g_state_b + 0x550, saved_550);
++        H005_B(0x24CF) = 0;
++
++        /* Livelli per classe, "n/n/n", alla riga 7. */
++        sep = 0;
++        copy_text(line, "", 0x28);
++        for (k = 0; k <= 7; ++k) {
++            Character *c = g_current_char;
++
++            if (c->b[0xFE + k] > 0 ||
++                (c->b[0x106 + k] < h073_12c8(c) && c->b[0x106 + k] > 0)) {
++                if (sep) {
++                    h026_append(0x28, line, 1, "/");
++                }
++                format_number(0x50, s_message,
++                              (s32)(u16)(c->b[0xFE + k] + c->b[0x106 + k]),
++                              0, 0x0A, 2, ' ');
++                h026_append(0x28, line, 0x50, s_message);
++                sep = 1;
++            }
++        }
++        ui_draw_text(7, 7, 0x0F, 0, 0x28, line);
++        h065_0be6();
++        h065_0ade();
++        key = ask_yes_no(0x0E, "Reroll stats? ", 0x0D, 0x0A, 0x0F);
++    } while (key != 'N');
++
++    h065_04b8();
++    do {
++        input_line(0x10, "Character name: ", 0x0D, 0, 0x0F, 0x0F,
++                   (char *)ch->b);
++    } while (ch->b[0] == 0);
++    h028_0d36();
++    set_default_figure();
++    h047_00e6();
++    for (s = 0; s <= 5; ++s) {
++        ch->b[0x10 + s * 2] = ch->b[0x11 + s * 2];
++    }
++    ch->b[0x1D] = ch->b[0x1C];
++    copy_text(s_message, "Save ", 0x50);
++    h026_append(0x50, s_message, 0x0F, (const char *)ch->b);
++    h026_append(0x50, s_message, 2, "? ");
++    key = ask_yes_no(0x50, s_message, 0x0D, 0x0A, 0x0F);
++    if (key == 'N') {
++        free_character(&ch);
++        g_current_char = saved;
++        return;
++    }
++    if (ch->b[0x105] > 0) {
++        add_starting_items(ch);
++    }
++    h066_1640(ch, 0, "");
++    free_character(&ch);
++    g_current_char = saved;
++}
+diff --git a/src_c/readable/h013.h b/src_c/readable/h013.h
+index d8da252..a0649f8 100644
+--- a/src_c/readable/h013.h
++++ b/src_c/readable/h013.h
+@@ -3,5 +3,6 @@
+ #define COK_H013_H
+ 
+ void main_menu(void);                   /* H013+$4BFC */
++void create_character(void);            /* H013+$0982 */
+ 
+ #endif
+diff --git a/src_c/readable/h029_gfx.c b/src_c/readable/h029_gfx.c
+index 333ea5a..402e7cb 100644
+--- a/src_c/readable/h029_gfx.c
++++ b/src_c/readable/h029_gfx.c
+@@ -316,10 +316,10 @@ void free_gfx_record(struct GfxRecord **rec)
+     *rec = NULL;
+ }
+ 
+-/* PORT H029+$0354: il bit plane_bit e' presente nel colore? */
+-static u8 color_has_bit(u8 color, u16 plane_bit)
++/* PORT H029+$0354: value AND mask (byte); usata anche come test di bit. */
++u8 mask_byte(u8 value, u16 mask)
+ {
+-    return (u8)(plane_bit & color);
++    return (u8)(mask & value);
+ }
+ 
+ /*
+@@ -340,7 +340,7 @@ static void build_gfx_mask(u8 color, struct GfxRecord *r)
+         graphics_blt_clear(r->mask->Planes[0],
+                            (u32)(width >> 3) * r->rows, 1);
+         for (i = 0; i <= 4; ++i) {
+-            minterm = color_has_bit(color, (u16)(1u << i)) ? 0xB0 : 0xE0;
++            minterm = mask_byte(color, (u16)(1u << i)) ? 0xB0 : 0xE0;
+             (void)graphics_blt_bitmap(r->image, 0, 0, r->mask, 0, 0,
+                                       (u16)((u16)(r->count * r->width8) << 3),
+                                       r->rows, minterm, (u8)(1u << i), NULL);
+diff --git a/src_c/readable/h029_gfx.h b/src_c/readable/h029_gfx.h
+index 28269a7..f57182b 100644
+--- a/src_c/readable/h029_gfx.h
++++ b/src_c/readable/h029_gfx.h
+@@ -11,6 +11,7 @@ void allocate_gfx_record(u16 rows, u16 count, u16 width8, u16 with_mask,
+ void free_pointer_data(void);           /* H029+$0180 */
+ void set_pointer_shape(s16 shape);      /* H029+$01B6 */
+ void add_to_byte(u8 *value, u16 delta); /* H029+$03E2 */
++u8   mask_byte(u8 value, u16 mask);     /* H029+$0354 */
+ void remap_gfx_colors(const u8 from[16], const u8 to[16], s16 frame,
+                       struct GfxRecord *rec);           /* H029+$0EFE */
+ void free_gfx_record(struct GfxRecord **rec);           /* H029+$067A */
+diff --git a/src_c/readable/h053.c b/src_c/readable/h053.c
+index caff670..9288a97 100644
+--- a/src_c/readable/h053.c
++++ b/src_c/readable/h053.c
+@@ -1,7 +1,39 @@
+ /* H053: caricamento e gestione di sequenze/sprite per l'interfaccia. */
+-#include "cok.h"
++#include "h053.h"
++#include "h003_exec.h"
+ 
+ /* PORT H053+$0004: link/unlk, nessun effetto. */
+ void h053_init(void)
+ {
+ }
++
++/*
++ * PORT H053+$0012: libera il blocco +$192, la lista degli oggetti (+$150),
++ * quella degli effetti (+$E8) e il record, poi azzera *character.
++ */
++void free_character(Character **character)
++{
++    Character *c = *character;
++    CokItem *item;
++    CokEffect *effect;
++
++    if (c->block_192 != NULL) {
++        exec_free_mem(c->block_192, 0x18);
++    }
++    item = c->items;
++    while (item != NULL) {
++        CokItem *dead = item;
++
++        item = item->next;
++        exec_free_mem(dead, sizeof(CokItem));
++    }
++    effect = c->effects;
++    while (effect != NULL) {
++        CokEffect *dead = effect;
++
++        effect = effect->next;
++        exec_free_mem(dead, sizeof(CokEffect));
++    }
++    exec_free_mem(*character, sizeof(Character));
++    *character = NULL;
++}
+diff --git a/src_c/readable/h053.h b/src_c/readable/h053.h
+new file mode 100644
+index 0000000..d734dc4
+--- /dev/null
++++ b/src_c/readable/h053.h
+@@ -0,0 +1,9 @@
++/* H053: gestione dei record dei personaggi. */
++#ifndef COK_H053_H
++#define COK_H053_H
++
++#include "character.h"
++
++void free_character(Character **character);    /* H053+$0012 */
++
++#endif
+diff --git a/src_c/readable/h062.c b/src_c/readable/h062.c
+index ebaacf3..3e13876 100644
+--- a/src_c/readable/h062.c
++++ b/src_c/readable/h062.c
+@@ -1,7 +1,52 @@
+ /* H062: Helper ed effetti condivisi del gioco; non tutti i significati sono attribuiti. */
+-#include "cok.h"
++#include "h062.h"
++#include "h003_exec.h"
++#include "h023_shared.h"
+ 
+ /* PORT H062+$0106: link/unlk, nessun effetto. */
+ void h062_init(void)
+ {
+ }
++
++/* PORT H062+$156C: somma di count tiri di un dado da sides facce. */
++u16 roll_dice(u16 count, u16 sides)
++{
++    u16 total = 0;
++    u16 i;
++
++    if (count > 0) {
++        for (i = 1; i <= count; ++i) {
++            total = (u16)(total + (u16)(random_below(sides) + 1));
++            if (i == 0xFFFF) {
++                break;          /* addq/bcc: il contatore non riparte da 0 */
++            }
++        }
++    }
++    return total;
++}
++
++/*
++ * PORT H062+$15F2: accoda alla lista +$E8 un effetto di $0A byte:
++ * +0 = type, +2 = value (word), +4 = b4, +5 = b5.
++ */
++void add_effect(Character *c, u16 type, u16 value, u16 b4, u8 b5)
++{
++    CokEffect *node = (CokEffect *)exec_alloc_mem(sizeof(CokEffect),
++                                                  COK_MEMF_CLEAR);
++    CokEffect *tail;
++
++    if (c->effects == NULL) {
++        c->effects = node;
++    } else {
++        tail = c->effects;
++        while (tail->next != NULL) {
++            tail = tail->next;
++        }
++        tail->next = node;
++    }
++    node->next = NULL;
++    node->b[0] = (u8)type;
++    COK_PUT16(node->b + 2, value);
++    node->b[5] = b5;
++    node->b[4] = (u8)b4;
++}
+diff --git a/src_c/readable/h062.h b/src_c/readable/h062.h
+new file mode 100644
+index 0000000..acb5d2f
+--- /dev/null
++++ b/src_c/readable/h062.h
+@@ -0,0 +1,11 @@
++/* H062: servizi condivisi sui personaggi (dadi, effetti). */
++#ifndef COK_H062_H
++#define COK_H062_H
++
++#include "character.h"
++
++u16  roll_dice(u16 count, u16 sides);           /* H062+$156C */
++void add_effect(Character *c, u16 type, u16 value, u16 b4, u8 b5);
++                                                /* H062+$15F2 */
++
++#endif
+diff --git a/src_c/readable/h073.c b/src_c/readable/h073.c
+index 27f290c..040a0b7 100644
+--- a/src_c/readable/h073.c
++++ b/src_c/readable/h073.c
+@@ -1,7 +1,241 @@
+ /* H073: disegno di interfaccia e composizione di schermate. */
+-#include "cok.h"
++#include "h073.h"
++#include "h029_gfx.h"
++#include "globals.h"
+ 
+ /* PORT H073+$0004: link/unlk, nessun effetto. */
+ void h073_init(void)
+ {
+ }
++
++/*
++ * PORT H073+$09BA: incantesimi da chierico per livello (+$124..+$128).  Il
++ * livello e' quello da chierico (+$FE); la tabella H005+$1946 ($9A byte per
++ * riga) dipende da +$5E > 4; la saggezza (+$15) da' incantesimi in piu'.
++ */
++void cleric_spell_slots(Character *c)
++{
++    u8 level = c->b[0xFE];              /* -$3(a5) */
++    u8 high;                            /* -$4(a5) */
++    u8 i;                               /* -$2(a5) */
++    u8 l;                               /* -$1(a5) */
++
++    if (level == 0) {
++        return;
++    }
++    high = (u8)(c->b[0x5E] > 4 ? 1 : 0);
++    for (i = 2; i <= 5; ++i) {
++        c->b[0x124 + i - 1] = 0;
++    }
++    c->b[0x124] = (u8)(high ? 2 : 1);
++    for (l = 2; l <= level; ++l) {
++        for (i = 1; i <= 5; ++i) {
++            c->b[0x124 + i - 1] = (u8)(c->b[0x124 + i - 1] +
++                H005_W(0x1946 + high * 0x9A + 0x2C + (l - 2) * 0x0A +
++                       (i - 1) * 2));
++        }
++        if (l == 0xFF) {
++            break;              /* addq.b/bcc */
++        }
++    }
++    if (c->b[0x15] > 12 && c->b[0x124] > 0) {
++        ++c->b[0x124];
++    }
++    if (c->b[0x15] > 13 && c->b[0x124] > 0) {
++        ++c->b[0x124];
++    }
++    if (c->b[0x15] > 14 && c->b[0x125] > 0) {
++        ++c->b[0x125];
++    }
++    if (c->b[0x15] > 15 && c->b[0x125] > 0) {
++        ++c->b[0x125];
++    }
++    if (c->b[0x15] > 16 && c->b[0x126] > 0) {
++        ++c->b[0x126];
++    }
++    if (c->b[0x15] > 17 && c->b[0x127] > 0) {
++        ++c->b[0x127];
++    }
++}
++
++/* Riga della tabella dei tiri salvezza (H005+$1566): classe, livello, tiro. */
++static u16 save_table(u8 cls, u8 level, u8 save)
++{
++    /* level - 1 con livello 0 da' -1 (muls con segno): riga precedente. */
++    return H005_W((u16)(0x1566 + cls * 0x78 + ((s16)level - 1) * 0x0A +
++                        save * 2));
++}
++
++/*
++ * PORT H073+$0BA8: tiri salvezza +$D4..+$D8: il minimo tra 20 e i valori
++ * delle classi (livello attuale +$FE e precedente +$106).  Per il primo
++ * tiro i bonus di costituzione (+$19) di nani/halfling (razze 3, 4, 5) o
++ * con l'oggetto speciale di tipo 6, e quelli per costituzione oltre 18,
++ * sono sommati a ogni giro sulle 8 classi, come nell'originale.
++ */
++void saving_throws(Character *c)
++{
++    u8 special = 0;                     /* -$9(a5) */
++    CokItem *item = c->items;           /* -$8(a5) */
++    u8 s;                               /* -$1(a5) */
++    u8 k;                               /* -$2(a5) */
++
++    while (item != NULL && !special) {
++        if (item->b[0x46] > 0x80 && item->b[0x3A] != 0) {
++            special = (u8)(mask_byte(item->b[0x46], 0x7F) == 6);
++        }
++        item = item->next;
++    }
++    for (s = 0; s <= 4; ++s) {
++        c->b[0xD4 + s] = 0x14;
++        for (k = 0; k <= 7; ++k) {
++            if (c->b[0xFE + k] > 0) {
++                u16 t = save_table(k, c->b[0xFE + k], s);
++
++                if (c->b[0xD4 + s] > t) {
++                    c->b[0xD4 + s] = (u8)t;
++                }
++            }
++            if (c->b[0xFE + k] > c->b[0x106 + k]) {
++                u16 t = save_table(k, c->b[0x106 + k], s);
++
++                if (c->b[0xD4 + s] > t) {
++                    c->b[0xD4 + s] = (u8)t;
++                }
++            }
++            if (s == 0 && (c->b[0x5B] == 3 || c->b[0x5B] == 5 ||
++                           c->b[0x5B] == 4 || special)) {
++                switch (c->b[0x19]) {
++                case 4: case 5: case 6:
++                    add_to_byte(&c->b[0xD4 + s], 1);
++                    break;
++                case 7: case 8: case 9: case 10:
++                    add_to_byte(&c->b[0xD4 + s], 2);
++                    break;
++                case 11: case 12: case 13:
++                    add_to_byte(&c->b[0xD4 + s], 3);
++                    break;
++                case 14: case 15: case 16: case 17:
++                    add_to_byte(&c->b[0xD4 + s], 4);
++                    break;
++                case 18:
++                    add_to_byte(&c->b[0xD4 + s], 5);
++                    break;
++                default:
++                    break;
++                }
++            }
++            if (s == 0) {
++                switch (c->b[0x19]) {
++                case 19: case 20:
++                    add_to_byte(&c->b[0xD4 + s], 1);
++                    break;
++                case 21: case 22:
++                    add_to_byte(&c->b[0xD4 + s], 2);
++                    break;
++                case 23: case 24:
++                    add_to_byte(&c->b[0xD4 + s], 3);
++                    break;
++                case 25:
++                    add_to_byte(&c->b[0xD4 + s], 4);
++                    break;
++                default:
++                    break;
++                }
++            }
++        }
++    }
++}
++
++/* PORT H073+$12C8: restituisce sempre 0. */
++u8 h073_12c8(Character *c)
++{
++    (void)c;
++    return 0;
++}
++
++/* PORT H073+$130A: +$DC < H073+$12C8 (cioe' mai: confronto senza segno con 0). */
++static u8 h073_130a(Character *c)
++{
++    return (u8)(c->b[0xDC] < h073_12c8(c));
++}
++
++/*
++ * PORT H073+$0FC8: abilita' da ladro +$E0..+$E7.  Il livello effettivo e'
++ * +$104 + +$10C * H073+$130A; la tabella per livello e' H005+$50F8 (8 byte
++ * per livello), le correzioni di razza H005+$5088 (16 byte per razza) e,
++ * per le prime 5, quelle di destrezza (+$17) H005+$3FF8.  L'oggetto
++ * speciale di tipo $0B alza il livello delle prime due abilita'; quello di
++ * tipo 2 porta il livello almeno a 4 o aggiunge 10 a tutte.
++ *
++ * bonus (-$4(a5)) nell'originale e' assegnato solo con l'oggetto di tipo
++ * $0B; senza, il codice somma il valore rimasto nella memoria dello stack.
++ * Qui parte da 0.
++ */
++void thief_skills(Character *c)
++{
++    u8 type_b = 0;                      /* -$d(a5) */
++    u8 type_2 = 0;                      /* -$e(a5) */
++    CokItem *item = c->items;           /* -$c(a5) */
++    u8 level;                           /* -$6(a5) */
++    u8 saved_level;                     /* -$7(a5) */
++    s16 bonus = 0;                      /* -$4(a5) */
++    u16 i;                              /* -$2(a5) */
++
++    while (item != NULL && !type_b && !type_2) {
++        if (item->b[0x46] > 0x80 && item->b[0x3A] != 0) {
++            u8 t = mask_byte(item->b[0x46], 0x7F);      /* -$5(a5) */
++
++            type_b = (u8)(t == 0x0B);
++            type_2 = (u8)(t == 2);
++        }
++        item = item->next;
++    }
++    level = (u8)(c->b[0x104] + c->b[0x10C] * h073_130a(c));
++    if (level < 4 && type_2) {
++        level = 4;
++        type_2 = 0;
++    }
++    saved_level = level;
++    for (i = 1; i <= 8; ++i) {
++        s16 race_adj;
++        u8 *skill = &c->b[0xE0 + i - 1];
++        u8 base;
++
++        if (type_b) {
++            if (i == 1) {
++                if (level < 5) {
++                    level = 5;
++                    bonus = 0;
++                } else {
++                    bonus = 5;
++                }
++            } else if (i == 2) {
++                if (level < 7) {
++                    level = 7;
++                    bonus = 0;
++                } else {
++                    bonus = 5;
++                }
++            }
++        }
++        race_adj = (s16)H005_W(0x5088 + c->b[0x5B] * 16 + (i - 1) * 2);
++        base = H005_B((u16)(0x50F8 + ((s16)level - 1) * 8 + (i - 1)));
++        if (race_adj < 0 &&
++            (s16)((race_adj < 0 ? -race_adj : race_adj) + bonus) >
++            (s16)base) {
++            *skill = 0;
++        } else {
++            *skill = (u8)(base + race_adj + bonus);
++            if (i < 6) {
++                *skill = (u8)(*skill +
++                    H005_W((u16)(0x3FF8 + ((s16)c->b[0x17] - 9) * 0x0A +
++                                 (i - 1) * 2)));
++            }
++        }
++        if (type_2) {
++            add_to_byte(skill, 0x0A);
++        }
++        level = saved_level;
++    }
++}
+diff --git a/src_c/readable/h073.h b/src_c/readable/h073.h
+new file mode 100644
+index 0000000..0acb231
+--- /dev/null
++++ b/src_c/readable/h073.h
+@@ -0,0 +1,12 @@
++/* H073: valori derivati dei personaggi (tiri salvezza, abilita', magie). */
++#ifndef COK_H073_H
++#define COK_H073_H
++
++#include "character.h"
++
++void cleric_spell_slots(Character *c);  /* H073+$09BA */
++void saving_throws(Character *c);       /* H073+$0BA8 */
++void thief_skills(Character *c);        /* H073+$0FC8 */
++u8   h073_12c8(Character *c);           /* H073+$12C8 */
++
++#endif
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index 3e24296..85235e7 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -228,16 +228,13 @@ u8 h046_0012(u16 dx, u16 dy, u16 col, u16 row) { (void)dx; (void)dy; (void)col;
+ u16 h048_0aa8(void *character) { (void)character; cok_unported("H048+$0AA8"); return 0; }
+ s32 h042_0b80(u16 a, u16 b, u8 animate, u16 frame) { (void)a; (void)b; (void)animate; (void)frame; cok_unported("H042+$0B80"); return 0; }
+ void h042_0254(s32 handle) { (void)handle; cok_unported("H042+$0254"); }
+-void *h008_party_next(void *character) { (void)character; cok_unported("struttura dei personaggi (+$18E)"); return NULL; }
+ const u8 *g_h005_2ade_area(void) { cok_unported("H005+$2ADE (area della mappa)"); return NULL; }
+ void *g_h005_2508;
+ void h013_0518(void) { cok_unported("H013+$0518"); }
+ void h013_051c(void) { cok_unported("H013+$051C"); }
+-void h013_0982(void) { cok_unported("H013+$0982"); }
+ void h013_2b9a(void) { cok_unported("H013+$2B9A"); }
+ void h013_31e0(void) { cok_unported("H013+$31E0"); }
+ void h013_4508(void) { cok_unported("H013+$4508"); }
+-u8 h013_character_byte(void *character, u16 offset) { (void)character; (void)offset; cok_unported("struttura dei personaggi"); return 0; }
+ u8 h065_3702(void) { cok_unported("H065+$3702"); return 0; }
+ void h065_196e(u8 *redraw) { (void)redraw; cok_unported("H065+$196E"); }
+ void h066_1640(void *character, u16 a, const char *text) { (void)character; (void)a; (void)text; cok_unported("H066+$1640"); }
+@@ -251,4 +248,11 @@ void h063_1d44(u16 len, const char *text) { (void)len; (void)text; cok_unported(
+ void h028_0d74(void) { cok_unported("H028+$0D74"); }
+ void h043_0840(void) { cok_unported_skip("H043+$0840"); }
+ void h041_00be(void *block) { (void)block; cok_unported("H041+$00BE"); }
+-void h053_0012(void **character) { (void)character; cok_unported("H053+$0012"); }
++
++void h065_04b8(void) { cok_unported("H065+$04B8"); }
++void h065_10de(u8 stat, u8 flag) { (void)stat; (void)flag; cok_unported("H065+$10DE"); }
++void h065_0be6(void) { cok_unported("H065+$0BE6"); }
++void h065_0ade(void) { cok_unported("H065+$0ADE"); }
++void h013_58dc(void) { cok_unported("H013+$58DC"); }
++void h028_0d36(void) { cok_unported("H028+$0D36"); }
++void h047_00e6(void) { cok_unported("H047+$00E6"); }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index dae258c..2a14ff7 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -14,7 +14,6 @@ u8   h046_0012(u16 dx, u16 dy, u16 col, u16 row);
+ u16  h048_0aa8(void *character);
+ s32  h042_0b80(u16 a, u16 b, u8 animate, u16 frame); /* insieme $27BC */
+ void h042_0254(s32 handle);
+-void *h008_party_next(void *character);  /* personaggio +$18E: successivo */
+ const u8 *g_h005_2ade_area(void);        /* H005+$2ADE: area della mappa */
+ extern void *g_h005_2508;                /* H005+$2508: personaggio scelto */
+ void h043_0584(void);
+@@ -204,11 +203,9 @@ void h085_4a02(void);
+ /* Funzioni del menu principale (H013+$4BFC). */
+ void h013_0518(void);
+ void h013_051c(void);
+-void h013_0982(void);
+ void h013_2b9a(void);
+ void h013_31e0(void);
+ void h013_4508(void);
+-u8   h013_character_byte(void *character, u16 offset);  /* struttura non portata */
+ u8   h065_3702(void);
+ void h065_196e(u8 *redraw);
+ void h066_1640(void *character, u16 a, const char *text);
+@@ -222,6 +219,13 @@ void h063_1d44(u16 len, const char *text);
+ void h028_0d74(void);
+ void h043_0840(void);
+ void h041_00be(void *block);
+-void h053_0012(void **character);
++
++void h065_04b8(void);                  /* schermata del personaggio */
++void h065_10de(u8 stat, u8 flag);      /* riga di una caratteristica */
++void h065_0be6(void);
++void h065_0ade(void);
++void h013_58dc(void);                  /* trampolino H013+$051C */
++void h028_0d36(void);
++void h047_00e6(void);
+ 
+ #endif
+-- 
+2.43.0
+

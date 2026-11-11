@@ -1,0 +1,1152 @@
+From d18b4af8eb093e5695302858365151dcf1ce98f0 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 16:01:27 +0000
+Subject: [PATCH 13/65] Port UI_RequestChoice and the Play/Demo prompt
+
+Ports H008+$01FC UI_RequestChoice with its nested procedures ($01A0,
+$020A, $03C8): option parsing, highlighted drawing on row 24, keys
+(letters, Enter, Esc, 4/6 to move, digit mapping, Alt shortcuts), mouse
+clicks on the option row and the game areas, pointer shape updates,
+picture-set animation and the prompt timeout. The parent's locals,
+reached through its frame by the nested procedures, become a struct.
+Also ports H029+$01B6 (pointer shape), H029+$03E2, H030+$00B6 and
+H030+$0A40, and ModifyIDCMP. The H001 call used the wrong argument
+order; it now follows the push order.
+
+The prompt shows 'Champions of Krynn v1.0 Play Demo', times out to Demo
+after 30 seconds, and P or Right+Enter choose Play or Demo. On the
+host, COK_KEYS injects timed key presses for tests.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md   |  48 +--
+ src_c/readable/README.md        |   4 +-
+ src_c/readable/globals.h        |   3 +-
+ src_c/readable/h001_main.c      |   5 +-
+ src_c/readable/h008.c           | 544 ++++++++++++++++++++++++++++++++
+ src_c/readable/h008.h           |   4 +
+ src_c/readable/h021_intuition.c |   6 +
+ src_c/readable/h021_intuition.h |   1 +
+ src_c/readable/h029_gfx.c       |  30 ++
+ src_c/readable/h029_gfx.h       |   2 +
+ src_c/readable/h030.c           |  45 +++
+ src_c/readable/h030.h           |   3 +
+ src_c/readable/host/display.c   |   2 +
+ src_c/readable/host/input.c     |  53 ++++
+ src_c/readable/host/intuition.c |   5 +
+ src_c/readable/host/ndk.h       |   5 +
+ src_c/readable/unported.c       |  17 +-
+ src_c/readable/unported.h       |  10 +-
+ 18 files changed, 746 insertions(+), 41 deletions(-)
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index 236a553..8878d3c 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **258 / 913**.
++Routine portate: **267 / 913**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -14,7 +14,7 @@ Routine portate: **258 / 913**.
+ | H005 | 21276 | 1 | 1 |
+ | H006 | 3020 | 4 | 3 |
+ | H007 | 3036 | 11 | 11 |
+-| H008 | 8660 | 21 | 2 |
++| H008 | 8660 | 21 | 6 |
+ | H009 | 988 | 3 | 1 |
+ | H010 | 2488 | 9 | 4 |
+ | H011 | 7004 | 12 | 2 |
+@@ -27,7 +27,7 @@ Routine portate: **258 / 913**.
+ | H018 | 192 | 3 | 3 |
+ | H019 | 240 | 1 | 1 |
+ | H020 | 2884 | 6 | 1 |
+-| H021 | 1632 | 14 | 13 |
++| H021 | 1632 | 14 | 14 |
+ | H022 | 328 | 10 | 8 |
+ | H023 | 140 | 2 | 1 |
+ | H024 | 268 | 2 | 2 |
+@@ -35,8 +35,8 @@ Routine portate: **258 / 913**.
+ | H026 | 1452 | 11 | 10 |
+ | H027 | 18156 | 10 | 2 |
+ | H028 | 4488 | 16 | 9 |
+-| H029 | 6084 | 32 | 16 |
+-| H030 | 3240 | 18 | 6 |
++| H029 | 6084 | 32 | 18 |
++| H030 | 3240 | 18 | 8 |
+ | H031 | 212 | 4 | 3 |
+ | H032 | 9352 | 1 | 1 |
+ | H033 | 8140 | 15 | 2 |
+@@ -120,8 +120,8 @@ Routine portate: **258 / 913**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0058` | `Game_Main` | verificato | h001_main.c:62 |
+-| `$0066` | `Select_DataPrefix` | verificato | h001_main.c:29 |
++| `$0058` | `Game_Main` | verificato | h001_main.c:63 |
++| `$0066` | `Select_DataPrefix` | verificato | h001_main.c:30 |
+ 
+ ### H002
+ 
+@@ -195,14 +195,14 @@ Routine portate: **258 / 913**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$009A` | `module_init_H008` | parziale | h008.c:5 |
++| `$009A` | `module_init_H008` | parziale | h008.c:11 |
+ | `$0102` | `sub_H008_00000102` | parziale |  |
+ | `$0162` | `sub_H008_00000162` | parziale |  |
+-| `$01A0` | `sub_H008_000001A0` | parziale |  |
+-| `$01FC` | `UI_RequestChoice` | parziale |  |
+-| `$020A` | `sub_H008_0000020A` | parziale |  |
+-| `$03C8` | `sub_H008_000003C8` | parziale |  |
+-| `$139E` | `sub_H008_0000139E` | parziale | h008.c:10 |
++| `$01A0` | `sub_H008_000001A0` | parziale | h008.c:22 |
++| `$01FC` | `UI_RequestChoice` | parziale | h008.c:332 |
++| `$020A` | `sub_H008_0000020A` | parziale | h008.c:55 |
++| `$03C8` | `sub_H008_000003C8` | parziale | h008.c:104 |
++| `$139E` | `sub_H008_0000139E` | parziale | h008.c:16 |
+ | `$13C0` | `trampoline_H008_1AF4` | parziale |  |
+ | `$13CE` | `sub_H008_000013CE` | parziale |  |
+ | `$1448` | `sub_H008_00001448` | parziale |  |
+@@ -372,7 +372,7 @@ Routine portate: **258 / 913**.
+ | `$01FA` | `wrapper_ActivateWindow` | parziale | h021_intuition.c:62 |
+ | `$0230` | `wrapper_ClearPointer` | parziale | h021_intuition.c:68 |
+ | `$0242` | `wrapper_CloseWindow` | parziale | h021_intuition.c:74 |
+-| `$026C` | `wrapper_ModifyIDCMP` | parziale |  |
++| `$026C` | `wrapper_ModifyIDCMP` | parziale | h021_intuition.c:104 |
+ | `$029C` | `wrapper_OpenWindow` | parziale | h021_intuition.c:80 |
+ | `$02EE` | `wrapper_SetPointer` | parziale | h021_intuition.c:96 |
+ | `$03AE` | `wrapper_AutoRequest` | parziale | h021_intuition.c:86 |
+@@ -471,13 +471,13 @@ Routine portate: **258 / 913**.
+ | --- | --- | --- | --- |
+ | `$0118` | `module_init_H029` | parziale | h029_gfx.c:37 |
+ | `$0180` | `sub_H029_00000180` | parziale | h029_gfx.c:79 |
+-| `$01B6` | `sub_H029_000001B6` | parziale |  |
++| `$01B6` | `sub_H029_000001B6` | parziale | h029_gfx.c:491 |
+ | `$0234` | `sub_H029_00000234` | parziale | h029_gfx.c:89 |
+ | `$0312` | `sub_H029_00000312` | parziale | h029_gfx.c:51 |
+ | `$0354` | `trampoline_H029_036C` | parziale | h029_gfx.c:318 |
+ | `$0376` | `trampoline_H029_0390` | parziale |  |
+ | `$039A` | `trampoline_H029_03B2` | parziale |  |
+-| `$03E2` | `sub_H029_000003E2` | parziale |  |
++| `$03E2` | `sub_H029_000003E2` | parziale | h029_gfx.c:514 |
+ | `$0408` | `Allocate_GraphicRecord` | verificato | h029_gfx.c:167 |
+ | `$067A` | `Free_GraphicRecord` | parziale | h029_gfx.c:293 |
+ | `$0766` | `sub_H029_00000766` | parziale | h029_gfx.c:325 |
+@@ -506,10 +506,10 @@ Routine portate: **258 / 913**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0070` | `module_init_H030` | parziale | h030.c:10 |
+-| `$00B6` | `sub_H030_000000B6` | parziale |  |
+-| `$019A` | `sub_H030_0000019A` | parziale | h030.c:16 |
+-| `$0256` | `UI_DrawText` | parziale | h030.c:36 |
++| `$0070` | `module_init_H030` | parziale | h030.c:12 |
++| `$00B6` | `sub_H030_000000B6` | parziale | h030.c:59 |
++| `$019A` | `sub_H030_0000019A` | parziale | h030.c:18 |
++| `$0256` | `UI_DrawText` | parziale | h030.c:38 |
+ | `$028A` | `sub_H030_0000028A` | parziale |  |
+ | `$0302` | `trampoline_H030_0470` | parziale |  |
+ | `$0310` | `sub_H030_00000310` | parziale |  |
+@@ -517,12 +517,12 @@ Routine portate: **258 / 913**.
+ | `$03FC` | `sub_H030_000003FC` | parziale |  |
+ | `$0718` | `sub_H030_00000718` | parziale |  |
+ | `$09A6` | `sub_H030_000009A6` | parziale |  |
+-| `$0A40` | `sub_H030_00000A40` | parziale |  |
++| `$0A40` | `sub_H030_00000A40` | parziale | h030.c:88 |
+ | `$0AD2` | `sub_H030_00000AD2` | parziale |  |
+ | `$0B4A` | `sub_H030_00000B4A` | parziale |  |
+-| `$0B6C` | `sub_H030_00000B6C` | parziale | h030.c:44 |
+-| `$0BDA` | `(byte non classificati)` | - | h030.c:61 |
+-| `$0C10` | `sub_H030_00000C10` | parziale | h030.c:71 |
++| `$0B6C` | `sub_H030_00000B6C` | parziale | h030.c:46 |
++| `$0BDA` | `(byte non classificati)` | - | h030.c:106 |
++| `$0C10` | `sub_H030_00000C10` | parziale | h030.c:116 |
+ | `$0C84` | `sub_H030_00000C84` | parziale |  |
+ 
+ ### H031
+diff --git a/src_c/readable/README.md b/src_c/readable/README.md
+index 0b132fb..8915fae 100644
+--- a/src_c/readable/README.md
++++ b/src_c/readable/README.md
+@@ -74,7 +74,9 @@ così gli adattatori del gioco sono identici sui due target); lo schermo
+ `COK_SCREENSHOT=file.bmp` (salva l'ultimo fotogramma all'uscita),
+ `COK_SCREENSHOT_AT=t1,t2,...` (con `COK_SCREENSHOT=base`: salva anche
+ `base-1.bmp`, `base-2.bmp`, ... ai millisecondi indicati),
+-`SDL_VIDEODRIVER=dummy` (senza finestra), `COK_DATA=dir` (directory dei
++`COK_KEYS=ms=Tasto,...` (tasti simulati a tempo, nomi SDL come `P`,
++`Return`, `Escape`, `Left`), `SDL_VIDEODRIVER=dummy` (senza finestra),
++`COK_DATA=dir` (directory dei
+ file del gioco, altrimenti quella corrente). Come su AmigaDOS i nomi dei file
+ non distinguono maiuscole e minuscole e il volume ("df0:", "Disk Two:") è
+ ignorato. Le richieste di sistema (es. "inserisci il disco") si chiudono con
+diff --git a/src_c/readable/globals.h b/src_c/readable/globals.h
+index 893240c..7ad5c01 100644
+--- a/src_c/readable/globals.h
++++ b/src_c/readable/globals.h
+@@ -78,6 +78,7 @@ extern CokHandler g_handlers_25c0[108]; /* $25C0..$276C: azioni (H033) */
+ extern CokHandler g_handlers_2832[120]; /* $2832..$2A0E: effetti (H027/H033) */
+ 
+ /* Dati di altri moduli. */
+-extern u16 g_distribution_check;   /* H009+$0000: $3F8F dopo la verifica */
++extern u16 g_distribution_check;
++extern u8  g_h047_0001;            /* H047+$0001 (-$1(a4) di H047) */   /* H009+$0000: $3F8F dopo la verifica */
+ 
+ #endif
+diff --git a/src_c/readable/h001_main.c b/src_c/readable/h001_main.c
+index 89abe6d..f10bb3c 100644
+--- a/src_c/readable/h001_main.c
++++ b/src_c/readable/h001_main.c
+@@ -16,6 +16,7 @@
+ #include "h004_init.h"
+ #include "h006.h"
+ #include "h007.h"
++#include "h008.h"
+ #include "globals.h"
+ #include "unported.h"
+ 
+@@ -53,8 +54,8 @@ static void ask_play_or_demo(s32 timeout)
+ {
+     G_SET_PROMPT_TIMEOUT(timeout);
+     G_PROMPT_KEY = 'D';
+-    s_choice = h008_01fc(&s_special, 0, 0, 0x0F, 0x0A, 0x0D,
+-                         s_options, 9, s_title, 0x18);
++    s_choice = ui_request_choice(0x18, s_title, 9, s_options, 0x0D, 0x0A,
++                                 0x0F, 0, 0, &s_special);
+     G_SET_PROMPT_TIMEOUT(0);
+     G_PROMPT_KEY = 0;
+ }
+diff --git a/src_c/readable/h008.c b/src_c/readable/h008.c
+index 67e99d3..3688fdf 100644
+--- a/src_c/readable/h008.c
++++ b/src_c/readable/h008.c
+@@ -1,6 +1,12 @@
+ /* H008: Interazioni UI, richieste di scelta e menu. */
+ #include "h008.h"
+ #include "h030.h"
++#include "h010_input.h"
++#include "h021_intuition.h"
++#include "h026_string.h"
++#include "h029_gfx.h"
++#include "globals.h"
++#include "unported.h"
+ 
+ /* PORT H008+$009A: link/unlk, nessun effetto. */
+ void h008_init(void)
+@@ -12,3 +18,541 @@ void clear_message_line(void)
+ {
+     fill_text_cells(0, 0x18, 0, 0x28);
+ }
++
++/* PORT H008+$01A0: 1 per le lettere maiuscole e le cifre. */
++static u8 is_hotkey_char(u8 c)
++{
++    return (u8)((c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9'));
++}
++
++/*
++ * Variabili locali di UI_RequestChoice (frame di H008+$01FC) usate anche
++ * dalle sotto-procedure annidate $020A e $03C8, che nell'originale le
++ * raggiungono attraverso il frame del chiamante.
++ */
++typedef struct ChoiceFrame {
++    /* argomenti */
++    const char *options;        /* $1A(a5) */
++    u16 title_pen;              /* $18(a5) */
++    u16 normal_pen;             /* $16(a5) */
++    u16 highlight_pen;          /* $14(a5) */
++    u8 digits_map;              /* $12(a5) */
++    u8 animate;                 /* $10(a5) */
++    u8 *special;                /* $C(a5) */
++    /* locali */
++    struct { u16 start; u16 end; } item[20];    /* -$C4: inizio/fine */
++    u16 count;                  /* -$74: numero di opzioni */
++    u16 title_len;              /* -$72: lunghezza del titolo */
++    u16 options_len;            /* -$70: lunghezza delle opzioni */
++    u8 key;                     /* -$5E */
++    u8 done;                    /* -$C5 */
++    u8 result;                  /* -$5F */
++    s16 col;                    /* -$68 */
++    s16 row;                    /* -$6A */
++} ChoiceFrame;
++
++/*
++ * PORT H008+$020A: divide le opzioni in voci: ogni voce comincia con una
++ * maiuscola o una cifra e finisce due caratteri prima della successiva
++ * (lo spazio separatore escluso); l'ultima finisce alla fine della
++ * stringa.  Le voci non usate valgono 0..0.
++ */
++static void parse_options(ChoiceFrame *f, u16 len, const char *options)
++{
++    u16 i;
++    u16 j;
++    u16 n = 1;                          /* -$2 */
++    u16 length;                         /* -$8 */
++
++    for (i = 1; i <= 0x14; ++i) {
++        for (j = 0; j <= 1; ++j) {
++            if (j == 0) {
++                f->item[i - 1].start = 0x3E7;
++            } else {
++                f->item[i - 1].end = 0x3E7;
++            }
++        }
++    }
++    length = h026_strlen(len, options);
++    for (i = 0; i <= length; ++i) {
++        if (is_hotkey_char((u8)options[i])) {
++            if (f->item[n - 1].start == 0x3E7) {
++                f->item[n - 1].start = i;
++            } else {
++                f->item[n - 1].end = (u16)(i - 2);
++                ++n;
++                f->item[n - 1].start = i;
++            }
++        }
++        if (i == 0xFFFF) {
++            break;
++        }
++    }
++    f->item[n - 1].end = (u16)(length - 1);
++    for (i = 1; i <= 0x14; ++i) {
++        if (f->item[i - 1].start == 0x3E7) {
++            f->item[i - 1].start = 0;
++        }
++        if (f->item[i - 1].end == 0x3E7) {
++            f->item[i - 1].end = 0;
++        }
++    }
++    f->count = n;
++}
++
++/*
++ * PORT H008+$03C8: disegna le opzioni nella riga 24 dopo il titolo: la
++ * voce selezionata in negativo (se c'e' una penna di evidenza), le
++ * iniziali con la penna di evidenza, il resto con la penna normale; poi
++ * cancella fino alla colonna 39.
++ */
++static void draw_options(ChoiceFrame *f, u8 selected)
++{
++    u16 i;
++
++    if (f->options_len == 0) {
++        return;
++    }
++    for (i = 0; i <= (u16)(f->options_len - 1); ++i) {
++        u16 col = (u16)(f->title_len + i);
++        u8 ch = (u8)f->options[i];
++
++        if (i >= f->item[selected - 1].start &&
++            i <= f->item[selected - 1].end && f->highlight_pen != 0) {
++            draw_char_run(col, 0x18, 0, f->highlight_pen, 1, ch, 1);
++        } else if (is_hotkey_char(ch)) {
++            draw_char_run(col, 0x18, f->highlight_pen, 0, 1, ch, 1);
++        } else {
++            draw_char_run(col, 0x18, f->normal_pen, 0, 1, ch, 1);
++        }
++    }
++    if ((u16)(f->title_len + f->options_len) < 0x27) {
++        draw_char_run((u16)(f->title_len + f->options_len), 0x18, 0, 0,
++                      (u16)(0x27 - f->options_len - f->title_len + 1), ' ', 1);
++    }
++}
++
++/* Indice dell'opzione selezionata (H005+$2483, persistente tra le chiamate). */
++#define SELECTED H005_B(0x2483)
++
++/* Coordinate di combattimento/mappa del cursore (rami $07F8/$0D8E). */
++static void map_target(s16 *dx, s16 *dy)
++{
++    const u8 *area = g_h005_2ade_area();
++
++    if (H005_B(0x24CC)) {
++        *dx = (s16)(H005_W(0x2438) - COK_GET16(area + 2) + 1);
++        *dy = (s16)(H005_W(0x2436) - COK_GET16(area + 4) + 1);
++    } else {
++        s16 who = (s16)h048_0aa8(g_current_char);
++
++        *dx = (s16)(H005_W(0x3154 + (who - 1) * 6) - COK_GET16(area + 2) + 1);
++        *dy = (s16)(H005_W(0x3154 + (who - 1) * 6 + 2) - COK_GET16(area + 4) + 1);
++    }
++}
++
++/* Il cursore e' sulla mappa di combattimento (22x22 celle)? */
++static int over_combat_map(const ChoiceFrame *f)
++{
++    return (H005_B(0x24CB) || H005_B(0x24CC)) && H005_B(0x3DE3) == 5 &&
++           f->col >= 0 && f->col <= 0x16 && f->row >= 0 && f->row <= 0x16;
++}
++
++/*
++ * Il cursore e' sulla vista dell'esplorazione: dentro la vista 3..13, o
++ * (fuori dalla vista, senza la mappa a tutto schermo, nel contesto 3) in
++ * 1..38 x 1..15.
++ */
++static int over_area_view(const ChoiceFrame *f)
++{
++    if (f->col >= 3 && f->col <= 0x0D && f->row >= 3 && f->row <= 0x0D) {
++        return 1;
++    }
++    return COK_GET16(g_state_a + 0x1CC) == 0 && H005_B(0x3DE3) == 3 &&
++           f->col >= 1 && f->col <= 0x26 && f->row >= 1 && f->row <= 0x0F;
++}
++
++/* Direzione o azione sotto il cursore nella vista (H046 o tabella $4F86). */
++static u8 area_view_code(const ChoiceFrame *f)
++{
++    if (COK_GET16(g_state_a + 0x1CC) == 0) {
++        return h046_0012((u16)(COK_GET16(g_state_a + 0x186) + 1),
++                         (u16)(COK_GET16(g_state_a + 0x188) + 1),
++                         (u16)f->col, (u16)f->row);
++    }
++    return H005_B(0x4F86 + (f->row - 3) * 0x0C + (f->col - 3));
++}
++
++/*
++ * Tasto Invio o clic (ramo $0BA6).  Senza clic: la voce selezionata.  Con
++ * un clic, in ordine: H047 attivo; ritratti del party; mappa di
++ * combattimento; vista dell'esplorazione; la riga delle opzioni; le aree
++ * di $24DA; la lista di H005+$2778.
++ */
++static void enter_or_click(ChoiceFrame *f)
++{
++    if (!G_MOUSE_CLICK) {
++        f->key = (u8)f->options[f->item[SELECTED - 1].start];
++        if (f->key == 0) {
++            f->key = 0x0D;
++        }
++        f->done = 1;
++        return;
++    }
++    f->row = (s16)((s16)H005_W(0x2354) / 8);
++    f->col = (s16)((s16)H005_W(0x2356) / 8);
++    if (g_h047_0001) {
++        *f->special = 1;
++        f->done = 1;
++        return;
++    }
++    if (H005_B(0x24A2) &&
++        (H005_B(0x3DE3) != 3 || COK_GET16(g_state_a + 0x270) != 0) &&
++        !H005_B(0x24B0) && H005_B(0x3DE3) != 5 &&
++        f->col >= H005_B(0x248D) && f->col <= H005_B(0x248C) &&
++        f->row >= H005_B(0x248B) && f->row <= H005_B(0x248A)) {
++        /* Clic su un personaggio del party. */
++        u16 index = (u16)(f->row - H005_B(0x248B));
++        void *member = g_party_head;
++        u16 i;
++
++        for (i = 1; i <= index; ++i) {
++            if (member != NULL) {
++                member = h008_party_next(member);
++            }
++        }
++        if (member != NULL) {
++            f->key = 'H';
++            *f->special = 1;
++            f->done = 1;
++            if (H005_B(0x24D8)) {
++                g_h005_2508 = member;
++            } else if (g_current_char == member) {
++                *f->special = 0;
++                f->key = (u8)f->options[f->item[SELECTED - 1].start];
++                if (f->key == 0) {
++                    f->key = 0x0D;
++                }
++            } else {
++                g_current_char = member;
++            }
++        }
++        return;
++    }
++    if (over_combat_map(f)) {
++        s16 dx;
++        s16 dy;
++
++        *f->special = 1;
++        map_target(&dx, &dy);
++        f->key = h046_0012((u16)dx, (u16)dy, (u16)((f->col + 2) / 3),
++                           (u16)((f->row + 2) / 3));
++        f->done = 1;
++        return;
++    }
++    if (H005_B(0x24B0) && over_area_view(f)) {
++        *f->special = 1;
++        f->key = area_view_code(f);
++        f->done = 1;
++        return;
++    }
++    if (f->row == 0x18 && !f->done) {
++        u16 i;
++
++        ++f->col;
++        if (!(f->col > (s16)f->title_len)) {
++            /* Clic sul titolo: l'originale esce subito (ramo $0F56). */
++            f->done = 2;
++            return;
++        }
++        f->col = (s16)(f->col - f->title_len);
++        for (i = 1; i <= f->count; ++i) {
++            if ((s16)(f->item[i - 1].start + 1) <= f->col &&
++                (s16)(f->item[i - 1].end + 1) >= f->col) {
++                f->key = (u8)f->options[f->item[i - 1].start];
++                SELECTED = (u8)i;
++                draw_options(f, SELECTED);
++                f->done = 1;
++            }
++        }
++        return;
++    }
++    if (H005_B(0x24DA) && !f->done) {
++        f->done = 1;
++        switch (f->row) {
++        case 1:
++            if (f->col >= 1 && f->col <= 0x10) {
++                H005_SET_W(0x2506, 6);
++            }
++            break;
++        case 3:
++            if (f->col >= 0x1F && f->col <= 0x21) {
++                H005_SET_W(0x2506, 7);
++            }
++            break;
++        case 9: case 10: case 11: case 12: case 13: case 14:
++            if (f->col >= 5 && f->col <= 9) {
++                H005_SET_W(0x2506, (u16)(f->row - 9));
++            }
++            break;
++        default:
++            f->done = 0;
++            break;
++        }
++        *f->special = 1;
++        f->key = 'G';
++        return;
++    }
++    if (!f->done && f->col >= (s16)H005_W(0x2504) &&
++        f->col <= (s16)H005_W(0x2502)) {
++        u16 i;
++
++        for (i = 1; i <= 0x19; ++i) {
++            u8 limit = H005_B(0x2778 + i - 1);
++
++            if (limit == 0xFF) {
++                break;
++            }
++            if (!f->done && !(limit > f->row)) {
++                f->done = 1;
++                f->key = (u8)f->options[f->item[SELECTED - 1].start];
++            }
++        }
++    }
++}
++
++/* Cifre 1..9 (e '\\' come 7) tradotte con la tabella H005+$4F7C. */
++static void map_digit(ChoiceFrame *f)
++{
++    f->key = H005_B(0x4F7C + f->key - '1');
++    *f->special = 1;
++}
++
++/*
++ * PORT H008+$01FC (UI_RequestChoice): mostra nella riga 24 il titolo e le
++ * opzioni (voci con iniziale maiuscola) e restituisce la scelta: la lettera
++ * della voce, Invio/clic sulla voce selezionata, Esc (0), o un tasto
++ * speciale con *special = 1 (frecce/'4' '6' per scorrere, Alt+a/m/q/x,
++ * clic nelle aree del gioco).  Con un tempo massimo (G_PROMPT_TIMEOUT, in
++ * centesimi) restituisce G_PROMPT_KEY.  La voce selezionata resta in
++ * H005+$2483.  Durante l'attesa anima l'insieme di immagini di $27BC e
++ * aggiorna la forma del puntatore.
++ */
++u8 ui_request_choice(u16 title_len, const char *title, u16 options_len,
++                     const char *options, u16 title_pen, u16 normal_pen,
++                     u16 highlight_pen, u8 digits_map, u8 animate,
++                     u8 *special)
++{
++    ChoiceFrame f;
++    s32 last_time;                      /* -$56 */
++    s32 now;                            /* -$5A */
++    s16 shape_code;                     /* -$5C */
++    u8 shape;                           /* -$5D */
++
++    memset(&f, 0, sizeof(f));
++    f.options = options;
++    f.title_pen = title_pen;
++    f.normal_pen = normal_pen;
++    f.highlight_pen = highlight_pen;
++    f.digits_map = digits_map;
++    f.animate = animate;
++    f.special = special;
++
++    intuition_modify_idcmp(g_window, g_window->IDCMPFlags | 0x00400000UL);
++    H005_B(0x249D) = 0;
++    f.title_len = h026_strlen(title_len, title);
++    parse_options(&f, options_len, options);
++    if (SELECTED > f.count || SELECTED == 0) {
++        SELECTED = 1;
++    }
++    f.options_len = h026_strlen(options_len, options);
++    f.key = 0;
++    *special = 0;
++    f.done = 0;
++    last_time = time_hundredths();
++    if (title[0] != 0) {
++        ui_draw_text(0, 0x18, title_pen, 0, title_len, title);
++    }
++    draw_options(&f, SELECTED);
++
++    do {
++        f.key = 0;
++        /* Animazione dell'insieme di immagini ($069E). */
++        if ((COK_GET16(g_state_a + 0x3FE) != 0 || animate) &&
++            H005_W(0x27BE) > 0) {
++            u16 frame;
++            s16 wait;
++
++            now = time_hundredths();
++            frame = (u16)(H005_W(0x27BE) + 1);
++            if (frame > H005_W(0x27BC)) {
++                frame = 1;
++            }
++            wait = (s16)(H005_W(0x27BC + 0x0E + (frame - 1) * 2) * 10 - 0x0B);
++            if (wait < 0) {
++                wait = 0;
++            }
++            if (COK_GET16(g_state_a + 0x3FE) != 0 ||
++                !(now - last_time < (s32)wait)) {
++                H005_SET_W(0x27BE, frame);
++                h042_0254(h042_0b80(3, 3, animate, frame));
++                last_time = now;
++            }
++        }
++        /* Forma del puntatore ($076A). */
++        if (H005_B(0x24E2)) {
++            shape_code = 9;
++        } else {
++            f.col = (s16)(g_window->MouseX / 8);
++            f.row = (s16)(g_window->MouseY / 8);
++            shape = 0;
++            if (over_combat_map(&f)) {
++                s16 dx;
++                s16 dy;
++
++                map_target(&dx, &dy);
++                shape = h046_0012((u16)dx, (u16)dy, (u16)((f.col + 2) / 3),
++                                  (u16)((f.row + 2) / 3));
++            } else if (H005_B(0x24B0) && over_area_view(&f)) {
++                shape = area_view_code(&f);
++            }
++            shape_code = 0x0A;
++            switch (shape) {
++            case 0x47: shape_code = 7; break;
++            case 0x48: shape_code = 0; break;
++            case 0x49: shape_code = 1; break;
++            case 0x4B: shape_code = 6; break;
++            case 0x4D: shape_code = 2; break;
++            case 0x4F: shape_code = 5; break;
++            case 0x50: shape_code = 4; break;
++            case 0x51: shape_code = 3; break;
++            default: break;
++            }
++        }
++        set_pointer_shape(shape_code);
++
++        /* Tempo massimo o input ($0A12). */
++        if (G_PROMPT_TIMEOUT > 0) {
++            s32 elapsed = time_hundredths() - last_time;
++
++            if (elapsed < 0) {
++                elapsed = -elapsed;
++            }
++            if (!(elapsed < G_PROMPT_TIMEOUT)) {
++                f.key = G_PROMPT_KEY;
++                f.done = 1;
++            }
++        }
++        if (!f.done) {
++            poll_intuition_events();
++            f.key = G_KEY;
++        }
++        if (f.key != 0 && !f.done) {
++            *special = 0;
++            if (G_KEY > 0 && G_KEY < 5) {
++                f.done = 1;
++                *special = 1;
++            } else {
++                switch (f.key) {
++                case 0x0D:
++                    enter_or_click(&f);
++                    if (f.done == 2) {
++                        /*
++                         * Clic sul titolo: l'originale toglie INTUITICKS e
++                         * restituisce -$5F, che qui non e' stato scritto
++                         * (sullo stack: valore indefinito); qui 0.
++                         */
++                        intuition_modify_idcmp(g_window, g_window->IDCMPFlags &
++                                                         ~0x00400000UL);
++                        return f.result;
++                    }
++                    break;
++                case 0x1B:
++                    f.done = 1;
++                    f.key = 0;
++                    break;
++                case '4':
++                    *special = 1;
++                    if (f.count > 1) {
++                        if (SELECTED == 1) {
++                            SELECTED = (u8)f.count;
++                        } else {
++                            SELECTED = (u8)(SELECTED - 1);
++                        }
++                        draw_options(&f, SELECTED);
++                    } else {
++                        if (digits_map) {
++                            map_digit(&f);
++                        }
++                        f.done = 1;
++                    }
++                    break;
++                case '6':
++                    *special = 1;
++                    if (f.count > 1) {
++                        if (SELECTED == f.count) {
++                            SELECTED = 1;
++                        } else {
++                            add_to_byte(&SELECTED, 1);
++                        }
++                        draw_options(&f, SELECTED);
++                    } else {
++                        f.done = 1;
++                        if (digits_map) {
++                            map_digit(&f);
++                        }
++                    }
++                    break;
++                default:
++                    /* Lettera di una voce, spazio, cifre ($11BA). */
++                    if (f.key >= 'a' && f.key <= 'z') {
++                        f.key = (u8)(f.key & 0x5F);
++                    }
++                    if (is_hotkey_char(f.key) || f.key == ' ') {
++                        if (f.key == ' ') {
++                            f.done = 1;
++                        } else {
++                            u16 i;
++
++                            for (i = 0; i <= f.options_len; ++i) {
++                                if ((u8)options[i] == f.key) {
++                                    u16 n;
++
++                                    f.done = 1;
++                                    /*
++                                     * L'originale cerca la voce che inizia
++                                     * qui senza limite; qui al massimo 20.
++                                     */
++                                    for (n = 1; n <= 0x14 &&
++                                                f.item[n - 1].start != i; ++n) {
++                                    }
++                                    if (n <= 0x14) {
++                                        SELECTED = (u8)n;
++                                        draw_options(&f, SELECTED);
++                                    }
++                                }
++                            }
++                        }
++                    }
++                    if (digits_map && ((f.key >= '1' && f.key <= '9') ||
++                                       f.key == '\\')) {
++                        if (f.key == '\\') {
++                            f.key = '7';
++                        } else {
++                            f.key = H005_B(0x4F7C + f.key - '1');
++                        }
++                        *special = 1;
++                        f.done = 1;
++                    }
++                    break;
++                }
++            }
++        }
++    } while (!f.done);
++
++    COK_PUT16(g_state_a + 0x3FE, 0);
++    f.result = f.key;
++    H005_B(0x249D) = *special;
++    intuition_modify_idcmp(g_window, g_window->IDCMPFlags & ~0x00400000UL);
++    return f.result;
++}
+diff --git a/src_c/readable/h008.h b/src_c/readable/h008.h
+index fe0562d..7f45fa0 100644
+--- a/src_c/readable/h008.h
++++ b/src_c/readable/h008.h
+@@ -4,6 +4,10 @@
+ 
+ #include "cok.h"
+ 
++u8   ui_request_choice(u16 title_len, const char *title, u16 options_len,
++                       const char *options, u16 title_pen, u16 normal_pen,
++                       u16 highlight_pen, u8 digits_map, u8 animate,
++                       u8 *special);                    /* H008+$01FC */
+ void clear_message_line(void);          /* H008+$139E */
+ 
+ #endif
+diff --git a/src_c/readable/h021_intuition.c b/src_c/readable/h021_intuition.c
+index 51dbc4b..782718f 100644
+--- a/src_c/readable/h021_intuition.c
++++ b/src_c/readable/h021_intuition.c
+@@ -100,3 +100,9 @@ void intuition_set_pointer(struct Window *window, u8 *data, u16 height,
+     SetPointer(window, (UWORD *)data, (s16)height, (s16)width, (s16)x_offset,
+                (s16)y_offset);
+ }
++
++/* PORT H021+$026C */
++void intuition_modify_idcmp(struct Window *window, u32 flags)
++{
++    ModifyIDCMP(window, flags);
++}
+diff --git a/src_c/readable/h021_intuition.h b/src_c/readable/h021_intuition.h
+index 8d9f1ca..dc62861 100644
+--- a/src_c/readable/h021_intuition.h
++++ b/src_c/readable/h021_intuition.h
+@@ -14,6 +14,7 @@ void intuition_activate_window(struct Window *window);    /* H021+$01FA */
+ void intuition_clear_pointer(struct Window *window);      /* H021+$0230 */
+ void intuition_close_window(struct Window *window);       /* H021+$0242 */
+ struct Window *intuition_open_window(struct NewWindow *nw); /* H021+$029C */
++void intuition_modify_idcmp(struct Window *window, u32 flags); /* H021+$026C */
+ void intuition_set_pointer(struct Window *window, u8 *data, u16 height,
+                            u16 width, u16 x_offset, u16 y_offset);
+                                                           /* H021+$02EE */
+diff --git a/src_c/readable/h029_gfx.c b/src_c/readable/h029_gfx.c
+index 591cecb..9cf9826 100644
+--- a/src_c/readable/h029_gfx.c
++++ b/src_c/readable/h029_gfx.c
+@@ -486,3 +486,33 @@ void remap_gfx_colors(const u8 from[16], const u8 to[16], s16 frame,
+     }
+     free_gfx_record(&temp);
+ }
++
++/*
++ * PORT H029+$01B6: imposta il puntatore del mouse shape (0..11) da
++ * pointers.daa, se diverso da quello attuale (H029 -$10).  Voce di $A
++ * byte: dati (g_pointer_image), +4 e +6 punto caldo, +8 altezza;
++ * larghezza 16.
++ */
++void set_pointer_shape(s16 shape)
++{
++    const u8 *entry;
++
++    if (shape < 0 || shape > 0x0B || shape == (s16)g_h029_m10) {
++        return;
++    }
++    g_h029_m10 = (u16)shape;
++    if (g_pointer_data == NULL) {
++        return;
++    }
++    entry = g_pointer_data + shape * 0x0A;
++    intuition_set_pointer(g_window, g_pointer_image[shape],
++                          COK_GET16(entry + 8), 0x10,
++                          (u16)-(s16)COK_GET16(entry + 4),
++                          (u16)-(s16)COK_GET16(entry + 6));
++}
++
++/* PORT H029+$03E2: *value += delta (byte). */
++void add_to_byte(u8 *value, u16 delta)
++{
++    *value = (u8)(*value + delta);
++}
+diff --git a/src_c/readable/h029_gfx.h b/src_c/readable/h029_gfx.h
+index 1f90fa8..50e451d 100644
+--- a/src_c/readable/h029_gfx.h
++++ b/src_c/readable/h029_gfx.h
+@@ -9,6 +9,8 @@
+ void allocate_gfx_record(u16 rows, u16 count, u16 width8, u16 with_mask,
+                          struct GfxRecord **rec);       /* H029+$0408 */
+ void free_pointer_data(void);           /* H029+$0180 */
++void set_pointer_shape(s16 shape);      /* H029+$01B6 */
++void add_to_byte(u8 *value, u16 delta); /* H029+$03E2 */
+ void remap_gfx_colors(const u8 from[16], const u8 to[16], s16 frame,
+                       struct GfxRecord *rec);           /* H029+$0EFE */
+ void free_gfx_record(struct GfxRecord **rec);           /* H029+$067A */
+diff --git a/src_c/readable/h030.c b/src_c/readable/h030.c
+index 4a7c80c..8c98720 100644
+--- a/src_c/readable/h030.c
++++ b/src_c/readable/h030.c
+@@ -4,6 +4,8 @@
+ #include "h028_files.h"
+ #include "h040.h"
+ #include "h038.h"
++#include "h015_runtime.h"
++#include "h021_intuition.h"
+ #include "h049.h"
+ #include "globals.h"
+ 
+@@ -53,6 +55,49 @@ void clear_text_cells(u16 col1, u16 row1, u16 col2, u16 row2)
+                        (u16)((col2 << 3) + 7), (u16)((row2 << 3) + 7));
+ }
+ 
++/*
++ * PORT H030+$00B6: count volte il carattere ch nella cella (col, row) e
++ * seguenti; uno spazio riempie le celle con il colore bg.  Fuori griglia o
++ * count 0: niente; a destra si taglia alla colonna 40.
++ */
++void draw_char_run(u16 col, u16 row, u16 fg, u16 bg, u16 count, u8 ch,
++                   u8 unused)
++{
++    char text[0x2C];                    /* -$2C(a5) */
++    u16 i;
++
++    (void)unused;
++    if (ch == ' ') {
++        fill_text_cells(col, row, bg, count);
++        return;
++    }
++    if (col > 0x27 || row > 0x18 || count < 1) {
++        return;
++    }
++    if ((u16)(col + count) > 0x28) {
++        count = (u16)(0x28 - col);
++    }
++    for (i = 0; i <= (u16)(count - 1); ++i) {
++        text[i] = (char)ch;
++    }
++    text[count] = 0;
++    ui_draw_text(col, row, fg, bg, 0x28, text);
++}
++
++/*
++ * PORT H030+$0A40: ora corrente in centesimi di secondo (CurrentTime:
++ * secondi * 100 + microsecondi / 10000).
++ */
++s32 time_hundredths(void)
++{
++    u32 seconds;
++    u32 micros;
++
++    intuition_current_time(&seconds, &micros);
++    return (s32)h015_mulu32(seconds, 100) +
++           h015_divs32((s32)micros, 10000, NULL);
++}
++
+ /* Dati del modulo (sotto a4). */
+ struct BitMap g_gothic_bitmap;          /* -$2C: font "gothic.lbm" */
+ u32 g_h030_alloc_size;                  /* -$4: ultima allocazione */
+diff --git a/src_c/readable/h030.h b/src_c/readable/h030.h
+index fbdb870..d7815c1 100644
+--- a/src_c/readable/h030.h
++++ b/src_c/readable/h030.h
+@@ -9,6 +9,9 @@ void ui_draw_text(u16 col, u16 row, u16 fg, u16 bg, u16 len,
+                   const char *text);                    /* H030+$0256 */
+ void clear_text_cells(u16 col1, u16 row1, u16 col2, u16 row2);
+                                         /* H030+$0B6C */
++void draw_char_run(u16 col, u16 row, u16 fg, u16 bg, u16 count, u8 ch,
++                   u8 unused);                          /* H030+$00B6 */
++s32  time_hundredths(void);                             /* H030+$0A40 */
+ void load_gothic_font(void);            /* H030+$0C10 */
+ 
+ #endif
+diff --git a/src_c/readable/host/display.c b/src_c/readable/host/display.c
+index ca4157d..4e9f847 100644
+--- a/src_c/readable/host/display.c
++++ b/src_c/readable/host/display.c
+@@ -11,6 +11,7 @@
+  *   COK_SCREENSHOT=f.bmp all'uscita salva l'ultimo fotogramma in f.bmp;
+  *   COK_SCREENSHOT_AT=t1,t2,...  salva anche f-1.bmp, f-2.bmp, ... ai
+  *                        millisecondi indicati dall'avvio del display;
++ *   COK_KEYS=ms=Tasto,...  tasti simulati a tempo (vedi host/input.c);
+  *   SDL_VIDEODRIVER=dummy  esecuzione senza finestra (test).
+  */
+ #include <stdio.h>
+@@ -259,6 +260,7 @@ void host_display_refresh(int force)
+     }
+     now = SDL_GetTicks();
+     timed_screenshots(now);
++    host_input_script(now);
+     if (shown_viewport() == NULL || s_texture == NULL ||
+         (!force && (!s_dirty || now - s_last_present < 16))) {
+         return;
+diff --git a/src_c/readable/host/input.c b/src_c/readable/host/input.c
+index a8b5184..abebf39 100644
+--- a/src_c/readable/host/input.c
++++ b/src_c/readable/host/input.c
+@@ -122,6 +122,10 @@ void host_input_event(const union SDL_Event *ev)
+     case SDL_MOUSEMOTION:
+         s_mouse_x = ev->motion.x;
+         s_mouse_y = ev->motion.y;
++        if (s_window != NULL) {
++            s_window->MouseX = (WORD)(s_mouse_x - s_window->LeftEdge);
++            s_window->MouseY = (WORD)(s_mouse_y - s_window->TopEdge);
++        }
+         break;
+     case SDL_MOUSEBUTTONDOWN:
+     case SDL_MOUSEBUTTONUP:
+@@ -170,6 +174,11 @@ struct Message *GetMsg(struct MsgPort *port)
+     }
+     host_display_refresh(0);
+     if (s_count == 0) {
++        /*
++         * Il gioco interroga la porta in cicli di attesa attiva: una pausa
++         * di 1 ms evita di occupare tutta la CPU dell'host.
++         */
++        SDL_Delay(1);
+         return NULL;
+     }
+     s_current = s_queue[s_head];
+@@ -210,3 +219,47 @@ void Delay(LONG ticks)
+         host_display_wait_event(left < 10 ? (int)left : 10);
+     }
+ }
++
++/*
++ * COK_KEYS="ms=Nome,ms=Nome,...": per i test senza finestra, preme e
++ * rilascia il tasto SDL Nome (es. P, Return, Escape, Left) al tempo
++ * indicato in millisecondi dall'avvio del display.
++ */
++void host_input_script(unsigned long now)
++{
++    static int s_done;
++    const char *list = getenv("COK_KEYS");
++    const char *p = list;
++    int index = 0;
++
++    while (p != NULL && *p != 0) {
++        char name[32];
++        unsigned long t = strtoul(p, NULL, 10);
++        const char *eq = strchr(p, '=');
++        const char *end = strchr(p, ',');
++        size_t n;
++
++        ++index;
++        if (eq == NULL) {
++            break;
++        }
++        n = (size_t)((end != NULL ? end : eq + strlen(eq)) - (eq + 1));
++        if (n >= sizeof(name)) {
++            n = sizeof(name) - 1;
++        }
++        memcpy(name, eq + 1, n);
++        name[n] = 0;
++        if (index > s_done && now >= t) {
++            SDL_Event ev;
++
++            s_done = index;
++            memset(&ev, 0, sizeof(ev));
++            ev.type = SDL_KEYDOWN;
++            ev.key.keysym.scancode = SDL_GetScancodeFromName(name);
++            host_input_event(&ev);
++            ev.type = SDL_KEYUP;
++            host_input_event(&ev);
++        }
++        p = end != NULL ? end + 1 : NULL;
++    }
++}
+diff --git a/src_c/readable/host/intuition.c b/src_c/readable/host/intuition.c
+index 0c1545a..8e75a20 100644
+--- a/src_c/readable/host/intuition.c
++++ b/src_c/readable/host/intuition.c
+@@ -239,3 +239,8 @@ BOOL AutoRequest(struct Window *window, struct IntuiText *body,
+         }
+     }
+ }
++
++void ModifyIDCMP(struct Window *window, ULONG flags)
++{
++    window->IDCMPFlags = flags;
++}
+diff --git a/src_c/readable/host/ndk.h b/src_c/readable/host/ndk.h
+index 00644dc..666141b 100644
+--- a/src_c/readable/host/ndk.h
++++ b/src_c/readable/host/ndk.h
+@@ -208,8 +208,11 @@ struct Window {
+     struct RastPort *RPort;
+     struct Screen *WScreen;
+     struct MsgPort *UserPort;   /* porta IDCMP (eventi da SDL) */
++    WORD MouseY, MouseX;        /* posizione del mouse nella finestra */
+ };
+ 
++#define IDCMP_INTUITICKS 0x00400000
++
+ #define IDCMP_MOUSEBUTTONS 0x00000008
+ #define IDCMP_RAWKEY       0x00000400
+ #define SELECTDOWN 0x68
+@@ -255,6 +258,7 @@ void           CloseScreen(struct Screen *screen);
+ struct Window *OpenWindow(struct NewWindow *nw);
+ void           CloseWindow(struct Window *window);
+ void           ShowTitle(struct Screen *screen, LONG show);
++void           ModifyIDCMP(struct Window *window, ULONG flags);
+ LONG           CloseWorkBench(void);
+ ULONG          OpenWorkBench(void);
+ void           ActivateWindow(struct Window *window);
+@@ -271,6 +275,7 @@ void host_input_open_window(struct Window *window);
+ void host_input_close_window(struct Window *window);
+ void host_input_event(const union SDL_Event *ev);
+ int  host_input_pending(void);
++void host_input_script(unsigned long now);   /* COK_KEYS */
+ 
+ /* Display SDL2 (host/display.c). */
+ void host_display_attach(struct Screen *screen);   /* schermo visibile */
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index ff3d956..8aa7ba0 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -32,16 +32,6 @@ void cok_unported(const char *where)
+ }
+ 
+ void h006_0914(void) { cok_unported("H006+$0914"); }
+-u8 h008_01fc(u8 *special, u8 cycle, u8 numeric, u16 sel_pen,
+-             u16 normal_pen, u16 title_pen, const char *option,
+-             u16 option_len, const char *title, u16 title_len)
+-{
+-    (void)special; (void)cycle; (void)numeric; (void)sel_pen;
+-    (void)normal_pen; (void)title_pen; (void)option; (void)option_len;
+-    (void)title; (void)title_len;
+-    cok_unported("H008+$01FC");
+-    return 0;
+-}
+ u8 h009_010c(void) { cok_unported("H009+$010C"); return 0; }
+ void h010_0332(void) { cok_unported("H010+$0332"); }
+ void h011_04a6(u16 a, u16 b, u16 c, u16 d)
+@@ -237,3 +227,10 @@ static const char s_h043_0584[] = "H043+$0584";
+ static const char s_h043_190e[] = "H043+$190E";
+ void h043_0584(void) { cok_unported_skip(s_h043_0584); }
+ void h043_190e(u16 command) { (void)command; cok_unported_skip(s_h043_190e); }
++u8 h046_0012(u16 dx, u16 dy, u16 col, u16 row) { (void)dx; (void)dy; (void)col; (void)row; cok_unported("H046+$0012"); return 0; }
++u16 h048_0aa8(void *character) { (void)character; cok_unported("H048+$0AA8"); return 0; }
++s32 h042_0b80(u16 a, u16 b, u8 animate, u16 frame) { (void)a; (void)b; (void)animate; (void)frame; cok_unported("H042+$0B80"); return 0; }
++void h042_0254(s32 handle) { (void)handle; cok_unported("H042+$0254"); }
++void *h008_party_next(void *character) { (void)character; cok_unported("struttura dei personaggi (+$18E)"); return NULL; }
++const u8 *g_h005_2ade_area(void) { cok_unported("H005+$2ADE (area della mappa)"); return NULL; }
++void *g_h005_2508;
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index 7afa0f8..b45f6b5 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -10,13 +10,17 @@
+ #include "gfx_record.h"
+ 
+ void h006_0914(void);
++u8   h046_0012(u16 dx, u16 dy, u16 col, u16 row);
++u16  h048_0aa8(void *character);
++s32  h042_0b80(u16 a, u16 b, u8 animate, u16 frame); /* insieme $27BC */
++void h042_0254(s32 handle);
++void *h008_party_next(void *character);  /* personaggio +$18E: successivo */
++const u8 *g_h005_2ade_area(void);        /* H005+$2ADE: area della mappa */
++extern void *g_h005_2508;                /* H005+$2508: personaggio scelto */
+ void h043_0584(void);
+ void h043_190e(u16 command);
+ void h010_03aa(void);
+ void h014_0018(u16 len, const char *msg, u16 value);
+-u8   h008_01fc(u8 *special, u8 cycle, u8 numeric, u16 sel_pen,
+-               u16 normal_pen, u16 title_pen, const char *option,
+-               u16 option_len, const char *title, u16 title_len);
+ u8   h009_010c(void);
+ void h010_0332(void);
+ void h011_04a6(u16 a, u16 b, u16 c, u16 d);
+-- 
+2.43.0
+

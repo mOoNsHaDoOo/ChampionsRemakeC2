@@ -1,0 +1,63 @@
+# Champions of Krynn - port asm -> C, build AmigaOS con SAS/C 6.x.
+#
+#   smake          compila cok senza audio (i comandi audio si saltano)
+#   smake AUDIO    compila cok con l'audio (DEFINE=COK_AUDIO: H043, H094 e
+#                  i loro adattatori Exec, oggetti *_a.o separati)
+#   smake clean    rimuove oggetti ed eseguibile
+#
+# Richiede gli header NDK (INCLUDE:) e LIB:c.o, LIB:sc.lib, LIB:amiga.lib.
+# Aggiungere qui ogni nuovo file .c del port.
+
+CC      = sc
+CFLAGS  = NOSTACKCHECK DATA=FAR CODE=FAR
+TARGET  = cok
+
+OBJS = globals.o h000_entry.o h001_main.o h002_dos.o h003_exec.o \
+       h004_init.o h005_data.o h006.o h007.o h008.o h009.o h010_input.o \
+       h011.o h012.o h013.o h014.o h015_runtime.o h016_gfx.o h017.o \
+       h018_libs.o h019.o h020_io.o h021_intuition.o h022_view.o \
+       h023_shared.o h024_screen.o h025_window.o h026_string.o h027.o \
+       h028_files.o h029_gfx.o h030.o h031.o h032.o h033.o h034.o h035.o \
+       h036.o h037.o h038.o h039.o h040.o h041.o h042_seq.o \
+       h044_tiles.o h045.o h046.o h047.o h048.o h049.o h050.o h051.o \
+       h052.o h053.o h054.o h055.o h056.o h057.o h058.o h059.o h060.o \
+       h061.o h062.o h063.o h064.o h065.o h066.o h067.o h068.o h069.o \
+       h070.o h071.o h072.o h073.o h074_path.o h075_file.o h076.o h077.o \
+       h078.o h080.o h081.o h082.o h083.o h084.o h085.o h086.o \
+       h087.o h088.o h089.o h091.o h093.o h095.o \
+       h096.o h097.o h098.o h099.o h100_custom.o init_data.o
+
+# Moduli che cambiano con COK_AUDIO: senza audio e con audio.
+NOAUDIO_OBJS = h043_audio.o h079.o h090.o h092.o h094.o unported.o
+AUDIO_OBJS   = h043_audio_a.o h079_a.o h090_a.o h092_a.o h094_a.o \
+               unported_a.o
+
+$(TARGET): $(OBJS) $(NOAUDIO_OBJS)
+	slink LIB:c.o $(OBJS) $(NOAUDIO_OBJS) TO $(TARGET) LIB LIB:sc.lib LIB:amiga.lib NOICONS
+
+AUDIO: $(OBJS) $(AUDIO_OBJS)
+	slink LIB:c.o $(OBJS) $(AUDIO_OBJS) TO $(TARGET) LIB LIB:sc.lib LIB:amiga.lib NOICONS
+
+h043_audio_a.o: h043_audio.c
+	$(CC) $(CFLAGS) DEFINE=COK_AUDIO OBJNAME=h043_audio_a.o h043_audio.c
+
+h079_a.o: h079.c
+	$(CC) $(CFLAGS) DEFINE=COK_AUDIO OBJNAME=h079_a.o h079.c
+
+h090_a.o: h090.c
+	$(CC) $(CFLAGS) DEFINE=COK_AUDIO OBJNAME=h090_a.o h090.c
+
+h092_a.o: h092.c
+	$(CC) $(CFLAGS) DEFINE=COK_AUDIO OBJNAME=h092_a.o h092.c
+
+h094_a.o: h094.c
+	$(CC) $(CFLAGS) DEFINE=COK_AUDIO OBJNAME=h094_a.o h094.c
+
+unported_a.o: unported.c
+	$(CC) $(CFLAGS) DEFINE=COK_AUDIO OBJNAME=unported_a.o unported.c
+
+.c.o:
+	$(CC) $(CFLAGS) $<
+
+clean:
+	-delete \#?.o $(TARGET) QUIET

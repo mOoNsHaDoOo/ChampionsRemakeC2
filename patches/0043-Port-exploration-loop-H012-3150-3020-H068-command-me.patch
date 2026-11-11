@@ -1,0 +1,1641 @@
+From ec814061830ea396df0fdac335087c0a5d96947f Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 11 Nov 2026 06:37:15 +0000
+Subject: [PATCH 43/65] Port exploration loop (H012+$3150/$3020), H068 command
+ menu, movement and doors, H069 party marker; fix SAS/C warnings
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md | 230 ++++++-------
+ src_c/readable/backlog.md     |  78 +++++
+ src_c/readable/h001_main.c    |   8 +-
+ src_c/readable/h011.c         |  12 +
+ src_c/readable/h011.h         |   1 +
+ src_c/readable/h012.c         | 180 +++++++++-
+ src_c/readable/h012.h         |   1 +
+ src_c/readable/h029_gfx.c     |  26 ++
+ src_c/readable/h029_gfx.h     |   2 +
+ src_c/readable/h048.c         |  12 +-
+ src_c/readable/h063.c         |   6 +-
+ src_c/readable/h064.c         |   3 +-
+ src_c/readable/h068.c         | 612 ++++++++++++++++++++++++++++++++++
+ src_c/readable/h068.h         |   8 +
+ src_c/readable/h069.c         |  30 ++
+ src_c/readable/h069.h         |   8 +
+ src_c/readable/h095.c         |   2 +-
+ src_c/readable/unported.c     |  10 +-
+ src_c/readable/unported.h     |   7 +-
+ 19 files changed, 1095 insertions(+), 141 deletions(-)
+ create mode 100644 src_c/readable/h068.h
+ create mode 100644 src_c/readable/h069.h
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index 336bf72..b9b8e76 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **854 / 1112**.
++Routine portate: **874 / 1112**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -17,8 +17,8 @@ Routine portate: **854 / 1112**.
+ | H008 | 8660 | 21 | 21 |
+ | H009 | 988 | 3 | 3 |
+ | H010 | 2488 | 9 | 6 |
+-| H011 | 7004 | 13 | 6 |
+-| H012 | 13580 | 33 | 30 |
++| H011 | 7004 | 13 | 7 |
++| H012 | 13580 | 33 | 32 |
+ | H013 | 25244 | 22 | 19 |
+ | H014 | 224 | 2 | 2 |
+ | H015 | 1016 | 11 | 5 |
+@@ -35,7 +35,7 @@ Routine portate: **854 / 1112**.
+ | H026 | 1452 | 11 | 11 |
+ | H027 | 18156 | 102 | 102 |
+ | H028 | 4488 | 16 | 16 |
+-| H029 | 6084 | 32 | 30 |
++| H029 | 6084 | 32 | 32 |
+ | H030 | 3240 | 18 | 18 |
+ | H031 | 212 | 4 | 4 |
+ | H032 | 9352 | 1 | 1 |
+@@ -74,8 +74,8 @@ Routine portate: **854 / 1112**.
+ | H065 | 14268 | 27 | 27 |
+ | H066 | 13840 | 27 | 23 |
+ | H067 | 9820 | 22 | 12 |
+-| H068 | 5788 | 14 | 1 |
+-| H069 | 232 | 3 | 1 |
++| H068 | 5788 | 14 | 14 |
++| H069 | 232 | 3 | 3 |
+ | H070 | 6940 | 13 | 1 |
+ | H071 | 3132 | 5 | 1 |
+ | H072 | 5404 | 12 | 1 |
+@@ -120,8 +120,8 @@ Routine portate: **854 / 1112**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0058` | `Game_Main` | verificato | h001_main.c:66 |
+-| `$0066` | `Select_DataPrefix` | verificato | h001_main.c:33 |
++| `$0058` | `Game_Main` | verificato | h001_main.c:68 |
++| `$0066` | `Select_DataPrefix` | verificato | h001_main.c:35 |
+ 
+ ### H002
+ 
+@@ -248,7 +248,7 @@ Routine portate: **854 / 1112**.
+ | `$0162` | `sub_H011_00000162` | parziale | h011.c:33 |
+ | `$01AA` | `(senza scheda)` | - | h011.c:66 |
+ | `$0330` | `sub_H011_00000330` | parziale |  |
+-| `$04A6` | `sub_H011_000004A6` | parziale |  |
++| `$04A6` | `sub_H011_000004A6` | parziale | h011.c:145 |
+ | `$04E2` | `sub_H011_000004E2` | parziale | h011.c:101 |
+ | `$058E` | `sub_H011_0000058E` | parziale |  |
+ | `$0868` | `sub_H011_00000868` | parziale |  |
+@@ -261,39 +261,39 @@ Routine portate: **854 / 1112**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0178` | `module_init_H012` | parziale | h012.c:29 |
++| `$0178` | `module_init_H012` | parziale | h012.c:32 |
+ | `$0186` | `trampoline_H012_3004` | parziale |  |
+-| `$018A` | `ECL_RunAtAddress` | verificato | h012.c:101 |
+-| `$01FA` | `(senza scheda)` | - | h012.c:154 |
+-| `$0208` | `sub_H012_00000208` | parziale | h012.c:134 |
+-| `$05D6` | `(senza scheda)` | - | h012.c:249 |
+-| `$0688` | `(senza scheda)` | - | h012.c:267 |
+-| `$0766` | `(senza scheda)` | - | h012.c:302 |
+-| `$0B18` | `(senza scheda)` | - | h012.c:377 |
+-| `$0BEA` | `(senza scheda)` | - | h012.c:504 |
+-| `$15AE` | `(senza scheda)` | - | h012.c:579 |
+-| `$1DDE` | `(senza scheda)` | - | h012.c:806 |
+-| `$1E90` | `(senza scheda)` | - | h012.c:825 |
+-| `$1F4C` | `(senza scheda)` | - | h012.c:848 |
+-| `$1F68` | `(senza scheda)` | - | h012.c:856 |
+-| `$2358` | `(senza scheda)` | - | h012.c:955 |
+-| `$2392` | `(senza scheda)` | - | h012.c:967 |
+-| `$23D6` | `(senza scheda)` | - | h012.c:979 |
+-| `$241C` | `(senza scheda)` | - | h012.c:993 |
+-| `$2486` | `(senza scheda)` | - | h012.c:1009 |
+-| `$2502` | `(senza scheda)` | - | h012.c:1025 |
+-| `$2596` | `(senza scheda)` | - | h012.c:1040 |
+-| `$26D6` | `(senza scheda)` | - | h012.c:1202 |
+-| `$2922` | `sub_H012_00002922` | parziale | h012.c:1267 |
+-| `$29A6` | `(senza scheda)` | - | h012.c:1292 |
+-| `$2AAE` | `(senza scheda)` | - | h012.c:1086 |
+-| `$2ABE` | `(senza scheda)` | - | h012.c:1093 |
+-| `$2AF6` | `(senza scheda)` | - | h012.c:1102 |
+-| `$2B64` | `(senza scheda)` | - | h012.c:1116 |
+-| `$2C28` | `(senza scheda)` | - | h012.c:1147 |
+-| `$2DF2` | `ECL_DispatchOpcode` | verificato | h012.c:35 |
+-| `$3020` | `sub_H012_00003020` | parziale |  |
+-| `$3150` | `Scenario_MainLoop` | verificato |  |
++| `$018A` | `ECL_RunAtAddress` | verificato | h012.c:104 |
++| `$01FA` | `(senza scheda)` | - | h012.c:157 |
++| `$0208` | `sub_H012_00000208` | parziale | h012.c:137 |
++| `$05D6` | `(senza scheda)` | - | h012.c:252 |
++| `$0688` | `(senza scheda)` | - | h012.c:270 |
++| `$0766` | `(senza scheda)` | - | h012.c:305 |
++| `$0B18` | `(senza scheda)` | - | h012.c:380 |
++| `$0BEA` | `(senza scheda)` | - | h012.c:507 |
++| `$15AE` | `(senza scheda)` | - | h012.c:582 |
++| `$1DDE` | `(senza scheda)` | - | h012.c:809 |
++| `$1E90` | `(senza scheda)` | - | h012.c:828 |
++| `$1F4C` | `(senza scheda)` | - | h012.c:851 |
++| `$1F68` | `(senza scheda)` | - | h012.c:859 |
++| `$2358` | `(senza scheda)` | - | h012.c:958 |
++| `$2392` | `(senza scheda)` | - | h012.c:970 |
++| `$23D6` | `(senza scheda)` | - | h012.c:982 |
++| `$241C` | `(senza scheda)` | - | h012.c:996 |
++| `$2486` | `(senza scheda)` | - | h012.c:1012 |
++| `$2502` | `(senza scheda)` | - | h012.c:1028 |
++| `$2596` | `(senza scheda)` | - | h012.c:1043 |
++| `$26D6` | `(senza scheda)` | - | h012.c:1205 |
++| `$2922` | `sub_H012_00002922` | parziale | h012.c:1270 |
++| `$29A6` | `(senza scheda)` | - | h012.c:1295 |
++| `$2AAE` | `(senza scheda)` | - | h012.c:1089 |
++| `$2ABE` | `(senza scheda)` | - | h012.c:1096 |
++| `$2AF6` | `(senza scheda)` | - | h012.c:1105 |
++| `$2B64` | `(senza scheda)` | - | h012.c:1119 |
++| `$2C28` | `(senza scheda)` | - | h012.c:1150 |
++| `$2DF2` | `ECL_DispatchOpcode` | verificato | h012.c:38 |
++| `$3020` | `sub_H012_00003020` | parziale | h012.c:1339 |
++| `$3150` | `Scenario_MainLoop` | verificato | h012.c:1400 |
+ 
+ ### H013
+ 
+@@ -605,8 +605,8 @@ Routine portate: **854 / 1112**.
+ | `$0A0E` | `Load_IndexedGraphicRecord` | verificato | h029_gfx.c:406 |
+ | `$0B94` | `Draw_GraphicTile24` | verificato | h029_gfx.c:658 |
+ | `$0D58` | `sub_H029_00000D58` | parziale | h029_gfx.c:704 |
+-| `$0E26` | `trampoline_H029_0E88` | parziale |  |
+-| `$0E92` | `trampoline_H029_0EF4` | parziale |  |
++| `$0E26` | `trampoline_H029_0E88` | parziale | h029_gfx.c:754 |
++| `$0E92` | `trampoline_H029_0EF4` | parziale | h029_gfx.c:767 |
+ | `$0EFE` | `trampoline_H029_10AC` | parziale | h029_gfx.c:454 |
+ | `$10B8` | `sub_H029_000010B8` | parziale | h029_gfx.c:562 |
+ | `$115C` | `sub_H029_0000115C` | parziale | h029_gfx.c:123 |
+@@ -866,13 +866,13 @@ Routine portate: **854 / 1112**.
+ | `$0B1A` | `sub_H048_00000B1A` | parziale | h048.c:290 |
+ | `$0DF2` | `sub_H048_00000DF2` | parziale | h048.c:362 |
+ | `$0F88` | `sub_H048_00000F88` | parziale | h048.c:407 |
+-| `$0FBA` | `sub_H048_00000FBA` | parziale | h048.c:413 |
+-| `$0FEC` | `sub_H048_00000FEC` | parziale | h048.c:420 |
+-| `$110C` | `sub_H048_0000110C` | parziale | h048.c:446 |
+-| `$113E` | `sub_H048_0000113E` | parziale | h048.c:453 |
+-| `$12F4` | `sub_H048_000012F4` | parziale | h048.c:515 |
+-| `$16D4` | `sub_H048_000016D4` | parziale | h048.c:605 |
+-| `$195E` | `sub_H048_0000195E` | parziale | h048.c:665 |
++| `$0FBA` | `sub_H048_00000FBA` | parziale | h048.c:415 |
++| `$0FEC` | `sub_H048_00000FEC` | parziale | h048.c:424 |
++| `$110C` | `sub_H048_0000110C` | parziale | h048.c:450 |
++| `$113E` | `sub_H048_0000113E` | parziale | h048.c:457 |
++| `$12F4` | `sub_H048_000012F4` | parziale | h048.c:519 |
++| `$16D4` | `sub_H048_000016D4` | parziale | h048.c:609 |
++| `$195E` | `sub_H048_0000195E` | parziale | h048.c:669 |
+ 
+ ### H049
+ 
+@@ -1125,8 +1125,8 @@ Routine portate: **854 / 1112**.
+ | `$0D80` | `sub_H063_00000D80` | parziale | h063.c:709 |
+ | `$0FA0` | `sub_H063_00000FA0` | parziale | h063.c:461 |
+ | `$103A` | `sub_H063_0000103A` | parziale | h063.c:476 |
+-| `$1160` | `trampoline_H063_1350` | parziale | h063.c:1214 |
+-| `$135A` | `sub_H063_0000135A` | parziale | h063.c:1198 |
++| `$1160` | `trampoline_H063_1350` | parziale | h063.c:1216 |
++| `$135A` | `sub_H063_0000135A` | parziale | h063.c:1200 |
+ | `$13BE` | `sub_H063_000013BE` | parziale | h063.c:503 |
+ | `$18F8` | `sub_H063_000018F8` | parziale | h063.c:159 |
+ | `$19B6` | `sub_H063_000019B6` | parziale | h063.c:182 |
+@@ -1138,64 +1138,64 @@ Routine portate: **854 / 1112**.
+ | `$1DC2` | `sub_H063_00001DC2` | parziale | h063.c:852 |
+ | `$1EE8` | `sub_H063_00001EE8` | parziale | h063.c:882 |
+ | `$1F34` | `trampoline_H063_1F7E` | parziale | h063.c:620 |
+-| `$1FDC` | `sub_H063_00001FDC` | parziale | h063.c:1309 |
+-| `$2178` | `sub_H063_00002178` | parziale | h063.c:1339 |
+-| `$21D2` | `trampoline_H063_22B4` | parziale | h063.c:1380 |
+-| `$21E0` | `sub_H063_000021E0` | parziale | h063.c:1359 |
++| `$1FDC` | `sub_H063_00001FDC` | parziale | h063.c:1311 |
++| `$2178` | `sub_H063_00002178` | parziale | h063.c:1341 |
++| `$21D2` | `trampoline_H063_22B4` | parziale | h063.c:1382 |
++| `$21E0` | `sub_H063_000021E0` | parziale | h063.c:1361 |
+ | `$2760` | `sub_H063_00002760` | parziale | h063.c:1094 |
+-| `$2984` | `sub_H063_00002984` | parziale | h063.c:1147 |
++| `$2984` | `sub_H063_00002984` | parziale | h063.c:1149 |
+ | `$2ACC` | `sub_H063_00002ACC` | parziale | h063.c:1007 |
+-| `$2B4C` | `trampoline_H063_2B72` | parziale | h063.c:1524 |
+-| `$2B7C` | `sub_H063_00002B7C` | parziale | h063.c:1184 |
+-| `$2BDE` | `sub_H063_00002BDE` | parziale | h063.c:1531 |
+-| `$2DC6` | `sub_H063_00002DC6` | parziale | h063.c:1253 |
++| `$2B4C` | `trampoline_H063_2B72` | parziale | h063.c:1526 |
++| `$2B7C` | `sub_H063_00002B7C` | parziale | h063.c:1186 |
++| `$2BDE` | `sub_H063_00002BDE` | parziale | h063.c:1533 |
++| `$2DC6` | `sub_H063_00002DC6` | parziale | h063.c:1255 |
+ | `$2F12` | `sub_H063_00002F12` | parziale | h063.c:892 |
+-| `$2F5A` | `sub_H063_00002F5A` | parziale | h063.c:1772 |
++| `$2F5A` | `sub_H063_00002F5A` | parziale | h063.c:1774 |
+ | `$2FAA` | `sub_H063_00002FAA` | parziale | h063.c:1024 |
+ | `$321A` | `trampoline_H063_3384` | parziale | h063.c:766 |
+-| `$33A0` | `trampoline_H063_3652` | parziale | h063.c:1579 |
+-| `$3658` | `sub_H063_00003658` | parziale | h063.c:1637 |
+-| `$3698` | `sub_H063_00003698` | parziale | h063.c:1710 |
+-| `$36EE` | `sub_H063_000036EE` | parziale | h063.c:1720 |
+-| `$3734` | `sub_H063_00003734` | parziale | h063.c:1730 |
+-| `$37B2` | `sub_H063_000037B2` | parziale | h063.c:1281 |
+-| `$3980` | `sub_H063_00003980` | parziale | h063.c:1748 |
++| `$33A0` | `trampoline_H063_3652` | parziale | h063.c:1581 |
++| `$3658` | `sub_H063_00003658` | parziale | h063.c:1639 |
++| `$3698` | `sub_H063_00003698` | parziale | h063.c:1712 |
++| `$36EE` | `sub_H063_000036EE` | parziale | h063.c:1722 |
++| `$3734` | `sub_H063_00003734` | parziale | h063.c:1732 |
++| `$37B2` | `sub_H063_000037B2` | parziale | h063.c:1283 |
++| `$3980` | `sub_H063_00003980` | parziale | h063.c:1750 |
+ | `$3A26` | `sub_H063_00003A26` | parziale | h063.c:905 |
+-| `$3CA0` | `sub_H063_00003CA0` | parziale | h063.c:1646 |
++| `$3CA0` | `sub_H063_00003CA0` | parziale | h063.c:1648 |
+ | `$3F72` | `trampoline_H063_4042` | parziale | h063.c:643 |
+ 
+ ### H064
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$00EE` | `module_init_H064` | parziale | h064.c:28 |
+-| `$0156` | `(senza scheda)` | - | h064.c:38 |
+-| `$0202` | `ECL_GOTO` | verificato | h064.c:66 |
+-| `$0234` | `ECL_GOSUB` | parziale | h064.c:73 |
+-| `$0258` | `(senza scheda)` | - | h064.c:80 |
+-| `$0306` | `ECL_Arithmetic` | verificato | h064.c:97 |
+-| `$03FC` | `(senza scheda)` | - | h064.c:136 |
+-| `$0468` | `ECL_SAVE_AssignVariable` | verificato | h064.c:151 |
+-| `$04DC` | `(senza scheda)` | - | h064.c:166 |
+-| `$05E2` | `(senza scheda)` | - | h064.c:305 |
+-| `$06A0` | `(senza scheda)` | - | h064.c:205 |
+-| `$0ABE` | `(senza scheda)` | - | h064.c:325 |
+-| `$0B10` | `(senza scheda)` | - | h064.c:337 |
+-| `$0C62` | `(senza scheda)` | - | h064.c:385 |
+-| `$0CC4` | `(senza scheda)` | - | h064.c:395 |
+-| `$0D4A` | `(senza scheda)` | - | h064.c:411 |
+-| `$0E40` | `ECL_RETURN` | verificato | h064.c:434 |
+-| `$0E9C` | `(senza scheda)` | - | h064.c:448 |
+-| `$0F30` | `(senza scheda)` | - | h064.c:467 |
+-| `$0F90` | `(senza scheda)` | - | h064.c:486 |
+-| `$1004` | `ECL_LOAD_FILES_or_PIECES` | verificato | h064.c:505 |
+-| `$121C` | `(senza scheda)` | - | h064.c:565 |
+-| `$12CA` | `(senza scheda)` | - | h064.c:586 |
+-| `$1346` | `(senza scheda)` | - | h064.c:600 |
+-| `$13AC` | `(senza scheda)` | - | h064.c:615 |
+-| `$1544` | `(senza scheda)` | - | h064.c:663 |
+-| `$1748` | `(senza scheda)` | - | h064.c:718 |
+-| `$17BC` | `(senza scheda)` | - | h064.c:739 |
++| `$00EE` | `module_init_H064` | parziale | h064.c:29 |
++| `$0156` | `(senza scheda)` | - | h064.c:39 |
++| `$0202` | `ECL_GOTO` | verificato | h064.c:67 |
++| `$0234` | `ECL_GOSUB` | parziale | h064.c:74 |
++| `$0258` | `(senza scheda)` | - | h064.c:81 |
++| `$0306` | `ECL_Arithmetic` | verificato | h064.c:98 |
++| `$03FC` | `(senza scheda)` | - | h064.c:137 |
++| `$0468` | `ECL_SAVE_AssignVariable` | verificato | h064.c:152 |
++| `$04DC` | `(senza scheda)` | - | h064.c:167 |
++| `$05E2` | `(senza scheda)` | - | h064.c:306 |
++| `$06A0` | `(senza scheda)` | - | h064.c:206 |
++| `$0ABE` | `(senza scheda)` | - | h064.c:326 |
++| `$0B10` | `(senza scheda)` | - | h064.c:338 |
++| `$0C62` | `(senza scheda)` | - | h064.c:386 |
++| `$0CC4` | `(senza scheda)` | - | h064.c:396 |
++| `$0D4A` | `(senza scheda)` | - | h064.c:412 |
++| `$0E40` | `ECL_RETURN` | verificato | h064.c:435 |
++| `$0E9C` | `(senza scheda)` | - | h064.c:449 |
++| `$0F30` | `(senza scheda)` | - | h064.c:468 |
++| `$0F90` | `(senza scheda)` | - | h064.c:487 |
++| `$1004` | `ECL_LOAD_FILES_or_PIECES` | verificato | h064.c:506 |
++| `$121C` | `(senza scheda)` | - | h064.c:566 |
++| `$12CA` | `(senza scheda)` | - | h064.c:587 |
++| `$1346` | `(senza scheda)` | - | h064.c:601 |
++| `$13AC` | `(senza scheda)` | - | h064.c:616 |
++| `$1544` | `(senza scheda)` | - | h064.c:664 |
++| `$1748` | `(senza scheda)` | - | h064.c:719 |
++| `$17BC` | `(senza scheda)` | - | h064.c:740 |
+ 
+ ### H065
+ 
+@@ -1292,28 +1292,28 @@ Routine portate: **854 / 1112**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$00A4` | `module_init_H068` | parziale | h068.c:4 |
+-| `$00B2` | `trampoline_H068_00C0` | parziale |  |
+-| `$00CA` | `sub_H068_000000CA` | parziale |  |
+-| `$02B8` | `sub_H068_000002B8` | parziale |  |
+-| `$0340` | `sub_H068_00000340` | parziale |  |
+-| `$0748` | `sub_H068_00000748` | parziale |  |
+-| `$082A` | `sub_H068_0000082A` | parziale |  |
+-| `$0890` | `sub_H068_00000890` | parziale |  |
+-| `$08E2` | `sub_H068_000008E2` | parziale |  |
+-| `$0932` | `sub_H068_00000932` | parziale |  |
+-| `$0A1A` | `sub_H068_00000A1A` | parziale |  |
+-| `$0B2C` | `sub_H068_00000B2C` | parziale |  |
+-| `$0C0E` | `Exploration_CommandMenu` | verificato |  |
+-| `$122E` | `Exploration_MoveOrDoor` | parziale |  |
++| `$00A4` | `module_init_H068` | parziale | h068.c:26 |
++| `$00B2` | `trampoline_H068_00C0` | parziale | h068.c:32 |
++| `$00CA` | `sub_H068_000000CA` | parziale | h068.c:43 |
++| `$02B8` | `sub_H068_000002B8` | parziale | h068.c:72 |
++| `$0340` | `sub_H068_00000340` | parziale | h068.c:91 |
++| `$0748` | `sub_H068_00000748` | parziale | h068.c:179 |
++| `$082A` | `sub_H068_0000082A` | parziale | h068.c:199 |
++| `$0890` | `sub_H068_00000890` | parziale | h068.c:213 |
++| `$08E2` | `sub_H068_000008E2` | parziale | h068.c:226 |
++| `$0932` | `sub_H068_00000932` | parziale | h068.c:242 |
++| `$0A1A` | `sub_H068_00000A1A` | parziale | h068.c:277 |
++| `$0B2C` | `sub_H068_00000B2C` | parziale | h068.c:307 |
++| `$0C0E` | `Exploration_CommandMenu` | verificato | h068.c:490 |
++| `$122E` | `Exploration_MoveOrDoor` | parziale | h068.c:576 |
+ 
+ ### H069
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0004` | `module_init_H069` | parziale | h069.c:4 |
+-| `$0012` | `sub_H069_00000012` | parziale |  |
+-| `$00A8` | `sub_H069_000000A8` | parziale |  |
++| `$0004` | `module_init_H069` | parziale | h069.c:8 |
++| `$0012` | `sub_H069_00000012` | parziale | h069.c:14 |
++| `$00A8` | `sub_H069_000000A8` | parziale | h069.c:32 |
+ 
+ ### H070
+ 
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index b7ab187..0e34f8e 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -2031,3 +2031,81 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
+ **Prossimo passo:** il ciclo dell'esplorazione H012+$3150 e il ciclo del gioco H011+$04A6.
+ 
+ ---
++
++## 2026-11-11 (cok-port-36)
++
++**Richiesta:** "ok compila su sasc, procedi con il ciclo dell'esplorazione". Insieme è arrivato il log di SAS/C (smake.err) di cok-port-35: compilazione e link riusciti, con 7 warning, corretti qui.
++
++**Ciclo dell'esplorazione (H012)**
++- **$3150 `explore_loop`:**
++  - Carica il programma ECL dell'area ($3E04+$1E4; $24 all'inizio, $39 nella dimostrazione) ed esegue l'ingresso $3DEC.
++  - Poi ripete finché il party non è perduto ($24D0):
++    - menu dei comandi;
++    - Encamp ($2922);
++    - ricerca e sguardo (un giro di $3DF2 con $594 = 1);
++    - il passo, seguito dagli ingressi $3DF2/$3DF4;
++    - i cambi di area.
++  - Alla fine toglie tutti dal party.
++- **$3020 (statica `enter_area`):** ingresso in una nuova area dopo NEWECL. Libera le immagini ed esegue $3DEC, $3DF4 e $3DF2 finché un comando chiede un'altra area.
++- **H011+$04A6 `set_view_start`:** memorizza i quattro byte di partenza della vista. Prima era lo stub `h011_04a6`.
++- **`h001_main.c`:** ora chiama `set_view_start` ed `explore_loop` al posto degli stub.
++
++**H068 portato per intero** (esplorazione, menu, passi e porte)
++- **$0C0E `explore_command_menu`:**
++  - nel dungeon: "Move Area Cast View Encamp Search Look"; in Move le frecce danno passo, rotazioni e dietro-front;
++  - all'aperto: "Move Encamp"; in Move le 8 direzioni del tastierino;
++  - "Area" mostra la mappa (fuori dall'area serve la parola di $2358 in argv[2]); altrimenti "Not Here".
++- **$122E `explore_move_or_door`:** passo libero oppure porta chiusa ("Locked. " con Bash/Pick/Knock/Exit); all'aperto il passo sulla mappa grande.
++- **Aiutanti:**
++  - $00CA apre la porta (piano GEO 3);
++  - $00B2 vuoto nell'originale;
++  - $02B8 classe nel party;
++  - $0340 Bash (tabelle di forza);
++  - $0748 Pick (+$E1);
++  - $082A/$0890/$08E2 Knock (incantesimo $1F);
++  - $0932 uscita dal bordo della mappa;
++  - $0A1A passo nel dungeon;
++  - $0B2C passo all'aperto.
++
++**Altri portati**
++- **H069+$0012 e $00A8:** segno del party sulla mappa all'aperto (disegna e ripristina lo sfondo). Prima lo stub `h069_0012`.
++- **H029+$0E26 e $0E92:** salvano e ripristinano una cella dello schermo nel record.
++
++**Dove mi discosto dall'asm (tutto documentato nel codice)**
++- **Menu all'aperto con $3E04+$3EE nullo:** l'originale restituisce un byte non inizializzato; qui 0.
++- **Comando Area:** l'originale legge argv[2] in ogni caso; qui solo se esiste (come in H013).
++
++**Correzioni**
++- **Stub superfluo in cok-port-35:** lo stub `h042_0300` era inutile, perché H042+$0300 era già portato come `release_picture_set`. COMBAT ora usa quello.
++- **Warning di SAS/C di cok-port-35:**
++  - 85, valore restituito di tipo int: h048 `shape_cell`/`combatant_index`, h095 `place_in_spiral`. Aggiunti i cast.
++  - 217, macro che chiama una funzione più volte: h048 `combatant_x`/`combatant_y`, h063 righe 1130-1131. L'indice si legge una volta in una variabile.
++
++**Restano stub**
++- **H011+$0B78:** vista 3D del dungeon.
++- **H057+$0C04:** lancio di incantesimi.
++- **H042:** immagini.
++- **H060+$0018:** ridisegno della vista.
++- **H066+$1FDA:** usato da un evento del dungeon.
++
++**Prove con i dati veri** (binario ASan di test, non committato)
++- **Come:**
++  - stub di immagini, suono e vista non fatali;
++  - tasti inviati quando un menu attende;
++  - log dei menu.
++- **Città:** "Begin adventuring" porta nel ciclo. Solace mostra il menu ECL "Inn Hall Commandant Armoury Next Leave".
++- **All'aperto:**
++  - Leave fa NEWECL nell'area $10 (contesto 3) e compare il menu dei comandi "Move Encamp";
++  - Move e le frecce spostano il segno del party;
++  - la nuova casella avvia l'evento vero ("As you top a rise, you spot a caravan under attack...").
++- **Dungeon** (partenza forzata nell'area $30, contesto 4):
++  - compare "Move Area Cast View Encamp Search Look";
++  - da 7,13: su → 7,12; destra + su → 8,13 verso est; due volte sinistra + su → 7,13 verso ovest; dietro-front + su → 8,13;
++  - Search e Area rispondono;
++  - un evento più avanti si ferma su H066+$1FDA (non portato).
++- **ASan:** pulito in tutte le prove.
++- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
++
++**Prossimo passo:** la vista 3D del dungeon (H011+$0B78 e aiutanti), il ridisegno H060+$0018 e le immagini di H042.
++
++---
+diff --git a/src_c/readable/h001_main.c b/src_c/readable/h001_main.c
+index 4fe5ed7..c14cf7b 100644
+--- a/src_c/readable/h001_main.c
++++ b/src_c/readable/h001_main.c
+@@ -19,6 +19,8 @@
+ #include "h008.h"
+ #include "h009.h"
+ #include "h013.h"
++#include "h011.h"
++#include "h012.h"
+ #include "globals.h"
+ #include "h010_input.h"
+ #include "unported.h"
+@@ -94,9 +96,9 @@ void game_main(void)
+             H005_SET_W(0x3DF6, 9);
+         }
+ 
+-        h011_04a6(G_VIEW_START(3), G_VIEW_START(2), G_VIEW_START(1),
+-                  G_VIEW_START(0));
+-        h012_3150();
++        set_view_start(G_VIEW_START(3), G_VIEW_START(2), G_VIEW_START(1),
++               G_VIEW_START(0));
++        explore_loop();
+         h006_0914();
+ 
+         if (G_DEMO_FLAG) {
+diff --git a/src_c/readable/h011.c b/src_c/readable/h011.c
+index bf8c96a..2d1f430 100644
+--- a/src_c/readable/h011.c
++++ b/src_c/readable/h011.c
+@@ -140,3 +140,15 @@ u16 map_door(s16 x, s16 y, u16 dir)
+     }
+     return r;
+ }
++
++/*
++ * PORT H011+$04A6: memorizza i quattro byte di partenza della vista
++ * ($2829..$2826, primo argomento in $2829).
++ */
++void set_view_start(u16 a, u16 b, u16 c, u16 d)
++{
++    H005_B(0x2829) = (u8)a;
++    H005_B(0x2828) = (u8)b;
++    H005_B(0x2827) = (u8)c;
++    H005_B(0x2826) = (u8)d;
++}
+diff --git a/src_c/readable/h011.h b/src_c/readable/h011.h
+index ba57d1e..179b409 100644
+--- a/src_c/readable/h011.h
++++ b/src_c/readable/h011.h
+@@ -8,4 +8,5 @@ u16  map_wall(s16 x, s16 y, u16 dir);   /* H011+$01AA */
+ u8   map_flags(s16 x, s16 y);           /* H011+$04E2 */
+ u16  map_door(s16 x, s16 y, u16 dir);   /* H011+$09C8 */
+ 
++void set_view_start(u16 a, u16 b, u16 c, u16 d); /* H011+$04A6 */
+ #endif
+diff --git a/src_c/readable/h012.c b/src_c/readable/h012.c
+index c784021..ab8b4c7 100644
+--- a/src_c/readable/h012.c
++++ b/src_c/readable/h012.c
+@@ -3,9 +3,12 @@
+ #include "h012.h"
+ #include "globals.h"
+ #include "unported.h"
++#include "h069.h"
++#include "h068.h"
+ #include "h061.h"
+ #include "h064.h"
+ #include "h013.h"
++#include "h042_seq.h"
+ #include "h003_exec.h"
+ #include "h008.h"
+ #include "h010_input.h"
+@@ -343,7 +346,7 @@ void ecl_combat(void)
+         if (steps < COK_GET16(g_state_b + 0x582)) {
+             COK_PUT16(g_state_b + 0x582, steps);
+         }
+-        h042_0300(&g_h005[0x27BC]);
++        release_picture_set();
+         combat_main_loop();
+         if (H005_B(0x24A7)) {
+             h043_190e(0xFF);
+@@ -368,7 +371,7 @@ void ecl_combat(void)
+         redraw_game_screen();
+         if (COK_GET16(g_state_a + 0x1CC) == 0 && !H005_B(0x24D0) &&
+             COK_GET16(g_state_a + 0x270) == 0) {
+-            h069_0012();
++            h069_draw_marker();
+         }
+     }
+     H005_B(0x24B0) = save;
+@@ -1284,7 +1287,7 @@ void ecl_camp_entry(void)
+     }
+     H005_B(0x24A3) = 0;
+     if (COK_GET16(g_state_a + 0x1CC) == 0 && COK_GET16(g_state_a + 0x270) == 0) {
+-        h069_0012();
++        h069_draw_marker();
+     }
+ }
+ 
+@@ -1331,3 +1334,174 @@ void ecl_party_menu(void)
+     (void)pc;
+     H005_B(0x24B0) = save;
+ }
++
++/*
++ * PORT H012+$3020: ingresso in una nuova area (dopo NEWECL o un'uscita):
++ * libera le immagini, esegue gli ingressi $3DEC, $3DF4 e $3DF2 del
++ * programma ECL e ridisegna, ripetendo finche' un comando chiede
++ * un'altra area (H064+$A).
++ */
++static void enter_area(void)
++{
++    do {
++        release_picture_set();
++        H005_B(0x279C) = 0;             /* stringa vuota di H012+$16F */
++        H005_B(0x2485) = 0xFF;
++        H064_B(0x0A) = 0;
++        H005_B(0x2822) = map_flags((s16)H005_W(0x281C), (s16)H005_W(0x281E));
++        COK_PUT16(g_state_b + 0x5AA, 0);
++        g_h064_saved_char = g_current_char;
++        run_ecl(H005_W(0x3DEC));
++        if (!H064_B(0x0A)) {
++            COK_PUT16(g_state_a + 0x1E4, H005_B(0x2498));
++        }
++        if (!H064_B(0x0A)) {
++            if ((H005_B(0x3DE2) == 4 && H005_B(0x3DE3) == 4) ||
++                (H005_B(0x3DE2) != 4 && H064_B(8))) {
++                h060_0018();
++            }
++            H064_B(0x0A) = 0;
++            run_ecl(H005_W(0x3DF4));
++            if (!H064_B(0x0A)) {
++                run_ecl(H005_W(0x3DF2));
++                if (!H064_B(0x0A)) {
++                    g_current_char = g_h064_saved_char;
++                    draw_party(g_current_char);
++                }
++            }
++        }
++    } while (H064_B(0x0A));
++    H005_B(0x3DE2) = H005_B(0x3DE3);
++}
++
++/* Maiuscola come nell'originale (a..z con andi #$5F). */
++static u8 key_upper(u8 k)
++{
++    if (k >= 'a' && k <= 'z') {
++        k = (u8)(k & 0x5F);
++    }
++    return k;
++}
++
++/* Toglie dal party tutti i personaggi (H012+$3248 e $34CE). */
++static void dismiss_party(u8 keep)
++{
++    Character *p;                       /* -$6(a5) */
++
++    p = g_party_head;
++    while (p != NULL) {
++        g_current_char = p;
++        p = p->next;
++        remove_from_party(keep, 1);
++    }
++}
++
++/*
++ * PORT H012+$3150: ciclo dell'esplorazione.  Carica il programma ECL
++ * dell'area ($3E04+$1E4, o $24 all'inizio, $39 nella dimostrazione), ne
++ * esegue l'ingresso e poi ripete: menu dei comandi (H068+$0C0E) con
++ * Encamp, ricerca e sguardo, ed eseguito il passo (H068+$122E) gli
++ * ingressi $3DF2/$3DF4; finche' il party non e' perduto ($24D0).
++ */
++void explore_loop(void)
++{
++    u8 key;                             /* -$1(a5) */
++
++    g_h064_saved_char = g_current_char;
++    H005_B(0x24E1) = 1;
++    H005_B(0x24BB) = 0;
++    H064_B(7) = 0;
++    H064_B(6) = 0;
++    H064_B(9) = 0;
++    H064_B(8) = 0;
++    H005_B(0x24B2) = 1;
++    H005_B(0x3DE3) = 4;
++    H064_B(0x0A) = 0;
++    if (COK_GET16(g_state_a + 0x1E4) == 0) {
++        H005_B(0x24B2) = 0;
++        if (H005_B(0x24D7)) {
++            H005_B(0x2498) = 0x39;
++        } else {
++            H005_B(0x2498) = 0x24;
++            draw_party(g_current_char);
++        }
++    } else {
++        H005_B(0x2498) = (u8)COK_GET16(g_state_a + 0x1E4);
++    }
++    if (COK_GET16(g_state_a + 0x1CC) == 0) {
++        H005_B(0x3DE3) = 3;
++    }
++    load_ecl_program(H005_B(0x2498));
++    ui_draw_text(0, 0, 0x0B, 0, 0x50, TEXT64);
++    ecl_start_area();
++    run_ecl(H005_W(0x3DEC));
++    if (H005_B(0x24D7)) {
++        dismiss_party(1);
++        return;
++    }
++    if (!H064_B(0x0A)) {
++        COK_PUT16(g_state_a + 0x1E4, H005_B(0x2498));
++    } else {
++        enter_area();
++    }
++    if (H005_B(0x3DE3) != 3 && H005_B(0x24D1)) {
++        if (H005_B(0x24B2) == 1) {
++            redraw_game_screen();
++        }
++        H005_B(0x24E1) = 1;
++        h060_0018();
++    }
++    H005_B(0x24D1) = 0;
++    H005_B(0x24B0) = 0;
++    do {
++        if (H005_W(0x3DE8) != H005_W(0x3DF4) && !H064_B(0x0A)) {
++            key = explore_command_menu();
++            g_h064_saved_char = g_current_char;
++            if (!H064_B(0x0A)) {
++                COK_PUT16(g_state_a + 0x1E4, H005_B(0x2498));
++            }
++            while ((COK_GET16(g_state_b + 0x594) > 1 ||
++                    key_upper(key) == 'E') && !H005_B(0x24D0)) {
++                if (key_upper(key) == 'E') {
++                    ecl_camp_entry();
++                } else {
++                    H005_B(0x2497) = mask_byte((u8)COK_GET16(g_state_b + 0x594), 1);
++                    COK_PUT16(g_state_b + 0x594, 1);
++                    H005_B(0x24E1) = 1;
++                    h060_0018();
++                    run_ecl(H005_W(0x3DF2));
++                    if (H064_B(0x0A)) {
++                        enter_area();
++                    }
++                    COK_PUT16(g_state_b + 0x594, H005_B(0x2497));
++                }
++                if (!H005_B(0x24D0)) {
++                    key = explore_command_menu();
++                    g_h064_saved_char = g_current_char;
++                }
++            }
++            if (!H005_B(0x24D0)) {
++                run_ecl(H005_W(0x3DF4));
++            }
++        } else if (H064_B(0x0A)) {
++            enter_area();
++        } else if (!H005_B(0x24D0)) {
++            COK_PUT16(g_state_a + 0x1E0, H005_W(0x281C));
++            COK_PUT16(g_state_a + 0x1E2, H005_W(0x281E));
++            explore_move_or_door();
++            h060_0018();
++            if (H005_W(0x281C) != COK_GET16(g_state_a + 0x1E0) ||
++                H005_W(0x281E) != COK_GET16(g_state_a + 0x1E2)) {
++                h043_190e(0x11);
++            }
++            H005_B(0x24BD) = 0;
++            H005_B(0x24BC) = 1;
++            run_ecl(H005_W(0x3DF2));
++            if (H064_B(0x0A)) {
++                enter_area();
++            }
++        }
++    } while (!H005_B(0x24D0));
++    H005_B(0x24D0) = 0;
++    dismiss_party(0);
++}
+diff --git a/src_c/readable/h012.h b/src_c/readable/h012.h
+index 5fbbb60..98b9716 100644
+--- a/src_c/readable/h012.h
++++ b/src_c/readable/h012.h
+@@ -29,4 +29,5 @@ void ecl_has_effect(void);   /* H012+$2AF6 */
+ void ecl_remove_items(void); /* H012+$2B64 */
+ void ecl_experience(void);   /* H012+$2C28 */
+ void ecl_camp_entry(void);              /* H012+$2922 */
++void explore_loop(void);                /* H012+$3150 */
+ #endif
+diff --git a/src_c/readable/h029_gfx.c b/src_c/readable/h029_gfx.c
+index 3340d22..51259cc 100644
+--- a/src_c/readable/h029_gfx.c
++++ b/src_c/readable/h029_gfx.c
+@@ -749,3 +749,29 @@ void copy_intuition_colors(void)
+     }
+     graphics_load_rgb4(&g_offscreen_vp, colors, 0x20);
+ }
++
++/*
++ * PORT H029+$0E26: copia nel record (BitMap +$10) il riquadro dello
++ * schermo alla cella (x, y) da 8 pixel, largo count*8 e alto rows.
++ */
++void save_screen_cell(u16 x, u16 y, struct GfxRecord *rec)
++{
++    if (rec == NULL) {
++        return;
++    }
++    (void)graphics_blt_bitmap(&g_screen->BitMap, (u16)(x * 8), (u16)(y * 8),
++                              rec->image, 0, 0, (u16)(rec->count * 8),
++                              rec->rows, 0xC0, 0xFF, NULL);
++}
++
++/* PORT H029+$0E92: rimette sullo schermo il riquadro salvato da $0E26. */
++void restore_screen_cell(u16 x, u16 y, struct GfxRecord *rec)
++{
++    if (rec == NULL) {
++        return;
++    }
++    (void)graphics_blt_bitmap(rec->image, 0, 0, &g_screen->BitMap,
++                              (u16)(x * 8), (u16)(y * 8),
++                              (u16)(rec->count * 8), rec->rows, 0xC0, 0xFF,
++                              NULL);
++}
+diff --git a/src_c/readable/h029_gfx.h b/src_c/readable/h029_gfx.h
+index 720cbdd..ae18d5c 100644
+--- a/src_c/readable/h029_gfx.h
++++ b/src_c/readable/h029_gfx.h
+@@ -47,4 +47,6 @@ void draw_tile24_saving(u16 x, u16 y, u8 frame, u8 mode,
+                         struct GfxRecord *src, struct GfxRecord *unused);
+                                                         /* H029+$0D58 */
+ 
++void save_screen_cell(u16 x, u16 y, struct GfxRecord *rec);   /* H029+$0E26 */
++void restore_screen_cell(u16 x, u16 y, struct GfxRecord *rec);/* H029+$0E92 */
+ #endif
+diff --git a/src_c/readable/h048.c b/src_c/readable/h048.c
+index ef93c58..b3e0c4f 100644
+--- a/src_c/readable/h048.c
++++ b/src_c/readable/h048.c
+@@ -89,7 +89,7 @@ u8 shape_cell(u16 size, u16 i, s16 *dx, s16 *dy)
+     }
+     *dx = (s16)H005_W(0x5048 + (size - 1) * 16 + i * 4);
+     *dy = (s16)H005_W(0x5048 + (size - 1) * 16 + i * 4 + 2);
+-    return *dx >= 0;
++    return (u8)(*dx >= 0);
+ }
+ 
+ /* PORT H048+$00C2: coordinate nella vista ($3104/$30B4) di tutti i combattenti. */
+@@ -283,7 +283,7 @@ u16 combatant_index(Character *c)
+             found = 1;
+         }
+     } while (!found && i != H005_B(0x247B) && i < 40);
+-    return found ? i : 0;
++    return (u16)(found ? i : 0);
+ }
+ 
+ /*
+@@ -407,13 +407,17 @@ void center_view(s16 x, s16 y, u16 margin, u16 dir)
+ /* PORT H048+$0F88: colonna di c sulla mappa (H005+$3154). */
+ u16 combatant_x(Character *c)
+ {
+-    return (u16)POS_X((s16)combatant_index(c));
++    s16 i = (s16)combatant_index(c);
++
++    return (u16)POS_X(i);
+ }
+ 
+ /* PORT H048+$0FBA: riga di c sulla mappa. */
+ u16 combatant_y(Character *c)
+ {
+-    return (u16)POS_Y((s16)combatant_index(c));
++    s16 i = (s16)combatant_index(c);
++
++    return (u16)POS_Y(i);
+ }
+ 
+ /*
+diff --git a/src_c/readable/h063.c b/src_c/readable/h063.c
+index a95a695..4dba107 100644
+--- a/src_c/readable/h063.c
++++ b/src_c/readable/h063.c
+@@ -1102,6 +1102,7 @@ void show_effect_message(Character *c, u8 flag, u16 len, const char *text)
+     u16 frame;                          /* -$8(a5) */
+     u16 n;                              /* -$a(a5) */
+     u16 times;                          /* -$c(a5) */
++    u16 k;                              /* indice di c, letto una volta */
+ 
+     if (H005_B(0x3DE3) != 5) {
+         show_char_message(c, len, text, 0x0A, 1);
+@@ -1127,8 +1128,9 @@ void show_effect_message(Character *c, u8 flag, u16 len, const char *text)
+     } else {
+         times = 0;
+     }
+-    x = (s16)(H005_W(0x3104 + (combatant_index(c) - 1) * 2) * 3);
+-    y = (s16)(H005_W(0x30B4 + (combatant_index(c) - 1) * 2) * 3);
++    k = combatant_index(c);
++    x = (s16)(H005_W(0x3104 + (k - 1) * 2) * 3);
++    y = (s16)(H005_W(0x30B4 + (k - 1) * 2) * 3);
+     for (n = 0; n <= times; ++n) {
+         for (frame = 0; frame <= 3; ++frame) {
+             draw_tile24_saving((u16)(x * 8), (u16)(y * 8), (u8)frame, 5,
+diff --git a/src_c/readable/h064.c b/src_c/readable/h064.c
+index 6e93b31..bdac90d 100644
+--- a/src_c/readable/h064.c
++++ b/src_c/readable/h064.c
+@@ -2,6 +2,7 @@
+ #include "h064.h"
+ #include "globals.h"
+ #include "unported.h"
++#include "h069.h"
+ #include "h003_exec.h"
+ #include "h008.h"
+ #include "h023_shared.h"
+@@ -355,7 +356,7 @@ void ecl_picture(void)
+                 h042_1006(n);
+                 h042_10dc();
+                 if (n == 0x79) {
+-                    h069_0012();
++                    h069_draw_marker();
+                 } else {
+                     H005_B(0x24AE) = 1;
+                 }
+diff --git a/src_c/readable/h068.c b/src_c/readable/h068.c
+index 13af445..b2eeff0 100644
+--- a/src_c/readable/h068.c
++++ b/src_c/readable/h068.c
+@@ -1,7 +1,619 @@
+ /* H068: Esplorazione, scelte di movimento, porte e azioni del party. */
+ #include "cok.h"
++#include "h068.h"
++#include "globals.h"
++#include "unported.h"
++#include "h008.h"
++#include "h011.h"
++#include "h026_string.h"
++#include "h029_gfx.h"
++#include "h030.h"
++#include "h036.h"
++#include "h042_seq.h"
++#include "h058.h"
++#include "h062.h"
++#include "h063.h"
++#include "h065.h"
++#include "h069.h"
++#include "h073.h"
++
++#define DX(d) ((s16)H005_W(0x3EE2 + (d) * 2))
++#define DY(d) ((s16)H005_W(0x3ED0 + (d) * 2))
++#define POS_X ((s16)H005_W(0x281C))
++#define POS_Y ((s16)H005_W(0x281E))
++#define POS_DIR H005_B(0x2820)
+ 
+ /* PORT H068+$00A4: link/unlk, nessun effetto. */
+ void h068_init(void)
+ {
+ }
++
++/*
++ * PORT H068+$00B2: chiamato quando la porta chiusa non offre azioni
++ * (solo " Exit"); nell'originale il corpo e' vuoto.
++ */
++static void locked_no_action(s16 x, s16 y, u8 dir)
++{
++    (void)x;
++    (void)y;
++    (void)dir;
++}
++
++/*
++ * PORT H068+$00CA: apre la porta del lato dir della casella (x, y): la
++ * coppia di bit del lato nel piano GEO 3 diventa 1.
++ */
++static void open_door(s16 x, s16 y, u8 dir)
++{
++    u8 *b;
++
++    if (x < 0 || x > 0x0F || y < 0 || y > 0x0F) {
++        return;
++    }
++    b = &g_geo_planes[0x300 + y * 16 + x];
++    switch (dir) {
++    case 0: *b = or_byte(mask_byte(*b, 0xFC), 0x01); break;
++    case 2: *b = or_byte(mask_byte(*b, 0xF3), 0x04); break;
++    case 4: *b = or_byte(mask_byte(*b, 0xCF), 0x10); break;
++    case 6: *b = or_byte(mask_byte(*b, 0x3F), 0x40); break;
++    default: break;
++    }
++}
++
++/* Apre la porta davanti al party da entrambi i lati. */
++static void open_door_ahead(void)
++{
++    open_door(POS_X, POS_Y, POS_DIR);
++    open_door((s16)(POS_X + DX(POS_DIR)), (s16)(POS_Y + DY(POS_DIR)),
++              (u8)((POS_DIR + 4) & 7));
++}
++
++/*
++ * PORT H068+$02B8: qualcuno nel party ha livelli nella classe cls (+$FE)
++ * o, dalla classe precedente (+$106), la puo' usare (H073+$130A)?
++ */
++static u8 party_has_class(u8 cls)
++{
++    u8 found = 0;                       /* -$5(a5) */
++    Character *p;                       /* -$4(a5) */
++
++    for (p = g_party_head; p != NULL && !found; p = p->next) {
++        if (p->b[0xFE + cls] > 0) {
++            found = 1;
++        } else if (p->b[0x106 + cls] > 0 && h073_130a(p)) {
++            found = 1;
++        }
++    }
++    return found;
++}
++
++/*
++ * PORT H068+$0340 (Bash): ogni personaggio prova a sfondare la porta
++ * secondo la forza (+$11, eccezionale +$1C); le porte di tipo 3 solo con
++ * forza 18 e oltre, altrimenti l'opzione sparisce ($24E4).
++ */
++static u8 bash_door(void)
++{
++    u8 ok = 0;                          /* -$5(a5) */
++    Character *p;                       /* -$4(a5) */
++
++    for (p = g_party_head; p != NULL && !ok; p = p->next) {
++        if (map_door(POS_X, POS_Y, POS_DIR) == 3) {
++            switch (p->b[0x11]) {
++            case 0x12:
++                if (p->b[0x1C] < 0x5B) {
++                    H005_B(0x24E4) = 0;
++                } else if (p->b[0x1C] < 0x64) {
++                    if (roll_dice(1, 6) == 1) ok = 1;
++                } else {
++                    if (roll_dice(1, 6) <= 2) ok = 1;
++                }
++                break;
++            case 0x13: case 0x14:
++                if (roll_dice(1, 6) <= 3) ok = 1;
++                break;
++            case 0x15: case 0x16:
++                if (roll_dice(1, 6) <= 4) ok = 1;
++                break;
++            case 0x17:
++                if (roll_dice(1, 6) <= 5) ok = 1;
++                break;
++            case 0x18:
++                if (roll_dice(1, 8) <= 7) ok = 1;
++                break;
++            case 0x19:
++                ok = 1;
++                break;
++            default:
++                H005_B(0x24E4) = 0;
++                break;
++            }
++        } else {
++            switch (p->b[0x11]) {
++            case 3: case 4: case 5: case 6: case 7:
++                if (roll_dice(1, 6) == 1) ok = 1;
++                break;
++            case 8: case 9: case 0x0A: case 0x0B: case 0x0C: case 0x0D:
++            case 0x0E: case 0x0F:
++                if (roll_dice(1, 6) <= 2) ok = 1;
++                break;
++            case 0x10: case 0x11:
++                if (roll_dice(1, 6) <= 3) ok = 1;
++                break;
++            case 0x12:
++                if (p->b[0x1C] < 0x33) {
++                    if (roll_dice(1, 6) <= 3) ok = 1;
++                } else if (p->b[0x1C] < 0x64) {
++                    if (roll_dice(1, 6) <= 4) ok = 1;
++                } else {
++                    if (roll_dice(1, 6) <= 5) ok = 1;
++                }
++                break;
++            case 0x13: case 0x14:
++                if (roll_dice(1, 8) <= 7) ok = 1;
++                break;
++            case 0x15:
++                if (roll_dice(1, 0x0A) <= 9) ok = 1;
++                break;
++            case 0x16: case 0x17:
++                if (roll_dice(1, 0x0C) <= 0x0B) ok = 1;
++                break;
++            case 0x18:
++                if (roll_dice(1, 0x14) <= 0x13) ok = 1;
++                break;
++            case 0x19:
++                ok = 1;
++                break;
++            default:
++                break;
++            }
++        }
++    }
++    if (ok) {
++        open_door_ahead();
++    }
++    return ok;
++}
++
++/*
++ * PORT H068+$0748 (Pick): riesce chi tira 1d100 <= +$E1 (scassinare) e
++ * non ha +$197; l'opzione comunque sparisce ($24E5).
++ */
++static u8 pick_lock(void)
++{
++    u8 ok = 0;                          /* -$5(a5) */
++    Character *p;                       /* -$4(a5) */
++
++    for (p = g_party_head; p != NULL && !ok; p = p->next) {
++        if (roll_dice(1, 0x64) <= p->b[0xE1] && !p->b[0x197]) {
++            ok = 1;
++        }
++    }
++    H005_B(0x24E5) = 0;
++    if (ok) {
++        open_door_ahead();
++    }
++    return ok;
++}
++
++/* PORT H068+$082A: posizione dell'incantesimo s fra i memorizzati di c, $FF se manca. */
++static u8 memorized_spell_index(u8 spell, Character *c)
++{
++    u16 k = 0;                          /* -$2(a5) */
++
++    while (k <= 0x39 && c->b[0x1E + k] != spell) {
++        ++k;
++    }
++    if (k <= 0x39) {
++        return (u8)k;
++    }
++    return 0xFF;
++}
++
++/* PORT H068+$0890: il primo personaggio che ha memorizzato l'incantesimo. */
++static Character *who_has_spell(u8 spell)
++{
++    Character *p;                       /* -$4(a5) */
++
++    p = g_party_head;
++    while (p != NULL && memorized_spell_index(spell, p) == 0xFF) {
++        p = p->next;
++    }
++    return p;
++}
++
++/*
++ * PORT H068+$08E2 (Knock): consuma l'incantesimo $1F del primo che l'ha
++ * memorizzato.  Nell'originale la porta non viene aperta qui.
++ */
++static u8 cast_knock(void)
++{
++    Character *p;                       /* -$4(a5) */
++
++    p = who_has_spell(0x1F);
++    if (p != NULL) {
++        p->b[0x1E + memorized_spell_index(0x1F, p)] = 0;
++        return 1;
++    }
++    return 0;
++}
++
++/*
++ * PORT H068+$0932: se davanti non c'e' parete e il passo uscirebbe dalla
++ * mappa 16x16, la posizione viene bloccata al bordo e $3E00+$5AA = 1
++ * (uscita dall'area).
++ */
++static void check_area_edge(void)
++{
++    s16 x = POS_X;                      /* -$2(a5) */
++    s16 y = POS_Y;                      /* -$4(a5) */
++    u16 dir = POS_DIR;                  /* -$6(a5) */
++
++    COK_PUT16(g_state_b + 0x5AA, 0);
++    if (map_door(x, y, dir) == 0) {
++        return;
++    }
++    x = (s16)(x + DX(dir));
++    y = (s16)(y + DY(dir));
++    if (x > 0x0F) {
++        H005_SET_W(0x281C, 0x0F);
++        COK_PUT16(g_state_b + 0x5AA, 1);
++    }
++    if (x < 0) {
++        H005_SET_W(0x281C, 0);
++        COK_PUT16(g_state_b + 0x5AA, 1);
++    }
++    if (y > 0x0F) {
++        H005_SET_W(0x281E, 0x0F);
++        COK_PUT16(g_state_b + 0x5AA, 1);
++    }
++    if (y < 0) {
++        H005_SET_W(0x281E, 0);
++        COK_PUT16(g_state_b + 0x5AA, 1);
++    }
++}
++
++/*
++ * PORT H068+$0A1A: un passo avanti nel dungeon (la mappa si avvolge),
++ * parete e flag della nuova casella, opzioni delle porte ripristinate e
++ * un turno (o 2 se si cerca).
++ */
++static void explore_step(void)
++{
++    s16 x;
++    s16 y;
++
++    h043_190e(0x11);
++    dos_delay(2);
++    x = (s16)(POS_X + DX(POS_DIR));
++    y = (s16)(POS_Y + DY(POS_DIR));
++    if (x < 0) x = 0x0F;
++    if (x > 0x0F) x = 0;
++    if (y < 0) y = 0x0F;
++    if (y > 0x0F) y = 0;
++    H005_SET_W(0x281C, (u16)x);
++    H005_SET_W(0x281E, (u16)y);
++    H005_B(0x2821) = (u8)map_wall(x, y, POS_DIR);
++    h029_fill_bytes(2, &H005_B(0x24E4), 3, 1);
++    H005_B(0x2822) = map_flags(x, y);
++    if (mask_byte((u8)COK_GET16(g_state_b + 0x594), 1) > 0) {
++        advance_time(1, 2);
++    } else {
++        advance_time(1, 1);
++    }
++}
++
++/*
++ * PORT H068+$0B2C: un passo sulla mappa all'aperto (38x15 caselle, senza
++ * avvolgimento): ripristina lo sfondo sotto il segno del party, sposta e
++ * ridisegna il segno, poi advance_time($C, 3).
++ */
++static void wild_step(void)
++{
++    s16 x;                              /* -$4(a5) */
++    s16 y;                              /* -$6(a5) */
++
++    h069_restore_marker();
++    COK_PUT16(g_state_a + 0x1E0, COK_GET16(g_state_a + 0x186));
++    COK_PUT16(g_state_a + 0x1E2, COK_GET16(g_state_a + 0x188));
++    x = (s16)((s16)COK_GET16(g_state_a + 0x186) + DX(POS_DIR));
++    y = (s16)((s16)COK_GET16(g_state_a + 0x188) + DY(POS_DIR));
++    if (x < 0) x = 0;
++    if (x > 0x25) x = 0x25;
++    if (y < 0) y = 0;
++    if (y > 0x0E) y = 0x0E;
++    COK_PUT16(g_state_a + 0x186, (u16)x);
++    COK_PUT16(g_state_a + 0x188, (u16)y);
++    h069_draw_marker();
++    advance_time(0x0C, 3);
++}
++
++/* Voci del menu nel dungeon (H068+$0C2E). */
++static void dungeon_menu(u8 *key, u8 *done, u8 *special)
++{
++    u8 redraw;                          /* -$2(a5) */
++    Character *c;
++
++    *done = 0;
++    *key = 0;
++    if (!H005_B(0x24B0)) {
++        *key = ui_request_choice(0, "", 0x26,
++                                 "Move Area Cast View Encamp Search Look",
++                                 0x0D, 0x0A, 0x0F, 1, 0, special);
++        if (*special) {
++            select_party_member(*key);
++            draw_party(g_current_char);
++            draw_status_line();
++            return;
++        }
++        switch (*key) {
++        case 'A':
++            if (COK_GET16(g_state_a + 0x1F6) == 0 ||
++                (g_argc > 2 &&
++                 h026_compare_nocase(0xFF, g_argv[2], 0x14,
++                                     (const char *)&g_h005[0x2358]) == 1)) {
++                H005_B(0x2825) = (u8)(H005_B(0x2825) == 0);
++                h011_0b78(POS_X, POS_Y, POS_DIR);
++            } else {
++                show_message(8, "Not Here", 0x0E, 0);
++            }
++            break;
++        case 'C':
++            c = g_current_char;
++            if (!c->b[0x197]) {
++                H005_B(0x2483) = 1;
++                h057_0c04();
++            }
++            break;
++        case 'E':
++            *done = 1;
++            H005_B(0x2483) = 1;
++            break;
++        case 'L':
++            COK_PUT16(g_state_b + 0x594,
++                      or_byte((u8)COK_GET16(g_state_b + 0x594), 2));
++            draw_status_line();
++            advance_time(1, 2);
++            H005_SET_W(0x3DEA, H005_W(0x3DF2));
++            *done = 1;
++            break;
++        case 'M':
++            clear_message_line();
++            H005_B(0x24B0) = 1;
++            break;
++        case 'S':
++            COK_PUT16(g_state_b + 0x594,
++                      xor_byte((u8)COK_GET16(g_state_b + 0x594), 1));
++            draw_status_line();
++            break;
++        case 'V':
++            H005_B(0x2483) = 1;
++            view_character(&redraw);
++            break;
++        default:
++            break;
++        }
++        return;
++    }
++    *key = ui_request_choice(0, "", 4, "Exit", 0x0D, 0x0A, 0x0F, 1, 0,
++                             special);
++    if (!*special) {
++        if (*key == 'E') {
++            H005_B(0x24B0) = 0;
++        }
++        return;
++    }
++    switch (*key) {
++    case 0x48:                          /* freccia su */
++        check_area_edge();
++        *done = 1;
++        draw_status_line();
++        *key = 0;
++        break;
++    case 0x50:                          /* freccia giu': dietro-front */
++        POS_DIR = (u8)((POS_DIR + 4) & 7);
++        H005_B(0x2821) = (u8)map_wall(POS_X, POS_Y, POS_DIR);
++        h011_0b78(POS_X, POS_Y, POS_DIR);
++        draw_status_line();
++        *key = 0;
++        break;
++    case 0x4B:                          /* freccia sinistra */
++        POS_DIR = (u8)((POS_DIR + 6) & 7);
++        h043_190e(0x11);
++        H005_B(0x2821) = (u8)map_wall(POS_X, POS_Y, POS_DIR);
++        h011_0b78(POS_X, POS_Y, POS_DIR);
++        draw_status_line();
++        *key = 0;
++        break;
++    case 0x4D:                          /* freccia destra */
++        POS_DIR = (u8)((POS_DIR + 2) & 7);
++        h043_190e(0x11);
++        H005_B(0x2821) = (u8)map_wall(POS_X, POS_Y, POS_DIR);
++        h011_0b78(POS_X, POS_Y, POS_DIR);
++        draw_status_line();
++        *key = 0;
++        break;
++    default:
++        break;
++    }
++}
++
++/* Voci del menu all'aperto (H068+$1036); restituisce 0 se non c'e' menu. */
++static u8 wild_menu(u8 *key, u8 *done, u8 *special)
++{
++    if (COK_GET16(g_state_a + 0x3EE) == 0) {
++        return 0;
++    }
++    *done = 0;
++    if (!H005_B(0x24B0)) {
++        *key = ui_request_choice(0, "", 0x0B, "Move Encamp", 0x0D, 0x0A,
++                                 0x0F, 1, 0, special);
++        if (!*special) {
++            if (*key == 'E') {
++                *done = 1;
++                H005_B(0x2483) = 1;
++            } else if (*key == 'M') {
++                clear_message_line();
++                H005_B(0x24B0) = 1;
++            }
++        }
++        return 1;
++    }
++    *key = 0;
++    if (*key == 0) {
++        *key = ui_request_choice(0, "", 4, "Exit", 0x0D, 0x0A, 0x0F, 1, 0,
++                                 special);
++    }
++    if (!*special) {
++        if (*key == 'E') {
++            H005_B(0x24B0) = 0;
++        }
++        return 1;
++    }
++    *done = 1;
++    switch (*key) {                     /* tastierino: 8 direzioni */
++    case 0x48: POS_DIR = 0; break;
++    case 0x49: POS_DIR = 1; break;
++    case 0x4D: POS_DIR = 2; break;
++    case 0x51: POS_DIR = 3; break;
++    case 0x50: POS_DIR = 4; break;
++    case 0x4F: POS_DIR = 5; break;
++    case 0x4B: POS_DIR = 6; break;
++    case 0x47: POS_DIR = 7; break;
++    default: break;
++    }
++    draw_status_line();
++    return 1;
++}
++
++/*
++ * PORT H068+$0C0E (Exploration_CommandMenu): il menu dei comandi
++ * dell'esplorazione, nel dungeon (contesto 4) o all'aperto (3), ripetuto
++ * finche' un comando non conclude il turno; restituisce il tasto.
++ * All'aperto senza menu ($3E04+$3EE nullo) l'originale restituisce un
++ * byte non inizializzato: qui 0.
++ */
++u8 explore_command_menu(void)
++{
++    u8 key = 0;                         /* -$1(a5) */
++    u8 done = 0;                        /* -$3(a5) */
++    u8 special = 0;                     /* -$4(a5) */
++
++    COK_PUT16(g_state_b + 0x592, 0);
++    switch (H005_B(0x3DE3)) {
++    case 3:
++        do {
++            if (!wild_menu(&key, &done, &special)) {
++                break;
++            }
++        } while (!done);
++        break;
++    case 4:
++        do {
++            dungeon_menu(&key, &done, &special);
++        } while (!done);
++        break;
++    default:
++        break;
++    }
++    if (!H005_B(0x24B9)) {
++        clear_text_cells(1, 0x11, 0x26, 0x16);
++        H005_B(0x24B9) = 1;
++    }
++    return key;
++}
++
++/*
++ * Porta chiusa davanti (H068+$128C per il tipo 2, $1428 per il tipo 3):
++ * "Locked." con Bash, Pick (un ladro), Knock (incantesimo $1F) ed Exit.
++ * Per il tipo 3 Pick toglie solo l'opzione.
++ */
++static u8 locked_door_menu(u8 wizard)
++{
++    char text[0x29];                    /* -$2C(a5) */
++    u8 special;                         /* -$2(a5) */
++    u8 choice;                          /* -$2D(a5) */
++    u8 moved = 0;
++
++    text[0] = '\0';
++    if (H005_B(0x24E4)) {
++        strcpy(text, "Bash");
++    }
++    if (H005_B(0x24E5) && party_has_class(6)) {
++        h026_append(0x28, text, 5, " Pick");
++    }
++    if (H005_B(0x24E6) && who_has_spell(0x1F) != NULL) {
++        h026_append(0x28, text, 6, " Knock");
++    }
++    h026_append(0x28, text, 5, " Exit");
++    if (h026_compare_nocase(0x28, text, 5, " Exit") == 1) {
++        locked_no_action(POS_X, POS_Y, POS_DIR);
++        return 0;
++    }
++    choice = ui_request_choice(8, "Locked. ", 0x28, text, 0x0D, 0x0A, 0x0F,
++                               0, 0, &special);
++    switch (choice) {
++    case 'B':
++        moved = bash_door();
++        break;
++    case 'K':
++        moved = cast_knock();
++        break;
++    case 'P':
++        if (wizard) {
++            H005_B(0x24E5) = 0;
++        } else {
++            moved = pick_lock();
++        }
++        break;
++    default:
++        break;
++    }
++    return moved;
++}
++
++/*
++ * PORT H068+$122E (Exploration_MoveOrDoor): esegue il passo scelto: nel
++ * dungeon secondo la porta davanti (1 passaggio libero, 2 e 3 chiusa),
++ * all'aperto sulla mappa grande; con $3E00+$592 >= $FF il passo e'
++ * annullato.  Poi libera le immagini dell'evento.
++ */
++void explore_move_or_door(void)
++{
++    u8 moved = 0;                       /* -$1(a5) */
++
++    switch (H005_B(0x3DE3)) {
++    case 3:
++        if (COK_GET16(g_state_b + 0x592) < 0xFF) {
++            wild_step();
++            draw_status_line();
++        } else {
++            COK_PUT16(g_state_b + 0x592, 0);
++        }
++        break;
++    case 4:
++        if (COK_GET16(g_state_b + 0x592) < 0xFF) {
++            H005_B(0x24E1) = 1;
++            switch (map_door(POS_X, POS_Y, POS_DIR)) {
++            case 1: moved = 1; break;
++            case 2: moved = locked_door_menu(0); break;
++            case 3: moved = locked_door_menu(1); break;
++            default: break;
++            }
++            if (moved) {
++                explore_step();
++            }
++            draw_status_line();
++        } else {
++            COK_PUT16(g_state_b + 0x592, 0);
++        }
++        break;
++    default:
++        break;
++    }
++    release_picture_set();
++    free_gfx_record(&g_gfx_27b0[0]);
++    free_gfx_record(&g_gfx_27b0[1]);
++    H005_B(0x27B0) = 0xFF;
++    H005_B(0x27B6) = 0xFF;
++}
+diff --git a/src_c/readable/h068.h b/src_c/readable/h068.h
+new file mode 100644
+index 0000000..6692549
+--- /dev/null
++++ b/src_c/readable/h068.h
+@@ -0,0 +1,8 @@
++/* H068: esplorazione, menu dei comandi, movimento e porte. */
++#ifndef COK_H068_H
++#define COK_H068_H
++#include "cok.h"
++void h068_init(void);                   /* H068+$00A4 */
++u8   explore_command_menu(void);        /* H068+$0C0E */
++void explore_move_or_door(void);        /* H068+$122E */
++#endif
+diff --git a/src_c/readable/h069.c b/src_c/readable/h069.c
+index c0f8f95..6ed7133 100644
+--- a/src_c/readable/h069.c
++++ b/src_c/readable/h069.c
+@@ -1,7 +1,37 @@
+ /* H069: composizione della vista 3D e servizi di disegno. */
+ #include "cok.h"
++#include "h069.h"
++#include "globals.h"
++#include "h029_gfx.h"
++#include "h038.h"
+ 
+ /* PORT H069+$0004: link/unlk, nessun effetto. */
+ void h069_init(void)
+ {
+ }
++
++/*
++ * PORT H069+$0012: segno del party sulla mappa all'aperto: salva lo
++ * sfondo della cella ($3E04+$186/$188, piu' la cornice) nel record $3334
++ * e la riempie col colore $E.
++ */
++void h069_draw_marker(void)
++{
++    u16 x;                              /* -$2(a5) */
++    u16 y;                              /* -$4(a5) */
++
++    x = (u16)(COK_GET16(g_state_a + 0x186) + 1);
++    y = (u16)(COK_GET16(g_state_a + 0x188) + 1);
++    save_screen_cell(x, y, g_gfx_3334);
++    graphics_set_apen(g_rastport, 0x0E);
++    graphics_set_open(g_rastport, 0);
++    graphics_rect_fill(g_rastport, (u16)(x * 8), (u16)(y * 8),
++                       (u16)((x + 1) * 8 - 1), (u16)((y + 1) * 8 - 1));
++}
++
++/* PORT H069+$00A8: rimette lo sfondo sotto il segno del party. */
++void h069_restore_marker(void)
++{
++    restore_screen_cell((u16)(COK_GET16(g_state_a + 0x186) + 1),
++                        (u16)(COK_GET16(g_state_a + 0x188) + 1), g_gfx_3334);
++}
+diff --git a/src_c/readable/h069.h b/src_c/readable/h069.h
+new file mode 100644
+index 0000000..011f29e
+--- /dev/null
++++ b/src_c/readable/h069.h
+@@ -0,0 +1,8 @@
++/* H069: segno del party sulla mappa all'aperto. */
++#ifndef COK_H069_H
++#define COK_H069_H
++#include "cok.h"
++void h069_init(void);                   /* H069+$0004 */
++void h069_draw_marker(void);            /* H069+$0012 */
++void h069_restore_marker(void);         /* H069+$00A8 */
++#endif
+diff --git a/src_c/readable/h095.c b/src_c/readable/h095.c
+index bfd23c3..3e63d3d 100644
+--- a/src_c/readable/h095.c
++++ b/src_c/readable/h095.c
+@@ -731,7 +731,7 @@ static u8 place_in_spiral(u16 n)
+             placed = try_place(n, cx, cy, gx, gy, set);
+         }
+     } while (!placed && !failed);
+-    return failed ? 0 : 1;
++    return (u8)(failed ? 0 : 1);
+ }
+ 
+ /*
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index 1290b8f..44f0eb3 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -33,12 +33,6 @@ void cok_unported(const char *where)
+ }
+ 
+ void h006_0914(void) { cok_unported("H006+$0914"); }
+-void h011_04a6(u16 a, u16 b, u16 c, u16 d)
+-{
+-    (void)a; (void)b; (void)c; (void)d;
+-    cok_unported("H011+$04A6");
+-}
+-void h012_3150(void) { cok_unported("H012+$3150"); }
+ 
+ /* Chiamate da H006+$01AE. */
+ 
+@@ -117,11 +111,11 @@ void h042_0f50(u16 frame, void *set) { (void)frame; (void)set; cok_unported("H04
+ void h012_14c8(void) { cok_unported("H012+$14C8"); }
+ 
+ void h042_10dc(void) { cok_unported("H042+$10DC"); }
+-void h069_0012(void) { cok_unported("H069+$0012"); }
+-void h042_0300(u8 *set) { (void)set; cok_unported("H042+$0300"); }
+ void h070_1958(void) { cok_unported("H070+$1958"); }
+ void h071_092c(void) { cok_unported("H071+$092C"); }
+ void h072_120c(void) { cok_unported("H072+$120C"); }
+ void h066_276e(u16 npc) { (void)npc; cok_unported("H066+$276E"); }
+ void h067_1292(u16 type, CokItem *it) { (void)type; (void)it; cok_unported("H067+$1292"); }
+ void h057_2f3a(u8 *result) { (void)result; cok_unported("H057+$2F3A"); }
++void h011_0b78(s16 x, s16 y, u8 dir) { (void)x; (void)y; (void)dir; cok_unported("H011+$0B78"); }
++void h057_0c04(void) { cok_unported("H057+$0C04"); }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index f3d935d..758d3c3 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -17,8 +17,6 @@ void h042_0254(u16 a, u16 b, u8 flag, void *picture);
+ void h043_0584(void);
+ void h043_190e(u16 command);
+ void h010_03aa(void);
+-void h011_04a6(u16 a, u16 b, u16 c, u16 d);
+-void h012_3150(void);
+ 
+ /* Gestori delle tabelle H005+$25C0 e H005+$2832. */
+ void h033_1a40(void);
+@@ -94,12 +92,13 @@ void h042_0f50(u16 frame, void *set);    /* fotogramma dell'insieme $27BC */
+ void h012_14c8(void);
+ 
+ void h042_10dc(void);                    /* dopo l'immagine grande */
+-void h069_0012(void);                    /* immagine $79 */
+ /* Usati dai comandi ECL di H012. */
+-void h042_0300(u8 *set);                 /* carica l'insieme d'immagini */
+ void h070_1958(void);                    /* scena dopo il combattimento */
+ void h071_092c(void);                    /* scena speciale ($6D8) */
+ void h072_120c(void);                    /* scena speciale ($5C4) */
+ void h066_276e(u16 npc);                 /* aggiunge un PNG */
+ void h067_1292(u16 type, CokItem *it);   /* oggetto casuale */
+ void h057_2f3a(u8 *result);              /* accampamento */
++/* Usati da H068. */
++void h011_0b78(s16 x, s16 y, u8 dir);    /* vista 3D del dungeon */
++void h057_0c04(void);                    /* lancio di incantesimi */
+-- 
+2.43.0
+

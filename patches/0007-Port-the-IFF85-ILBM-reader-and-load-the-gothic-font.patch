@@ -1,0 +1,1823 @@
+From e3af2e58f6d3582e0475a7af17e67a914a27e148 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 15:24:16 +0000
+Subject: [PATCH 07/65] Port the IFF85/ILBM reader and load the gothic font
+
+Ports the Electronic Arts IFF85 reader compiled into the game: H098
+buffered I/O, H086 group and chunk parser, H039 ChunkMoreBytes, H087
+GetBMHD/GetCMAP/GetBODY, H088 ByteRun1 UnPackRow, H054 RowBytes, H099
+MaxPackedSize and the H040 ILBM callbacks with Read_ILBM. Chunk headers
+and BMHD are decoded from big-endian bytes, so the host reads them
+correctly. H030+$0C10 now loads gothic.lbm through Open_ResourceFile and
+hands it to H049+$0438.
+
+tests/ilbm_test.c with scripts/check_ilbm.py (an independent decoder)
+gives identical planes and colours for all seven .lbm files of the game.
+Host paths that are absolute are no longer treated as game-relative.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ scripts/check_ilbm.py                    |  52 ++++
+ src_c/readable/CMakeLists.txt            |  27 ++
+ src_c/readable/PORT_STATUS.md            | 122 ++++-----
+ src_c/readable/h002_dos.c                |  24 +-
+ src_c/readable/h002_dos.h                |   1 +
+ src_c/readable/h003_exec.c               |  14 +
+ src_c/readable/h003_exec.h               |   1 +
+ src_c/readable/h006.c                    |   3 +-
+ src_c/readable/h030.c                    |  42 ++-
+ src_c/readable/h030.h                    |   9 +
+ src_c/readable/h039.c                    |   8 +-
+ src_c/readable/h040.c                    | 165 +++++++++++-
+ src_c/readable/h040.h                    |  13 +
+ src_c/readable/h049.c                    |  20 +-
+ src_c/readable/h049.h                    |   9 +
+ src_c/readable/h054.c                    |   8 +-
+ src_c/readable/h086.c                    | 324 ++++++++++++++++++++++-
+ src_c/readable/h086.h                    |  76 ++++++
+ src_c/readable/h087.c                    | 147 +++++++++-
+ src_c/readable/h087.h                    |  53 ++++
+ src_c/readable/h088.c                    |  59 ++++-
+ src_c/readable/h098.c                    |  74 +++++-
+ src_c/readable/h098.h                    |  11 +
+ src_c/readable/h099.c                    |   8 +-
+ src_c/readable/tests/ilbm_test.c         |  56 ++++
+ src_c/readable/tests/run_ilbm_test.cmake |   9 +
+ src_c/readable/unported.c                |   1 -
+ src_c/readable/unported.h                |   1 -
+ 28 files changed, 1261 insertions(+), 76 deletions(-)
+ create mode 100644 scripts/check_ilbm.py
+ create mode 100644 src_c/readable/h030.h
+ create mode 100644 src_c/readable/h040.h
+ create mode 100644 src_c/readable/h049.h
+ create mode 100644 src_c/readable/h086.h
+ create mode 100644 src_c/readable/h087.h
+ create mode 100644 src_c/readable/h098.h
+ create mode 100644 src_c/readable/tests/ilbm_test.c
+ create mode 100644 src_c/readable/tests/run_ilbm_test.cmake
+
+diff --git a/scripts/check_ilbm.py b/scripts/check_ilbm.py
+new file mode 100644
+index 0000000..74c6fcc
+--- /dev/null
++++ b/scripts/check_ilbm.py
+@@ -0,0 +1,52 @@
++#!/usr/bin/env python3
++"""Decoder ILBM indipendente (Python) per verificare Read_ILBM del port.
++
++Uso: check_ilbm.py file.lbm uscita_del_port.bin
++Produce lo stesso formato di src_c/readable/tests/ilbm_test.c (larghezza in
++byte per riga, righe, piani (max 5), colori RGB4, piani) e confronta.
++"""
++import struct, sys
++
++def decode(path):
++    data = open(path, 'rb').read()
++    assert data[0:4] == b'FORM' and data[8:12] == b'ILBM', 'non FORM ILBM'
++    pos, end = 12, 8 + struct.unpack('>I', data[4:8])[0]
++    bmhd = cmap = body = None
++    while pos + 8 <= end:
++        cid, size = data[pos:pos + 4], struct.unpack('>I', data[pos + 4:pos + 8])[0]
++        chunk = data[pos + 8:pos + 8 + size]
++        if cid == b'BMHD': bmhd = struct.unpack('>HHhhBBBBHBBhh', chunk[:20])
++        elif cid == b'CMAP': cmap = chunk
++        elif cid == b'BODY': body = chunk; break
++        pos += 8 + size + (size & 1)
++    w, h, _, _, nplanes, masking, comp = bmhd[:7]
++    rb = ((w + 15) >> 4) << 1
++    depth = min(nplanes, 5)
++    planes = [bytearray() for _ in range(depth)]
++    src = 0
++    for _ in range(h):
++        for p in range(nplanes + (1 if masking == 1 else 0)):
++            row = bytearray()
++            if comp == 0:
++                row = body[src:src + rb]; src += rb
++            else:
++                while len(row) < rb:
++                    n = body[src]; src += 1
++                    if n < 128:
++                        row += body[src:src + n + 1]; src += n + 1
++                    elif n != 128:
++                        row += bytes([body[src]]) * (257 - n); src += 1
++            if p < depth:
++                planes[p] += row[:rb]
++    ncol = min(len(cmap) // 3, 32) if cmap else 0
++    cols = [((cmap[i*3] >> 4) << 8) | ((cmap[i*3+1] >> 4) << 4) | (cmap[i*3+2] >> 4)
++            for i in range(ncol)]
++    out = struct.pack('>HHH', rb, h, depth) + bytes([ncol])
++    out += b''.join(struct.pack('>H', c) for c in cols)
++    return out + b''.join(bytes(p) for p in planes)
++
++exp = decode(sys.argv[1])
++got = open(sys.argv[2], 'rb').read()
++diff = sum(1 for a, b in zip(exp, got) if a != b) + abs(len(exp) - len(got))
++print('%s: %d byte, %d differenze' % (sys.argv[1], len(exp), diff))
++sys.exit(1 if diff else 0)
+diff --git a/src_c/readable/CMakeLists.txt b/src_c/readable/CMakeLists.txt
+index 5151c8c..1b6f50b 100644
+--- a/src_c/readable/CMakeLists.txt
++++ b/src_c/readable/CMakeLists.txt
+@@ -101,4 +101,31 @@ if(COK_BUILD_TESTS)
+         target_compile_definitions(h015_test PRIVATE _CRT_SECURE_NO_WARNINGS)
+     endif()
+     add_test(NAME h015_runtime COMMAND h015_test)
++
++    # Read_ILBM (H040..H099) su un file .lbm: ilbm_test file.lbm out.bin,
++    # poi scripts/check_ilbm.py file.lbm out.bin (decoder indipendente).
++    add_executable(ilbm_test tests/ilbm_test.c h040.c h086.c h087.c h088.c
++                   h054.c h099.c h039.c h098.c h002_dos.c h003_exec.c
++                   h015_runtime.c h037.c ${COK_HOST_SOURCES})
++    target_include_directories(ilbm_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
++    target_link_libraries(ilbm_test PRIVATE ${COK_SDL2_TARGET})
++    if(MSVC)
++        target_compile_definitions(ilbm_test PRIVATE _CRT_SECURE_NO_WARNINGS)
++    endif()
++    # Con -DCOK_TEST_DATA=<cartella dei file del gioco> anche ctest lo usa.
++    set(COK_TEST_DATA "" CACHE PATH "Cartella dei file del gioco per i test")
++    find_package(Python3 COMPONENTS Interpreter QUIET)
++    if(COK_TEST_DATA AND Python3_FOUND)
++        foreach(lbm gothic.lbm scrn1b.lbm scrn2.lbm text1.lbm text2.lbm
++                    charS.LBM charT.LBM)
++            add_test(NAME ilbm_${lbm}
++                     COMMAND ${CMAKE_COMMAND}
++                             -DTEST=$<TARGET_FILE:ilbm_test>
++                             -DPYTHON=${Python3_EXECUTABLE}
++                             -DCHECK=${CMAKE_CURRENT_SOURCE_DIR}/../../scripts/check_ilbm.py
++                             -DFILE=${COK_TEST_DATA}/${lbm}
++                             -DOUT=${CMAKE_CURRENT_BINARY_DIR}/ilbm_${lbm}.bin
++                             -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/run_ilbm_test.cmake)
++        endforeach()
++    endif()
+ endif()
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index 3674ce4..2b4869b 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,14 +2,14 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **170 / 910**.
++Routine portate: **201 / 911**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+ | H000 | 600 | 1 | 1 |
+ | H001 | 664 | 2 | 2 |
+-| H002 | 572 | 15 | 9 |
+-| H003 | 316 | 5 | 3 |
++| H002 | 572 | 15 | 10 |
++| H003 | 316 | 5 | 4 |
+ | H004 | 24284 | 2 | 2 |
+ | H005 | 21276 | 1 | 1 |
+ | H006 | 3020 | 4 | 2 |
+@@ -36,7 +36,7 @@ Routine portate: **170 / 910**.
+ | H027 | 18156 | 10 | 1 |
+ | H028 | 4488 | 16 | 6 |
+ | H029 | 6084 | 32 | 10 |
+-| H030 | 3240 | 17 | 1 |
++| H030 | 3240 | 17 | 2 |
+ | H031 | 212 | 4 | 2 |
+ | H032 | 9352 | 1 | 1 |
+ | H033 | 8140 | 15 | 1 |
+@@ -45,8 +45,8 @@ Routine portate: **170 / 910**.
+ | H036 | 144 | 2 | 1 |
+ | H037 | 52 | 2 | 2 |
+ | H038 | 504 | 5 | 1 |
+-| H039 | 104 | 2 | 1 |
+-| H040 | 1632 | 5 | 1 |
++| H039 | 104 | 2 | 2 |
++| H040 | 1632 | 5 | 5 |
+ | H041 | 240 | 3 | 1 |
+ | H042 | 4420 | 14 | 1 |
+ | H043 | 6680 | 30 | 1 |
+@@ -55,12 +55,12 @@ Routine portate: **170 / 910**.
+ | H046 | 724 | 2 | 1 |
+ | H047 | 5224 | 8 | 1 |
+ | H048 | 6636 | 21 | 1 |
+-| H049 | 2992 | 13 | 1 |
++| H049 | 2992 | 13 | 2 |
+ | H050 | 136 | 4 | 1 |
+ | H051 | 256 | 2 | 2 |
+ | H052 | 316 | 1 | 1 |
+ | H053 | 504 | 3 | 1 |
+-| H054 | 52 | 2 | 1 |
++| H054 | 52 | 2 | 2 |
+ | H055 | 180 | 4 | 3 |
+ | H056 | 2528 | 2 | 1 |
+ | H057 | 12872 | 33 | 1 |
+@@ -92,9 +92,9 @@ Routine portate: **170 / 910**.
+ | H083 | 92 | 1 | 1 |
+ | H084 | 92 | 2 | 2 |
+ | H085 | 19904 | 14 | 1 |
+-| H086 | 2088 | 13 | 1 |
+-| H087 | 1132 | 4 | 1 |
+-| H088 | 328 | 2 | 1 |
++| H086 | 2088 | 14 | 14 |
++| H087 | 1132 | 4 | 4 |
++| H088 | 328 | 2 | 2 |
+ | H089 | 8 | 1 | 1 |
+ | H090 | 200 | 3 | 1 |
+ | H091 | 8 | 1 | 1 |
+@@ -104,8 +104,8 @@ Routine portate: **170 / 910**.
+ | H095 | 10484 | 21 | 1 |
+ | H096 | 19972 | 35 | 1 |
+ | H097 | 8296 | 15 | 1 |
+-| H098 | 844 | 4 | 1 |
+-| H099 | 932 | 2 | 1 |
++| H098 | 844 | 4 | 4 |
++| H099 | 932 | 2 | 2 |
+ | H100 | 28 | 1 | 1 |
+ 
+ ## Dettaglio
+@@ -127,21 +127,21 @@ Routine portate: **170 / 910**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0008` | `sub_H002_00000008` | parziale | h002_dos.c:94 |
+-| `$0014` | `wrapper_Close` | parziale | h002_dos.c:168 |
++| `$0008` | `sub_H002_00000008` | parziale | h002_dos.c:104 |
++| `$0014` | `wrapper_Close` | parziale | h002_dos.c:178 |
+ | `$0026` | `wrapper_CreateDir` | parziale |  |
+ | `$004A` | `wrapper_DeleteFile` | parziale |  |
+ | `$0070` | `wrapper_Examine` | parziale |  |
+ | `$0088` | `wrapper_ExNext` | parziale |  |
+-| `$00A0` | `wrapper_Info` | parziale | h002_dos.c:137 |
++| `$00A0` | `wrapper_Info` | parziale | h002_dos.c:147 |
+ | `$00C0` | `wrapper_IoErr` | parziale |  |
+-| `$00DC` | `wrapper_Lock` | parziale | h002_dos.c:102 |
+-| `$00F2` | `wrapper_Open` | parziale | h002_dos.c:183 |
+-| `$0122` | `wrapper_Read` | parziale | h002_dos.c:207 |
+-| `$0156` | `wrapper_Seek` | parziale | h002_dos.c:219 |
+-| `$01A2` | `wrapper_UnLock` | parziale | h002_dos.c:127 |
+-| `$01CC` | `wrapper_Write` | parziale |  |
+-| `$01E8` | `wrapper_Execute` | parziale | h002_dos.c:237 |
++| `$00DC` | `wrapper_Lock` | parziale | h002_dos.c:112 |
++| `$00F2` | `wrapper_Open` | parziale | h002_dos.c:193 |
++| `$0122` | `wrapper_Read` | parziale | h002_dos.c:217 |
++| `$0156` | `wrapper_Seek` | parziale | h002_dos.c:241 |
++| `$01A2` | `wrapper_UnLock` | parziale | h002_dos.c:137 |
++| `$01CC` | `wrapper_Write` | parziale | h002_dos.c:229 |
++| `$01E8` | `wrapper_Execute` | parziale | h002_dos.c:259 |
+ 
+ ### H003
+ 
+@@ -150,7 +150,7 @@ Routine portate: **170 / 910**.
+ | `$0004` | `sub_H003_00000004` | parziale | h003_exec.c:11 |
+ | `$0068` | `wrapper_AllocMem` | parziale | h003_exec.c:16 |
+ | `$007E` | `wrapper_AvailMem` | parziale |  |
+-| `$0090` | `wrapper_CopyMem` | parziale |  |
++| `$0090` | `wrapper_CopyMem` | parziale | h003_exec.c:43 |
+ | `$00F6` | `wrapper_FreeMem` | parziale | h003_exec.c:31 |
+ 
+ ### H004
+@@ -170,9 +170,9 @@ Routine portate: **170 / 910**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$00EC` | `module_init_H006` | parziale | h006.c:28 |
++| `$00EC` | `module_init_H006` | parziale | h006.c:29 |
+ | `$00FA` | `sub_H006_000000FA` | parziale |  |
+-| `$01AE` | `Initialize_GameEnvironment` | verificato | h006.c:69 |
++| `$01AE` | `Initialize_GameEnvironment` | verificato | h006.c:70 |
+ | `$0914` | `sub_H006_00000914` | parziale |  |
+ 
+ ### H007
+@@ -505,7 +505,7 @@ Routine portate: **170 / 910**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0070` | `module_init_H030` | parziale | h030.c:4 |
++| `$0070` | `module_init_H030` | parziale | h030.c:9 |
+ | `$00B6` | `sub_H030_000000B6` | parziale |  |
+ | `$019A` | `sub_H030_0000019A` | parziale |  |
+ | `$0256` | `UI_DrawText` | parziale |  |
+@@ -520,7 +520,7 @@ Routine portate: **170 / 910**.
+ | `$0AD2` | `sub_H030_00000AD2` | parziale |  |
+ | `$0B4A` | `sub_H030_00000B4A` | parziale |  |
+ | `$0B6C` | `sub_H030_00000B6C` | parziale |  |
+-| `$0C10` | `sub_H030_00000C10` | parziale |  |
++| `$0C10` | `sub_H030_00000C10` | parziale | h030.c:29 |
+ | `$0C84` | `sub_H030_00000C84` | parziale |  |
+ 
+ ### H031
+@@ -606,17 +606,17 @@ Routine portate: **170 / 910**.
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+ | `$0004` | `trampoline_H039_0064` | parziale | h039.c:4 |
+-| `$000C` | `trampoline_H039_0022` | parziale |  |
++| `$000C` | `trampoline_H039_0022` | parziale | h039.c:9 |
+ 
+ ### H040
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0210` | `trampoline_H040_065C` | parziale | h040.c:4 |
+-| `$0218` | `IFF_FORM_ILBM` | verificato |  |
+-| `$04B6` | `IFF_PROP_ILBM` | verificato |  |
+-| `$05AA` | `IFF_LIST` | verificato |  |
+-| `$05E4` | `Read_ILBM` | verificato |  |
++| `$0210` | `trampoline_H040_065C` | parziale | h040.c:20 |
++| `$0218` | `IFF_FORM_ILBM` | verificato | h040.c:26 |
++| `$04B6` | `IFF_PROP_ILBM` | verificato | h040.c:111 |
++| `$05AA` | `IFF_LIST` | verificato | h040.c:142 |
++| `$05E4` | `Read_ILBM` | verificato | h040.c:151 |
+ 
+ ### H041
+ 
+@@ -758,7 +758,7 @@ Routine portate: **170 / 910**.
+ | `$0014` | `trampoline_H049_0082` | parziale |  |
+ | `$012A` | `trampoline_H049_0198` | parziale |  |
+ | `$0224` | `Draw_TextWithBlitter` | verificato |  |
+-| `$0438` | `sub_H049_00000438` | parziale |  |
++| `$0438` | `sub_H049_00000438` | parziale | h049.c:20 |
+ | `$044E` | `trampoline_H049_0450` | parziale |  |
+ | `$045A` | `Draw_GlyphRowsCPU` | verificato |  |
+ | `$04AE` | `Queue_BitplaneBlit` | verificato |  |
+@@ -803,7 +803,7 @@ Routine portate: **170 / 910**.
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+ | `$0004` | `trampoline_H054_0030` | parziale | h054.c:4 |
+-| `$000C` | `trampoline_H054_0028` | parziale |  |
++| `$000C` | `trampoline_H054_0028` | parziale | h054.c:9 |
+ 
+ ### H055
+ 
+@@ -1338,35 +1338,36 @@ Routine portate: **170 / 910**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0004` | `trampoline_H086_0822` | parziale | h086.c:4 |
+-| `$000C` | `sub_H086_0000000C` | parziale |  |
+-| `$0068` | `sub_H086_00000068` | parziale |  |
+-| `$00C0` | `sub_H086_000000C0` | parziale |  |
+-| `$015C` | `sub_H086_0000015C` | parziale |  |
+-| `$01F8` | `sub_H086_000001F8` | parziale |  |
+-| `$022E` | `sub_H086_0000022E` | parziale |  |
+-| `$03F2` | `trampoline_H086_049E` | parziale |  |
+-| `$04BA` | `sub_H086_000004BA` | parziale |  |
+-| `$0578` | `sub_H086_00000578` | parziale |  |
+-| `$06D6` | `sub_H086_000006D6` | parziale |  |
+-| `$0714` | `sub_H086_00000714` | parziale |  |
+-| `$07C0` | `sub_H086_000007C0` | parziale |  |
++| `$0004` | `trampoline_H086_0822` | parziale | h086.c:12 |
++| `$000C` | `sub_H086_0000000C` | parziale | h086.c:18 |
++| `$0068` | `sub_H086_00000068` | parziale | h086.c:37 |
++| `$00C0` | `sub_H086_000000C0` | parziale | h086.c:52 |
++| `$015C` | `sub_H086_0000015C` | parziale | h086.c:77 |
++| `$01F8` | `sub_H086_000001F8` | parziale | h086.c:97 |
++| `$022E` | `sub_H086_0000022E` | parziale | h086.c:111 |
++| `$03F2` | `trampoline_H086_049E` | parziale | h086.c:174 |
++| `$04BA` | `sub_H086_000004BA` | parziale | h086.c:216 |
++| `$0578` | `sub_H086_00000578` | parziale | h086.c:238 |
++| `$06BC` | `(senza scheda)` | - | h086.c:281 |
++| `$06D6` | `sub_H086_000006D6` | parziale | h086.c:287 |
++| `$0714` | `sub_H086_00000714` | parziale | h086.c:300 |
++| `$07C0` | `sub_H086_000007C0` | parziale | h086.c:317 |
+ 
+ ### H087
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0004` | `trampoline_H087_0468` | parziale | h087.c:4 |
+-| `$000C` | `trampoline_H087_0028` | parziale |  |
+-| `$009C` | `sub_H087_0000009C` | parziale |  |
+-| `$0166` | `Read_ILBM_BODY` | verificato |  |
++| `$0004` | `trampoline_H087_0468` | parziale | h087.c:6 |
++| `$000C` | `trampoline_H087_0028` | parziale | h087.c:12 |
++| `$009C` | `sub_H087_0000009C` | parziale | h087.c:39 |
++| `$0166` | `Read_ILBM_BODY` | verificato | h087.c:65 |
+ 
+ ### H088
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+ | `$0004` | `trampoline_H088_0142` | parziale | h088.c:4 |
+-| `$000C` | `UnPackRow_ByteRun1` | verificato |  |
++| `$000C` | `UnPackRow_ByteRun1` | verificato | h088.c:10 |
+ 
+ ### H089
+ 
+@@ -1507,17 +1508,17 @@ Routine portate: **170 / 910**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0018` | `trampoline_H098_0346` | parziale | h098.c:4 |
+-| `$007C` | `sub_H098_0000007C` | parziale |  |
+-| `$00D0` | `sub_H098_000000D0` | parziale |  |
+-| `$0276` | `sub_H098_00000276` | parziale |  |
++| `$0018` | `trampoline_H098_0346` | parziale | h098.c:17 |
++| `$007C` | `sub_H098_0000007C` | parziale | h098.c:23 |
++| `$00D0` | `sub_H098_000000D0` | parziale | h098.c:37 |
++| `$0276` | `sub_H098_00000276` | parziale | h098.c:52 |
+ 
+ ### H099
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+ | `$010E` | `trampoline_H099_03A0` | parziale | h099.c:4 |
+-| `$01B0` | `trampoline_H099_01CE` | parziale |  |
++| `$01B0` | `trampoline_H099_01CE` | parziale | h099.c:9 |
+ 
+ ### H100
+ 
+@@ -1525,3 +1526,6 @@ Routine portate: **170 / 910**.
+ | --- | --- | --- | --- |
+ | `$0008` | `sub_H100_00000008` | parziale | h100_custom.c:7 |
+ 
++## Marcatori senza routine nell'asm
++
++- `H030+$0BDA` (h030.c:19)
+diff --git a/src_c/readable/h002_dos.c b/src_c/readable/h002_dos.c
+index f4e1166..24f5e2c 100644
+--- a/src_c/readable/h002_dos.c
++++ b/src_c/readable/h002_dos.c
+@@ -31,6 +31,12 @@ static const char *host_path(const char *name)
+     const char *colon = strchr(name, ':');
+     const char *dir = getenv("COK_DATA");
+ 
++    /* "C:\..." e "\\server\..." sono percorsi Windows assoluti: invariati. */
++    if ((colon == name + 1 && (name[2] == '\\' || name[2] == '/')) ||
++        (name[0] == '\\' && name[1] == '\\')) {
++        sprintf(path, "%.1000s", name);
++        return path;
++    }
+     sprintf(path, "%.500s%s%.500s", dir != NULL ? dir : "",
+             dir != NULL ? "/" : "", colon != NULL ? colon + 1 : name);
+     return path;
+@@ -49,7 +55,11 @@ static const char *host_path(const char *name)
+     size_t base;
+     struct stat st;
+ 
+-    sprintf(path, "%.500s", dir != NULL && dir[0] != 0 ? dir : ".");
++    if (rest[0] == '/') {
++        path[0] = 0;            /* percorso assoluto dell'host */
++    } else {
++        sprintf(path, "%.500s", dir != NULL && dir[0] != 0 ? dir : ".");
++    }
+     while (*rest != 0) {
+         const char *end = strchr(rest, '/');
+         size_t n = end != NULL ? (size_t)(end - rest) : strlen(rest);
+@@ -216,6 +226,18 @@ s32 dos_read(cok_bptr file, void *buf, s32 len)
+ #endif
+ }
+ 
++/* PORT H002+$01CC */
++s32 dos_write(cok_bptr file, const void *buf, s32 len)
++{
++#if COK_AMIGA
++    return Write(file, (APTR)buf, len);
++#else
++    FILE *f = host_file(file);
++
++    return f != NULL ? (s32)fwrite(buf, 1, (size_t)len, f) : -1;
++#endif
++}
++
+ /* PORT H002+$0156: restituisce la posizione precedente, come Seek. */
+ s32 dos_seek(cok_bptr file, s32 pos, s32 mode)
+ {
+diff --git a/src_c/readable/h002_dos.h b/src_c/readable/h002_dos.h
+index bcb887b..82b03ed 100644
+--- a/src_c/readable/h002_dos.h
++++ b/src_c/readable/h002_dos.h
+@@ -27,6 +27,7 @@ u8       dos_info(cok_bptr lock, cok_info_data *info);  /* H002+$00A0 */
+ void     dos_close(cok_bptr file);                /* H002+$0014 */
+ cok_bptr dos_open(const char *name, s32 mode);    /* H002+$00F2 */
+ s32      dos_read(cok_bptr file, void *buf, s32 len);   /* H002+$0122 */
++s32      dos_write(cok_bptr file, const void *buf, s32 len);  /* H002+$01CC */
+ s32      dos_seek(cok_bptr file, s32 pos, s32 mode);    /* H002+$0156 */
+ u8       dos_execute(const char *cmd, cok_bptr in, cok_bptr out); /* H002+$01E8 */
+ 
+diff --git a/src_c/readable/h003_exec.c b/src_c/readable/h003_exec.c
+index 760b0a5..923293f 100644
+--- a/src_c/readable/h003_exec.c
++++ b/src_c/readable/h003_exec.c
+@@ -38,3 +38,17 @@ void exec_free_mem(void *block, u32 size)
+     free(block);
+ #endif
+ }
++
++/*
++ * PORT H003+$0090.  CopyMem non ammette sovrapposizioni (EA usava movmem):
++ * sull'host si usa memmove, che da' lo stesso risultato senza
++ * sovrapposizione e uno ben definito con.
++ */
++void exec_copy_mem(const void *src, void *dst, u32 size)
++{
++#if COK_AMIGA
++    CopyMem((APTR)src, (APTR)dst, size);
++#else
++    memmove(dst, src, size);
++#endif
++}
+diff --git a/src_c/readable/h003_exec.h b/src_c/readable/h003_exec.h
+index a0bb40a..a3e57f5 100644
+--- a/src_c/readable/h003_exec.h
++++ b/src_c/readable/h003_exec.h
+@@ -8,6 +8,7 @@
+ #define COK_MEMF_CLEAR 0x00010000UL
+ 
+ void *exec_alloc_mem(u32 size, u32 flags);   /* H003+$0068 */
++void  exec_copy_mem(const void *src, void *dst, u32 size); /* H003+$0090 */
+ void  exec_free_mem(void *block, u32 size);  /* H003+$00F6 */
+ 
+ #endif
+diff --git a/src_c/readable/h006.c b/src_c/readable/h006.c
+index c23a244..28c85fa 100644
+--- a/src_c/readable/h006.c
++++ b/src_c/readable/h006.c
+@@ -16,6 +16,7 @@
+ #include "h026_string.h"
+ #include "h028_files.h"
+ #include "h029_gfx.h"
++#include "h030.h"
+ #include "h031.h"
+ #include "globals.h"
+ #include "unported.h"
+@@ -208,7 +209,7 @@ void init_game_environment(void)
+ 
+     h029_fill_bytes(0x4F, &g_h005[0x16], 0x50, 0);
+     H005_SET_W(0x14, 0);
+-    h030_0c10();
++    load_gothic_font();
+     h008_139e();
+     h030_0256(0, 0x18, 0x0A, 0, 0x15, "Loading...Please Wait");
+ 
+diff --git a/src_c/readable/h030.c b/src_c/readable/h030.c
+index c9c2292..6bcd80d 100644
+--- a/src_c/readable/h030.c
++++ b/src_c/readable/h030.c
+@@ -1,7 +1,47 @@
+ /* H030: Presentazione testo e interfaccia. */
+-#include "cok.h"
++#include "h030.h"
++#include "h003_exec.h"
++#include "h028_files.h"
++#include "h040.h"
++#include "h049.h"
++#include "globals.h"
+ 
+ /* PORT H030+$0070: link/unlk, nessun effetto. */
+ void h030_init(void)
+ {
+ }
++
++/* Dati del modulo (sotto a4). */
++struct BitMap g_gothic_bitmap;          /* -$2C: font "gothic.lbm" */
++u32 g_h030_alloc_size;                  /* -$4: ultima allocazione */
++
++/*
++ * PORT H030+$0BDA: allocatore per Read_ILBM (memoria chip azzerata); la
++ * dimensione resta in -$4(a4).
++ */
++static u8 *alloc_chip_planes(u32 size)
++{
++    g_h030_alloc_size = size;
++    return (u8 *)exec_alloc_mem(size, COK_MEMF_CHIP | COK_MEMF_CLEAR);
++}
++
++/*
++ * PORT H030+$0C10: carica "gothic.lbm" (font del testo) in
++ * g_gothic_bitmap e lo registra in H049 come sorgente dei glifi, con
++ * destinazione la bitmap della finestra.  Se il file manca resta solo la
++ * registrazione (con i piani a NULL), come nell'originale.
++ */
++void load_gothic_font(void)
++{
++    ILBMFrame frame;                    /* -$6A(a5) */
++    cok_bptr file = 0;                  /* -$6E(a5) */
++
++    (void)open_resource_file(0x0A, "gothic.lbm", 0x15,
++                             "Can't load intro gfx!", 1, &file);
++    if (file != 0) {
++        (void)read_ilbm(file, &g_gothic_bitmap, &frame, alloc_chip_planes);
++        dos_close(file);
++    }
++    h049_set_glyph_planes((u8 *)g_gothic_bitmap.Planes[0],
++                          g_rastport->BitMap);
++}
+diff --git a/src_c/readable/h030.h b/src_c/readable/h030.h
+new file mode 100644
+index 0000000..c48bc83
+--- /dev/null
++++ b/src_c/readable/h030.h
+@@ -0,0 +1,9 @@
++/* H030: presentazione testo e interfaccia. */
++#ifndef COK_H030_H
++#define COK_H030_H
++
++#include "cok.h"
++
++void load_gothic_font(void);            /* H030+$0C10 */
++
++#endif
+diff --git a/src_c/readable/h039.c b/src_c/readable/h039.c
+index b1b9840..1cc67c3 100644
+--- a/src_c/readable/h039.c
++++ b/src_c/readable/h039.c
+@@ -1,7 +1,13 @@
+ /* H039: servizi di callback/inizializzazione per il parser IFF. */
+-#include "cok.h"
++#include "h086.h"
+ 
+ /* PORT H039+$0004: link/unlk, nessun effetto. */
+ void h039_init(void)
+ {
+ }
++
++/* PORT H039+$000C (ChunkMoreBytes): byte del chunk non ancora letti. */
++s32 iff_chunk_more_bytes(GroupContext *context)
++{
++    return context->ck_size - context->bytes_so_far;
++}
+diff --git a/src_c/readable/h040.c b/src_c/readable/h040.c
+index a6dfd07..f142998 100644
+--- a/src_c/readable/h040.c
++++ b/src_c/readable/h040.c
+@@ -1,7 +1,168 @@
+-/* H040: Lettore ILBM basato sulle callback del parser IFF. */
+-#include "cok.h"
++/*
++ * H040: lettore di immagini ILBM sopra il parser IFF (readpict.c di
++ * Electronic Arts).
++ *
++ * Dati del modulo (nel codice):
++ *   $000 buffer di $200 byte per la lettura del BODY
++ *   $200 frame del chiamante, riempito al termine
++ *   $204 BitMap di destinazione
++ *   $208 allocatore dei piani
++ */
++#include "h040.h"
++#include "h015_runtime.h"
++#include "h037.h"
++
++static u8 s_body_buffer[0x200];         /* H040+$0000 */
++static ILBMFrame *s_frame;              /* H040+$0200 */
++static struct BitMap *s_bitmap;         /* H040+$0204 */
++static IlbmAllocFn s_alloc;             /* H040+$0208 */
+ 
+ /* PORT H040+$0210: link/unlk, nessun effetto. */
+ void h040_init(void)
+ {
+ }
++
++/*
++ * PORT H040+$0218 (GetFoILBM): callback dei FORM.  Un FORM non ILBM viene
++ * attraversato (gruppi annidati).  In un FORM ILBM: BMHD e CMAP vanno in
++ * una copia locale del frame; al BODY la bitmap ha al massimo 5 piani,
++ * tutti in un unico blocco dall'allocatore, e il frame del chiamante
++ * riceve la copia locale.  Come nell'originale, BODY senza BMHD e gli
++ * errori escono senza CloseRGroup.
++ */
++static s32 get_form_ilbm(GroupContext *parent)
++{
++    GroupContext form_context;                  /* -$28 */
++    ILBMFrame ilbm_frame;                       /* -$8E */
++    s32 iffp;
++    u8 n_planes;                                /* -$95 */
++    u32 plane_size;                             /* -$94 */
++    s16 i;
++
++    if (parent->subtype != ID_ILBM) {
++        iffp = iff_open_rgroup(parent, &form_context);
++        if (iffp != IFF_OKAY) {
++            return iffp;
++        }
++        do {
++            iffp = iff_get_f1chunk_hdr(&form_context);
++        } while (iffp >= IFF_OKAY);
++        if (iffp == END_MARK) {
++            iffp = IFF_OKAY;
++        }
++        (void)iff_close_rgroup(&form_context);
++        return iffp;
++    }
++
++    ilbm_frame = *(ILBMFrame *)parent->client_frame;
++    iffp = iff_open_rgroup(parent, &form_context);
++    if (iffp != IFF_OKAY) {
++        return iffp;
++    }
++    do {
++        iffp = iff_get_fchunk_hdr(&form_context);
++        if (iffp == ID_BMHD) {
++            ilbm_frame.found_bmhd = 1;
++            iffp = ilbm_get_bmhd(&form_context, &ilbm_frame.bm_hdr);
++        } else if (iffp == ID_CMAP) {
++            ilbm_frame.n_color_regs = 32;
++            iffp = ilbm_get_cmap(&form_context, ilbm_frame.color_map,
++                                 &ilbm_frame.n_color_regs);
++        } else if (iffp == ID_BODY) {
++            if (!ilbm_frame.found_bmhd) {
++                return BAD_FORM;
++            }
++            n_planes = ilbm_frame.bm_hdr.n_planes < 5 ?
++                       ilbm_frame.bm_hdr.n_planes : 5;
++            graphics_init_bitmap(s_bitmap, n_planes, ilbm_frame.bm_hdr.w,
++                                 ilbm_frame.bm_hdr.h);
++            plane_size = (u32)ilbm_row_bytes(ilbm_frame.bm_hdr.w) *
++                         ilbm_frame.bm_hdr.h;
++            s_bitmap->Planes[0] =
++                (PLANEPTR)s_alloc(h015_mulu32(n_planes, plane_size));
++            if (s_bitmap->Planes[0] != NULL) {
++                for (i = 1; i < (s16)n_planes; ++i) {
++                    s_bitmap->Planes[i] = s_bitmap->Planes[0] +
++                                          h015_mulu32((u32)i, plane_size);
++                }
++                iffp = ilbm_get_body(&form_context, s_bitmap, NULL,
++                                     &ilbm_frame.bm_hdr, s_body_buffer,
++                                     sizeof(s_body_buffer));
++                if (iffp == IFF_OKAY) {
++                    iffp = IFF_DONE;
++                }
++                *s_frame = ilbm_frame;
++            } else {
++                iffp = CLIENT_ERROR;
++            }
++        } else if (iffp == END_MARK) {
++            iffp = BAD_FORM;
++        }
++    } while (iffp >= IFF_OKAY);
++
++    if (iffp != IFF_DONE) {
++        return iffp;
++    }
++    (void)iff_close_rgroup(&form_context);
++    return iffp;
++}
++
++/*
++ * PORT H040+$04B6 (GetPrILBM): callback dei PROP ILBM: BMHD e CMAP vanno
++ * direttamente nel frame del gruppo (ereditati dai FORM del LIST).
++ */
++static s32 get_prop_ilbm(GroupContext *parent)
++{
++    ILBMFrame *ilbm_frame = (ILBMFrame *)parent->client_frame;
++    GroupContext prop_context;
++    s32 iffp;
++
++    if (parent->subtype != ID_ILBM) {
++        return IFF_OKAY;
++    }
++    iffp = iff_open_rgroup(parent, &prop_context);
++    if (iffp != IFF_OKAY) {
++        return iffp;
++    }
++    do {
++        iffp = iff_get_pchunk_hdr(&prop_context);
++        if (iffp == ID_BMHD) {
++            ilbm_frame->found_bmhd = 1;
++            iffp = ilbm_get_bmhd(&prop_context, &ilbm_frame->bm_hdr);
++        } else if (iffp == ID_CMAP) {
++            ilbm_frame->n_color_regs = 32;
++            iffp = ilbm_get_cmap(&prop_context, ilbm_frame->color_map,
++                                 &ilbm_frame->n_color_regs);
++        }
++    } while (iffp >= IFF_OKAY);
++    (void)iff_close_rgroup(&prop_context);
++    return iffp == END_MARK ? IFF_OKAY : iffp;
++}
++
++/* PORT H040+$05AA (GetLiILBM): un LIST lavora su una copia del frame. */
++static s32 get_list_ilbm(GroupContext *parent)
++{
++    ILBMFrame new_frame = *(ILBMFrame *)parent->client_frame;
++
++    return iff_read_ilist(parent, &new_frame.client_frame);
++}
++
++/*
++ * PORT H040+$05E4 (Read_ILBM): legge un file ILBM nella bitmap (piani
++ * dall'allocatore) e nel frame (BMHD, colori).  Restituisce IFF_DONE se
++ * l'immagine e' stata letta, altrimenti un IFFP di errore.
++ */
++s32 read_ilbm(cok_bptr file, struct BitMap *bitmap, ILBMFrame *frame,
++              IlbmAllocFn alloc)
++{
++    frame->client_frame.get_list = get_list_ilbm;
++    frame->client_frame.get_prop = get_prop_ilbm;
++    frame->client_frame.get_form = get_form_ilbm;
++    frame->client_frame.get_cat = iff_read_icat;
++    frame->found_bmhd = 0;
++    frame->n_color_regs = 0;
++    s_alloc = alloc;
++    s_bitmap = bitmap;
++    s_frame = frame;
++    return iff_read_iff(file, &frame->client_frame);
++}
+diff --git a/src_c/readable/h040.h b/src_c/readable/h040.h
+new file mode 100644
+index 0000000..c20aaf0
+--- /dev/null
++++ b/src_c/readable/h040.h
+@@ -0,0 +1,13 @@
++/* H040: lettore di immagini ILBM sopra il parser IFF (readpict.c di EA). */
++#ifndef COK_H040_H
++#define COK_H040_H
++
++#include "h087.h"
++
++/* Allocatore dei piani: riceve la dimensione totale, restituisce memoria. */
++typedef u8 *(*IlbmAllocFn)(u32 size);
++
++s32 read_ilbm(cok_bptr file, struct BitMap *bitmap, ILBMFrame *frame,
++              IlbmAllocFn alloc);                       /* H040+$05E4 */
++
++#endif
+diff --git a/src_c/readable/h049.c b/src_c/readable/h049.c
+index 0282a4d..d11958f 100644
+--- a/src_c/readable/h049.c
++++ b/src_c/readable/h049.c
+@@ -1,5 +1,5 @@
+ /* H049: Disegno di testo/glifi, blitter diretto e nodi QBSBlit. */
+-#include "cok.h"
++#include "h049.h"
+ 
+ /*
+  * PORT H049+$0008: copia GfxBase del runtime H015 nella cella del modulo.
+@@ -8,3 +8,21 @@
+ void h049_init(void)
+ {
+ }
++
++/*
++ * Stato del disegno dei glifi (struttura nel codice a H049+$09BC):
++ *   +$0C piano dei glifi (immagine del font), +$10 BitMap di destinazione.
++ */
++u8 *g_h049_glyphs;              /* H049+$09BC+$0C */
++struct BitMap *g_h049_dest;     /* H049+$09BC+$10 */
++
++/*
++ * PORT H049+$0438: registra la sorgente dei glifi e la bitmap di
++ * destinazione.  Routine in assembly con argomenti sullo stack:
++ * $8(a7) (primo argomento) = glifi, $4(a7) = destinazione.
++ */
++void h049_set_glyph_planes(u8 *glyphs, struct BitMap *dest)
++{
++    g_h049_dest = dest;
++    g_h049_glyphs = glyphs;
++}
+diff --git a/src_c/readable/h049.h b/src_c/readable/h049.h
+new file mode 100644
+index 0000000..8e9f750
+--- /dev/null
++++ b/src_c/readable/h049.h
+@@ -0,0 +1,9 @@
++/* H049: disegno di testo/glifi, blitter diretto e nodi QBSBlit. */
++#ifndef COK_H049_H
++#define COK_H049_H
++
++#include "cok.h"
++
++void h049_set_glyph_planes(u8 *glyphs, struct BitMap *dest); /* H049+$0438 */
++
++#endif
+diff --git a/src_c/readable/h054.c b/src_c/readable/h054.c
+index 6e9ddee..3403180 100644
+--- a/src_c/readable/h054.c
++++ b/src_c/readable/h054.c
+@@ -1,7 +1,13 @@
+ /* H054: Calcolo dello spazio raster per riga. */
+-#include "cok.h"
++#include "h087.h"
+ 
+ /* PORT H054+$0004: link/unlk, nessun effetto. */
+ void h054_init(void)
+ {
+ }
++
++/* PORT H054+$000C (RowBytes): byte per riga, a word intere. */
++u16 ilbm_row_bytes(u16 width)
++{
++    return (u16)(((u16)(width + 0x0F) >> 4) << 1);
++}
+diff --git a/src_c/readable/h086.c b/src_c/readable/h086.c
+index 3913298..abbf6bd 100644
+--- a/src_c/readable/h086.c
++++ b/src_c/readable/h086.c
+@@ -1,7 +1,327 @@
+-/* H086: Parser generico IFF: chunk e gruppi FORM/LIST/PROP/CAT. */
+-#include "cok.h"
++/*
++ * H086: parser IFF generico (iff.c "IFF85" di Electronic Arts, 1985).
++ *
++ * Differenza dall'originale: intestazioni dei chunk e sottotipi sono letti
++ * in un buffer di byte e convertiti da big-endian (COK_GET32), invece di
++ * essere letti direttamente nei campi LONG; sull'Amiga il risultato e' lo
++ * stesso, sull'host (little-endian) e' quello corretto.
++ */
++#include "h086.h"
++#include "h098.h"
+ 
+ /* PORT H086+$0004: link/unlk, nessun effetto. */
+ void h086_init(void)
+ {
+ }
++
++/*
++ * PORT H086+$000C (FileLength): va alla fine del file; la seconda GSeek
++ * (spostamento 0 da OFFSET_CURRENT) restituisce quella posizione, cioe' la
++ * lunghezza.  Il file resta alla fine: lo riavvolge OpenRIFF.
++ */
++s32 iff_file_length(cok_bptr file)
++{
++    s32 length = NO_FILE;
++
++    /* tst.l / bls: con file 0 resta NO_FILE (confronto senza segno). */
++    if (file != 0) {
++        (void)gio_seek(file, 0, OFFSET_END);
++        length = gio_seek(file, 0, OFFSET_CURRENT);
++        if (length < 0) {
++            length = DOS_ERROR;
++        }
++    }
++    return length;
++}
++
++/* PORT H086+$0068 (SkipFwd) */
++s32 iff_skip_fwd(GroupContext *context, s32 bytes)
++{
++    s32 iffp = IFF_OKAY;
++
++    if (bytes > 0) {
++        if (gio_seek(context->file, bytes, OFFSET_CURRENT) == -1) {
++            iffp = BAD_IFF;
++        } else {
++            context->position += bytes;
++        }
++    }
++    return iffp;
++}
++
++/* PORT H086+$00C0 (OpenRIFF): contesto del file intero. */
++s32 iff_open_riff(cok_bptr file, GroupContext *new_ctx,
++                  ClientFrame *client_frame)
++{
++    s32 iffp = IFF_OKAY;
++
++    new_ctx->parent = NULL;
++    new_ctx->client_frame = client_frame;
++    new_ctx->file = file;
++    new_ctx->position = 0;
++    new_ctx->subtype = 0;
++    new_ctx->bytes_so_far = 0;
++    new_ctx->ck_id = 0;
++    new_ctx->ck_size = 0;
++    new_ctx->bound = iff_file_length(file);
++    if (new_ctx->bound < 0) {
++        iffp = new_ctx->bound;
++    } else if (new_ctx->bound < 8) {
++        iffp = NOT_IFF;
++    } else {
++        (void)gio_seek(file, 0, OFFSET_BEGINNING);
++    }
++    return iffp;
++}
++
++/* PORT H086+$015C (OpenRGroup): contesto del gruppo nel chunk corrente. */
++s32 iff_open_rgroup(GroupContext *parent, GroupContext *new_ctx)
++{
++    s32 iffp = IFF_OKAY;
++
++    new_ctx->parent = parent;
++    new_ctx->client_frame = parent->client_frame;
++    new_ctx->file = parent->file;
++    new_ctx->position = parent->position;
++    new_ctx->bound = iff_chunk_more_bytes(parent) + parent->position;
++    new_ctx->subtype = 0;
++    new_ctx->bytes_so_far = 0;
++    new_ctx->ck_id = 0;
++    new_ctx->ck_size = 0;
++    if (new_ctx->bound > parent->bound || (new_ctx->bound & 1) != 0) {
++        iffp = BAD_IFF;
++    }
++    return iffp;
++}
++
++/* PORT H086+$01F8 (CloseRGroup): riporta la posizione nel genitore. */
++s32 iff_close_rgroup(GroupContext *context)
++{
++    s32 position;
++
++    if (context->parent != NULL) {
++        position = context->position;
++        context->parent->bytes_so_far += position - context->parent->position;
++        context->parent->position = position;
++    }
++    return IFF_OKAY;
++}
++
++/*
++ * PORT H086+$022E (GetChunkHdr): salta il resto del chunk corrente (con il
++ * byte di riempimento) e legge l'intestazione del successivo.  Restituisce
++ * l'ID del chunk oppure un IFFP negativo, lasciato anche in ck_id.
++ */
++s32 iff_get_chunk_hdr(GroupContext *context)
++{
++    s32 remaining;
++    s32 result;
++    u8 header[8];
++    u8 subtype[4];
++
++    result = iff_skip_fwd(context, iff_chunk_more_bytes(context) +
++                                   (context->ck_size & 1));
++    if (result != 0) {
++        return result;
++    }
++    context->ck_id = BAD_IFF;
++    context->subtype = 0;
++    context->bytes_so_far = 0;
++    remaining = context->bound - context->position;
++    if (remaining == 0) {
++        context->ck_size = 0;
++        context->ck_id = END_MARK;
++    } else if (remaining < 8) {
++        context->ck_size = remaining;
++    } else {
++        result = gio_read(context->file, header, 8);
++        if (result == -1) {
++            context->ck_id = DOS_ERROR;
++            return DOS_ERROR;
++        }
++        if (result == 0) {
++            context->ck_id = BAD_IFF;
++            return BAD_IFF;
++        }
++        context->ck_id = (s32)COK_GET32(header);
++        context->ck_size = (s32)COK_GET32(header + 4);
++        if (context->parent == NULL && context->ck_id != ID_FORM &&
++            context->ck_id != ID_LIST && context->ck_id != ID_CAT) {
++            context->ck_id = NOT_IFF;
++            return NOT_IFF;
++        }
++        context->position += 8;
++        remaining -= 8;
++        if (context->ck_id <= 0) {
++            context->ck_id = BAD_IFF;
++        } else if (context->ck_size < 0 || context->ck_size > remaining) {
++            context->ck_size = remaining;
++            context->ck_id = BAD_IFF;
++        } else if (context->ck_id == ID_LIST || context->ck_id == ID_FORM ||
++                   context->ck_id == ID_PROP || context->ck_id == ID_CAT) {
++            result = iff_read_bytes(context, subtype, 4);
++            if (result != 0) {
++                context->ck_id = result;
++            } else {
++                context->subtype = (s32)COK_GET32(subtype);
++            }
++        }
++    }
++    return context->ck_id;
++}
++
++/*
++ * PORT H086+$03F2 (IFFReadBytes): legge dal chunk corrente senza
++ * superarne la fine.
++ */
++s32 iff_read_bytes(GroupContext *context, void *buffer, s32 n_bytes)
++{
++    s32 iffp = IFF_OKAY;
++    s32 read;
++
++    if (n_bytes < 0) {
++        iffp = CLIENT_ERROR;
++    } else if (n_bytes > iff_chunk_more_bytes(context)) {
++        iffp = SHORT_CHUNK;
++    } else if (n_bytes > 0) {
++        read = gio_read(context->file, buffer, n_bytes);
++        if (read == -1) {
++            iffp = DOS_ERROR;
++        } else if (read == 0) {
++            iffp = BAD_IFF;
++        } else {
++            context->position += n_bytes;
++            context->bytes_so_far += n_bytes;
++        }
++    }
++    return iffp;
++}
++
++/* Chiamata del callback del client per il gruppo letto. */
++static s32 call_group(GroupContext *context, ClientFrame *frame, s32 id)
++{
++    if (id == ID_FORM) {
++        return frame->get_form(context);
++    }
++    if (id == ID_LIST) {
++        return frame->get_list(context);
++    }
++    if (id == ID_CAT) {
++        return frame->get_cat(context);
++    }
++    return id;
++}
++
++/*
++ * PORT H086+$04BA (ReadIFF): legge il file come un unico gruppo FORM, LIST
++ * o CAT chiamando il callback corrispondente.  Un risultato positivo (un ID
++ * non gestito) diventa NOT_IFF.
++ */
++s32 iff_read_iff(cok_bptr file, ClientFrame *client_frame)
++{
++    GroupContext context;
++    s32 iffp;
++
++    iffp = iff_open_riff(file, &context, client_frame);
++    if (iffp == 0) {
++        iffp = iff_get_chunk_hdr(&context);
++        iffp = call_group(&context, client_frame, iffp);
++    }
++    (void)iff_close_rgroup(&context);
++    if (iffp > 0) {
++        iffp = NOT_IFF;
++    }
++    return iffp;
++}
++
++/*
++ * PORT H086+$0578 (ReadIList): legge un LIST (o un CAT con client_frame
++ * NULL): i PROP sono ammessi solo all'inizio di un LIST.
++ */
++s32 iff_read_ilist(GroupContext *parent, ClientFrame *client_frame)
++{
++    GroupContext list_context;
++    s32 iffp;
++    u8 prop_ok = 1;
++
++    iffp = iff_open_rgroup(parent, &list_context);
++    if (iffp != 0) {
++        return iffp;
++    }
++    if (parent->ck_id == ID_CAT) {
++        prop_ok = 0;
++    } else {
++        list_context.client_frame = client_frame;
++    }
++    do {
++        iffp = iff_get_chunk_hdr(&list_context);
++        if (iffp == ID_PROP) {
++            if (prop_ok) {
++                iffp = client_frame->get_prop(&list_context);
++            } else {
++                iffp = BAD_IFF;
++            }
++        } else {
++            iffp = call_group(&list_context, client_frame, iffp);
++        }
++        if (list_context.ck_id != ID_PROP) {
++            prop_ok = 0;
++        }
++    } while (iffp == IFF_OKAY);
++    (void)iff_close_rgroup(&list_context);
++    if (iffp > 0) {
++        iffp = BAD_IFF;
++    }
++    if (iffp == END_MARK) {
++        iffp = IFF_OKAY;
++    }
++    return iffp;
++}
++
++/* PORT H086+$06BC (ReadICat) */
++s32 iff_read_icat(GroupContext *parent)
++{
++    return iff_read_ilist(parent, NULL);
++}
++
++/* PORT H086+$06D6 (GetFChunkHdr): dentro un FORM un PROP e' un errore. */
++s32 iff_get_fchunk_hdr(GroupContext *context)
++{
++    s32 id = iff_get_chunk_hdr(context);
++
++    if (id == ID_PROP) {
++        id = BAD_IFF;
++        context->ck_id = id;
++    }
++    return id;
++}
++
++/*
++ * PORT H086+$0714 (GetF1ChunkHdr): come GetFChunkHdr, ma legge subito i
++ * gruppi annidati con i callback del client.
++ */
++s32 iff_get_f1chunk_hdr(GroupContext *context)
++{
++    ClientFrame *frame = context->client_frame;
++    s32 iffp = iff_get_chunk_hdr(context);
++
++    if (iffp == ID_PROP) {
++        iffp = BAD_IFF;
++    } else {
++        iffp = call_group(context, frame, iffp);
++    }
++    context->ck_id = iffp;
++    return iffp;
++}
++
++/* PORT H086+$07C0 (GetPChunkHdr): dentro un PROP i gruppi sono errori. */
++s32 iff_get_pchunk_hdr(GroupContext *context)
++{
++    s32 id = iff_get_chunk_hdr(context);
++
++    if (id == ID_LIST || id == ID_FORM || id == ID_PROP || id == ID_CAT) {
++        id = BAD_IFF;
++        context->ck_id = id;
++    }
++    return id;
++}
+diff --git a/src_c/readable/h086.h b/src_c/readable/h086.h
+new file mode 100644
+index 0000000..5847b9b
+--- /dev/null
++++ b/src_c/readable/h086.h
+@@ -0,0 +1,76 @@
++/*
++ * H086: parser IFF generico (iff.c "IFF85" di Electronic Arts, 1985):
++ * gruppi FORM/LIST/PROP/CAT, intestazioni dei chunk, lettura dei byte.
++ */
++#ifndef COK_H086_H
++#define COK_H086_H
++
++#include "h002_dos.h"
++
++/* Valori IFFP restituiti dalle routine (negativi = fine o errore). */
++#define IFF_OKAY      0
++#define END_MARK     (-1)       /* fine del gruppo */
++#define IFF_DONE     (-2)       /* il client ha finito */
++#define DOS_ERROR    (-3)
++#define NOT_IFF      (-4)
++#define NO_FILE      (-5)
++#define CLIENT_ERROR (-6)
++#define BAD_FORM     (-7)
++#define SHORT_CHUNK  (-8)
++#define BAD_IFF      (-9)
++
++#define COK_MAKE_ID(a, b, c, d) \
++    ((s32)((u32)(a) << 24 | (u32)(b) << 16 | (u32)(c) << 8 | (u32)(d)))
++#define ID_FORM COK_MAKE_ID('F', 'O', 'R', 'M')
++#define ID_LIST COK_MAKE_ID('L', 'I', 'S', 'T')
++#define ID_PROP COK_MAKE_ID('P', 'R', 'O', 'P')
++#define ID_CAT  COK_MAKE_ID('C', 'A', 'T', ' ')
++
++struct GroupContext;
++typedef s32 (*IffGroupFn)(struct GroupContext *parent);
++
++/* ClientFrame: callback per i gruppi (16 byte nell'originale). */
++typedef struct ClientFrame {
++    IffGroupFn get_list;        /* +$00 */
++    IffGroupFn get_prop;        /* +$04 */
++    IffGroupFn get_form;        /* +$08 */
++    IffGroupFn get_cat;         /* +$0C */
++} ClientFrame;
++
++/*
++ * GroupContext ($24 byte nell'originale).  ck_id, ck_size e subtype sono
++ * letti dal file big-endian e qui tenuti come valori numerici.
++ */
++typedef struct GroupContext {
++    struct GroupContext *parent; /* +$00: NULL al livello del file */
++    ClientFrame *client_frame;  /* +$04 */
++    cok_bptr file;              /* +$08 */
++    s32 position;               /* +$0C: posizione nel file */
++    s32 bound;                  /* +$10: fine del gruppo */
++    s32 ck_id;                  /* +$14: chunk corrente (o IFFP) */
++    s32 ck_size;                /* +$18 */
++    s32 subtype;                /* +$1C: sottotipo di FORM/LIST/PROP/CAT */
++    s32 bytes_so_far;           /* +$20: byte del chunk gia' letti */
++} GroupContext;
++
++s32 iff_file_length(cok_bptr file);                          /* H086+$000C */
++s32 iff_skip_fwd(GroupContext *context, s32 bytes);          /* H086+$0068 */
++s32 iff_open_riff(cok_bptr file, GroupContext *new_ctx,
++                  ClientFrame *client_frame);                 /* H086+$00C0 */
++s32 iff_open_rgroup(GroupContext *parent, GroupContext *new_ctx);
++                                                              /* H086+$015C */
++s32 iff_close_rgroup(GroupContext *context);                 /* H086+$01F8 */
++s32 iff_get_chunk_hdr(GroupContext *context);                /* H086+$022E */
++s32 iff_read_bytes(GroupContext *context, void *buffer, s32 n_bytes);
++                                                              /* H086+$03F2 */
++s32 iff_read_iff(cok_bptr file, ClientFrame *client_frame);  /* H086+$04BA */
++s32 iff_read_ilist(GroupContext *parent, ClientFrame *client_frame);
++                                                              /* H086+$0578 */
++s32 iff_read_icat(GroupContext *parent);                     /* H086+$06BC */
++s32 iff_get_fchunk_hdr(GroupContext *context);               /* H086+$06D6 */
++s32 iff_get_f1chunk_hdr(GroupContext *context);              /* H086+$0714 */
++s32 iff_get_pchunk_hdr(GroupContext *context);               /* H086+$07C0 */
++
++s32 iff_chunk_more_bytes(GroupContext *context);             /* H039+$000C */
++
++#endif
+diff --git a/src_c/readable/h087.c b/src_c/readable/h087.c
+index 2f5d23d..8ffff6b 100644
+--- a/src_c/readable/h087.c
++++ b/src_c/readable/h087.c
+@@ -1,7 +1,152 @@
+ /* H087: Lettura BMHD, palette e BODY delle immagini ILBM. */
+-#include "cok.h"
++#include "h087.h"
++#include "h003_exec.h"
++#include "h015_runtime.h"
+ 
+ /* PORT H087+$0004: link/unlk, nessun effetto. */
+ void h087_init(void)
+ {
+ }
++
++/*
++ * PORT H087+$000C (GetBMHD): 20 byte del chunk BMHD.  L'originale li legge
++ * direttamente nella struttura; qui in un buffer, convertiti da big-endian.
++ */
++s32 ilbm_get_bmhd(GroupContext *context, BitMapHeader *bm_hdr)
++{
++    u8 raw[20];
++    s32 iffp = iff_read_bytes(context, raw, 20);
++
++    if (iffp == IFF_OKAY) {
++        bm_hdr->w = COK_GET16(raw);
++        bm_hdr->h = COK_GET16(raw + 2);
++        bm_hdr->x = (s16)COK_GET16(raw + 4);
++        bm_hdr->y = (s16)COK_GET16(raw + 6);
++        bm_hdr->n_planes = raw[8];
++        bm_hdr->masking = raw[9];
++        bm_hdr->compression = raw[0x0A];
++        bm_hdr->pad1 = raw[0x0B];
++        bm_hdr->transparent_color = COK_GET16(raw + 0x0C);
++        bm_hdr->x_aspect = raw[0x0E];
++        bm_hdr->y_aspect = raw[0x0F];
++        bm_hdr->page_width = (s16)COK_GET16(raw + 0x10);
++        bm_hdr->page_height = (s16)COK_GET16(raw + 0x12);
++    }
++    return iffp;
++}
++
++/*
++ * PORT H087+$009C (GetCMAP): al massimo *n_color_regs colori (terne RGB a
++ * 8 bit ridotte a RGB4); *n_color_regs diventa il numero letto.
++ */
++s32 ilbm_get_cmap(GroupContext *context, u16 *color_map, u8 *n_color_regs)
++{
++    u8 n = (u8)h015_divs32(context->ck_size, 3, NULL);
++    u8 rgb[3];
++    s32 iffp;
++
++    if (*n_color_regs < n) {
++        n = *n_color_regs;
++    }
++    *n_color_regs = n;
++    while (n > 0) {
++        iffp = iff_read_bytes(context, rgb, 3);
++        if (iffp != IFF_OKAY) {
++            return iffp;
++        }
++        *color_map++ = (u16)(((rgb[0] >> 4) << 8) + ((rgb[1] >> 4) << 4) +
++                             (rgb[2] >> 4));
++        --n;
++    }
++    return IFF_OKAY;
++}
++
++/*
++ * PORT H087+$0166 (GetBODY): legge il BODY riga per riga nei piani della
++ * bitmap (piani in piu' del file e maschera senza destinazione vanno nel
++ * primo blocco del buffer, che fa da cestino).  buffer/buf_size sono il
++ * buffer di lettura del chunk; servono almeno due righe compresse.
++ */
++s32 ilbm_get_body(GroupContext *context, struct BitMap *bitmap, u8 *mask,
++                  BitMapHeader *bm_hdr, u8 *buffer, s32 buf_size)
++{
++    u16 src_plane_cnt = bm_hdr->n_planes;           /* -$6 */
++    u16 src_row_bytes = ilbm_row_bytes(bm_hdr->w);  /* -$8 */
++    s32 buf_row_bytes = (s32)ilbm_max_packed_size(src_row_bytes); /* -$C */
++    u16 n_rows = bm_hdr->h;                         /* -$E */
++    u8 compression = bm_hdr->compression;           /* -$F */
++    u8 *planes[MAX_SRC_PLANES];                     /* -$6C */
++    u8 *null_dest;                                  /* -$20 */
++    u8 *null_buf;                                   /* -$24 */
++    u8 **p_dest;                                    /* -$28 */
++    u8 *buf;                                        /* -$1C */
++    u16 n_empty;                                    /* -$16 */
++    u16 n_filled;                                   /* -$18 */
++    u16 i_plane;                                    /* -$12 */
++    s32 iffp;
++
++    if (compression > CMP_BYTE_RUN1) {
++        return CLIENT_ERROR;
++    }
++    if (src_row_bytes != bitmap->BytesPerRow ||
++        buf_size < buf_row_bytes * 2 || src_plane_cnt > MAX_SRC_PLANES) {
++        return CLIENT_ERROR;
++    }
++    if (n_rows > bitmap->Rows) {
++        n_rows = bitmap->Rows;
++    }
++    for (i_plane = 0; i_plane < bitmap->Depth; ++i_plane) {
++        planes[i_plane] = (u8 *)bitmap->Planes[i_plane];
++    }
++    for (; i_plane < MAX_SRC_PLANES; ++i_plane) {
++        planes[i_plane] = NULL;
++    }
++    if (bm_hdr->masking == MSK_HAS_MASK) {
++        planes[src_plane_cnt] = mask;   /* NULL se non richiesta */
++        ++src_plane_cnt;
++    }
++
++    null_dest = buffer;
++    buffer += src_row_bytes;
++    buf_size -= src_row_bytes;
++    buf = buffer + buf_size;
++
++    for (; n_rows != 0; --n_rows) {
++        for (i_plane = 0; i_plane < src_plane_cnt; ++i_plane) {
++            p_dest = &planes[i_plane];
++            if (*p_dest == NULL) {
++                null_buf = null_dest;
++                p_dest = &null_buf;
++            }
++            n_empty = (u16)(buf - buffer);
++            n_filled = (u16)(buf_size - n_empty);
++            if ((s32)n_filled < buf_row_bytes) {
++                /* Sposta i dati rimasti all'inizio e riempie il resto. */
++                exec_copy_mem(buf, buffer, n_filled);
++                if ((s32)n_empty > iff_chunk_more_bytes(context)) {
++                    n_empty = (u16)iff_chunk_more_bytes(context);
++                    buf_size = (s32)(u16)(n_filled + n_empty);
++                }
++                iffp = iff_read_bytes(context, buffer + n_filled, n_empty);
++                if (iffp != IFF_OKAY) {
++                    return iffp;
++                }
++                buf = buffer;
++                n_filled = (u16)buf_size;
++                n_empty = 0;
++            }
++            if (compression == 0) {
++                if (n_filled < src_row_bytes) {
++                    return BAD_FORM;
++                }
++                exec_copy_mem(buf, *p_dest, src_row_bytes);
++                buf += src_row_bytes;
++                *p_dest += src_row_bytes;
++            } else if (ilbm_unpack_row(&buf, p_dest, (s16)n_filled,
++                                       (s16)src_row_bytes)) {
++                return BAD_FORM;
++            }
++        }
++    }
++    return IFF_OKAY;
++}
+diff --git a/src_c/readable/h087.h b/src_c/readable/h087.h
+new file mode 100644
+index 0000000..e6c3ea5
+--- /dev/null
++++ b/src_c/readable/h087.h
+@@ -0,0 +1,53 @@
++/* H087: lettura dei chunk ILBM (ilbmr.c di Electronic Arts): BMHD, CMAP, BODY. */
++#ifndef COK_H087_H
++#define COK_H087_H
++
++#include "h086.h"
++
++#define ID_ILBM COK_MAKE_ID('I', 'L', 'B', 'M')
++#define ID_BMHD COK_MAKE_ID('B', 'M', 'H', 'D')
++#define ID_CMAP COK_MAKE_ID('C', 'M', 'A', 'P')
++#define ID_BODY COK_MAKE_ID('B', 'O', 'D', 'Y')
++
++#define MAX_SRC_PLANES 0x11     /* 16 piani + maschera */
++#define MSK_HAS_MASK   1
++#define CMP_BYTE_RUN1  1
++
++/* BitMapHeader (20 byte nel file, big-endian). */
++typedef struct BitMapHeader {
++    u16 w;                      /* +$00 */
++    u16 h;                      /* +$02 */
++    s16 x;                      /* +$04 */
++    s16 y;                      /* +$06 */
++    u8 n_planes;                /* +$08 */
++    u8 masking;                 /* +$09 */
++    u8 compression;             /* +$0A */
++    u8 pad1;                    /* +$0B */
++    u16 transparent_color;      /* +$0C */
++    u8 x_aspect;                /* +$0E */
++    u8 y_aspect;                /* +$0F */
++    s16 page_width;             /* +$10 */
++    s16 page_height;            /* +$12 */
++} BitMapHeader;
++
++/* ILBMFrame ($66 byte nell'originale): ClientFrame + stato del lettore. */
++typedef struct ILBMFrame {
++    ClientFrame client_frame;   /* +$00 */
++    u8 found_bmhd;              /* +$10 */
++    u8 n_color_regs;            /* +$11 */
++    BitMapHeader bm_hdr;        /* +$12 */
++    u16 color_map[32];          /* +$26: colori RGB4 */
++} ILBMFrame;
++
++s32 ilbm_get_bmhd(GroupContext *context, BitMapHeader *bm_hdr); /* H087+$000C */
++s32 ilbm_get_cmap(GroupContext *context, u16 *color_map, u8 *n_color_regs);
++                                                                 /* H087+$009C */
++s32 ilbm_get_body(GroupContext *context, struct BitMap *bitmap, u8 *mask,
++                  BitMapHeader *bm_hdr, u8 *buffer, s32 buf_size);
++                                                                 /* H087+$0166 */
++u8  ilbm_unpack_row(u8 **source, u8 **dest, s16 src_bytes, s16 dst_bytes);
++                                                                 /* H088+$000C */
++u16 ilbm_row_bytes(u16 width);                                  /* H054+$000C */
++u16 ilbm_max_packed_size(u16 row_size);                         /* H099+$01B0 */
++
++#endif
+diff --git a/src_c/readable/h088.c b/src_c/readable/h088.c
+index e046da5..afc919a 100644
+--- a/src_c/readable/h088.c
++++ b/src_c/readable/h088.c
+@@ -1,7 +1,64 @@
+ /* H088: UnPackRow ByteRun1 con aggiornamento dei puntatori. */
+-#include "cok.h"
++#include "h087.h"
+ 
+ /* PORT H088+$0004: link/unlk, nessun effetto. */
+ void h088_init(void)
+ {
+ }
++
++/*
++ * PORT H088+$000C (UnPackRow, ByteRun1): decodifica dst_bytes byte da
++ * *source a *dest consumando al massimo src_bytes byte; aggiorna i due
++ * puntatori.  Restituisce 1 se i dati non bastano o eccedono, 0 se la riga
++ * e' completa.  n >= 0: n+1 byte letterali; -127..-1: il byte seguente
++ * ripetuto 1-n volte; -128: nessuna operazione.
++ */
++u8 ilbm_unpack_row(u8 **source, u8 **dest, s16 src_bytes, s16 dst_bytes)
++{
++    u8 *s = *source;
++    u8 *d = *dest;
++    u8 error = 1;
++    s16 n;
++    u8 c;
++
++    for (;;) {
++        if (!(dst_bytes > 0)) {
++            error = 0;
++            break;
++        }
++        if ((src_bytes = (s16)(src_bytes - 1)) < 0) {
++            break;
++        }
++        n = (s16)*s++;
++        if (n > 0x7F) {
++            n = (s16)(n - 0x100);
++        }
++        if (n >= 0) {
++            n = (s16)(n + 1);
++            if ((src_bytes = (s16)(src_bytes - n)) < 0) {
++                break;
++            }
++            if ((dst_bytes = (s16)(dst_bytes - n)) < 0) {
++                break;
++            }
++            do {
++                *d++ = *s++;
++            } while ((n = (s16)(n - 1)) > 0);
++        } else if (n != -128) {
++            n = (s16)(-n + 1);
++            if ((src_bytes = (s16)(src_bytes - 1)) < 0) {
++                break;
++            }
++            if ((dst_bytes = (s16)(dst_bytes - n)) < 0) {
++                break;
++            }
++            c = *s++;
++            do {
++                *d++ = c;
++            } while ((n = (s16)(n - 1)) > 0);
++        }
++    }
++    *source = s;
++    *dest = d;
++    return error;
++}
+diff --git a/src_c/readable/h098.c b/src_c/readable/h098.c
+index 8accfa5..df4f6b4 100644
+--- a/src_c/readable/h098.c
++++ b/src_c/readable/h098.c
+@@ -1,7 +1,77 @@
+-/* H098: Backend di lettura/posizionamento file per il parser IFF. */
+-#include "cok.h"
++/*
++ * H098: I/O con buffer per il parser IFF (gio.c di Electronic Arts).
++ *
++ * Dati del modulo (nel codice, H098+$0000..$0013):
++ *   $00 wWaterline  $04 wIndex  $08 wNBytes  $0C wBuffer  $10 wFile
++ * La scrittura con buffer serve solo a GWrite; in lettura wFile e' nullo e
++ * le routine vanno direttamente a Read/Seek.
++ */
++#include "h098.h"
++
++static s32 s_waterline;         /* H098+$0000 */
++static s32 s_index;             /* H098+$0004 */
++static s32 s_nbytes;            /* H098+$0008 (usato da GWriteDeclare) */
++static u8 *s_buffer;            /* H098+$000C */
++static cok_bptr s_file;         /* H098+$0010 */
+ 
+ /* PORT H098+$0018: link/unlk, nessun effetto. */
+ void h098_init(void)
+ {
++    (void)s_nbytes;
++}
++
++/* PORT H098+$007C (GRead): svuota prima il buffer di scrittura del file. */
++s32 gio_read(cok_bptr file, void *buffer, s32 n_bytes)
++{
++    s32 result = 0;
++
++    if (file == s_file) {
++        result = gio_write_flush(file);
++    }
++    if (result >= 0) {
++        result = dos_read(file, buffer, n_bytes);
++    }
++    return result;
++}
++
++/* PORT H098+$00D0 (GWriteFlush) */
++s32 gio_write_flush(cok_bptr file)
++{
++    s32 result = 0;
++
++    (void)file;
++    if (s_file != 0 && s_buffer != NULL && s_index > 0) {
++        result = dos_write(s_file, s_buffer, s_waterline);
++    }
++    s_waterline = 0;
++    s_index = 0;
++    return result;
++}
++
++/*
++ * PORT H098+$0276 (GSeek): dentro il buffer di scrittura si sposta solo
++ * l'indice (OFFSET_CURRENT entro il livello raggiunto); altrimenti svuota il
++ * buffer e chiama Seek.  -2 significa "usa Seek".
++ */
++s32 gio_seek(cok_bptr file, s32 position, s32 mode)
++{
++    s32 result = -2;
++    s32 new_index = s_index + position;
++
++    if (file == s_file && s_buffer != NULL) {
++        if (mode == OFFSET_CURRENT && new_index >= 0 &&
++            new_index <= s_waterline) {
++            result = s_index;
++            s_index = new_index;
++        } else {
++            result = gio_write_flush(file);
++            if (result >= 0) {
++                result = -2;
++            }
++        }
++    }
++    if (result == -2) {
++        result = dos_seek(file, position, mode);
++    }
++    return result;
+ }
+diff --git a/src_c/readable/h098.h b/src_c/readable/h098.h
+new file mode 100644
+index 0000000..ff0087f
+--- /dev/null
++++ b/src_c/readable/h098.h
+@@ -0,0 +1,11 @@
++/* H098: I/O con buffer per il parser IFF (gio.c di Electronic Arts). */
++#ifndef COK_H098_H
++#define COK_H098_H
++
++#include "h002_dos.h"
++
++s32 gio_read(cok_bptr file, void *buffer, s32 n_bytes);      /* H098+$007C */
++s32 gio_write_flush(cok_bptr file);                           /* H098+$00D0 */
++s32 gio_seek(cok_bptr file, s32 position, s32 mode);          /* H098+$0276 */
++
++#endif
+diff --git a/src_c/readable/h099.c b/src_c/readable/h099.c
+index f91f68e..8330b5a 100644
+--- a/src_c/readable/h099.c
++++ b/src_c/readable/h099.c
+@@ -1,7 +1,13 @@
+ /* H099: Helper per dimensioni/buffer di decompressione. */
+-#include "cok.h"
++#include "h087.h"
+ 
+ /* PORT H099+$010E: link/unlk, nessun effetto. */
+ void h099_init(void)
+ {
+ }
++
++/* PORT H099+$01B0 (MaxPackedSize): caso peggiore di ByteRun1 per una riga. */
++u16 ilbm_max_packed_size(u16 row_size)
++{
++    return (u16)(row_size + ((u16)(row_size + 0x7F) >> 7));
++}
+diff --git a/src_c/readable/tests/ilbm_test.c b/src_c/readable/tests/ilbm_test.c
+new file mode 100644
+index 0000000..5ca6f38
+--- /dev/null
++++ b/src_c/readable/tests/ilbm_test.c
+@@ -0,0 +1,56 @@
++/*
++ * Legge un file ILBM con Read_ILBM (H040) e scrive su out: w, h, piani
++ * (word big-endian), numero di colori (byte), i colori RGB4 (word) e i
++ * piani della bitmap.  Confronto: scripts/check_ilbm.py.
++ *   ./ilbm_test file.lbm out.bin
++ */
++#include <stdio.h>
++#include <stdlib.h>
++#include "../h040.h"
++
++static u32 s_size;
++
++static u8 *alloc_planes(u32 size)
++{
++    s_size = size;
++    return (u8 *)calloc(1, size);
++}
++
++int main(int argc, char **argv)
++{
++    struct BitMap bm;
++    ILBMFrame frame;
++    cok_bptr file;
++    s32 iffp;
++    FILE *out;
++    int i;
++
++    if (argc < 3) {
++        printf("uso: ilbm_test file.lbm out.bin\n");
++        return 2;
++    }
++    memset(&bm, 0, sizeof(bm));
++    file = dos_open(argv[1], MODE_OLDFILE);
++    if (file == 0) {
++        printf("%s: non trovato\n", argv[1]);
++        return 2;
++    }
++    iffp = read_ilbm(file, &bm, &frame, alloc_planes);
++    dos_close(file);
++    printf("%s: iffp %ld, %ux%u, %u piani, %u colori\n", argv[1], (long)iffp,
++           frame.bm_hdr.w, frame.bm_hdr.h, bm.Depth, frame.n_color_regs);
++    out = fopen(argv[2], "wb");
++    fputc(bm.BytesPerRow >> 8, out); fputc(bm.BytesPerRow & 0xFF, out);
++    fputc(bm.Rows >> 8, out); fputc(bm.Rows & 0xFF, out);
++    fputc(0, out); fputc(bm.Depth, out);
++    fputc(frame.n_color_regs, out);
++    for (i = 0; i < frame.n_color_regs; ++i) {
++        fputc(frame.color_map[i] >> 8, out);
++        fputc(frame.color_map[i] & 0xFF, out);
++    }
++    for (i = 0; i < bm.Depth; ++i) {
++        fwrite(bm.Planes[i], 1, (size_t)bm.BytesPerRow * bm.Rows, out);
++    }
++    fclose(out);
++    return iffp == IFF_DONE ? 0 : 1;
++}
+diff --git a/src_c/readable/tests/run_ilbm_test.cmake b/src_c/readable/tests/run_ilbm_test.cmake
+new file mode 100644
+index 0000000..e3f6ad1
+--- /dev/null
++++ b/src_c/readable/tests/run_ilbm_test.cmake
+@@ -0,0 +1,9 @@
++# Esegue ilbm_test e confronta l'uscita con scripts/check_ilbm.py.
++execute_process(COMMAND ${TEST} ${FILE} ${OUT} RESULT_VARIABLE rc)
++if(NOT rc EQUAL 0)
++    message(FATAL_ERROR "ilbm_test: ${rc}")
++endif()
++execute_process(COMMAND ${PYTHON} ${CHECK} ${FILE} ${OUT} RESULT_VARIABLE rc)
++if(NOT rc EQUAL 0)
++    message(FATAL_ERROR "check_ilbm.py: differenze")
++endif()
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index 293bd0b..9f0a32d 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -43,7 +43,6 @@ void h027_4276(void) { cok_unported("H027+$4276"); }
+ void h014_0018(u16 len, const char *msg, u16 value) { (void)len; (void)msg; (void)value; cok_unported("H014+$0018"); }
+ void h029_0a0e(u16 a, const char *name, u16 id, u16 b, u8 c, struct GfxRecord **rec) { (void)a; (void)name; (void)id; (void)b; (void)c; (void)rec; cok_unported("H029+$0A0E"); }
+ void h030_0256(u16 a, u16 b, u16 c, u16 d, u16 len, const char *text) { (void)a; (void)b; (void)c; (void)d; (void)len; (void)text; cok_unported("H030+$0256"); }
+-void h030_0c10(void) { cok_unported("H030+$0C10"); }
+ void h033_1a50(void) { cok_unported("H033+$1A50"); }
+ void h034_0032(u8 a, u8 b) { (void)a; (void)b; cok_unported("H034+$0032"); }
+ void h035_0246(u16 a, const char *name, u16 b, u16 c) { (void)a; (void)name; (void)b; (void)c; cok_unported("H035+$0246"); }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index 9224914..67a9d68 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -16,7 +16,6 @@ void h027_4276(void);
+ void h014_0018(u16 len, const char *msg, u16 value);
+ void h029_0a0e(u16 a, const char *name, u16 id, u16 b, u8 c, struct GfxRecord **rec);
+ void h030_0256(u16 a, u16 b, u16 c, u16 d, u16 len, const char *text);
+-void h030_0c10(void);
+ void h033_1a50(void);
+ void h034_0032(u8 a, u8 b);
+ void h035_0246(u16 a, const char *name, u16 b, u16 c);
+-- 
+2.43.0
+

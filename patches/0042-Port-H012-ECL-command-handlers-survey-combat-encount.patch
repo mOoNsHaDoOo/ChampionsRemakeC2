@@ -1,0 +1,1701 @@
+From 7cbd89882d1bdf82a9030fa3389f7057f17320d0 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 23:41:02 +0000
+Subject: [PATCH 42/65] Port H012 ECL command handlers (survey, combat,
+ encounter, treasure, damage, experience, ...)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md |   47 +-
+ src_c/readable/backlog.md     |   55 ++
+ src_c/readable/h012.c         | 1288 ++++++++++++++++++++++++++++++++-
+ src_c/readable/h012.h         |   26 +
+ src_c/readable/h031.c         |    9 +
+ src_c/readable/h031.h         |    1 +
+ src_c/readable/h062.c         |   22 +
+ src_c/readable/h062.h         |    1 +
+ src_c/readable/unported.c     |   32 +-
+ src_c/readable/unported.h     |   33 +-
+ 10 files changed, 1428 insertions(+), 86 deletions(-)
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index 0ce76b3..336bf72 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **825 / 1087**.
++Routine portate: **854 / 1112**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -18,7 +18,7 @@ Routine portate: **825 / 1087**.
+ | H009 | 988 | 3 | 3 |
+ | H010 | 2488 | 9 | 6 |
+ | H011 | 7004 | 13 | 6 |
+-| H012 | 13580 | 8 | 3 |
++| H012 | 13580 | 33 | 30 |
+ | H013 | 25244 | 22 | 19 |
+ | H014 | 224 | 2 | 2 |
+ | H015 | 1016 | 11 | 5 |
+@@ -37,7 +37,7 @@ Routine portate: **825 / 1087**.
+ | H028 | 4488 | 16 | 16 |
+ | H029 | 6084 | 32 | 30 |
+ | H030 | 3240 | 18 | 18 |
+-| H031 | 212 | 4 | 3 |
++| H031 | 212 | 4 | 4 |
+ | H032 | 9352 | 1 | 1 |
+ | H033 | 8140 | 16 | 15 |
+ | H034 | 472 | 3 | 3 |
+@@ -68,7 +68,7 @@ Routine portate: **825 / 1087**.
+ | H059 | 6340 | 14 | 14 |
+ | H060 | 396 | 2 | 1 |
+ | H061 | 16936 | 35 | 33 |
+-| H062 | 10496 | 32 | 31 |
++| H062 | 10496 | 32 | 32 |
+ | H063 | 16496 | 52 | 52 |
+ | H064 | 6460 | 28 | 28 |
+ | H065 | 14268 | 27 | 27 |
+@@ -261,12 +261,37 @@ Routine portate: **825 / 1087**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0178` | `module_init_H012` | parziale | h012.c:8 |
++| `$0178` | `module_init_H012` | parziale | h012.c:29 |
+ | `$0186` | `trampoline_H012_3004` | parziale |  |
+-| `$018A` | `ECL_RunAtAddress` | verificato | h012.c:80 |
+-| `$0208` | `sub_H012_00000208` | parziale |  |
+-| `$2922` | `sub_H012_00002922` | parziale |  |
+-| `$2DF2` | `ECL_DispatchOpcode` | verificato | h012.c:14 |
++| `$018A` | `ECL_RunAtAddress` | verificato | h012.c:101 |
++| `$01FA` | `(senza scheda)` | - | h012.c:154 |
++| `$0208` | `sub_H012_00000208` | parziale | h012.c:134 |
++| `$05D6` | `(senza scheda)` | - | h012.c:249 |
++| `$0688` | `(senza scheda)` | - | h012.c:267 |
++| `$0766` | `(senza scheda)` | - | h012.c:302 |
++| `$0B18` | `(senza scheda)` | - | h012.c:377 |
++| `$0BEA` | `(senza scheda)` | - | h012.c:504 |
++| `$15AE` | `(senza scheda)` | - | h012.c:579 |
++| `$1DDE` | `(senza scheda)` | - | h012.c:806 |
++| `$1E90` | `(senza scheda)` | - | h012.c:825 |
++| `$1F4C` | `(senza scheda)` | - | h012.c:848 |
++| `$1F68` | `(senza scheda)` | - | h012.c:856 |
++| `$2358` | `(senza scheda)` | - | h012.c:955 |
++| `$2392` | `(senza scheda)` | - | h012.c:967 |
++| `$23D6` | `(senza scheda)` | - | h012.c:979 |
++| `$241C` | `(senza scheda)` | - | h012.c:993 |
++| `$2486` | `(senza scheda)` | - | h012.c:1009 |
++| `$2502` | `(senza scheda)` | - | h012.c:1025 |
++| `$2596` | `(senza scheda)` | - | h012.c:1040 |
++| `$26D6` | `(senza scheda)` | - | h012.c:1202 |
++| `$2922` | `sub_H012_00002922` | parziale | h012.c:1267 |
++| `$29A6` | `(senza scheda)` | - | h012.c:1292 |
++| `$2AAE` | `(senza scheda)` | - | h012.c:1086 |
++| `$2ABE` | `(senza scheda)` | - | h012.c:1093 |
++| `$2AF6` | `(senza scheda)` | - | h012.c:1102 |
++| `$2B64` | `(senza scheda)` | - | h012.c:1116 |
++| `$2C28` | `(senza scheda)` | - | h012.c:1147 |
++| `$2DF2` | `ECL_DispatchOpcode` | verificato | h012.c:35 |
+ | `$3020` | `sub_H012_00003020` | parziale |  |
+ | `$3150` | `Scenario_MainLoop` | verificato |  |
+ 
+@@ -627,7 +652,7 @@ Routine portate: **825 / 1087**.
+ | `$0004` | `module_init_H031` | parziale | h031.c:4 |
+ | `$0012` | `sub_H031_00000012` | parziale | h031.c:10 |
+ | `$003E` | `sub_H031_0000003E` | parziale | h031.c:23 |
+-| `$008A` | `sub_H031_0000008A` | parziale |  |
++| `$008A` | `sub_H031_0000008A` | parziale | h031.c:38 |
+ 
+ ### H032
+ 
+@@ -1060,7 +1085,7 @@ Routine portate: **825 / 1087**.
+ | `$083E` | `trampoline_H062_0F04` | parziale | h062.c:531 |
+ | `$0F24` | `sub_H062_00000F24` | parziale | h062.c:906 |
+ | `$1038` | `trampoline_H062_1262` | parziale | h062.c:936 |
+-| `$126C` | `sub_H062_0000126C` | parziale |  |
++| `$126C` | `sub_H062_0000126C` | parziale | h062.c:1022 |
+ | `$12F6` | `sub_H062_000012F6` | parziale | h062.c:581 |
+ | `$142C` | `sub_H062_0000142C` | parziale | h062.c:618 |
+ | `$156C` | `sub_H062_0000156C` | parziale | h062.c:22 |
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index 1be9943..b7ab187 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -1976,3 +1976,58 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
+ **Prossimo passo:** i gestori ECL di H012 (26) e il ciclo dell'esplorazione H012+$3150.
+ 
+ ---
++
++## 2026-11-10 (cok-port-35)
++
++**Richiesta:** "ok compila su sasc, procedi con i comandi ECL di H064". I comandi di H064 erano già in cok-port-34, quindi questo passo porta i comandi ECL di H012.
++
++**Comandi ECL di H012 portati** (25 su 26, in `h012.c`, collegati al dispatcher `ecl_execute`)
++- **Party e personaggi:**
++  - $1E PARTY SURVEY ($01FA): minimo, massimo e media sul party (livello, valori +$E0.., velocità) o presenza di un effetto;
++  - $22 ($05D6): c'è un ranger/guaritore (classe 4 o $A);
++  - $32 ($1E90): qualcuno porta un oggetto del tipo dato;
++  - $3B ($2596): cerca un incantesimo memorizzato (posizione e personaggio);
++  - $3F ($2AF6): il personaggio corrente ha l'effetto dato;
++  - $40 ($2B64): toglie a tutti gli oggetti del tipo dato;
++  - $39 ($2486): sceglie il personaggio corrente;
++  - $36 ($2502): aggiunge un PNG con la sua IA;
++  - $3E ($2ABE): il personaggio corrente lascia il party;
++  - $41 EXPERIENCE ($2C28): punti esperienza divisi per le classi.
++- **Incontri e combattimento:**
++  - $23 SURPRISE ($0688);
++  - $24 COMBAT ($0766): combattimento (H059) o scena speciale, poi contesto 3/4 e ridisegno;
++  - $29 ENCOUNTER ($15AE): COMBAT/WAIT/FLEE/PARLAY o ADVANCE, avvicinamento, "Both sides wait.", "The monsters flee.";
++  - $2C PARLAY ($1DDE): HAUGHTY/SLY/NICE/MEEK/ABUSIVE;
++  - $2E DAMAGE ($1F68): danno con tiro salvezza o tiro per colpire, "The entire party is killed!".
++- **Tesoro:** $27 TREASURE ($0BEA): monete e oggetti dal blocco di ITEMn.DAX (record di $3F byte) o casuali (tabelle di H012).
++- **Flusso e schermo:**
++  - $25 ON GOTO e $26 ON GOSUB ($0B18);
++  - $2D ($26D6): azioni speciali (vista, animazione, suono, muro, passo avanti);
++  - $31 ($2358) chiude le immagini, $33 ($23D6) a capo, $34 ($2392) avanza il tempo, $3A ($1F4C) pausa, $3C ($2AAE) nulla;
++  - $3D ($241C): ridisegna la schermata dell'esplorazione;
++  - $38 ($29A6): menu del party (H013+$4BFC) o accampamento ($2922, portato anche questo).
++
++**Aiutanti portati**
++- **H031+$008A:** byte con segno.
++- **H062+$126C:** tiro per colpire dei comandi ECL.
++
++**Dove mi discosto dall'asm (tutto documentato nel codice)**
++- **PARLAY senza scelta valida:** l'originale legge oltre i cinque valori; qui 0.
++- **EXPERIENCE con nessuna classe:** l'originale divide per 0 (eccezione del 68000); qui nessun punto.
++- **$3C:** l'originale non avanza il PC (ripeterebbe il comando all'infinito); lasciato identico.
++
++**Restano stub**
++- **$28 ($14C8):** usa i reali di H015 e H061+$3C4C (soldi), non ancora portati.
++- **Nuovi stub:** H042+$0300, H070+$1958, H071+$092C, H072+$120C, H066+$276E, H067+$1292, H057+$2F3A.
++- **Ciclo dell'esplorazione:** H012+$3150, e H011+$04A6 (il ciclo del gioco), al quale arriva NEWECL.
++
++**Prove con i dati veri** (test temporaneo, non committato)
++- **Come:** i programmi ECL di 10 aree di ECL1.DAX ($10, $11, $12, $20, $21, $22, $24, $30, $31, $32) eseguiti da `run_ecl` col binario ASan; solo nel test gli stub delle immagini e del suono erano non fatali.
++- **Comandi di H012 eseguiti:** $25 ON GOTO, $2D azioni speciali, $38 menu del party, $3D ridisegno, oltre a quelli di H064.
++- **Arresto:** le aree arrivano a NEWECL e al ciclo del gioco H011+$04A6 (non portato); $11 e $12 restano nel menu del party in attesa di tasti.
++- **ASan:** pulito.
++- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
++
++**Prossimo passo:** il ciclo dell'esplorazione H012+$3150 e il ciclo del gioco H011+$04A6.
++
++---
+diff --git a/src_c/readable/h012.c b/src_c/readable/h012.c
+index 8ed526f..c784021 100644
+--- a/src_c/readable/h012.c
++++ b/src_c/readable/h012.c
+@@ -1,9 +1,30 @@
+ /* H012: ciclo dell'esplorazione e interprete ECL. */
++#include <string.h>
+ #include "h012.h"
+ #include "globals.h"
+ #include "unported.h"
+ #include "h061.h"
+ #include "h064.h"
++#include "h013.h"
++#include "h003_exec.h"
++#include "h008.h"
++#include "h010_input.h"
++#include "h011.h"
++#include "h026_string.h"
++#include "h028_files.h"
++#include "h029_gfx.h"
++#include "h030.h"
++#include "h031.h"
++#include "h036.h"
++#include "h044_tiles.h"
++#include "h045.h"
++#include "h053.h"
++#include "h056.h"
++#include "h058.h"
++#include "h059.h"
++#include "h062.h"
++#include "h063.h"
++#include "h065.h"
+ 
+ /* PORT H012+$0178: link/unlk, nessun effetto. */
+ void h012_init(void)
+@@ -40,38 +61,38 @@ static void ecl_execute(void)
+         ecl_if(); break;
+     case 0x1C: ecl_clear_monsters(); break;
+     case 0x1D: ecl_party_strength(); break;
+-    case 0x1E: h012_01fa(); break;
++    case 0x1E: ecl_party_survey(); break;
+     case 0x20: ecl_new_ecl(); break;
+     case 0x21: case 0x37: ecl_load_files(); break;
+-    case 0x22: h012_05d6(); break;
+-    case 0x23: h012_0688(); break;
+-    case 0x24: h012_0766(); break;
+-    case 0x25: case 0x26: h012_0b18(); break;
+-    case 0x27: h012_0bea(); break;
++    case 0x22: ecl_party_has_class(); break;
++    case 0x23: ecl_surprise(); break;
++    case 0x24: ecl_combat(); break;
++    case 0x25: case 0x26: ecl_on_goto(); break;
++    case 0x27: ecl_treasure(); break;
+     case 0x28: h012_14c8(); break;
+-    case 0x29: h012_15ae(); break;
++    case 0x29: ecl_encounter(); break;
+     case 0x2A: ecl_get_table(); break;
+     case 0x2B: ecl_horizontal_menu(); break;
+-    case 0x2C: h012_1dde(); break;
+-    case 0x2D: h012_26d6(); break;
+-    case 0x2E: h012_1f68(); break;
++    case 0x2C: ecl_parlay(); break;
++    case 0x2D: ecl_special(); break;
++    case 0x2E: ecl_damage(); break;
+     case 0x2F: case 0x30: ecl_and_or(); break;
+-    case 0x31: h012_2358(); break;
+-    case 0x32: h012_1e90(); break;
+-    case 0x33: h012_23d6(); break;
+-    case 0x34: h012_2392(); break;
++    case 0x31: ecl_clear_picture(); break;
++    case 0x32: ecl_find_item(); break;
++    case 0x33: ecl_new_line(); break;
++    case 0x34: ecl_advance_time(); break;
+     case 0x35: ecl_set_table(); break;
+-    case 0x36: h012_2502(); break;
+-    case 0x38: h012_29a6(); break;
+-    case 0x39: h012_2486(); break;
+-    case 0x3A: h012_1f4c(); break;
+-    case 0x3B: h012_2596(); break;
+-    case 0x3C: h012_2aae(); break;
+-    case 0x3D: h012_241c(); break;
+-    case 0x3E: h012_2abe(); break;
+-    case 0x3F: h012_2af6(); break;
+-    case 0x40: h012_2b64(); break;
+-    case 0x41: h012_2c28(); break;
++    case 0x36: ecl_add_npc(); break;
++    case 0x38: ecl_party_menu(); break;
++    case 0x39: ecl_who(); break;
++    case 0x3A: ecl_delay(); break;
++    case 0x3B: ecl_find_spell(); break;
++    case 0x3C: ecl_nop_3c(); break;
++    case 0x3D: ecl_redraw_screen(); break;
++    case 0x3E: ecl_remove_character(); break;
++    case 0x3F: ecl_has_effect(); break;
++    case 0x40: ecl_remove_items(); break;
++    case 0x41: ecl_experience(); break;
+     default: break;
+     }
+ }
+@@ -93,3 +114,1220 @@ void run_ecl(u16 addr)
+     }
+     H064_B(0x0B) = 0;
+ }
++
++#define OPD(i)  operand_desc(i)
++#define ADDR(i) decode_address(operand_lo(i), operand_hi(i))
++#define TEXT64  ((char *)&g_h064_data[0x0C])    /* H064+$C */
++
++/* Audio prima e dopo le scene: H043 (non portato, i comandi si saltano). */
++static void scene_audio(void)
++{
++    if (H005_B(0x24A7)) {
++        h043_190e(0xFF);
++    }
++    if (!H005_B(0x24A7)) {
++        h043_0584();
++    }
++}
++
++/*
++ * PORT H012+$0208 (annidata in $01FA): scrive minimo, massimo, media e
++ * "trovato" nelle variabili degli operandi 3..6.
++ */
++typedef struct SurveyFrame {
++    u8 found;                           /* -$D(a5) */
++    u16 avg;                            /* -$14(a5) */
++    u16 max;                            /* -$16(a5) */
++    u16 min;                            /* -$18(a5) */
++    u16 dst[4];                         /* -$1A..-$20(a5) */
++} SurveyFrame;
++
++static void survey_store(SurveyFrame *f)
++{
++    write_var(f->dst[0], f->min);
++    write_var(f->dst[1], f->max);
++    write_var(f->dst[2], f->avg);
++    write_var(f->dst[3], f->found);
++}
++
++/*
++ * PORT H012+$01FA (comando $1E, PARTY SURVEY): per la variabile del
++ * personaggio indicata (o il suo valore): effetto presente in qualcuno,
++ * livello (+$1B), uno dei valori +$E0.. o la velocita' +$1A9: minimo,
++ * massimo e media sul party.  Per una variabile non prevista l'indice non
++ * e' inizializzato nell'originale: qui 0 (ricerca dell'effetto).
++ */
++void ecl_party_survey(void)
++{
++    SurveyFrame f;
++    Character *p;                       /* -$C(a5) */
++    CokEffect *e;                       /* -$12(a5) */
++    u16 addr;                           /* -$2(a5) */
++    u16 kind = 0;                       /* -$4(a5) */
++    u16 total = 0;                      /* -$6(a5) */
++    u16 v8;                             /* -$8(a5) */
++    u16 count = 0;                      /* -$22(a5) */
++    u16 k;                              /* -$24(a5) */
++    u8 v;
++
++    read_operands(6);
++    p = g_party_head;
++    f.found = 0;
++    if (OPD(1) == 1) {
++        addr = ADDR(1);
++    } else {
++        addr = eval_operand(1);
++    }
++    v8 = eval_operand(2);
++    f.dst[0] = ADDR(3);
++    f.dst[1] = ADDR(4);
++    f.dst[2] = ADDR(5);
++    f.dst[3] = ADDR(6);
++    f.min = 0xFF;
++    f.max = 0;
++    f.avg = 0;
++    addr = (u16)(addr - 0x3100);
++    if (addr == 0x8400) {
++        kind = 0;
++    } else if (addr == 0x19) {
++        kind = 1;
++    } else if (addr > 0xA4 && addr < 0xAD) {
++        kind = (u16)(addr - 0xA3);
++    } else if (addr == 0x9F) {
++        kind = 0x0A;
++    }
++    switch (kind) {
++    case 0:
++        while (p != NULL && !f.found) {
++            f.found = find_effect(p, v8, &e);
++            p = p->next;
++        }
++        f.min = 0;
++        f.max = 0;
++        f.avg = 0;
++        survey_store(&f);
++        break;
++    case 1:
++        for (; p != NULL; p = p->next) {
++            ++count;
++            v = p->b[0x1B];
++            if (v > f.max) f.max = v;
++            if (v < f.min) f.min = v;
++            total = (u16)(total + v);
++        }
++        f.avg = (u16)(total / count);
++        survey_store(&f);
++        break;
++    case 2: case 3: case 4: case 5: case 6: case 7: case 8: case 9:
++        k = (u16)(addr - 0xA4);
++        for (; p != NULL; p = p->next) {
++            ++count;
++            v = p->b[0xE0 + k - 1];
++            if (v < f.min) f.min = v;
++            if (v > f.max) f.max = v;
++            total = (u16)(total + v);
++        }
++        f.avg = (u16)(total / count);
++        survey_store(&f);
++        break;
++    case 0x0A:
++        for (; p != NULL; p = p->next) {
++            ++count;
++            v = p->b[0x1A9];
++            if (v < f.min) f.min = v;
++            if (v > f.max) f.max = v;
++            total = (u16)(total + v);
++        }
++        f.avg = (u16)(total / count);
++        survey_store(&f);
++        break;
++    default:
++        break;
++    }
++}
++
++/* PORT H012+$05D6 (comando $22): 1 se nel party c'e' un ranger/guaritore (+$5C 4 o $A). */
++void ecl_party_has_class(void)
++{
++    Character *p;                       /* -$4(a5) */
++    u16 r = 0;                          /* -$6(a5) */
++    u16 zero = 0;                       /* -$8(a5) */
++
++    read_operands(2);
++    for (p = g_party_head; p != NULL; p = p->next) {
++        if (p->b[0x5C] == 4 || p->b[0x5C] == 0x0A) {
++            r = 1;
++        }
++    }
++    write_var(ADDR(1), r);
++    write_var(ADDR(2), zero);
++}
++
++/*
++ * PORT H012+$0688 (comando $23, SURPRISE): due d6 contro i valori degli
++ * operandi; il risultato (0 nessuno, 1 o 2 sorpreso un lato) va in $2CB.
++ */
++void ecl_surprise(void)
++{
++    u16 v[4];                           /* -$10(a5)..-$A(a5) */
++    u16 i;                              /* -$6(a5) */
++    s16 a;                              /* -$12(a5) */
++    s16 b;                              /* -$14(a5) */
++    s16 r1;                             /* -$2(a5) */
++    s16 r2;                             /* -$4(a5) */
++    u16 res = 0;                        /* -$8(a5) */
++
++    read_operands(4);
++    for (i = 1; i <= 4; ++i) {
++        v[i - 1] = eval_operand(i);
++    }
++    a = (s16)(v[3] + 2 - v[0]);
++    b = (s16)(v[1] + 2 - v[2]);
++    r1 = (s16)roll_dice(1, 6);
++    r2 = (s16)roll_dice(1, 6);
++    if (r1 <= a) {
++        if (r2 > b) {
++            res = 1;
++        } else {
++            res = 3;
++        }
++    }
++    if (r2 <= b) {
++        res = 2;
++    }
++    write_var(0x2CB, res);
++}
++
++/*
++ * PORT H012+$0766 (comando $24, COMBAT): senza mostri caricati una
++ * scena (H071+$092C, H072+$120C o H070+$1958 secondo $3E00+$6D8/$5C4);
++ * altrimenti il combattimento (H059+$1782), dopo il quale H070+$1958 e,
++ * all'aperto, l'immagine $79.  Poi contesto 3/4 e ridisegno.
++ */
++void ecl_combat(void)
++{
++    u8 save;                            /* -$8(a5) */
++    u8 redraw = 1;                      /* -$7(a5) */
++    u16 steps;                          /* -$2(a5) */
++
++    H005_B(0x24AE) = 0;
++    save = H005_B(0x24B0);
++    H005_B(0x24B0) = 0;
++    H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1);
++    if (!H005_B(0x24B6)) {
++        if (COK_GET16(g_state_b + 0x6D8) == 1) {
++            COK_PUT16(g_state_b + 0x6D8, 0);
++            scene_audio();
++            h071_092c();
++            if (COK_GET16(g_state_a + 0x1CC) == 0) {
++                redraw = 0;
++            }
++            scene_audio();
++        } else if (COK_GET16(g_state_b + 0x5C4) == 1) {
++            COK_PUT16(g_state_b + 0x5C4, 0);
++            scene_audio();
++            h072_120c();
++            if (COK_GET16(g_state_a + 0x1CC) == 0) {
++                redraw = 0;
++            }
++            scene_audio();
++        } else {
++            scene_audio();
++            h070_1958();
++            scene_audio();
++        }
++    } else {
++        scene_audio();
++        steps = free_steps((s16)H005_W(0x281C), (s16)H005_W(0x281E),
++                           H005_B(0x2820));
++        if (steps < COK_GET16(g_state_b + 0x582)) {
++            COK_PUT16(g_state_b + 0x582, steps);
++        }
++        h042_0300(&g_h005[0x27BC]);
++        combat_main_loop();
++        if (H005_B(0x24A7)) {
++            h043_190e(0xFF);
++        }
++        h070_1958();
++        if (!H005_B(0x24A7)) {
++            h043_0584();
++        }
++        if (COK_GET16(g_state_a + 0x1CC) == 0) {
++            scene_audio();
++            h042_1006(0x79);
++        } else {
++            scene_audio();
++        }
++    }
++    H005_B(0x3DE3) = (u8)(COK_GET16(g_state_a + 0x1CC) ? 4 : 3);
++    COK_PUT16(g_state_b + 0x594,
++              mask_byte((u8)COK_GET16(g_state_b + 0x594), 1));
++    h029_fill_bytes(1, &H005_B(0x2378), 2, 0);
++    H005_B(0x24BD) = 0;
++    if (redraw) {
++        redraw_game_screen();
++        if (COK_GET16(g_state_a + 0x1CC) == 0 && !H005_B(0x24D0) &&
++            COK_GET16(g_state_a + 0x270) == 0) {
++            h069_0012();
++        }
++    }
++    H005_B(0x24B0) = save;
++}
++
++/* PORT H012+$0B18 (comandi $25 ON GOTO e $26 ON GOSUB). */
++void ecl_on_goto(void)
++{
++    u8 done = 0;                        /* -$9(a5) */
++    u16 v;                              /* -$2(a5) */
++    u16 n;                              /* -$4(a5) */
++    u16 i = 0;                          /* -$8(a5) */
++
++    read_operands(2);
++    v = eval_operand(1);
++    n = eval_operand(2);
++    H005_SET_W(0x3DEA, H005_W(0x3DEA) - 1);
++    read_operands(n);
++    while (i < n && !done) {
++        if (v == i) {
++            if (H005_B(0x2493) == 0x25) {
++                H005_SET_W(0x3DEA, ADDR(i + 1));
++            } else {
++                ecl_gosub((u16)(i + 1));
++            }
++            done = 1;
++        } else {
++            ++i;
++        }
++    }
++}
++
++/* Tipo dell'oggetto casuale del tesoro (le tabelle di H012+$0BEA). */
++static u16 random_treasure_type(void)
++{
++    u16 r;                              /* -$72(a5) */
++    u16 r2;                             /* -$74(a5) */
++    u16 cat;                            /* -$88(a5) */
++    u16 sub;                            /* -$86(a5) */
++    u16 t = 0;                          /* -$78(a5) */
++
++    r = roll_dice(1, 0x64);
++    if (r < 0x15) cat = 0;
++    else if (r < 0x42) cat = 1;
++    else if (r < 0x47) cat = 2;
++    else if (r < 0x51) cat = 3;
++    else if (r < 0x56) cat = 4;
++    else if (r < 0x60) cat = 5;
++    else cat = 6;
++    switch (cat) {
++    case 0:
++        r2 = roll_dice(1, 0x64);
++        sub = (u16)(r2 < 0x0B ? 0 : (r2 < 0x1A ? 1 : 2));
++        switch (sub) {
++        case 0:
++            r2 = roll_dice(1, 0x0A);
++            if (r2 <= 2) t = 6;
++            else if (r2 <= 6) t = 8;
++            else if (r2 <= 8) t = 0x46;
++            else if (r2 == 9) t = 0x0F;
++            else if (r2 == 0x0A) t = 0x1D;
++            break;
++        case 1:
++            r2 = roll_dice(1, 0x14);
++            if (r2 >= 1 && r2 <= 3) t = 5;
++            else if (r2 <= 5) t = 7;
++            else if (r2 <= 8) t = 0x18;
++            else if (r2 <= 0x0A) t = 0x16;
++            else if (r2 <= 0x0C) t = 0x19;
++            else if (r2 <= 0x0E) t = 0x17;
++            else if (r2 <= 0x10) t = 0x1C;
++            else if (r2 <= 0x12) t = 0x1D;
++            else if (r2 <= 0x14) t = 0x1E;
++            break;
++        default:
++            r2 = roll_dice(1, 4);
++            if (r2 < 4) {
++                r2 = roll_dice(1, 0x14);
++                if (r2 >= 1 && r2 <= 8) t = 0x12;
++                else if (r2 <= 0x0D) t = 0x11;
++                else if (r2 == 0x0E) t = 0x0D;
++                else if (r2 == 0x0F) t = 0x10;
++                else if (r2 <= 0x12) t = 0x13;
++                else if (r2 <= 0x14) t = 0x14;
++            } else {
++                r2 = roll_dice(1, 8);
++                if (r2 == 1) t = 1;
++                else if (r2 <= 3) t = 4;
++                else if (r2 <= 5) t = 8;
++                else if (r2 == 6) t = 0x0A;
++                else if (r2 == 7) t = 0x0E;
++                else if (r2 == 8) t = 0x47;
++            }
++            break;
++        }
++        break;
++    case 1: t = 0x27; break;
++    case 2: t = 0x28; break;
++    case 3: t = 0x25; break;
++    case 4: t = 0x3B; break;
++    case 5:
++        r2 = roll_dice(1, 0x14);
++        if (r2 >= 1 && r2 <= 3) t = 0x1F;
++        else if (r2 <= 0x0B) t = 0x23;
++        else if (r2 <= 0x10) t = 0x24;
++        else if (r2 == 0x11) t = 0x20;
++        else if (r2 == 0x12) t = 0x21;
++        else if (r2 <= 0x14) t = 0x22;
++        break;
++    default:
++        r2 = roll_dice(1, 6);
++        if (r2 >= 1 && r2 <= 2) t = 0x32;
++        else if (r2 <= 4) t = 0x30;
++        else if (r2 == 5) t = 0x34;
++        else if (r2 == 6) t = 0x35;
++        break;
++    }
++    return t;
++}
++
++/* Mette in testa alla lista del tesoro ($2A3A) una copia di it. */
++static void push_treasure(const CokItem *it)
++{
++    CokItem *old = g_treasure_items;
++
++    g_treasure_items = (CokItem *)exec_alloc_mem(sizeof(CokItem),
++                                                 COK_MEMF_CLEAR);
++    memcpy(g_treasure_items->b, it->b, 0x48);
++    g_treasure_items->next = old;
++}
++
++/*
++ * PORT H012+$0BEA (comando $27, TREASURE): monete ($2A1E, 7 long) e
++ * oggetti: con k < $80 tutti quelli del blocco k di ITEMn.DAX (record di
++ * $3F byte), con $80+n n oggetti casuali (H067+$1292); i nomi si
++ * costruiscono per il personaggio corrente.
++ */
++void ecl_treasure(void)
++{
++    u16 i;                              /* -$2(a5) */
++    u16 k;                              /* -$4(a5) */
++    u16 j;                              /* -$6(a5) */
++    u16 pos;                            /* -$7A(a5) */
++    u16 size = 0;                       /* -$7C(a5) */
++    u8 *buf = NULL;                     /* -$82(a5) */
++    char num[2];                        /* -$7E(a5) */
++    CokItem it;                         /* -$66(a5) */
++    CokItem *p;                         /* -$6E(a5) */
++    u8 len;                             /* -$83(a5) */
++
++    read_operands(8);
++    for (i = 0; i <= 6; ++i) {
++        H005_SET_L(0x2A1E + i * 4, (u32)eval_operand((u16)(i + 1)));
++    }
++    k = eval_operand(8);
++    if (k < 0x80) {
++        format_number(1, num, (s32)H005_B(0x246E), 0, 0x0A, 1, '0');
++        strcpy(TEXT64, "ITEM");
++        h026_append(0x50, TEXT64, 1, num);
++        dax_load_block(0x50, TEXT64, 4, ".DAX", k, &size, &buf);
++        if (size == 0) {
++            show_message_wait(0x0F, 0, 0x18, "Unable to find item file");
++            quit_game();
++        }
++        pos = 0;
++        do {
++            memset(&it, 0, sizeof it);
++            len = buf[pos];
++            exec_copy_mem(buf + pos + 1, it.b, 0x28);
++            it.b[len] = 0;
++            it.b[0x2A] = buf[pos + 0x29];
++            it.next = NULL;
++            it.b[0x30] = buf[pos + 0x2E];
++            for (j = 1; j <= 3; ++j) {
++                it.b[0x32 + j - 1] = buf[pos + 0x2E + j];
++            }
++            COK_PUT16(&it.b[0x36], (u16)h031_signed_byte(buf[pos + 0x32]));
++            COK_PUT16(&it.b[0x38], (u16)h031_signed_byte(buf[pos + 0x33]));
++            it.b[0x3A] = buf[pos + 0x34];
++            it.b[0x3B] = buf[pos + 0x35];
++            it.b[0x3C] = buf[pos + 0x36];
++            exec_copy_mem(buf + pos + 0x37, &it.b[0x3E], 2);
++            h031_swap_word(&it.b[0x3E]);
++            it.b[0x40] = buf[pos + 0x39];
++            exec_copy_mem(buf + pos + 0x3A, &it.b[0x42], 2);
++            h031_swap_word(&it.b[0x42]);
++            for (j = 1; j <= 3; ++j) {
++                it.b[0x44 + j - 1] = buf[pos + 0x3B + j];
++            }
++            pos = (u16)(pos + 0x3F);
++            push_treasure(&it);
++        } while (pos < (u16)(size - 0x100));
++        exec_free_mem(buf, size);
++    } else if (k != 0xFF) {
++        k = (u16)(k - 0x80);
++        for (j = 1; j <= k; ++j) {
++            memset(&it, 0, sizeof it);
++            h067_1292(random_treasure_type(), &it);
++            push_treasure(&it);
++        }
++        for (p = g_treasure_items; p != NULL; p = p->next) {
++            build_item_name(g_current_char, p, 0, 0, 0, 0);
++        }
++    }
++}
++
++/*
++ * PORT H012+$15AE (comando $29, ENCOUNTER): incontro alla distanza
++ * $3E00+$580 con COMBAT/WAIT/FLEE/ADVANCE (o PARLAY da vicino o
++ * all'aperto); per ogni scelta l'azione dell'operando 5..9 decide il
++ * risultato (variabile dell'operando 4: 0 i mostri fuggono, 1
++ * combattimento, 2 fuga, 3 parlare) o un avvicinamento e un nuovo giro.
++ * I testi 1..3 valgono per le distanze 0..2.
++ */
++void ecl_encounter(void)
++{
++    u16 act[5];                         /* -$C(a5) */
++    char texts[3][0x100];               /* -$30C(a5) */
++    char text[0x100];                   /* -$40C(a5) */
++    char title[2];                      /* -$446(a5) */
++    char opts[0x29];                    /* -$444(a5) */
++    u16 near_speed;                     /* -$40E(a5) */
++    u16 flee_speed;                     /* -$410(a5) */
++    u16 maxv = 0;                       /* -$414(a5) */
++    u16 minv = 0;                       /* -$416(a5) */
++    u16 dst;                            /* -$44C(a5) */
++    u16 k;                              /* -$44A(a5) */
++    u16 i;                              /* -$412(a5) */
++    u16 choice;                         /* -$2(a5) */
++    u16 a;                              /* -$448(a5) */
++    u8 again;                           /* -$417(a5) */
++    u8 clear;                           /* -$418(a5) */
++    u8 animate;                         /* -$419(a5) */
++
++    H005_B(0x24B4) = 1;
++    H005_B(0x24B9) = 0;
++    H005_B(0x24CE) = 1;
++    party_speed_range(&maxv, &minv);
++    title[0] = '\0';
++    title[1] = '\0';
++    text[0] = '\0';
++    read_operands(0x0E);
++    H005_B(0x2491) = (u8)eval_operand(1);
++    COK_PUT16(g_state_b + 0x580, eval_operand(2));
++    H005_B(0x2490) = (u8)eval_operand(3);
++    dst = ADDR(4);
++    for (i = 0; i <= 4; ++i) {
++        act[i] = eval_operand((u16)(i + 5));
++    }
++    for (i = 1; i <= 3; ++i) {
++        memcpy(texts[i - 1], ecl_string(i), 0x100);
++    }
++    near_speed = eval_operand(0x0D);
++    flee_speed = eval_operand(0x0E);
++    COK_PUT16(g_state_b + 0x582,
++              free_steps((s16)H005_W(0x281C), (s16)H005_W(0x281E),
++                         H005_B(0x2820)));
++    if (COK_GET16(g_state_b + 0x580) < COK_GET16(g_state_b + 0x582)) {
++        COK_PUT16(g_state_b + 0x582, COK_GET16(g_state_b + 0x580));
++    }
++    show_event_picture(H005_B(0x2491), H005_B(0x2490),
++                       (u8)COK_GET16(g_state_b + 0x582), &H005_B(0x2378));
++    do {
++        animate = (u8)(H005_B(0x24BD) && H005_B(0x24BC) &&
++                       COK_GET16(g_state_a + 0x1CC) && H005_B(0x2486) != 9);
++        clear = (u8)(COK_GET16(g_state_a + 0x1CC) != 0);
++        again = 0;
++        H005_SET_W(0x334E, 1);
++        H005_SET_W(0x334C, 0x11);
++        switch (COK_GET16(g_state_b + 0x582)) {
++        case 0:
++            k = 1;
++            do {
++                memcpy(text, texts[k - 1], 0x100);
++                ++k;
++            } while (text[0] == '\0' && k <= 3);
++            break;
++        case 1:
++            k = 2;
++            do {
++                memcpy(text, texts[k - 1], 0x100);
++                ++k;
++                if (k > 3) k = 1;
++            } while (text[0] == '\0' && k != 2);
++            break;
++        case 2:
++            k = 3;
++            do {
++                memcpy(text, texts[k - 1], 0x100);
++                ++k;
++                if (k > 3) k = 1;
++            } while (text[0] == '\0' && k != 3);
++            break;
++        default:
++            break;
++        }
++        if (text[0] == '\0') {
++            clear = 0;
++        }
++        word_wrap_text(1, 0x11, 0x26, 0x16, 0x0A, 0, clear, 0xFF, text);
++        if (COK_GET16(g_state_b + 0x582) == 0 ||
++            COK_GET16(g_state_a + 0x1CC) == 0) {
++            strcpy(opts, "~COMBAT ~WAIT ~FLEE ~PARLAY");
++        } else {
++            strcpy(opts, "~COMBAT ~WAIT ~FLEE ~ADVANCE");
++        }
++        choice = ecl_menu(1, title, 0x28, opts, 0x0D, 0x0A, 0x0F, 0, animate);
++        if ((COK_GET16(g_state_b + 0x582) == 0 ||
++             COK_GET16(g_state_a + 0x1CC) == 0) && choice == 3) {
++            choice = 4;
++        }
++        a = (choice <= 4) ? act[choice] : 0;
++        switch (a) {
++        case 0:
++            if (choice != 2) {
++                write_var(dst, 1);
++            } else if (minv >= near_speed) {
++                write_var(dst, 2);
++            } else {
++                write_var(dst, 1);
++            }
++            break;
++        case 1:
++            switch (choice) {
++            case 0: write_var(dst, 1); break;
++            case 1:
++                again = 1;
++                word_wrap_text(1, 0x11, 0x26, 0x16, 0x0A, 0, 1, 0x10,
++                               "Both sides wait.");
++                break;
++            case 2: write_var(dst, 2); break;
++            case 3:
++                if (COK_GET16(g_state_b + 0x582) != 0) {
++                    COK_PUT16(g_state_b + 0x582,
++                              COK_GET16(g_state_b + 0x582) - 1);
++                    show_event_picture(H005_B(0x2491), H005_B(0x2490),
++                                       (u8)COK_GET16(g_state_b + 0x582),
++                                       &H005_B(0x2378));
++                } else {
++                    word_wrap_text(1, 0x11, 0x26, 0x16, 0x0A, 0, 1, 0x10,
++                                   "Both sides wait.");
++                    again = 1;
++                }
++                break;
++            case 4:
++                if (COK_GET16(g_state_b + 0x582) == 0) {
++                    write_var(dst, 3);
++                } else {
++                    COK_PUT16(g_state_b + 0x582,
++                              COK_GET16(g_state_b + 0x582) - 1);
++                    show_event_picture(H005_B(0x2491), H005_B(0x2490),
++                                       (u8)COK_GET16(g_state_b + 0x582),
++                                       &H005_B(0x2378));
++                    again = 1;
++                }
++                break;
++            default: break;
++            }
++            break;
++        case 2:
++            if (choice == 0 && !(flee_speed > maxv)) {
++                write_var(dst, 1);
++            } else if (choice <= 4) {
++                write_var(dst, 0);
++                H005_SET_W(0x334E, 1);
++                H005_SET_W(0x334C, 0x11);
++                word_wrap_text(1, 0x11, 0x26, 0x16, 0x0A, 0, 1, 0x12,
++                               "The monsters flee.");
++            }
++            break;
++        case 3:
++            switch (choice) {
++            case 0: write_var(dst, 1); break;
++            case 1:
++            case 3:
++                if (COK_GET16(g_state_b + 0x582) != 0) {
++                    COK_PUT16(g_state_b + 0x582,
++                              COK_GET16(g_state_b + 0x582) - 1);
++                    show_event_picture(H005_B(0x2491), H005_B(0x2490),
++                                       (u8)COK_GET16(g_state_b + 0x582),
++                                       &H005_B(0x2378));
++                } else {
++                    word_wrap_text(1, 0x11, 0x26, 0x16, 0x0A, 0, 1, 0x10,
++                                   "Both sides wait.");
++                }
++                again = 1;
++                break;
++            case 2: write_var(dst, 2); break;
++            case 4:
++                if (COK_GET16(g_state_b + 0x582) == 0) {
++                    write_var(dst, 3);
++                } else {
++                    COK_PUT16(g_state_b + 0x582,
++                              COK_GET16(g_state_b + 0x582) - 1);
++                    show_event_picture(H005_B(0x2491), H005_B(0x2490),
++                                       (u8)COK_GET16(g_state_b + 0x582),
++                                       &H005_B(0x2378));
++                    again = 1;
++                }
++                break;
++            default: break;
++            }
++            break;
++        case 4:
++            switch (choice) {
++            case 0: write_var(dst, 1); break;
++            case 1:
++            case 3:
++            case 4:
++                if (COK_GET16(g_state_b + 0x582) == 0) {
++                    write_var(dst, 3);
++                } else {
++                    COK_PUT16(g_state_b + 0x582,
++                              COK_GET16(g_state_b + 0x582) - 1);
++                    show_event_picture(H005_B(0x2491), H005_B(0x2490),
++                                       (u8)COK_GET16(g_state_b + 0x582),
++                                       &H005_B(0x2378));
++                    again = 1;
++                }
++                break;
++            case 2: write_var(dst, 2); break;
++            default: break;
++            }
++            break;
++        default:
++            break;
++        }
++    } while (again);
++    clear_message_line();
++    H005_B(0x24CE) = 0;
++    H005_B(0x24B4) = 0;
++}
++
++/*
++ * PORT H012+$1DDE (comando $2C, PARLAY): HAUGHTY/SLY/NICE/MEEK/ABUSIVE;
++ * il valore dell'operando scelto va nella variabile del sesto.  Senza
++ * scelta valida l'originale legge fuori dai cinque valori: qui 0.
++ */
++void ecl_parlay(void)
++{
++    u16 v[5];                           /* -$10(a5) */
++    u16 i;                              /* -$6(a5) */
++    u16 k;                              /* -$2(a5) */
++
++    read_operands(6);
++    for (i = 0; i <= 4; ++i) {
++        v[i] = eval_operand((u16)(i + 1));
++    }
++    k = ecl_menu(0, "", 0x22, "~HAUGHTY ~SLY ~NICE ~MEEK ~ABUSIVE", 0x0D,
++                 0x0A, 0x0F, 0, 0);
++    write_var(ADDR(6), (k <= 4) ? v[k] : 0);
++}
++
++/* PORT H012+$1E90 (comando $32): qualcuno porta un oggetto del tipo t (+$30)? */
++void ecl_find_item(void)
++{
++    u8 found = 0;                       /* -$D(a5) */
++    u16 t;                              /* -$2(a5) */
++    Character *p;                       /* -$8(a5) */
++    CokItem *it;                        /* -$C(a5) */
++
++    read_operands(1);
++    t = eval_operand(1);
++    h029_fill_bytes(5, &H005_B(0x237E), 6, 0);
++    H005_B(0x237F) = 1;
++    for (p = g_party_head; p != NULL && !found; p = p->next) {
++        for (it = p->items; it != NULL && !found; it = it->next) {
++            if (it->b[0x30] == t) {
++                H005_B(0x237E) = 1;
++                H005_B(0x237F) = 0;
++                found = 1;
++            }
++        }
++    }
++}
++
++/* PORT H012+$1F4C (comando $3A, DELAY): pausa. */
++void ecl_delay(void)
++{
++    H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1);
++    message_delay();
++}
++
++/*
++ * PORT H012+$1F68 (comando $2E, DAMAGE): danno nd(s)+b a uno o a tutti
++ * (bit 6), con tiro salvezza (bit 7: tipo dal 5o operando, danno pieno
++ * comunque col bit 4), o a flags bersagli casuali con un tiro per
++ * colpire (H062+$126C).  Se cadono tutti "The entire party is killed!".
++ */
++void ecl_damage(void)
++{
++    Character *save;                    /* -$22(a5) */
++    Character *p;                       /* -$1A(a5) */
++    u8 group = 0;                       /* -$24(a5) */
++    u8 full;                            /* -$25(a5) */
++    u16 flags;                          /* -$2(a5) */
++    u16 n;                              /* -$4(a5) */
++    u16 sides;                          /* -$6(a5) */
++    u16 bonus;                          /* -$E(a5) */
++    u16 save_t;                         /* -$C(a5) */
++    u16 dmg;                            /* -$16(a5) */
++    u16 victim = 0;                     /* -$10(a5) */
++    u16 kind;                           /* -$A(a5) */
++    u16 st;                             /* -$12(a5) */
++    u16 i;                              /* -$8(a5) */
++    u16 j;                              /* -$14(a5) */
++
++    save = g_current_char;
++    p = g_party_head;
++    read_operands(5);
++    flags = eval_operand(1);
++    n = eval_operand(2);
++    sides = eval_operand(3);
++    bonus = eval_operand(4);
++    save_t = eval_operand(5);
++    dmg = (u16)(roll_dice(n, sides) + bonus);
++    full = mask_byte((u8)flags, 0x10);
++    if (mask_byte((u8)flags, 0x40)) {
++        group = 1;
++    } else {
++        victim = roll_dice(1, COK_GET16(g_state_b + 0x67C));
++    }
++    if (mask_byte((u8)flags, 0x80)) {
++        kind = mask_byte((u8)flags, 0x1F);
++        st = mask_byte((u8)save_t, 7);
++        if (group) {
++            for (; p != NULL; p = p->next) {
++                if (mask_byte((u8)flags, 0x20)) {
++                    ecl_damage_message(p, dmg);
++                } else if (!saving_throw_roll(p, (u8)st, (s16)kind)) {
++                    ecl_damage_message(p, dmg);
++                } else if (full) {
++                    ecl_damage_message(p, dmg);
++                }
++            }
++        } else if (mask_byte((u8)save_t, 0x80)) {
++            if (st == 0 ||
++                !saving_throw_roll(g_current_char, (u8)(st - 1), (s16)kind)) {
++                ecl_damage_message(g_current_char, dmg);
++            } else if (full) {
++                ecl_damage_message(g_current_char, dmg);
++            }
++        } else {
++            for (i = 2; i <= victim; ++i) {
++                p = p->next;
++            }
++            if (!saving_throw_roll(p, (u8)st, (s16)kind)) {
++                ecl_damage_message(p, dmg);
++            } else if (full) {
++                ecl_damage_message(p, dmg);
++            }
++        }
++    } else {
++        for (i = 1; i <= flags; ++i) {
++            p = g_party_head;
++            victim = roll_dice(1, COK_GET16(g_state_b + 0x67C));
++            for (j = 1; j < victim; ++j) {
++                p = p->next;
++            }
++            if (ecl_attack_hits(p, save_t)) {
++                ecl_damage_message(p, dmg);
++            }
++            dmg = (u16)(roll_dice(n, sides) + bonus);
++        }
++    }
++    H005_B(0x24D0) = 1;
++    for (p = g_party_head; p != NULL; p = p->next) {
++        if (p->b[0x198]) {
++            H005_B(0x24D0) = 0;
++        }
++    }
++    if (H005_B(0x24D0)) {
++        draw_screen_frame(1);
++        H005_SET_W(0x334E, 2);
++        H005_SET_W(0x334C, 2);
++        word_wrap_text(1, 1, 0x26, 0x16, 0x0A, 0, 1, 0x1B,
++                       "The entire party is killed!");
++        dos_delay(0x96);
++    }
++    g_current_char = save;
++    show_message_wait(0x0F, 0, 0x22, "press <enter>/<return> to continue");
++}
++
++/* PORT H012+$2358 (comando $31): chiude le immagini dell'evento. */
++void ecl_clear_picture(void)
++{
++    H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1);
++    if (H005_B(0x24BA)) {
++        H005_B(0x24E1) = 1;
++        h060_0018();
++        H005_B(0x24BA) = 0;
++        H005_B(0x24BD) = 0;
++    }
++}
++
++/* PORT H012+$2392 (comando $34): avanza il tempo di n unita' u. */
++void ecl_advance_time(void)
++{
++    u16 n;                              /* -$2(a5) */
++    u8 u;                               /* -$3(a5) */
++
++    read_operands(2);
++    n = eval_operand(1);
++    u = (u8)eval_operand(2);
++    advance_time(n, u);
++}
++
++/* PORT H012+$23D6 (comando $33): a capo nella finestra di testo. */
++void ecl_new_line(void)
++{
++    H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1);
++    if (H005_B(0x24BE)) {
++        H005_SET_W(0x334E, 1);
++        H005_SET_W(0x334C, H005_W(0x334C) + 1);
++        H005_B(0x24BE) = 0;
++    } else {
++        H005_SET_W(0x334E, 1);
++        H005_SET_W(0x334C, H005_W(0x334C) + 1);
++    }
++}
++
++/* PORT H012+$241C (comando $3D): ridisegna la schermata dell'esplorazione. */
++void ecl_redraw_screen(void)
++{
++    H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1);
++    H005_B(0x24AE) = 0;
++    draw_explore_frame();
++    draw_party(g_current_char);
++    draw_status_line();
++    if (!H005_B(0x24D7)) {
++        h042_0254(3, 3, 1, g_pic_rec_27c2);
++    }
++    draw_status_line();
++    H005_B(0x24B2) = 0;
++    H005_B(0x24BF) = 1;
++}
++
++/* PORT H012+$2486 (comando $39): sceglie il personaggio corrente col testo dato. */
++void ecl_who(void)
++{
++    u8 save;                            /* -$53(a5) */
++    char prompt[0x51];                  /* -$52(a5) */
++
++    save = H005_B(0x24B0);
++    H005_B(0x24B0) = 0;
++    H005_B(0x24B3) = 0;
++    read_operands(1);
++    clear_text_cells(1, 0x11, 0x26, 0x16);
++    h026_copy(0x50, prompt, 0xFF, ecl_string(1));
++    choose_party_member(0x50, prompt, 0, 0, &g_current_char);
++    H005_B(0x24B0) = save;
++}
++
++/* PORT H012+$2502 (comando $36): aggiunge un PNG (H066+$276E) con l'IA data. */
++void ecl_add_npc(void)
++{
++    u16 v;                              /* -$C(a5) */
++
++    read_operands(2);
++    h066_276e(eval_operand(1));
++    v = (u16)(eval_operand(2) >> 1);
++    v = or_byte((u8)v, 0x80);
++    g_current_char->b[0xEC] = (u8)v;
++    recompute_stats(g_current_char);
++    draw_party(g_current_char);
++}
++
++/*
++ * PORT H012+$2596 (comando $3B): cerca l'incantesimo s fra quelli
++ * memorizzati (+$1F..) dei personaggi: posizione ($FF se no) e numero
++ * del personaggio nelle variabili; poi la traccia di debug H056+$0886.
++ */
++void ecl_find_spell(void)
++{
++    u8 found = 0;                       /* -$B(a5) */
++    u8 stop = 0;                        /* -$C(a5) */
++    u16 s;                              /* -$2(a5) */
++    u16 dst1;                           /* -$E(a5) */
++    u16 dst2;                           /* -$10(a5) */
++    u16 k = 1;                          /* -$4(a5) */
++    u16 idx = 0;                        /* -$6(a5) */
++    Character *p;                       /* -$A(a5) */
++
++    read_operands(3);
++    s = eval_operand(1);
++    dst1 = ADDR(2);
++    dst2 = ADDR(3);
++    p = g_party_head;
++    while (p != NULL && !found) {
++        k = 1;
++        do {
++            if (p->b[0x1E + k] == s) {
++                found = 1;
++            } else if (k <= 0x39) {
++                ++k;
++            } else {
++                stop = 1;
++            }
++        } while (!stop && !found);
++        stop = 0;
++        p = p->next;
++        if (p != NULL && !found) {
++            ++idx;
++        }
++    }
++    if (k > 0x39) {
++        k = 0xFF;
++    }
++    write_var(dst1, k);
++    write_var(dst2, idx);
++    debug_trace(5, "spell", (u8)k, (u8)idx, (u8)s);
++}
++
++/*
++ * PORT H012+$2AAE (comando $3C): nessun effetto.  L'originale non avanza
++ * il PC (il comando si ripeterebbe all'infinito); qui lo stesso.
++ */
++void ecl_nop_3c(void)
++{
++}
++
++/* PORT H012+$2ABE (comando $3E): il personaggio corrente lascia il party. */
++void ecl_remove_character(void)
++{
++    H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1);
++    remove_from_party(0, 1);
++    g_h064_saved_char = g_current_char;
++    draw_party(g_current_char);
++}
++
++/* PORT H012+$2AF6 (comando $3F): il personaggio corrente ha l'effetto t? */
++void ecl_has_effect(void)
++{
++    CokEffect *e;                       /* -$4(a5) */
++
++    h029_fill_bytes(5, &H005_B(0x237E), 6, 0);
++    read_operands(1);
++    if (find_effect(g_current_char, eval_operand(1), &e)) {
++        H005_B(0x237E) = 1;
++    } else {
++        H005_B(0x237F) = 1;
++    }
++}
++
++/* PORT H012+$2B64 (comando $40): toglie a tutti gli oggetti del tipo t. */
++void ecl_remove_items(void)
++{
++    u16 t;                              /* -$2(a5) */
++    Character *save;                    /* -$A(a5) */
++    Character *p;                       /* -$6(a5) */
++    CokItem *it;                        /* -$E(a5) */
++    CokItem *next;                      /* -$12(a5) */
++
++    read_operands(1);
++    t = eval_operand(1);
++    save = g_current_char;
++    for (p = g_party_head; p != NULL; p = p->next) {
++        it = p->items;
++        while (it != NULL) {
++            next = it->next;
++            if (it->b[0x30] == t) {
++                g_current_char = p;
++                if (it->b[0x3A]) {
++                    ready_item(it);
++                }
++                delete_item(p, it);
++            }
++            it = next;
++        }
++        recompute_stats(p);
++    }
++    g_current_char = save;
++}
++
++/*
++ * PORT H012+$2C28 (comando $41, EXPERIENCE): punti esperienza al party (o
++ * al corrente), divisi per le classi di ciascuno (+$FE..+$105 non nulli);
++ * solo a chi e' in piedi.  Senza classi l'originale divide per 0
++ * (eccezione del 68000): qui nessun punto.
++ */
++static void give_xp(Character *p, u16 xp)
++{
++    u16 classes = 0;                    /* -$C(a5) */
++    u8 i;                               /* -$9(a5) */
++    u16 share;                          /* -$E(a5) */
++
++    for (i = 0; i <= 7; ++i) {
++        if (p->b[0xFE + i] > 0) {
++            ++classes;
++        }
++    }
++    if (classes == 0) {
++        return;
++    }
++    share = (u16)(xp / classes);
++    if (p->b[0x198]) {
++        COK_PUT32(&p->b[0x11E], COK_GET32(&p->b[0x11E]) + share);
++    }
++}
++
++void ecl_experience(void)
++{
++    u16 xp;                             /* -$2(a5) */
++    u8 all;                             /* -$3(a5) */
++    Character *p;                       /* -$8(a5) */
++
++    read_operands(2);
++    xp = eval_operand(2);
++    all = (u8)eval_operand(1);
++    H005_SET_W(0x334C, 0x11);
++    H005_SET_W(0x334E, 1);
++    if (all) {
++        word_wrap_text(1, 0x11, 0x26, 0x16, 0x0A, 0, 1, 0x2B,
++                       "Congratulations the party gains experience!");
++        message_delay();
++        for (p = g_party_head; p != NULL; p = p->next) {
++            give_xp(p, xp);
++        }
++    } else {
++        p = g_current_char;
++        strcpy(TEXT64, "Congratulations ");
++        h026_append(0x50, TEXT64, 0x0F, (const char *)p->b);
++        h026_append(0x50, TEXT64, 0x12, " gains experience!");
++        word_wrap_text(1, 0x11, 0x26, 0x16, 0x0A, 0, 1, 0x50, TEXT64);
++        message_delay();
++        give_xp(p, xp);
++    }
++}
++
++/*
++ * PORT H012+$26D6 (comando $2D): azioni speciali per codice: $2E10
++ * ridisegna la vista se cambiata, $6803 anima l'insieme $27BC, $B203
++ * suono, $C018 muro davanti, $C01E un passo avanti.
++ */
++void ecl_special(void)
++{
++    u16 w;                              /* -$2(a5) */
++    u8 *set = &g_h005[0x27BC];
++
++    read_operands(1);
++    w = make_word(operand_lo(1), operand_hi(1));
++    if (w == 0x2E10) w = 0;
++    else if (w == 0x6803) w = 1;
++    else if (w == 0xB203) w = 2;
++    else if (w == 0xC018) w = 3;
++    else if (w == 0xC01E) w = 4;
++    switch (w) {
++    case 0:
++        H005_B(0x2822) = map_flags((s16)H005_W(0x281C), (s16)H005_W(0x281E));
++        if (H005_B(0x24BD) || H005_B(0x24BA) || H005_B(0x24B8) ||
++            H005_B(0x24B7) || H005_B(0x24B5)) {
++            h029_fill_bytes(1, &H005_B(0x2378), 2, 0);
++            H005_B(0x24E1) = 1;
++            h060_0018();
++            draw_status_line();
++            H005_B(0x24B5) = 0;
++            H005_B(0x24B8) = 0;
++            H005_B(0x24B7) = 0;
++            H005_B(0x24BD) = 0;
++            H005_B(0x24BA) = 0;
++            H005_B(0x2821) = (u8)map_wall((s16)H005_W(0x281C),
++                                          (s16)H005_W(0x281E),
++                                          H005_B(0x2820));
++        }
++        break;
++    case 1:
++        h042_0254(3, 3, 1, h042_0b80(COK_GET16(set + 2), set));
++        COK_PUT16(set + 2, COK_GET16(set + 2) + 1);
++        if (COK_GET16(set + 2) > COK_GET16(set)) {
++            COK_PUT16(set + 2, 1);
++        }
++        message_delay();
++        break;
++    case 2:
++        switch (H005_W(0x2376)) {
++        case 0x0A: h043_190e(0x13); break;
++        default: h043_190e(0x11); break;
++        }
++        break;
++    case 3:
++        if (COK_GET16(g_state_a + 0x1CC) == 0) {
++            H005_B(0x2821) = (u8)map_wall((s16)H005_W(0x281C),
++                                          (s16)H005_W(0x281E),
++                                          H005_B(0x2820));
++        }
++        break;
++    case 4:
++        step_forward();
++        break;
++    default:
++        break;
++    }
++}
++
++/*
++ * PORT H012+$2922: riposo/accampamento dell'area: esegue l'ingresso
++ * $3DF0, poi H057+$2F3A; se richiesto ridisegna ed esegue $3DEE; infine
++ * ridisegna la vista (e all'aperto l'immagine).
++ */
++void ecl_camp_entry(void)
++{
++    u8 r = 0;                           /* -$1(a5) */
++
++    run_ecl(H005_W(0x3DF0));
++    h057_2f3a(&r);
++    if (r) {
++        redraw_game_screen();
++        run_ecl(H005_W(0x3DEE));
++    }
++    H005_B(0x24E1) = 1;
++    if (COK_GET16(g_state_a + 0x270) == 0) {
++        h060_0018();
++    }
++    H005_B(0x24A3) = 0;
++    if (COK_GET16(g_state_a + 0x1CC) == 0 && COK_GET16(g_state_a + 0x270) == 0) {
++        h069_0012();
++    }
++}
++
++/*
++ * PORT H012+$29A6 (comando $38): 0 il menu del party (H013+$4BFC), 9 il
++ * campo ($2922) e, fuori dalla citta', EXIT.
++ */
++void ecl_party_menu(void)
++{
++    u8 save;                            /* -$A(a5) */
++    u16 pc;                             /* -$4(a5) */
++    u16 v;                              /* -$2(a5) */
++
++    save = H005_B(0x24B0);
++    H005_B(0x24B0) = 0;
++    if (H064_B(9)) {
++        g_current_char = g_h064_saved_char;
++        H064_B(9) = 0;
++    }
++    pc = H005_W(0x3DEA);
++    read_operands(1);
++    v = eval_operand(1);
++    switch (v) {
++    case 0:
++        H005_B(0x249C) = 0;
++        main_menu();
++        H005_B(0x249C) = 1;
++        if (H005_B(0x2486) != 9 && COK_GET16(g_state_a + 0x270) == 0 &&
++            COK_GET16(g_state_a + 0x1CC) == 0) {
++            redraw_game_screen();
++        }
++        break;
++    case 9:
++        pc = H005_W(0x3DEA);
++        ecl_camp_entry();
++        H005_SET_W(0x3DEA, pc);
++        if (COK_GET16(g_state_a + 0x270) == 0) {
++            ecl_exit();
++        }
++        break;
++    default:
++        break;
++    }
++    (void)pc;
++    H005_B(0x24B0) = save;
++}
+diff --git a/src_c/readable/h012.h b/src_c/readable/h012.h
+index 479338b..5fbbb60 100644
+--- a/src_c/readable/h012.h
++++ b/src_c/readable/h012.h
+@@ -3,4 +3,30 @@
+ #define COK_H012_H
+ #include "cok.h"
+ void run_ecl(u16 addr);                 /* H012+$018A */
++void ecl_party_survey(void); /* H012+$01FA */
++void ecl_party_has_class(void); /* H012+$05D6 */
++void ecl_surprise(void);     /* H012+$0688 */
++void ecl_combat(void);       /* H012+$0766 */
++void ecl_on_goto(void);      /* H012+$0B18 */
++void ecl_treasure(void);     /* H012+$0BEA */
++void ecl_encounter(void);    /* H012+$15AE */
++void ecl_parlay(void);       /* H012+$1DDE */
++void ecl_special(void);      /* H012+$26D6 */
++void ecl_damage(void);       /* H012+$1F68 */
++void ecl_clear_picture(void); /* H012+$2358 */
++void ecl_find_item(void);    /* H012+$1E90 */
++void ecl_new_line(void);     /* H012+$23D6 */
++void ecl_advance_time(void); /* H012+$2392 */
++void ecl_add_npc(void);      /* H012+$2502 */
++void ecl_party_menu(void);   /* H012+$29A6 */
++void ecl_who(void);          /* H012+$2486 */
++void ecl_delay(void);        /* H012+$1F4C */
++void ecl_find_spell(void);   /* H012+$2596 */
++void ecl_nop_3c(void);       /* H012+$2AAE */
++void ecl_redraw_screen(void); /* H012+$241C */
++void ecl_remove_character(void); /* H012+$2ABE */
++void ecl_has_effect(void);   /* H012+$2AF6 */
++void ecl_remove_items(void); /* H012+$2B64 */
++void ecl_experience(void);   /* H012+$2C28 */
++void ecl_camp_entry(void);              /* H012+$2922 */
+ #endif
+diff --git a/src_c/readable/h031.c b/src_c/readable/h031.c
+index 4520153..6f3fbb8 100644
+--- a/src_c/readable/h031.c
++++ b/src_c/readable/h031.c
+@@ -34,3 +34,12 @@ void h031_swap_long(u8 *value)
+     value[1] = value[2];
+     value[2] = t;
+ }
++
++/* PORT H031+$008A: byte con segno (da disco) in word. */
++s16 h031_signed_byte(u8 b)
++{
++    if (b < 0x80) {
++        return b;
++    }
++    return (s16)(b - 0x100);
++}
+diff --git a/src_c/readable/h031.h b/src_c/readable/h031.h
+index 0298588..9d31cab 100644
+--- a/src_c/readable/h031.h
++++ b/src_c/readable/h031.h
+@@ -6,5 +6,6 @@
+ 
+ void h031_swap_word(u8 *word);          /* H031+$0012 */
+ void h031_swap_long(u8 *value);         /* H031+$003E */
++s16  h031_signed_byte(u8 b);            /* H031+$008A */
+ 
+ #endif
+diff --git a/src_c/readable/h062.c b/src_c/readable/h062.c
+index 8f598fe..544675a 100644
+--- a/src_c/readable/h062.c
++++ b/src_c/readable/h062.c
+@@ -1017,3 +1017,25 @@ void fall_down(Character *c, u8 status, u16 len, const char *text)
+ void h062_nop_1898(void)
+ {
+ }
++
++/*
++ * PORT H062+$126C: tiro per colpire c (d20 in $2A1A, 20 vale 100; evento
++ * $10): colpisce se il tiro piu' bonus supera la CA (+$19C).  Con 1 no.
++ */
++u8 ecl_attack_hits(Character *c, u16 bonus)
++{
++    u8 hit = 0;                         /* -$1(a5) */
++
++    H005_SET_W(0x2A1A, roll_dice(1, 0x14));
++    if ((s16)H005_W(0x2A1A) > 1) {
++        if (H005_W(0x2A1A) == 0x14) {
++            H005_SET_W(0x2A1A, 0x64);
++        }
++        trigger_event(&c, 0x10);
++        if ((s16)H005_W(0x2A1A) >= 0 &&
++            (u16)(H005_W(0x2A1A) + bonus) > c->b[0x19C]) {
++            hit = 1;
++        }
++    }
++    return hit;
++}
+diff --git a/src_c/readable/h062.h b/src_c/readable/h062.h
+index 68a8fb0..fff03e8 100644
+--- a/src_c/readable/h062.h
++++ b/src_c/readable/h062.h
+@@ -43,5 +43,6 @@ void check_cloud(Character *c, u8 in_cloud);    /* H062+$1038 */
+ void fall_down(Character *c, u8 status, u16 len, const char *text);
+                                                 /* H062+$1694 */
+ void h062_nop_1898(void);                       /* H062+$1898 */
++u8   ecl_attack_hits(Character *c, u16 bonus);   /* H062+$126C */
+ 
+ #endif
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index b2d5c2e..1290b8f 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -114,32 +114,14 @@ void h097_1d68(Character *c) { (void)c; cok_unported("H097+$1D68"); }
+ void h066_1fda(Character *c, u16 idx) { (void)c; (void)idx; cok_unported("H066+$1FDA"); }
+ void h042_0f50(u16 frame, void *set) { (void)frame; (void)set; cok_unported("H042+$0F50"); }
+ 
+-void h012_01fa(void) { cok_unported("H012+$01FA"); }
+-void h012_05d6(void) { cok_unported("H012+$05D6"); }
+-void h012_0688(void) { cok_unported("H012+$0688"); }
+-void h012_0766(void) { cok_unported("H012+$0766"); }
+-void h012_0b18(void) { cok_unported("H012+$0B18"); }
+-void h012_0bea(void) { cok_unported("H012+$0BEA"); }
+ void h012_14c8(void) { cok_unported("H012+$14C8"); }
+-void h012_15ae(void) { cok_unported("H012+$15AE"); }
+-void h012_1dde(void) { cok_unported("H012+$1DDE"); }
+-void h012_26d6(void) { cok_unported("H012+$26D6"); }
+-void h012_1f68(void) { cok_unported("H012+$1F68"); }
+-void h012_2358(void) { cok_unported("H012+$2358"); }
+-void h012_1e90(void) { cok_unported("H012+$1E90"); }
+-void h012_23d6(void) { cok_unported("H012+$23D6"); }
+-void h012_2392(void) { cok_unported("H012+$2392"); }
+-void h012_2502(void) { cok_unported("H012+$2502"); }
+-void h012_29a6(void) { cok_unported("H012+$29A6"); }
+-void h012_2486(void) { cok_unported("H012+$2486"); }
+-void h012_1f4c(void) { cok_unported("H012+$1F4C"); }
+-void h012_2596(void) { cok_unported("H012+$2596"); }
+-void h012_2aae(void) { cok_unported("H012+$2AAE"); }
+-void h012_241c(void) { cok_unported("H012+$241C"); }
+-void h012_2abe(void) { cok_unported("H012+$2ABE"); }
+-void h012_2af6(void) { cok_unported("H012+$2AF6"); }
+-void h012_2b64(void) { cok_unported("H012+$2B64"); }
+-void h012_2c28(void) { cok_unported("H012+$2C28"); }
+ 
+ void h042_10dc(void) { cok_unported("H042+$10DC"); }
+ void h069_0012(void) { cok_unported("H069+$0012"); }
++void h042_0300(u8 *set) { (void)set; cok_unported("H042+$0300"); }
++void h070_1958(void) { cok_unported("H070+$1958"); }
++void h071_092c(void) { cok_unported("H071+$092C"); }
++void h072_120c(void) { cok_unported("H072+$120C"); }
++void h066_276e(u16 npc) { (void)npc; cok_unported("H066+$276E"); }
++void h067_1292(u16 type, CokItem *it) { (void)type; (void)it; cok_unported("H067+$1292"); }
++void h057_2f3a(u8 *result) { (void)result; cok_unported("H057+$2F3A"); }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index f01b298..f3d935d 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -91,32 +91,15 @@ void h066_1fda(Character *c, u16 idx);   /* carica un mostro (MONnCHA) */
+ void h042_0f50(u16 frame, void *set);    /* fotogramma dell'insieme $27BC */
+ 
+ /* Gestori dei comandi ECL (H064, H012) non ancora portati. */
+-void h012_01fa(void);
+-void h012_05d6(void);
+-void h012_0688(void);
+-void h012_0766(void);
+-void h012_0b18(void);
+-void h012_0bea(void);
+ void h012_14c8(void);
+-void h012_15ae(void);
+-void h012_1dde(void);
+-void h012_26d6(void);
+-void h012_1f68(void);
+-void h012_2358(void);
+-void h012_1e90(void);
+-void h012_23d6(void);
+-void h012_2392(void);
+-void h012_2502(void);
+-void h012_29a6(void);
+-void h012_2486(void);
+-void h012_1f4c(void);
+-void h012_2596(void);
+-void h012_2aae(void);
+-void h012_241c(void);
+-void h012_2abe(void);
+-void h012_2af6(void);
+-void h012_2b64(void);
+-void h012_2c28(void);
+ 
+ void h042_10dc(void);                    /* dopo l'immagine grande */
+ void h069_0012(void);                    /* immagine $79 */
++/* Usati dai comandi ECL di H012. */
++void h042_0300(u8 *set);                 /* carica l'insieme d'immagini */
++void h070_1958(void);                    /* scena dopo il combattimento */
++void h071_092c(void);                    /* scena speciale ($6D8) */
++void h072_120c(void);                    /* scena speciale ($5C4) */
++void h066_276e(u16 npc);                 /* aggiunge un PNG */
++void h067_1292(u16 type, CokItem *it);   /* oggetto casuale */
++void h057_2f3a(u8 *result);              /* accampamento */
+-- 
+2.43.0
+

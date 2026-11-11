@@ -1,0 +1,1807 @@
+From 4de74b8408f7a0822f90699d24374a9033f9dd51 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 16:20:49 +0000
+Subject: [PATCH 15/65] Port the main menu, the list menu engine and the exit
+ path
+
+Ports H013+$4BFC (main party menu: entries enabled from the party
+state, function dispatch, the 'J' free-training switch on argv[2]),
+the H008 list menu engine ($0102, $0162, $13CE..$1A60, $1AF4 body:
+paged list with headers, Next/Prev, arrows, mouse), the Yes/No question
+$203C and list allocation $20C2/$2178. Also the exit chain: H010+$0332
+and $00C4, H029+$148E, H030+$0C84, H028+$0D74 and the
+FreeColorMap/FreeVPortCopLists/FreeCprList adapters. Several H005
+pointer slots become C variables; main keeps argc/argv (H015+$8).
+
+Fixes found with AddressSanitizer: DAX literal runs that claim bytes
+past the compressed block now copy only what is there, and the host
+SetPointer no longer reads the sprite's end words. Moving up from the
+first menu entry reads a null node in the original (byte at $2A); a
+null node now counts as a header, giving the same wrap.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md   | 148 +++++-----
+ src_c/readable/globals.c        |   4 +
+ src_c/readable/globals.h        |   6 +
+ src_c/readable/h000_entry.c     |  11 +-
+ src_c/readable/h001_main.c      |   8 +-
+ src_c/readable/h006.c           |   4 +-
+ src_c/readable/h008.c           | 464 ++++++++++++++++++++++++++++++++
+ src_c/readable/h008.h           |  23 ++
+ src_c/readable/h010_input.c     |  80 ++++++
+ src_c/readable/h010_input.h     |   1 +
+ src_c/readable/h013.c           | 290 +++++++++++++++++++-
+ src_c/readable/h013.h           |   7 +
+ src_c/readable/h022_view.c      |  12 +
+ src_c/readable/h022_view.h      |   2 +
+ src_c/readable/h028_files.c     |  43 ++-
+ src_c/readable/h028_files.h     |   1 +
+ src_c/readable/h029_gfx.c       |  24 ++
+ src_c/readable/h029_gfx.h       |   1 +
+ src_c/readable/h030.c           |   6 +
+ src_c/readable/h030.h           |   1 +
+ src_c/readable/h034.c           |   2 +-
+ src_c/readable/h082.c           |  12 +-
+ src_c/readable/h082.h           |   9 +
+ src_c/readable/host/graphics.c  |  11 +
+ src_c/readable/host/intuition.c |   3 +-
+ src_c/readable/host/ndk.h       |   5 +
+ src_c/readable/tests/dax_test.c |   7 +-
+ src_c/readable/unported.c       |  23 +-
+ src_c/readable/unported.h       |  25 +-
+ 29 files changed, 1138 insertions(+), 95 deletions(-)
+ create mode 100644 src_c/readable/h013.h
+ create mode 100644 src_c/readable/h082.h
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index f485e3a..ae02c99 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **273 / 913**.
++Routine portate: **298 / 913**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -14,12 +14,12 @@ Routine portate: **273 / 913**.
+ | H005 | 21276 | 1 | 1 |
+ | H006 | 3020 | 4 | 3 |
+ | H007 | 3036 | 11 | 11 |
+-| H008 | 8660 | 21 | 6 |
++| H008 | 8660 | 21 | 21 |
+ | H009 | 988 | 3 | 3 |
+-| H010 | 2488 | 9 | 4 |
++| H010 | 2488 | 9 | 6 |
+ | H011 | 7004 | 12 | 2 |
+ | H012 | 13580 | 8 | 1 |
+-| H013 | 25244 | 20 | 1 |
++| H013 | 25244 | 20 | 3 |
+ | H014 | 224 | 2 | 1 |
+ | H015 | 1016 | 11 | 5 |
+ | H016 | 436 | 5 | 4 |
+@@ -28,15 +28,15 @@ Routine portate: **273 / 913**.
+ | H019 | 240 | 1 | 1 |
+ | H020 | 2884 | 6 | 1 |
+ | H021 | 1632 | 14 | 14 |
+-| H022 | 328 | 10 | 8 |
++| H022 | 328 | 10 | 10 |
+ | H023 | 140 | 2 | 2 |
+ | H024 | 268 | 2 | 2 |
+ | H025 | 264 | 2 | 2 |
+ | H026 | 1452 | 11 | 11 |
+ | H027 | 18156 | 10 | 2 |
+-| H028 | 4488 | 16 | 9 |
+-| H029 | 6084 | 32 | 18 |
+-| H030 | 3240 | 18 | 9 |
++| H028 | 4488 | 16 | 10 |
++| H029 | 6084 | 32 | 19 |
++| H030 | 3240 | 18 | 10 |
+ | H031 | 212 | 4 | 3 |
+ | H032 | 9352 | 1 | 1 |
+ | H033 | 8140 | 15 | 2 |
+@@ -88,7 +88,7 @@ Routine portate: **273 / 913**.
+ | H079 | 148 | 5 | 1 |
+ | H080 | 1388 | 1 | 1 |
+ | H081 | 76 | 1 | 1 |
+-| H082 | 156 | 2 | 1 |
++| H082 | 156 | 2 | 2 |
+ | H083 | 92 | 1 | 1 |
+ | H084 | 92 | 2 | 2 |
+ | H085 | 19904 | 14 | 1 |
+@@ -120,8 +120,8 @@ Routine portate: **273 / 913**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0058` | `Game_Main` | verificato | h001_main.c:64 |
+-| `$0066` | `Select_DataPrefix` | verificato | h001_main.c:31 |
++| `$0058` | `Game_Main` | verificato | h001_main.c:66 |
++| `$0066` | `Select_DataPrefix` | verificato | h001_main.c:33 |
+ 
+ ### H002
+ 
+@@ -195,27 +195,27 @@ Routine portate: **273 / 913**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$009A` | `module_init_H008` | parziale | h008.c:11 |
+-| `$0102` | `sub_H008_00000102` | parziale |  |
+-| `$0162` | `sub_H008_00000162` | parziale |  |
+-| `$01A0` | `sub_H008_000001A0` | parziale | h008.c:22 |
+-| `$01FC` | `UI_RequestChoice` | parziale | h008.c:332 |
+-| `$020A` | `sub_H008_0000020A` | parziale | h008.c:55 |
+-| `$03C8` | `sub_H008_000003C8` | parziale | h008.c:104 |
+-| `$139E` | `sub_H008_0000139E` | parziale | h008.c:16 |
+-| `$13C0` | `trampoline_H008_1AF4` | parziale |  |
+-| `$13CE` | `sub_H008_000013CE` | parziale |  |
+-| `$1448` | `sub_H008_00001448` | parziale |  |
+-| `$15DC` | `sub_H008_000015DC` | parziale |  |
+-| `$164E` | `sub_H008_0000164E` | parziale |  |
+-| `$16BA` | `sub_H008_000016BA` | parziale |  |
+-| `$176A` | `sub_H008_0000176A` | parziale |  |
+-| `$188A` | `sub_H008_0000188A` | parziale |  |
+-| `$19A8` | `sub_H008_000019A8` | parziale |  |
+-| `$1A60` | `sub_H008_00001A60` | parziale |  |
+-| `$203C` | `sub_H008_0000203C` | parziale |  |
+-| `$20C2` | `sub_H008_000020C2` | parziale |  |
+-| `$2178` | `sub_H008_00002178` | parziale |  |
++| `$009A` | `module_init_H008` | parziale | h008.c:12 |
++| `$0102` | `sub_H008_00000102` | parziale | h008.c:561 |
++| `$0162` | `sub_H008_00000162` | parziale | h008.c:574 |
++| `$01A0` | `sub_H008_000001A0` | parziale | h008.c:23 |
++| `$01FC` | `UI_RequestChoice` | parziale | h008.c:333 |
++| `$020A` | `sub_H008_0000020A` | parziale | h008.c:56 |
++| `$03C8` | `sub_H008_000003C8` | parziale | h008.c:105 |
++| `$139E` | `sub_H008_0000139E` | parziale | h008.c:17 |
++| `$13C0` | `trampoline_H008_1AF4` | parziale | h008.c:803 |
++| `$13CE` | `sub_H008_000013CE` | parziale | h008.c:613 |
++| `$1448` | `sub_H008_00001448` | parziale | h008.c:636 |
++| `$15DC` | `sub_H008_000015DC` | parziale | h008.c:670 |
++| `$164E` | `sub_H008_0000164E` | parziale | h008.c:683 |
++| `$16BA` | `sub_H008_000016BA` | parziale | h008.c:707 |
++| `$176A` | `sub_H008_0000176A` | parziale | h008.c:716 |
++| `$188A` | `sub_H008_0000188A` | parziale | h008.c:728 |
++| `$19A8` | `sub_H008_000019A8` | parziale | h008.c:762 |
++| `$1A60` | `sub_H008_00001A60` | parziale | h008.c:785 |
++| `$203C` | `sub_H008_0000203C` | parziale | h008.c:968 |
++| `$20C2` | `sub_H008_000020C2` | parziale | h008.c:985 |
++| `$2178` | `sub_H008_00002178` | parziale | h008.c:1006 |
+ 
+ ### H009
+ 
+@@ -229,15 +229,15 @@ Routine portate: **273 / 913**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$00B6` | `module_init_H010` | parziale | h010_input.c:12 |
+-| `$00C4` | `sub_H010_000000C4` | parziale |  |
+-| `$0332` | `sub_H010_00000332` | parziale |  |
++| `$00B6` | `module_init_H010` | parziale | h010_input.c:20 |
++| `$00C4` | `sub_H010_000000C4` | parziale | h010_input.c:155 |
++| `$0332` | `sub_H010_00000332` | parziale | h010_input.c:214 |
+ | `$0360` | `sub_H010_00000360` | parziale |  |
+ | `$03AA` | `sub_H010_000003AA` | parziale |  |
+-| `$042E` | `trampoline_H010_0882` | parziale | h010_input.c:101 |
+-| `$043C` | `sub_H010_0000043C` | parziale | h010_input.c:40 |
++| `$042E` | `trampoline_H010_0882` | parziale | h010_input.c:109 |
++| `$043C` | `sub_H010_0000043C` | parziale | h010_input.c:48 |
+ | `$0882` | `Poll_IntuitionEvents` | verificato |  |
+-| `$0974` | `sub_H010_00000974` | parziale | h010_input.c:137 |
++| `$0974` | `sub_H010_00000974` | parziale | h010_input.c:145 |
+ 
+ ### H011
+ 
+@@ -273,7 +273,7 @@ Routine portate: **273 / 913**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0506` | `module_init_H013` | parziale | h013.c:4 |
++| `$0506` | `module_init_H013` | parziale | h013.c:10 |
+ | `$0518` | `trampoline_H013_52E0` | parziale |  |
+ | `$051C` | `trampoline_H013_58DC` | parziale |  |
+ | `$0520` | `trampoline_H013_56CE` | parziale |  |
+@@ -290,8 +290,8 @@ Routine portate: **273 / 913**.
+ | `$31EE` | `trampoline_H013_333C` | parziale |  |
+ | `$43E8` | `sub_H013_000043E8` | parziale |  |
+ | `$4508` | `sub_H013_00004508` | parziale |  |
+-| `$4BFC` | `Party_MainMenu` | verificato |  |
+-| `$4C0A` | `sub_H013_00004C0A` | parziale |  |
++| `$4BFC` | `Party_MainMenu` | verificato | h013.c:82 |
++| `$4C0A` | `sub_H013_00004C0A` | parziale | h013.c:43 |
+ | `$52E0` | `Add_CharacterToParty` | parziale |  |
+ 
+ ### H014
+@@ -382,8 +382,8 @@ Routine portate: **273 / 913**.
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+ | `$0008` | `sub_H022_00000008` | parziale | h022_view.c:4 |
+-| `$0014` | `wrapper_FreeColorMap` | parziale |  |
+-| `$0026` | `wrapper_FreeVPortCopLists` | parziale |  |
++| `$0014` | `wrapper_FreeColorMap` | parziale | h022_view.c:59 |
++| `$0026` | `wrapper_FreeVPortCopLists` | parziale | h022_view.c:65 |
+ | `$0038` | `wrapper_GetColorMap` | parziale | h022_view.c:23 |
+ | `$0060` | `wrapper_InitView` | parziale | h022_view.c:29 |
+ | `$0072` | `wrapper_InitVPort` | parziale | h022_view.c:35 |
+@@ -448,53 +448,53 @@ Routine portate: **273 / 913**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$01B8` | `module_init_H028` | parziale | h028_files.c:17 |
+-| `$01C6` | `Open_WithRetry` | parziale | h028_files.c:45 |
+-| `$02D0` | `sub_H028_000002D0` | parziale | h028_files.c:26 |
++| `$01B8` | `module_init_H028` | parziale | h028_files.c:18 |
++| `$01C6` | `Open_WithRetry` | parziale | h028_files.c:46 |
++| `$02D0` | `sub_H028_000002D0` | parziale | h028_files.c:27 |
+ | `$033E` | `sub_H028_0000033E` | parziale |  |
+-| `$0408` | `sub_H028_00000408` | parziale | h028_files.c:85 |
+-| `$0576` | `sub_H028_00000576` | parziale | h028_files.c:127 |
+-| `$05FA` | `Open_ResourceFile` | parziale | h028_files.c:144 |
++| `$0408` | `sub_H028_00000408` | parziale | h028_files.c:86 |
++| `$0576` | `sub_H028_00000576` | parziale | h028_files.c:128 |
++| `$05FA` | `Open_ResourceFile` | parziale | h028_files.c:145 |
+ | `$07E0` | `sub_H028_000007E0` | parziale |  |
+ | `$08F0` | `sub_H028_000008F0` | parziale |  |
+-| `$09DC` | `DAX_DecompressRLE` | verificato | h028_files.c:193 |
+-| `$0B80` | `sub_H028_00000B80` | parziale | h028_files.c:254 |
++| `$09DC` | `DAX_DecompressRLE` | verificato | h028_files.c:194 |
++| `$0B80` | `sub_H028_00000B80` | parziale | h028_files.c:265 |
+ | `$0C68` | `sub_H028_00000C68` | parziale |  |
+ | `$0D36` | `sub_H028_00000D36` | parziale |  |
+-| `$0D74` | `sub_H028_00000D74` | parziale |  |
+-| `$0DD8` | `DAX_LoadBlock` | verificato | h028_files.c:276 |
++| `$0D74` | `sub_H028_00000D74` | parziale | h028_files.c:376 |
++| `$0DD8` | `DAX_LoadBlock` | verificato | h028_files.c:287 |
+ | `$1098` | `sub_H028_00001098` | parziale |  |
+ 
+ ### H029
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0118` | `module_init_H029` | parziale | h029_gfx.c:37 |
+-| `$0180` | `sub_H029_00000180` | parziale | h029_gfx.c:79 |
+-| `$01B6` | `sub_H029_000001B6` | parziale | h029_gfx.c:491 |
+-| `$0234` | `sub_H029_00000234` | parziale | h029_gfx.c:89 |
+-| `$0312` | `sub_H029_00000312` | parziale | h029_gfx.c:51 |
+-| `$0354` | `trampoline_H029_036C` | parziale | h029_gfx.c:318 |
++| `$0118` | `module_init_H029` | parziale | h029_gfx.c:38 |
++| `$0180` | `sub_H029_00000180` | parziale | h029_gfx.c:80 |
++| `$01B6` | `sub_H029_000001B6` | parziale | h029_gfx.c:492 |
++| `$0234` | `sub_H029_00000234` | parziale | h029_gfx.c:90 |
++| `$0312` | `sub_H029_00000312` | parziale | h029_gfx.c:52 |
++| `$0354` | `trampoline_H029_036C` | parziale | h029_gfx.c:319 |
+ | `$0376` | `trampoline_H029_0390` | parziale |  |
+ | `$039A` | `trampoline_H029_03B2` | parziale |  |
+-| `$03E2` | `sub_H029_000003E2` | parziale | h029_gfx.c:514 |
+-| `$0408` | `Allocate_GraphicRecord` | verificato | h029_gfx.c:167 |
+-| `$067A` | `Free_GraphicRecord` | parziale | h029_gfx.c:293 |
+-| `$0766` | `sub_H029_00000766` | parziale | h029_gfx.c:325 |
+-| `$091E` | `Populate_GraphicPlanes` | verificato | h029_gfx.c:362 |
+-| `$0A0E` | `Load_IndexedGraphicRecord` | verificato | h029_gfx.c:388 |
++| `$03E2` | `sub_H029_000003E2` | parziale | h029_gfx.c:515 |
++| `$0408` | `Allocate_GraphicRecord` | verificato | h029_gfx.c:168 |
++| `$067A` | `Free_GraphicRecord` | parziale | h029_gfx.c:294 |
++| `$0766` | `sub_H029_00000766` | parziale | h029_gfx.c:326 |
++| `$091E` | `Populate_GraphicPlanes` | verificato | h029_gfx.c:363 |
++| `$0A0E` | `Load_IndexedGraphicRecord` | verificato | h029_gfx.c:389 |
+ | `$0B94` | `Draw_GraphicTile24` | verificato |  |
+ | `$0D58` | `sub_H029_00000D58` | parziale |  |
+ | `$0E26` | `trampoline_H029_0E88` | parziale |  |
+ | `$0E92` | `trampoline_H029_0EF4` | parziale |  |
+-| `$0EFE` | `trampoline_H029_10AC` | parziale | h029_gfx.c:436 |
++| `$0EFE` | `trampoline_H029_10AC` | parziale | h029_gfx.c:437 |
+ | `$10B8` | `sub_H029_000010B8` | parziale |  |
+-| `$115C` | `sub_H029_0000115C` | parziale | h029_gfx.c:117 |
+-| `$1206` | `sub_H029_00001206` | parziale | h029_gfx.c:133 |
+-| `$12BC` | `sub_H029_000012BC` | parziale | h029_gfx.c:155 |
+-| `$1308` | `sub_H029_00001308` | parziale | h029_gfx.c:224 |
+-| `$1346` | `Prepare_DisplayResources` | parziale | h029_gfx.c:236 |
+-| `$148E` | `sub_H029_0000148E` | parziale |  |
++| `$115C` | `sub_H029_0000115C` | parziale | h029_gfx.c:118 |
++| `$1206` | `sub_H029_00001206` | parziale | h029_gfx.c:134 |
++| `$12BC` | `sub_H029_000012BC` | parziale | h029_gfx.c:156 |
++| `$1308` | `sub_H029_00001308` | parziale | h029_gfx.c:225 |
++| `$1346` | `Prepare_DisplayResources` | parziale | h029_gfx.c:237 |
++| `$148E` | `sub_H029_0000148E` | parziale | h029_gfx.c:522 |
+ | `$14F6` | `sub_H029_000014F6` | parziale |  |
+ | `$1520` | `sub_H029_00001520` | parziale |  |
+ | `$1576` | `sub_H029_00001576` | parziale |  |
+@@ -523,7 +523,7 @@ Routine portate: **273 / 913**.
+ | `$0B6C` | `sub_H030_00000B6C` | parziale | h030.c:48 |
+ | `$0BDA` | `(byte non classificati)` | - | h030.c:149 |
+ | `$0C10` | `sub_H030_00000C10` | parziale | h030.c:159 |
+-| `$0C84` | `sub_H030_00000C84` | parziale |  |
++| `$0C84` | `sub_H030_00000C84` | parziale | h030.c:179 |
+ 
+ ### H031
+ 
+@@ -1302,7 +1302,7 @@ Routine portate: **273 / 913**.
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+ | `$0008` | `sub_H082_00000008` | parziale | h082.c:5 |
+-| `$0074` | `wrapper_FreeCprList` | parziale |  |
++| `$0074` | `wrapper_FreeCprList` | parziale | h082.c:16 |
+ 
+ ### H083
+ 
+diff --git a/src_c/readable/globals.c b/src_c/readable/globals.c
+index 46a6862..589879c 100644
+--- a/src_c/readable/globals.c
++++ b/src_c/readable/globals.c
+@@ -21,6 +21,10 @@ struct GfxRecord *g_gfx_sky_280c;
+ struct Screen *g_screen;
+ struct Window *g_window;
+ struct RastPort *g_rastport;
++struct GfxRecord *g_gfx_2798;
++struct GfxRecord *g_gfx_27b0[2];
++u8 *g_h005_52fc;
++u8 *g_h005_5300;
+ u8 *g_dax_buffer;
+ struct GfxRecord *g_8x8_sets[5];
+ struct GfxRecord *g_sprite_sets[29][2];
+diff --git a/src_c/readable/globals.h b/src_c/readable/globals.h
+index 7ad5c01..e6463a4 100644
+--- a/src_c/readable/globals.h
++++ b/src_c/readable/globals.h
+@@ -60,6 +60,10 @@ extern struct GfxRecord *g_gfx_sky_280c; /* $280C: "sky" $FA */
+ extern struct Screen *g_screen;         /* $52F2: schermo del gioco */
+ extern struct Window *g_window;         /* $52F6: finestra del gioco */
+ extern struct RastPort *g_rastport;     /* $52EE: RastPort della finestra */
++extern struct GfxRecord *g_gfx_2798;    /* $2798 */
++extern struct GfxRecord *g_gfx_27b0[2]; /* $27B2, $27B8: record di due voci da 6 byte */
++extern u8 *g_h005_52fc;                 /* $52FC: blocco di $34 byte */
++extern u8 *g_h005_5300;                 /* $5300: blocco di $34 byte */
+ extern u8 *g_dax_buffer;                /* $3C7E: blocco DAX compresso */
+ extern struct GfxRecord *g_8x8_sets[5]; /* $3338: set 8x8 caricati da H034 */
+ extern struct GfxRecord *g_sprite_sets[29][2]; /* $3244: coppie di set 24x24 */
+@@ -78,6 +82,8 @@ extern CokHandler g_handlers_25c0[108]; /* $25C0..$276C: azioni (H033) */
+ extern CokHandler g_handlers_2832[120]; /* $2832..$2A0E: effetti (H027/H033) */
+ 
+ /* Dati di altri moduli. */
++extern int g_argc;                 /* argomenti (H015+$8: argv) */
++extern char **g_argv;
+ extern u16 g_distribution_check;
+ extern u8  g_h047_0001;            /* H047+$0001 (-$1(a4) di H047) */   /* H009+$0000: $3F8F dopo la verifica */
+ 
+diff --git a/src_c/readable/h000_entry.c b/src_c/readable/h000_entry.c
+index 0b1df3c..ddc39e5 100644
+--- a/src_c/readable/h000_entry.c
++++ b/src_c/readable/h000_entry.c
+@@ -211,8 +211,17 @@ static void program_entry(void)
+     game_main();
+ }
+ 
+-int main(void)
++/*
++ * Argomenti della riga di comando: il runtime H015 li tiene in H015+$8
++ * (argv, tabella di puntatori); il gioco legge argv[2] (H013, tasto J).
++ */
++int g_argc;
++char **g_argv;
++
++int main(int argc, char **argv)
+ {
++    g_argc = argc;
++    g_argv = argv;
+     program_entry();
+     return 0;
+ }
+diff --git a/src_c/readable/h001_main.c b/src_c/readable/h001_main.c
+index 50286c2..4fe5ed7 100644
+--- a/src_c/readable/h001_main.c
++++ b/src_c/readable/h001_main.c
+@@ -18,7 +18,9 @@
+ #include "h007.h"
+ #include "h008.h"
+ #include "h009.h"
++#include "h013.h"
+ #include "globals.h"
++#include "h010_input.h"
+ #include "unported.h"
+ 
+ static u8 s_special;               /* H001 -$2(a4) */
+@@ -80,13 +82,13 @@ void game_main(void)
+ 
+         if (!G_DEMO_FLAG) {
+             if (!manual_check()) {
+-                h010_0332();
++                quit_game();
+             }
+             if (g_distribution_check != 0x3F8F) {
+-                h010_0332();
++                quit_game();
+             }
+             G_RESOURCE_GROUP = 1;
+-            h013_4bfc();
++            main_menu();
+         } else {
+             G_RESOURCE_GROUP = 2;
+             H005_SET_W(0x3DF6, 9);
+diff --git a/src_c/readable/h006.c b/src_c/readable/h006.c
+index 5e0dedf..63aa8ed 100644
+--- a/src_c/readable/h006.c
++++ b/src_c/readable/h006.c
+@@ -148,7 +148,7 @@ void init_game_environment(void)
+     /* H006+$041C: due voci da 6 byte a $27B0. */
+     for (s_i = 1; s_i <= 2; ++s_i) {
+         H005_B(0x27B0 + (s_i - 1) * 6) = 0xFF;
+-        H005_SET_L(0x27B0 + (s_i - 1) * 6 + 2, 0);
++        g_gfx_27b0[s_i - 1] = NULL;      /* long a +2 */
+     }
+     g_pic_rec_27c2 = NULL;
+     g_pic_rec_27c6 = NULL;
+@@ -158,7 +158,7 @@ void init_game_environment(void)
+         g_pic_buffers[s_i - 2] = NULL;
+     }
+     H005_SET_W(0x27BC, 0);
+-    H005_SET_L(0x2798, 0);
++    g_gfx_2798 = NULL;
+     H005_SET_L(0x2A3A, 0);
+ 
+     h029_fill_bytes(7, &g_h005[0x281C], 7, 0);
+diff --git a/src_c/readable/h008.c b/src_c/readable/h008.c
+index 3688fdf..4601243 100644
+--- a/src_c/readable/h008.c
++++ b/src_c/readable/h008.c
+@@ -5,6 +5,7 @@
+ #include "h021_intuition.h"
+ #include "h026_string.h"
+ #include "h029_gfx.h"
++#include "h003_exec.h"
+ #include "globals.h"
+ #include "unported.h"
+ 
+@@ -556,3 +557,466 @@ u8 ui_request_choice(u16 title_len, const char *title, u16 options_len,
+     intuition_modify_idcmp(g_window, g_window->IDCMPFlags & ~0x00400000UL);
+     return f.result;
+ }
++
++/* PORT H008+$0102: voce index (0 = la prima), NULL se la lista e' corta. */
++MenuItem *menu_nth(MenuItem *list, u16 index)
++{
++    u16 i = 0;
++    MenuItem *node = list;
++
++    while (node != NULL && i != index) {
++        node = node->next;
++        ++i;
++    }
++    return i == index ? node : NULL;
++}
++
++/* PORT H008+$0162: numero di voci. */
++u16 menu_length(MenuItem *list)
++{
++    u16 n = 0;
++    MenuItem *node = list;
++
++    while (node != NULL) {
++        ++n;
++        node = node->next;
++    }
++    return n;
++}
++
++/*
++ * Variabili di list_menu (frame di H008+$13C0) usate dalle sotto-procedure
++ * annidate $1448..$1A60 attraverso il frame del chiamante.
++ */
++typedef struct ListFrame {
++    MenuItem *list;             /* $1A(a5) */
++    u16 *index;                 /* $10(a5): voce selezionata */
++    u16 first_col;              /* $24 */
++    u16 first_row;              /* $22 */
++    u16 last_col;               /* $20 */
++    u16 last_row;               /* $1E */
++    u16 title_pen;              /* $2A: intestazioni */
++    u16 normal_pen;             /* $28: voci */
++    u16 highlight_pen;          /* $26: voce selezionata (sfondo) */
++    char text[0x52];            /* -$52 */
++    u16 width;                  /* -$54 */
++    u16 row_no;                 /* -$56 */
++    u16 count;                  /* -$58 */
++    u16 visible;                /* -$5C */
++} ListFrame;
++
++/* Prima riga mostrata dei menu a elenco (H005+$2796). */
++#define LIST_TOP H005_W(0x2796)
++#define SET_LIST_TOP(v) H005_SET_W(0x2796, (u16)(v))
++
++/*
++ * PORT H008+$13CE: ultima intestazione prima della voce index (o la prima
++ * voce se e' un'intestazione).  Il risultato non e' usato dal chiamante.
++ */
++static MenuItem *last_header_before(MenuItem *list, s16 index)
++{
++    s16 i = 0;
++    MenuItem *node = list;
++    MenuItem *found = NULL;
++
++    while (node != NULL && i < index) {
++        if (node->header) {
++            found = node;
++        }
++        node = node->next;
++        ++i;
++    }
++    if (found == NULL && list->header) {
++        return list;
++    }
++    return found;
++}
++
++/*
++ * PORT H008+$1448: disegna le voci da top nell'area del menu (intestazioni
++ * con title_pen, voci con normal_pen), annotando in H005+$2778 la riga di
++ * ciascuna ($FF = fine).
++ */
++static void draw_menu_items(ListFrame *f, u16 top)
++{
++    MenuItem *node;
++    s16 row;
++    u16 len;
++
++    h029_fill_bytes(0x18, &g_h005[0x2778], 0x19, 0xFF);
++    clear_text_cells(f->first_col, f->first_row, f->last_col, f->last_row);
++    node = menu_nth(f->list, top);
++    (void)last_header_before(f->list, (s16)top);
++    row = (s16)f->first_row;
++    f->row_no = 1;
++    while (node != NULL && row <= (s16)f->last_row) {
++        H005_B(0x2778 + f->row_no - 1) = (u8)row;
++        ui_draw_text(f->first_col, (u16)row,
++                     node->header ? f->title_pen : f->normal_pen, 0, 0x28,
++                     node->text);
++        len = h026_strlen(0x28, node->text);
++        if (len < f->width) {
++            draw_char_run((u16)(h026_strlen(0x28, node->text) + f->first_col),
++                          (u16)row, 0, 0,
++                          (u16)(f->width - h026_strlen(0x28, node->text)),
++                          ' ', 1);
++        }
++        node = node->next;
++        ++row;
++        ++f->row_no;
++    }
++}
++
++/* PORT H008+$15DC: spazi iniziali del testo. */
++static u16 leading_spaces(u16 len, const char *text)
++{
++    u16 i = 0;
++    u16 n = h026_strlen(len, text);
++
++    while (i < n && text[i] == ' ') {
++        ++i;
++    }
++    return i;
++}
++
++/*
++ * PORT H008+$164E: posizione dopo l'ultimo carattere non spazio; parte dal
++ * NUL, quindi in pratica e' la lunghezza della stringa.
++ */
++static u16 text_end(u16 len, const char *text)
++{
++    u16 n = h026_strlen(len, text);
++
++    while (n > 1 && text[n] == ' ') {
++        --n;
++    }
++    return n;
++}
++
++/* Testo della voce index senza spazi iniziali in f->text; restituisce la colonna. */
++static u16 trimmed_text(ListFrame *f, u16 index)
++{
++    MenuItem *node = menu_nth(f->list, index);
++    u16 lead = leading_spaces(0x28, node->text);
++    u16 count = (u16)(text_end(0x28, node->text) - lead + 1);
++
++    h026_substr(0x50, f->text, 0x28, node->text, lead, count);
++    return (u16)(f->first_col + lead);
++}
++
++/* PORT H008+$16BA: evidenzia la voce index (testo 0 su highlight_pen). */
++static void highlight_item(ListFrame *f, u16 index)
++{
++    u16 col = trimmed_text(f, index);
++
++    ui_draw_text(col, (u16)(index - LIST_TOP + f->first_row), 0,
++                 f->highlight_pen, 0x50, f->text);
++}
++
++/* PORT H008+$176A: ridisegna la voce index senza evidenza. */
++static void unhighlight_item(ListFrame *f, u16 index)
++{
++    MenuItem *node = menu_nth(f->list, index);
++    u16 col = trimmed_text(f, index);
++
++    ui_draw_text(col, (u16)(index - LIST_TOP + f->first_row),
++                 node->header ? f->title_pen : f->normal_pen, 0, 0x50,
++                 f->text);
++}
++
++/*
++ * PORT H008+$188A: sposta la selezione oltre le intestazioni nella
++ * direzione down (con giro dentro la pagina), al massimo visible passi.
++ * Oltre la fine della lista l'originale legge il flag da un puntatore
++ * nullo, cioe' il byte all'indirizzo $2A (tabella dei vettori della CPU,
++ * normalmente diverso da zero): la riga vuota viene saltata come
++ * un'intestazione.  Qui un nodo nullo conta come intestazione.
++ */
++static void skip_headers(ListFrame *f, u8 down)
++{
++    s16 i = 0;
++    MenuItem *node = menu_nth(f->list, *f->index);
++
++    if (down) {
++        while (i < (s16)f->visible && (node == NULL || node->header)) {
++            ++i;
++            ++*f->index;
++            if ((s16)*f->index > (s16)(LIST_TOP + f->visible - 1)) {
++                *f->index = LIST_TOP;
++            }
++            node = menu_nth(f->list, *f->index);
++        }
++    } else {
++        while (i < (s16)f->visible && (node == NULL || node->header)) {
++            ++i;
++            --*f->index;
++            if ((s16)*f->index < (s16)LIST_TOP) {
++                *f->index = (u16)(LIST_TOP + f->visible - 1);
++            }
++            node = menu_nth(f->list, *f->index);
++        }
++    }
++}
++
++/*
++ * PORT H008+$19A8: pagina successiva (next) o precedente, mantenendo la
++ * posizione della selezione nella pagina; ridisegna.
++ */
++static void page_menu(ListFrame *f, u8 next)
++{
++    s16 rel = (s16)(*f->index - LIST_TOP);
++
++    if (next) {
++        SET_LIST_TOP(LIST_TOP + f->visible);
++        if ((s16)LIST_TOP > (s16)(f->count - f->visible)) {
++            SET_LIST_TOP(f->count - f->visible);
++        }
++    } else {
++        SET_LIST_TOP(LIST_TOP - f->visible);
++        if ((s16)LIST_TOP < 0) {
++            SET_LIST_TOP(0);
++        }
++    }
++    *f->index = (u16)(LIST_TOP + rel);
++    skip_headers(f, next);
++    draw_menu_items(f, LIST_TOP);
++}
++
++/* PORT H008+$1A60: selezione giu' (down) o su, con giro nella pagina. */
++static void move_selection(ListFrame *f, u8 down)
++{
++    if (down) {
++        ++*f->index;
++        if ((s16)*f->index > (s16)(LIST_TOP + f->visible - 1)) {
++            *f->index = LIST_TOP;
++        }
++    } else {
++        --*f->index;
++        if ((s16)*f->index < (s16)LIST_TOP) {
++            *f->index = (u16)(LIST_TOP + f->visible - 1);
++        }
++    }
++    skip_headers(f, down);
++}
++
++/*
++ * PORT H008+$13C0 (corpo a $1AF4): menu a elenco.  Mostra le voci di list
++ * nell'area (first_col, first_row)..(last_col, last_row), la voce *index
++ * evidenziata e, nella riga 24, title e options con " Next"/" Prev" (se ci
++ * sono altre pagine) e " Exit" (with_exit).  Frecce su/giu' (tastierino
++ * 8/2) muovono, 9/3 cambiano pagina, N e P anche; Invio o un'opzione
++ * scelgono: *chosen = voce selezionata e restituisce il tasto.  Un clic su
++ * una voce la seleziona, un secondo clic la sceglie.  Esc, E o 0: *chosen
++ * = NULL e 0.  *redraw: ridisegnare le voci.
++ */
++u8 list_menu(u16 title_len, const char *title, u16 options_len,
++             const char *options, u16 title_pen, u16 normal_pen,
++             u16 highlight_pen, u16 first_col, u16 first_row,
++             u16 last_col, u16 last_row, MenuItem *list, u8 with_exit,
++             u8 *redraw, u16 *index, MenuItem **chosen)
++{
++    ListFrame f;
++    char opts[0x2A];                    /* -$88 */
++    u8 has_next;                        /* -$89 */
++    u8 has_prev;                        /* -$8A */
++    u8 special;                         /* -$59 */
++    u8 key;                             /* -$5D */
++    u8 prev_key = 'N';                  /* -$5E */
++    u16 leading;                        /* -$90 */
++    u16 total;                          /* -$92 */
++    s16 row;                            /* -$96 */
++    s16 col;                            /* -$94 */
++    MenuItem *node;
++
++    if (list == NULL) {
++        *index = 0;
++        *chosen = NULL;
++        return 0;
++    }
++    memset(&f, 0, sizeof(f));
++    f.list = list;
++    f.index = index;
++    f.first_col = first_col;
++    f.first_row = first_row;
++    f.last_col = last_col;
++    f.last_row = last_row;
++    f.title_pen = title_pen;
++    f.normal_pen = normal_pen;
++    f.highlight_pen = highlight_pen;
++
++    H005_SET_W(0x2504, first_col);
++    H005_SET_W(0x2502, last_col);
++    f.width = (u16)(last_col - first_col + 1);
++    f.count = menu_length(list);
++    f.visible = (u16)(last_row - first_row + 1);
++    leading = 0;
++    for (node = list; node != NULL && node->header; node = node->next) {
++        ++leading;
++    }
++    total = menu_length(list);
++    if (!((s16)total > (s16)f.visible)) {
++        SET_LIST_TOP(0);
++    }
++    if ((s16)LIST_TOP > (s16)*index) {
++        SET_LIST_TOP(*index);
++        *redraw = 1;
++    }
++    if ((s16)LIST_TOP > (s16)total) {
++        SET_LIST_TOP(0);
++        *redraw = 1;
++    }
++    ++*index;
++    move_selection(&f, 0);
++    if (*redraw) {
++        draw_menu_items(&f, LIST_TOP);
++    }
++    *redraw = 0;
++
++    for (;;) {
++        highlight_item(&f, *index);
++        h026_copy(0x28, opts, options_len, options);
++        has_next = 0;
++        has_prev = 0;
++        if ((s16)LIST_TOP < (s16)(f.count - f.visible)) {
++            h026_append(0x28, opts, 5, " Next");
++            has_next = 1;
++        }
++        if ((s16)LIST_TOP > (s16)leading) {
++            h026_append(0x28, opts, 5, " Prev");
++            has_prev = 1;
++        }
++        if (with_exit) {
++            h026_append(0x28, opts, 5, " Exit");
++        }
++        key = ui_request_choice(title_len, title, 0x28, opts, title_pen,
++                                normal_pen, highlight_pen, 1, 0, &special);
++        row = (s16)((s16)H005_W(0x2354) / 8);
++        col = (s16)((s16)H005_W(0x2356) / 8);
++        unhighlight_item(&f, *index);
++        if (special) {
++            switch (key) {
++            case 'H':
++                move_selection(&f, 0);
++                break;
++            case 'P':
++                move_selection(&f, 1);
++                break;
++            case 'I':
++                if (has_prev) {
++                    page_menu(&f, 0);
++                }
++                break;
++            case 'Q':
++                if (has_next) {
++                    page_menu(&f, 1);
++                }
++                break;
++            default:
++                break;
++            }
++            continue;
++        }
++        switch (key) {
++        case 0:
++        case 0x1B:
++        case 'E':
++            *chosen = NULL;
++            return 0;
++        case 'P':
++            if (!G_MOUSE_CLICK || row == 0x18) {
++                page_menu(&f, 0);
++            }
++            break;
++        case 'N':
++            if (!G_MOUSE_CLICK || row == 0x18) {
++                page_menu(&f, 1);
++            }
++            break;
++        default:
++            if (G_MOUSE_CLICK && row != 0x18) {
++                if (col >= (s16)H005_W(0x2504) && col <= (s16)H005_W(0x2502)) {
++                    u16 i;
++
++                    for (i = 1; i <= 0x19; ++i) {
++                        u8 item_row = H005_B(0x2778 + i - 1);
++
++                        if (item_row == 0xFF) {
++                            break;
++                        }
++                        if ((s16)item_row == row) {
++                            if ((u16)(i - 1 + LIST_TOP) == *index) {
++                                *chosen = menu_nth(list, *index);
++                                return key;
++                            }
++                            unhighlight_item(&f, *index);
++                            *index = (u16)(i - 1 + LIST_TOP);
++                            highlight_item(&f, *index);
++                        }
++                    }
++                }
++            } else if (!G_MOUSE_CLICK || prev_key == key) {
++                *chosen = menu_nth(list, *index);
++                return key;
++            }
++            break;
++        }
++        prev_key = key;
++    }
++}
++
++/*
++ * PORT H008+$203C: domanda "Yes No" (parte da No) finche' la risposta e' Y
++ * o N; la restituisce.
++ */
++u8 ask_yes_no(u16 text_len, const char *text, u16 title_pen,
++              u16 normal_pen, u16 highlight_pen)
++{
++    u8 special;                         /* -$1(a5) */
++    u8 key;
++
++    H005_B(0x2483) = 2;
++    do {
++        key = ui_request_choice(text_len, text, 6, "Yes No", title_pen,
++                                normal_pen, highlight_pen, 0, 0, &special);
++    } while (key != 'Y' && key != 'N');
++    return key;
++}
++
++/* PORT H008+$20C2: lista di count voci vuote (almeno una). */
++void menu_alloc(u16 count, MenuItem **list)
++{
++    MenuItem *node;
++    s16 i;
++
++    *list = (MenuItem *)exec_alloc_mem(sizeof(MenuItem), COK_MEMF_CLEAR);
++    (*list)->next = NULL;
++    (*list)->header = 0;
++    (*list)->text[0] = 0;
++    node = *list;
++    for (i = 2; i <= (s16)count; ++i) {
++        node->next = (MenuItem *)exec_alloc_mem(sizeof(MenuItem),
++                                                COK_MEMF_CLEAR);
++        node = node->next;
++        node->next = NULL;
++        node->header = 0;
++        node->text[0] = 0;
++    }
++}
++
++/* PORT H008+$2178: libera la lista e azzera *list. */
++void menu_free(MenuItem **list)
++{
++    MenuItem *node;
++    MenuItem *dead;
++
++    if (*list == NULL) {
++        return;
++    }
++    node = *list;
++    while (node != NULL) {
++        dead = node;
++        node = node->next;
++        exec_free_mem(dead, sizeof(MenuItem));
++    }
++    *list = NULL;
++}
+diff --git a/src_c/readable/h008.h b/src_c/readable/h008.h
+index 7f45fa0..02cdafe 100644
+--- a/src_c/readable/h008.h
++++ b/src_c/readable/h008.h
+@@ -4,10 +4,33 @@
+ 
+ #include "cok.h"
+ 
++/*
++ * Voce di un menu a elenco ($30 byte nell'originale): testo, flag di
++ * intestazione (riga non selezionabile, saltata dal cursore) e successiva.
++ */
++typedef struct MenuItem {
++    char text[0x2A];            /* +$00 */
++    u8 header;                  /* +$2A */
++    u8 pad;
++    struct MenuItem *next;      /* +$2C */
++} MenuItem;
++
++MenuItem *menu_nth(MenuItem *list, u16 index);          /* H008+$0102 */
++u16  menu_length(MenuItem *list);                       /* H008+$0162 */
+ u8   ui_request_choice(u16 title_len, const char *title, u16 options_len,
+                        const char *options, u16 title_pen, u16 normal_pen,
+                        u16 highlight_pen, u8 digits_map, u8 animate,
+                        u8 *special);                    /* H008+$01FC */
+ void clear_message_line(void);          /* H008+$139E */
++u8   list_menu(u16 title_len, const char *title, u16 options_len,
++               const char *options, u16 title_pen, u16 normal_pen,
++               u16 highlight_pen, u16 first_col, u16 first_row,
++               u16 last_col, u16 last_row, MenuItem *list, u8 with_exit,
++               u8 *redraw, u16 *index, MenuItem **chosen);
++                                        /* H008+$13C0 (corpo a $1AF4) */
++u8   ask_yes_no(u16 text_len, const char *text, u16 title_pen,
++                u16 normal_pen, u16 highlight_pen);     /* H008+$203C */
++void menu_alloc(u16 count, MenuItem **list);            /* H008+$20C2 */
++void menu_free(MenuItem **list);                        /* H008+$2178 */
+ 
+ #endif
+diff --git a/src_c/readable/h010_input.c b/src_c/readable/h010_input.c
+index 1ac8409..3ffafd3 100644
+--- a/src_c/readable/h010_input.c
++++ b/src_c/readable/h010_input.c
+@@ -1,6 +1,14 @@
+ /* H010: input Intuition, conversione degli eventi, uscita ed errori. */
+ #include "h010_input.h"
+ #include "h050.h"
++#include "h002_dos.h"
++#include "h003_exec.h"
++#include "h015_runtime.h"
++#include "h026_string.h"
++#include "h028_files.h"
++#include "h029_gfx.h"
++#include "h030.h"
++#include "h042_seq.h"
+ #include "globals.h"
+ #include "unported.h"
+ 
+@@ -142,3 +150,75 @@ void wait_for_key(void)
+         poll_intuition_events();
+     } while (G_KEY == 0);
+ }
++
++/*
++ * PORT H010+$00C4: libera le risorse del gioco: schermate dei personaggi,
++ * blocchi di stato, record grafici, set di tile e sprite, l'insieme di
++ * immagini, i personaggi del party, i blocchi di $52FC/$5300 e il font.
++ * Installato su disco fisso (prefisso diverso da "df0:"), toglie gli
++ * Assign dei tre dischi.
++ */
++static void free_game_resources(void)
++{
++    u16 i;
++    u16 j;
++
++    free_char_screens();
++    exec_free_mem(g_state_a, 0x800);
++    exec_free_mem(g_state_b, 0x800);
++    exec_free_mem(g_state_c, 0x400);
++    exec_free_mem(g_ecl_buffer, 0x1E00);
++    exec_free_mem(g_h005_282e, 0x924);
++    exec_free_mem(g_geo_planes, 0x400);
++    free_gfx_record(&g_gfx_3334);
++    free_gfx_record(&g_gfx_3d8a);
++    free_gfx_record(&g_gfx_sky_2804);
++    free_gfx_record(&g_gfx_sky_2808);
++    free_gfx_record(&g_gfx_sky_280c);
++    free_gfx_record(&g_gfx_332c);
++    for (i = 1; i <= 2; ++i) {
++        free_gfx_record(&g_gfx_27b0[i - 1]);
++    }
++    for (i = 0; i <= 4; ++i) {
++        free_gfx_record(&g_8x8_sets[i]);
++    }
++    for (i = 0; i <= 0x1C; ++i) {
++        for (j = 0; j <= 1; ++j) {
++            free_gfx_record(&g_sprite_sets[i][j]);
++        }
++    }
++    if (g_gfx_2798 != NULL) {
++        free_gfx_record(&g_gfx_2798);
++    }
++    release_picture_set();
++    while (g_party_head != NULL) {
++        g_current_char = h008_party_next(g_party_head);
++        h053_0012(&g_party_head);
++        g_party_head = g_current_char;
++    }
++    if (g_h005_52fc != NULL) {
++        exec_free_mem(g_h005_52fc, 0x34);
++    }
++    if (g_h005_5300 != NULL) {
++        exec_free_mem(g_h005_5300, 0x34);
++    }
++    free_gothic_font();
++    if (h026_compare_nocase(0x50, G_DATA_PREFIX, 4, "df0:") != 1) {
++        (void)dos_execute("Assign \"Disk One:\"", 0, 0);
++        (void)dos_execute("Assign \"Disk Two:\"", 0, 0);
++        (void)dos_execute("Assign \"Disk Three:\"", 0, 0);
++    }
++}
++
++/*
++ * PORT H010+$0332: uscita dal gioco: ferma l'audio, libera la View fuori
++ * schermo, chiude finestra e schermo, libera le risorse e termina (H015).
++ */
++void quit_game(void)
++{
++    h043_0840();
++    release_display_resources();
++    close_game_display();
++    free_game_resources();
++    h015_runtime_exit(0);
++}
+diff --git a/src_c/readable/h010_input.h b/src_c/readable/h010_input.h
+index 05707ee..2c43e1a 100644
+--- a/src_c/readable/h010_input.h
++++ b/src_c/readable/h010_input.h
+@@ -6,5 +6,6 @@
+ 
+ void poll_intuition_events(void);       /* H010+$042E (corpo a $0882) */
+ void wait_for_key(void);                /* H010+$0974 */
++void quit_game(void);                   /* H010+$0332 */
+ 
+ #endif
+diff --git a/src_c/readable/h013.c b/src_c/readable/h013.c
+index f58013b..d96dd8f 100644
+--- a/src_c/readable/h013.c
++++ b/src_c/readable/h013.c
+@@ -1,7 +1,295 @@
+ /* H013: Creazione/gestione personaggi e menu principale del party. */
+-#include "cok.h"
++#include "h013.h"
++#include "h008.h"
++#include "h026_string.h"
++#include "h044_tiles.h"
++#include "globals.h"
++#include "h010_input.h"
++#include "unported.h"
+ 
+ /* PORT H013+$0506: link/unlk, nessun effetto. */
+ void h013_init(void)
+ {
+ }
++
++/* H013 -$52(a4): messaggio di "Free training". */
++static char s_message[0x52];
++
++/* Voce della tabella del menu principale (-$23A(a5), passo $2C). */
++typedef struct MainMenuEntry {
++    char text[0x2A];
++    u8 enabled;                 /* +$2A */
++    u8 pad;
++} MainMenuEntry;
++
++enum {
++    MM_CREATE, MM_DROP, MM_MODIFY, MM_TRAIN, MM_KNIGHT, MM_VIEW, MM_ADD,
++    MM_REMOVE, MM_LOAD, MM_SAVE, MM_BEGIN, MM_EXIT, MM_COUNT
++};
++
++/* Copia con dbeq $28: al massimo 41 byte, NUL compreso. */
++static void copy_entry(MainMenuEntry *e, const char *text)
++{
++    unsigned i;
++
++    for (i = 0; i <= 0x28; ++i) {
++        e->text[i] = text[i];
++        if (text[i] == 0) {
++            break;
++        }
++    }
++}
++
++/* PORT H013+$4C0A: testi del menu principale e voci sempre presenti. */
++static void init_main_menu(MainMenuEntry *items, char *keys)
++{
++    unsigned i;
++    const char *letters = "C D M T K V A R L S B E J";
++
++    for (i = 0; i <= 0x28; ++i) {
++        keys[i] = letters[i];
++        if (letters[i] == 0) {
++            break;
++        }
++    }
++    copy_entry(&items[MM_CREATE], "Create New Character");
++    items[MM_CREATE].enabled = 1;
++    copy_entry(&items[MM_DROP], "Drop Character");
++    items[MM_DROP].enabled = 0;
++    copy_entry(&items[MM_MODIFY], "Modify Character");
++    items[MM_MODIFY].enabled = 0;
++    copy_entry(&items[MM_TRAIN], "Train Character");
++    items[MM_TRAIN].enabled = 0;
++    copy_entry(&items[MM_KNIGHT], "Knight Change Classes");
++    items[MM_KNIGHT].enabled = 0;
++    copy_entry(&items[MM_VIEW], "View Character");
++    items[MM_VIEW].enabled = 0;
++    copy_entry(&items[MM_ADD], "Add Character to Party");
++    items[MM_ADD].enabled = 1;
++    copy_entry(&items[MM_REMOVE], "Remove Character from Party");
++    items[MM_REMOVE].enabled = 0;
++    copy_entry(&items[MM_LOAD], "Load Saved Game");
++    items[MM_LOAD].enabled = 1;
++    copy_entry(&items[MM_SAVE], "Save Current Game");
++    items[MM_SAVE].enabled = 0;
++    copy_entry(&items[MM_BEGIN], "BEGIN Adventuring");
++    items[MM_BEGIN].enabled = 0;
++    copy_entry(&items[MM_EXIT], "Exit to Workbench");
++    items[MM_EXIT].enabled = 1;
++}
++
++/*
++ * PORT H013+$4BFC: menu principale del party.  Ad ogni giro ridisegna la
++ * cornice e il personaggio corrente, abilita le voci secondo party e
++ * personaggio, mostra il menu (H008+$13C0) ed esegue la funzione scelta
++ * (la lettera iniziale della voce).  Esce con "BEGIN Adventuring" (o con
++ * la rimozione dell'ultimo personaggio senza un party caricato).
++ */
++void main_menu(void)
++{
++    MainMenuEntry items[MM_COUNT];      /* -$23A(a5) */
++    char keys[0x2A];                    /* -$2A(a5) */
++    MenuItem *list = NULL;              /* -$250(a5) */
++    MenuItem *node;                     /* -$25C(a5) */
++    MenuItem *chosen = NULL;            /* -$258(a5) */
++    u16 index;                          /* -$262(a5) */
++    u16 count;                          /* -$248(a5) */
++    u16 i;                              /* -$23C(a5) */
++    u8 saved_context;                   /* -$24A(a5) */
++    u8 rebuild;                         /* -$249(a5) */
++    u8 redraw;                          /* -$23F(a5) */
++    u8 key;                             /* -$23D(a5) */
++
++    init_main_menu(items, keys);
++    H005_B(0x24A2) = 0;
++    saved_context = H005_B(0x3DE3);
++    H005_B(0x3DE3) = 0;
++    rebuild = 1;
++    H005_B(0x24DE) = 0;
++    index = 0;
++
++    for (;;) {
++        if (rebuild) {
++            draw_screen_frame(1);
++            if (g_current_char != NULL) {
++                h063_0d80(g_current_char);
++                items[MM_DROP].enabled = 1;
++                items[MM_MODIFY].enabled = 1;
++                items[MM_TRAIN].enabled =
++                    (u8)(COK_GET16(g_state_b + 0x550) > 0 || H005_B(0x24DE));
++                items[MM_KNIGHT].enabled = items[MM_TRAIN].enabled;
++                items[MM_VIEW].enabled = 1;
++                items[MM_REMOVE].enabled = 1;
++                items[MM_LOAD].enabled = 0;
++                items[MM_SAVE].enabled = 1;
++                items[MM_BEGIN].enabled = 1;
++            } else {
++                items[MM_DROP].enabled = 0;
++                items[MM_MODIFY].enabled = 0;
++                items[MM_TRAIN].enabled = 0;
++                items[MM_KNIGHT].enabled = 0;
++                items[MM_VIEW].enabled = 0;
++                items[MM_REMOVE].enabled = 0;
++                items[MM_LOAD].enabled = 1;
++                items[MM_SAVE].enabled = 0;
++                items[MM_BEGIN].enabled = 0;
++            }
++            count = 0;
++            for (i = 0; i <= 0x0B; ++i) {
++                if (items[i].enabled) {
++                    ++count;
++                }
++            }
++            menu_alloc(count, &list);
++            node = list;
++            for (i = 0; i <= 0x0B; ++i) {
++                if (items[i].enabled) {
++                    memcpy(node->text, items[i].text, 0x2A);
++                    node = node->next;
++                }
++            }
++        }
++        redraw = 1;
++        (void)list_menu(0x12, "Choose a function ", 7, "Select ", 0x0D, 0x0A,
++                        0x0F, 9, 0x0C, 0x26, 0x16, list, 0, &redraw, &index,
++                        &chosen);
++        /*
++         * La funzione e' la lettera iniziale della voce scelta.  Con Esc
++         * (voce nulla) l'originale legge il byte all'indirizzo 0; qui 0.
++         */
++        key = chosen != NULL ? (u8)chosen->text[0] : 0;
++        if (rebuild) {
++            menu_free(&list);
++        }
++        if (key != 'S' && key != 'E') {
++            H005_B(0x24A3) = 0;
++        }
++        switch (key) {
++        case 'C':
++            if (items[MM_CREATE].enabled) {
++                h013_0982();
++            }
++            break;
++        case 'D':
++            if (items[MM_DROP].enabled) {
++                h013_2b9a();
++            }
++            break;
++        case 'M':
++            if (items[MM_MODIFY].enabled) {
++                h013_31e0();
++            }
++            break;
++        case 'T':
++            if (items[MM_TRAIN].enabled) {
++                h013_051c();
++            }
++            break;
++        case 'K':
++            if (items[MM_KNIGHT].enabled) {
++                h013_4508();
++            }
++            break;
++        case 'V':
++            if (items[MM_VIEW].enabled && h065_3702()) {
++                h065_196e(&redraw);
++            }
++            break;
++        case 'A':
++            if (items[MM_ADD].enabled) {
++                h013_0518();
++            }
++            break;
++        case 'R':
++            if (items[MM_REMOVE].enabled && g_current_char != NULL &&
++                h065_3702()) {
++                if (h013_character_byte(g_current_char, 0xEC) < 0x80) {
++                    h066_1640(g_current_char, 0, "");
++                    h053_00ca(0, 1);
++                } else {
++                    h013_2b9a();
++                }
++                if (g_current_char == NULL && !H005_B(0x249C)) {
++                    H005_B(0x24D0) = 1;
++                    return;
++                }
++            }
++            break;
++        case 'L':
++            if (items[MM_LOAD].enabled) {
++                h066_291e();
++            }
++            break;
++        case 'S':
++            if (items[MM_SAVE].enabled && g_party_head != NULL) {
++                h066_3000();
++            }
++            break;
++        case 'B':
++            if (items[MM_BEGIN].enabled) {
++                H005_B(0x24A2) = 1;
++                if (g_party_head != NULL || G_DEMO_FLAG) {
++                    H005_B(0x3DE3) = saved_context;
++                    if (!H005_B(0x24D1) && H005_B(0x2486) != 9) {
++                        if (H005_B(0x3DE3) == 3 &&
++                            COK_GET16(g_state_a + 0x270) == 0) {
++                            h044_0452();
++                        } else {
++                            h044_0330();
++                        }
++                        h063_0d80(g_current_char);
++                    } else if (COK_GET16(g_state_a + 0x1E4) == 0 ||
++                               COK_GET16(g_state_a + 0x270) != 0) {
++                        h044_0330();
++                        h063_0d80(g_current_char);
++                    }
++                    clear_message_line();
++                    COK_PUT16(g_state_b + 0x550, 0);
++                    h028_0d74();
++                    return;
++                }
++            }
++            break;
++        case 'E':
++            if (items[MM_EXIT].enabled) {
++                key = ask_yes_no(0x12, "Quit to workbench ", 0x0E, 0x0A, 0x0F);
++                if (key == 'Y') {
++                    if (g_party_head != NULL && !H005_B(0x24A3)) {
++                        key = ask_yes_no(0x1E, "Game not saved.  Quit anyway? ",
++                                         0x0E, 0x0A, 0x0F);
++                        if (key == 'N') {
++                            h066_3000();
++                        }
++                    }
++                    if (key == 'Y') {
++                        menu_free(&list);
++                        h043_0840();
++                        quit_game();
++                    }
++                }
++            }
++            break;
++        case 'J':
++            /*
++             * Trucco: se il terzo argomento della riga di comando e' la
++             * parola di H005+$2358, attiva/disattiva "Free training".
++             * L'originale legge argv[2] in ogni caso; qui solo se esiste.
++             */
++            if (g_argc > 2 &&
++                h026_compare_nocase(0xFF, g_argv[2], 0x14,
++                                    (const char *)&g_h005[0x2358]) == 1) {
++                H005_B(0x24DE) = (u8)(H005_B(0x24DE) == 0);
++                h026_copy(0x50, s_message, 0x0E, "Free training ");
++                if (H005_B(0x24DE)) {
++                    h026_append(0x50, s_message, 2, "on");
++                } else {
++                    h026_append(0x50, s_message, 3, "off");
++                }
++                h063_1d44(0x50, s_message);
++            }
++            break;
++        default:
++            break;
++        }
++    }
++}
+diff --git a/src_c/readable/h013.h b/src_c/readable/h013.h
+new file mode 100644
+index 0000000..d8da252
+--- /dev/null
++++ b/src_c/readable/h013.h
+@@ -0,0 +1,7 @@
++/* H013: creazione/gestione dei personaggi e menu principale del party. */
++#ifndef COK_H013_H
++#define COK_H013_H
++
++void main_menu(void);                   /* H013+$4BFC */
++
++#endif
+diff --git a/src_c/readable/h022_view.c b/src_c/readable/h022_view.c
+index a20bfb8..f6ee29a 100644
+--- a/src_c/readable/h022_view.c
++++ b/src_c/readable/h022_view.c
+@@ -55,3 +55,15 @@ void graphics_mrg_cop(struct View *view)
+ {
+     MrgCop(view);
+ }
++
++/* PORT H022+$0014 */
++void graphics_free_color_map(struct ColorMap *cm)
++{
++    FreeColorMap(cm);
++}
++
++/* PORT H022+$0026 */
++void graphics_free_vport_cop_lists(struct ViewPort *vp)
++{
++    FreeVPortCopLists(vp);
++}
+diff --git a/src_c/readable/h022_view.h b/src_c/readable/h022_view.h
+index 08f5ba8..ee05ab7 100644
+--- a/src_c/readable/h022_view.h
++++ b/src_c/readable/h022_view.h
+@@ -4,6 +4,8 @@
+ 
+ #include "cok.h"
+ 
++void graphics_free_color_map(struct ColorMap *cm);       /* H022+$0014 */
++void graphics_free_vport_cop_lists(struct ViewPort *vp); /* H022+$0026 */
+ struct ColorMap *graphics_get_color_map(u32 entries);   /* H022+$0038 */
+ void graphics_init_view(struct View *view);             /* H022+$0060 */
+ void graphics_init_vport(struct ViewPort *vp);          /* H022+$0072 */
+diff --git a/src_c/readable/h028_files.c b/src_c/readable/h028_files.c
+index 5aaedda..da2208b 100644
+--- a/src_c/readable/h028_files.c
++++ b/src_c/readable/h028_files.c
+@@ -7,10 +7,11 @@
+ #include "h031.h"
+ #include "unported.h"
+ #include "globals.h"
++#include "h010_input.h"
+ 
+ u8  g_h028_mf9;                 /* -$F9(a4) */
+-u32 g_h028_maa;                 /* -$AA(a4) */
+-u32 g_h028_mae;                 /* -$AE(a4) */
++struct BitMap *g_char_screen_s; /* -$AA(a4): "charS.LBM" */
++struct BitMap *g_char_screen_t; /* -$AE(a4): "charT.LBM" */
+ char g_h028_m52[0x52];          /* -$52(a4): directory alternativa, mai
+                                    scritta nell'asm, quindi sempre "" */
+ 
+@@ -18,8 +19,8 @@ char g_h028_m52[0x52];          /* -$52(a4): directory alternativa, mai
+ void h028_init(void)
+ {
+     g_h028_mf9 = 0;
+-    g_h028_maa = 0;
+-    g_h028_mae = 0;
++    g_char_screen_s = NULL;
++    g_char_screen_t = NULL;
+ }
+ 
+ /*
+@@ -217,7 +218,17 @@ static void dax_decompress_rle(const u8 *src, u8 *dst, u16 *comp_size,
+         }
+         if (kind == 0) {
+             if ((u16)(di + n + 1) <= *raw_size) {
+-                exec_copy_mem(src + (u16)(si + 1), dst + di, (u32)(u16)(n + 1));
++                /*
++                 * L'ultimo controllo di alcuni blocchi dichiara piu' byte di
++                 * quelli rimasti: l'originale li legge oltre il buffer
++                 * compresso.  Qui si copiano solo i byte presenti (il
++                 * buffer ha 2 byte di margine) e il resto resta a zero.
++                 */
++                u32 avail = (u32)*comp_size + 2 - (u32)(u16)(si + 1);
++                u32 want = (u32)(u16)(n + 1);
++
++                exec_copy_mem(src + (u16)(si + 1), dst + di,
++                              want < avail ? want : avail);
+             } else {
+                 h014_0018(0x1A, overrun, (u16)(di + n + 1 - *raw_size));
+             }
+@@ -328,7 +339,7 @@ void dax_load_block(u16 name_len, const char *name, u16 ext_len,
+         comp_size = COK_GET16(comp_raw);
+         if (comp_size > 0xA000 && entry_id == id) {
+             dos_close(file);
+-            h010_0332();
++            quit_game();
+         }
+         if (count > 0x3E7) {
+             h014_0018(0x1C, "large limit in getdatablock>", count);
+@@ -360,3 +371,23 @@ void dax_load_block(u16 name_len, const char *name, u16 ext_len,
+     dax_decompress_rle(g_dax_buffer, *data, &comp_size, size);
+     exec_free_mem(g_dax_buffer, (u32)comp_saved + 2);
+ }
++
++/*
++ * PORT H028+$0D74: se caricate (flag -$F9), libera le due schermate dei
++ * personaggi (charS/charT: piani con H041+$00BE, BitMap di $28 byte).
++ */
++void free_char_screens(void)
++{
++    if (!g_h028_mf9) {
++        return;
++    }
++    if (g_char_screen_s != NULL) {
++        h041_00be(g_char_screen_s->Planes[0]);
++        exec_free_mem(g_char_screen_s, sizeof(struct BitMap));
++    }
++    if (g_char_screen_t != NULL) {
++        h041_00be(g_char_screen_t->Planes[0]);
++        exec_free_mem(g_char_screen_t, sizeof(struct BitMap));
++    }
++    g_h028_mf9 = 0;
++}
+diff --git a/src_c/readable/h028_files.h b/src_c/readable/h028_files.h
+index ee98f8d..72c1253 100644
+--- a/src_c/readable/h028_files.h
++++ b/src_c/readable/h028_files.h
+@@ -10,6 +10,7 @@ u8 file_exists(u16 len, const char *name);      /* H028+$02D0 */
+ u8 open_resource_file(u16 name_len, const char *name, u16 msg_len,
+                       const char *msg, u8 unused, cok_bptr *file);
+                                                 /* H028+$05FA */
++void free_char_screens(void);            /* H028+$0D74 */
+ void dax_load_block(u16 name_len, const char *name, u16 ext_len,
+                     const char *ext, u16 id, u16 *size, u8 **data);
+                                                 /* H028+$0DD8 */
+diff --git a/src_c/readable/h029_gfx.c b/src_c/readable/h029_gfx.c
+index 9cf9826..333ea5a 100644
+--- a/src_c/readable/h029_gfx.c
++++ b/src_c/readable/h029_gfx.c
+@@ -11,6 +11,7 @@
+ #include "h028_files.h"
+ #include "h018_libs.h"
+ #include "h084.h"
++#include "h082.h"
+ #include "h016_gfx.h"
+ #include "h037.h"
+ #include "h055.h"
+@@ -516,3 +517,26 @@ void add_to_byte(u8 *value, u16 delta)
+ {
+     *value = (u8)(*value + delta);
+ }
++
++/*
++ * PORT H029+$148E: libera la View fuori schermo di H029+$1346 (ColorMap,
++ * liste Copper, RastPort), chiude intuition.library aperta li' e libera il
++ * record di $3D8E.
++ */
++void release_display_resources(void)
++{
++    struct ColorMap *cm;
++    struct Library *lib;
++
++    if (g_offscreen_rp != NULL) {
++        cm = g_offscreen_vp.ColorMap;
++        graphics_free_color_map(cm);
++        graphics_free_vport_cop_lists(&g_offscreen_vp);
++        graphics_free_cpr_list(g_offscreen_view.LOFCprList);
++        exec_free_mem(g_offscreen_rp, sizeof(struct RastPort));
++        g_offscreen_rp = NULL;
++        lib = g_h029_intuition;
++        exec_close_library(lib);
++    }
++    free_gfx_record(&g_gfx_3d8e);
++}
+diff --git a/src_c/readable/h029_gfx.h b/src_c/readable/h029_gfx.h
+index 50e451d..28269a7 100644
+--- a/src_c/readable/h029_gfx.h
++++ b/src_c/readable/h029_gfx.h
+@@ -18,6 +18,7 @@ void load_indexed_gfx_record(u16 name_len, const char *name, u16 id,
+                              u16 with_mask, u8 mask_color,
+                              struct GfxRecord **rec);   /* H029+$0A0E */
+ void prepare_display_resources(void);   /* H029+$1346 */
++void release_display_resources(void);   /* H029+$148E */
+ void open_game_display(void);           /* H029+$1206 */
+ void close_game_display(void);          /* H029+$12BC */
+ void h029_fill_bytes(u16 unused, u8 *dst, u16 count, u8 value); /* H029+$0312 */
+diff --git a/src_c/readable/h030.c b/src_c/readable/h030.c
+index c87973a..1bb99cc 100644
+--- a/src_c/readable/h030.c
++++ b/src_c/readable/h030.c
+@@ -175,3 +175,9 @@ void load_gothic_font(void)
+     h049_set_glyph_planes((u8 *)g_gothic_bitmap.Planes[0],
+                           g_rastport->BitMap);
+ }
++
++/* PORT H030+$0C84: libera i piani del font (dimensione dell'allocazione). */
++void free_gothic_font(void)
++{
++    exec_free_mem(g_gothic_bitmap.Planes[0], g_h030_alloc_size);
++}
+diff --git a/src_c/readable/h030.h b/src_c/readable/h030.h
+index 78746d1..c7571a2 100644
+--- a/src_c/readable/h030.h
++++ b/src_c/readable/h030.h
+@@ -15,5 +15,6 @@ s32  time_hundredths(void);                             /* H030+$0A40 */
+ void input_line(u16 prompt_len, const char *prompt, u16 fg, u16 bg,
+                 u16 max_chars, u16 out_max, char *out); /* H030+$0718 */
+ void load_gothic_font(void);            /* H030+$0C10 */
++void free_gothic_font(void);            /* H030+$0C84 */
+ 
+ #endif
+diff --git a/src_c/readable/h034.c b/src_c/readable/h034.c
+index 548bc23..ede2971 100644
+--- a/src_c/readable/h034.c
++++ b/src_c/readable/h034.c
+@@ -43,7 +43,7 @@ void load_8x8_set(u8 id, u8 slot)
+     h026_append(0x50, message, 0x0A, " from 8x8D");
+     h026_append(0x50, message, 1, group);
+     wait_for_key();
+-    h010_0332();
++    quit_game();
+ }
+ 
+ /*
+diff --git a/src_c/readable/h082.c b/src_c/readable/h082.c
+index 213016e..89aa0db 100644
+--- a/src_c/readable/h082.c
++++ b/src_c/readable/h082.c
+@@ -1,5 +1,5 @@
+ /* H082: Adattatore graphics.library/FreeCprList. */
+-#include "cok.h"
++#include "h082.h"
+ 
+ /*
+  * PORT H082+$0008: copia GfxBase del runtime H015 nella cella del modulo.
+@@ -8,3 +8,13 @@
+ void h082_init(void)
+ {
+ }
++
++#if COK_AMIGA
++#include <proto/graphics.h>
++#endif
++
++/* PORT H082+$0074 */
++void graphics_free_cpr_list(struct cprlist *list)
++{
++    FreeCprList(list);
++}
+diff --git a/src_c/readable/h082.h b/src_c/readable/h082.h
+new file mode 100644
+index 0000000..bb2457f
+--- /dev/null
++++ b/src_c/readable/h082.h
+@@ -0,0 +1,9 @@
++/* H082: adattatore graphics.library/FreeCprList. */
++#ifndef COK_H082_H
++#define COK_H082_H
++
++#include "cok.h"
++
++void graphics_free_cpr_list(struct cprlist *list);      /* H082+$0074 */
++
++#endif
+diff --git a/src_c/readable/host/graphics.c b/src_c/readable/host/graphics.c
+index 484bda1..ee3a69d 100644
+--- a/src_c/readable/host/graphics.c
++++ b/src_c/readable/host/graphics.c
+@@ -253,3 +253,14 @@ LONG BltBitMap(struct BitMap *src, LONG src_x, LONG src_y,
+     host_display_changed();
+     return planes;
+ }
++
++/* Senza liste Copper non c'e' nulla da liberare. */
++void FreeVPortCopLists(struct ViewPort *vp)
++{
++    (void)vp;
++}
++
++void FreeCprList(struct cprlist *list)
++{
++    (void)list;
++}
+diff --git a/src_c/readable/host/intuition.c b/src_c/readable/host/intuition.c
+index 8e75a20..21ced6c 100644
+--- a/src_c/readable/host/intuition.c
++++ b/src_c/readable/host/intuition.c
+@@ -186,7 +186,8 @@ void SetPointer(struct Window *window, UWORD *data, LONG height, LONG width,
+     (void)width;
+     (void)x_offset;
+     (void)y_offset;
+-    for (i = 0; i < (height + 2) * 4 && p != NULL; ++i) {
++    /* Word di controllo e righe: (altezza + 1) * 4 byte. */
++    for (i = 0; i < (height + 1) * 4 && p != NULL; ++i) {
+         if (p[i] != 0) {
+             blank = 0;
+             break;
+diff --git a/src_c/readable/host/ndk.h b/src_c/readable/host/ndk.h
+index 666141b..4466012 100644
+--- a/src_c/readable/host/ndk.h
++++ b/src_c/readable/host/ndk.h
+@@ -112,8 +112,11 @@ struct ViewPort {
+     struct RasInfo *RasInfo;
+ };
+ 
++struct cprlist;
++
+ struct View {
+     struct ViewPort *ViewPort;
++    struct cprlist *LOFCprList; /* liste Copper: sull'host sempre NULL */
+     WORD DyOffset;
+     WORD DxOffset;
+     UWORD Modes;
+@@ -134,6 +137,8 @@ void     FreeColorMap(struct ColorMap *cm);
+ void     MakeVPort(struct View *view, struct ViewPort *vp);
+ void     MrgCop(struct View *view);
+ void     LoadView(struct View *view);
++void     FreeVPortCopLists(struct ViewPort *vp);
++void     FreeCprList(struct cprlist *list);
+ void     InitRastPort(struct RastPort *rp);
+ void     WaitTOF(void);
+ void     OwnBlitter(void);
+diff --git a/src_c/readable/tests/dax_test.c b/src_c/readable/tests/dax_test.c
+index 046020b..37aa98d 100644
+--- a/src_c/readable/tests/dax_test.c
++++ b/src_c/readable/tests/dax_test.c
+@@ -16,12 +16,17 @@ void h014_0018(u16 len, const char *msg, u16 value)
+     printf("errore H014: %s %u\n", msg, value);
+ }
+ 
+-void h010_0332(void)
++void quit_game(void)
+ {
+     printf("uscita H010+$0332\n");
+     exit(3);
+ }
+ 
++void h041_00be(void *block)
++{
++    (void)block;
++}
++
+ int main(int argc, char **argv)
+ {
+     u16 size = 0;
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index a93ce13..3e24296 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -32,14 +32,12 @@ void cok_unported(const char *where)
+ }
+ 
+ void h006_0914(void) { cok_unported("H006+$0914"); }
+-void h010_0332(void) { cok_unported("H010+$0332"); }
+ void h011_04a6(u16 a, u16 b, u16 c, u16 d)
+ {
+     (void)a; (void)b; (void)c; (void)d;
+     cok_unported("H011+$04A6");
+ }
+ void h012_3150(void) { cok_unported("H012+$3150"); }
+-void h013_4bfc(void) { cok_unported("H013+$4BFC"); }
+ 
+ /* Chiamate da H006+$01AE. */
+ void h014_0018(u16 len, const char *msg, u16 value) { (void)len; (void)msg; (void)value; cok_unported("H014+$0018"); }
+@@ -233,3 +231,24 @@ void h042_0254(s32 handle) { (void)handle; cok_unported("H042+$0254"); }
+ void *h008_party_next(void *character) { (void)character; cok_unported("struttura dei personaggi (+$18E)"); return NULL; }
+ const u8 *g_h005_2ade_area(void) { cok_unported("H005+$2ADE (area della mappa)"); return NULL; }
+ void *g_h005_2508;
++void h013_0518(void) { cok_unported("H013+$0518"); }
++void h013_051c(void) { cok_unported("H013+$051C"); }
++void h013_0982(void) { cok_unported("H013+$0982"); }
++void h013_2b9a(void) { cok_unported("H013+$2B9A"); }
++void h013_31e0(void) { cok_unported("H013+$31E0"); }
++void h013_4508(void) { cok_unported("H013+$4508"); }
++u8 h013_character_byte(void *character, u16 offset) { (void)character; (void)offset; cok_unported("struttura dei personaggi"); return 0; }
++u8 h065_3702(void) { cok_unported("H065+$3702"); return 0; }
++void h065_196e(u8 *redraw) { (void)redraw; cok_unported("H065+$196E"); }
++void h066_1640(void *character, u16 a, const char *text) { (void)character; (void)a; (void)text; cok_unported("H066+$1640"); }
++void h053_00ca(u8 a, u8 b) { (void)a; (void)b; cok_unported("H053+$00CA"); }
++void h066_291e(void) { cok_unported("H066+$291E"); }
++void h066_3000(void) { cok_unported("H066+$3000"); }
++void h044_0330(void) { cok_unported("H044+$0330"); }
++void h044_0452(void) { cok_unported("H044+$0452"); }
++void h063_0d80(void *character) { (void)character; cok_unported("H063+$0D80"); }
++void h063_1d44(u16 len, const char *text) { (void)len; (void)text; cok_unported("H063+$1D44"); }
++void h028_0d74(void) { cok_unported("H028+$0D74"); }
++void h043_0840(void) { cok_unported_skip("H043+$0840"); }
++void h041_00be(void *block) { (void)block; cok_unported("H041+$00BE"); }
++void h053_0012(void **character) { (void)character; cok_unported("H053+$0012"); }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index ab83a67..dae258c 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -21,10 +21,8 @@ void h043_0584(void);
+ void h043_190e(u16 command);
+ void h010_03aa(void);
+ void h014_0018(u16 len, const char *msg, u16 value);
+-void h010_0332(void);
+ void h011_04a6(u16 a, u16 b, u16 c, u16 d);
+ void h012_3150(void);
+-void h013_4bfc(void);
+ 
+ /* Gestori delle tabelle H005+$25C0 e H005+$2832. */
+ void h027_0312(void);
+@@ -203,4 +201,27 @@ void h085_4628(void);
+ void h085_4798(void);
+ void h085_4a02(void);
+ 
++/* Funzioni del menu principale (H013+$4BFC). */
++void h013_0518(void);
++void h013_051c(void);
++void h013_0982(void);
++void h013_2b9a(void);
++void h013_31e0(void);
++void h013_4508(void);
++u8   h013_character_byte(void *character, u16 offset);  /* struttura non portata */
++u8   h065_3702(void);
++void h065_196e(u8 *redraw);
++void h066_1640(void *character, u16 a, const char *text);
++void h053_00ca(u8 a, u8 b);
++void h066_291e(void);
++void h066_3000(void);
++void h044_0330(void);
++void h044_0452(void);
++void h063_0d80(void *character);
++void h063_1d44(u16 len, const char *text);
++void h028_0d74(void);
++void h043_0840(void);
++void h041_00be(void *block);
++void h053_0012(void **character);
++
+ #endif
+-- 
+2.43.0
+

@@ -1,0 +1,1087 @@
+From bb7234dd54521b8d82a5ede1d971a5f5b7d7ce2e Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 20:36:59 +0000
+Subject: [PATCH 30/65] Port the first spell effects and the effect bookkeeping
+
+Cure Light/Serious Wounds (H085+$1CB8/$3298, H062+$253C, H063+$2ACC),
+Cure Disease ($2E28, $0A1A, H062+$18AC), Neutralize Poison ($3552),
+Enlarge ($1EBA) and Strength ($2BD4) with the caster level
+(H063+$2FAA), the effect duration (H085+$0672) and H062+$1916/$19C2.
+Effect handler call, effect removal and stat recompute (H062+$03F2,
+$0452, $1952, $1A32) replace their stubs.  dax_test uses the new
+error_message name.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/PORT_STATUS.md   |  52 ++---
+ src_c/readable/h033.c           |  12 +-
+ src_c/readable/h062.c           | 352 +++++++++++++++++++++++++++++++-
+ src_c/readable/h062.h           |  12 ++
+ src_c/readable/h063.c           |  73 +++++++
+ src_c/readable/h063.h           |   4 +
+ src_c/readable/h065.c           |   6 +-
+ src_c/readable/h085.c           | 209 +++++++++++++++++++
+ src_c/readable/h085.h           |   8 +-
+ src_c/readable/tests/dax_test.c |   4 +-
+ src_c/readable/unported.c       |   9 -
+ src_c/readable/unported.h       |   9 -
+ 12 files changed, 696 insertions(+), 54 deletions(-)
+
+diff --git a/src_c/readable/PORT_STATUS.md b/src_c/readable/PORT_STATUS.md
+index 9a8fbaa..55c91f8 100644
+--- a/src_c/readable/PORT_STATUS.md
++++ b/src_c/readable/PORT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ Generato da `scripts/port_status.py`: routine delle schede `ROUTINE` di `rebuild/source`, portate se un sorgente di questa cartella ha il marcatore `/* PORT Hnnn+$XXXX */`.
+ 
+-Routine portate: **463 / 917**.
++Routine portate: **483 / 923**.
+ 
+ | Hunk | Byte | Routine | Portate |
+ | --- | ---: | ---: | ---: |
+@@ -68,8 +68,8 @@ Routine portate: **463 / 917**.
+ | H059 | 6340 | 14 | 1 |
+ | H060 | 396 | 2 | 1 |
+ | H061 | 16936 | 35 | 1 |
+-| H062 | 10496 | 32 | 4 |
+-| H063 | 16496 | 52 | 28 |
++| H062 | 10496 | 32 | 14 |
++| H063 | 16496 | 52 | 30 |
+ | H064 | 6460 | 7 | 1 |
+ | H065 | 14268 | 27 | 27 |
+ | H066 | 13840 | 27 | 23 |
+@@ -91,7 +91,7 @@ Routine portate: **463 / 917**.
+ | H082 | 156 | 2 | 2 |
+ | H083 | 92 | 1 | 1 |
+ | H084 | 92 | 2 | 2 |
+-| H085 | 19904 | 14 | 1 |
++| H085 | 19904 | 20 | 9 |
+ | H086 | 2088 | 14 | 14 |
+ | H087 | 1132 | 4 | 4 |
+ | H088 | 328 | 2 | 2 |
+@@ -956,12 +956,12 @@ Routine portate: **463 / 917**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0106` | `module_init_H062` | parziale | h062.c:8 |
++| `$0106` | `module_init_H062` | parziale | h062.c:10 |
+ | `$0114` | `sub_H062_00000114` | parziale |  |
+ | `$021E` | `sub_H062_0000021E` | parziale |  |
+ | `$02FA` | `sub_H062_000002FA` | parziale |  |
+-| `$03F2` | `sub_H062_000003F2` | parziale |  |
+-| `$0452` | `sub_H062_00000452` | parziale |  |
++| `$03F2` | `sub_H062_000003F2` | parziale | h062.c:103 |
++| `$0452` | `sub_H062_00000452` | parziale | h062.c:116 |
+ | `$057C` | `sub_H062_0000057C` | parziale |  |
+ | `$0772` | `sub_H062_00000772` | parziale |  |
+ | `$083E` | `trampoline_H062_0F04` | parziale |  |
+@@ -970,22 +970,22 @@ Routine portate: **463 / 917**.
+ | `$126C` | `sub_H062_0000126C` | parziale |  |
+ | `$12F6` | `sub_H062_000012F6` | parziale |  |
+ | `$142C` | `sub_H062_0000142C` | parziale |  |
+-| `$156C` | `sub_H062_0000156C` | parziale | h062.c:13 |
++| `$156C` | `sub_H062_0000156C` | parziale | h062.c:15 |
+ | `$15C6` | `sub_H062_000015C6` | parziale |  |
+-| `$15F2` | `sub_H062_000015F2` | parziale | h062.c:31 |
++| `$15F2` | `sub_H062_000015F2` | parziale | h062.c:33 |
+ | `$1694` | `sub_H062_00001694` | parziale |  |
+-| `$1780` | `sub_H062_00001780` | parziale | h062.c:56 |
++| `$1780` | `sub_H062_00001780` | parziale | h062.c:58 |
+ | `$17C0` | `sub_H062_000017C0` | parziale |  |
+ | `$1898` | `sub_H062_00001898` | parziale |  |
+-| `$18AC` | `sub_H062_000018AC` | parziale |  |
+-| `$1916` | `sub_H062_00001916` | parziale |  |
+-| `$1952` | `sub_H062_00001952` | parziale |  |
+-| `$19C2` | `sub_H062_000019C2` | parziale |  |
+-| `$1A32` | `trampoline_H062_1C04` | parziale |  |
+-| `$1A40` | `sub_H062_00001A40` | parziale |  |
+-| `$1A9E` | `sub_H062_00001A9E` | parziale |  |
++| `$18AC` | `sub_H062_000018AC` | parziale | h062.c:374 |
++| `$1916` | `sub_H062_00001916` | parziale | h062.c:388 |
++| `$1952` | `sub_H062_00001952` | parziale | h062.c:160 |
++| `$19C2` | `sub_H062_000019C2` | parziale | h062.c:400 |
++| `$1A32` | `trampoline_H062_1C04` | parziale | h062.c:230 |
++| `$1A40` | `sub_H062_00001A40` | parziale | h062.c:186 |
++| `$1A9E` | `sub_H062_00001A9E` | parziale | h062.c:195 |
+ | `$2188` | `sub_H062_00002188` | parziale |  |
+-| `$253C` | `sub_H062_0000253C` | parziale |  |
++| `$253C` | `sub_H062_0000253C` | parziale | h062.c:69 |
+ | `$2650` | `sub_H062_00002650` | parziale |  |
+ | `$2734` | `sub_H062_00002734` | parziale |  |
+ 
+@@ -1026,14 +1026,14 @@ Routine portate: **463 / 917**.
+ | `$21E0` | `sub_H063_000021E0` | parziale |  |
+ | `$2760` | `sub_H063_00002760` | parziale |  |
+ | `$2984` | `sub_H063_00002984` | parziale |  |
+-| `$2ACC` | `sub_H063_00002ACC` | parziale |  |
++| `$2ACC` | `sub_H063_00002ACC` | parziale | h063.c:1002 |
+ | `$2B4C` | `trampoline_H063_2B72` | parziale |  |
+ | `$2B7C` | `sub_H063_00002B7C` | parziale |  |
+ | `$2BDE` | `sub_H063_00002BDE` | parziale |  |
+ | `$2DC6` | `sub_H063_00002DC6` | parziale |  |
+ | `$2F12` | `sub_H063_00002F12` | parziale | h063.c:887 |
+ | `$2F5A` | `sub_H063_00002F5A` | parziale |  |
+-| `$2FAA` | `sub_H063_00002FAA` | parziale |  |
++| `$2FAA` | `sub_H063_00002FAA` | parziale | h063.c:1019 |
+ | `$321A` | `trampoline_H063_3384` | parziale | h063.c:761 |
+ | `$33A0` | `trampoline_H063_3652` | parziale |  |
+ | `$3658` | `sub_H063_00003658` | parziale |  |
+@@ -1325,10 +1325,10 @@ Routine portate: **463 / 917**.
+ 
+ | Offset | Nome nell'analisi | Analisi | Port |
+ | --- | --- | --- | --- |
+-| `$0664` | `module_init_H085` | parziale | h085.c:15 |
+-| `$0672` | `trampoline_H085_078A` | parziale |  |
++| `$0664` | `module_init_H085` | parziale | h085.c:18 |
++| `$0672` | `trampoline_H085_078A` | parziale | h085.c:114 |
+ | `$07B6` | `sub_H085_000007B6` | parziale |  |
+-| `$0A1A` | `sub_H085_00000A1A` | parziale |  |
++| `$0A1A` | `sub_H085_00000A1A` | parziale | h085.c:56 |
+ | `$0AB2` | `sub_H085_00000AB2` | parziale |  |
+ | `$0BB2` | `trampoline_H085_0D50` | parziale |  |
+ | `$0BC0` | `sub_H085_00000BC0` | parziale |  |
+@@ -1337,7 +1337,13 @@ Routine portate: **463 / 917**.
+ | `$1234` | `sub_H085_00001234` | parziale |  |
+ | `$1306` | `sub_H085_00001306` | parziale |  |
+ | `$1A6C` | `sub_H085_00001A6C` | parziale |  |
++| `$1CB8` | `(senza scheda)` | - | h085.c:43 |
++| `$1EBA` | `(senza scheda)` | - | h085.c:152 |
++| `$2BD4` | `(senza scheda)` | - | h085.c:187 |
++| `$2E28` | `(senza scheda)` | - | h085.c:77 |
+ | `$302A` | `sub_H085_0000302A` | parziale |  |
++| `$3298` | `(senza scheda)` | - | h085.c:49 |
++| `$3552` | `(senza scheda)` | - | h085.c:84 |
+ | `$3EE2` | `sub_H085_00003EE2` | parziale |  |
+ 
+ ### H086
+diff --git a/src_c/readable/h033.c b/src_c/readable/h033.c
+index 7977d69..48718ea 100644
+--- a/src_c/readable/h033.c
++++ b/src_c/readable/h033.c
+@@ -497,7 +497,7 @@ void install_action_handlers(void)
+     H005_B(0x24A8) = 1;
+     g_handlers_25c0[0] = h085_1c60;   /* $25C0 */
+     g_handlers_25c0[1] = h085_1c86;   /* $25C4 */
+-    g_handlers_25c0[2] = h085_1cb8;   /* $25C8 */
++    g_handlers_25c0[2] = cure_light_wounds;   /* $25C8 */
+     g_handlers_25c0[3] = h085_1d3c;   /* $25CC */
+     g_handlers_25c0[4] = h085_3e4a;   /* $25D0 */
+     g_handlers_25c0[5] = h085_3e78;   /* $25D4 */
+@@ -506,7 +506,7 @@ void install_action_handlers(void)
+     g_handlers_25c0[8] = h085_1da6;   /* $25E0 */
+     g_handlers_25c0[9] = h085_1de4;   /* $25E4 */
+     g_handlers_25c0[10] = h085_3e4a;   /* $25E8 */
+-    g_handlers_25c0[11] = h085_1eba;   /* $25EC */
++    g_handlers_25c0[11] = enlarge;   /* $25EC */
+     g_handlers_25c0[12] = h085_1ffa;   /* $25F0 */
+     g_handlers_25c0[13] = h085_2090;   /* $25F4 */
+     g_handlers_25c0[14] = h085_20de;   /* $25F8 */
+@@ -529,11 +529,11 @@ void install_action_handlers(void)
+     g_handlers_25c0[31] = h085_2628;   /* $263C */
+     g_handlers_25c0[32] = h085_2692;   /* $2640 */
+     g_handlers_25c0[33] = h085_26c0;   /* $2644 */
+-    g_handlers_25c0[34] = h085_2bd4;   /* $2648 */
++    g_handlers_25c0[34] = strength_spell;   /* $2648 */
+     g_handlers_25c0[35] = h033_1a40;   /* $264C */
+     g_handlers_25c0[36] = h085_2dba;   /* $2650 */
+     g_handlers_25c0[37] = h085_2dfa;   /* $2654 */
+-    g_handlers_25c0[38] = h085_2e28;   /* $2658 */
++    g_handlers_25c0[38] = cure_disease;   /* $2658 */
+     g_handlers_25c0[39] = h085_2e40;   /* $265C */
+     g_handlers_25c0[40] = h085_3ed4;   /* $2660 */
+     g_handlers_25c0[41] = h085_2e70;   /* $2664 */
+@@ -552,7 +552,7 @@ void install_action_handlers(void)
+     g_handlers_25c0[54] = h085_3224;   /* $2698 */
+     g_handlers_25c0[55] = h033_1a40;   /* $269C */
+     g_handlers_25c0[56] = h085_3252;   /* $26A0 */
+-    g_handlers_25c0[57] = h085_3298;   /* $26A4 */
++    g_handlers_25c0[57] = cure_serious_wounds;   /* $26A4 */
+     g_handlers_25c0[58] = h085_331e;   /* $26A8 */
+     g_handlers_25c0[59] = h085_33a8;   /* $26AC */
+     g_handlers_25c0[60] = h085_3402;   /* $26B0 */
+@@ -561,7 +561,7 @@ void install_action_handlers(void)
+     g_handlers_25c0[63] = h085_15fe;   /* $26BC */
+     g_handlers_25c0[64] = h085_34b0;   /* $26C0 */
+     g_handlers_25c0[65] = h085_34f0;   /* $26C4 */
+-    g_handlers_25c0[66] = h085_3552;   /* $26C8 */
++    g_handlers_25c0[66] = neutralize_poison;   /* $26C8 */
+     g_handlers_25c0[67] = h085_363e;   /* $26CC */
+     g_handlers_25c0[68] = h085_3e78;   /* $26D0 */
+     g_handlers_25c0[69] = h085_36b8;   /* $26D4 */
+diff --git a/src_c/readable/h062.c b/src_c/readable/h062.c
+index c39b726..e985047 100644
+--- a/src_c/readable/h062.c
++++ b/src_c/readable/h062.c
+@@ -3,7 +3,9 @@
+ #include "h003_exec.h"
+ #include "h023_shared.h"
+ #include "h063.h"
++#include "globals.h"
+ #include "unported.h"
++#include "h029_gfx.h"
+ 
+ /* PORT H062+$0106: link/unlk, nessun effetto. */
+ void h062_init(void)
+@@ -59,6 +61,354 @@ void remove_effects_19(Character *c)
+     CokEffect *e;                       /* -$4(a5) */
+ 
+     while (find_effect(c, 0x19, &e)) {
+-        h062_0452(c, 0x19, e);
++        remove_effect(c, 0x19, e);
+     }
+ }
++
++/*
++ * PORT H062+$253C: cura c di amount punti (fino a +$64) se lo stato
++ * (+$197) e' 0, 1, 4 o 5; con full_only non cura chi e' gia' al massimo.
++ * Chi era incosciente (+$198 = 0) torna attivo fuori dal combattimento.
++ */
++u8 heal_character(Character *c, u16 amount, u8 full_only)
++{
++    u8 ok = 0;                          /* -$1(a5) */
++    u8 st = c->b[0x197];
++
++    if (st == 0 || st == 1 || st == 4 || st == 5) {
++        if (!(c->b[0x1A8] >= c->b[0x64] && full_only)) {
++            c->b[0x1A8] = (u8)(c->b[0x1A8] + amount);
++            if (c->b[0x1A8] > c->b[0x64]) {
++                c->b[0x1A8] = c->b[0x64];
++            }
++            if (!c->b[0x198]) {
++                if (c->b[0x197] == 5) {
++                    c->b[0x197] = 4;
++                }
++                if (c->b[0x197] == 4 && H005_B(0x3DE3) != 5) {
++                    c->b[0x197] = 0;
++                    c->b[0x198] = 1;
++                }
++            }
++            ok = 1;
++        }
++    }
++    return ok;
++}
++
++/* Gestore della tabella degli effetti H005+$2832 (argomenti come H062+$03F2). */
++typedef void (*CokEffectHandler)(Character **c, void *obj, u8 flag);
++
++/*
++ * PORT H062+$03F2: chiama il gestore dell'effetto type (H005+$2832 +
++ * (type-1)*4), o quello di $2A0E se $24E0 e' attivo, con (c, obj, flag).
++ */
++void call_effect_handler(u16 type, Character **c, void *obj, u8 flag)
++{
++    if (H005_B(0x24E0)) {
++        ((CokEffectHandler)g_handlers_2832[119])(c, obj, flag);
++    } else {
++        ((CokEffectHandler)g_handlers_2832[type - 1])(c, obj, flag);
++    }
++}
++
++/*
++ * PORT H062+$0452: toglie da c l'effetto e (o il primo di tipo type se e
++ * e' nullo); se ha +$5 chiama prima il suo gestore con flag 1.  Per i tipi
++ * $E, $C e $26 ricalcola le caratteristiche interessate.
++ */
++void remove_effect(Character *c, u16 type, CokEffect *e)
++{
++    CokEffect *p = e;                   /* -$8(a5) */
++    CokEffect *prev;                    /* -$4(a5) */
++    u16 n;                              /* -$a(a5) */
++
++    if (p == NULL) {
++        p = c->effects;
++        n = 0;
++        while (p != NULL && p->b[0] != type) {
++            ++n;
++            p = p->next;
++        }
++        (void)n;
++    }
++    if (p == NULL) {
++        return;
++    }
++    if (p->b[5]) {
++        call_effect_handler(type, &c, p, 1);
++    }
++    if (c->effects == p) {
++        c->effects = p->next;
++    } else {
++        prev = c->effects;
++        while (prev != NULL && prev->next != p) {
++            prev = prev->next;
++        }
++        prev->next = p->next;
++    }
++    exec_free_mem(p, sizeof(CokEffect));            /* FreeMem($0A) */
++    if (type == 0x0E) {
++        recompute_stat(c, 5);
++    }
++    if (type == 0x0C || type == 0x26) {
++        recompute_stat(c, 0);
++    }
++}
++
++/*
++ * PORT H062+$1952: valore di caratteristica dato dall'effetto e (+$4 senza
++ * il bit 7): fino a $65 e' forza 18 con eccezionale valore - 1, oltre e'
++ * valore - $64.
++ */
++static void effect_stat_value(CokEffect *e, u16 *value, u16 *ext)
++{
++    *ext = 0;
++    *value = mask_byte(e->b[4], 0x7F);
++    if (*value <= 0x65) {
++        *ext = (u16)(*value - 1);
++        *value = 0x12;
++    } else {
++        *value = (u16)(*value - 0x64);
++    }
++}
++
++/* Frame di H062+$1A32 per le procedure annidate. */
++typedef struct StatFrame {
++    Character *c;                       /* $e(a5) */
++    u16 sum;                            /* -$4(a5) */
++    u16 value;                          /* -$e(a5) */
++    u16 cand;                           /* -$10(a5) */
++    u16 ext;                            /* -$12(a5) */
++    u16 cand_ext;                       /* -$14(a5) */
++} StatFrame;
++
++/* PORT H062+$1A40: tiene il valore candidato se maggiore. */
++static void stat_take_max(StatFrame *f)
++{
++    if (f->cand > f->value || (f->cand == 0x12 && f->cand_ext > f->ext)) {
++        f->value = f->cand;
++        f->ext = f->cand_ext;
++    }
++}
++
++/* PORT H062+$1A9E: punti ferita di costituzione per level livelli di cls. */
++static void stat_con_hp(StatFrame *f, u16 level, u8 cls)
++{
++    if (level >= H005_B(0x5026 + cls)) {
++        level = (u16)(H005_B(0x5026 + cls) - 1);
++    }
++    if (cls == 4 &&
++        (f->c->b[0xDC] == 0 || f->c->b[0x10A] == f->c->b[0xDC])) {
++        ++level;
++    }
++    if (cls == 2 || cls == 4 || cls == 7) {
++        switch (f->value) {
++        case 15: case 16: case 17: case 18: case 19:
++            f->sum = (u16)(f->sum + (f->value - 0x0E) * level);
++            break;
++        case 20:
++            f->sum = (u16)(f->sum + level * 5);
++            break;
++        case 21: case 22: case 23:
++            f->sum = (u16)(f->sum + level * 6);
++            break;
++        case 24: case 25:
++            f->sum = (u16)(f->sum + level * 7);
++            break;
++        default:
++            break;
++        }
++    } else if (f->value > 0x0F) {
++        f->sum = (u16)(f->sum + level * 2);
++    } else if (f->value == 0x0F) {
++        f->sum = (u16)(f->sum + level);
++    }
++}
++
++/*
++ * PORT H062+$1A32 (corpo a $1C04): ricalcola la caratteristica stat di c
++ * (0 STR, 3 DEX, 4 CON, 5 CHA) dal valore base, dagli oggetti magici
++ * pronti e dagli effetti; per CON anche i punti ferita.
++ */
++void recompute_stat(Character *c, u8 stat)
++{
++    StatFrame f;
++    CokEffect *e;                       /* -$18(a5) */
++    CokItem *it;                        /* -$1e(a5) */
++    u16 override = 0xFF;                /* -$8(a5) */
++    u16 v;                              /* -$a(a5) */
++    u16 count;                          /* -$c(a5) */
++    u16 lvl;                            /* -$6(a5) */
++    u16 old_hp;                         /* -$2(a5) */
++    u8 k;                               /* -$19(a5) */
++
++    f.c = c;
++    f.sum = 0;
++    f.cand = 0;
++    f.cand_ext = 0;
++    it = c->items;
++    f.value = c->b[0x10 + stat * 2];
++    f.ext = c->b[0x1D];
++    for (; it != NULL; it = it->next) {
++        if (it->b[0x46] > 0x80 && it->b[0x3A]) {
++            v = mask_byte(it->b[0x46], 0x7F);
++            if (stat == 0) {
++                if (v == 3) {
++                    f.cand = 0x12;
++                    f.cand_ext = 0x64;
++                } else if (v == 5) {
++                    switch (it->b[0x45]) {
++                    case 0: f.cand = 0x12; f.cand_ext = 0x64; break;
++                    case 1: f.cand = 0x13; break;
++                    case 2: f.cand = 0x14; break;
++                    case 3: f.cand = 0x15; break;
++                    case 4: f.cand = 0x16; break;
++                    case 5: f.cand = 0x17; break;
++                    case 6: f.cand = 0x18; break;
++                    default: break;
++                    }
++                }
++                stat_take_max(&f);
++            }
++        }
++    }
++    switch (stat) {
++    case 0:                             /* $1D7C */
++        if (find_effect(c, 0x26, &e)) {
++            effect_stat_value(e, &f.cand, &f.cand_ext);
++            if (f.value <= 0x12 && f.ext < 0x64) {
++                f.cand = (u16)(f.value + f.cand);
++                if (f.cand > 0x12) {
++                    if (c->b[0x100] > 0 || c->b[0x108] > 0 ||
++                        c->b[0x105] > 0 || c->b[0x10D] > 0 ||
++                        c->b[0x102] > 0 || c->b[0x10A] > 0) {
++                        f.cand_ext = (u16)(c->b[0x1C] + (f.cand - 0x12) * 10);
++                        if (f.cand_ext > 0x64) {
++                            f.cand_ext = 0x64;
++                        }
++                        f.cand = 0x12;
++                    } else {
++                        f.cand = 0x12;
++                    }
++                }
++            }
++            stat_take_max(&f);
++        }
++        if (find_effect(c, 0x71, &e)) {
++            effect_stat_value(e, &f.cand, &f.cand_ext);
++            stat_take_max(&f);
++        }
++        if (find_effect(c, 0x0C, &e)) {
++            effect_stat_value(e, &f.cand, &f.cand_ext);
++            stat_take_max(&f);
++        }
++        if (override != 0xFF) {
++            c->b[0x11] = (u8)override;
++            c->b[0x1C] = 0;
++        } else {
++            c->b[0x11] = (u8)f.value;
++            c->b[0x1C] = (u8)f.ext;
++        }
++        break;
++    case 3:                             /* $20FA */
++        if (override != 0xFF) {
++            c->b[0x17] = (u8)override;
++        } else {
++            c->b[0x17] = (u8)f.value;
++        }
++        break;
++    case 4:                             /* $1EF6 */
++        count = 0;
++        old_hp = c->b[0x64];
++        c->b[0x64] = c->b[0x123];
++        for (k = 0; k <= 7; ++k) {
++            lvl = c->b[0x106 + k];
++            if (lvl > 0) {
++                stat_con_hp(&f, lvl, k);
++            }
++            lvl = c->b[0xFE + k];
++            if (lvl > 0) {
++                ++count;
++            }
++            if (lvl > H005_B(0x5026 + k)) {
++                lvl = H005_B(0x5026 + k);
++            }
++            if (lvl > c->b[0xDC]) {
++                lvl = (u16)(lvl - c->b[0xDC]);
++                stat_con_hp(&f, lvl, k);
++            }
++        }
++        f.sum = (u16)(f.sum / count);
++        add_to_byte(&c->b[0x64], f.sum);
++        if (c->b[0x64] > old_hp) {
++            add_to_byte(&c->b[0x1A8], (u16)(c->b[0x64] - old_hp));
++        }
++        if (c->b[0x64] < old_hp) {
++            if (c->b[0x1A8] > (u16)(old_hp - c->b[0x64])) {
++                c->b[0x1A8] = (u8)(c->b[0x1A8] - (old_hp - c->b[0x64]));
++            } else {
++                c->b[0x1A8] = 0;
++            }
++        }
++        c->b[0x19] = (u8)f.value;
++        if (c->b[0x19] >= 0x14) {
++            if (!find_effect(c, 0x3E, &e)) {
++                add_effect(c, 0x3E, 0x3C, 0xFF, 1);
++            }
++        } else {
++            remove_effect(c, 0x3E, NULL);
++        }
++        break;
++    case 5:                             /* $2122 */
++        if (find_effect(c, 0x0E, &e)) {
++            f.value = (u16)(f.value + e->b[4]);
++        }
++        c->b[0x1B] = (u8)f.value;
++        break;
++    default:
++        break;
++    }
++}
++
++/* PORT H062+$18AC: se c ha l'effetto type lo toglie con "is Cured". */
++u8 cure_effect(Character *c, u16 type)
++{
++    CokEffect *e;                       /* -$6(a5) */
++    u8 ok = 0;                          /* -$1(a5) */
++
++    if (find_effect(c, type, &e)) {
++        show_char_message(c, 8, "is Cured", 0x0A, 1);
++        remove_effect(c, type, e);
++        ok = 1;
++    }
++    return ok;
++}
++
++/* PORT H062+$1916: valore d'effetto per forza str (18: eccezionale + 1). */
++static u16 strength_effect_value(u16 str, u16 ext)
++{
++    u16 v = (u16)(str + 0x64);          /* -$2(a5) */
++
++    if (str == 0x12) {
++        v = (u16)(ext + 1);
++    }
++    return v;
++}
++
++/*
++ * PORT H062+$19C2: la forza str/ext supera quella base di c (+$10, +$1D)?
++ * In *value il valore per l'effetto.
++ */
++u8 strength_raises(Character *c, u16 str, u16 ext, u16 *value)
++{
++    u8 ok;                              /* -$f(a5) */
++
++    if (str > c->b[0x10] || (str == 0x12 && ext > c->b[0x1D])) {
++        ok = 1;
++        *value = strength_effect_value(str, ext);
++    } else {
++        ok = 0;
++    }
++    return ok;
++}
+diff --git a/src_c/readable/h062.h b/src_c/readable/h062.h
+index 19e67f1..ee3f1c6 100644
+--- a/src_c/readable/h062.h
++++ b/src_c/readable/h062.h
+@@ -10,4 +10,16 @@ void add_effect(Character *c, u16 type, u16 value, u16 b4, u8 b5);
+ 
+ void remove_effects_19(Character *c);           /* H062+$1780 */
+ 
++u8   heal_character(Character *c, u16 amount, u8 full_only); /* H062+$253C */
++
++void call_effect_handler(u16 type, Character **c, void *obj, u8 flag);
++                                                /* H062+$03F2 */
++void remove_effect(Character *c, u16 type, CokEffect *e);  /* H062+$0452 */
++void recompute_stat(Character *c, u8 stat);     /* H062+$1A32 */
++
++u8   cure_effect(Character *c, u16 type);        /* H062+$18AC */
++
++u8   strength_raises(Character *c, u16 str, u16 ext, u16 *value);
++                                                /* H062+$19C2 */
++
+ #endif
+diff --git a/src_c/readable/h063.c b/src_c/readable/h063.c
+index f8e2ec5..c889039 100644
+--- a/src_c/readable/h063.c
++++ b/src_c/readable/h063.c
+@@ -998,3 +998,76 @@ void give_item_copy(Character *c, CokItem *it)
+         p->next = copy;
+     }
+ }
++
++/* PORT H063+$2ACC: "is fully healed" o "is partially healed". */
++void heal_message(Character *c)
++{
++    char text[0x2A];                    /* -$2a(a5) */
++
++    if (c->b[0x1A8] == c->b[0x64]) {
++        strcpy(text, "is fully healed");
++    } else {
++        strcpy(text, "is partially healed");
++    }
++    show_char_message(c, 0x28, text, 0x0A, 1);
++    if (H005_B(0x3DE3) != 5) {
++        draw_party(g_current_char);
++    }
++}
++
++/*
++ * PORT H063+$2FAA: livello d'incantatore del personaggio corrente per
++ * spell (dalla classe dell'incantesimo); 6 per chi non e' incantatore e
++ * per gli oggetti ($24D9) tranne la classe 4.  Per una classe oltre 4
++ * l'originale restituisce la parola non inizializzata; qui 0.
++ */
++s16 caster_level(u16 spell)
++{
++    Character *c = g_current_char;
++    s16 a;                              /* -$2(a5) */
++    s16 b;                              /* -$4(a5) */
++    s16 level = 0;                      /* -$8(a5) */
++
++    if (c->b[0xFE] == 0 && c->b[0x103] == 0 && c->b[0x105] < 9 &&
++        c->b[0x102] < 8) {
++        level = 6;
++    } else {
++        switch (H005_B(0x66 + (spell - 1) * 16)) {
++        case 0:
++        case 2:                         /* $3012 */
++            a = (s16)(c->b[0xFE] + c->b[0x106] * h073_130a(c));
++            b = (s16)(c->b[0x105] + c->b[0x10D] * h073_130a(c) - 8);
++            level = a > b ? a : b;
++            break;
++        case 1:                         /* $30A6 */
++            level = 0;
++            break;
++        case 3:                         /* $30AC */
++            a = (s16)(c->b[0x103] + c->b[0x10B] * h073_130a(c));
++            b = (s16)(c->b[0x102] + c->b[0x10A] * h073_130a(c) - 8);
++            if (c->b[0x103] > 0 && c->b[0x5F] > 0) {
++                switch (COK_GET16(g_state_a + (c->b[0x5F] + 0x1F8) * 2)) {
++                case 0:
++                    --a;
++                    break;
++                case 2:
++                    ++a;
++                    break;
++                default:
++                    break;
++                }
++            }
++            level = a > b ? a : b;
++            break;
++        case 4:                         /* $31B4 */
++            level = 0x0C;
++            break;
++        default:
++            break;
++        }
++    }
++    if (H005_B(0x24D9) && H005_B(0x66 + (spell - 1) * 16) != 4) {
++        level = 6;
++    }
++    return level;
++}
+diff --git a/src_c/readable/h063.h b/src_c/readable/h063.h
+index a747249..6d4fb43 100644
+--- a/src_c/readable/h063.h
++++ b/src_c/readable/h063.h
+@@ -31,4 +31,8 @@ s16  str_weight_allowance(Character *c);                 /* H063+$1A8A */
+ 
+ void give_item_copy(Character *c, CokItem *it);         /* H063+$1CC0 */
+ 
++void heal_message(Character *c);                        /* H063+$2ACC */
++
++s16  caster_level(u16 spell);                            /* H063+$2FAA */
++
+ #endif
+diff --git a/src_c/readable/h065.c b/src_c/readable/h065.c
+index 0cbce8d..ae797c0 100644
+--- a/src_c/readable/h065.c
++++ b/src_c/readable/h065.c
+@@ -752,14 +752,14 @@ static void magic_item_ready(CokItem *it, u8 readying)
+     switch (mask_byte(it->b[0x46], 0x7F)) {
+     case 0: case 2:
+         H005_B(0x24E0) = 1;
+-        h062_03f2(it->b[0x46], &c, it, (u8)(readying == 0));
++        call_effect_handler(it->b[0x46], &c, it, (u8)(readying == 0));
+         break;
+     case 3: case 5:
+-        h062_1a32(c, 0);
++        recompute_stat(c, 0);
+         break;
+     case 9:
+         if (!readying) {
+-            h062_0452(c, 0x17, NULL);
++            remove_effect(c, 0x17, NULL);
+         }
+         break;
+     default:
+diff --git a/src_c/readable/h085.c b/src_c/readable/h085.c
+index f2b4bf1..5d087de 100644
+--- a/src_c/readable/h085.c
++++ b/src_c/readable/h085.c
+@@ -1,6 +1,9 @@
+ /* H085: dati del modulo (nomi dei livelli di incantesimo). */
+ #include "init_data.h"
+ #include "h085.h"
++#include "globals.h"
++#include "h062.h"
++#include "h063.h"
+ 
+ /* Dati del modulo sotto a4: g_h085_bss[0x292 - off] e' -off(a4). */
+ u8 g_h085_bss[0x292];
+@@ -17,3 +20,209 @@ void h085_init(void)
+ {
+     INIT_APPLY(s_init_4d1a, g_h085_bss, sizeof(g_h085_bss));
+ }
++
++/* Cura il primo bersaglio di dice d8 + bonus (+1d8 per +$5E = 4). */
++static void cure_wounds(u16 dice, u16 extra)
++{
++    u16 bonus;                          /* -$2(a5) */
++
++    if (H005_B(0x246C) == 0) {
++        return;
++    }
++    if (g_current_char->b[0x5E] == 4) {
++        bonus = roll_dice(1, 8);
++    } else {
++        bonus = 0;
++    }
++    if (heal_character(g_spell_targets[0],
++                       (u16)(roll_dice(dice, 8) + extra + bonus), 0)) {
++        heal_message(g_spell_targets[0]);
++    }
++}
++
++/* PORT H085+$1CB8: Cure Light Wounds, 1d8. */
++void cure_light_wounds(void)
++{
++    cure_wounds(1, 0);
++}
++
++/* PORT H085+$3298: Cure Serious Wounds, 2d8 + 1. */
++void cure_serious_wounds(void)
++{
++    cure_wounds(2, 1);
++}
++
++/*
++ * PORT H085+$0A1A: toglie al primo bersaglio le malattie ($22, $2B; con
++ * $2B anche $2C e $1F e ricalcola la forza).
++ */
++static u8 cure_target_disease(void)
++{
++    u8 ok = 0;                          /* -$1(a5) */
++
++    H005_B(0x24AA) = 1;
++    if (cure_effect(g_spell_targets[0], 0x22)) {
++        ok = 1;
++    }
++    if (cure_effect(g_spell_targets[0], 0x2B)) {
++        ok = 1;
++        remove_effect(g_spell_targets[0], 0x2C, NULL);
++        remove_effect(g_spell_targets[0], 0x1F, NULL);
++        recompute_stat(g_spell_targets[0], 0);
++    }
++    H005_B(0x24AA) = 0;
++    return ok;
++}
++
++/* PORT H085+$2E28: Cure Disease. */
++void cure_disease(void)
++{
++    (void)cure_target_disease();
++}
++
++/*
++ * PORT H085+$3552: Neutralize Poison: toglie gli effetti $37, $16 e $F
++ * (veleno) e rianima il bersaglio; un morto (+$197 = 1) non ha effetto.
++ */
++void neutralize_poison(void)
++{
++    Character *t = g_spell_targets[0];  /* -$4(a5) */
++    CokEffect *e;                       /* -$8(a5) */
++
++    if (t->b[0x197] == 1) {
++        g_spell_targets[0] = NULL;
++        return;
++    }
++    if (find_effect(t, 0x37, &e)) {
++        if (t->b[0x1A8] == 0) {
++            t->b[0x1A8] = 1;
++        }
++        H005_B(0x24AA) = 1;
++        remove_effect(t, 0x37, NULL);
++        remove_effect(t, 0x16, NULL);
++        remove_effect(t, 0x0F, NULL);
++        H005_B(0x24AA) = 0;
++        show_char_message(t, 0x0D, "is unpoisoned", 0x0A, 1);
++        t->b[0x198] = 1;
++        t->b[0x197] = 0;
++    } else {
++        show_char_message(t, 0x0D, "is unaffected", 0x0A, 1);
++    }
++}
++
++/*
++ * PORT H085+$0672: durata dell'effetto di spell: tiri fissi per $28, $39,
++ * $3B, $3D e $3F, altrimenti byte 4 + livello d'incantatore * byte 5.
++ */
++static u16 spell_duration(u16 spell)
++{
++    u16 d = 0;                          /* -$2(a5) */
++
++    switch (spell) {
++    case 0x28:
++        d = (u16)(roll_dice(1, 6) * 10);
++        break;
++    case 0x39:
++    case 0x3D:
++        d = roll_dice(5, 4);
++        break;
++    case 0x3B:
++        d = (u16)(roll_dice(1, 4) * 10 + 0x28);
++        break;
++    case 0x3F:
++        if (H005_B(0x3DE3) == 5) {
++            d = (u16)(roll_dice(2, 0x0A) * 10);
++        } else {
++            d = (u16)((roll_dice(1, 0x0A) + 0x0A) * 10);
++        }
++        break;
++    default:                            /* $0716 */
++        d = (u16)(H005_B(0x66 + (spell - 1) * 16 + 4) +
++                  (u16)caster_level(spell) *
++                  H005_B(0x66 + (spell - 1) * 16 + 5));
++        break;
++    }
++    return d;
++}
++
++#define H085_W(off)        COK_GET16(&g_h085_bss[(off)])
++#define H085_SET_W(off, v) COK_PUT16(&g_h085_bss[(off)], (v))
++
++/*
++ * PORT H085+$1EBA: Enlarge: forza 18/00..22 secondo il livello
++ * d'incantatore (H085+$0 eccezionale, +$2 forza), se maggiore di quella
++ * base.
++ */
++void enlarge(void)
++{
++    Character *t = g_spell_targets[0];  /* -$6(a5) */
++    u16 value;                          /* -$2(a5) */
++
++    H085_SET_W(2, 0x12);
++    H085_SET_W(0, 0);
++    switch (caster_level(H005_B(0x2471))) {
++    case 1:  H085_SET_W(0, 0);    break;
++    case 2:  H085_SET_W(0, 1);    break;
++    case 3:  H085_SET_W(0, 0x33); break;
++    case 4:  H085_SET_W(0, 0x4C); break;
++    case 5:  H085_SET_W(0, 0x5B); break;
++    case 6:  H085_SET_W(0, 0x64); break;
++    case 7:  H085_SET_W(2, 0x13); break;
++    case 8:  H085_SET_W(2, 0x14); break;
++    case 9:  H085_SET_W(2, 0x15); break;
++    case 10:
++    case 11: H085_SET_W(2, 0x16); break;
++    default: break;
++    }
++    if (strength_raises(t, H085_W(2), H085_W(0), &value)) {
++        show_char_message(t, 0x0B, "is stronger", 0x0A, 1);
++        add_effect(t, 0x0C, spell_duration(H005_B(0x2471)), value, 1);
++        recompute_stat(t, 0);
++    } else {
++        show_char_message(t, 0x0D, "is unaffected", 0x0A, 1);
++    }
++}
++
++/*
++ * PORT H085+$2BD4: Strength: +1d4 (maghi), 1d6 (chierici, ladri) o 1d8
++ * (guerrieri) alla forza, con l'eccezionale per i guerrieri.  Senza
++ * classi adatte l'originale usa la parola non inizializzata; qui 0.
++ */
++void strength_spell(void)
++{
++    Character *t = g_spell_targets[0];  /* -$4(a5) */
++    u16 ext = 0;                        /* -$6(a5) */
++    u16 bonus = 0;                      /* -$8(a5) */
++    u16 str;                            /* -$a(a5) */
++    u16 value;                          /* -$c(a5) */
++
++    if (t->b[0x103] > 0 || t->b[0x10B] > t->b[0xDC]) {
++        bonus = roll_dice(1, 4);
++    }
++    if (t->b[0xFE] > 0 || t->b[0x106] > t->b[0xDC] || t->b[0x104] > 0 ||
++        t->b[0x10C] > t->b[0xDC]) {
++        bonus = roll_dice(1, 6);
++    }
++    if (t->b[0x100] > 0 || t->b[0x108] > t->b[0xDC]) {
++        bonus = roll_dice(1, 8);
++    }
++    str = (u16)(t->b[0x11] + bonus);
++    if (str > 0x12) {
++        if (t->b[0x100] > 0 || t->b[0x108] > t->b[0xDC] ||
++            t->b[0x105] > 0 || t->b[0x10D] > t->b[0xDC] ||
++            t->b[0x102] > 0 || t->b[0x10A] > t->b[0xDC]) {
++            ext = (u16)(t->b[0x1C] + (str - 0x12) * 10);
++            if (ext > 0x64) {
++                ext = 0x64;
++            }
++            str = 0x12;
++        } else {
++            str = 0x12;
++        }
++    }
++    if (strength_raises(t, str, ext, &value)) {
++        value = (u16)(bonus + 0x64);
++        add_effect(t, 0x26, spell_duration(H005_B(0x2471)), value, 1);
++        recompute_stat(t, 0);
++    }
++}
+diff --git a/src_c/readable/h085.h b/src_c/readable/h085.h
+index 6f141f1..ae43e7f 100644
+--- a/src_c/readable/h085.h
++++ b/src_c/readable/h085.h
+@@ -22,6 +22,12 @@ extern CokMenuItem *g_h085_spell_list;       /* H085+$01B2 */
+ #define H085_LEVEL_NAME(level) \
+     ((const char *)&g_h085_bss[0x1B6 + (level) * 0x16])
+ 
+-void h085_init(void);                        /* H085+$0664 */
++void h085_init(void);
++void cure_light_wounds(void);                /* H085+$1CB8 */
++void cure_serious_wounds(void);              /* H085+$3298 */
++void cure_disease(void);                     /* H085+$2E28 */
++void neutralize_poison(void);                /* H085+$3552 */
++void enlarge(void);                          /* H085+$1EBA */
++void strength_spell(void);                   /* H085+$2BD4 */                        /* H085+$0664 */
+ 
+ #endif
+diff --git a/src_c/readable/tests/dax_test.c b/src_c/readable/tests/dax_test.c
+index 61d9223..bc87bd7 100644
+--- a/src_c/readable/tests/dax_test.c
++++ b/src_c/readable/tests/dax_test.c
+@@ -10,8 +10,8 @@
+ #include "../globals.h"
+ #include "../h040.h"
+ 
+-/* Le routine di errore e uscita non portate: qui segnalano e proseguono. */
+-void h014_0018(u16 len, const char *msg, u16 value)
++/* Messaggio di errore (H014+$0018) e uscita: qui segnalano e proseguono. */
++void error_message(u16 len, const char *msg, u16 value)
+ {
+     (void)len;
+     printf("errore H014: %s %u\n", msg, value);
+diff --git a/src_c/readable/unported.c b/src_c/readable/unported.c
+index 00478ae..a78652f 100644
+--- a/src_c/readable/unported.c
++++ b/src_c/readable/unported.c
+@@ -149,12 +149,10 @@ void h085_15fe(void) { cok_unported("H085+$15FE"); }
+ void h085_172a(void) { cok_unported("H085+$172A"); }
+ void h085_1c60(void) { cok_unported("H085+$1C60"); }
+ void h085_1c86(void) { cok_unported("H085+$1C86"); }
+-void h085_1cb8(void) { cok_unported("H085+$1CB8"); }
+ void h085_1d3c(void) { cok_unported("H085+$1D3C"); }
+ void h085_1d78(void) { cok_unported("H085+$1D78"); }
+ void h085_1da6(void) { cok_unported("H085+$1DA6"); }
+ void h085_1de4(void) { cok_unported("H085+$1DE4"); }
+-void h085_1eba(void) { cok_unported("H085+$1EBA"); }
+ void h085_1ffa(void) { cok_unported("H085+$1FFA"); }
+ void h085_2090(void) { cok_unported("H085+$2090"); }
+ void h085_20de(void) { cok_unported("H085+$20DE"); }
+@@ -171,10 +169,8 @@ void h085_25fa(void) { cok_unported("H085+$25FA"); }
+ void h085_2628(void) { cok_unported("H085+$2628"); }
+ void h085_2692(void) { cok_unported("H085+$2692"); }
+ void h085_26c0(void) { cok_unported("H085+$26C0"); }
+-void h085_2bd4(void) { cok_unported("H085+$2BD4"); }
+ void h085_2dba(void) { cok_unported("H085+$2DBA"); }
+ void h085_2dfa(void) { cok_unported("H085+$2DFA"); }
+-void h085_2e28(void) { cok_unported("H085+$2E28"); }
+ void h085_2e40(void) { cok_unported("H085+$2E40"); }
+ void h085_2e70(void) { cok_unported("H085+$2E70"); }
+ void h085_2ec4(void) { cok_unported("H085+$2EC4"); }
+@@ -184,7 +180,6 @@ void h085_318a(void) { cok_unported("H085+$318A"); }
+ void h085_31b4(void) { cok_unported("H085+$31B4"); }
+ void h085_3224(void) { cok_unported("H085+$3224"); }
+ void h085_3252(void) { cok_unported("H085+$3252"); }
+-void h085_3298(void) { cok_unported("H085+$3298"); }
+ void h085_331e(void) { cok_unported("H085+$331E"); }
+ void h085_33a8(void) { cok_unported("H085+$33A8"); }
+ void h085_3402(void) { cok_unported("H085+$3402"); }
+@@ -192,7 +187,6 @@ void h085_3430(void) { cok_unported("H085+$3430"); }
+ void h085_3482(void) { cok_unported("H085+$3482"); }
+ void h085_34b0(void) { cok_unported("H085+$34B0"); }
+ void h085_34f0(void) { cok_unported("H085+$34F0"); }
+-void h085_3552(void) { cok_unported("H085+$3552"); }
+ void h085_363e(void) { cok_unported("H085+$363E"); }
+ void h085_36b8(void) { cok_unported("H085+$36B8"); }
+ void h085_3758(void) { cok_unported("H085+$3758"); }
+@@ -240,9 +234,6 @@ void h042_0ed2(u16 a, u16 b, u8 flag) { (void)a; (void)b; (void)flag; cok_unport
+ void h042_0406(u16 len, const char *name, u16 id, u16 x, void *set) { (void)len; (void)name; (void)id; (void)x; (void)set; cok_unported("H042+$0406"); }
+ void h060_0018(void) { cok_unported("H060+$0018"); }
+ void h063_33a0(void) { cok_unported("H063+$33A0"); }
+-void h062_03f2(u16 type, Character **c, CokItem *it, u8 unready) { (void)type; (void)c; (void)it; (void)unready; cok_unported("H062+$03F2"); }
+-void h062_1a32(Character *c, u8 flag) { (void)c; (void)flag; cok_unported("H062+$1A32"); }
+-void h062_0452(Character *c, u16 type, CokEffect *e) { (void)c; (void)type; (void)e; cok_unported("H062+$0452"); }
+ 
+ /* Dipendenze del lancio degli incantesimi (H033+$1426, H065+$2F82). */
+ void h063_1b90(Character *c, u16 spell) { (void)c; (void)spell; cok_unported("H063+$1B90"); }
+diff --git a/src_c/readable/unported.h b/src_c/readable/unported.h
+index c98da77..cc621eb 100644
+--- a/src_c/readable/unported.h
++++ b/src_c/readable/unported.h
+@@ -130,12 +130,10 @@ void h085_15fe(void);
+ void h085_172a(void);
+ void h085_1c60(void);
+ void h085_1c86(void);
+-void h085_1cb8(void);
+ void h085_1d3c(void);
+ void h085_1d78(void);
+ void h085_1da6(void);
+ void h085_1de4(void);
+-void h085_1eba(void);
+ void h085_1ffa(void);
+ void h085_2090(void);
+ void h085_20de(void);
+@@ -152,10 +150,8 @@ void h085_25fa(void);
+ void h085_2628(void);
+ void h085_2692(void);
+ void h085_26c0(void);
+-void h085_2bd4(void);
+ void h085_2dba(void);
+ void h085_2dfa(void);
+-void h085_2e28(void);
+ void h085_2e40(void);
+ void h085_2e70(void);
+ void h085_2ec4(void);
+@@ -165,7 +161,6 @@ void h085_318a(void);
+ void h085_31b4(void);
+ void h085_3224(void);
+ void h085_3252(void);
+-void h085_3298(void);
+ void h085_331e(void);
+ void h085_33a8(void);
+ void h085_3402(void);
+@@ -173,7 +168,6 @@ void h085_3430(void);
+ void h085_3482(void);
+ void h085_34b0(void);
+ void h085_34f0(void);
+-void h085_3552(void);
+ void h085_363e(void);
+ void h085_36b8(void);
+ void h085_3758(void);
+@@ -216,9 +210,6 @@ void h042_0406(u16 len, const char *name, u16 id, u16 x, void *set);
+ void h060_0018(void);
+ void h063_33a0(void);
+ 
+-void h062_03f2(u16 type, Character **c, CokItem *it, u8 unready);
+-void h062_1a32(Character *c, u8 flag);
+-void h062_0452(Character *c, u16 type, CokEffect *e); /* toglie l'effetto */
+ 
+ /* Dipendenze del lancio degli incantesimi (H033+$1426, H065+$2F82). */
+ void h063_1b90(Character *c, u16 spell);  /* toglie l'incantesimo lanciato */
+-- 
+2.43.0
+
