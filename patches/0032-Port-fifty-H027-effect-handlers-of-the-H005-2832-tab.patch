@@ -1,7 +1,7 @@
 From 07d9a80df825c33a2851b8d04393ff15c76a0f75 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 21:02:51 +0000
-Subject: [PATCH 32/65] Port fifty H027 effect handlers of the H005+$2832 table
+Subject: [PATCH 32/78] Port fifty H027 effect handlers of the H005+$2832 table
 
 Handlers for effects 1-3, 8-$A, $F, $11, $14, $15, $19, $1C, $1D, $21,
 $22, $24, $25, $27, $2A, $2F, $32, $36, $38, $39, $3B, $3F, $49, $4A,

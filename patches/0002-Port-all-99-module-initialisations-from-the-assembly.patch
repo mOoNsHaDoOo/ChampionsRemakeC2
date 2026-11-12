@@ -1,7 +1,7 @@
 From 8f14a85eefe7caa636752d7bcdbaf0ef40c1e7dd Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 14:41:12 +0000
-Subject: [PATCH 02/65] Port all 99 module initialisations from the assembly
+Subject: [PATCH 02/78] Port all 99 module initialisations from the assembly
 
 Every init called by H000+$0000 is now C. Constant tables are generated
 from the asm and applied by init_data.c; loops are hand-written. Each

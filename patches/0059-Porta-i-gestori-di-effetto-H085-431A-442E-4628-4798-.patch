@@ -1,7 +1,7 @@
 From 51a8086ba597fc22d791b01d70457a37a6035be2 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Wed, 11 Nov 2026 11:48:02 +0000
-Subject: [PATCH 59/65] Porta i gestori di effetto H085 $431A, $442E, $4628,
+Subject: [PATCH 59/78] Porta i gestori di effetto H085 $431A, $442E, $4628,
  $4798, $4A02
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>

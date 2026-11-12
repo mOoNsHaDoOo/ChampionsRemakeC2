@@ -1,7 +1,7 @@
 From e3af2e58f6d3582e0475a7af17e67a914a27e148 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 15:24:16 +0000
-Subject: [PATCH 07/65] Port the IFF85/ILBM reader and load the gothic font
+Subject: [PATCH 07/78] Port the IFF85/ILBM reader and load the gothic font
 
 Ports the Electronic Arts IFF85 reader compiled into the game: H098
 buffered I/O, H086 group and chunk parser, H039 ChunkMoreBytes, H087

@@ -1,7 +1,7 @@
 From 826aadd5e9095d96e48066532c98dd51b7c96bc1 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 22:49:35 +0000
-Subject: [PATCH 40/65] Port the ECL VM services (H061) and the ECL dispatcher
+Subject: [PATCH 40/78] Port the ECL VM services (H061) and the ECL dispatcher
  (H012), fix Begin adventuring stub
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>

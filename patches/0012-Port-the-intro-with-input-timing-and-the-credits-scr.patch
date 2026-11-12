@@ -1,7 +1,7 @@
 From 5d6320bb3b073c1012574ca85ff9f794bb8017e1 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 15:52:54 +0000
-Subject: [PATCH 12/65] Port the intro with input, timing and the credits
+Subject: [PATCH 12/78] Port the intro with input, timing and the credits
  screen
 
 Ports H007 (intro: picture loading with fades, credits, $02CE..$09D8),

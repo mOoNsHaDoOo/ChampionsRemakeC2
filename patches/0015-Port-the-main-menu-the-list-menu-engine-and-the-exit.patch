@@ -1,7 +1,7 @@
 From 4de74b8408f7a0822f90699d24374a9033f9dd51 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 16:20:49 +0000
-Subject: [PATCH 15/65] Port the main menu, the list menu engine and the exit
+Subject: [PATCH 15/78] Port the main menu, the list menu engine and the exit
  path
 
 Ports H013+$4BFC (main party menu: entries enabled from the party

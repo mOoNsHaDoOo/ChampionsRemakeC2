@@ -1,7 +1,7 @@
 From 81a4102839b0dc2bf4ca804359560a296e97a9af Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 15:28:34 +0000
-Subject: [PATCH 09/65] Draw text: port UI_DrawText and the blitter text
+Subject: [PATCH 09/78] Draw text: port UI_DrawText and the blitter text
  renderer
 
 Ports H030+$0256 UI_DrawText, H030+$019A (fill text cells), H008+$139E,

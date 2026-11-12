@@ -1,7 +1,7 @@
 From b608a8fdb16ae97ceb279554b23fce41caaf86da Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Wed, 11 Nov 2026 09:47:40 +0000
-Subject: [PATCH 48/65] Port H097 monster AI; fix H048 fall frames alias ($3304
+Subject: [PATCH 48/78] Port H097 monster AI; fix H048 fall frames alias ($3304
  = sprite slot $18); pad host rasters for blitter overread
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>

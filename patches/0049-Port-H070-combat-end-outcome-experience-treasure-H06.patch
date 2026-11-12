@@ -1,7 +1,7 @@
 From 24f66b7bf62ef7e8b4236891289c67f6c169654d Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Wed, 11 Nov 2026 10:04:38 +0000
-Subject: [PATCH 49/65] Port H070 combat end (outcome, experience, treasure),
+Subject: [PATCH 49/78] Port H070 combat end (outcome, experience, treasure),
  H067 pool/share/take money, H071+$047C, H006+$0914
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>

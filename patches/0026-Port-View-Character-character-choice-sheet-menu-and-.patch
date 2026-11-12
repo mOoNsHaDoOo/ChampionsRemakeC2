@@ -1,7 +1,7 @@
 From 59813d0e9c3db128521b44430e8771150cdb816d Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 19:32:53 +0000
-Subject: [PATCH 26/65] Port View Character: character choice, sheet menu and
+Subject: [PATCH 26/78] Port View Character: character choice, sheet menu and
  screen redraw
 
 Port H065+$196E View Character (menu Items/Spells/Trade/Drop/Heal/Cure/

@@ -1,0 +1,134 @@
+From 0d811a988cfa62ba43365bc23f69e9c6e892b625 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 11 Nov 2026 19:30:20 +0000
+Subject: [PATCH 73/78] Host: RectFill ridisegna il bordo con AOlPen quando
+ AREAOUTLINE e' attivo (segno del party sulla mappa all'aperto); backlog del
+ collaudo dell'avamposto
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/backlog.md      | 28 +++++++++++++++++
+ src_c/readable/host/graphics.c | 56 ++++++++++++++++++++++++++++++++--
+ 2 files changed, 81 insertions(+), 3 deletions(-)
+
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index bf9e095..2d7eb2b 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -3015,3 +3015,31 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
+ - I messaggi di show_message finiscono nel log ("MSG ...").
+ 
+ ---
++
++## v65: segno del party sulla mappa all'aperto (contorno di RectFill sull'host); collaudo dell'avamposto e del viaggio
++
++**Correzione host: RectFill con AREAOUTLINE** (segnalata dall'utente: sull'Amiga il segno del party sulla mappa e' diverso)
++- **Il segno:** H069+$0012 disegna la cella del party con SetAPen($E), poi H038+$01B4 (SetOPen: AOlPen = 0, Flags |= AREAOUTLINE), poi RectFill.
++- **Sull'Amiga:** con AREAOUTLINE RectFill ridisegna il bordo del rettangolo con AOlPen, e il segno e' un quadrato giallo con il bordo nero.
++- **Sull'host:** RectFill ignorava il flag (il commento supponeva AOlPen sempre uguale a FgPen, vero solo per H030) e disegnava un quadrato tutto giallo.
++- **Correzione:** host/graphics.c RectFill ridisegna ora il bordo con AOlPen quando AREAOUTLINE e' attivo, rispettando il taglio ai bordi della bitmap.
++  - Per H030 (fill_text_cells e clear_text_cells, OPen = APen) il risultato non cambia.
++  - Il codice del gioco e la build Amiga non cambiano.
++- **Da confermare sull'Amiga:** il segno deve essere una cella 8x8 gialla con il bordo nero di un pixel.
++
++**Avamposto** (ASan, party CLR + KTST dopo la scorta)
++- **Inn:** "Welcome, we have plenty of space for you." e il campo.
++  - Rest: "Rest Time" con Days/Hours/Mins/Add/Subtract; 2 giorni.
++  - CLR e KTST passano da 1 a 3 HP (+1 al giorno); l'ora resta 12:08 (48 ore).
++- **Armoury:** "Buy View Pool Appraise Exit".
++  - Esc non esce: nell'asm la tabella dei tasti (H071+$0B9A, subi.w #$41 / cmpi.w #$15) copre solo 'A'..'V', e il tasto 0 va nel caso di default. Si esce con E, come nell'originale.
++- **Next:** "Vault Temple Bar Prev Leave".
++- **Bar:** "Have a drink Relax Leave"; "What will you drink?" Beer Ale Wine Mead Whiskey; "You hear tavern tale 19." (rimando all'Adventurer's Journal).
++- **Vault:** "Deposit Withdraw View balance Exit"; "You have 000 steel pieces".
++- **Leave:** mappa all'aperto, "You are near an outpost. Do you enter?". Con No si passa al movimento.
++
++**Viaggio:** con le frecce il segno del party si sposta sulla mappa verso nord, accanto a Throtl, fino al bordo della mappa. Ogni passo esegue gli script ECL del passo (3655, 37BE).
++
++**ASan:** pulito.
++
++---
+diff --git a/src_c/readable/host/graphics.c b/src_c/readable/host/graphics.c
+index adec578..3e34aca 100644
+--- a/src_c/readable/host/graphics.c
++++ b/src_c/readable/host/graphics.c
+@@ -173,16 +173,46 @@ void SetBPen(struct RastPort *rp, ULONG pen)
+ 
+ /*
+  * Riempie il rettangolo (estremi compresi) con FgPen, tagliato ai bordi
+- * della bitmap; in COMPLEMENT inverte i bit dei piani.  Il contorno con
+- * AOlPen (AREAOUTLINE) non e' emulato: il gioco lo usa con AOlPen uguale a
+- * FgPen, che da' lo stesso risultato.
++ * della bitmap; in COMPLEMENT inverte i bit dei piani.  Con AREAOUTLINE
++ * (SetOPen) il bordo del rettangolo e' poi ridisegnato con AOlPen, come
++ * fa graphics.library: il segno del party sulla mappa all'aperto
++ * (H069+$0012, APen $E, OPen 0) e' un quadrato col bordo nero.
+  */
++static void outline_pixel(struct BitMap *bm, LONG x, LONG y, UBYTE pen,
++                          UBYTE mode)
++{
++    int i;
++
++    for (i = 0; i < bm->Depth; ++i) {
++        UBYTE *plane = bm->Planes[i];
++        UBYTE *p;
++        UBYTE mask;
++
++        if (plane == NULL) {
++            continue;
++        }
++        p = plane + (size_t)y * bm->BytesPerRow + (x >> 3);
++        mask = (UBYTE)(0x80 >> (x & 7));
++        if (mode & COMPLEMENT) {
++            *p ^= mask;
++        } else if ((pen >> i) & 1) {
++            *p |= mask;
++        } else {
++            *p &= (UBYTE)~mask;
++        }
++    }
++}
++
+ void RectFill(struct RastPort *rp, LONG xmin, LONG ymin, LONG xmax, LONG ymax)
+ {
+     struct BitMap *bm = rp->BitMap;
+     LONG x;
+     LONG y;
+     int i;
++    LONG oxmin = xmin;
++    LONG oymin = ymin;
++    LONG oxmax = xmax;
++    LONG oymax = ymax;
+ 
+     if (bm == NULL) {
+         return;
+@@ -221,6 +251,26 @@ void RectFill(struct RastPort *rp, LONG xmin, LONG ymin, LONG xmax, LONG ymax)
+             }
+         }
+     }
++    if ((rp->Flags & AREAOUTLINE) && xmin <= xmax && ymin <= ymax) {
++        UBYTE pen = (UBYTE)rp->AOlPen;
++
++        for (x = xmin; x <= xmax; ++x) {
++            if (oymin == ymin) {
++                outline_pixel(bm, x, ymin, pen, rp->DrawMode);
++            }
++            if (oymax == ymax && ymax != ymin) {
++                outline_pixel(bm, x, ymax, pen, rp->DrawMode);
++            }
++        }
++        for (y = ymin + 1; y < ymax; ++y) {
++            if (oxmin == xmin) {
++                outline_pixel(bm, xmin, y, pen, rp->DrawMode);
++            }
++            if (oxmax == xmax && xmax != xmin) {
++                outline_pixel(bm, xmax, y, pen, rp->DrawMode);
++            }
++        }
++    }
+     host_display_changed();
+ }
+ 
+-- 
+2.43.0
+

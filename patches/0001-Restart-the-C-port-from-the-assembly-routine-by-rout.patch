@@ -1,7 +1,7 @@
 From d2676989ebde539af3f4fcea6eeac3a01b29b951 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 14:19:32 +0000
-Subject: [PATCH 01/65] Restart the C port from the assembly, routine by
+Subject: [PATCH 01/78] Restart the C port from the assembly, routine by
  routine
 
 Remove the old readable layer and start a new port in src_c/readable,

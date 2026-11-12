@@ -1,0 +1,47 @@
+From 919152413a7f8102326a83586f6760660f347784 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 11 Nov 2026 14:43:30 +0000
+Subject: [PATCH 67/78] Backlog: collaudo di Turn Undead con il chierico nuovo
+ CLR
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/backlog.md | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index 67325e0..c22247b 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -2827,3 +2827,27 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
+ **Harness di prova:** il passo Shot non consuma piu' il menu corrente, cosi' un passo condizionale puo' seguirlo subito.
+ 
+ ---
++
++## v59: collaudo di Turn Undead (nessuna modifica al codice)
++
++**Personaggi pronti dei dischi** (CHRDATA1..6)
++- Hanno solo equipaggiamento normale (armature, scudi, armi, frecce); MOLLY ha l'oggetto di tipo $43.
++- Nessuna pergamena e nessun oggetto magico: non servono al collaudo di pergamene e oggetti magici.
++
++**Mostri non morti nei file del gioco** (MON1CHA.dax, campo +$DF letto con load_monster_record)
++- SKELETON (26) tipo 1, ZOMBIE (31) tipo 2, GHOUL (7) tipo 3, GHAST (6) tipo 6.
++- Gli altri 31 mostri di MON1 hanno +$DF = 0.
++
++**Collaudo** (ASan, solo CLR, chierico di livello 1)
++- Un gancio di prova sostituisce i mostri della battaglia della carovana con SKELETON, mostro reale dei file del gioco. I danni a CLR sono limitati perche' resti ad almeno 1 HP; i mostri muoiono al primo colpo solo dopo il Turn.
++- **Menu:** compare "Move View Aim Turn Done". Turn appare perche' load_monster (H064) conta i non morti in $248F e il turno di CLR ha +$13 < $248F. Nella carovana normale il menu e' "Move View Aim Done", corretto perche' non ci sono non morti.
++- **Esito:** "CLR turns undead...", poi per ogni scheletro "SKELETON is turned" e gli scheletri fuggono. Dopo l'uso Turn sparisce dal menu (+$13 incrementato).
++- **Tre prove:** il tiro 1d20 e' unico per l'azione e il valore di tabella per tipo 1 e livello 1 e' 10.
++  - tiro 18: due scheletri scacciati;
++  - tiro 13: due scacciati;
++  - tiro 7: "Nothing Happens...".
++- **ASan:** pulito in tutte le prove.
++
++**Restano:** uso delle pergamene e oggetti magici in combattimento. Servono oggetti veri del gioco (tesori o negozi), non dati costruiti a mano.
++
++---
+-- 
+2.43.0
+

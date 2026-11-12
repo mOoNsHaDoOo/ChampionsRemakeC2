@@ -1,7 +1,7 @@
 From 31176ecb7dad4ea9adadeaefa2233bc5488d7350 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 18:28:09 +0000
-Subject: [PATCH 19/65] Port training (H013+$58DC) and the level-dependent
+Subject: [PATCH 19/78] Port training (H013+$58DC) and the level-dependent
  values
 
 Port Train Character H013+$58DC (trampoline $051C), used by the main

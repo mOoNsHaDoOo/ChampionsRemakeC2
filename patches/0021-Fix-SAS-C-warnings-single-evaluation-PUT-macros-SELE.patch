@@ -1,7 +1,7 @@
 From eab2710fb1b19863ad4e525f4ff453210ced18cc Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 18:44:41 +0000
-Subject: [PATCH 21/65] Fix SAS/C warnings: single-evaluation PUT macros,
+Subject: [PATCH 21/78] Fix SAS/C warnings: single-evaluation PUT macros,
  SELECTED, Character
 
 COK_PUT16/COK_PUT32 now evaluate their arguments once (warning 217).

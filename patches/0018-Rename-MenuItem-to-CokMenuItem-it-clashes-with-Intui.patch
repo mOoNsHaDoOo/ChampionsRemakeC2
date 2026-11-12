@@ -1,7 +1,7 @@
 From 1af1344fd2c6a08631d530bc0f22be068ce57e86 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 17:01:16 +0000
-Subject: [PATCH 18/65] Rename MenuItem to CokMenuItem: it clashes with
+Subject: [PATCH 18/78] Rename MenuItem to CokMenuItem: it clashes with
  Intuition on SAS/C
 
 intuition/intuition.h already declares struct MenuItem (SAS/C error 63).

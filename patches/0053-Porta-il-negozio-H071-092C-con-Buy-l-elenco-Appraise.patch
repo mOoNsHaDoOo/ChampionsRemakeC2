@@ -1,7 +1,7 @@
 From fd91b868de4ad94be41c475d86b989762e312c45 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Wed, 11 Nov 2026 10:54:53 +0000
-Subject: [PATCH 53/65] Porta il negozio H071+$092C con Buy, l'elenco, Appraise
+Subject: [PATCH 53/78] Porta il negozio H071+$092C con Buy, l'elenco, Appraise
  (H067+$1D7C) e H067+$03BC
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>

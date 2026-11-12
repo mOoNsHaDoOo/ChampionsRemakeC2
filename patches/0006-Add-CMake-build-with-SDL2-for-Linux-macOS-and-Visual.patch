@@ -1,7 +1,7 @@
 From bba64ad1b0e5bbca1d20c1aa615302b642424307 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 15:14:42 +0000
-Subject: [PATCH 06/65] Add CMake build with SDL2 for Linux, macOS and Visual
+Subject: [PATCH 06/78] Add CMake build with SDL2 for Linux, macOS and Visual
  Studio 2022
 
 CMakeLists.txt builds the host port and the h015 test; CMakePresets.json

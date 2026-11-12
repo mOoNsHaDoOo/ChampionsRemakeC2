@@ -1,7 +1,7 @@
 From 70bf1a3f162c02c283fd2c38f3e4f6356163ab0e Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 19:15:37 +0000
-Subject: [PATCH 23/65] Port Save_CharacterRecord (H066+$1640) and its disk
+Subject: [PATCH 23/78] Port Save_CharacterRecord (H066+$1640) and its disk
  checks
 
 Port H066+$1640 (body $16EC) with the nested path builder $164E: it

@@ -1,7 +1,7 @@
 From fb3680fe952fdb21e8475b570a136206e086c840 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Wed, 11 Nov 2026 11:15:55 +0000
-Subject: [PATCH 56/65] Porta il comando ECL ROB (H012+$14C8), H061+$3C4C e i
+Subject: [PATCH 56/78] Porta il comando ECL ROB (H012+$14C8), H061+$3C4C e i
  salti mathffp di H015
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>

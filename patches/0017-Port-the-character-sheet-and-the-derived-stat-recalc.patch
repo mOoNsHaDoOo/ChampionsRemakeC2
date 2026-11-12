@@ -1,7 +1,7 @@
 From d15667b0f7a07a88fd496a984c1848525e8389f8 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 16:51:26 +0000
-Subject: [PATCH 17/65] Port the character sheet and the derived-stat
+Subject: [PATCH 17/78] Port the character sheet and the derived-stat
  recalculation
 
 Port H065+$04B8 (character sheet), $0ADE (money), $0BE6 with its

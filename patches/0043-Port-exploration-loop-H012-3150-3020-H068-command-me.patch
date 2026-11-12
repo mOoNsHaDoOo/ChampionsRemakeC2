@@ -1,7 +1,7 @@
 From ec814061830ea396df0fdac335087c0a5d96947f Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Wed, 11 Nov 2026 06:37:15 +0000
-Subject: [PATCH 43/65] Port exploration loop (H012+$3150/$3020), H068 command
+Subject: [PATCH 43/78] Port exploration loop (H012+$3150/$3020), H068 command
  menu, movement and doors, H069 party marker; fix SAS/C warnings
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>

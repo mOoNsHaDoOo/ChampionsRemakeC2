@@ -1,0 +1,45 @@
+From a90ea7f753447c54bb71d5288007183f04a4540f Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 11 Nov 2026 14:32:49 +0000
+Subject: [PATCH 66/78] Backlog: collaudo di Order e Drop con due personaggi
+ nuovi
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/backlog.md | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index 5392a69..67325e0 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -2805,3 +2805,25 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
+ - Con questi passi le sequenze non perdono piu' la sincronia sulle pagine di testo di lunghezza variabile.
+ 
+ ---
++
++## v58: collaudo di Order e Drop con due personaggi nuovi (nessuna modifica al codice)
++
++**Party:** CLR (chierico, AC 10, HP 13) e KTST (cavaliere, AC 10, HP 15), entrambi creati con la build attuale. Aggiunti con Add Character to Party; l'elenco mostra L, KTST, BOB, TAS, CLR, KNT con "*" accanto agli aggiunti.
++
++**Percorso** (ASan): Begin, Leave, Encamp, Alter ("Order Drop Speed Icon Pics Level Exit"), Order, Drop.
++
++**Order**
++- Il corrente e' KTST, scritto in bianco: draw_party (H063+$0D80) usa la penna $0F per il corrente e il colore dello stato per gli altri.
++- **Select:** "KTST has been selected", il menu diventa "Place Exit".
++- **Freccia giu':** KTST era l'ultimo e passa in testa (KTST, CLR), come nell'asm (H057+$1FD6: dalla coda in testa).
++- **Place:** si torna a "Select Exit"; Exit riporta al menu Alter.
++
++**Drop**
++- "KTST will be gone", "Drop from party? Yes No", Yes.
++- KTST esce dal party e resta solo CLR; il riquadro del party e il menu del campo si ridisegnano correttamente.
++
++**ASan:** pulito.
++
++**Harness di prova:** il passo Shot non consuma piu' il menu corrente, cosi' un passo condizionale puo' seguirlo subito.
++
++---
+-- 
+2.43.0
+

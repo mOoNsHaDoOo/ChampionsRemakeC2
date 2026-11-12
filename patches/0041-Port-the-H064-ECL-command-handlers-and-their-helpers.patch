@@ -1,7 +1,7 @@
 From ea298e1203eec820060e95a51b117232423af525 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 23:02:06 +0000
-Subject: [PATCH 41/65] Port the H064 ECL command handlers and their helpers
+Subject: [PATCH 41/78] Port the H064 ECL command handlers and their helpers
  (H061, H030, H044, H028)
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>

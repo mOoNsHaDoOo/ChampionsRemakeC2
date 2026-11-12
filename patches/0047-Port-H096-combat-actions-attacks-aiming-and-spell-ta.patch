@@ -1,7 +1,7 @@
 From 24fa8b78ac289468d32fbe3eaac2322d75dddf11 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Wed, 11 Nov 2026 08:32:33 +0000
-Subject: [PATCH 47/65] Port H096 combat actions, attacks, aiming and spell
+Subject: [PATCH 47/78] Port H096 combat actions, attacks, aiming and spell
  targeting; H033+$11FC, H046+$0012
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>

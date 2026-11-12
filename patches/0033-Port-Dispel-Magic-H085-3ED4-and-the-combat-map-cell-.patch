@@ -1,7 +1,7 @@
 From 4f08813c4f50e3c27b6f54140462638e06b4119f Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 21:13:20 +0000
-Subject: [PATCH 33/65] Port Dispel Magic (H085+$3ED4) and the combat map cell
+Subject: [PATCH 33/78] Port Dispel Magic (H085+$3ED4) and the combat map cell
  lookup
 
 Dispel Magic removes the timed effects of the target and the caster's

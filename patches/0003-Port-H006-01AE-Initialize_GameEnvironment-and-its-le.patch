@@ -1,7 +1,7 @@
 From d992ff7b89ff3c5b514116543456c0ec2c66006a Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 14:47:18 +0000
-Subject: [PATCH 03/65] Port H006+$01AE (Initialize_GameEnvironment) and its
+Subject: [PATCH 03/78] Port H006+$01AE (Initialize_GameEnvironment) and its
  leaf services
 
 Ports the game environment setup called from main, plus the DOS

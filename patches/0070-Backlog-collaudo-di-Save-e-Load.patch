@@ -1,0 +1,54 @@
+From 80588c42eb57956f39ab8c90cf4f2cdc25a98116 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 11 Nov 2026 16:54:08 +0000
+Subject: [PATCH 70/78] Backlog: collaudo di Save e Load
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/backlog.md | 32 ++++++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
+
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index 1bb1ed9..c45b8de 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -2925,3 +2925,35 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
+ **README.md** riscritto in inglese e aggiornato: stato completo, audio con COK_AUDIO, convenzione dei commenti, build SAS/C (smake / smake AUDIO).
+ 
+ ---
++
++## v62: collaudo di Save e Load (nessuna modifica al codice)
++
++**Save** (ASan, CLR dopo la carovana, con pozione e pergamena dal tesoro)
++- **Al campo:** Save, poi "Save Which Game: A B C D E F G H I J", A, poi "exit to workbench" No.
++- **Stato al salvataggio:** CLR 1/13 HP, esperienza 2717, 70 steel, ingombro 90; pozione e pergamena non pronte; 07,13 N, ore 12:11.
++- **File scritti:**
++  - savgamA.dat (5481 byte);
++  - CHRDATA1.sav (426) e CHRDATA1.swg (144 = 2 oggetti da $48);
++  - CLR.who cancellato (H066+$3000).
++- **Nomi dei file:** i personaggi pronti dei dischi si chiamano CHRDATA1..6, proprio come la partita A. Il party pronto e' dunque la partita A, e salvare in A lo sostituisce.
++
++**Load** (secondo avvio dai file salvati)
++- **Menu col party vuoto:** "Create New Character, Add Character to Party, Load Saved Game, Exit to Workbench".
++- **Caricamento:** "Load Which Game: A" offre solo le partite esistenti. Dopo A il party contiene CLR (AC 10, HP 1).
++- **Begin Adventuring:** mappa all'aperto col party; al campo 07,13 N, ore 12:11. CLR come al salvataggio (1/13, 2717, 70 steel, ingombro 90, stessi oggetti non pronti).
++- **Eventi:** il passo che nella partita nuova apriva la battaglia della carovana ora esegue solo gli script del passo (3655, 37BE) e torna al menu di movimento. Lo stato degli eventi e' stato ripristinato.
++
++**Andata e ritorno:** carica A, poi subito Save in B.
++- CHRDATB1.sav e .swg sono identici byte per byte a CHRDATA1.
++- savgamB.dat differisce da savgamA.dat in 3 byte, tutti attesi:
++  - A+$279: contatore dei salvataggi da Encamp, da 1 a 2;
++  - $3DE2: contesto precedente, da 4 a 2, per il percorso della sessione dopo il caricamento;
++  - nome del file del personaggio: "CHRDATA1" / "CHRDATB1".
++- **Disposizione di savgam<x>.dat**, letta da H066+$3000:
++  - $246E (1 byte), stato A ($800), stato B ($800), stato C ($400);
++  - $281C (8 byte), $3DE2, $3DE3, i 3 posti di $2810 (2+2 byte ciascuno);
++  - il numero dei personaggi (word) e i nomi (8 x $2A).
++
++**ASan:** pulito in tutte le prove.
++
++---
+-- 
+2.43.0
+

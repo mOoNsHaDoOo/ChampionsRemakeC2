@@ -1,7 +1,7 @@
 From 2e9e2465293d33391a3047b6c5285fb7c743feca Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 15:00:55 +0000
-Subject: [PATCH 04/65] Open the game display; add an SDL2 host backend
+Subject: [PATCH 04/78] Open the game display; add an SDL2 host backend
 
 Ports H029+$1206 (screen, window, palette, mouse pointers), H029+$0408
 (Allocate_GraphicRecord), H029+$1346 (offscreen View), H029+$12BC, and

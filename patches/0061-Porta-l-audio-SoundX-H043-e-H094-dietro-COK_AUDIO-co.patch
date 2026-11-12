@@ -1,7 +1,7 @@
 From 65594cfcf1cb90f3d99eb884bd3550e42539fc68 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Wed, 11 Nov 2026 12:13:04 +0000
-Subject: [PATCH 61/65] Porta l'audio SoundX (H043 e H094) dietro COK_AUDIO,
+Subject: [PATCH 61/78] Porta l'audio SoundX (H043 e H094) dietro COK_AUDIO,
  con il target smake AUDIO
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>

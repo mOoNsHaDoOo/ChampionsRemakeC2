@@ -1,0 +1,47 @@
+From 63e7877adc496e5caee43069bdacefc5b5089a15 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 11 Nov 2026 17:51:06 +0000
+Subject: [PATCH 71/78] Backlog: Save e Load con due personaggi e dal menu
+ principale
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/backlog.md | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index c45b8de..e36fa92 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -2957,3 +2957,27 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
+ **ASan:** pulito in tutte le prove.
+ 
+ ---
++
++## v63: Save e Load con due personaggi e dal menu principale (nessuna modifica al codice)
++
++**Save Current Game dal menu principale** (ASan; party CLR + KTST, partita non ancora cominciata)
++- **Comandi:** "Save Which Game" e poi C.
++- **File scritti:** savgamC.dat, CHRDATC1.sav (CLR, senza oggetti, quindi senza .swg), CHRDATC2.sav e CHRDATC2.swg (KTST, 3 oggetti, 216 byte). CLR.who e KTST.who sono cancellati.
++- **Oggetti di KTST:** .swg identico a KTST.swg.
++- **Record dei personaggi:** rispetto ai .who cambiano solo campi che si ricalcolano quando il personaggio entra nel party:
++  - +$DB livello massimo, da 0 a 1;
++  - +$143 posto dell'icona, da $0A creazione a 0/1 nel party;
++  - +$18C ingombro di KTST, da 10 a 570 (450 + 60 + 50 + 10 di monete).
++
++**Load**
++- "Load Which Game: A C" elenca le partite esistenti.
++- **Partita C:** il party torna come CLR (10/13) e KTST (10/15), nello stesso ordine.
++- **Begin Adventuring:** riparte l'introduzione, ed e' giusto perche' la partita era stata salvata prima di cominciare.
++
++**Andata e ritorno: carica C, poi Save in D**
++- CHRDATD1.sav, CHRDATD2.sav e .swg sono identici byte per byte a quelli di C.
++- savgamD.dat differisce da savgamC.dat solo nei due nomi dei file ("CHRDATC1/2" e "CHRDATD1/2", offset $141F e $1449).
++
++**ASan:** pulito.
++
++---
+-- 
+2.43.0
+

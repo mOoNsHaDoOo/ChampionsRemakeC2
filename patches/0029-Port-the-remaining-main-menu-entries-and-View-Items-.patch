@@ -1,7 +1,7 @@
 From 23198601e1163787e541cc00d428f12f15af1cbc Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 20:25:58 +0000
-Subject: [PATCH 29/65] Port the remaining main menu entries and View/Items
+Subject: [PATCH 29/78] Port the remaining main menu entries and View/Items
  commands
 
 Drop (H013+$2B9A, H053+$00CA, H066+$1312), Modify (H013+$2D76..$31E0),

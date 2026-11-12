@@ -1,0 +1,57 @@
+From af05f27c0bad55e01210fe31e5b6410e867ef973 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 11 Nov 2026 18:33:49 +0000
+Subject: [PATCH 72/78] Backlog: collaudo della scorta della carovana,
+ dell'avamposto, del Commandant e della Hall
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/backlog.md | 34 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 34 insertions(+)
+
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index e36fa92..bf9e095 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -2981,3 +2981,37 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
+ **ASan:** pulito.
+ 
+ ---
++
++## v64: collaudo della scorta della carovana, dell'avamposto, del Commandant e della Hall (nessuna modifica al codice)
++
++**Percorso** (ASan, party CLR + KTST; gancio di prova: i mostri muoiono al primo colpo, il party resta ad almeno 1 HP)
++- Leave, la battaglia della carovana con i due personaggi in Auto, "Continue Battle" No, tesoro Exit, "go back and claim your treasure?" No.
++- **Testi dopo la battaglia**
++  - "All of the draconians are slain save one, who rips a book from a dead man's hands. He turns to...", col ritratto del draconiano;
++  - poi, sulla mappa: "One of the surviving women comes up. 'Brave warriors, will you help us reach the outpost?'". Risposta: **Yes**.
++- **Dopo il Yes:** "Congratulations the party gains experience!". Si carica la nuova area (ECL area 11, RUN 3514) e appare l'avamposto: immagine della citta', "Where do you wish to go", menu "Inn Hall Commandant Armoury Next Leave".
++
++**Commandant**
++- Col ritratto di Sir Karl, testo che scorre lettera per lettera:
++  - "You enter the office to the sounds of battle. Sir Karl drives his sword through the Commandant who collapses. The body then writhes and becomes a stone. Sir Karl murmurs, 'I was afraid...'";
++  - "As you report, his face grows gray. 'This is much worse than...'";
++  - "'We have a patrol in Throtl. Caramon leads it. Find him. Tell him he is desperately needed here. The imposter has emptied this outpost of troops. I know you are inexperienced...'".
++- Poi si torna al menu dell'avamposto.
++
++**Hall** (addestramento)
++- Mostra il menu dei personaggi con in piu' "Train Character" e "Knight Change Classes".
++- **Train su CLR:** "Pick Character", poi "Not Enough Experience". CLR ha 3358 punti di esperienza ed e' di livello 1.
++  - Per il chierico la riga della tabella e' 0 o 1 secondo la divinita' (+$5E <= 4: riga 0; H063+$3F72), e la soglia del livello 2 della riga 0 e' 4000 (H005+$1946).
++  - L'asm di Train (H013+$5A26..$5A4C) usa riga * $9A e indice (livello+1)-2 come il C.
++  - La tabella e' verificata byte per byte con l'emulazione dell'asm. Il messaggio e' quindi quello dell'originale.
++- **Modify su KTST:** "KTST can't be modified.", corretto per un personaggio gia' in gioco (+$DC).
++- **View di CLR:** 1/13 HP, esperienza 3358, 70 steel.
++
++**ASan:** pulito in tutte le prove.
++
++**Harness di prova** (fuori dal repository)
++- La build ASan di prova ora si fa su una copia del sorgente (srccopy). I ganci si applicano li', e gli annotamenti vengono tolti solo dalla copia.
++- Il passo `*testo:TASTO|testo2:TASTO2` accetta piu' alternative, e la riga dei passi va fino a 159 caratteri.
++- I messaggi di show_message finiscono nel log ("MSG ...").
++
++---
+-- 
+2.43.0
+

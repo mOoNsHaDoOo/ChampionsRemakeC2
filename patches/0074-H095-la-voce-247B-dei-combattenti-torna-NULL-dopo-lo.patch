@@ -1,0 +1,74 @@
+From 34bb2d99c332d9133dc8e8fb7c91d541fcae56f3 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 11 Nov 2026 20:41:48 +0000
+Subject: [PATCH 74/78] H095: la voce $247B dei combattenti torna NULL dopo lo
+ schieramento (memoria liberata della battaglia precedente); backlog del
+ viaggio a Throtl
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/backlog.md | 26 ++++++++++++++++++++++++++
+ src_c/readable/h095.c     | 12 ++++++++++++
+ 2 files changed, 38 insertions(+)
+
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index 2d7eb2b..33c8665 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -3043,3 +3043,29 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
+ **ASan:** pulito.
+ 
+ ---
++
++## v66: viaggio a Throtl e correzione della lista dei combattenti fra due battaglie (H095)
++
++**Correzione: voce $247B di g_combatants fra una battaglia e l'altra** (h095.c, deploy_combatants)
++- **ASan:** heap-use-after-free all'avvio della seconda battaglia di Throtl. center_view (H048+$0DF2), da redraw_combat_screen in start_combat, legge +$198 di un combattente liberato da remove_combatants alla fine della battaglia precedente.
++- **Causa:** lo schieramento (H095) riempie g_combatants[0..n-1] e porta $247B a n+1, senza scrivere la voce n.
++  - Nella prima battaglia quella voce e' 0 (BSS azzerato).
++  - Nelle successive resta il puntatore a un combattente della battaglia precedente, gia' liberato con FreeMem.
++  - L'originale legge quella memoria liberata, che sull'Amiga e' leggibile ma ha contenuto casuale; nel C e' memoria non valida.
++- **Correzione:** dopo lo schieramento la voce $247B torna NULL, come nella prima battaglia. Deviazione documentata nel commento.
++
++**Viaggio a Throtl** (ASan, party CLR + KTST)
++- **Avvicinamento:** dall'avamposto, col movimento sulla mappa all'aperto (coordinate A+$186/$188), Su, Su, Destra fino alla casella 2,1: "You are near Throtl. Do you enter?" Yes.
++- **Ingresso:** nuova area (ECL area 20, mappa GEO 32) e ritratto della guardia: "Throtl's off limits to you. Leave and no one gets hurt. What do you do?" (Attack Leave).
++- **Attack:** battaglia contro Hobgoblin, Hobgoblin Ldr e Warrior.
++  - CLR e KTST erano ancora in Auto dalla battaglia precedente (+$19A resta impostato).
++  - Poi "Continue Battle", il tesoro e la vista 3D di Throtl (muri, porte, pavimento in pietra), menu del movimento "Exit".
++- **Vista 3D:** si cammina da 07,15 a 07,12 e l'ora avanza.
++- **Evento con ritratto:** "A man gibbering with fear stumbles into view. He cries out in anguish, 'Caramon! Where are you! Look out! Above you, it's a trap!'".
++- **Seconda battaglia:** in un'altra prova, a 07,14, "Monsters attack!" col ritratto. Si combatte sulla mappa della citta' con muri e angoli; la battaglia si chiude regolarmente dopo la correzione.
++
++**ASan:** pulito dopo la correzione.
++
++**Harness di prova:** stampa delle coordinate del segno del party (MARK x,y).
++
++---
+diff --git a/src_c/readable/h095.c b/src_c/readable/h095.c
+index 66035ed..1eddf61 100644
+--- a/src_c/readable/h095.c
++++ b/src_c/readable/h095.c
+@@ -987,6 +987,18 @@ static void deploy_combatants(void)
+         p = p->next;
+     }
+     prev->next = NULL;
++    /*
++     * La voce $247B (dopo l'ultimo combattente) non viene scritta: nella
++     * prima battaglia e' 0 (BSS azzerato), nelle successive l'originale vi
++     * lascia il puntatore a un combattente della battaglia precedente, gia'
++     * liberato (FreeMem), e center_view (H048+$0DF2) ne legge +$198.  Qui
++     * la voce torna NULL come nella prima battaglia (la memoria liberata
++     * non si legge sull'host).
++     */
++    /* $247B: numero di combattenti nella tabella +$2B32 (+1 dopo lo schieramento) */
++    if (H005_B(0x247B) >= 1 && H005_B(0x247B) <= 40) {
++        g_combatants[H005_B(0x247B) - 1] = NULL;
++    }
+     (void)skipped;
+     (void)placed;
+ }
+-- 
+2.43.0
+

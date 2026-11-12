@@ -1,7 +1,7 @@
 From e9ffd6f7b56d6ba20b44d04e18bc8103411a5aed Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 19:27:41 +0000
-Subject: [PATCH 25/65] unported.h: include gfx_record.h instead of redeclaring
+Subject: [PATCH 25/78] unported.h: include gfx_record.h instead of redeclaring
  GfxRecord
 
 SAS/C warning 63: struct GfxRecord was already declared by gfx_record.h.

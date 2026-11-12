@@ -1,0 +1,50 @@
+From b21d0c3360914294770af3a53e72406238ccc21b Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 11 Nov 2026 22:38:01 +0000
+Subject: [PATCH 76/78] Backlog: Throtl col party pronto della partita A
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/backlog.md | 28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index 9a8bde6..01dd9c8 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -3097,3 +3097,31 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
+ **Harness di prova:** nelle alternative di `*`, la forma `=Opzioni` confronta tutta la riga delle opzioni (es. `=Exit` per il menu del movimento, distinto da "View Take Pool Exit").
+ 
+ ---
++
++## v68: Throtl col party pronto della partita A (nessuna modifica al codice)
++
++**Party:** la partita A dei dischi: Sir Strongsword (CA -1, 26 PF), Istan Horbin, Garin, Molly, Kal, Sirrion.
++
++**Percorso** (ASan; gancio di prova: i mostri muoiono al primo colpo)
++- Carovana, scorta (Yes), avamposto, Leave, Throtl (Su, Su, Destra), Attack, prima battaglia, campo.
++- Poi Save nella partita F, usata come base delle prove successive.
++- Il salvataggio scrive anche i file .fx degli effetti attivi (CHRDATF2..6.fx).
++
++**Movimento 3D:** Left e Right girano il party, Up avanza; contro un muro il party non si muove (a 7,7 verso est).
++
++**Esplorazione da 07,15**
++- Su fino a 07,0, poi a ovest: "Locked." con "Bash Pick Exit". Con Pick (scasso) la porta si apre e il party entra a 06,0.
++- **Eventi:**
++  - 07,12: l'uomo terrorizzato ("Caramon! Where are you! Look out! Above...");
++  - 07,9: "Broken swords and armor indicate the remains of a battle";
++  - battaglie a 07,7, 06,0 e 06,1, contro Hobgoblin, Giant Rat e Giant Centipede.
++- **Battaglie a sei personaggi:** attacchi e danni ("hitting for 12 points of damage"), "goes down", "is killed", teschio sui caduti, arco a distanza (Sirrion), tesoro ("View Pool Exit" quando ci sono solo monete).
++- Gli incontri non sono fissi: col party CLR + KTST c'era una battaglia a 07,2, qui no.
++
++**ASan:** pulito in tutte le prove.
++
++**Harness di prova** (fuori dal repository)
++- path.py genera percorsi ("U8 R U7 ..."). Tra un passo e l'altro un gestore risponde da solo a testi, battaglie (Done, poi Auto), "Continue Battle", tesori, domande Si'/No e porte chiuse (Pick).
++- La forma `=Exit` riconosce il menu del movimento.
++
++---
+-- 
+2.43.0
+

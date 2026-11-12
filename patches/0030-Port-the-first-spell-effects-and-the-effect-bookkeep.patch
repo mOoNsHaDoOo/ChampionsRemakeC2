@@ -1,7 +1,7 @@
 From bb7234dd54521b8d82a5ede1d971a5f5b7d7ce2e Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 20:36:59 +0000
-Subject: [PATCH 30/65] Port the first spell effects and the effect bookkeeping
+Subject: [PATCH 30/78] Port the first spell effects and the effect bookkeeping
 
 Cure Light/Serious Wounds (H085+$1CB8/$3298, H062+$253C, H063+$2ACC),
 Cure Disease ($2E28, $0A1A, H062+$18AC), Neutralize Poison ($3552),

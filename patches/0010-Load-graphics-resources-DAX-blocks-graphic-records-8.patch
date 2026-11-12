@@ -1,7 +1,7 @@
 From 361de020dc62d4f8b0b87480b0439a7a38de7bfe Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 15:35:15 +0000
-Subject: [PATCH 10/65] Load graphics resources: DAX blocks, graphic records,
+Subject: [PATCH 10/78] Load graphics resources: DAX blocks, graphic records,
  8x8 sets
 
 Ports DAX_LoadBlock (H028+$0DD8) with its container open ($0B80) and

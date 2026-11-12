@@ -1,7 +1,7 @@
 From d18b4af8eb093e5695302858365151dcf1ce98f0 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 16:01:27 +0000
-Subject: [PATCH 13/65] Port UI_RequestChoice and the Play/Demo prompt
+Subject: [PATCH 13/78] Port UI_RequestChoice and the Play/Demo prompt
 
 Ports H008+$01FC UI_RequestChoice with its nested procedures ($01A0,
 $020A, $03C8): option parsing, highlighted drawing on row 24, keys

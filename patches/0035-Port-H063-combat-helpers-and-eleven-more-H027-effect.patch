@@ -1,7 +1,7 @@
 From 72fb82bb2e6dddbfaf2d0933752891b91526efa9 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 21:33:49 +0000
-Subject: [PATCH 35/65] Port H063 combat helpers and eleven more H027 effect
+Subject: [PATCH 35/78] Port H063 combat helpers and eleven more H027 effect
  handlers; add backlog.md
 
 H063+$135A, $1160, $2DC6 and $37B2; $016A, $0354 and $19B6 are exported.

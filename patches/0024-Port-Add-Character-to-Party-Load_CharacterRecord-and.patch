@@ -1,7 +1,7 @@
 From 61a06da05adb6878e46bc1a484d58b18a81043fe Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 19:23:41 +0000
-Subject: [PATCH 24/65] Port Add Character to Party, Load_CharacterRecord and
+Subject: [PATCH 24/78] Port Add Character to Party, Load_CharacterRecord and
  the party list
 
 Port H013+$52E0 Add_CharacterToParty (trampoline $0518) with the party

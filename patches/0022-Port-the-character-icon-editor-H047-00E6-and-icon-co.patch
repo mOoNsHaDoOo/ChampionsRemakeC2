@@ -1,7 +1,7 @@
 From 85024c3870a071d4669f91c8d9eadc7eff421286 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 19:00:53 +0000
-Subject: [PATCH 22/65] Port the character icon editor (H047+$00E6) and icon
+Subject: [PATCH 22/78] Port the character icon editor (H047+$00E6) and icon
  composition
 
 Port H047+$00E6 (body $08D6) with its nested procedures $00F4, $0162,

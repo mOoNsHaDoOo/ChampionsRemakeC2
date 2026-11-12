@@ -1,7 +1,7 @@
 From 4a46ad2971a9afcc37820f0721e5778bdcb4b76c Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 20:03:55 +0000
-Subject: [PATCH 28/65] Port the Use command of the Items screen and spell
+Subject: [PATCH 28/78] Port the Use command of the Items screen and spell
  casting
 
 H065+$2F82 (Use) and +$34FC (spell choice); H033 spell lists

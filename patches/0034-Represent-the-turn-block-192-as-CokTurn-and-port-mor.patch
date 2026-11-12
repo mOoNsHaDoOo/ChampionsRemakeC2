@@ -1,7 +1,7 @@
 From 2a3f9dedfc395e644a8c9fab7911628e8fb56f4c Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 21:21:57 +0000
-Subject: [PATCH 34/65] Represent the turn block +$192 as CokTurn and port more
+Subject: [PATCH 34/78] Represent the turn block +$192 as CokTurn and port more
  H027 handlers
 
 The +$192 block keeps its $18 bytes; its only longword, the target

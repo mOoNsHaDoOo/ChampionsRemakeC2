@@ -1,7 +1,7 @@
 From c31e60fdafb0697d08c10b743fc031641c7e9a73 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Wed, 11 Nov 2026 12:28:07 +0000
-Subject: [PATCH 62/65] Host: audio.device emulato con SDL2 (4 canali Paula)
+Subject: [PATCH 62/78] Host: audio.device emulato con SDL2 (4 canali Paula)
  per la build COK_AUDIO
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>

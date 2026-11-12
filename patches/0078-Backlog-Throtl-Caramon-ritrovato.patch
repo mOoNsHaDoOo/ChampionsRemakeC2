@@ -1,0 +1,51 @@
+From 392928d5fbdd03df7e63b367b3bd2e31b69ac43f Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Thu, 12 Nov 2026 08:35:47 +0000
+Subject: [PATCH 78/78] Backlog: Throtl, Caramon ritrovato
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/backlog.md | 29 +++++++++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
+
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index 729ac5e..6efb9fa 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -3160,3 +3160,32 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
+ **Harness di prova:** pilota automatico; screenshot automatici sui menu con un dato testo (COK_TEST_SHOTMENU); Invio dopo 5 s senza menu; mappa dei passaggi (COK_TEST_MAPDUMP); buffer dei passi a 400 caratteri.
+ 
+ ---
++
++## v70: Throtl, Caramon ritrovato (nessuna modifica al codice)
++
++**Ripartenza:** dalla partita J (fine dell'esplorazione della v69).
++- **Pilota automatico di prova:** carica le 171 caselle gia' visitate e riprova ogni porta chiusa fino a 5 volte.
++- **"Leave Stay":** a 7,15 verso sud (bordo della mappa, uscita dalla citta') si risponde Stay.
++
++**Passaggi:**
++- la porta a sud di 3,9 si apre: caselle nuove 3,10, 3,11, 4,10, 5,9, 5,10, 6,10, 6,11, 1,11;
++- la porta a est di 0,11 resta chiusa dopo i tentativi;
++- l'uscita 7,15 verso sud viene rifiutata (Stay) per 5 volte, poi "AUTO done" e Save nella partita I.
++
++**Eventi** (col ritratto di Caramon in catene, poi di Maya)
++- 6,10: "You see a chained figure to the south."
++- 6,11: "You find Caramon in chains. As you free him he tells you of his ordeals, and you record it as journal entry 73."
++- "Suddenly you hear a great crash from outside the room. A strange, high-pitched, tinkling sound is accompanied by muffled screams."
++- "A female voice calls out for Caramon. He glances up, startled at the sound. Caramon yells, and in a moment a figure appears in the doorway."
++- "A lovely elven woman strides in the room. She embraces Caramon and explains her presence, and you record it as journal entry 5."
++- "Caramon says 'The cleric that took me has just left for his quarters in the south-west corner of Throtl. Find him and you will find the key.'"
++- "The key will make the doors into the temple glow. The doors are located in the two corridors that border the northeast quadrant of the city."
++- "Caramon and Maya leave. You hear a great rush of air shortly after their departure." e "Your companions leave."
++
++**ASan:** pulito.
++
++**Prossimo passo:** il chierico nell'angolo sud-ovest (la chiave), poi le porte del tempio nel quadrante nord-est.
++
++**Harness di prova:** contatore dei tentativi delle porte; caselle visitate da file (COK_TEST_VISITED); risposta Stay a "Leave Stay".
++
++---
+-- 
+2.43.0
+

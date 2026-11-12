@@ -1,7 +1,7 @@
 From 8ccfe3f9d229e4e946dab998969bb92403bdad14 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 19:42:32 +0000
-Subject: [PATCH 27/65] Port the Items screen of View Character
+Subject: [PATCH 27/78] Port the Items screen of View Character
 
 Port H065+$255A (items list with Ready/Use/Trade/Drop/Halve/Join/Sell/Id)
 with $1C48 (can the item be given away), $1D80, $1E2C (halve), $1EE4

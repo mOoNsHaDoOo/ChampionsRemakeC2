@@ -1,7 +1,7 @@
 From 460c00a4b0179194b792a7e0ac3b3c5b47fa272b Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 22:20:05 +0000
-Subject: [PATCH 38/65] Port the combat start (H095), H011 map wall queries,
+Subject: [PATCH 38/78] Port the combat start (H095), H011 map wall queries,
  H029+$1718, H035+$0040, H096+$37C2
 
 The host Intuition View now has a copper list with the screen colors.

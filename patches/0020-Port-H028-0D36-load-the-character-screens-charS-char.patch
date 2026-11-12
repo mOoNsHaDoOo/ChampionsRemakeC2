@@ -1,7 +1,7 @@
 From 1491b6b860f1fe55ccc3c0d5e494762a49e49f42 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 18:37:41 +0000
-Subject: [PATCH 20/65] Port H028+$0D36: load the character screens charS/charT
+Subject: [PATCH 20/78] Port H028+$0D36: load the character screens charS/charT
 
 Port H028+$0D36 and $0C68 (load charS.LBM and charT.LBM once, copy
 their palette to H005+$522E) and the H041 sized allocator ($000C,

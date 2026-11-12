@@ -1,7 +1,7 @@
 From 2ca37734e78311001bdeb0e5a432685c356a09fa Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 22:02:48 +0000
-Subject: [PATCH 37/65] Port the combat map graphics: H048, H077, H063 missile
+Subject: [PATCH 37/78] Port the combat map graphics: H048, H077, H063 missile
  and status routines, H029 double buffering, H049 blitter and mirror
 
 Fix H077+$08AC calls: the four words before H048+$110C are its arguments.

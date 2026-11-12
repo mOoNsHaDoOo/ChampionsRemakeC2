@@ -1,7 +1,7 @@
 From 0c6d1f16f82d553ee5c88a2ec95a8a0e38676f30 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 15:07:44 +0000
-Subject: [PATCH 05/65] Fix SAS/C build errors; port Open_ResourceFile
+Subject: [PATCH 05/78] Fix SAS/C build errors; port Open_ResourceFile
 
 SAS/C 6.58 reported a redeclared struct GfxRecord, an int return in
 H029+$1308 and an undefined GfxBase. GfxRecord now lives in

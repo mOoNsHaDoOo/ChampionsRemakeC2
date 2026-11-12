@@ -1,7 +1,7 @@
 From c75e096a7dd130ce97ce983bd7b1343f3093ed13 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 16:07:12 +0000
-Subject: [PATCH 14/65] Port the manual check (copy protection) and text input
+Subject: [PATCH 14/78] Port the manual check (copy protection) and text input
 
 Ports H009+$010C with $007E, the question table H049+$079E, the
 random generator H023+$0010, string insert H026+$0254 and the line

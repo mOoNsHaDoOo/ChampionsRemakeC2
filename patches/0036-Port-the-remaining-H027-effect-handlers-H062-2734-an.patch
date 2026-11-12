@@ -1,7 +1,7 @@
 From 881a9d00da575113a493a6be9082719ff4558e10 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 21:43:37 +0000
-Subject: [PATCH 36/65] Port the remaining H027 effect handlers, H062+$2734 and
+Subject: [PATCH 36/78] Port the remaining H027 effect handlers, H062+$2734 and
  H029+$0376
 
 Add the acid pool list ($250C) and the dropped weapon list ($3360) as C globals.

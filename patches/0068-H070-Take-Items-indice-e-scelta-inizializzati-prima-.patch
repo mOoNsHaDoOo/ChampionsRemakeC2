@@ -1,0 +1,82 @@
+From d5918d7b2e891cc103b7acb19847ff8f6cd9a18d Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 11 Nov 2026 16:11:15 +0000
+Subject: [PATCH 68/78] H070 Take Items: indice e scelta inizializzati prima
+ del ciclo come nell'asm; backlog del collaudo di pergamene e oggetti magici
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/backlog.md | 30 ++++++++++++++++++++++++++++++
+ src_c/readable/h070.c     |  9 ++++++---
+ 2 files changed, 36 insertions(+), 3 deletions(-)
+
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index c22247b..8f0c95d 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -2851,3 +2851,33 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
+ **Restano:** uso delle pergamene e oggetti magici in combattimento. Servono oggetti veri del gioco (tesori o negozi), non dati costruiti a mano.
+ 
+ ---
++
++## v60: collaudo di pergamene, pozioni e oggetti magici; correzione di Take Items (H070+$0E94)
++
++**Correzione: h070 take_items** (H070+$0E94)
++- Nell'asm indice (-$10), scelta (-$4) e cursore (-$E) si inizializzano una sola volta, prima del ciclo ($0E9E..$0EAA; il ciclo riparte da $0EAE).
++- Il C li azzerava a ogni giro, quindi dopo un Take la selezione tornava alla prima riga invece di restare dov'era. Ora l'inizializzazione e' fuori dal ciclo.
++
++**Oggetti dei tesori del gioco** (ITEM1.DAX, dump letto come ecl_treasure, H012 comando TREASURE)
++- **Blocchi con oggetti magici:** 17, 32..39, 48..51, 53.
++- **Blocco 17:** Scroll Cler 3 Spells (tipo $28, incantesimi $43 $3A $45), due White MU Scroll e due Red MU Scroll 3 Spells, Potion of Healing, Wand of Magic Missiles (5 cariche, incantesimo $41), frecce e dardi.
++
++**Collaudo** (ASan, solo CLR; ganci di prova fuori dal repository, oggetti tutti dai file del gioco)
++- **Tesoro e Take**
++  - Un gancio mette il blocco 17 nel tesoro della carovana. Il tesoro elenca gli oggetti; Take Items prende la pozione e la pergamena, e la selezione resta sulla riga dopo il Take.
++  - Nota: 'I' su "Money Items Exit" lascia selezionata la 2a opzione ($2483) e in "Take Exit" la 2a e' Exit. Invio quindi esce, anche nell'asm; si prende con T.
++- **Al campo**
++  - **Use senza Ready:** "Must be Readied" (H065+$28D2).
++  - **Pozione:** Ready, poi Use; HP da 1/13 a 8/13, la pozione sparisce (ingombro da 90 a 80).
++  - **Pergamena:** Ready, poi Use; "Spells on Scroll", 4th Level: Neutralize Poison, Cure Serious Wounds, Protection Evil 10' Radius.
++  - **Cure Serious Wounds** su CLR ("Cast Spell on whom"): HP 13/13, l'oggetto diventa "Scroll Cler 2 Spells" e l'incantesimo sparisce dalla pergamena.
++  - **Immagine del campo:** dopo View il fuoco riappare dopo un attimo. E' l'animazione di ui_request_choice ($069E), che ridisegna dopo l'attesa del fotogramma; anche all'ingresso del campo il riquadro e' vuoto per un attimo.
++- **In combattimento** (bacchetta e pergamena date a CLR all'inizio della battaglia con take_item, H071+$047C)
++  - Il menu diventa "Move View Aim Use Done"; Use mostra "Ready Use Drop Halve Join Exit".
++  - **Bacchetta:** Ready, poi Use; "Item Wand of Magic Missiles", Aim (Next Prev Manual Target Center Exit), Next su un Baaz, Target.
++  - **Cariche:** da 5 a 4. In Auto l'IA usa la bacchetta da sola: da 4 a 3 a 2.
++  - **Mira:** senza nemici in vista Next resta su CLR e Target lo colpisce ("CLR takes 6 points of damage from magic"). Errore della sequenza di prova, non del port.
++  - **Pergamena:** Cure Serious Wounds su CLR, HP da 1 a 5; sulla pergamena restano gli incantesimi 43 00 45.
++- **ASan:** pulito in tutte le prove.
++
++---
+diff --git a/src_c/readable/h070.c b/src_c/readable/h070.c
+index e92c127..16bf88a 100644
+--- a/src_c/readable/h070.c
++++ b/src_c/readable/h070.c
+@@ -393,7 +393,9 @@ static void treasure_list(u16 *index, CokMenuItem **cursor, CokItem **out,
+ 
+ /*
+  * PORT H070+$0E94 (Take Items): il personaggio corrente prende oggetti
+- * dal tesoro (H071+$047C) finche' esce o il tesoro e' vuoto.
++ * dal tesoro (H071+$047C) finche' esce o il tesoro e' vuoto.  Indice e
++ * scelta si azzerano una volta sola, prima del ciclo (H070+$0E9E/$0EAA):
++ * dopo un Take la selezione resta alla stessa riga.
+  */
+ static void take_items(void)
+ {
+@@ -405,9 +407,10 @@ static void take_items(void)
+     u8 done;                            /* -$A(a5) */
+     u8 fail;                            /* -$11(a5) */
+ 
++    chosen = NULL;
++    cursor = NULL;
++    index = 0;
+     do {
+-        index = 0;
+-        chosen = NULL;
+         treasure_list(&index, &cursor, &chosen, &key);
+         if ((key != 'T' && key != 0x0D) || chosen == NULL) {
+             done = 1;
+-- 
+2.43.0
+

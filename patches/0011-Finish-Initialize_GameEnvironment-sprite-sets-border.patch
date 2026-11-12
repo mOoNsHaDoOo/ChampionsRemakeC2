@@ -1,7 +1,7 @@
 From 47be7884fae6b66fb7ecd3c898345e713e2ff5c0 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 15:38:19 +0000
-Subject: [PATCH 11/65] Finish Initialize_GameEnvironment: sprite sets, border,
+Subject: [PATCH 11/78] Finish Initialize_GameEnvironment: sprite sets, border,
  handler tables
 
 Ports H035+$0246 (24x24 sprite set pairs), H029+$0EFE (colour remap),

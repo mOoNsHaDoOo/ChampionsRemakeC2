@@ -1,7 +1,7 @@
 From 39528435ab14e42dd08cbbe767caa8e89749f91d Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Wed, 11 Nov 2026 07:01:41 +0000
-Subject: [PATCH 44/65] Port dungeon 3D view (H011+$0B78 and helpers),
+Subject: [PATCH 44/78] Port dungeon 3D view (H011+$0B78 and helpers),
  GEO/WALLDEF loaders, H060+$0018, H049+$0014, H010+$0360; make H042 picture
  stubs non-fatal
 

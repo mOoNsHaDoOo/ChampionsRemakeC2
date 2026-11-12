@@ -1,0 +1,50 @@
+From 8f08cb62a1ce43b0eee6c2c95e2026f859c185f0 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 11 Nov 2026 21:28:32 +0000
+Subject: [PATCH 75/78] Backlog: esplorazione di Throtl
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013G8KST8dgGfenpqx3RukYi
+---
+ src_c/readable/backlog.md | 28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+
+diff --git a/src_c/readable/backlog.md b/src_c/readable/backlog.md
+index 33c8665..9a8bde6 100644
+--- a/src_c/readable/backlog.md
++++ b/src_c/readable/backlog.md
+@@ -3069,3 +3069,31 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
+ **Harness di prova:** stampa delle coordinate del segno del party (MARK x,y).
+ 
+ ---
++
++## v67: esplorazione di Throtl (nessuna modifica al codice)
++
++**Base di prova:** la partita E, salvata col party CLR + KTST nel campo di Throtl subito dopo la prima battaglia, si carica con Load. Dopo Begin si riparte dal menu dell'esplorazione "Move Area Cast View Encamp Search Look", a 07,15 N.
++
++**Area:** mostra la pianta 16x16 di Throtl con muri e porte, e il segno del party a 07,15.
++
++**Look:** esegue lo script della casella (ECL 3736) e torna al menu.
++
++**Camminata verso nord** (Move, poi frecce; ASan)
++- **Posizioni:** da 07,15 a 07,2, un passo per casella. A ogni passo girano gli script del passo (35D2, 3736).
++- **Eventi lungo la strada:**
++  - 07,14: battaglia ("Monsters attack!"), tesoro;
++  - 07,12: testo dell'uomo terrorizzato ("Caramon! Where are you! ... Above you, it's a trap!");
++  - 07,9: un testo;
++  - 07,2: battaglia contro Giant Rat, Giant Centipede, Hobgoblin e Hobgoblin Ldr sulla mappa della citta'.
++- **A 07,2 il party e' distrutto:** "The monsters rejoice for the party has been destroyed".
++  - CLR e KTST erano entrambi a 1 HP.
++  - Il gancio di prova limita i danni dei colpi; la morte arriva da un'altra via, probabilmente il veleno del centopiede, ma non e' verificato nel log.
++  - E' il comportamento atteso del gioco.
++
++**ASan:** pulito.
++
++**Prossimo passo:** proseguire con un party di 6 personaggi (il party pronto della partita A dei dischi) oppure dopo il riposo all'Inn dell'avamposto.
++
++**Harness di prova:** nelle alternative di `*`, la forma `=Opzioni` confronta tutta la riga delle opzioni (es. `=Exit` per il menu del movimento, distinto da "View Take Pool Exit").
++
++---
+-- 
+2.43.0
+
