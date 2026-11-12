@@ -3043,3 +3043,22 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
 **ASan:** pulito.
 
 ---
+
+## v66: colori sbagliati delle immagini grandi con CPU veloci (BltClear senza attesa in H029 Allocate_GraphicRecord)
+
+**Segnalazione dell'utente:** su FS-UAE (A1200, 68040, Kickstart 3.2) le immagini grandi e i ritratti appaiono a volte con colori sbagliati; la cornice e il testo sono giusti. Il difetto e' intermittente: a volte solo una parte della mappa, a volte un ritratto giusto la prima volta e sbagliato la seconda.
+
+**Analisi** (debugger su FS-UAE)
+- I registri colore sono giusti: 0..15 la palette dell'interfaccia, 16..31 quella dell'immagine.
+- Nello schermo il 5o piano dell'immagine e' vuoto, quindi ogni pixel perde il bit 4 e prende un colore 0..15.
+- Il blocco caricato in Fast RAM ha tutti e 5 i piani; nel record in Chip RAM i piani 0..3 sono uguali e il 5o e' vuoto.
+- Il record si alloca con H029+$0408: ogni piano viene azzerato con BltClear(flags = 0), che non aspetta l'ultimo blit. Subito dopo transfer_gfx_planes (H029+$091E) copia i piani con CopyMem.
+- Con una CPU veloce la copia arriva al 5o piano prima che il blitter abbia finito di azzerarlo, e il blitter lo riazzera.
+- Il difetto e' dell'originale: su un 68000 il blitter finisce sempre prima. In FS-UAE con cpu_speed=max dipende dalla velocita' dell'emulatore.
+- **Conferma:** con uae_immediate_blits = true il difetto sparisce in tutte le prove.
+
+**Correzione:** H029 allocate_gfx_record chiama BltClear con flags = 1 (attesa della fine del blit), per i piani dell'immagine e per la maschera.
+- Sull'host BltClear e' sincrona: il risultato non cambia.
+- **Da confermare sull'Amiga:** con cpu_speed=max e senza immediate_blits le immagini devono avere sempre i colori giusti.
+
+---

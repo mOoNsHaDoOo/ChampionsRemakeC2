@@ -180,6 +180,12 @@ void close_game_display(void)
  * azzerato.  Con with_mask = 1 anche una BitMap di maschera con un solo
  * raster, ripetuto nei 5 piani.  Gli errori di allocazione vanno a
  * H014+$0018 con il numero del piano e "plane alloc problem".
+ *
+ * Diverso dall'originale: BltClear con flags = 1 (aspetta la fine del
+ * blit).  L'originale passa 0 e il chiamante scrive subito i piani con la
+ * CPU (CopyMem in transfer_gfx_planes): con una CPU veloce (68040, o
+ * FS-UAE con cpu_speed=max) l'ultimo BltClear finisce dopo la copia e
+ * azzera il 5o piano, e l'immagine prende i colori 0..15.
  */
 void allocate_gfx_record(u16 rows, u16 count, u16 width8, u16 with_mask,
                          struct GfxRecord **rec)
@@ -206,7 +212,7 @@ void allocate_gfx_record(u16 rows, u16 count, u16 width8, u16 with_mask,
         if (bm->Planes[i] == NULL) {
             error_message(0x13, plane_error, i);
         } else {
-            graphics_blt_clear(bm->Planes[i], (u32)(width >> 3) * rows, 0);
+            graphics_blt_clear(bm->Planes[i], (u32)(width >> 3) * rows, 1);
         }
     }
 
@@ -218,7 +224,7 @@ void allocate_gfx_record(u16 rows, u16 count, u16 width8, u16 with_mask,
         if (bm->Planes[0] == NULL) {
             error_message(0x13, plane_error, 0);
         } else {
-            graphics_blt_clear(bm->Planes[0], (u32)(width >> 3) * rows, 0);
+            graphics_blt_clear(bm->Planes[0], (u32)(width >> 3) * rows, 1);
         }
         for (i = 1; i <= 4; ++i) {
             bm->Planes[i] = bm->Planes[0];
