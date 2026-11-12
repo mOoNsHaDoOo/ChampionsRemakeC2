@@ -286,6 +286,9 @@ void prepare_display_resources(void)
     g_offscreen_vp.DHeight = 0xC8;
     g_offscreen_vp.RasInfo = &g_offscreen_ri;
     g_offscreen_vp.ColorMap = graphics_get_color_map(0x20);
+    /* Non nell'originale: stesso monitor dello schermo (vedi H022). */
+    graphics_attach_view_mode(&g_offscreen_view, &g_offscreen_vp,
+                              &g_screen->ViewPort);
     graphics_make_vport(&g_offscreen_view, &g_offscreen_vp);
     graphics_mrg_cop(&g_offscreen_view);
 
@@ -562,6 +565,7 @@ void release_display_resources(void)
         graphics_free_color_map(cm);
         graphics_free_vport_cop_lists(&g_offscreen_vp);
         graphics_free_cpr_list(g_offscreen_view.LOFCprList);
+        graphics_detach_view_mode(&g_offscreen_view); /* non nell'originale */
         exec_free_mem(g_offscreen_rp, sizeof(struct RastPort));
         g_offscreen_rp = NULL;
         lib = g_h029_intuition;

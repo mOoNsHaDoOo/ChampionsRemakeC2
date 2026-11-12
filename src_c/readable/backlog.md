@@ -3062,3 +3062,26 @@ Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine
 - **Da confermare sull'Amiga:** con cpu_speed=max e senza immediate_blits le immagini devono avere sempre i colori giusti.
 
 ---
+
+## v67: flashing del display su Kickstart 3.x con DblPAL in DEVS:Monitors (View fuori schermo senza ViewExtra)
+
+**Segnalazione dell'utente:** su FS-UAE (A1200, Kickstart 3.2) con DblPAL.monitor in DEVS:Monitors il display lampeggia, si deforma e si ricompone di continuo, tranne durante la scrittura del testo con Delay. Togliendo DblPAL il difetto sparisce.
+
+**Analisi** (debugger su FS-UAE)
+- Il log di FS-UAE mostra BEAMCON0 che alterna $0020 (PAL, 15 kHz) e $1B88 (DblPAL, 31 kHz) centinaia di volte.
+- Un watchpoint su GfxBase->current_monitor mostra il task del gioco che chiama LoadView alternando due View: una porta il monitor a DblPAL.monitor, l'altra a pal.monitor.
+- Le due View sono g_offscreen_view, costruita da H029+$1346 con InitView/MakeVPort/MrgCop senza ViewExtra, e g_saved_view, cioe' la View di Intuition.
+- Su graphics.library V36+ LoadView mostra una View senza ViewExtra col monitor di default di GfxBase, che con DblPAL installato e' DblPAL. Lo scambio delle View in begin_screen_update/end_screen_update e swap_display_view cambia quindi BEAMCON0 a ogni chiamata.
+- Il difetto e' dell'originale: sul Kickstart 1.3 il monitor di default non esisteva.
+
+**Correzione:** nuovi adattatori H022 graphics_attach_view_mode e graphics_detach_view_mode (solo Amiga, vuoti sull'host).
+- prepare_display_resources associa alla View fuori schermo un ViewExtra col MonitorSpec e un ViewPortExtra (DisplayClip nominale, VideoControl) con il ModeID dello schermo del gioco, letto con GetVPModeID. Cosi' le due View usano sempre lo stesso monitor, PAL o NTSC. Va fatto prima di MakeVPort/MrgCop.
+- Se il ModeID non e' disponibile si usa PAL o NTSC secondo GfxBase->DisplayFlags; su graphics.library < 36 non cambia nulla.
+- release_display_resources libera ViewPortExtra, MonitorSpec e ViewExtra dopo FreeColorMap e FreeVPortCopLists.
+
+**Da confermare sull'Amiga** (compilato solo per l'host):
+- La build SAS/C deve trovare graphics/videocontrol.h, displayinfo.h, gfxnodes.h, monitor.h e modeid.h.
+- Con DblPAL.monitor in DEVS:Monitors il display non deve piu' lampeggiare e l'immagine fuori schermo deve restare allineata come prima.
+- All'uscita dal gioco non devono esserci perdite di memoria (ordine dei GfxFree rispetto a FreeColorMap).
+
+---

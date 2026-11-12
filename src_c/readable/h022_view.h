@@ -14,4 +14,7 @@ void graphics_make_vport(struct View *view, struct ViewPort *vp); /* H022+$00B2 
 void graphics_mrg_cop(struct View *view);               /* H022+$00C8 */
 void graphics_load_rgb4(struct ViewPort *vp, const u8 *colors, u16 count);
                                                         /* H022+$0084 */
+void graphics_attach_view_mode(struct View *view, struct ViewPort *vp,
+                               struct ViewPort *mode_vp); /* non nell'originale */
+void graphics_detach_view_mode(struct View *view);      /* non nell'originale */
 #endif
