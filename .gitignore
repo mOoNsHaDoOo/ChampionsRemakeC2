@@ -53,3 +53,9 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+# macOS
+.DS_Store
+
+# Game data and build output of the audio host build
+src_c/readable/build-audio/
