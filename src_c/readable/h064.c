@@ -1,4 +1,4 @@
-/* H064: gestori nativi dei comandi ECL. */
+/* H064: native handlers of the ECL commands. */
 #include "h064.h"
 #include "globals.h"
 #include "unported.h"
@@ -22,67 +22,67 @@
 #include <string.h>
 
 /*
- * Dati all'inizio del modulo (H064+$0000..$005D): +$0 personaggio
- * corrente salvato, +$6..+$B flag della VM ECL (+$B: fine del
- * programma), +$C testo.  g_h064_data[k] e' H064+k.
+ * Data at the start of the module (H064+$0000..$005D): +$0 current character
+ * saved, +$6..+$B ECL VM flags (+$B: end of the
+ * program), +$C text.  g_h064_data[k] is H064+k.
  */
 Character *g_h064_saved_char;           /* H064+$0000 */
 u8 g_h064_data[0x5E];
 
-/* PORT H064+$00EE: link/unlk, nessun effetto. */
+/* PORT H064+$00EE: link/unlk, no effect. */
 void h064_init(void)
 {
 }
 
-/* Operandi: byte grezzi e indirizzo dell'operando i. */
+/* Operands: raw bytes and address of operand i. */
 #define OPD(i)  operand_desc(i)
 #define ADDR(i) decode_address(operand_lo(i), operand_hi(i))
 
 /*
- * PORT H064+$0156 (comando $00, EXIT): fine del programma: ripristina il
- * personaggio corrente salvato, ferma la VM (+$B), svuota la pila GOSUB
- * e riporta il testo in alto a sinistra della finestra.
+ * PORT H064+$0156 (command $00, EXIT): end of the program: restores the
+ * saved current character, stops the VM (+$B), empties the GOSUB stack
+ * and moves the text back to the top left of the window.
  */
 void ecl_exit(void)
 {
-    if (H005_B(0x24BB)) { /* $24BB: uso: azzerato a inizio area; con 1 EXIT ridisegna la cornice */
+    if (H005_B(0x24BB)) { /* $24BB: use: cleared when the area starts; with 1 EXIT redraws the frame */
         draw_explore_frame();
     }
-    if (H064_B(9)) { /* H064_data+$9: flag LOAD CHARACTER: ripristinare il personaggio salvato */
+    if (H064_B(9)) { /* H064_data+$9: LOAD CHARACTER flag: restore the saved character */
         g_current_char = g_h064_saved_char;
-        H064_B(9) = 0; /* H064_data+$9: flag LOAD CHARACTER: ripristinare il personaggio salvato */
+        H064_B(9) = 0; /* H064_data+$9: LOAD CHARACTER flag: restore the saved character */
     }
-    /* $2378: flag: sprite dell'evento gia' mostrato (flags[0], 2 byte con +$2379) */
+    /* $2378: flag: event sprite already shown (flags[0], 2 bytes with +$2379) */
     h029_fill_bytes(1, &H005_B(0x2378), 2, 0);
-    H005_B(0x24BD) = 0; /* $24BD: 1 se l'immagine/ritratto dell'evento e' a schermo */
-    H005_B(0x24BB) = 0; /* $24BB: uso: azzerato a inizio area; con 1 EXIT ridisegna la cornice */
-    H064_B(0x0B) = 1; /* H064_data+$B: flag fine esecuzione ECL (EXIT o NEWECL) */
-    H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1); /* $3DEA: (word) PC logico del programma ECL (base $3500) */
+    H005_B(0x24BD) = 0; /* $24BD: 1 if the event picture/portrait is on screen */
+    H005_B(0x24BB) = 0; /* $24BB: use: cleared when the area starts; with 1 EXIT redraws the frame */
+    H064_B(0x0B) = 1; /* H064_data+$B: end of ECL execution flag (EXIT or NEWECL) */
+    H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1); /* $3DEA: (word) logical PC of the ECL program (base $3500) */
     while (g_ecl_stack != NULL) {
         g_ecl_stack_prev = g_ecl_stack->next;
         exec_free_mem(g_ecl_stack, sizeof(CokEclFrame));
         g_ecl_stack = g_ecl_stack_prev;
     }
-    H005_SET_W(0x334C, 0x11); /* $334C: (word) cursore del testo: riga */
-    H005_SET_W(0x334E, 1); /* $334E: (word) cursore del testo: colonna */
-    H005_B(0x24BF) = 0; /* $24BF: uso: 1 dopo il comando ECL $3D (ridisegno), 0 dopo EXIT */
+    H005_SET_W(0x334C, 0x11); /* $334C: (word) text cursor: row */
+    H005_SET_W(0x334E, 1); /* $334E: (word) text cursor: column */
+    H005_B(0x24BF) = 0; /* $24BF: use: 1 after ECL command $3D (redraw), 0 after EXIT */
 }
 
-/* PORT H064+$0202 (comando $01, GOTO). */
+/* PORT H064+$0202 (command $01, GOTO). */
 void ecl_goto(void)
 {
     read_operands(1);
-    H005_SET_W(0x3DEA, ADDR(1)); /* $3DEA: (word) PC logico del programma ECL (base $3500) */
+    H005_SET_W(0x3DEA, ADDR(1)); /* $3DEA: (word) logical PC of the ECL program (base $3500) */
 }
 
-/* PORT H064+$0234 (comando $02, GOSUB). */
+/* PORT H064+$0234 (command $02, GOSUB). */
 void ecl_gosub_cmd(void)
 {
     read_operands(1);
     ecl_gosub(1);
 }
 
-/* PORT H064+$0258 (comando $03, COMPARE): stringhe se una lo e', altrimenti valori. */
+/* PORT H064+$0258 (command $03, COMPARE): strings if one of them is, otherwise values. */
 void ecl_compare(void)
 {
     char a[0x51];                       /* -$58(a5) */
@@ -99,10 +99,10 @@ void ecl_compare(void)
 }
 
 /*
- * PORT H064+$0306 (comandi $04..$07: ADD, SUB, DIV, MUL): risultato nella
- * variabile del terzo operando; il resto della divisione in $3E00+$67E.
- * SUB fa secondo - primo, DIV primo / secondo.  Con divisore 0 il
- * 68000 genererebbe un'eccezione: qui risultato 0 e resto invariato.
+ * PORT H064+$0306 (commands $04..$07: ADD, SUB, DIV, MUL): result in the
+ * variable of the third operand; the remainder of the division in $3E00+$67E.
+ * SUB does second - first, DIV first / second.  With divisor 0 the
+ * 68000 would raise an exception: here result 0 and remainder unchanged.
  */
 void ecl_arithmetic(void)
 {
@@ -116,7 +116,7 @@ void ecl_arithmetic(void)
         v[i - 1] = eval_operand(i);
     }
     dst = ADDR(3);
-    switch (H005_B(0x2493)) { /* $2493: codice del comando ECL in esecuzione */
+    switch (H005_B(0x2493)) { /* $2493: code of the ECL command being executed */
     case 4:
         r = (u16)(v[0] + v[1]);
         break;
@@ -126,7 +126,7 @@ void ecl_arithmetic(void)
     case 6:
         if (v[1] != 0) {
             r = (u16)(v[0] / v[1]);
-            /* B+$67E: (word) resto della divisione dei comandi ECL ADD..MUL */
+            /* B+$67E: (word) remainder of the division of the ECL commands ADD..MUL */
             COK_PUT16(g_state_b + 0x67E, (u16)(v[0] % v[1]));
         }
         break;
@@ -139,7 +139,7 @@ void ecl_arithmetic(void)
     write_var(dst, r);
 }
 
-/* PORT H064+$03FC (comando $08, RANDOM): numero casuale da 0 a n (n < $FF). */
+/* PORT H064+$03FC (command $08, RANDOM): random number from 0 to n (n < $FF). */
 void ecl_random(void)
 {
     u16 n;                              /* -$2(a5) */
@@ -154,7 +154,7 @@ void ecl_random(void)
     write_var(dst, (u16)random_below(n));
 }
 
-/* PORT H064+$0468 (comando $09, SAVE): valore o stringa nella variabile. */
+/* PORT H064+$0468 (command $09, SAVE): value or string into the variable. */
 void ecl_save(void)
 {
     u16 dst;                            /* -$4(a5) */
@@ -169,9 +169,9 @@ void ecl_save(void)
 }
 
 /*
- * PORT H064+$04DC (comando $0A, LOAD CHARACTER): il personaggio n del
- * party diventa il corrente ($24B3 se non c'e'); col bit 7, se richiesto
- * ($24C4, $24C3), lascia il party.
+ * PORT H064+$04DC (command $0A, LOAD CHARACTER): party character n
+ * becomes the current one ($24B3 if it is not there); with bit 7, if requested
+ * ($24C4, $24C3), it leaves the party.
  */
 void ecl_load_character(void)
 {
@@ -180,7 +180,7 @@ void ecl_load_character(void)
     u8 leave;                           /* -$A(a5) */
     Character *p;                       /* -$4(a5) */
 
-    H064_B(9) = 1; /* H064_data+$9: flag LOAD CHARACTER: ripristinare il personaggio salvato */
+    H064_B(9) = 1; /* H064_data+$9: LOAD CHARACTER flag: restore the saved character */
     read_operands(1);
     v = (u8)eval_operand(1);
     p = g_party_head;
@@ -192,29 +192,29 @@ void ecl_load_character(void)
     }
     if (p != NULL) {
         g_current_char = p;
-        H005_B(0x24B3) = 0; /* $24B3: 1 se LOAD CHARACTER non ha trovato il personaggio (var $1F = 0) */
+        H005_B(0x24B3) = 0; /* $24B3: 1 if LOAD CHARACTER did not find the character (var $1F = 0) */
     } else {
-        H005_B(0x24B3) = 1; /* $24B3: 1 se LOAD CHARACTER non ha trovato il personaggio (var $1F = 0) */
+        H005_B(0x24B3) = 1; /* $24B3: 1 if LOAD CHARACTER did not find the character (var $1F = 0) */
     }
-    /* $24C4: uso: azzerato; con $24C3 LOAD CHARACTER toglie dal party; $24C3: uso: 1 da una
-     * scrittura ECL dello stato B a 0; con $24C4 lascia */
+    /* $24C4: use: cleared; with $24C3 LOAD CHARACTER removes from the party; $24C3: use: 1
+     * from an ECL write of state B to 0; with $24C4 it leaves */
     if (leave && H005_B(0x24C4) && H005_B(0x24C3)) {
         if (g_h064_saved_char == g_current_char) {
-            H064_B(9) = 0; /* H064_data+$9: flag LOAD CHARACTER: ripristinare il personaggio salvato */
+            H064_B(9) = 0; /* H064_data+$9: LOAD CHARACTER flag: restore the saved character */
         }
         remove_from_party(0, 1);
         draw_party(g_current_char);
-        H005_B(0x24C4) = 0; /* $24C4: uso: azzerato; con $24C3 LOAD CHARACTER toglie dal party */
-        H005_B(0x24C3) = 0; /* $24C3: uso: 1 da una scrittura ECL dello stato B a 0; con $24C4 lascia */
+        H005_B(0x24C4) = 0; /* $24C4: use: cleared; with $24C3 LOAD CHARACTER removes from the party */
+        H005_B(0x24C3) = 0; /* $24C3: use: 1 from an ECL write of state B to 0; with $24C4 it leaves */
     }
 }
 
 /*
- * PORT H064+$06A0 (comando $0B, LOAD MONSTER): aggiunge al party n copie
- * del mostro idx (con oggetti ed effetti, questi in ordine inverso) e il
- * suo set di figure CPIC spr nel posto $248E; i nemici (lato 1) hanno i
- * punti ferita scalati con la difficolta' ($3E04+$3E8, 1..5).  Al massimo
- * $3F mostri (H064+$5).
+ * PORT H064+$06A0 (command $0B, LOAD MONSTER): adds n copies of
+ * monster idx to the party (with items and effects, the latter in reverse order) and
+ * its CPIC figure set spr in slot $248E; the enemies (side 1) have their
+ * hit points scaled with the difficulty ($3E04+$3E8, 1..5).  At most
+ * $3F monsters (H064+$5).
  */
 void ecl_load_monster(void)
 {
@@ -237,25 +237,25 @@ void ecl_load_monster(void)
 
     save = g_current_char;
     read_operands(3);
-    if (H064_B(5) >= 0x3F) { /* H064_data+$5: numero di mostri caricati con LOAD MONSTER (max $3F) */
+    if (H064_B(5) >= 0x3F) { /* H064_data+$5: number of monsters loaded with LOAD MONSTER (max $3F) */
         g_current_char = save;
         return;
     }
     idx = (u8)eval_operand(1);
     load_monster(idx, &mon, &items, &effects);
-    diff = COK_GET16(g_state_a + 0x3E8); /* A+$3E8: (word) livello di difficolta' (1..5, iniziale 3) */
-    /* pg+$199: lato in combattimento (0 party, 1 avversari) */
+    diff = COK_GET16(g_state_a + 0x3E8); /* A+$3E8: (word) difficulty level (1..5, initial 3) */
+    /* ch+$199: side in combat (0 party, 1 opponents) */
     if (mon->b[0x199] == 1 && diff > 0 && diff < 6) {
-        mon->b[0x1A8] = (u8)((u16)(mon->b[0x1A8] * (diff + 1)) >> 2); /* pg+$1A8: punti ferita correnti */
-        mon->b[0x64] = (u8)((u16)(mon->b[0x64] * (diff + 1)) >> 2); /* pg+$64: punti ferita massimi */
-        /* pg+$1A8: punti ferita correnti; pg+$64: punti ferita massimi */
+        mon->b[0x1A8] = (u8)((u16)(mon->b[0x1A8] * (diff + 1)) >> 2); /* ch+$1A8: current hit points */
+        mon->b[0x64] = (u8)((u16)(mon->b[0x64] * (diff + 1)) >> 2); /* ch+$64: maximum hit points */
+        /* ch+$1A8: current hit points; ch+$64: maximum hit points */
         if (mon->b[0x1A8] == 0 || mon->b[0x64] == 0) {
-            mon->b[0x1A8] = 1; /* pg+$1A8: punti ferita correnti */
-            mon->b[0x64] = 1; /* pg+$64: punti ferita massimi */
+            mon->b[0x1A8] = 1; /* ch+$1A8: current hit points */
+            mon->b[0x64] = 1; /* ch+$64: maximum hit points */
         }
     }
-    if (mon->b[0xDF]) { /* pg+$DF: tipo di non morto (0 = no); base -1 abilita' da ladro +$E0..+$E7 */
-        /* $248F: mostri caricati con +$DF: limite di Turn Undead (turno +$13) */
+    if (mon->b[0xDF]) { /* ch+$DF: undead type (0 = no); base -1 of the thief skills +$E0..+$E7 */
+        /* $248F: monsters loaded with +$DF: Turn Undead limit (turn +$13) */
         add_to_byte(&H005_B(0x248F), 1);
     }
     tmpl = *mon;
@@ -267,33 +267,33 @@ void ecl_load_monster(void)
     }
     spr = (u8)eval_operand(3);
     p = g_party_head;
-    /* $248E: prossimo posto del set di figure CPIC per i mostri (da 8) */
+    /* $248E: next slot of the CPIC figure set for the monsters (from 8) */
     load_sprite_set(0x0C, "CPIC", spr, H005_B(0x248E));
     while (p->next != NULL) {
         p = p->next;
     }
     p->next = mon;
     p = p->next;
-    /* pg+$143: posto delle icone 24x24 (0..7 nel party; $0A creazione, $0C editor); $248E: prossimo
-     * posto del set di figure CPIC per i mostri (da 8) */
+    /* ch+$143: slot of the 24x24 icons (0..7 in the party; $0A creation, $0C editor); $248E: next
+     * slot of the CPIC figure set for the monsters (from 8) */
     p->b[0x143] = H005_B(0x248E);
     p->next = NULL;
-    add_to_byte(&H064_B(5), 1); /* H064_data+$5: numero di mostri caricati con LOAD MONSTER (max $3F) */
+    add_to_byte(&H064_B(5), 1); /* H064_data+$5: number of monsters loaded with LOAD MONSTER (max $3F) */
     ++count;
-    /* H064_data+$5: numero di mostri caricati con LOAD MONSTER (max $3F) */
+    /* H064_data+$5: number of monsters loaded with LOAD MONSTER (max $3F) */
     while (count <= n && H064_B(5) < 0x3F) {
         q = (Character *)exec_alloc_mem(sizeof(Character), COK_MEMF_CLEAR);
         p->next = q;
         p = p->next;
-        *p = tmpl;                      /* copia dei $1AA byte */
-        /* pg+$143: posto delle icone 24x24 (0..7 nel party; $0A creazione, $0C editor); $248E:
-         * prossimo posto del set di figure CPIC per i mostri (da 8) */
+        *p = tmpl;                      /* copy of the $1AA bytes */
+        /* ch+$143: slot of the 24x24 icons (0..7 in the party; $0A creation, $0C editor);
+         * $248E: next slot of the CPIC figure set for the monsters (from 8) */
         p->b[0x143] = H005_B(0x248E);
         p->next = NULL;
         p->effects = NULL;
         p->items = NULL;
         ++count;
-        add_to_byte(&H064_B(5), 1); /* H064_data+$5: numero di mostri caricati con LOAD MONSTER (max $3F) */
+        add_to_byte(&H064_B(5), 1); /* H064_data+$5: number of monsters loaded with LOAD MONSTER (max $3F) */
         for (it = items; it != NULL; it = it->next) {
             CokItem *old = p->items;
 
@@ -313,68 +313,66 @@ void ecl_load_monster(void)
         }
         effects = effects0;
     }
-    add_to_byte(&H005_B(0x248E), 1); /* $248E: prossimo posto del set di figure CPIC per i mostri (da 8) */
-    H005_B(0x24B6) = 1; /* $24B6: 1 se ci sono mostri caricati (LOAD MONSTER) per COMBAT */
+    add_to_byte(&H005_B(0x248E), 1); /* $248E: next slot of the CPIC figure set for the monsters (from 8) */
+    H005_B(0x24B6) = 1; /* $24B6: 1 if there are monsters loaded (LOAD MONSTER) for COMBAT */
     g_current_char = save;
 }
 
 /*
- * PORT H064+$05E2 (comando $0C, APPROACH): sprite spr ($2491) e ritratto
- * pic ($2490) dell'incontro alla distanza d ($3E00+$580), limitata dalle
- * caselle libere davanti ($3E00+$582).
+ * PORT H064+$05E2 (command $0C, APPROACH): sprite spr ($2491) and portrait
+ * pic ($2490) of the encounter at distance d ($3E00+$580), limited by the
+ * free squares in front ($3E00+$582).
  */
 void ecl_approach(void)
 {
     read_operands(3);
-    H005_B(0x2491) = (u8)eval_operand(1); /* $2491: sprite SPRIT dell'incontro (ENCOUNTER/APPROACH) */
-    /* B+$580: (word) distanza richiesta dell'incontro (ENCOUNTER/APPROACH) */
+    H005_B(0x2491) = (u8)eval_operand(1); /* $2491: SPRIT sprite of the encounter (ENCOUNTER/APPROACH) */
+    /* B+$580: (word) requested distance of the encounter (ENCOUNTER/APPROACH) */
     COK_PUT16(g_state_b + 0x580, eval_operand(2));
-    H005_B(0x2490) = (u8)eval_operand(3); /* $2490: ritratto PIC dell'incontro (ENCOUNTER/APPROACH) */
-    /* $281C: (word) x del party sulla mappa dell'area 16x16; $281E: (word) y del party sulla mappa
-     * dell'area 16x16; $2820: direzione del party (0 nord, 2 est, 4 sud, 6 ovest); B+$582: (word)
-     * distanza attuale dei nemici, limitata alle caselle libere */
+    H005_B(0x2490) = (u8)eval_operand(3); /* $2490: PIC portrait of the encounter (ENCOUNTER/APPROACH) */
+    /* $281C: (word) party x on the 16x16 area map; $281E: (word) party y on the 16x16 area map;
+     * $2820: party direction (0 north, 2 east, 4 south, 6 west); B+$582: (word) current distance
+     * of the enemies, limited to the free squares */
     COK_PUT16(g_state_b + 0x582,
               free_steps((s16)H005_W(0x281C), (s16)H005_W(0x281E),
                          H005_B(0x2820)));
-    /* B+$580: (word) distanza richiesta dell'incontro (ENCOUNTER/APPROACH); B+$582: (word) distanza
-     * attuale dei nemici, limitata alle caselle libere */
+    /* B+$580: (word) requested distance of the encounter (ENCOUNTER/APPROACH); B+$582: (word)
+     * current distance of the enemies, limited to the free squares */
     if (COK_GET16(g_state_b + 0x580) < COK_GET16(g_state_b + 0x582)) {
-        /* B+$580: (word) distanza richiesta dell'incontro (ENCOUNTER/APPROACH); B+$582: (word)
-         * distanza attuale dei nemici, limitata alle caselle libere */
+        /* B+$580: (word) requested distance of the encounter (ENCOUNTER/APPROACH); B+$582:
+         * (word) current distance of the enemies, limited to the free squares */
         COK_PUT16(g_state_b + 0x582, COK_GET16(g_state_b + 0x580));
     }
-    /* $2491: sprite SPRIT dell'incontro (ENCOUNTER/APPROACH); $2490: ritratto PIC dell'incontro
-     * (ENCOUNTER/APPROACH) */
+    /* $2491: SPRIT sprite of the encounter (ENCOUNTER/APPROACH); $2490: PIC portrait of the
+     * encounter (ENCOUNTER/APPROACH) */
     show_event_picture(H005_B(0x2491), H005_B(0x2490),
-                       /* B+$582: (word) distanza attuale dei nemici, limitata alle caselle libere;
-                        * $2378: flag: sprite dell'evento gia' mostrato (flags[0], 2 byte con
-                        * +$2379) */
+                       /* B+$582: (word) current distance of the enemies, limited to the free squares; $2378: flag:
+                        * event sprite already shown (flags[0], 2 bytes with +$2379) */
                        (u8)COK_GET16(g_state_b + 0x582), &H005_B(0x2378));
 }
 
-/* PORT H064+$0ABE (comando $0D): l'incontro si avvicina di una casella. */
+/* PORT H064+$0ABE (command $0D): the encounter comes one square closer. */
 void ecl_approach_step(void)
 {
-    /* B+$582: (word) distanza attuale dei nemici, limitata alle caselle libere */
+    /* B+$582: (word) current distance of the enemies, limited to the free squares */
     if (COK_GET16(g_state_b + 0x582) > 0) {
-        /* B+$582: (word) distanza attuale dei nemici, limitata alle caselle libere */
+        /* B+$582: (word) current distance of the enemies, limited to the free squares */
         COK_PUT16(g_state_b + 0x582, COK_GET16(g_state_b + 0x582) - 1);
-        /* $2491: sprite SPRIT dell'incontro (ENCOUNTER/APPROACH); $2490: ritratto PIC dell'incontro
-         * (ENCOUNTER/APPROACH) */
+        /* $2491: SPRIT sprite of the encounter (ENCOUNTER/APPROACH); $2490: PIC portrait of the
+         * encounter (ENCOUNTER/APPROACH) */
         show_event_picture(H005_B(0x2491), H005_B(0x2490),
-                           /* B+$582: (word) distanza attuale dei nemici, limitata alle caselle
-                            * libere; $2378: flag: sprite dell'evento gia' mostrato (flags[0], 2
-                            * byte con +$2379) */
+                           /* B+$582: (word) current distance of the enemies, limited to the free squares; $2378: flag:
+                            * event sprite already shown (flags[0], 2 bytes with +$2379) */
                            (u8)COK_GET16(g_state_b + 0x582), &H005_B(0x2378));
     }
-    H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1); /* $3DEA: (word) PC logico del programma ECL (base $3500) */
+    H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1); /* $3DEA: (word) logical PC of the ECL program (base $3500) */
 }
 
 /*
- * PORT H064+$0B10 (comando $0E, PICTURE): mostra l'immagine n: dalla $70
- * un'immagine grande (la $79 con H069+$0012), sotto un PIC nella
- * finestra, con un ritratto testa+corpo se impostato; $FF chiude le
- * immagini e ridisegna la vista.
+ * PORT H064+$0B10 (command $0E, PICTURE): shows picture n: from $70
+ * a big picture ($79 with H069+$0012), below that a PIC in the
+ * window, with a head+body portrait if set; $FF closes the
+ * pictures and redraws the view.
  */
 void ecl_picture(void)
 {
@@ -384,49 +382,49 @@ void ecl_picture(void)
     read_operands(1);
     n = eval_operand(1);
     if (n != 0xFF) {
-        H005_B(0x2379) = 1; /* $2379: flag: ritratto dell'evento gia' mostrato (flags[1]) */
-        H005_B(0x24BD) = 1; /* $24BD: 1 se l'immagine/ritratto dell'evento e' a schermo */
-        /* B+$5C2: (word) testa del ritratto dell'evento, $FF immagine PIC */
+        H005_B(0x2379) = 1; /* $2379: flag: event portrait already shown (flags[1]) */
+        H005_B(0x24BD) = 1; /* $24BD: 1 if the event picture/portrait is on screen */
+        /* B+$5C2: (word) head of the event portrait, $FF PIC picture */
         if (COK_GET16(g_state_b + 0x5C2) == 0xFF) {
-            H005_B(0x24BC) = 1; /* $24BC: 1 se l'immagine dell'evento e' animabile (non testa+corpo) */
+            H005_B(0x24BC) = 1; /* $24BC: 1 if the event picture can be animated (not head+body) */
             if (n >= 0x70) {
                 load_big_picture(n);
                 show_big_picture();
                 if (n == 0x79) {
                     h069_draw_marker();
                 } else {
-                    /* $24AE: 1 con un'immagine grande a tutto schermo: niente elenco party */
+                    /* $24AE: 1 with a full-screen big picture: no party list */
                     H005_B(0x24AE) = 1;
                 }
-                H005_B(0x24E1) = 0; /* $24E1: 1: immagine/vista dell'esplorazione da ridisegnare */
+                H005_B(0x24E1) = 0; /* $24E1: 1: exploration picture/view to be redrawn */
             } else {
                 strcpy(name, "PIC");
                 load_sequence(0x50, name, n, 0);
                 show_picture(3, 3, 1, g_pic_rec_27c2);
             }
         } else {
-            /* B+$5C2: (word) testa del ritratto dell'evento, $FF immagine PIC */
+            /* B+$5C2: (word) head of the event portrait, $FF PIC picture */
             show_head_body(COK_GET16(g_state_b + 0x5C2), n);
         }
         return;
     }
-    /* $3DE2: contesto di gioco precedente (copia di $3DE3), salvato; $3DE3: modo/contesto di gioco
-     * corrente (0 menu, 1 vista, 5 combattimento) */
+    /* $3DE2: previous game context (copy of $3DE3), saved; $3DE3: current game mode/context (0
+     * menu, 1 view, 5 combat) */
     if ((H005_B(0x3DE2) != 4 || H005_B(0x3DE3) == 4) &&
-        /* $24BD: 1 se l'immagine/ritratto dell'evento e' a schermo; $24BA: 1 se lo sprite SPRIT
-         * dell'evento e' a schermo */
+        /* $24BD: 1 if the event picture/portrait is on screen; $24BA: 1 if the SPRIT sprite of
+         * the event is on screen */
         (H005_B(0x24BD) || H005_B(0x24BA))) {
-        H005_B(0x24E1) = 1; /* $24E1: 1: immagine/vista dell'esplorazione da ridisegnare */
+        H005_B(0x24E1) = 1; /* $24E1: 1: exploration picture/view to be redrawn */
         refresh_view();
-        H005_B(0x24BD) = 0; /* $24BD: 1 se l'immagine/ritratto dell'evento e' a schermo */
-        H005_B(0x24BA) = 0; /* $24BA: 1 se lo sprite SPRIT dell'evento e' a schermo */
-        H005_B(0x24BC) = 1; /* $24BC: 1 se l'immagine dell'evento e' animabile (non testa+corpo) */
+        H005_B(0x24BD) = 0; /* $24BD: 1 if the event picture/portrait is on screen */
+        H005_B(0x24BA) = 0; /* $24BA: 1 if the SPRIT sprite of the event is on screen */
+        H005_B(0x24BC) = 1; /* $24BC: 1 if the event picture can be animated (not head+body) */
     }
-    H005_B(0x2378) = 0; /* $2378: flag: sprite dell'evento gia' mostrato (flags[0], 2 byte con +$2379) */
-    H005_B(0x2379) = 0; /* $2379: flag: ritratto dell'evento gia' mostrato (flags[1]) */
+    H005_B(0x2378) = 0; /* $2378: flag: event sprite already shown (flags[0], 2 bytes with +$2379) */
+    H005_B(0x2379) = 0; /* $2379: flag: event portrait already shown (flags[1]) */
 }
 
-/* PORT H064+$0C62 (comando $0F, INPUT NUMBER). */
+/* PORT H064+$0C62 (command $0F, INPUT NUMBER). */
 void ecl_input_number(void)
 {
     u16 dst;                            /* -$6(a5) */
@@ -436,7 +434,7 @@ void ecl_input_number(void)
     write_var(dst, input_number(1, "", 0x0A, 0));
 }
 
-/* PORT H064+$0CC4 (comando $10, INPUT STRING): stringa vuota diventa " ". */
+/* PORT H064+$0CC4 (command $10, INPUT STRING): an empty string becomes " ". */
 void ecl_input_string(void)
 {
     char buf[0x51];                     /* -$56(a5) */
@@ -452,35 +450,35 @@ void ecl_input_string(void)
 }
 
 /*
- * PORT H064+$0D4A (comandi $11 PRINT e $12 PRINTCLEAR): testo (o numero)
- * nella finestra di testo; $12 riparte dall'alto e la pulisce.
+ * PORT H064+$0D4A (commands $11 PRINT and $12 PRINTCLEAR): text (or number)
+ * in the text window; $12 starts again from the top and clears it.
  */
 void ecl_print(void)
 {
     read_operands(1);
-    H005_B(0x24B9) = 0; /* $24B9: 0 dopo testo ECL; il menu comandi pulisce righe $11..$16 e mette 1 */
-    H005_B(0x24CE) = 1; /* $24CE: 1: pausa per carattere nella scrittura del testo */
+    H005_B(0x24B9) = 0; /* $24B9: 0 after ECL text; the command menu clears rows $11..$16 and sets 1 */
+    H005_B(0x24CE) = 1; /* $24CE: 1: per-character pause when writing text */
     if (OPD(1) < 0x80) {
         format_number(0xFF, ecl_string(1), (s32)eval_operand(1), 0, 0x0A, 4,
                       ' ');
         trim_leading_spaces(0xFF, ecl_string(1));
     }
-    if (H005_B(0x2493) == 0x11) { /* $2493: codice del comando ECL in esecuzione */
+    if (H005_B(0x2493) == 0x11) { /* $2493: code of the ECL command being executed */
         word_wrap_text(1, 0x11, 0x26, 0x16, 0x0A, 0, 0, 0xFF, ecl_string(1));
     } else {
-        H005_SET_W(0x334C, 0x11); /* $334C: (word) cursore del testo: riga */
-        H005_SET_W(0x334E, 1); /* $334E: (word) cursore del testo: colonna */
+        H005_SET_W(0x334C, 0x11); /* $334C: (word) text cursor: row */
+        H005_SET_W(0x334E, 1); /* $334E: (word) text cursor: column */
         word_wrap_text(1, 0x11, 0x26, 0x16, 0x0A, 0, 1, 0xFF, ecl_string(1));
     }
-    H005_B(0x24CE) = 0; /* $24CE: 1: pausa per carattere nella scrittura del testo */
+    H005_B(0x24CE) = 0; /* $24CE: 1: per-character pause when writing text */
 }
 
-/* PORT H064+$0E40 (comando $13, RETURN): torna dal GOSUB; senza pila e' EXIT. */
+/* PORT H064+$0E40 (command $13, RETURN): returns from GOSUB; without a stack it is EXIT. */
 void ecl_return(void)
 {
-    H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1); /* $3DEA: (word) PC logico del programma ECL (base $3500) */
+    H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1); /* $3DEA: (word) logical PC of the ECL program (base $3500) */
     if (g_ecl_stack != NULL) {
-        H005_SET_W(0x3DEA, g_ecl_stack->pc); /* $3DEA: (word) PC logico del programma ECL (base $3500) */
+        H005_SET_W(0x3DEA, g_ecl_stack->pc); /* $3DEA: (word) logical PC of the ECL program (base $3500) */
         g_ecl_stack_prev = g_ecl_stack->next;
         exec_free_mem(g_ecl_stack, sizeof(CokEclFrame));
         g_ecl_stack = g_ecl_stack_prev;
@@ -495,31 +493,31 @@ void ecl_compare_and(void)
     u16 v[4];                           /* -$8(a5) */
     u16 i;                              /* -$A(a5) */
 
-    /* $237E: risultati dell'ultimo confronto ECL, 6 byte: +0 uguale */
+    /* $237E: results of the last ECL comparison, 6 bytes: +0 equal */
     h029_fill_bytes(5, &H005_B(0x237E), 6, 0);
     read_operands(4);
     for (i = 1; i <= 4; ++i) {
         v[i - 1] = eval_operand(i);
     }
     if (v[0] == v[1] && v[2] == v[3]) {
-        H005_B(0x237E) = 1; /* $237E: risultati dell'ultimo confronto ECL, 6 byte: +0 uguale */
+        H005_B(0x237E) = 1; /* $237E: results of the last ECL comparison, 6 bytes: +0 equal */
     } else {
-        H005_B(0x237F) = 1; /* $237F: risultati del confronto +1: diverso */
+        H005_B(0x237F) = 1; /* $237F: comparison results +1: not equal */
     }
 }
 
 /*
- * PORT H064+$0F30 (comandi $16..$1B, IF =, <>, <, >, <=, >=): se il
- * risultato dell'ultimo confronto e' falso salta il comando seguente.
+ * PORT H064+$0F30 (commands $16..$1B, IF =, <>, <, >, <=, >=): if the
+ * result of the last comparison is false it skips the next command.
  */
 void ecl_if(void)
 {
     u16 i;                              /* -$2(a5) */
 
-    H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1); /* $3DEA: (word) PC logico del programma ECL (base $3500) */
+    H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1); /* $3DEA: (word) logical PC of the ECL program (base $3500) */
     for (i = 1; i <= 6; ++i) {
-        if (H005_B(0x2493) == i + 0x15) { /* $2493: codice del comando ECL in esecuzione */
-            /* $237D: uso: base calcolata $237E+i-1 con i>=1; vedi i risultati a +$237E */
+        if (H005_B(0x2493) == i + 0x15) { /* $2493: code of the ECL command being executed */
+            /* $237D: use: computed base $237E+i-1 with i>=1; see the results at +$237E */
             if (!H005_B(0x237E + i - 1)) {
                 ecl_skip_command();
                 return;
@@ -529,32 +527,32 @@ void ecl_if(void)
 }
 
 /*
- * PORT H064+$0F90 (comando $20, NEWECL): carica il programma dell'area n
- * (la precedente in $3E04+$1E4) e lo riparte dall'inizio.
+ * PORT H064+$0F90 (command $20, NEWECL): loads the program of area n
+ * (the previous one in $3E04+$1E4) and restarts it from the beginning.
  */
 void ecl_new_ecl(void)
 {
     u8 n;                               /* -$1(a5) */
 
     read_operands(1);
-    /* $2498: id del programma ECL dell'area corrente ($24 iniziale, $39 demo); A+$1E4: (word)
-     * numero dell'area ECL corrente (copia di $2498) */
+    /* $2498: id of the ECL program of the current area ($24 initial, $39 demo); A+$1E4:
+     * (word) number of the current ECL area (copy of $2498) */
     COK_PUT16(g_state_a + 0x1E4, H005_B(0x2498));
     n = (u8)eval_operand(1);
-    H005_B(0x2498) = n; /* $2498: id del programma ECL dell'area corrente ($24 iniziale, $39 demo) */
+    H005_B(0x2498) = n; /* $2498: id of the ECL program of the current area ($24 initial, $39 demo) */
     load_ecl_program(n);
     ecl_start_area();
-    H064_B(0x0B) = 1; /* H064_data+$B: flag fine esecuzione ECL (EXIT o NEWECL) */
-    H064_B(0x0A) = 1; /* H064_data+$A: flag NEWECL: nuovo programma caricato, riparte l'ingresso */
-    /* $2378: flag: sprite dell'evento gia' mostrato (flags[0], 2 byte con +$2379) */
+    H064_B(0x0B) = 1; /* H064_data+$B: end of ECL execution flag (EXIT or NEWECL) */
+    H064_B(0x0A) = 1; /* H064_data+$A: NEWECL flag: new program loaded, the entry restarts */
+    /* $2378: flag: event sprite already shown (flags[0], 2 bytes with +$2379) */
     h029_fill_bytes(1, &H005_B(0x2378), 2, 0);
 }
 
 /*
- * PORT H064+$1004 (comandi $21 LOAD FILES e $37 LOAD PIECES): mappa GEO
- * del dungeon ($21) o definizioni dei muri dei tre set ($37, $FF nessuna,
- * $7F tutte via); se cambiano entrambi nel dungeon si ridisegna la
- * cornice.
+ * PORT H064+$1004 (commands $21 LOAD FILES and $37 LOAD PIECES): GEO map
+ * of the dungeon ($21) or wall definitions of the three sets ($37, $FF none,
+ * $7F all removed); if both change in the dungeon the frame
+ * is redrawn.
  */
 void ecl_load_files(void)
 {
@@ -562,70 +560,70 @@ void ecl_load_files(void)
     u16 i;                              /* -$8(a5) */
 
     read_operands(3);
-    H064_B(8) = 1; /* H064_data+$8: flag LOAD FILES/PIECES eseguito: ridisegna la vista */
+    H064_B(8) = 1; /* H064_data+$8: LOAD FILES/PIECES done flag: redraws the view */
     for (i = 1; i <= 3; ++i) {
         v[i - 1] = eval_operand(i);
     }
-    if (H005_B(0x2493) == 0x21) { /* $2493: codice del comando ECL in esecuzione */
-        H064_B(6) = 1; /* H064_data+$6: flag mappa GEO caricata (LOAD FILES $21) nel programma */
-        /* A+$1CC: (word) 1 area 3D (mappa 16x16), 0 mappa all'aperto */
+    if (H005_B(0x2493) == 0x21) { /* $2493: code of the ECL command being executed */
+        H064_B(6) = 1; /* H064_data+$6: GEO map loaded flag (LOAD FILES $21) in the program */
+        /* A+$1CC: (word) 1 3D area (16x16 map), 0 outdoor map */
         if (v[0] != 0xFF && v[0] != 0x7F && COK_GET16(g_state_a + 0x1CC)) {
-            /* A+$18A: (word) id della mappa GEO caricata (ricaricata al Load) */
+            /* A+$18A: (word) id of the loaded GEO map (reloaded on Load) */
             COK_PUT16(g_state_a + 0x18A, v[0]);
             load_geo_map(v[0]);
-            /* B+$592: uso: se >= $FF il passo dell'esplorazione e' annullato (poi 0) */
+            /* B+$592: use: if >= $FF the exploration step is cancelled (then 0) */
             COK_PUT16(g_state_b + 0x592, 0);
         }
     } else {
-        H064_B(7) = 1; /* H064_data+$7: flag muri caricati (LOAD PIECES $37) nel programma */
+        H064_B(7) = 1; /* H064_data+$7: walls loaded flag (LOAD PIECES $37) in the program */
         if (v[0] == 0x7F) {
             load_wall_defs(0, 1);
-        /* A+$1CE: uso: con +$1D0 non nullo LOAD FILES carica solo i muri 1 e 3; A+$1D0: uso: con
-         * +$1CE non nullo LOAD FILES carica solo i muri 1 e 3 */
+        /* A+$1CE: use: with +$1D0 not zero LOAD FILES loads only walls 1 and 3; A+$1D0: use:
+         * with +$1CE not zero LOAD FILES loads only walls 1 and 3 */
         } else if (COK_GET16(g_state_a + 0x1CE) && COK_GET16(g_state_a + 0x1D0)) {
             if (v[0] != 0xFF) {
                 load_wall_defs(v[0], 1);
             } else {
-                /* $2810: tab. 3 voci da 4 byte dei set di muri: word id WALLDEF, $FFFF vuoto */
+                /* $2810: tab. of 3 4-byte entries of the wall sets: word WALLDEF id, $FFFF empty */
                 H005_SET_W(0x2810, 0xFFFF);
-                /* $2812: word +2 delle voci $2810: posizione (slot 1..3), $FFFF vuoto */
+                /* $2812: word +2 of the $2810 entries: position (slot 1..3), $FFFF empty */
                 H005_SET_W(0x2812, 0xFFFF);
             }
             if (v[2] != 0xFF && v[2] != 0x7F) {
                 load_wall_defs(v[2], 3);
             } else {
-                H005_SET_W(0x2818, 0xFFFF); /* $2818: word id WALLDEF della 3a voce di $2810 ($FFFF vuoto) */
-                H005_SET_W(0x281A, 0xFFFF); /* $281A: word posizione della 3a voce di $2810 ($FFFF vuoto) */
+                H005_SET_W(0x2818, 0xFFFF); /* $2818: WALLDEF id word of the 3rd entry of $2810 ($FFFF empty) */
+                H005_SET_W(0x281A, 0xFFFF); /* $281A: position word of the 3rd entry of $2810 ($FFFF empty) */
             }
         } else {
             for (i = 1; i <= 3; ++i) {
                 if (v[i - 1] != 0xFF) {
                     load_wall_defs(v[i - 1], i);
                 } else {
-                    /* $2810: tab. 3 voci da 4 byte dei set di muri: word id WALLDEF, $FFFF vuoto */
+                    /* $2810: tab. of 3 4-byte entries of the wall sets: word WALLDEF id, $FFFF empty */
                     H005_SET_W(0x2810 + (i - 1) * 4, 0xFFFF);
-                    /* $2812: word +2 delle voci $2810: posizione (slot 1..3), $FFFF vuoto */
+                    /* $2812: word +2 of the $2810 entries: position (slot 1..3), $FFFF empty */
                     H005_SET_W(0x2810 + (i - 1) * 4 + 2, 0xFFFF);
                 }
             }
         }
     }
-    /* H064_data+$7: flag muri caricati (LOAD PIECES $37) nel programma; H064_data+$6: flag mappa
-     * GEO caricata (LOAD FILES $21) nel programma; $3DE2: contesto di gioco precedente (copia di
-     * $3DE3), salvato */
+    /* H064_data+$7: walls loaded flag (LOAD PIECES $37) in the program; H064_data+$6: GEO map
+     * loaded flag (LOAD FILES $21) in the program; $3DE2: previous game context (copy of
+     * $3DE3), saved */
     if (H064_B(7) && H064_B(6) && H005_B(0x3DE2) == 3) {
-        /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento); $24B2: 1:
-         * cornice dell'esplorazione da ridisegnare (dopo LOAD FILES) */
+        /* $3DE3: game mode (0 menu, 1 view, 2 camp, 5 combat); $24B2: 1: exploration
+         * frame to be redrawn (after LOAD FILES) */
         if (H005_B(0x3DE3) != 3 && H005_B(0x24B2)) {
             draw_explore_frame();
             draw_party(g_current_char);
             draw_status_line();
         }
-        H005_B(0x24B2) = 0; /* $24B2: 1: cornice dell'esplorazione da ridisegnare (dopo LOAD FILES) */
+        H005_B(0x24B2) = 0; /* $24B2: 1: exploration frame to be redrawn (after LOAD FILES) */
     }
 }
 
-/* PORT H064+$121C (comandi $2F AND e $30 OR): bit a bit, confronto con 0. */
+/* PORT H064+$121C (commands $2F AND and $30 OR): bitwise, comparison with 0. */
 void ecl_and_or(void)
 {
     u16 a;                              /* -$6(a5) */
@@ -637,7 +635,7 @@ void ecl_and_or(void)
     a = eval_operand(1);
     b = eval_operand(2);
     dst = ADDR(3);
-    if (H005_B(0x2493) == 0x2F) { /* $2493: codice del comando ECL in esecuzione */
+    if (H005_B(0x2493) == 0x2F) { /* $2493: code of the ECL command being executed */
         r = mask_byte((u8)a, b);
     } else {
         r = or_byte((u8)a, b);
@@ -646,7 +644,7 @@ void ecl_and_or(void)
     write_var(dst, r);
 }
 
-/* PORT H064+$12CA (comando $2A, GETTABLE): dst = base[i]. */
+/* PORT H064+$12CA (command $2A, GETTABLE): dst = base[i]. */
 void ecl_get_table(void)
 {
     u16 base;                           /* -$2(a5) */
@@ -660,7 +658,7 @@ void ecl_get_table(void)
     write_var(dst, read_var((u16)(base + i)));
 }
 
-/* PORT H064+$1346 (comando $35, SETTABLE): base[i] = valore. */
+/* PORT H064+$1346 (command $35, SETTABLE): base[i] = value. */
 void ecl_set_table(void)
 {
     u16 val;                            /* -$6(a5) */
@@ -675,9 +673,9 @@ void ecl_set_table(void)
 }
 
 /*
- * PORT H064+$13AC (comando $15, VERTICAL MENU): testo nella finestra,
- * poi una lista di n voci (gli operandi seguenti); la scelta va nella
- * variabile del primo operando.
+ * PORT H064+$13AC (command $15, VERTICAL MENU): text in the window,
+ * then a list of n entries (the following operands); the choice goes into the
+ * variable of the first operand.
  */
 void ecl_vertical_menu(void)
 {
@@ -691,20 +689,20 @@ void ecl_vertical_menu(void)
     CokMenuItem *head;                  /* -$10C(a5) */
     u16 sel;                            /* -$110(a5) */
 
-    H005_B(0x2483) = 1; /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
-    H005_B(0x24B9) = 0; /* $24B9: 0 dopo testo ECL; il menu comandi pulisce righe $11..$16 e mette 1 */
+    H005_B(0x2483) = 1; /* $2483: index of the selected option in the row menus (persistent) */
+    H005_B(0x24B9) = 0; /* $24B9: 0 after ECL text; the command menu clears rows $11..$16 and sets 1 */
     title[0] = '\0';
     title[1] = '\0';
     read_operands(3);
     dst = ADDR(1);
     memcpy(text, ecl_string(1), 0x100);
     n = eval_operand(3);
-    H005_SET_W(0x3DEA, H005_W(0x3DEA) - 1); /* $3DEA: (word) PC logico del programma ECL (base $3500) */
+    H005_SET_W(0x3DEA, H005_W(0x3DEA) - 1); /* $3DEA: (word) logical PC of the ECL program (base $3500) */
     read_operands(n);
     menu_alloc(n, &list);
     head = list;
-    H005_SET_W(0x334E, 1); /* $334E: (word) cursore del testo: colonna */
-    H005_SET_W(0x334C, 0x11); /* $334C: (word) cursore del testo: riga */
+    H005_SET_W(0x334E, 1); /* $334E: (word) text cursor: column */
+    H005_SET_W(0x334C, 0x11); /* $334C: (word) text cursor: row */
     word_wrap_text(1, 0x11, 0x26, 0x16, 0x0A, 0, 1, 0xFF, text);
     while (list != NULL) {
         h026_copy(0x28, list->text, 0xFF, ecl_string(k));
@@ -715,7 +713,7 @@ void ecl_vertical_menu(void)
     list = head;
     sel = 0;
     (void)ecl_list_menu(1, title, 1, title, 0x0D, 0x0A, 0x0F, 1,
-                        /* $334C: (word) cursore del testo: riga */
+                        /* $334C: (word) text cursor: row */
                         (u16)(H005_W(0x334C) + 1), 0x26, 0x16, list, 0,
                         &redraw, &sel, &list);
     write_var(dst, sel);
@@ -724,10 +722,10 @@ void ecl_vertical_menu(void)
 }
 
 /*
- * PORT H064+$1544 (comando $2B, HORIZONTAL MENU): opzioni con le
- * scorciatoie '~' sulla riga dei messaggi; con una sola opzione Invio la
- * conferma (e "PRESS BUTTON OR RETURN..." diventa la versione da
- * tastiera).  La scelta va nella variabile del primo operando.
+ * PORT H064+$1544 (command $2B, HORIZONTAL MENU): options with the
+ * '~' shortcuts on the message row; with a single option Enter
+ * confirms it (and "PRESS BUTTON OR RETURN..." becomes the
+ * keyboard version).  The choice goes into the variable of the first operand.
  */
 void ecl_horizontal_menu(void)
 {
@@ -741,14 +739,14 @@ void ecl_horizontal_menu(void)
     u16 pen3;                           /* -$42(a5) */
     u16 pen2;                           /* -$44(a5) */
 
-    H005_B(0x2483) = 1; /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
+    H005_B(0x2483) = 1; /* $2483: index of the selected option in the row menus (persistent) */
     title[0] = '\0';
     title[1] = '\0';
     opts[0] = '\0';
     read_operands(2);
     dst = ADDR(1);
     n = eval_operand(2);
-    H005_SET_W(0x3DEA, H005_W(0x3DEA) - 1); /* $3DEA: (word) PC logico del programma ECL (base $3500) */
+    H005_SET_W(0x3DEA, H005_W(0x3DEA) - 1); /* $3DEA: (word) logical PC of the ECL program (base $3500) */
     read_operands(n);
     opts[0] = '\0';
     if (n == 1) {
@@ -765,8 +763,8 @@ void ecl_horizontal_menu(void)
         pen3 = 0x0F;
         pen2 = 0x0A;
     }
-    /* $24BD: 1 se l'immagine/ritratto dell'evento e' a schermo; $24BC: 1 se l'immagine dell'evento
-     * e' animabile (non testa+corpo) */
+    /* $24BD: 1 if the event picture/portrait is on screen; $24BC: 1 if the event picture can be
+     * animated (not head+body) */
     animate = (u8)(H005_B(0x24BD) && H005_B(0x24BC));
     for (k = 1; k <= (u16)(n - 1); ++k) {
         h026_append(0x32, opts, 1, "~");
@@ -781,19 +779,19 @@ void ecl_horizontal_menu(void)
 }
 
 /*
- * PORT H064+$1748 (comando $1C, CLEAR MONSTERS): nessun mostro caricato,
- * posti delle figure da 8, tesoro ($2A1E..$2A39 e la lista $2A3A) vuoto.
+ * PORT H064+$1748 (command $1C, CLEAR MONSTERS): no monster loaded,
+ * figure slots from 8, treasure ($2A1E..$2A39 and the list $2A3A) empty.
  */
 void ecl_clear_monsters(void)
 {
     CokItem *next;                      /* -$4(a5) */
 
-    H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1); /* $3DEA: (word) PC logico del programma ECL (base $3500) */
-    H005_B(0x248F) = 0; /* $248F: mostri caricati con +$DF: limite di Turn Undead (turno +$13) */
-    H064_B(5) = 0; /* H064_data+$5: numero di mostri caricati con LOAD MONSTER (max $3F) */
-    H005_B(0x24B6) = 0; /* $24B6: 1 se ci sono mostri caricati (LOAD MONSTER) per COMBAT */
-    H005_B(0x248E) = 8; /* $248E: prossimo posto del set di figure CPIC per i mostri (da 8) */
-    /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
+    H005_SET_W(0x3DEA, H005_W(0x3DEA) + 1); /* $3DEA: (word) logical PC of the ECL program (base $3500) */
+    H005_B(0x248F) = 0; /* $248F: monsters loaded with +$DF: Turn Undead limit (turn +$13) */
+    H064_B(5) = 0; /* H064_data+$5: number of monsters loaded with LOAD MONSTER (max $3F) */
+    H005_B(0x24B6) = 0; /* $24B6: 1 if there are monsters loaded (LOAD MONSTER) for COMBAT */
+    H005_B(0x248E) = 8; /* $248E: next slot of the CPIC figure set for the monsters (from 8) */
+    /* $2A1E: party pool: 7 longs, coins per type 0..6 (4 = steel) */
     h029_fill_bytes(0x1B, &H005_B(0x2A1E), 0x1C, 0);
     while (g_treasure_items != NULL) {
         next = g_treasure_items->next;
@@ -803,9 +801,9 @@ void ecl_clear_monsters(void)
 }
 
 /*
- * PORT H064+$17BC (comando $1D, PARTY STRENGTH): somma per personaggio di
- * (PF + CA*5 + THAC0*5 + livello*8 + livello2*4) / 10 (byte, CA oltre
- * $3C e THAC0 oltre $27), nella variabile dell'operando.
+ * PORT H064+$17BC (command $1D, PARTY STRENGTH): per character sum of
+ * (HP + AC*5 + THAC0*5 + level*8 + level2*4) / 10 (byte, AC beyond
+ * $3C and THAC0 beyond $27), into the variable of the operand.
  */
 void ecl_party_strength(void)
 {
@@ -819,13 +817,13 @@ void ecl_party_strength(void)
 
     read_operands(1);
     for (p = g_party_head; p != NULL; p = p->next) {
-        hp = p->b[0x1A8]; /* pg+$1A8: punti ferita correnti */
-        ac = p->b[0x19C]; /* pg+$19C: classe d'armatura corrente codificata (60 - CA) */
-        thac0 = p->b[0x19B]; /* pg+$19B: THAC0 corrente codificato (60 - THAC0) */
-        /* pg+$103: livello da mago; pg+$10B: livello precedente da mago */
+        hp = p->b[0x1A8]; /* ch+$1A8: current hit points */
+        ac = p->b[0x19C]; /* ch+$19C: encoded current armour class (60 - AC) */
+        thac0 = p->b[0x19B]; /* ch+$19B: encoded current THAC0 (60 - THAC0) */
+        /* ch+$103: mage level; ch+$10B: previous mage level */
         lvl = (u8)(p->b[0x103] + p->b[0x10B] * h073_130a(p));
-        /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico; pg+$106: livelli
-         * della classe precedente, 8 voci come +$FE; chierico */
+        /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric; ch+$106: levels of the
+         * previous class, 8 entries like +$FE; cleric */
         lvl2 = (u8)(p->b[0xFE] + p->b[0x106] * h073_130a(p));
         ac = (u8)(ac > 0x3C ? ac - 0x3C : 0);
         thac0 = (u8)(thac0 > 0x27 ? thac0 - 0x27 : 0);

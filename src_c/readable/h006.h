@@ -1,4 +1,4 @@
-/* H006: preparazione dell'ambiente, percorsi, stato e risorse comuni. */
+/* H006: setup of the environment, paths, state and shared resources. */
 #ifndef COK_H006_H
 #define COK_H006_H
 

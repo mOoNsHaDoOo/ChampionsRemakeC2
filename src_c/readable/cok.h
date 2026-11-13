@@ -1,17 +1,17 @@
 /*
- * Champions of Krynn - port in C dall'assembly 68000 (rebuild/source).
+ * Champions of Krynn - C port from the 68000 assembly (rebuild/source).
  *
- * Regole del port:
- *   - ogni funzione portata ha sopra il marcatore  PORT Hnnn+$XXXX  con
- *     l'indirizzo della routine originale (vedi scripts/port_status.py);
- *   - il comportamento segue l'assembly; dove il C deve scostarsi (host,
- *     puntatori a 64 bit, accessi fuori dai limiti) il commento lo dice;
- *   - le routine non ancora portate stanno in unported.c e fermano il
- *     programma indicando il loro indirizzo.
+ * Rules of the port:
+ *   - every ported function has the marker  PORT Hnnn+$XXXX  above it with
+ *     the address of the original routine (see scripts/port_status.py);
+ *   - the behaviour follows the assembly; where the C has to differ (host,
+ *     64-bit pointers, out-of-bounds accesses) the comment says so;
+ *   - the routines not ported yet live in unported.c and stop the
+ *     program reporting their address.
  *
- * Convenzione di chiamata originale: argomenti sullo stack nell'ordine di
- * dichiarazione (il primo e' all'offset piu' alto), tolti dal chiamato.
- * Nel C gli argomenti seguono lo stesso ordine.
+ * Original calling convention: arguments on the stack in declaration
+ * order (the first one is at the highest offset), removed by the callee.
+ * In C the arguments follow the same order.
  */
 #ifndef COK_H
 #define COK_H
@@ -19,7 +19,7 @@
 #include <stddef.h>
 #include <string.h>
 
-/* Piattaforma: SAS/C (o altro compilatore Amiga) oppure host. */
+/* Platform: SAS/C (or another Amiga compiler) or host. */
 #if defined(__SASC) || defined(__AMIGA__) || defined(AMIGA)
 #define COK_AMIGA 1
 #else
@@ -56,10 +56,10 @@ typedef uint32_t u32;
 typedef int32_t  s32;
 #endif
 
-/* Word e long big-endian dentro i blocchi di byte (formato dei file). */
+/* Big-endian words and longs inside byte blocks (file format). */
 #define COK_GET16(p)  ((u16)(((const u8 *)(p))[0] << 8 | ((const u8 *)(p))[1]))
 #define COK_GET32(p)  ((u32)COK_GET16(p) << 16 | COK_GET16((const u8 *)(p) + 2))
-/* Argomento valutato una sola volta (puo' essere una chiamata). */
+/* Argument evaluated only once (it may be a call). */
 #define COK_PUT16(p, v) do { u16 cok_w_ = (u16)(v); \
                              u8 *cok_p_ = (u8 *)(p); \
                              cok_p_[0] = (u8)(cok_w_ >> 8); \
@@ -71,11 +71,11 @@ typedef int32_t  s32;
                              cok_q_[2] = (u8)(cok_l_ >> 8); \
                              cok_q_[3] = (u8)cok_l_; } while (0)
 
-/* Ferma il programma su una routine non ancora portata (unported.c). */
+/* Stops the program on a routine not ported yet (unported.c). */
 void cok_unported(const char *where);
 /*
- * Routine non ancora portata che si puo' saltare senza fermare il gioco
- * (solo audio): stampa un avviso la prima volta e prosegue.
+ * Routine not ported yet that can be skipped without stopping the game
+ * (audio only): prints a warning the first time and goes on.
  */
 void cok_unported_skip(const char *where);
 

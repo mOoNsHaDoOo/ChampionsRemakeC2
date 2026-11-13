@@ -1,4 +1,4 @@
-/* H058: riposo e scorrere del tempo. */
+/* H058: resting and the passing of time. */
 #ifndef COK_H058_H
 #define COK_H058_H
 #include "cok.h"

@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H098
-; Backend di lettura/posizionamento file per il parser IFF.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H098
+; File read/seek backend for the IFF parser.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Backend di lettura/posizionamento file per il parser IFF.
+; MODULE NOTE
+; File read/seek backend for the IFF parser.
 ; --------------------------------------------------------------------------
 ; H098: 844 original bytes; all offsets are section-relative.
         section H098,code
@@ -17,10 +17,10 @@ H098:
         dc.w $0000,$0000
         dc.l H098+$00000014
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H098_0346 [parziale]
-; Scopo: Trampolino verso H098+$0346; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H098+$0346.
-; Chiamanti diretti: H000+$00C0
+; ROUTINE: trampoline_H098_0346 [partial]
+; Purpose: Trampoline to H098+$0346; the actual body is there.
+;   - Jumps to the actual body at H098+$0346.
+; Direct callers: H000+$00C0
 ; --------------------------------------------------------------------------
 L098_00000018:
 ; H098+$00000018: 4e550000  link.w a5, #$0
@@ -40,10 +40,10 @@ L098_0000001C:
         dc.l H002+$00000014
         dc.w $202D,$FFFC,$6000,$0002,$4E5D,$205F,$588F,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H098_0000007C [parziale]
-; Scopo: Routine del modulo backend di lettura/posizionamento file per il parser IFF; richiama H002+$0122.
-;   - Richiama H002+$0122.
-; Chiamanti diretti: H086+$0448, H086+$02CC
+; ROUTINE: sub_H098_0000007C [partial]
+; Purpose: Routine of the file read/seek backend for the IFF parser module; calls H002+$0122.
+;   - Calls H002+$0122.
+; Direct callers: H086+$0448, H086+$02CC
 ; --------------------------------------------------------------------------
 L098_0000007C:
 ; H098+$0000007C: 4e55fffc  link.w a5, #$fffc
@@ -110,10 +110,10 @@ L098_000000CE:
 ; H098+$000000CE: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H098_000000D0 [parziale]
-; Scopo: Routine del modulo backend di lettura/posizionamento file per il parser IFF; richiama H002+$01CC.
-;   - Richiama H002+$01CC.
-; Chiamanti diretti: H098+$02DE, H098+$0096
+; ROUTINE: sub_H098_000000D0 [partial]
+; Purpose: Routine of the file read/seek backend for the IFF parser module; calls H002+$01CC.
+;   - Calls H002+$01CC.
+; Direct callers: H098+$02DE, H098+$0096
 ; --------------------------------------------------------------------------
 L098_000000D0:
 ; H098+$000000D0: 4e55fffc  link.w a5, #$fffc
@@ -232,10 +232,10 @@ L098_0000012C:
         dc.w $2400,$D5AD,$FFFC,$202D,$FFFC,$6000,$0002,$4E5D
         dc.w $205F,$4FEF,$000C,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H098_00000276 [parziale]
-; Scopo: Routine del modulo backend di lettura/posizionamento file per il parser IFF; richiama H002+$0156.
-;   - Richiama H002+$0156.
-; Chiamanti diretti: H086+$0086, H086+$002C, H086+$003E, H086+$0140
+; ROUTINE: sub_H098_00000276 [partial]
+; Purpose: Routine of the file read/seek backend for the IFF parser module; calls H002+$0156.
+;   - Calls H002+$0156.
+; Direct callers: H086+$0086, H086+$002C, H086+$003E, H086+$0140
 ; --------------------------------------------------------------------------
 L098_00000276:
 ; H098+$00000276: 4e55fff8  link.w a5, #$fff8

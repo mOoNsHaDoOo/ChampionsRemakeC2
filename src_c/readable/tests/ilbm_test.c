@@ -1,7 +1,7 @@
 /*
- * Legge un file ILBM con Read_ILBM (H040) e scrive su out: w, h, piani
- * (word big-endian), numero di colori (byte), i colori RGB4 (word) e i
- * piani della bitmap.  Confronto: scripts/check_ilbm.py.
+ * Reads an ILBM file with Read_ILBM (H040) and writes to out: w, h, planes
+ * (big-endian words), number of colours (byte), the RGB4 colours (words) and
+ * the planes of the bitmap.  Comparison: scripts/check_ilbm.py.
  *   ./ilbm_test file.lbm out.bin
  */
 #include <stdio.h>
@@ -26,18 +26,18 @@ int main(int argc, char **argv)
     int i;
 
     if (argc < 3) {
-        printf("uso: ilbm_test file.lbm out.bin\n");
+        printf("usage: ilbm_test file.lbm out.bin\n");
         return 2;
     }
     memset(&bm, 0, sizeof(bm));
     file = dos_open(argv[1], MODE_OLDFILE);
     if (file == 0) {
-        printf("%s: non trovato\n", argv[1]);
+        printf("%s: not found\n", argv[1]);
         return 2;
     }
     iffp = read_ilbm(file, &bm, &frame, alloc_planes);
     dos_close(file);
-    printf("%s: iffp %ld, %ux%u, %u piani, %u colori\n", argv[1], (long)iffp,
+    printf("%s: iffp %ld, %ux%u, %u planes, %u colours\n", argv[1], (long)iffp,
            frame.bm_hdr.w, frame.bm_hdr.h, bm.Depth, frame.n_color_regs);
     out = fopen(argv[2], "wb");
     fputc(bm.BytesPerRow >> 8, out); fputc(bm.BytesPerRow & 0xFF, out);

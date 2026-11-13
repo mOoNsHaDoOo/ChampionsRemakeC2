@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H036
-; Adattatore dos.library/Delay.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H036
+; dos.library/Delay adapter.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Adattatore dos.library/Delay: converte l'attesa nel formato richiesto e chiama l'LVO.
+; MODULE NOTE
+; dos.library/Delay adapter: converts the wait into the required format and calls the LVO.
 ; --------------------------------------------------------------------------
 ; H036: 144 original bytes; all offsets are section-relative.
         section H036,code
@@ -16,10 +16,10 @@ H036:
         dc.w $0000,$0000
         dc.l H036+$00000004
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H036_00000008 [parziale]
-; Scopo: Routine del modulo adattatore dos.library/Delay; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H000+$0078
+; ROUTINE: sub_H036_00000008 [partial]
+; Purpose: Routine of the dos.library/Delay adapter module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H000+$0078
 ; --------------------------------------------------------------------------
 L036_00000008:
 ; H036+$00000008: 41fafffa  lea.l $4(pc), a0
@@ -34,10 +34,10 @@ L036_00000012:
         dc.w $222F,$0010,$242F,$000C,$262F,$0008,$282F,$0004
         dc.w $2C7A,$FFDA,$2F57,$0010,$4FEF,$0010,$4EEE,$FF76
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_Delay [parziale]
-; Scopo: Adattatore a dos.library/Delay; incapsula la chiamata alla libreria.
-;   - Chiama dos.library/Delay (LVO -198).
-; Chiamanti diretti: H030+$0B60, H007+$066E, H063+$2914, H042+$0BFC, H048+$1546, H030+$0398 e altri 4
+; ROUTINE: wrapper_Delay [partial]
+; Purpose: Adapter to dos.library/Delay; wraps the library call.
+;   - Calls dos.library/Delay (LVO -198).
+; Direct callers: H030+$0B60, H007+$066E, H063+$2914, H042+$0BFC, H048+$1546, H030+$0398 and 4 more
 ; --------------------------------------------------------------------------
 L036_00000034:
 ; H036+$00000034: 222f0004  move.l $4(a7), d1

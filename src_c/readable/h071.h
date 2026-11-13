@@ -1,4 +1,4 @@
-/* H071: negozio e acquisto di oggetti. */
+/* H071: shop and buying of items. */
 #ifndef COK_H071_H
 #define COK_H071_H
 #include "character.h"

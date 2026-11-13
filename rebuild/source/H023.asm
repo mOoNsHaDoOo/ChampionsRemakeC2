@@ -1,8 +1,8 @@
 ; ============================================================================
-; GUIDA DEL MODULO H023
-; servizi di inizializzazione condivisi (chiamato da più moduli).
-; I commenti descrivono l'analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H023
+; shared initialisation services (called by several modules).
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 ; H023: 140 original bytes; all offsets are section-relative.
         section H023,code
@@ -11,10 +11,10 @@ H023:
         dc.w $0000,$0000
         dc.l H023+$00000004
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H023_007E [parziale]
-; Scopo: Trampolino verso H023+$007E; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H023+$007E.
-; Chiamanti diretti: H000+$0054
+; ROUTINE: trampoline_H023_007E [partial]
+; Purpose: Trampoline to H023+$007E; the actual body is there.
+;   - Jumps to the actual body at H023+$007E.
+; Direct callers: H000+$0054
 ; --------------------------------------------------------------------------
 L023_00000008:
 ; H023+$00000008: 4e550000  link.w a5, #$0
@@ -23,11 +23,11 @@ L023_0000000C:
 ; H023+$0000000C: 60000070  bra.w $7e
         bra.w H023+$7E
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H023_00000010 [parziale]
-; Scopo: Routine del modulo servizi di inizializzazione condivisi (chiamato da più moduli); richiama H015+$004A, H015+$006E.
-;   - Richiama H015+$004A.
-;   - Richiama H015+$006E.
-; Chiamanti diretti: H062+$159E, H009+$0134, H009+$016C, H009+$01AA, H042+$049C, H013+$0AD0 e altri 9
+; ROUTINE: sub_H023_00000010 [partial]
+; Purpose: Routine of the shared initialisation services (called by several modules) module; calls H015+$004A, H015+$006E.
+;   - Calls H015+$004A.
+;   - Calls H015+$006E.
+; Direct callers: H062+$159E, H009+$0134, H009+$016C, H009+$01AA, H042+$049C, H013+$0AD0 and 9 more
 ; --------------------------------------------------------------------------
 L023_00000010:
 ; H023+$00000010: 4e550000  link.w a5, #$0

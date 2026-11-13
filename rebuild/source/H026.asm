@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H026
-; Helper su stringhe e buffer con limiti passati dai chiamanti.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H026
+; String and buffer helpers with limits passed by the callers.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Helper su stringhe e buffer: copia con limiti, confronto, conversione e gestione di terminazioni. Non sono routine C con ABI completa.
+; MODULE NOTE
+; String and buffer helpers: copy with limits, comparison, conversion and handling of terminators. They are not C routines with a complete ABI.
 ; --------------------------------------------------------------------------
 ; H026: 1452 original bytes; all offsets are section-relative.
         section H026,code
@@ -15,10 +15,10 @@ H026:
 ; Preserved bytes H026+$00000000..$00000004; code/data not fully classified.
         dc.l H026+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H026_05A6 [parziale]
-; Scopo: Trampolino verso H026+$05A6; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H026+$05A6.
-; Chiamanti diretti: H000+$006C
+; ROUTINE: trampoline_H026_05A6 [partial]
+; Purpose: Trampoline to H026+$05A6; the actual body is there.
+;   - Jumps to the actual body at H026+$05A6.
+; Direct callers: H000+$006C
 ; --------------------------------------------------------------------------
 L026_00000004:
 ; H026+$00000004: 4e550000  link.w a5, #$0
@@ -27,10 +27,10 @@ L026_00000008:
 ; H026+$00000008: 6000059c  bra.w $5a6
         bra.w H026+$5A6
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H026_0014 [parziale]
-; Scopo: Trampolino verso H026+$0014; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H026+$0014.
-; Chiamanti diretti: H026+$01F0, H063+$1FAA, H030+$0540, H008+$05FE, H008+$0644, H028+$0458 e altri 54
+; ROUTINE: trampoline_H026_0014 [partial]
+; Purpose: Trampoline to H026+$0014; the actual body is there.
+;   - Jumps to the actual body at H026+$0014.
+; Direct callers: H026+$01F0, H063+$1FAA, H030+$0540, H008+$05FE, H008+$0644, H028+$0458 and 54 more
 ; --------------------------------------------------------------------------
 L026_0000000C:
 ; H026+$0000000C: 4e55fffe  link.w a5, #$fffe
@@ -75,10 +75,10 @@ L026_00000038:
 ; H026+$00000038: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H026_0000003A [parziale]
-; Scopo: Routine del modulo helper su stringhe e buffer con limiti passati dai chiamanti; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H026+$0156, H026+$0162, H030+$097E, H043+$1158, H043+$12DC, H043+$0ACA
+; ROUTINE: sub_H026_0000003A [partial]
+; Purpose: Routine of the string and buffer helpers with limits passed by the callers module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H026+$0156, H026+$0162, H030+$097E, H043+$1158, H043+$12DC, H043+$0ACA
 ; --------------------------------------------------------------------------
 L026_0000003A:
 ; H026+$0000003A: 4e55fffe  link.w a5, #$fffe
@@ -150,10 +150,10 @@ L026_00000086:
 ; H026+$00000086: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H026_00000088 [parziale]
-; Scopo: Routine del modulo helper su stringhe e buffer con limiti passati dai chiamanti; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H026+$0176, H009+$037E, H009+$03A4, H043+$0FAC, H043+$129A, H043+$132C e altri 14
+; ROUTINE: sub_H026_00000088 [partial]
+; Purpose: Routine of the string and buffer helpers with limits passed by the callers module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H026+$0176, H009+$037E, H009+$03A4, H043+$0FAC, H043+$129A, H043+$132C and 14 more
 ; --------------------------------------------------------------------------
 L026_00000088:
 ; H026+$00000088: 4e55fffe  link.w a5, #$fffe
@@ -260,10 +260,10 @@ L026_00000104:
 ; H026+$00000104: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H026_00000106 [parziale]
-; Scopo: Routine del modulo helper su stringhe e buffer con limiti passati dai chiamanti; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H006+$01D0, H028+$0690, H028+$06DE, H035+$02B4, H035+$02D4, H029+$0A78 e altri 21
+; ROUTINE: sub_H026_00000106 [partial]
+; Purpose: Routine of the string and buffer helpers with limits passed by the callers module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H006+$01D0, H028+$0690, H028+$06DE, H035+$02B4, H035+$02D4, H029+$0A78 and 21 more
 ; --------------------------------------------------------------------------
 L026_00000106:
 ; H026+$00000106: 4e550000  link.w a5, #$0
@@ -389,10 +389,10 @@ L026_00000186:
 ; H026+$00000186: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H026_00000188 [parziale]
-; Scopo: Routine del modulo helper su stringhe e buffer con limiti passati dai chiamanti; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H043+$059E, H043+$05FC, H028+$06B0, H028+$06C8, H009+$0186, H009+$019C e altri 131
+; ROUTINE: sub_H026_00000188 [partial]
+; Purpose: Routine of the string and buffer helpers with limits passed by the callers module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H043+$059E, H043+$05FC, H028+$06B0, H028+$06C8, H009+$0186, H009+$019C and 131 more
 ; --------------------------------------------------------------------------
 L026_00000188:
 ; H026+$00000188: 4e55fffe  link.w a5, #$fffe
@@ -467,10 +467,10 @@ L026_000001DE:
 ; H026+$000001DE: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H026_000001E0 [parziale]
-; Scopo: Routine del modulo helper su stringhe e buffer con limiti passati dai chiamanti; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H056+$07D8, H062+$2288, H062+$229E, H056+$0948, H056+$095E, H056+$0974 e altri 281
+; ROUTINE: sub_H026_000001E0 [partial]
+; Purpose: Routine of the string and buffer helpers with limits passed by the callers module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H056+$07D8, H062+$2288, H062+$229E, H056+$0948, H056+$095E, H056+$0974 and 281 more
 ; --------------------------------------------------------------------------
 L026_000001E0:
 ; H026+$000001E0: 4e55fffc  link.w a5, #$fffc
@@ -565,10 +565,10 @@ L026_00000252:
 ; H026+$00000252: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H026_00000254 [parziale]
-; Scopo: Routine del modulo helper su stringhe e buffer con limiti passati dai chiamanti; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H063+$100E, H014+$007A, H014+$0092, H009+$0294, H009+$0306, H063+$112C e altri 22
+; ROUTINE: sub_H026_00000254 [partial]
+; Purpose: Routine of the string and buffer helpers with limits passed by the callers module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H063+$100E, H014+$007A, H014+$0092, H009+$0294, H009+$0306, H063+$112C and 22 more
 ; --------------------------------------------------------------------------
 L026_00000254:
 ; H026+$00000254: 4e55fff0  link.w a5, #$fff0
@@ -822,10 +822,10 @@ L026_00000390:
         dc.w $526D,$FFFC,$526D,$FFFE,$60B4,$4E5D,$205F,$4FEF
         dc.w $000E,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H026_000003F6 [parziale]
-; Scopo: Routine del modulo helper su stringhe e buffer con limiti passati dai chiamanti; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H028+$04A4, H028+$054E, H063+$0AEA, H030+$0828, H066+$1CF4, H013+$55BC e altri 6
+; ROUTINE: sub_H026_000003F6 [partial]
+; Purpose: Routine of the string and buffer helpers with limits passed by the callers module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H028+$04A4, H028+$054E, H063+$0AEA, H030+$0828, H066+$1CF4, H013+$55BC and 6 more
 ; --------------------------------------------------------------------------
 L026_000003F6:
 ; H026+$000003F6: 4e55fffc  link.w a5, #$fffc
@@ -900,10 +900,10 @@ L026_00000450:
 ; H026+$00000450: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H026_00000452 [parziale]
-; Scopo: Routine del modulo helper su stringhe e buffer con limiti passati dai chiamanti; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H035+$029E, H029+$0A62, H028+$0488, H028+$0532, H057+$318A, H066+$1B76 e altri 9
+; ROUTINE: sub_H026_00000452 [partial]
+; Purpose: Routine of the string and buffer helpers with limits passed by the callers module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H035+$029E, H029+$0A62, H028+$0488, H028+$0532, H057+$318A, H066+$1B76 and 9 more
 ; --------------------------------------------------------------------------
 L026_00000452:
 ; H026+$00000452: 4e55fffc  link.w a5, #$fffc
@@ -1003,10 +1003,10 @@ L026_000004BE:
         dc.w $FFFC,$526D,$FFFA,$60A8,$526D,$FFFE,$608C,$70FF
         dc.w $6000,$0002,$4E5D,$205F,$4FEF,$0010,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H026_0000054E [parziale]
-; Scopo: Routine del modulo helper su stringhe e buffer con limiti passati dai chiamanti; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H028+$0446, H066+$1CDA, H066+$05EE
+; ROUTINE: sub_H026_0000054E [partial]
+; Purpose: Routine of the string and buffer helpers with limits passed by the callers module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H028+$0446, H066+$1CDA, H066+$05EE
 ; --------------------------------------------------------------------------
 L026_0000054E:
 ; H026+$0000054E: 4e55fffe  link.w a5, #$fffe

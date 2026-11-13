@@ -1,4 +1,4 @@
-/* H059: ciclo del combattimento tattico. */
+/* H059: tactical combat loop. */
 #ifndef COK_H059_H
 #define COK_H059_H
 #include "character.h"

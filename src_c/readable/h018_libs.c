@@ -1,4 +1,4 @@
-/* H018: adattatori exec.library per apertura e chiusura delle librerie. */
+/* H018: exec.library adapters for opening and closing libraries. */
 #include "h018_libs.h"
 
 /* PORT H018+$0004: rts. */

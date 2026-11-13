@@ -1,9 +1,9 @@
-# Champions of Krynn - port asm -> C, build host.
+# Champions of Krynn - asm -> C port, host build.
 #
-#   make          compila build/cok (richiede SDL2: libsdl2-dev, brew sdl2, ...)
-#   make status   aggiorna PORT_STATUS.md
-#   make clean    rimuove build/
-#   make AUDIO=1  compila anche l'audio (COK_AUDIO, H043/H094; sull'host muto),
+#   make          builds build/cok (requires SDL2: libsdl2-dev, brew sdl2, ...)
+#   make status   updates PORT_STATUS.md
+#   make clean    removes build/
+#   make AUDIO=1  also builds the audio (COK_AUDIO, H043/H094; silent on the host),
 #                 in build-audio/
 
 CC        ?= cc

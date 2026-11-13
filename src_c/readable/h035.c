@@ -1,4 +1,4 @@
-/* H035: caricamento set 24x24 e risorse COMSPR. */
+/* H035: loading of 24x24 sets and COMSPR resources. */
 #include "h035.h"
 #include "h026_string.h"
 #include "h029_gfx.h"
@@ -10,18 +10,18 @@
 #include "h049.h"
 #include "h010_input.h"
 
-/* PORT H035+$0032: link/unlk, nessun effetto. */
+/* PORT H035+$0032: link/unlk, no effect. */
 void h035_init(void)
 {
 }
 
 /*
- * PORT H035+$0246: carica la coppia di set 24x24 del posto slot: record
- * id e id+$80.  I contenitori "COMSPR" e "ICON" (nome intero, senza
- * distinzione di maiuscole) hanno la maschera (colore trasparente 8); gli
- * altri hanno il gruppo di risorse in coda al nome e vengono ricolorati
- * con le tabelle H005+$3DA2 (da) e H005+$3D92 (a).  Il prefisso di 5
- * caratteri e' calcolato ma non usato, come nell'originale.
+ * PORT H035+$0246: loads the pair of 24x24 sets of slot slot: records
+ * id and id+$80.  The containers "COMSPR" and "ICON" (whole name, case
+ * insensitive) have the mask (transparent colour 8); the
+ * others have the resource group at the end of the name and are recoloured
+ * with the tables H005+$3DA2 (from) and H005+$3D92 (to).  The 5-character
+ * prefix is computed but not used, as in the original.
  */
 void load_sprite_set(u16 name_len, const char *name, u16 id, u16 slot)
 {
@@ -39,33 +39,33 @@ void load_sprite_set(u16 name_len, const char *name, u16 id, u16 slot)
                                 &g_sprite_sets[slot][1]);
         return;
     }
-    /* $246E: disco dei dati / gruppo di risorse corrente (G_RESOURCE_GROUP) */
+    /* $246E: data disk / current resource group (G_RESOURCE_GROUP) */
     format_number(1, group, (s32)G_RESOURCE_GROUP, 0, 0x0A, 1, '0');
     h026_append(0x50, full, 1, group);
     load_indexed_gfx_record(0x50, full, id, 1, 0, &g_sprite_sets[slot][0]);
-    /* $3DA2: ricolorazione dei set grafici: colori di partenza (16 byte); $3D92: ricolorazione dei
-     * set grafici: colori di arrivo (16 byte) */
+    /* $3DA2: recolouring of the graphic sets: source colours (16 bytes); $3D92: recolouring of the
+     * graphic sets: target colours (16 bytes) */
     remap_gfx_colors(&g_h005[0x3DA2], &g_h005[0x3D92], 0,
                      g_sprite_sets[slot][0]);
     load_indexed_gfx_record(0x50, full, (u16)(id + 0x80), 1, 0,
                             &g_sprite_sets[slot][1]);
-    /* $3DA2: ricolorazione dei set grafici: colori di partenza (16 byte); $3D92: ricolorazione dei
-     * set grafici: colori di arrivo (16 byte) */
+    /* $3DA2: recolouring of the graphic sets: source colours (16 bytes); $3D92: recolouring of the
+     * graphic sets: target colours (16 bytes) */
     remap_gfx_colors(&g_h005[0x3DA2], &g_h005[0x3D92], 0,
                      g_sprite_sets[slot][1]);
 }
 
 /*
- * PORT H035+$0040 (Load24x24Set): carica il record id del contenitore name
- * (con maschera; colore trasparente 8 se first = $22) e ne copia count
- * tile 24x24 nel set $332C dalla tile first; poi lo libera.  Con first
- * oltre $27: "Start range error in Load24x24Set" e uscita (H010+$0360,
+ * PORT H035+$0040 (Load24x24Set): loads record id of the container name
+ * (with mask; transparent colour 8 if first = $22) and copies count
+ * 24x24 tiles of it into the set $332C from tile first; then frees it.  With first
+ * beyond $27: "Start range error in Load24x24Set" and exit (H010+$0360,
  * H010+$0332).
  */
 void load_24x24_set(u16 name_len, const char *name, u8 id, u8 first,
                     u8 count)
 {
-    char copy[0x52];                    /* nome per valore */
+    char copy[0x52];                    /* name by value */
     struct GfxRecord *rec = NULL;       /* -$4(a5) */
     u16 dst_x;                          /* -$C(a5) */
     u16 color;                          /* -$10(a5) */
@@ -90,8 +90,8 @@ void load_24x24_set(u16 name_len, const char *name, u8 id, u8 first,
 }
 
 /*
- * PORT H035+$019A: disegna il fotogramma frame del set di tile $332C nella
- * cella 24x24 (col, row), con la maschera se masked = 1 (H029+$0B94).
+ * PORT H035+$019A: draws frame frame of the tile set $332C in the
+ * 24x24 cell (col, row), with the mask if masked = 1 (H029+$0B94).
  */
 void draw_map_tile(s16 col, s16 row, u8 frame, u8 masked)
 {
@@ -99,7 +99,7 @@ void draw_map_tile(s16 col, s16 row, u8 frame, u8 masked)
                 g_gfx_332c, g_gfx_3d8e);
 }
 
-/* PORT H035+$01DC: libera i due record del posto slot (se presenti). */
+/* PORT H035+$01DC: frees the two records of slot slot (if present). */
 void free_sprite_set(u8 slot)
 {
     u16 i;
@@ -112,14 +112,14 @@ void free_sprite_set(u8 slot)
 }
 
 /*
- * PORT H035+$0460: disegna il set which (0/1) del posto slot alla cella
- * 24x24 (col, row) attraverso la maschera.  In combattimento ($3DE3 != 0)
- * l'origine e' spostata di 8 pixel e il disegno e' tagliato a $A8 pixel;
- * con scale > 3 l'immagine passa da un record temporaneo specchiato
- * (H049+$09D6).  La
- * RastPort e' quella fuori schermo di H029 se attiva (-$5), altrimenti
- * quella dello schermo (e H029 -$9 = 1); con H029 -$6 il disegno usa il
- * blitter (H049+$04AE) invece di BltMaskBitMapRastPort.
+ * PORT H035+$0460: draws set which (0/1) of slot slot at the
+ * 24x24 cell (col, row) through the mask.  In combat ($3DE3 != 0)
+ * the origin is moved by 8 pixels and the drawing is clipped at $A8 pixels;
+ * with scale > 3 the picture goes through a temporary mirrored record
+ * (H049+$09D6).  The
+ * RastPort is the off-screen one of H029 if active (-$5), otherwise
+ * the screen one (and H029 -$9 = 1); with H029 -$6 the drawing uses the
+ * blitter (H049+$04AE) instead of BltMaskBitMapRastPort.
  */
 void draw_sprite_set(u16 col, u16 row, u16 scale, u16 which, u16 slot)
 {
@@ -144,7 +144,7 @@ void draw_sprite_set(u16 col, u16 row, u16 scale, u16 which, u16 slot)
     y = (s16)(row * 0x18);
     width = (s16)(rec->count << 3);
     height = (s16)rec->rows;
-    if (H005_B(0x3DE3) == 0) { /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
+    if (H005_B(0x3DE3) == 0) { /* $3DE3: game mode (0 menu, 1 view, 2 camp, 5 combat) */
         offset = 0;
     } else {
         offset = 8;

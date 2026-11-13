@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H008
-; Interazioni UI, richieste di scelta e menu.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H008
+; UI interactions, choice requests and menus.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Raccoglie le interazioni UI: richieste di scelta, menu, messaggi e conferme. Le routine sono pensate per essere chiamate dai moduli di gioco, non solo dal menu iniziale.
+; MODULE NOTE
+; Gathers the UI interactions: choice requests, menus, messages and confirmations. The routines are meant to be called by the game modules, not only by the initial menu.
 ; --------------------------------------------------------------------------
 ; H008: 8660 original bytes; all offsets are section-relative.
         section H008,code
@@ -25,10 +25,10 @@ H008:
         dc.w $6F00,$0000,$0000
         dc.l H008+$00000052
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H008 [parziale]
-; Scopo: Ingresso del modulo interazioni UI, richieste di scelta e menu; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H008+$21CC.
-; Chiamanti diretti: H000+$01B0
+; ROUTINE: module_init_H008 [partial]
+; Purpose: Entry of the UI interactions, choice requests and menus module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H008+$21CC.
+; Direct callers: H000+$01B0
 ; --------------------------------------------------------------------------
 L008_0000009A:
 ; H008+$0000009A: 2f0c  move.l a4, -(a7)
@@ -55,10 +55,10 @@ L008_000000A4:
         dc.l H014+$00000018
         dc.w $4E5D,$285F,$205F,$548F,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H008_00000102 [parziale]
-; Scopo: Routine del modulo interazioni UI, richieste di scelta e menu; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H013+$53B2, H013+$0B26, H008+$1496, H008+$16CA, H008+$177A, H013+$0D5A e altri 8
+; ROUTINE: sub_H008_00000102 [partial]
+; Purpose: Routine of the UI interactions, choice requests and menus module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H013+$53B2, H013+$0B26, H008+$1496, H008+$16CA, H008+$177A, H013+$0D5A and 8 more
 ; --------------------------------------------------------------------------
 L008_00000102:
 ; H008+$00000102: 2f0c  move.l a4, -(a7)
@@ -141,10 +141,10 @@ L008_00000160:
 ; H008+$00000160: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H008_00000162 [parziale]
-; Scopo: Routine del modulo interazioni UI, richieste di scelta e menu; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H008+$1B7A
+; ROUTINE: sub_H008_00000162 [partial]
+; Purpose: Routine of the UI interactions, choice requests and menus module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H008+$1B7A
 ; --------------------------------------------------------------------------
 L008_00000162:
 ; H008+$00000162: 2f0c  move.l a4, -(a7)
@@ -201,10 +201,10 @@ L008_0000019E:
 ; H008+$0000019E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H008_000001A0 [parziale]
-; Scopo: Routine del modulo interazioni UI, richieste di scelta e menu; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H008+$02B0, H008+$0488, H008+$11D6
+; ROUTINE: sub_H008_000001A0 [partial]
+; Purpose: Routine of the UI interactions, choice requests and menus module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H008+$02B0, H008+$0488, H008+$11D6
 ; --------------------------------------------------------------------------
 L008_000001A0:
 ; H008+$000001A0: 2f0c  move.l a4, -(a7)
@@ -294,12 +294,12 @@ L008_000001FA:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: UI_RequestChoice [parziale]
-; Scopo: Costruisce un’interazione con prompt/scelte e restituisce la risposta.
-;   - Usata dalla scelta demo, dai messaggi di conferma e da numerosi menu.
-;   - Riceve testo, colori/coordinate e flag attraverso lo stack di modulo.
-;   - La firma completa e tutti i flag non sono ancora attribuiti.
-; Chiamanti diretti: H001+$0150, H001+$0270, H008+$1D22, H008+$2094, H013+$3598, H013+$4B16, H047+$0B04, H057+$1E2A, H057+$2292, H057+$24F4 ...
+; ROUTINE: UI_RequestChoice [partial]
+; Purpose: Builds an interaction with prompt/choices and returns the answer.
+;   - Used by the demo choice, by the confirmation messages and by many menus.
+;   - Receives text, colours/coordinates and flags through the module stack.
+;   - The complete signature and all the flags are not assigned yet.
+; Direct callers: H001+$0150, H001+$0270, H008+$1D22, H008+$2094, H013+$3598, H013+$4B16, H047+$0B04, H057+$1E2A, H057+$2292, H057+$24F4 ...
 ; --------------------------------------------------------------------------
 L008_000001FC:
 ; H008+$000001FC: 2f0c  move.l a4, -(a7)
@@ -314,10 +314,10 @@ L008_00000206:
 ; H008+$00000206: 6000036c  bra.w $574
         bra.w H008+$574
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H008_0000020A [parziale]
-; Scopo: Routine del modulo interazioni UI, richieste di scelta e menu; richiama H026+$000C.
-;   - Richiama H026+$000C.
-; Chiamanti diretti: H008+$0612
+; ROUTINE: sub_H008_0000020A [partial]
+; Purpose: Routine of the UI interactions, choice requests and menus module; calls H026+$000C.
+;   - Calls H026+$000C.
+; Direct callers: H008+$0612
 ; --------------------------------------------------------------------------
 L008_0000020A:
 ; H008+$0000020A: 4e55fff6  link.w a5, #$fff6
@@ -693,17 +693,17 @@ L008_000003C6:
 ; H008+$000003C6: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H008_000003C8 [parziale]
-; Scopo: Routine del modulo interazioni UI, richieste di scelta e menu; richiama H030+$00B6, H021+$026C, H026+$000C, H030+$0A40.
-;   - Richiama H030+$00B6.
-;   - Richiama H021+$026C.
-;   - Richiama H026+$000C.
-;   - Richiama H030+$0A40.
-;   - Richiama H030+$0256.
-;   - Richiama H042+$0B80.
-;   - Richiama H042+$0254.
-;   - Usa lo stato globale: H005+$52F6 (puntatore alla finestra del gioco); H005+$3E04 (puntatore stato persistente A, 2048 byte); H005+$3DE3 (contesto nativo, 5 nel combattimento).
-; Chiamanti diretti: H008+$0696, H008+$0AE8, H008+$0B64, H008+$1262, H008+$1004
+; ROUTINE: sub_H008_000003C8 [partial]
+; Purpose: Routine of the UI interactions, choice requests and menus module; calls H030+$00B6, H021+$026C, H026+$000C, H030+$0A40.
+;   - Calls H030+$00B6.
+;   - Calls H021+$026C.
+;   - Calls H026+$000C.
+;   - Calls H030+$0A40.
+;   - Calls H030+$0256.
+;   - Calls H042+$0B80.
+;   - Calls H042+$0254.
+;   - Uses the global state: H005+$52F6 (pointer to the game window); H005+$3E04 (pointer to persistent state A, 2048 bytes); H005+$3DE3 (native context, 5 in combat).
+; Direct callers: H008+$0696, H008+$0AE8, H008+$0B64, H008+$1262, H008+$1004
 ; --------------------------------------------------------------------------
 L008_000003C8:
 ; H008+$000003C8: 4e55fffe  link.w a5, #$fffe
@@ -1138,11 +1138,11 @@ L008_000005B2:
 L008_000005B4:
 ; H008+$000005B4: 51cafffc  dbra d2, $5b2
         dbra d2, H008+$5B2
-; STATO: H005+$52F6 = puntatore alla finestra del gioco
+; STATE: H005+$52F6 = pointer to the game window
 L008_000005B8:
 ; H008+$000005B8: 2f39000052f6  move.l $52f6.l, -(a7)
         move.l (H005+$52F6).l, -(a7)
-; STATO: H005+$52F6 = puntatore alla finestra del gioco
+; STATE: H005+$52F6 = pointer to the game window
 L008_000005BE:
 ; H008+$000005BE: 2679000052f6  movea.l $52f6.l, a3
         movea.l (H005+$52F6).l, a3
@@ -1300,7 +1300,7 @@ L008_00000680:
 L008_00000684:
 ; H008+$00000684: 2f2d0020  move.l $20(a5), -(a7)
         move.l $20(a5), -(a7)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L008_00000688:
 ; H008+$00000688: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1316,7 +1316,7 @@ L008_00000696:
 L008_0000069A:
 ; H008+$0000069A: 422dffa2  clr.b -$5e(a5)
         clr.b -$5e(a5)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L008_0000069E:
 ; H008+$0000069E: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -1402,7 +1402,7 @@ L008_00000708:
 L008_0000070C:
 ; H008+$0000070C: 426dff34  clr.w -$cc(a5)
         clr.w -$cc(a5)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L008_00000710:
 ; H008+$00000710: 247900003e04  movea.l $3e04.l, a2
         movea.l (H005+$3E04).l, a2
@@ -1486,7 +1486,7 @@ L008_00000774:
 L008_0000077A:
 ; H008+$0000077A: 6000028c  bra.w $a08
         bra.w H008+$A08
-; STATO: H005+$52F6 = puntatore alla finestra del gioco
+; STATE: H005+$52F6 = pointer to the game window
 L008_0000077E:
 ; H008+$0000077E: 2679000052f6  movea.l $52f6.l, a3
         movea.l (H005+$52F6).l, a3
@@ -1502,7 +1502,7 @@ L008_0000078A:
 L008_0000078E:
 ; H008+$0000078E: 3b42ff96  move.w d2, -$6a(a5)
         move.w d2, -$6a(a5)
-; STATO: H005+$52F6 = puntatore alla finestra del gioco
+; STATE: H005+$52F6 = pointer to the game window
 L008_00000792:
 ; H008+$00000792: 2679000052f6  movea.l $52f6.l, a3
         movea.l (H005+$52F6).l, a3
@@ -1533,7 +1533,7 @@ L008_000007B4:
 L008_000007BA:
 ; H008+$000007BA: 670000f6  beq.w $8b2
         beq.w H008+$8B2
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L008_000007BE:
 ; H008+$000007BE: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
@@ -1603,7 +1603,7 @@ L008_00000820:
 L008_00000824:
 ; H008+$00000824: 6000005a  bra.w $880
         bra.w H008+$880
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L008_00000828:
 ; H008+$00000828: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -1744,7 +1744,7 @@ L008_000008DA:
 L008_000008E0:
 ; H008+$000008E0: 6f000044  ble.w $926
         ble.w H008+$926
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L008_000008E4:
 ; H008+$000008E4: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -1754,7 +1754,7 @@ L008_000008EA:
 L008_000008EE:
 ; H008+$000008EE: 66000096  bne.w $986
         bne.w H008+$986
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L008_000008F2:
 ; H008+$000008F2: 0c39000300003de3  cmpi.b #$3, $3de3.l
         cmpi.b #$3, (H005+$3DE3).l
@@ -1785,7 +1785,7 @@ L008_0000091C:
 L008_00000922:
 ; H008+$00000922: 6e000062  bgt.w $986
         bgt.w H008+$986
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L008_00000926:
 ; H008+$00000926: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -1795,7 +1795,7 @@ L008_0000092C:
 L008_00000930:
 ; H008+$00000930: 66000034  bne.w $966
         bne.w H008+$966
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L008_00000934:
 ; H008+$00000934: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -1808,7 +1808,7 @@ L008_0000093E:
 L008_00000940:
 ; H008+$00000940: 3f02  move.w d2, -(a7)
         move.w d2, -(a7)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L008_00000942:
 ; H008+$00000942: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -1948,7 +1948,7 @@ L008_000009FE:
 L008_00000A00:
 ; H008+$00000A00: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H008+$09D8; indici 0..10, default -1.
+; DISPATCH: words relative to H008+$09D8; indices 0..10, default -1.
 L008_00000A04:
 ; H008+$00000A04: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -2003,7 +2003,7 @@ L008_00000A46:
 L008_00000A4A:
 ; H008+$00000A4A: 4eb90000042e  jsr $42e.l
         jsr (H010+$42E).l
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L008_00000A50:
 ; H008+$00000A50: 1b7900005305ffa2  move.b $5305.l, -$5e(a5)
         move.b (H005+$5305).l, -$5e(a5)
@@ -2025,14 +2025,14 @@ L008_00000A68:
 L008_00000A6C:
 ; H008+$00000A6C: 4213  clr.b (a3)
         clr.b (a3)
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L008_00000A6E:
 ; H008+$00000A6E: 4a3900005305  tst.b $5305.l
         tst.b (H005+$5305).l
 L008_00000A74:
 ; H008+$00000A74: 63000020  bls.w $a96
         bls.w H008+$A96
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L008_00000A78:
 ; H008+$00000A78: 0c39000500005305  cmpi.b #$5, $5305.l
         cmpi.b #$5, (H005+$5305).l
@@ -2250,7 +2250,7 @@ L008_00000BA6:
 L008_00000BAC:
 ; H008+$00000BAC: 670005d8  beq.w $1186
         beq.w H008+$1186
-; STATO: H005+$2354 = coordinata mouse Y
+; STATE: H005+$2354 = mouse Y coordinate
 L008_00000BB0:
 ; H008+$00000BB0: 343900002354  move.w $2354.l, d2
         move.w (H005+$2354).l, d2
@@ -2263,7 +2263,7 @@ L008_00000BB8:
 L008_00000BBC:
 ; H008+$00000BBC: 3b42ff96  move.w d2, -$6a(a5)
         move.w d2, -$6a(a5)
-; STATO: H005+$2356 = coordinata mouse X
+; STATE: H005+$2356 = mouse X coordinate
 L008_00000BC0:
 ; H008+$00000BC0: 343900002356  move.w $2356.l, d2
         move.w (H005+$2356).l, d2
@@ -2300,14 +2300,14 @@ L008_00000BEC:
 L008_00000BF2:
 ; H008+$00000BF2: 67000144  beq.w $d38
         beq.w H008+$D38
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L008_00000BF6:
 ; H008+$00000BF6: 0c39000300003de3  cmpi.b #$3, $3de3.l
         cmpi.b #$3, (H005+$3DE3).l
 L008_00000BFE:
 ; H008+$00000BFE: 66000010  bne.w $c10
         bne.w H008+$C10
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L008_00000C02:
 ; H008+$00000C02: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -2323,7 +2323,7 @@ L008_00000C10:
 L008_00000C16:
 ; H008+$00000C16: 66000120  bne.w $d38
         bne.w H008+$D38
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L008_00000C1A:
 ; H008+$00000C1A: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
@@ -2405,7 +2405,7 @@ L008_00000C7A:
 L008_00000C7C:
 ; H008+$00000C7C: 3b44ff94  move.w d4, -$6c(a5)
         move.w d4, -$6c(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L008_00000C80:
 ; H008+$00000C80: 2b7900003364ff36  move.l $3364.l, -$ca(a5)
         move.l (H005+$3364).l, -$ca(a5)
@@ -2475,7 +2475,7 @@ L008_00000CDC:
 L008_00000CE4:
 ; H008+$00000CE4: 6000004e  bra.w $d34
         bra.w H008+$D34
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L008_00000CE8:
 ; H008+$00000CE8: 243900003368  move.l $3368.l, d2
         move.l (H005+$3368).l, d2
@@ -2527,7 +2527,7 @@ L008_00000D22:
 L008_00000D28:
 ; H008+$00000D28: 6000000a  bra.w $d34
         bra.w H008+$D34
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L008_00000D2C:
 ; H008+$00000D2C: 23edff3600003368  move.l -$ca(a5), $3368.l
         move.l -$ca(a5), (H005+$3368).l
@@ -2546,7 +2546,7 @@ L008_00000D42:
 L008_00000D48:
 ; H008+$00000D48: 67000104  beq.w $e4e
         beq.w H008+$E4E
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L008_00000D4C:
 ; H008+$00000D4C: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
@@ -2622,7 +2622,7 @@ L008_00000DB6:
 L008_00000DBA:
 ; H008+$00000DBA: 6000005a  bra.w $e16
         bra.w H008+$E16
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L008_00000DBE:
 ; H008+$00000DBE: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -2766,7 +2766,7 @@ L008_00000E76:
 L008_00000E7C:
 ; H008+$00000E7C: 6f000044  ble.w $ec2
         ble.w H008+$EC2
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L008_00000E80:
 ; H008+$00000E80: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -2776,7 +2776,7 @@ L008_00000E86:
 L008_00000E8A:
 ; H008+$00000E8A: 660000a8  bne.w $f34
         bne.w H008+$F34
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L008_00000E8E:
 ; H008+$00000E8E: 0c39000300003de3  cmpi.b #$3, $3de3.l
         cmpi.b #$3, (H005+$3DE3).l
@@ -2813,7 +2813,7 @@ L008_00000EC2:
 L008_00000EC6:
 ; H008+$00000EC6: 16bc0001  move.b #$1, (a3)
         move.b #$1, (a3)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L008_00000ECA:
 ; H008+$00000ECA: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -2823,7 +2823,7 @@ L008_00000ED0:
 L008_00000ED4:
 ; H008+$00000ED4: 66000034  bne.w $f0a
         bne.w H008+$F0A
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L008_00000ED8:
 ; H008+$00000ED8: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -2836,7 +2836,7 @@ L008_00000EE2:
 L008_00000EE4:
 ; H008+$00000EE4: 3f02  move.w d2, -(a7)
         move.w d2, -(a7)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L008_00000EE6:
 ; H008+$00000EE6: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -2919,11 +2919,11 @@ L008_00000F4E:
 L008_00000F52:
 ; H008+$00000F52: 6e000030  bgt.w $f84
         bgt.w H008+$F84
-; STATO: H005+$52F6 = puntatore alla finestra del gioco
+; STATE: H005+$52F6 = pointer to the game window
 L008_00000F56:
 ; H008+$00000F56: 2f39000052f6  move.l $52f6.l, -(a7)
         move.l (H005+$52F6).l, -(a7)
-; STATO: H005+$52F6 = puntatore alla finestra del gioco
+; STATE: H005+$52F6 = pointer to the game window
 L008_00000F5C:
 ; H008+$00000F5C: 2679000052f6  movea.l $52f6.l, a3
         movea.l (H005+$52F6).l, a3
@@ -3188,7 +3188,7 @@ L008_000010CC:
 L008_000010CE:
 ; H008+$000010CE: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H008+$10A2; indici 0..13, default -1.
+; DISPATCH: words relative to H008+$10A2; indices 0..13, default -1.
 L008_000010D2:
 ; H008+$000010D2: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -3604,7 +3604,7 @@ L008_0000133C:
 L008_0000133E:
 ; H008+$0000133E: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H008+$12D8; indici 0..41, default -1.
+; DISPATCH: words relative to H008+$12D8; indices 0..41, default -1.
 L008_00001342:
 ; H008+$00001342: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -3614,7 +3614,7 @@ L008_00001346:
 L008_0000134A:
 ; H008+$0000134A: 6700f34e  beq.w $69a
         beq.w H008+$69A
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L008_0000134E:
 ; H008+$0000134E: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -3630,11 +3630,11 @@ L008_0000135E:
 L008_00001362:
 ; H008+$00001362: 13d30000249d  move.b (a3), $249d.l
         move.b (a3), (H005+$249D).l
-; STATO: H005+$52F6 = puntatore alla finestra del gioco
+; STATE: H005+$52F6 = pointer to the game window
 L008_00001368:
 ; H008+$00001368: 2f39000052f6  move.l $52f6.l, -(a7)
         move.l (H005+$52F6).l, -(a7)
-; STATO: H005+$52F6 = puntatore alla finestra del gioco
+; STATE: H005+$52F6 = pointer to the game window
 L008_0000136E:
 ; H008+$0000136E: 2679000052f6  movea.l $52f6.l, a3
         movea.l (H005+$52F6).l, a3
@@ -3679,10 +3679,10 @@ L008_0000139C:
 ; H008+$0000139C: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H008_0000139E [parziale]
-; Scopo: Routine del modulo interazioni UI, richieste di scelta e menu; richiama H030+$019A.
-;   - Richiama H030+$019A.
-; Chiamanti diretti: H006+$06E8, H006+$0B5E, H061+$1AF2, H061+$1BC6, H013+$5136, H013+$538C e altri 16
+; ROUTINE: sub_H008_0000139E [partial]
+; Purpose: Routine of the UI interactions, choice requests and menus module; calls H030+$019A.
+;   - Calls H030+$019A.
+; Direct callers: H006+$06E8, H006+$0B5E, H061+$1AF2, H061+$1BC6, H013+$5136, H013+$538C and 16 more
 ; --------------------------------------------------------------------------
 L008_0000139E:
 ; H008+$0000139E: 2f0c  move.l a4, -(a7)
@@ -3719,13 +3719,13 @@ L008_000013BE:
 ; H008+$000013BE: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H008_1AF4 [parziale]
-; Scopo: Trampolino verso H008+$1AF4; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H008+$1AF4.
-;   - Richiama H026+$0188.
-;   - Richiama H026+$01E0.
-;   - Usa lo stato globale: H005+$2354 (coordinata mouse Y); H005+$2356 (coordinata mouse X).
-; Chiamanti diretti: H013+$4F24, H013+$5362, H013+$0BC0, H013+$0DF4, H013+$0F58, H065+$1836 e altri 11
+; ROUTINE: trampoline_H008_1AF4 [partial]
+; Purpose: Trampoline to H008+$1AF4; the actual body is there.
+;   - Jumps to the actual body at H008+$1AF4.
+;   - Calls H026+$0188.
+;   - Calls H026+$01E0.
+;   - Uses the global state: H005+$2354 (mouse Y coordinate); H005+$2356 (mouse X coordinate).
+; Direct callers: H013+$4F24, H013+$5362, H013+$0BC0, H013+$0DF4, H013+$0F58, H065+$1836 and 11 more
 ; --------------------------------------------------------------------------
 L008_000013C0:
 ; H008+$000013C0: 2f0c  move.l a4, -(a7)
@@ -3740,10 +3740,10 @@ L008_000013CA:
 ; H008+$000013CA: 60000728  bra.w $1af4
         bra.w H008+$1AF4
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H008_000013CE [parziale]
-; Scopo: Routine del modulo interazioni UI, richieste di scelta e menu; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H008+$14AE
+; ROUTINE: sub_H008_000013CE [partial]
+; Purpose: Routine of the UI interactions, choice requests and menus module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H008+$14AE
 ; --------------------------------------------------------------------------
 L008_000013CE:
 ; H008+$000013CE: 4e55fff6  link.w a5, #$fff6
@@ -3838,14 +3838,14 @@ L008_00001446:
 ; H008+$00001446: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H008_00001448 [parziale]
-; Scopo: Routine del modulo interazioni UI, richieste di scelta e menu; richiama H029+$0312, H030+$0B6C, H030+$0256, H026+$000C.
-;   - Richiama H029+$0312.
-;   - Richiama H030+$0B6C.
-;   - Richiama H030+$0256.
-;   - Richiama H026+$000C.
-;   - Richiama H030+$00B6.
-; Chiamanti diretti: H008+$1C50, H008+$1A54
+; ROUTINE: sub_H008_00001448 [partial]
+; Purpose: Routine of the UI interactions, choice requests and menus module; calls H029+$0312, H030+$0B6C, H030+$0256, H026+$000C.
+;   - Calls H029+$0312.
+;   - Calls H030+$0B6C.
+;   - Calls H030+$0256.
+;   - Calls H026+$000C.
+;   - Calls H030+$00B6.
+; Direct callers: H008+$1C50, H008+$1A54
 ; --------------------------------------------------------------------------
 L008_00001448:
 ; H008+$00001448: 4e55fff6  link.w a5, #$fff6
@@ -4008,7 +4008,7 @@ L008_0000151C:
 L008_00001520:
 ; H008+$00001520: 2f2dfffc  move.l -$4(a5), -(a7)
         move.l -$4(a5), -(a7)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L008_00001524:
 ; H008+$00001524: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -4039,7 +4039,7 @@ L008_00001544:
 L008_00001548:
 ; H008+$00001548: 2f2dfffc  move.l -$4(a5), -(a7)
         move.l -$4(a5), -(a7)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L008_0000154C:
 ; H008+$0000154C: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -4162,10 +4162,10 @@ L008_000015DA:
 ; H008+$000015DA: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H008_000015DC [parziale]
-; Scopo: Routine del modulo interazioni UI, richieste di scelta e menu; richiama H026+$000C.
-;   - Richiama H026+$000C.
-; Chiamanti diretti: H008+$16DE, H008+$178E
+; ROUTINE: sub_H008_000015DC [partial]
+; Purpose: Routine of the UI interactions, choice requests and menus module; calls H026+$000C.
+;   - Calls H026+$000C.
+; Direct callers: H008+$16DE, H008+$178E
 ; --------------------------------------------------------------------------
 L008_000015DC:
 ; H008+$000015DC: 4e55fffc  link.w a5, #$fffc
@@ -4268,10 +4268,10 @@ L008_0000164C:
 ; H008+$0000164C: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H008_0000164E [parziale]
-; Scopo: Routine del modulo interazioni UI, richieste di scelta e menu; richiama H026+$000C.
-;   - Richiama H026+$000C.
-; Chiamanti diretti: H008+$16F2, H008+$17A2
+; ROUTINE: sub_H008_0000164E [partial]
+; Purpose: Routine of the UI interactions, choice requests and menus module; calls H026+$000C.
+;   - Calls H026+$000C.
+; Direct callers: H008+$16F2, H008+$17A2
 ; --------------------------------------------------------------------------
 L008_0000164E:
 ; H008+$0000164E: 4e55fffe  link.w a5, #$fffe
@@ -4368,11 +4368,11 @@ L008_000016B8:
 ; H008+$000016B8: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H008_000016BA [parziale]
-; Scopo: Routine del modulo interazioni UI, richieste di scelta e menu; richiama H026+$0452, H030+$0256.
-;   - Richiama H026+$0452.
-;   - Richiama H030+$0256.
-; Chiamanti diretti: H008+$1C62, H008+$1F1A
+; ROUTINE: sub_H008_000016BA [partial]
+; Purpose: Routine of the UI interactions, choice requests and menus module; calls H026+$0452, H030+$0256.
+;   - Calls H026+$0452.
+;   - Calls H030+$0256.
+; Direct callers: H008+$1C62, H008+$1F1A
 ; --------------------------------------------------------------------------
 L008_000016BA:
 ; H008+$000016BA: 4e55fff8  link.w a5, #$fff8
@@ -4501,7 +4501,7 @@ L008_00001754:
 L008_00001758:
 ; H008+$00001758: 486bffae  pea.l -$52(a3)
         pea.l -$52(a3)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L008_0000175C:
 ; H008+$0000175C: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -4518,11 +4518,11 @@ L008_00001768:
 ; H008+$00001768: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H008_0000176A [parziale]
-; Scopo: Routine del modulo interazioni UI, richieste di scelta e menu; richiama H026+$0452, H030+$0256.
-;   - Richiama H026+$0452.
-;   - Richiama H030+$0256.
-; Chiamanti diretti: H008+$1D52, H008+$1EFC
+; ROUTINE: sub_H008_0000176A [partial]
+; Purpose: Routine of the UI interactions, choice requests and menus module; calls H026+$0452, H030+$0256.
+;   - Calls H026+$0452.
+;   - Calls H030+$0256.
+; Direct callers: H008+$1D52, H008+$1EFC
 ; --------------------------------------------------------------------------
 L008_0000176A:
 ; H008+$0000176A: 4e55fff8  link.w a5, #$fff8
@@ -4660,7 +4660,7 @@ L008_00001810:
 L008_00001814:
 ; H008+$00001814: 486bffae  pea.l -$52(a3)
         pea.l -$52(a3)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L008_00001818:
 ; H008+$00001818: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -4737,7 +4737,7 @@ L008_00001874:
 L008_00001878:
 ; H008+$00001878: 486bffae  pea.l -$52(a3)
         pea.l -$52(a3)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L008_0000187C:
 ; H008+$0000187C: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -4754,10 +4754,10 @@ L008_00001888:
 ; H008+$00001888: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H008_0000188A [parziale]
-; Scopo: Routine del modulo interazioni UI, richieste di scelta e menu; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H008+$1AE8, H008+$1A46
+; ROUTINE: sub_H008_0000188A [partial]
+; Purpose: Routine of the UI interactions, choice requests and menus module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H008+$1AE8, H008+$1A46
 ; --------------------------------------------------------------------------
 L008_0000188A:
 ; H008+$0000188A: 4e55fffa  link.w a5, #$fffa
@@ -4994,10 +4994,10 @@ L008_000019A6:
 ; H008+$000019A6: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H008_000019A8 [parziale]
-; Scopo: Routine del modulo interazioni UI, richieste di scelta e menu; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H008+$1D8A, H008+$1D9E, H008+$1E30, H008+$1E06
+; ROUTINE: sub_H008_000019A8 [partial]
+; Purpose: Routine of the UI interactions, choice requests and menus module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H008+$1D8A, H008+$1D9E, H008+$1E30, H008+$1E06
 ; --------------------------------------------------------------------------
 L008_000019A8:
 ; H008+$000019A8: 4e55fffe  link.w a5, #$fffe
@@ -5135,12 +5135,12 @@ L008_00001A5E:
 ; H008+$00001A5E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H008_00001A60 [parziale]
-; Scopo: Routine del modulo interazioni UI, richieste di scelta e menu; richiama H026+$0188, H026+$01E0.
-;   - Richiama H026+$0188.
-;   - Richiama H026+$01E0.
-;   - Usa lo stato globale: H005+$2354 (coordinata mouse Y); H005+$2356 (coordinata mouse X).
-; Chiamanti diretti: H008+$1C3A, H008+$1D6C, H008+$1D78
+; ROUTINE: sub_H008_00001A60 [partial]
+; Purpose: Routine of the UI interactions, choice requests and menus module; calls H026+$0188, H026+$01E0.
+;   - Calls H026+$0188.
+;   - Calls H026+$01E0.
+;   - Uses the global state: H005+$2354 (mouse Y coordinate); H005+$2356 (mouse X coordinate).
+; Direct callers: H008+$1C3A, H008+$1D6C, H008+$1D78
 ; --------------------------------------------------------------------------
 L008_00001A60:
 ; H008+$00001A60: 4e55fff8  link.w a5, #$fff8
@@ -5701,14 +5701,14 @@ L008_00001D1C:
 L008_00001D1E:
 ; H008+$00001D1E: 486dffa7  pea.l -$59(a5)
         pea.l -$59(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L008_00001D22:
 ; H008+$00001D22: 6100e4d8  bsr.w $1fc
         bsr.w H008+$1FC
 L008_00001D26:
 ; H008+$00001D26: 1b40ffa3  move.b d0, -$5d(a5)
         move.b d0, -$5d(a5)
-; STATO: H005+$2354 = coordinata mouse Y
+; STATE: H005+$2354 = mouse Y coordinate
 L008_00001D2A:
 ; H008+$00001D2A: 343900002354  move.w $2354.l, d2
         move.w (H005+$2354).l, d2
@@ -5721,7 +5721,7 @@ L008_00001D32:
 L008_00001D36:
 ; H008+$00001D36: 3b42ff6a  move.w d2, -$96(a5)
         move.w d2, -$96(a5)
-; STATO: H005+$2356 = coordinata mouse X
+; STATE: H005+$2356 = mouse X coordinate
 L008_00001D3A:
 ; H008+$00001D3A: 343900002356  move.w $2356.l, d2
         move.w (H005+$2356).l, d2
@@ -5848,7 +5848,7 @@ L008_00001DCC:
 L008_00001DCE:
 ; H008+$00001DCE: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H008+$1DA8; indici 0..9, default -1.
+; DISPATCH: words relative to H008+$1DA8; indices 0..9, default -1.
 L008_00001DD2:
 ; H008+$00001DD2: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -6195,7 +6195,7 @@ L008_00002018:
 L008_0000201A:
 ; H008+$0000201A: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H008+$1F6A; indici 0..80, default -1.
+; DISPATCH: words relative to H008+$1F6A; indices 0..80, default -1.
 L008_0000201E:
 ; H008+$0000201E: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -6227,10 +6227,10 @@ L008_0000203A:
 ; H008+$0000203A: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H008_0000203C [parziale]
-; Scopo: Routine del modulo interazioni UI, richieste di scelta e menu; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H013+$516E, H013+$51AA, H013+$2C1E, H013+$2C46, H096+$392A, H057+$30B2 e altri 24
+; ROUTINE: sub_H008_0000203C [partial]
+; Purpose: Routine of the UI interactions, choice requests and menus module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H013+$516E, H013+$51AA, H013+$2C1E, H013+$2C46, H096+$392A, H057+$30B2 and 24 more
 ; --------------------------------------------------------------------------
 L008_0000203C:
 ; H008+$0000203C: 2f0c  move.l a4, -(a7)
@@ -6310,7 +6310,7 @@ L008_0000208E:
 L008_00002090:
 ; H008+$00002090: 486dffff  pea.l -$1(a5)
         pea.l -$1(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L008_00002094:
 ; H008+$00002094: 6100e166  bsr.w $1fc
         bsr.w H008+$1FC
@@ -6351,10 +6351,10 @@ L008_000020C0:
 ; H008+$000020C0: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H008_000020C2 [parziale]
-; Scopo: Routine del modulo interazioni UI, richieste di scelta e menu; richiama H003+$0068.
-;   - Richiama H003+$0068.
-; Chiamanti diretti: H013+$4E86, H013+$0AEA, H064+$1434, H013+$0D1E, H013+$0E62, H013+$127E e altri 2
+; ROUTINE: sub_H008_000020C2 [partial]
+; Purpose: Routine of the UI interactions, choice requests and menus module; calls H003+$0068.
+;   - Calls H003+$0068.
+; Direct callers: H013+$4E86, H013+$0AEA, H064+$1434, H013+$0D1E, H013+$0E62, H013+$127E and 2 more
 ; --------------------------------------------------------------------------
 L008_000020C2:
 ; H008+$000020C2: 2f0c  move.l a4, -(a7)
@@ -6518,10 +6518,10 @@ L008_00002176:
 ; H008+$00002176: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H008_00002178 [parziale]
-; Scopo: Routine del modulo interazioni UI, richieste di scelta e menu; richiama H003+$00F6.
-;   - Richiama H003+$00F6.
-; Chiamanti diretti: H013+$4F42, H013+$51D2, H013+$0BD6, H013+$56B8, H013+$56C2, H013+$0D10 e altri 15
+; ROUTINE: sub_H008_00002178 [partial]
+; Purpose: Routine of the UI interactions, choice requests and menus module; calls H003+$00F6.
+;   - Calls H003+$00F6.
+; Direct callers: H013+$4F42, H013+$51D2, H013+$0BD6, H013+$56B8, H013+$56C2, H013+$0D10 and 15 more
 ; --------------------------------------------------------------------------
 L008_00002178:
 ; H008+$00002178: 2f0c  move.l a4, -(a7)

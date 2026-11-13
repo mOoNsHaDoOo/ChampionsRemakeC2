@@ -1,4 +1,4 @@
-/* H066: personaggi su disco e icona del personaggio. */
+/* H066: characters on disk and the character icon. */
 #ifndef COK_H066_H
 #define COK_H066_H
 

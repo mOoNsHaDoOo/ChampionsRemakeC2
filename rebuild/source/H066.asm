@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H066
-; Salvataggi/caricamenti, personaggi, liste e record dei mostri.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H066
+; Saving/loading, characters, lists and monster records.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Salvataggi/caricamenti, personaggi e record mostro. H066+$3000 salva, H066+$291E carica, H066+$1B0E legge il record da 426 byte e H066+$1FDA converte i mostri da 409 a 426 byte.
+; MODULE NOTE
+; Saving/loading, characters and monster records. H066+$3000 saves, H066+$291E loads, H066+$1B0E reads the 426-byte record and H066+$1FDA converts the monsters from 409 to 426 bytes.
 ; --------------------------------------------------------------------------
 ; H066: 13840 original bytes; all offsets are section-relative.
         section H066,code
@@ -62,10 +62,10 @@ H066:
         dc.w $5244,$4154,$0043,$4852,$4441,$5400
         dc.l H066+$0000005E
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H066 [parziale]
-; Scopo: Ingresso del modulo salvataggi/caricamenti, personaggi, liste e record dei mostri; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H066+$3608.
-; Chiamanti diretti: H000+$01A4
+; ROUTINE: module_init_H066 [partial]
+; Purpose: Entry of the saving/loading, characters, lists and monster records module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H066+$3608.
+; Direct callers: H000+$01A4
 ; --------------------------------------------------------------------------
 L066_000002F0:
 ; H066+$000002F0: 2f0c  move.l a4, -(a7)
@@ -106,11 +106,11 @@ L066_000002FA:
         dc.l H010+$00000332
         dc.w $4E5D,$285F,$205F,$4FEF,$000A,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H066_0780 [parziale]
-; Scopo: Trampolino verso H066+$0780; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H066+$0780.
-;   - Usa lo stato globale: H005+$3CD4 (percorso del salvataggio).
-; Chiamanti diretti: H013+$5304
+; ROUTINE: trampoline_H066_0780 [partial]
+; Purpose: Trampoline to H066+$0780; the actual body is there.
+;   - Jumps to the actual body at H066+$0780.
+;   - Uses the global state: H005+$3CD4 (path of the saved games).
+; Direct callers: H013+$5304
 ; --------------------------------------------------------------------------
 L066_000003D0:
 ; H066+$000003D0: 2f0c  move.l a4, -(a7)
@@ -125,17 +125,17 @@ L066_000003DA:
 ; H066+$000003DA: 600003a4  bra.w $780
         bra.w H066+$780
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H066_000003DE [parziale]
-; Scopo: Routine del modulo salvataggi/caricamenti, personaggi, liste e record dei mostri; richiama H003+$0068, H002+$00DC, H002+$0070, H002+$0088.
-;   - Richiama H003+$0068.
-;   - Richiama H002+$00DC.
-;   - Richiama H002+$0070.
-;   - Richiama H002+$0088.
-;   - Richiama H026+$000C.
-;   - Richiama H026+$0188.
-;   - Richiama H026+$0106.
-;   - Usa lo stato globale: H005+$3CD4 (percorso del salvataggio); H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H066+$0828
+; ROUTINE: sub_H066_000003DE [partial]
+; Purpose: Routine of the saving/loading, characters, lists and monster records module; calls H003+$0068, H002+$00DC, H002+$0070, H002+$0088.
+;   - Calls H003+$0068.
+;   - Calls H002+$00DC.
+;   - Calls H002+$0070.
+;   - Calls H002+$0088.
+;   - Calls H026+$000C.
+;   - Calls H026+$0188.
+;   - Calls H026+$0106.
+;   - Uses the global state: H005+$3CD4 (path of the saved games); H005+$3364 (head of the party list).
+; Direct callers: H066+$0828
 ; --------------------------------------------------------------------------
 L066_000003DE:
 ; H066+$000003DE: 4e55fe74  link.w a5, #$fe74
@@ -327,7 +327,7 @@ L066_000004BC:
 L066_000004C0:
 ; H066+$000004C0: 3f3c0050  move.w #$50, -(a7)
         move.w #$50, -(a7)
-; STATO: H005+$3CD4 = percorso del salvataggio
+; STATE: H005+$3CD4 = path of the saved games
 L066_000004C4:
 ; H066+$000004C4: 487900003cd4  pea.l $3cd4.l
         pea.l (H005+$3CD4).l
@@ -678,7 +678,7 @@ L066_00000676:
 L066_00000678:
 ; H066+$00000678: 57cafffc  dbeq d2, $676
         dbeq d2, H066+$676
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L066_0000067C:
 ; H066+$0000067C: 2b7900003364ffea  move.l $3364.l, -$16(a5)
         move.l (H005+$3364).l, -$16(a5)
@@ -943,7 +943,7 @@ L066_000007DA:
 L066_000007DE:
 ; H066+$000007DE: 3f3c0050  move.w #$50, -(a7)
         move.w #$50, -(a7)
-; STATO: H005+$3CD4 = percorso del salvataggio
+; STATE: H005+$3CD4 = path of the saved games
 L066_000007E2:
 ; H066+$000007E2: 487900003cd4  pea.l $3cd4.l
         pea.l (H005+$3CD4).l
@@ -1030,7 +1030,7 @@ L066_0000083E:
 L066_00000840:
 ; H066+$00000840: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H066+$0832; indici 0..0, default -1.
+; DISPATCH: words relative to H066+$0832; indices 0..0, default -1.
 L066_00000844:
 ; H066+$00000844: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -1050,11 +1050,11 @@ L066_00000850:
 ; H066+$00000850: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H066_00000852 [parziale]
-; Scopo: Routine del modulo salvataggi/caricamenti, personaggi, liste e record dei mostri; richiama H028+$05FA.
-;   - Richiama H028+$05FA.
-;   - Usa lo stato globale: H005+$246E (selettore del gruppo risorse).
-; Chiamanti diretti: H066+$1C1A, H066+$1D94, H066+$1EF4, H066+$2B24
+; ROUTINE: sub_H066_00000852 [partial]
+; Purpose: Routine of the saving/loading, characters, lists and monster records module; calls H028+$05FA.
+;   - Calls H028+$05FA.
+;   - Uses the global state: H005+$246E (resource group selector).
+; Direct callers: H066+$1C1A, H066+$1D94, H066+$1EF4, H066+$2B24
 ; --------------------------------------------------------------------------
 L066_00000852:
 ; H066+$00000852: 2f0c  move.l a4, -(a7)
@@ -1137,11 +1137,11 @@ L066_0000089A:
 L066_0000089C:
 ; H066+$0000089C: 51cafffc  dbra d2, $89a
         dbra d2, H066+$89A
-; STATO: H005+$246E = selettore del gruppo risorse
+; STATE: H005+$246E = resource group selector
 L066_000008A0:
 ; H066+$000008A0: 1b790000246efffe  move.b $246e.l, -$2(a5)
         move.b (H005+$246E).l, -$2(a5)
-; STATO: H005+$246E = selettore del gruppo risorse
+; STATE: H005+$246E = resource group selector
 L066_000008A8:
 ; H066+$000008A8: 42390000246e  clr.b $246e.l
         clr.b (H005+$246E).l
@@ -1163,14 +1163,14 @@ L066_000008BE:
 L066_000008C2:
 ; H066+$000008C2: 2f2d000c  move.l $c(a5), -(a7)
         move.l $c(a5), -(a7)
-; FLUSSO: Chiama Open_ResourceFile (H028+$05FA).
+; FLOW: Calls Open_ResourceFile (H028+$05FA).
 L066_000008C6:
 ; H066+$000008C6: 4eb9000005fa  jsr $5fa.l
         jsr (H028+$5FA).l
 L066_000008CC:
 ; H066+$000008CC: 1b40ffff  move.b d0, -$1(a5)
         move.b d0, -$1(a5)
-; STATO: H005+$246E = selettore del gruppo risorse
+; STATE: H005+$246E = resource group selector
 L066_000008D0:
 ; H066+$000008D0: 13edfffe0000246e  move.b -$2(a5), $246e.l
         move.b -$2(a5), (H005+$246E).l
@@ -1190,10 +1190,10 @@ L066_000008E2:
 ; H066+$000008E2: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H066_0B88 [parziale]
-; Scopo: Trampolino verso H066+$0B88; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H066+$0B88.
-; Chiamanti diretti: H066+$29C8, H066+$1718, H066+$31AA, H066+$07C0, H066+$2E58
+; ROUTINE: trampoline_H066_0B88 [partial]
+; Purpose: Trampoline to H066+$0B88; the actual body is there.
+;   - Jumps to the actual body at H066+$0B88.
+; Direct callers: H066+$29C8, H066+$1718, H066+$31AA, H066+$07C0, H066+$2E58
 ; --------------------------------------------------------------------------
 L066_000008E4:
 ; H066+$000008E4: 2f0c  move.l a4, -(a7)
@@ -1208,17 +1208,17 @@ L066_000008EE:
 ; H066+$000008EE: 60000092  bra.w $982
         bra.w H066+$982
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H066_000008F2 [parziale]
-; Scopo: Routine del modulo salvataggi/caricamenti, personaggi, liste e record dei mostri; richiama H026+$01E0, H026+$0106, H028+$033E, H026+$0188.
-;   - Richiama H026+$01E0.
-;   - Richiama H026+$0106.
-;   - Richiama H028+$033E.
-;   - Richiama H026+$0188.
-;   - Richiama H028+$01C6.
-;   - Richiama H002+$00DC.
-;   - Richiama H026+$0452.
-;   - Usa lo stato globale: H005+$3CD4 (percorso del salvataggio).
-; Chiamanti diretti: H066+$09DA
+; ROUTINE: sub_H066_000008F2 [partial]
+; Purpose: Routine of the saving/loading, characters, lists and monster records module; calls H026+$01E0, H026+$0106, H028+$033E, H026+$0188.
+;   - Calls H026+$01E0.
+;   - Calls H026+$0106.
+;   - Calls H028+$033E.
+;   - Calls H026+$0188.
+;   - Calls H028+$01C6.
+;   - Calls H002+$00DC.
+;   - Calls H026+$0452.
+;   - Uses the global state: H005+$3CD4 (path of the saved games).
+; Direct callers: H066+$09DA
 ; --------------------------------------------------------------------------
 L066_000008F2:
 ; H066+$000008F2: 4e550000  link.w a5, #$0
@@ -1365,7 +1365,7 @@ L066_000009A6:
 L066_000009AA:
 ; H066+$000009AA: 3f3c0050  move.w #$50, -(a7)
         move.w #$50, -(a7)
-; STATO: H005+$3CD4 = percorso del salvataggio
+; STATE: H005+$3CD4 = path of the saved games
 L066_000009AE:
 ; H066+$000009AE: 487900003cd4  pea.l $3cd4.l
         pea.l (H005+$3CD4).l
@@ -1440,7 +1440,7 @@ L066_00000A00:
 L066_00000A04:
 ; H066+$00000A04: 3f3c0050  move.w #$50, -(a7)
         move.w #$50, -(a7)
-; STATO: H005+$3CD4 = percorso del salvataggio
+; STATE: H005+$3CD4 = path of the saved games
 L066_00000A08:
 ; H066+$00000A08: 487900003cd4  pea.l $3cd4.l
         pea.l (H005+$3CD4).l
@@ -1476,14 +1476,14 @@ L066_00000A30:
 L066_00000A34:
 ; H066+$00000A34: 486dffa6  pea.l -$5a(a5)
         pea.l -$5a(a5)
-; FLUSSO: Chiama Open_WithRetry (H028+$01C6).
+; FLOW: Calls Open_WithRetry (H028+$01C6).
 L066_00000A38:
 ; H066+$00000A38: 4eb9000001c6  jsr $1c6.l
         jsr (H028+$1C6).l
 L066_00000A3E:
 ; H066+$00000A3E: 3f3c0050  move.w #$50, -(a7)
         move.w #$50, -(a7)
-; STATO: H005+$3CD4 = percorso del salvataggio
+; STATE: H005+$3CD4 = path of the saved games
 L066_00000A42:
 ; H066+$00000A42: 487900003cd4  pea.l $3cd4.l
         pea.l (H005+$3CD4).l
@@ -1497,7 +1497,7 @@ L066_00000A4C:
 L066_00000A52:
 ; H066+$00000A52: 6000ff72  bra.w $9c6
         bra.w H066+$9C6
-; STATO: H005+$3CD4 = percorso del salvataggio
+; STATE: H005+$3CD4 = path of the saved games
 L066_00000A56:
 ; H066+$00000A56: 47f900003cd4  lea.l $3cd4.l, a3
         lea.l (H005+$3CD4).l, a3
@@ -1520,7 +1520,7 @@ L066_00000A6C:
 L066_00000A70:
 ; H066+$00000A70: 660000fc  bne.w $b6e
         bne.w H066+$B6E
-; STATO: H005+$3CD4 = percorso del salvataggio
+; STATE: H005+$3CD4 = path of the saved games
 L066_00000A74:
 ; H066+$00000A74: 143900003cd4  move.b $3cd4.l, d2
         move.b (H005+$3CD4).l, d2
@@ -1569,7 +1569,7 @@ L066_00000AA6:
 L066_00000AAA:
 ; H066+$00000AAA: 3f3c0050  move.w #$50, -(a7)
         move.w #$50, -(a7)
-; STATO: H005+$3CD4 = percorso del salvataggio
+; STATE: H005+$3CD4 = path of the saved games
 L066_00000AAE:
 ; H066+$00000AAE: 487900003cd4  pea.l $3cd4.l
         pea.l (H005+$3CD4).l
@@ -1687,7 +1687,7 @@ L066_00000B46:
 L066_00000B4A:
 ; H066+$00000B4A: 486dffa6  pea.l -$5a(a5)
         pea.l -$5a(a5)
-; FLUSSO: Chiama Open_WithRetry (H028+$01C6).
+; FLOW: Calls Open_WithRetry (H028+$01C6).
 L066_00000B4E:
 ; H066+$00000B4E: 4eb9000001c6  jsr $1c6.l
         jsr (H028+$1C6).l
@@ -1697,7 +1697,7 @@ L066_00000B54:
 L066_00000B58:
 ; H066+$00000B58: 67000014  beq.w $b6e
         beq.w H066+$B6E
-; STATO: H005+$3CD4 = percorso del salvataggio
+; STATE: H005+$3CD4 = path of the saved games
 L066_00000B5C:
 ; H066+$00000B5C: 47f900003cd4  lea.l $3cd4.l, a3
         lea.l (H005+$3CD4).l, a3
@@ -1750,7 +1750,7 @@ L066_00000B92:
 L066_00000B94:
 ; H066+$00000B94: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H066+$0B86; indici 0..0, default -1.
+; DISPATCH: words relative to H066+$0B86; indices 0..0, default -1.
 L066_00000B98:
 ; H066+$00000B98: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -1776,10 +1776,10 @@ L066_00000BAA:
 ; H066+$00000BAA: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H066_00000BAC [parziale]
-; Scopo: Routine del modulo salvataggi/caricamenti, personaggi, liste e record dei mostri; richiama H016+$0014.
-;   - Richiama H016+$0014.
-; Chiamanti diretti: H066+$0F40, H066+$0F60
+; ROUTINE: sub_H066_00000BAC [partial]
+; Purpose: Routine of the saving/loading, characters, lists and monster records module; calls H016+$0014.
+;   - Calls H016+$0014.
+; Direct callers: H066+$0F40, H066+$0F60
 ; --------------------------------------------------------------------------
 L066_00000BAC:
 ; H066+$00000BAC: 2f0c  move.l a4, -(a7)
@@ -1916,16 +1916,16 @@ L066_00000C32:
 ; H066+$00000C32: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H066_0E5A [parziale]
-; Scopo: Trampolino verso H066+$0E5A; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H066+$0E5A.
-;   - Richiama H028+$0D36.
-;   - Richiama H029+$0354.
-;   - Richiama H029+$0EFE.
-;   - Richiama H029+$0766.
-;   - Richiama H035+$01DC.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H013+$5412, H013+$558E, H066+$2EFC, H047+$0962, H047+$0996, H047+$0ECA e altri 5
+; ROUTINE: trampoline_H066_0E5A [partial]
+; Purpose: Trampoline to H066+$0E5A; the actual body is there.
+;   - Jumps to the actual body at H066+$0E5A.
+;   - Calls H028+$0D36.
+;   - Calls H029+$0354.
+;   - Calls H029+$0EFE.
+;   - Calls H029+$0766.
+;   - Calls H035+$01DC.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H013+$5412, H013+$558E, H066+$2EFC, H047+$0962, H047+$0996, H047+$0ECA and 5 more
 ; --------------------------------------------------------------------------
 L066_00000C34:
 ; H066+$00000C34: 2f0c  move.l a4, -(a7)
@@ -1940,12 +1940,12 @@ L066_00000C3E:
 ; H066+$00000C3E: 6000021a  bra.w $e5a
         bra.w H066+$E5A
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H066_00000C42 [parziale]
-; Scopo: Routine del modulo salvataggi/caricamenti, personaggi, liste e record dei mostri; richiama H029+$0408, H016+$0084, H029+$067A.
-;   - Richiama H029+$0408.
-;   - Richiama H016+$0084.
-;   - Richiama H029+$067A.
-; Chiamanti diretti: H066+$0DF6, H066+$0D36
+; ROUTINE: sub_H066_00000C42 [partial]
+; Purpose: Routine of the saving/loading, characters, lists and monster records module; calls H029+$0408, H016+$0084, H029+$067A.
+;   - Calls H029+$0408.
+;   - Calls H016+$0084.
+;   - Calls H029+$067A.
+; Direct callers: H066+$0DF6, H066+$0D36
 ; --------------------------------------------------------------------------
 L066_00000C42:
 ; H066+$00000C42: 4e55fffe  link.w a5, #$fffe
@@ -1974,7 +1974,7 @@ L066_00000C5C:
 L066_00000C60:
 ; H066+$00000C60: 2f2d000c  move.l $c(a5), -(a7)
         move.l $c(a5), -(a7)
-; FLUSSO: Chiama Allocate_GraphicRecord (H029+$0408).
+; FLOW: Calls Allocate_GraphicRecord (H029+$0408).
 L066_00000C64:
 ; H066+$00000C64: 4eb900000408  jsr $408.l
         jsr (H029+$408).l
@@ -2094,7 +2094,7 @@ L066_00000CF6:
 L066_00000CF8:
 ; H066+$00000CF8: 2f2d000c  move.l $c(a5), -(a7)
         move.l $c(a5), -(a7)
-; FLUSSO: Chiama Free_GraphicRecord (H029+$067A).
+; FLOW: Calls Free_GraphicRecord (H029+$067A).
 L066_00000CFC:
 ; H066+$00000CFC: 4eb90000067a  jsr $67a.l
         jsr (H029+$67A).l
@@ -2119,7 +2119,7 @@ L066_00000D12:
 L066_00000D16:
 ; H066+$00000D16: 2f2d000c  move.l $c(a5), -(a7)
         move.l $c(a5), -(a7)
-; FLUSSO: Chiama Allocate_GraphicRecord (H029+$0408).
+; FLOW: Calls Allocate_GraphicRecord (H029+$0408).
 L066_00000D1A:
 ; H066+$00000D1A: 4eb900000408  jsr $408.l
         jsr (H029+$408).l
@@ -2139,10 +2139,10 @@ L066_00000D28:
 ; H066+$00000D28: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H066_00000D2A [parziale]
-; Scopo: Routine del modulo salvataggi/caricamenti, personaggi, liste e record dei mostri; richiama H016+$0014.
-;   - Richiama H016+$0014.
-; Chiamanti diretti: H066+$0ED4, H066+$0EF8, H066+$0F20
+; ROUTINE: sub_H066_00000D2A [partial]
+; Purpose: Routine of the saving/loading, characters, lists and monster records module; calls H016+$0014.
+;   - Calls H016+$0014.
+; Direct callers: H066+$0ED4, H066+$0EF8, H066+$0F20
 ; --------------------------------------------------------------------------
 L066_00000D2A:
 ; H066+$00000D2A: 4e55fffc  link.w a5, #$fffc
@@ -2312,16 +2312,16 @@ L066_00000DE8:
 ; H066+$00000DE8: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H066_00000DEA [parziale]
-; Scopo: Routine del modulo salvataggi/caricamenti, personaggi, liste e record dei mostri; richiama H016+$0014, H028+$0D36, H029+$0354, H029+$0EFE.
-;   - Richiama H016+$0014.
-;   - Richiama H028+$0D36.
-;   - Richiama H029+$0354.
-;   - Richiama H029+$0EFE.
-;   - Richiama H029+$0766.
-;   - Richiama H035+$01DC.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H066+$10FE, H066+$1122, H066+$11D8, H066+$1200, H066+$1154, H066+$1184
+; ROUTINE: sub_H066_00000DEA [partial]
+; Purpose: Routine of the saving/loading, characters, lists and monster records module; calls H016+$0014, H028+$0D36, H029+$0354, H029+$0EFE.
+;   - Calls H016+$0014.
+;   - Calls H028+$0D36.
+;   - Calls H029+$0354.
+;   - Calls H029+$0EFE.
+;   - Calls H029+$0766.
+;   - Calls H035+$01DC.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H066+$10FE, H066+$1122, H066+$11D8, H066+$1200, H066+$1154, H066+$1184
 ; --------------------------------------------------------------------------
 L066_00000DEA:
 ; H066+$00000DEA: 4e550000  link.w a5, #$0
@@ -2421,7 +2421,7 @@ L066_00000E58:
 L066_00000E5A:
 ; H066+$00000E5A: 4eb900000d36  jsr $d36.l
         jsr (H028+$D36).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L066_00000E60:
 ; H066+$00000E60: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3483,12 +3483,12 @@ L066_00001310:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Delete_CharacterSidecarFiles [verificato]
-; Scopo: Rimuove file associati al nome derivato dal personaggio.
-;   - Costruisce i nomi con suffissi .who, .swg e .fx.
-;   - Invoca il wrapper DeleteFile per ciascun nome.
-;   - Non è il caricatore delle liste: quella ricostruzione avviene in H066+$1B0E.
-; Chiamanti diretti: H013+$2D04, H066+$2EC0, H066+$35E2
+; ROUTINE: Delete_CharacterSidecarFiles [verified]
+; Purpose: Removes the files associated with the name derived from the character.
+;   - Builds the names with the suffixes .who, .swg and .fx.
+;   - Invokes the DeleteFile wrapper for each name.
+;   - It is not the loader of the lists: that reconstruction happens in H066+$1B0E.
+; Direct callers: H013+$2D04, H066+$2EC0, H066+$35E2
 ; --------------------------------------------------------------------------
 L066_00001312:
 ; H066+$00001312: 2f0c  move.l a4, -(a7)
@@ -3524,7 +3524,7 @@ L066_00001336:
 L066_0000133A:
 ; H066+$0000133A: 3f3c0050  move.w #$50, -(a7)
         move.w #$50, -(a7)
-; STATO: H005+$3CD4 = percorso del salvataggio
+; STATE: H005+$3CD4 = path of the saved games
 L066_0000133E:
 ; H066+$0000133E: 487900003cd4  pea.l $3cd4.l
         pea.l (H005+$3CD4).l
@@ -3723,11 +3723,11 @@ L066_0000142C:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Query_FreeDiskSpace [parziale]
-; Scopo: Ricava lo spazio disponibile sul volume usato per salvare.
-;   - Passa per gli helper DOS di lock/informazioni volume.
-;   - Il valore restituito viene confrontato con la stima del numero di byte necessari.
-; Chiamanti diretti: H066+$17E6, H066+$3230
+; ROUTINE: Query_FreeDiskSpace [partial]
+; Purpose: Derives the space available on the volume used for saving.
+;   - Goes through the DOS lock/volume information helpers.
+;   - The returned value is compared with the estimate of the number of bytes needed.
+; Direct callers: H066+$17E6, H066+$3230
 ; --------------------------------------------------------------------------
 L066_0000142E:
 ; H066+$0000142E: 2f0c  move.l a4, -(a7)
@@ -3884,12 +3884,12 @@ L066_000014DA:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Check_SaveWritable [parziale]
-; Scopo: Controlla che il supporto di salvataggio sia utilizzabile.
-;   - Usa il nome testfilename e messaggi di richiesta del disco.
-;   - Il risultato influenza la prosecuzione dei percorsi di salvataggio.
-;   - Non è stato attribuito un significato a ogni valore di ritorno.
-; Chiamanti diretti: H066+$18AA, H066+$3256
+; ROUTINE: Check_SaveWritable [partial]
+; Purpose: Checks that the save medium can be used.
+;   - Uses the name testfilename and disk request messages.
+;   - The result affects how the saving paths go on.
+;   - A meaning has not been assigned to every return value.
+; Direct callers: H066+$18AA, H066+$3256
 ; --------------------------------------------------------------------------
 L066_000014DC:
 ; H066+$000014DC: 2f0c  move.l a4, -(a7)
@@ -3904,17 +3904,17 @@ L066_000014E6:
 ; H066+$000014E6: 6000005e  bra.w $1546
         bra.w H066+$1546
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H066_000014EA [parziale]
-; Scopo: Routine del modulo salvataggi/caricamenti, personaggi, liste e record dei mostri; richiama H026+$0188, H026+$01E0, H002+$00F2, H026+$0452.
-;   - Richiama H026+$0188.
-;   - Richiama H026+$01E0.
-;   - Richiama H002+$00F2.
-;   - Richiama H026+$0452.
-;   - Richiama H030+$028A.
-;   - Richiama H002+$0014.
-;   - Richiama H002+$004A.
-;   - Usa lo stato globale: H005+$3CD4 (percorso del salvataggio).
-; Chiamanti diretti: H066+$1548, H066+$1620
+; ROUTINE: sub_H066_000014EA [partial]
+; Purpose: Routine of the saving/loading, characters, lists and monster records module; calls H026+$0188, H026+$01E0, H002+$00F2, H026+$0452.
+;   - Calls H026+$0188.
+;   - Calls H026+$01E0.
+;   - Calls H002+$00F2.
+;   - Calls H026+$0452.
+;   - Calls H030+$028A.
+;   - Calls H002+$0014.
+;   - Calls H002+$004A.
+;   - Uses the global state: H005+$3CD4 (path of the saved games).
+; Direct callers: H066+$1548, H066+$1620
 ; --------------------------------------------------------------------------
 L066_000014EA:
 ; H066+$000014EA: 4e550000  link.w a5, #$0
@@ -3931,7 +3931,7 @@ L066_000014F6:
 L066_000014FA:
 ; H066+$000014FA: 3f3c0050  move.w #$50, -(a7)
         move.w #$50, -(a7)
-; STATO: H005+$3CD4 = percorso del salvataggio
+; STATE: H005+$3CD4 = path of the saved games
 L066_000014FE:
 ; H066+$000014FE: 487900003cd4  pea.l $3cd4.l
         pea.l (H005+$3CD4).l
@@ -4017,7 +4017,7 @@ L066_00001560:
 L066_00001564:
 ; H066+$00001564: 660000a6  bne.w $160c
         bne.w H066+$160C
-; STATO: H005+$3CD4 = percorso del salvataggio
+; STATE: H005+$3CD4 = path of the saved games
 L066_00001568:
 ; H066+$00001568: 143900003cd4  move.b $3cd4.l, d2
         move.b (H005+$3CD4).l, d2
@@ -4067,7 +4067,7 @@ L066_000015A0:
 L066_000015A4:
 ; H066+$000015A4: 3f3c0050  move.w #$50, -(a7)
         move.w #$50, -(a7)
-; STATO: H005+$3CD4 = percorso del salvataggio
+; STATE: H005+$3CD4 = path of the saved games
 L066_000015A8:
 ; H066+$000015A8: 487900003cd4  pea.l $3cd4.l
         pea.l (H005+$3CD4).l
@@ -4194,14 +4194,14 @@ L066_0000163E:
         rts 
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Save_CharacterRecord [verificato]
-; Scopo: Scrive un personaggio e serializza le sue due liste collegate.
-;   - Compone nome/estensione e gestisce eventuale sostituzione del file.
-;   - Scrive il record principale di 426 byte con Write.
-;   - La lista a record+$0150 viene scritta in .swg come nodi di 72 byte; next a +$2C.
-;   - La lista a record+$00E8 viene scritta in .fx come nodi di 10 byte; next a +$06.
-;   - Un nome fornito dal chiamante e un nome derivato dal personaggio seguono percorsi di estensione differenti.
-; Chiamanti diretti: H013+$2B7C, H013+$5022, H066+$35DA
+; ROUTINE: Save_CharacterRecord [verified]
+; Purpose: Writes a character and serialises its two linked lists.
+;   - Builds name/extension and handles a possible replacement of the file.
+;   - Writes the main 426-byte record with Write.
+;   - The list at record+$0150 is written to .swg as 72-byte nodes; next at +$2C.
+;   - The list at record+$00E8 is written to .fx as 10-byte nodes; next at +$06.
+;   - A name supplied by the caller and a name derived from the character follow different extension paths.
+; Direct callers: H013+$2B7C, H013+$5022, H066+$35DA
 ; --------------------------------------------------------------------------
 L066_00001640:
 ; H066+$00001640: 2f0c  move.l a4, -(a7)
@@ -4216,17 +4216,17 @@ L066_0000164A:
 ; H066+$0000164A: 600000a0  bra.w $16ec
         bra.w H066+$16EC
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H066_0000164E [parziale]
-; Scopo: Routine del modulo salvataggi/caricamenti, personaggi, liste e record dei mostri; richiama H026+$0188, H026+$01E0, H030+$028A, H008+$01FC.
-;   - Richiama H026+$0188.
-;   - Richiama H026+$01E0.
-;   - Richiama H030+$028A.
-;   - Richiama H008+$01FC.
-;   - Richiama H028+$08F0.
-;   - Richiama H028+$02D0.
-;   - Richiama H008+$203C.
-;   - Usa lo stato globale: H005+$3CD4 (percorso del salvataggio).
-; Chiamanti diretti: H066+$18CA, H066+$19C8, H066+$1A10, H066+$1A8E
+; ROUTINE: sub_H066_0000164E [partial]
+; Purpose: Routine of the saving/loading, characters, lists and monster records module; calls H026+$0188, H026+$01E0, H030+$028A, H008+$01FC.
+;   - Calls H026+$0188.
+;   - Calls H026+$01E0.
+;   - Calls H030+$028A.
+;   - Calls H008+$01FC.
+;   - Calls H028+$08F0.
+;   - Calls H028+$02D0.
+;   - Calls H008+$203C.
+;   - Uses the global state: H005+$3CD4 (path of the saved games).
+; Direct callers: H066+$18CA, H066+$19C8, H066+$1A10, H066+$1A8E
 ; --------------------------------------------------------------------------
 L066_0000164E:
 ; H066+$0000164E: 4e550000  link.w a5, #$0
@@ -4279,7 +4279,7 @@ L066_0000167C:
 L066_00001680:
 ; H066+$00001680: 3f3c0050  move.w #$50, -(a7)
         move.w #$50, -(a7)
-; STATO: H005+$3CD4 = percorso del salvataggio
+; STATE: H005+$3CD4 = path of the saved games
 L066_00001684:
 ; H066+$00001684: 487900003cd4  pea.l $3cd4.l
         pea.l (H005+$3CD4).l
@@ -4491,7 +4491,7 @@ L066_00001794:
 L066_00001796:
 ; H066+$00001796: 1b7c004fff77  move.b #$4f, -$89(a5)
         move.b #$4f, -$89(a5)
-; STATO: H005+$3CD4 = percorso del salvataggio
+; STATE: H005+$3CD4 = path of the saved games
 L066_0000179C:
 ; H066+$0000179C: 143900003cd4  move.b $3cd4.l, d2
         move.b (H005+$3CD4).l, d2
@@ -4555,7 +4555,7 @@ L066_000017DE:
 L066_000017E2:
 ; H066+$000017E2: 486dffa8  pea.l -$58(a5)
         pea.l -$58(a5)
-; FLUSSO: Chiama Query_FreeDiskSpace (H066+$142E).
+; FLOW: Calls Query_FreeDiskSpace (H066+$142E).
 L066_000017E6:
 ; H066+$000017E6: 6100fc46  bsr.w $142e
         bsr.w H066+$142E
@@ -4614,7 +4614,7 @@ L066_00001826:
 L066_00001828:
 ; H066+$00001828: 486dff47  pea.l -$b9(a5)
         pea.l -$b9(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L066_0000182C:
 ; H066+$0000182C: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -4706,7 +4706,7 @@ L066_000018A0:
 L066_000018A4:
 ; H066+$000018A4: 4eb900000188  jsr $188.l
         jsr (H026+$188).l
-; FLUSSO: Chiama Check_SaveWritable (H066+$14DC).
+; FLOW: Calls Check_SaveWritable (H066+$14DC).
 L066_000018AA:
 ; H066+$000018AA: 6100fc30  bsr.w $14dc
         bsr.w H066+$14DC
@@ -4961,7 +4961,7 @@ L066_000019EA:
 L066_000019F0:
 ; H066+$000019F0: 2f02  move.l d2, -(a7)
         move.l d2, -(a7)
-; PASSO: Scrive il record principale, esattamente $01AA = 426 byte.
+; STEP: Writes the main record, exactly $01AA = 426 bytes.
 ; -> H002+$01CC (wrapper_Write)
 L066_000019F2:
 ; H066+$000019F2: 4eb9000001cc  jsr $1cc.l
@@ -5050,7 +5050,7 @@ L066_00001A60:
 L066_00001A62:
 ; H066+$00001A62: 2f02  move.l d2, -(a7)
         move.l d2, -(a7)
-; PASSO: Scrive un nodo .swg da $48 = 72 byte; il link next è a +$2C.
+; STEP: Writes a .swg node of $48 = 72 bytes; the next link is at +$2C.
 ; -> H002+$01CC (wrapper_Write)
 L066_00001A64:
 ; H066+$00001A64: 4eb9000001cc  jsr $1cc.l
@@ -5148,7 +5148,7 @@ L066_00001ADE:
 L066_00001AE0:
 ; H066+$00001AE0: 2f02  move.l d2, -(a7)
         move.l d2, -(a7)
-; PASSO: Scrive un nodo .fx da $0A = 10 byte; il link next è a +$06.
+; STEP: Writes a .fx node of $0A = 10 bytes; the next link is at +$06.
 ; -> H002+$01CC (wrapper_Write)
 L066_00001AE2:
 ; H066+$00001AE2: 4eb9000001cc  jsr $1cc.l
@@ -5189,14 +5189,14 @@ L066_00001B0C:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Load_CharacterRecord [verificato]
-; Scopo: Legge un record personaggio e ricostruisce le liste collegate in memoria.
-;   - Legge 426 byte del record.
-;   - Azzera i puntatori +$0150, +$00E8, +$0192 e +$018E: gli indirizzi salvati non sono riutilizzabili.
-;   - Se esiste .swg, legge nodi da 72 byte, alloca nuove celle e ricostruisce next a +$2C.
-;   - Se esiste .fx, legge nodi da 10 byte e ricostruisce next a +$06.
-;   - Esegue le routine di riallineamento/aggiornamento finale del personaggio.
-; Chiamanti diretti: H013+$53CE, H066+$2E4A
+; ROUTINE: Load_CharacterRecord [verified]
+; Purpose: Reads a character record and rebuilds the linked lists in memory.
+;   - Reads 426 bytes of the record.
+;   - Clears the pointers +$0150, +$00E8, +$0192 and +$018E: the saved addresses cannot be reused.
+;   - If .swg exists, reads 72-byte nodes, allocates new cells and rebuilds next at +$2C.
+;   - If .fx exists, reads 10-byte nodes and rebuilds next at +$06.
+;   - Runs the final realignment/update routines of the character.
+; Direct callers: H013+$53CE, H066+$2E4A
 ; --------------------------------------------------------------------------
 L066_00001B0E:
 ; H066+$00001B0E: 2f0c  move.l a4, -(a7)
@@ -5278,7 +5278,7 @@ L066_00001B62:
 L066_00001B66:
 ; H066+$00001B66: 3f3c0050  move.w #$50, -(a7)
         move.w #$50, -(a7)
-; STATO: H005+$3CD4 = percorso del salvataggio
+; STATE: H005+$3CD4 = path of the saved games
 L066_00001B6A:
 ; H066+$00001B6A: 487900003cd4  pea.l $3cd4.l
         pea.l (H005+$3CD4).l
@@ -5320,7 +5320,7 @@ L066_00001B9A:
 L066_00001B9E:
 ; H066+$00001B9E: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$246E = selettore del gruppo risorse
+; STATE: H005+$246E = resource group selector
 L066_00001BA0:
 ; H066+$00001BA0: 14390000246e  move.b $246e.l, d2
         move.b (H005+$246E).l, d2
@@ -5352,7 +5352,7 @@ L066_00001BC4:
 L066_00001BC8:
 ; H066+$00001BC8: 3f3c0050  move.w #$50, -(a7)
         move.w #$50, -(a7)
-; STATO: H005+$3CD4 = percorso del salvataggio
+; STATE: H005+$3CD4 = path of the saved games
 L066_00001BCC:
 ; H066+$00001BCC: 487900003cd4  pea.l $3cd4.l
         pea.l (H005+$3CD4).l
@@ -5434,7 +5434,7 @@ L066_00001C2E:
 L066_00001C32:
 ; H066+$00001C32: 486c014e  pea.l $14e(a4)
         pea.l $14e(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L066_00001C36:
 ; H066+$00001C36: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -5489,7 +5489,7 @@ L066_00001C76:
 L066_00001C7A:
 ; H066+$00001C7A: 4eb900000014  jsr $14.l
         jsr (H002+$14).l
-; PASSO: Ignora gli indirizzi presenti nel file: azzera puntatori e link del record appena letto.
+; STEP: Ignores the addresses present in the file: clears pointers and links of the record just read.
 L066_00001C80:
 ; H066+$00001C80: 266d0010  movea.l $10(a5), a3
         movea.l $10(a5), a3
@@ -5540,7 +5540,7 @@ L066_00001CB2:
 L066_00001CB4:
 ; H066+$00001CB4: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H066+$1CA6; indici 0..0, default -1.
+; DISPATCH: words relative to H066+$1CA6; indices 0..0, default -1.
 L066_00001CB8:
 ; H066+$00001CB8: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -5601,7 +5601,7 @@ L066_00001CFE:
 L066_00001D02:
 ; H066+$00001D02: 3f3c0050  move.w #$50, -(a7)
         move.w #$50, -(a7)
-; STATO: H005+$3CD4 = percorso del salvataggio
+; STATE: H005+$3CD4 = path of the saved games
 L066_00001D06:
 ; H066+$00001D06: 487900003cd4  pea.l $3cd4.l
         pea.l (H005+$3CD4).l
@@ -5833,7 +5833,7 @@ L066_00001E2C:
 L066_00001E30:
 ; H066+$00001E30: 266dffe4  movea.l -$1c(a5), a3
         movea.l -$1c(a5), a3
-; PASSO: Il nodo .swg appena ricostruito termina con next = NULL.
+; STEP: The .swg node just rebuilt ends with next = NULL.
 L066_00001E34:
 ; H066+$00001E34: 42ab002c  clr.l $2c(a3)
         clr.l $2c(a3)
@@ -5872,7 +5872,7 @@ L066_00001E5E:
 L066_00001E62:
 ; H066+$00001E62: 3f3c0050  move.w #$50, -(a7)
         move.w #$50, -(a7)
-; STATO: H005+$3CD4 = percorso del salvataggio
+; STATE: H005+$3CD4 = path of the saved games
 L066_00001E66:
 ; H066+$00001E66: 487900003cd4  pea.l $3cd4.l
         pea.l (H005+$3CD4).l
@@ -6104,7 +6104,7 @@ L066_00001F8C:
 L066_00001F90:
 ; H066+$00001F90: 266dffdc  movea.l -$24(a5), a3
         movea.l -$24(a5), a3
-; PASSO: Il nodo .fx appena ricostruito termina con next = NULL.
+; STEP: The .fx node just rebuilt ends with next = NULL.
 L066_00001F94:
 ; H066+$00001F94: 42ab0006  clr.l $6(a3)
         clr.l $6(a3)
@@ -6167,14 +6167,14 @@ L066_00001FD8:
 FN_load_MON_CHA_to_runtime_character:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Load_MonsterRecord [verificato]
-; Scopo: Carica MON<gruppo>CHA e converte il record su disco nel formato runtime.
-;   - Legge il blocco identificato tramite il caricatore DAX.
-;   - Il campione contiene record CHA da 409 byte.
-;   - Copia il nome saltando il prefisso di lunghezza e impone il terminatore a offset 15.
-;   - Copia e amplia campi del blocco nel record runtime da 426 byte; il campo a +$58 viene ampliato a word.
-;   - Carica inoltre risorse associate e adatta il record al contesto corrente.
-; Chiamanti diretti: H061+$1C14, H066+$27AC
+; ROUTINE: Load_MonsterRecord [verified]
+; Purpose: Loads MON<group>CHA and converts the on-disk record into the runtime format.
+;   - Reads the identified block through the DAX loader.
+;   - The sample contains CHA records of 409 bytes.
+;   - Copies the name skipping the length prefix and forces the terminator at offset 15.
+;   - Copies and widens fields of the block into the 426-byte runtime record; the field at +$58 is widened to a word.
+;   - Also loads associated resources and adapts the record to the current context.
+; Direct callers: H061+$1C14, H066+$27AC
 ; --------------------------------------------------------------------------
 L066_00001FDA:
 ; H066+$00001FDA: 2f0c  move.l a4, -(a7)
@@ -6189,17 +6189,17 @@ L066_00001FE4:
 ; H066+$00001FE4: 60000084  bra.w $206a
         bra.w H066+$206A
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H066_00001FE8 [parziale]
-; Scopo: Routine del modulo salvataggi/caricamenti, personaggi, liste e record dei mostri; richiama H026+$0188, H026+$01E0, H045+$01D6, H028+$0DD8.
-;   - Richiama H026+$0188.
-;   - Richiama H026+$01E0.
-;   - Richiama H045+$01D6.
-;   - Richiama FN_DAX_load_block (H028+$0DD8).
-;   - Richiama H014+$0018.
-;   - Richiama H030+$028A.
-;   - Richiama H010+$0332.
-;   - Usa lo stato globale: H005+$246E (selettore del gruppo risorse).
-; Chiamanti diretti: H066+$209A, H066+$2410, H066+$2534
+; ROUTINE: sub_H066_00001FE8 [partial]
+; Purpose: Routine of the saving/loading, characters, lists and monster records module; calls H026+$0188, H026+$01E0, H045+$01D6, H028+$0DD8.
+;   - Calls H026+$0188.
+;   - Calls H026+$01E0.
+;   - Calls H045+$01D6.
+;   - Calls FN_DAX_load_block (H028+$0DD8).
+;   - Calls H014+$0018.
+;   - Calls H030+$028A.
+;   - Calls H010+$0332.
+;   - Uses the global state: H005+$246E (resource group selector).
+; Direct callers: H066+$209A, H066+$2410, H066+$2534
 ; --------------------------------------------------------------------------
 L066_00001FE8:
 ; H066+$00001FE8: 4e550000  link.w a5, #$0
@@ -6321,7 +6321,7 @@ L066_0000206E:
 L066_00002072:
 ; H066+$00002072: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$246E = selettore del gruppo risorse
+; STATE: H005+$246E = resource group selector
 L066_00002074:
 ; H066+$00002074: 14390000246e  move.b $246e.l, d2
         move.b (H005+$246E).l, d2
@@ -6377,7 +6377,7 @@ L066_000020B2:
 L066_000020B6:
 ; H066+$000020B6: 486dffa6  pea.l -$5a(a5)
         pea.l -$5a(a5)
-; FLUSSO: Chiama DAX_LoadBlock (H028+$0DD8).
+; FLOW: Calls DAX_LoadBlock (H028+$0DD8).
 L066_000020BA:
 ; H066+$000020BA: 4eb900000dd8  jsr $dd8.l
         jsr (FN_DAX_load_block).l
@@ -6396,7 +6396,7 @@ L066_000020CC:
 L066_000020D0:
 ; H066+$000020D0: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$246E = selettore del gruppo risorse
+; STATE: H005+$246E = resource group selector
 L066_000020D2:
 ; H066+$000020D2: 14390000246e  move.b $246e.l, d2
         move.b (H005+$246E).l, d2
@@ -7128,7 +7128,7 @@ L066_00002428:
 L066_0000242C:
 ; H066+$0000242C: 486dffa6  pea.l -$5a(a5)
         pea.l -$5a(a5)
-; FLUSSO: Chiama DAX_LoadBlock (H028+$0DD8).
+; FLOW: Calls DAX_LoadBlock (H028+$0DD8).
 L066_00002430:
 ; H066+$00002430: 4eb900000dd8  jsr $dd8.l
         jsr (FN_DAX_load_block).l
@@ -7363,7 +7363,7 @@ L066_0000254C:
 L066_00002550:
 ; H066+$00002550: 486dffa6  pea.l -$5a(a5)
         pea.l -$5a(a5)
-; FLUSSO: Chiama DAX_LoadBlock (H028+$0DD8).
+; FLOW: Calls DAX_LoadBlock (H028+$0DD8).
 L066_00002554:
 ; H066+$00002554: 4eb900000dd8  jsr $dd8.l
         jsr (FN_DAX_load_block).l
@@ -7811,10 +7811,10 @@ L066_0000276C:
 ; H066+$0000276C: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H066_27E4 [parziale]
-; Scopo: Trampolino verso H066+$27E4; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H066+$27E4.
-; Chiamanti diretti: H012+$2528
+; ROUTINE: trampoline_H066_27E4 [partial]
+; Purpose: Trampoline to H066+$27E4; the actual body is there.
+;   - Jumps to the actual body at H066+$27E4.
+; Direct callers: H012+$2528
 ; --------------------------------------------------------------------------
 L066_0000276E:
 ; H066+$0000276E: 2f0c  move.l a4, -(a7)
@@ -7825,7 +7825,7 @@ L066_00002770:
 L066_00002774:
 ; H066+$00002774: 4e55fff6  link.w a5, #$fff6
         link.w a5, #$fff6
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L066_00002778:
 ; H066+$00002778: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -7860,7 +7860,7 @@ L066_000027A4:
 L066_000027A8:
 ; H066+$000027A8: 2f2dfff8  move.l -$8(a5), -(a7)
         move.l -$8(a5), -(a7)
-; FLUSSO: Chiama Load_MonsterRecord (H066+$1FDA).
+; FLOW: Calls Load_MonsterRecord (H066+$1FDA).
 L066_000027AC:
 ; H066+$000027AC: 6100f82c  bsr.w $1fda
         bsr.w H066+$1FDA
@@ -7920,13 +7920,13 @@ L066_000027EC:
 ; H066+$000027EC: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H066_000027EE [parziale]
-; Scopo: Routine del modulo salvataggi/caricamenti, personaggi, liste e record dei mostri; richiama H029+$0312, H029+$03E2, H073+$05AE.
-;   - Richiama H029+$0312.
-;   - Richiama H029+$03E2.
-;   - Richiama H073+$05AE.
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party); H005+$3368 (personaggio corrente); H005+$3E00 (puntatore stato persistente B, 2048 byte).
-; Chiamanti diretti: H013+$5408, H013+$5584, H066+$27C0, H066+$2E52
+; ROUTINE: sub_H066_000027EE [partial]
+; Purpose: Routine of the saving/loading, characters, lists and monster records module; calls H029+$0312, H029+$03E2, H073+$05AE.
+;   - Calls H029+$0312.
+;   - Calls H029+$03E2.
+;   - Calls H073+$05AE.
+;   - Uses the global state: H005+$3364 (head of the party list); H005+$3368 (current character); H005+$3E00 (pointer to persistent state B, 2048 bytes).
+; Direct callers: H013+$5408, H013+$5584, H066+$27C0, H066+$2E52
 ; --------------------------------------------------------------------------
 L066_000027EE:
 ; H066+$000027EE: 2f0c  move.l a4, -(a7)
@@ -7943,21 +7943,21 @@ L066_000027F8:
 L066_000027FC:
 ; H066+$000027FC: 177c00ff0143  move.b #$ff, $143(a3)
         move.b #$ff, $143(a3)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L066_00002802:
 ; H066+$00002802: 4ab900003364  tst.l $3364.l
         tst.l (H005+$3364).l
 L066_00002808:
 ; H066+$00002808: 6600000e  bne.w $2818
         bne.w H066+$2818
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L066_0000280C:
 ; H066+$0000280C: 23ed000c00003364  move.l $c(a5), $3364.l
         move.l $c(a5), (H005+$3364).l
 L066_00002814:
 ; H066+$00002814: 6000002c  bra.w $2842
         bra.w H066+$2842
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L066_00002818:
 ; H066+$00002818: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -7985,7 +7985,7 @@ L066_00002838:
 L066_0000283C:
 ; H066+$0000283C: 276d000c018e  move.l $c(a5), $18e(a3)
         move.l $c(a5), $18e(a3)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L066_00002842:
 ; H066+$00002842: 23ed000c00003368  move.l $c(a5), $3368.l
         move.l $c(a5), (H005+$3368).l
@@ -8005,7 +8005,7 @@ L066_00002856:
 L066_00002858:
 ; H066+$00002858: 4eb900000312  jsr $312.l
         jsr (H029+$312).l
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L066_0000285E:
 ; H066+$0000285E: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -8069,7 +8069,7 @@ L066_000028A8:
 L066_000028AE:
 ; H066+$000028AE: 60b6  bra.b $2866
         bra.b H066+$2866
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L066_000028B0:
 ; H066+$000028B0: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -8122,7 +8122,7 @@ L066_000028EA:
 L066_000028EC:
 ; H066+$000028EC: 60cc  bra.b $28ba
         bra.b H066+$28BA
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L066_000028EE:
 ; H066+$000028EE: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -8168,14 +8168,14 @@ L066_0000291C:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Load_GameSlot [verificato]
-; Scopo: Carica lo stato globale di una partita e ricostruisce i personaggi referenziati.
-;   - Forma savgam<slot>.dat e presenta gli slot disponibili.
-;   - Legge i blocchi fissi del file principale: 5481 byte nel formato osservato.
-;   - Legge conteggio e tabella da otto nomi, ciascuno in un campo da 42 byte.
-;   - Per ogni nome esistente alloca 426 byte e chiama Load_CharacterRecord.
-;   - Ricostruisce il collegamento al party e riattiva risorse/stato dello scenario.
-; Chiamanti diretti: H013+$5066
+; ROUTINE: Load_GameSlot [verified]
+; Purpose: Loads the global state of a game and rebuilds the referenced characters.
+;   - Builds savgam<slot>.dat and presents the available slots.
+;   - Reads the fixed blocks of the main file: 5481 bytes in the observed format.
+;   - Reads the count and a table of eight names, each in a 42-byte field.
+;   - For every existing name it allocates 426 bytes and calls Load_CharacterRecord.
+;   - Rebuilds the link to the party and reactivates resources/state of the scenario.
+; Direct callers: H013+$5066
 ; --------------------------------------------------------------------------
 L066_0000291E:
 ; H066+$0000291E: 2f0c  move.l a4, -(a7)
@@ -8190,17 +8190,17 @@ L066_00002928:
 ; H066+$00002928: 60000096  bra.w $29c0
         bra.w H066+$29C0
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H066_0000292C [parziale]
-; Scopo: Routine del modulo salvataggi/caricamenti, personaggi, liste e record dei mostri; richiama H026+$0188, H026+$01E0, H028+$02D0, H026+$000C.
-;   - Richiama H026+$0188.
-;   - Richiama H026+$01E0.
-;   - Richiama H028+$02D0.
-;   - Richiama H026+$000C.
-;   - Richiama H008+$01FC.
-;   - Richiama H014+$0018.
-;   - Richiama H008+$139E.
-;   - Usa lo stato globale: H005+$3CD4 (percorso del salvataggio); H005+$246E (selettore del gruppo risorse); H005+$3E04 (puntatore stato persistente A, 2048 byte).
-; Chiamanti diretti: H066+$29FE, H066+$2A9E
+; ROUTINE: sub_H066_0000292C [partial]
+; Purpose: Routine of the saving/loading, characters, lists and monster records module; calls H026+$0188, H026+$01E0, H028+$02D0, H026+$000C.
+;   - Calls H026+$0188.
+;   - Calls H026+$01E0.
+;   - Calls H028+$02D0.
+;   - Calls H026+$000C.
+;   - Calls H008+$01FC.
+;   - Calls H014+$0018.
+;   - Calls H008+$139E.
+;   - Uses the global state: H005+$3CD4 (path of the saved games); H005+$246E (resource group selector); H005+$3E04 (pointer to persistent state A, 2048 bytes).
+; Direct callers: H066+$29FE, H066+$2A9E
 ; --------------------------------------------------------------------------
 L066_0000292C:
 ; H066+$0000292C: 4e550000  link.w a5, #$0
@@ -8217,7 +8217,7 @@ L066_00002938:
 L066_0000293C:
 ; H066+$0000293C: 3f3c0050  move.w #$50, -(a7)
         move.w #$50, -(a7)
-; STATO: H005+$3CD4 = percorso del salvataggio
+; STATE: H005+$3CD4 = path of the saved games
 L066_00002940:
 ; H066+$00002940: 487900003cd4  pea.l $3cd4.l
         pea.l (H005+$3CD4).l
@@ -8485,7 +8485,7 @@ L066_00002A8C:
 L066_00002A8E:
 ; H066+$00002A8E: 486dfe1f  pea.l -$1e1(a5)
         pea.l -$1e1(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L066_00002A92:
 ; H066+$00002A92: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -8569,7 +8569,7 @@ L066_00002AF8:
 L066_00002AFC:
 ; H066+$00002AFC: 3f3c0050  move.w #$50, -(a7)
         move.w #$50, -(a7)
-; STATO: H005+$3CD4 = percorso del salvataggio
+; STATE: H005+$3CD4 = path of the saved games
 L066_00002B00:
 ; H066+$00002B00: 487900003cd4  pea.l $3cd4.l
         pea.l (H005+$3CD4).l
@@ -8642,7 +8642,7 @@ L066_00002B56:
 L066_00002B5A:
 ; H066+$00002B5A: 486c014e  pea.l $14e(a4)
         pea.l $14e(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L066_00002B5E:
 ; H066+$00002B5E: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -8652,7 +8652,7 @@ L066_00002B64:
 L066_00002B6C:
 ; H066+$00002B6C: 2f2dfe04  move.l -$1fc(a5), -(a7)
         move.l -$1fc(a5), -(a7)
-; STATO: H005+$246E = selettore del gruppo risorse
+; STATE: H005+$246E = resource group selector
 L066_00002B70:
 ; H066+$00002B70: 47f90000246e  lea.l $246e.l, a3
         lea.l (H005+$246E).l, a3
@@ -8665,7 +8665,7 @@ L066_00002B78:
 L066_00002B7A:
 ; H066+$00002B7A: 2f02  move.l d2, -(a7)
         move.l d2, -(a7)
-; PASSO: Caricamento speculare: primo byte del file principale.
+; STEP: Mirror loading: first byte of the main file.
 ; -> H002+$0122 (wrapper_Read)
 L066_00002B7C:
 ; H066+$00002B7C: 4eb900000122  jsr $122.l
@@ -8676,7 +8676,7 @@ L066_00002B82:
 L066_00002B86:
 ; H066+$00002B86: 2f2dfe04  move.l -$1fc(a5), -(a7)
         move.l -$1fc(a5), -(a7)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L066_00002B8A:
 ; H066+$00002B8A: 2f3900003e04  move.l $3e04.l, -(a7)
         move.l (H005+$3E04).l, -(a7)
@@ -8686,7 +8686,7 @@ L066_00002B90:
 L066_00002B96:
 ; H066+$00002B96: 2f02  move.l d2, -(a7)
         move.l d2, -(a7)
-; PASSO: Legge 2048 byte nel blocco di stato A.
+; STEP: Reads 2048 bytes into state block A.
 ; -> H002+$0122 (wrapper_Read)
 L066_00002B98:
 ; H066+$00002B98: 4eb900000122  jsr $122.l
@@ -8697,7 +8697,7 @@ L066_00002B9E:
 L066_00002BA2:
 ; H066+$00002BA2: 2f2dfe04  move.l -$1fc(a5), -(a7)
         move.l -$1fc(a5), -(a7)
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L066_00002BA6:
 ; H066+$00002BA6: 2f3900003e00  move.l $3e00.l, -(a7)
         move.l (H005+$3E00).l, -(a7)
@@ -8707,7 +8707,7 @@ L066_00002BAC:
 L066_00002BB2:
 ; H066+$00002BB2: 2f02  move.l d2, -(a7)
         move.l d2, -(a7)
-; PASSO: Legge 2048 byte nel blocco di stato B.
+; STEP: Reads 2048 bytes into state block B.
 ; -> H002+$0122 (wrapper_Read)
 L066_00002BB4:
 ; H066+$00002BB4: 4eb900000122  jsr $122.l
@@ -8718,7 +8718,7 @@ L066_00002BBA:
 L066_00002BBE:
 ; H066+$00002BBE: 2f2dfe04  move.l -$1fc(a5), -(a7)
         move.l -$1fc(a5), -(a7)
-; STATO: H005+$3DFC = puntatore stato persistente C, 1024 byte
+; STATE: H005+$3DFC = pointer to persistent state C, 1024 bytes
 L066_00002BC2:
 ; H066+$00002BC2: 2f3900003dfc  move.l $3dfc.l, -(a7)
         move.l (H005+$3DFC).l, -(a7)
@@ -8728,7 +8728,7 @@ L066_00002BC8:
 L066_00002BCE:
 ; H066+$00002BCE: 2f02  move.l d2, -(a7)
         move.l d2, -(a7)
-; PASSO: Legge 1024 byte nel blocco ausiliario C.
+; STEP: Reads 1024 bytes into the auxiliary block C.
 ; -> H002+$0122 (wrapper_Read)
 L066_00002BD0:
 ; H066+$00002BD0: 4eb900000122  jsr $122.l
@@ -8739,7 +8739,7 @@ L066_00002BD6:
 L066_00002BDA:
 ; H066+$00002BDA: 2f2dfe04  move.l -$1fc(a5), -(a7)
         move.l -$1fc(a5), -(a7)
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L066_00002BDE:
 ; H066+$00002BDE: 47f90000281c  lea.l $281c.l, a3
         lea.l (H005+$281C).l, a3
@@ -8784,7 +8784,7 @@ L066_00002C0A:
 L066_00002C0E:
 ; H066+$00002C0E: 2f2dfe04  move.l -$1fc(a5), -(a7)
         move.l -$1fc(a5), -(a7)
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L066_00002C12:
 ; H066+$00002C12: 47f900003de3  lea.l $3de3.l, a3
         lea.l (H005+$3DE3).l, a3
@@ -8825,7 +8825,7 @@ L066_00002C40:
 L066_00002C42:
 ; H066+$00002C42: e542  asl.w #$2, d2
         asl.w #$2, d2
-; STATO: H005+$2810 = tre elementi di stato degli insiemi pareti
+; STATE: H005+$2810 = three state elements of the wall sets
 L066_00002C44:
 ; H066+$00002C44: 47f900002810  lea.l $2810.l, a3
         lea.l (H005+$2810).l, a3
@@ -8844,7 +8844,7 @@ L066_00002C54:
 L066_00002C56:
 ; H066+$00002C56: e542  asl.w #$2, d2
         asl.w #$2, d2
-; STATO: H005+$2810 = tre elementi di stato degli insiemi pareti
+; STATE: H005+$2810 = three state elements of the wall sets
 L066_00002C58:
 ; H066+$00002C58: 47f900002810  lea.l $2810.l, a3
         lea.l (H005+$2810).l, a3
@@ -8873,7 +8873,7 @@ L066_00002C74:
 L066_00002C76:
 ; H066+$00002C76: e542  asl.w #$2, d2
         asl.w #$2, d2
-; STATO: H005+$2810 = tre elementi di stato degli insiemi pareti
+; STATE: H005+$2810 = three state elements of the wall sets
 L066_00002C78:
 ; H066+$00002C78: 47f900002810  lea.l $2810.l, a3
         lea.l (H005+$2810).l, a3
@@ -8892,7 +8892,7 @@ L066_00002C88:
 L066_00002C8A:
 ; H066+$00002C8A: e542  asl.w #$2, d2
         asl.w #$2, d2
-; STATO: H005+$2810 = tre elementi di stato degli insiemi pareti
+; STATE: H005+$2810 = three state elements of the wall sets
 L066_00002C8C:
 ; H066+$00002C8C: 47f900002810  lea.l $2810.l, a3
         lea.l (H005+$2810).l, a3
@@ -8930,7 +8930,7 @@ L066_00002CB0:
 L066_00002CB2:
 ; H066+$00002CB2: 2f02  move.l d2, -(a7)
         move.l d2, -(a7)
-; PASSO: Legge il conteggio word dei personaggi.
+; STEP: Reads the word count of the characters.
 ; -> H002+$0122 (wrapper_Read)
 L066_00002CB4:
 ; H066+$00002CB4: 4eb900000122  jsr $122.l
@@ -8953,7 +8953,7 @@ L066_00002CC8:
 L066_00002CCE:
 ; H066+$00002CCE: 2f02  move.l d2, -(a7)
         move.l d2, -(a7)
-; PASSO: Legge i 336 byte della tabella nomi del party.
+; STEP: Reads the 336 bytes of the party name table.
 ; -> H002+$0122 (wrapper_Read)
 L066_00002CD0:
 ; H066+$00002CD0: 4eb900000122  jsr $122.l
@@ -8971,7 +8971,7 @@ L066_00002CDE:
 L066_00002CE4:
 ; H066+$00002CE4: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L066_00002CE6:
 ; H066+$00002CE6: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -8984,7 +8984,7 @@ L066_00002CF0:
 L066_00002CF2:
 ; H066+$00002CF2: 13c2000024d5  move.b d2, $24d5.l
         move.b d2, (H005+$24D5).l
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L066_00002CF8:
 ; H066+$00002CF8: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -9004,14 +9004,14 @@ L066_00002D08:
 L066_00002D0E:
 ; H066+$00002D0E: 13c0000024d4  move.b d0, $24d4.l
         move.b d0, (H005+$24D4).l
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L066_00002D14:
 ; H066+$00002D14: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
 L066_00002D1A:
 ; H066+$00002D1A: 33eb01f800003df6  move.w $1f8(a3), $3df6.l
         move.w $1f8(a3), (H005+$3DF6).l
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L066_00002D22:
 ; H066+$00002D22: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -9092,7 +9092,7 @@ L066_00002D86:
 L066_00002D8A:
 ; H066+$00002D8A: 3f3c0050  move.w #$50, -(a7)
         move.w #$50, -(a7)
-; STATO: H005+$3CD4 = percorso del salvataggio
+; STATE: H005+$3CD4 = path of the saved games
 L066_00002D8E:
 ; H066+$00002D8E: 487900003cd4  pea.l $3cd4.l
         pea.l (H005+$3CD4).l
@@ -9230,8 +9230,8 @@ L066_00002E42:
 L066_00002E46:
 ; H066+$00002E46: 1f3c0001  move.b #$1, -(a7)
         move.b #$1, -(a7)
-; PASSO: Per il nome estratto carica il record personaggio e ricostruisce le sue liste.
-; FLUSSO: Chiama Load_CharacterRecord (H066+$1B0E).
+; STEP: For the extracted name it loads the character record and rebuilds its lists.
+; FLOW: Calls Load_CharacterRecord (H066+$1B0E).
 L066_00002E4A:
 ; H066+$00002E4A: 6100ecc2  bsr.w $1b0e
         bsr.w H066+$1B0E
@@ -9315,7 +9315,7 @@ L066_00002EA6:
 L066_00002EAA:
 ; H066+$00002EAA: 548f  addq.l #$2, a7
         addq.l #$2, a7
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L066_00002EAC:
 ; H066+$00002EAC: 2b7900003364fea4  move.l $3364.l, -$15c(a5)
         move.l (H005+$3364).l, -$15c(a5)
@@ -9328,7 +9328,7 @@ L066_00002EB8:
 L066_00002EBC:
 ; H066+$00002EBC: 2f2dfea4  move.l -$15c(a5), -(a7)
         move.l -$15c(a5), -(a7)
-; FLUSSO: Chiama Delete_CharacterSidecarFiles (H066+$1312).
+; FLOW: Calls Delete_CharacterSidecarFiles (H066+$1312).
 L066_00002EC0:
 ; H066+$00002EC0: 6100e450  bsr.w $1312
         bsr.w H066+$1312
@@ -9341,11 +9341,11 @@ L066_00002EC8:
 L066_00002ECE:
 ; H066+$00002ECE: 60e4  bra.b $2eb4
         bra.b H066+$2EB4
-; STATO: H005+$3364 = testa della lista del party; H005+$3368 = personaggio corrente
+; STATE: H005+$3364 = head of the party list; H005+$3368 = current character
 L066_00002ED0:
 ; H066+$00002ED0: 23f90000336400003368  move.l $3364.l, $3368.l
         move.l (H005+$3364).l, (H005+$3368).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L066_00002EDA:
 ; H066+$00002EDA: 4ab900003368  tst.l $3368.l
         tst.l (H005+$3368).l
@@ -9355,7 +9355,7 @@ L066_00002EE0:
 L066_00002EE4:
 ; H066+$00002EE4: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L066_00002EE6:
 ; H066+$00002EE6: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -9386,7 +9386,7 @@ L066_00002F08:
 L066_00002F0C:
 ; H066+$00002F0C: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L066_00002F0E:
 ; H066+$00002F0E: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -9399,7 +9399,7 @@ L066_00002F18:
 L066_00002F1A:
 ; H066+$00002F1A: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L066_00002F1C:
 ; H066+$00002F1C: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -9413,33 +9413,33 @@ L066_00002F26:
 L066_00002F28:
 ; H066+$00002F28: 4eb900000246  jsr $246.l
         jsr (H035+$246).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L066_00002F2E:
 ; H066+$00002F2E: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L066_00002F34:
 ; H066+$00002F34: 23eb018e00003368  move.l $18e(a3), $3368.l
         move.l $18e(a3), (H005+$3368).l
 L066_00002F3C:
 ; H066+$00002F3C: 609c  bra.b $2eda
         bra.b H066+$2EDA
-; STATO: H005+$3364 = testa della lista del party; H005+$3368 = personaggio corrente
+; STATE: H005+$3364 = head of the party list; H005+$3368 = current character
 L066_00002F3E:
 ; H066+$00002F3E: 23f90000336400003368  move.l $3364.l, $3368.l
         move.l (H005+$3364).l, (H005+$3368).l
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L066_00002F48:
 ; H066+$00002F48: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
 L066_00002F4E:
 ; H066+$00002F4E: 342b0624  move.w $624(a3), d2
         move.w $624(a3), d2
-; STATO: H005+$246E = selettore del gruppo risorse
+; STATE: H005+$246E = resource group selector
 L066_00002F52:
 ; H066+$00002F52: 13c20000246e  move.b d2, $246e.l
         move.b d2, (H005+$246E).l
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L066_00002F58:
 ; H066+$00002F58: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -9449,21 +9449,21 @@ L066_00002F5E:
 L066_00002F62:
 ; H066+$00002F62: 67000076  beq.w $2fda
         beq.w H066+$2FDA
-; STATO: H005+$2810 = tre elementi di stato degli insiemi pareti
+; STATE: H005+$2810 = three state elements of the wall sets
 L066_00002F66:
 ; H066+$00002F66: 4a7900002810  tst.w $2810.l
         tst.w (H005+$2810).l
 L066_00002F6C:
 ; H066+$00002F6C: 6f000012  ble.w $2f80
         ble.w H066+$2F80
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L066_00002F70:
 ; H066+$00002F70: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
 L066_00002F76:
 ; H066+$00002F76: 3f2b018a  move.w $18a(a3), -(a7)
         move.w $18a(a3), -(a7)
-; FLUSSO: Chiama Load3DMap_GEO (H011+$1876).
+; FLOW: Calls Load3DMap_GEO (H011+$1876).
 L066_00002F7A:
 ; H066+$00002F7A: 4eb900001876  jsr $1876.l
         jsr (H011+$1876).l
@@ -9485,7 +9485,7 @@ L066_00002F94:
 L066_00002F96:
 ; H066+$00002F96: e542  asl.w #$2, d2
         asl.w #$2, d2
-; STATO: H005+$2810 = tre elementi di stato degli insiemi pareti
+; STATE: H005+$2810 = three state elements of the wall sets
 L066_00002F98:
 ; H066+$00002F98: 47f900002810  lea.l $2810.l, a3
         lea.l (H005+$2810).l, a3
@@ -9504,7 +9504,7 @@ L066_00002FAA:
 L066_00002FAC:
 ; H066+$00002FAC: e542  asl.w #$2, d2
         asl.w #$2, d2
-; STATO: H005+$2810 = tre elementi di stato degli insiemi pareti
+; STATE: H005+$2810 = three state elements of the wall sets
 L066_00002FAE:
 ; H066+$00002FAE: 47f900002810  lea.l $2810.l, a3
         lea.l (H005+$2810).l, a3
@@ -9520,14 +9520,14 @@ L066_00002FBC:
 L066_00002FBE:
 ; H066+$00002FBE: e542  asl.w #$2, d2
         asl.w #$2, d2
-; STATO: H005+$2810 = tre elementi di stato degli insiemi pareti
+; STATE: H005+$2810 = three state elements of the wall sets
 L066_00002FC0:
 ; H066+$00002FC0: 47f900002810  lea.l $2810.l, a3
         lea.l (H005+$2810).l, a3
 L066_00002FC6:
 ; H066+$00002FC6: 3f332002  move.w $2(a3, d2.w), -(a7)
         move.w $2(a3, d2.w), -(a7)
-; FLUSSO: Chiama Load_WallDefinitions (H011+$14EA).
+; FLOW: Calls Load_WallDefinitions (H011+$14EA).
 L066_00002FCA:
 ; H066+$00002FCA: 4eb9000014ea  jsr $14ea.l
         jsr (H011+$14EA).l
@@ -9543,7 +9543,7 @@ L066_00002FD6:
 L066_00002FDA:
 ; H066+$00002FDA: 3f3c0079  move.w #$79, -(a7)
         move.w #$79, -(a7)
-; FLUSSO: Chiama Load_BigPicture (H042+$1006).
+; FLOW: Calls Load_BigPicture (H042+$1006).
 L066_00002FDE:
 ; H066+$00002FDE: 4eb900001006  jsr $1006.l
         jsr (H042+$1006).l
@@ -9551,11 +9551,11 @@ L066_00002FDE:
 L066_00002FE4:
 ; H066+$00002FE4: 4eb90000139e  jsr $139e.l
         jsr (H008+$139E).l
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L066_00002FEA:
 ; H066+$00002FEA: 13f900003de300003de2  move.b $3de3.l, $3de2.l
         move.b (H005+$3DE3).l, (H005+$3DE2).l
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L066_00002FF4:
 ; H066+$00002FF4: 423900003de3  clr.b $3de3.l
         clr.b (H005+$3DE3).l
@@ -9570,14 +9570,14 @@ L066_00002FFE:
         rts 
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Save_GameSlot [verificato]
-; Scopo: Salva una partita su disco: stato globale e file separati dei personaggi.
-;   - Sceglie lo slot A..J e compone savgam<slot>.dat.
-;   - Controlla spazio disponibile e scrivibilità attraverso helper di questo hunk.
-;   - Scrive il layout fisso dello stato, il numero dei personaggi e 336 byte di nomi.
-;   - Attraversa il party tramite il link +$018E.
-;   - Salva ogni personaggio sotto il nome CHRDAT<slot><numero> con il relativo corredo di file.
-; Chiamanti diretti: H013+$5080, H013+$51BE, H057+$3092
+; ROUTINE: Save_GameSlot [verified]
+; Purpose: Saves a game to disk: global state and separate files of the characters.
+;   - Chooses the slot A..J and builds savgam<slot>.dat.
+;   - Checks available space and writability through helpers of this hunk.
+;   - Writes the fixed layout of the state, the number of characters and 336 bytes of names.
+;   - Walks the party through the +$018E link.
+;   - Saves every character under the name CHRDAT<slot><number> with its set of files.
+; Direct callers: H013+$5080, H013+$51BE, H057+$3092
 ; --------------------------------------------------------------------------
 L066_00003000:
 ; H066+$00003000: 2f0c  move.l a4, -(a7)
@@ -9592,10 +9592,10 @@ L066_0000300A:
 ; H066+$0000300A: 60000130  bra.w $313c
         bra.w H066+$313C
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H066_0000300E [parziale]
-; Scopo: Routine del modulo salvataggi/caricamenti, personaggi, liste e record dei mostri; opera su H005+$3364 (testa della lista del party).
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H066+$31E8
+; ROUTINE: sub_H066_0000300E [partial]
+; Purpose: Routine of the saving/loading, characters, lists and monster records module; works on H005+$3364 (head of the party list).
+;   - Uses the global state: H005+$3364 (head of the party list).
+; Direct callers: H066+$31E8
 ; --------------------------------------------------------------------------
 L066_0000300E:
 ; H066+$0000300E: 4e55fff2  link.w a5, #$fff2
@@ -9603,7 +9603,7 @@ L066_0000300E:
 L066_00003012:
 ; H066+$00003012: 426dfff2  clr.w -$e(a5)
         clr.w -$e(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L066_00003016:
 ; H066+$00003016: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -9710,17 +9710,17 @@ L066_000030A6:
 ; H066+$000030A6: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H066_000030A8 [parziale]
-; Scopo: Routine del modulo salvataggi/caricamenti, personaggi, liste e record dei mostri; richiama H026+$0188, H026+$01E0, H008+$01FC, H028+$02D0.
-;   - Richiama H026+$0188.
-;   - Richiama H026+$01E0.
-;   - Richiama H008+$01FC.
-;   - Richiama H028+$02D0.
-;   - Richiama H030+$028A.
-;   - Richiama H002+$00F2.
-;   - Richiama H008+$139E.
-;   - Usa lo stato globale: H005+$3CD4 (percorso del salvataggio); H005+$3DE3 (contesto nativo, 5 nel combattimento); H005+$3E04 (puntatore stato persistente A, 2048 byte).
-; Chiamanti diretti: H066+$31BC
+; ROUTINE: sub_H066_000030A8 [partial]
+; Purpose: Routine of the saving/loading, characters, lists and monster records module; calls H026+$0188, H026+$01E0, H008+$01FC, H028+$02D0.
+;   - Calls H026+$0188.
+;   - Calls H026+$01E0.
+;   - Calls H008+$01FC.
+;   - Calls H028+$02D0.
+;   - Calls H030+$028A.
+;   - Calls H002+$00F2.
+;   - Calls H008+$139E.
+;   - Uses the global state: H005+$3CD4 (path of the saved games); H005+$3DE3 (native context, 5 in combat); H005+$3E04 (pointer to persistent state A, 2048 bytes).
+; Direct callers: H066+$31BC
 ; --------------------------------------------------------------------------
 L066_000030A8:
 ; H066+$000030A8: 4e550000  link.w a5, #$0
@@ -9737,7 +9737,7 @@ L066_000030B4:
 L066_000030B8:
 ; H066+$000030B8: 3f3c0050  move.w #$50, -(a7)
         move.w #$50, -(a7)
-; STATO: H005+$3CD4 = percorso del salvataggio
+; STATE: H005+$3CD4 = path of the saved games
 L066_000030BC:
 ; H066+$000030BC: 487900003cd4  pea.l $3cd4.l
         pea.l (H005+$3CD4).l
@@ -9863,7 +9863,7 @@ L066_00003158:
 L066_0000315C:
 ; H066+$0000315C: 4227  clr.b -(a7)
         clr.b -(a7)
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L066_0000315E:
 ; H066+$0000315E: 0c39000200003de3  cmpi.b #$2, $3de3.l
         cmpi.b #$2, (H005+$3DE3).l
@@ -9879,7 +9879,7 @@ L066_0000316A:
 L066_0000316C:
 ; H066+$0000316C: 486dfe75  pea.l -$18b(a5)
         pea.l -$18b(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L066_00003170:
 ; H066+$00003170: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -9983,7 +9983,7 @@ L066_000031EE:
 L066_000031F4:
 ; H066+$000031F4: d5adfe6c  add.l d2, -$194(a5)
         add.l d2, -$194(a5)
-; STATO: H005+$3CD4 = percorso del salvataggio
+; STATE: H005+$3CD4 = path of the saved games
 L066_000031F8:
 ; H066+$000031F8: 0c39006400003cd4  cmpi.b #$64, $3cd4.l
         cmpi.b #$64, (H005+$3CD4).l
@@ -10029,7 +10029,7 @@ L066_00003228:
 L066_0000322C:
 ; H066+$0000322C: 486cffa2  pea.l -$5e(a4)
         pea.l -$5e(a4)
-; FLUSSO: Chiama Query_FreeDiskSpace (H066+$142E).
+; FLOW: Calls Query_FreeDiskSpace (H066+$142E).
 L066_00003230:
 ; H066+$00003230: 6100e1fc  bsr.w $142e
         bsr.w H066+$142E
@@ -10061,7 +10061,7 @@ L066_0000324C:
 L066_00003252:
 ; H066+$00003252: 600003ae  bra.w $3602
         bra.w H066+$3602
-; FLUSSO: Chiama Check_SaveWritable (H066+$14DC).
+; FLOW: Calls Check_SaveWritable (H066+$14DC).
 L066_00003256:
 ; H066+$00003256: 6100e284  bsr.w $14dc
         bsr.w H066+$14DC
@@ -10077,7 +10077,7 @@ L066_0000325E:
 L066_00003262:
 ; H066+$00003262: 6000039e  bra.w $3602
         bra.w H066+$3602
-; PASSO: Apre il file principale in MODE_NEWFILE (1006), tramite il wrapper Open.
+; STEP: Opens the main file in MODE_NEWFILE (1006), through the Open wrapper.
 L066_00003266:
 ; H066+$00003266: 47edfe76  lea.l -$18a(a5), a3
         lea.l -$18a(a5), a3
@@ -10116,11 +10116,11 @@ L066_0000328E:
 L066_00003292:
 ; H066+$00003292: 486c0254  pea.l $254(a4)
         pea.l $254(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L066_00003296:
 ; H066+$00003296: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L066_0000329C:
 ; H066+$0000329C: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -10145,7 +10145,7 @@ L066_000032B6:
 L066_000032BC:
 ; H066+$000032BC: d444  add.w d4, d2
         add.w d4, d2
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L066_000032BE:
 ; H066+$000032BE: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -10155,11 +10155,11 @@ L066_000032C4:
 L066_000032C8:
 ; H066+$000032C8: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$246E = selettore del gruppo risorse
+; STATE: H005+$246E = resource group selector
 L066_000032CA:
 ; H066+$000032CA: 14390000246e  move.b $246e.l, d2
         move.b (H005+$246E).l, d2
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L066_000032D0:
 ; H066+$000032D0: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -10169,7 +10169,7 @@ L066_000032D6:
 L066_000032DA:
 ; H066+$000032DA: 2f2dfff8  move.l -$8(a5), -(a7)
         move.l -$8(a5), -(a7)
-; STATO: H005+$246E = selettore del gruppo risorse
+; STATE: H005+$246E = resource group selector
 L066_000032DE:
 ; H066+$000032DE: 47f90000246e  lea.l $246e.l, a3
         lea.l (H005+$246E).l, a3
@@ -10182,7 +10182,7 @@ L066_000032E6:
 L066_000032E8:
 ; H066+$000032E8: 2f02  move.l d2, -(a7)
         move.l d2, -(a7)
-; PASSO: Scrive 1 byte: selettore del gruppo risorse H005+$246E.
+; STEP: Writes 1 byte: resource group selector H005+$246E.
 ; -> H002+$01CC (wrapper_Write)
 L066_000032EA:
 ; H066+$000032EA: 4eb9000001cc  jsr $1cc.l
@@ -10193,7 +10193,7 @@ L066_000032F0:
 L066_000032F4:
 ; H066+$000032F4: 2f2dfff8  move.l -$8(a5), -(a7)
         move.l -$8(a5), -(a7)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L066_000032F8:
 ; H066+$000032F8: 2f3900003e04  move.l $3e04.l, -(a7)
         move.l (H005+$3E04).l, -(a7)
@@ -10203,7 +10203,7 @@ L066_000032FE:
 L066_00003304:
 ; H066+$00003304: 2f02  move.l d2, -(a7)
         move.l d2, -(a7)
-; PASSO: Scrive il primo blocco persistente da 2048 byte.
+; STEP: Writes the first 2048-byte persistent block.
 ; -> H002+$01CC (wrapper_Write)
 L066_00003306:
 ; H066+$00003306: 4eb9000001cc  jsr $1cc.l
@@ -10214,7 +10214,7 @@ L066_0000330C:
 L066_00003310:
 ; H066+$00003310: 2f2dfff8  move.l -$8(a5), -(a7)
         move.l -$8(a5), -(a7)
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L066_00003314:
 ; H066+$00003314: 2f3900003e00  move.l $3e00.l, -(a7)
         move.l (H005+$3E00).l, -(a7)
@@ -10224,7 +10224,7 @@ L066_0000331A:
 L066_00003320:
 ; H066+$00003320: 2f02  move.l d2, -(a7)
         move.l d2, -(a7)
-; PASSO: Scrive il secondo blocco persistente da 2048 byte.
+; STEP: Writes the second 2048-byte persistent block.
 ; -> H002+$01CC (wrapper_Write)
 L066_00003322:
 ; H066+$00003322: 4eb9000001cc  jsr $1cc.l
@@ -10235,7 +10235,7 @@ L066_00003328:
 L066_0000332C:
 ; H066+$0000332C: 2f2dfff8  move.l -$8(a5), -(a7)
         move.l -$8(a5), -(a7)
-; STATO: H005+$3DFC = puntatore stato persistente C, 1024 byte
+; STATE: H005+$3DFC = pointer to persistent state C, 1024 bytes
 L066_00003330:
 ; H066+$00003330: 2f3900003dfc  move.l $3dfc.l, -(a7)
         move.l (H005+$3DFC).l, -(a7)
@@ -10245,7 +10245,7 @@ L066_00003336:
 L066_0000333C:
 ; H066+$0000333C: 2f02  move.l d2, -(a7)
         move.l d2, -(a7)
-; PASSO: Scrive il blocco ausiliario da 1024 byte.
+; STEP: Writes the 1024-byte auxiliary block.
 ; -> H002+$01CC (wrapper_Write)
 L066_0000333E:
 ; H066+$0000333E: 4eb9000001cc  jsr $1cc.l
@@ -10256,7 +10256,7 @@ L066_00003344:
 L066_00003348:
 ; H066+$00003348: 2f2dfff8  move.l -$8(a5), -(a7)
         move.l -$8(a5), -(a7)
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L066_0000334C:
 ; H066+$0000334C: 47f90000281c  lea.l $281c.l, a3
         lea.l (H005+$281C).l, a3
@@ -10269,7 +10269,7 @@ L066_00003354:
 L066_00003356:
 ; H066+$00003356: 2f02  move.l d2, -(a7)
         move.l d2, -(a7)
-; PASSO: Scrive 8 byte contigui da H005+$281C (coordinate e stato della vista).
+; STEP: Writes 8 contiguous bytes from H005+$281C (coordinates and state of the view).
 ; -> H002+$01CC (wrapper_Write)
 L066_00003358:
 ; H066+$00003358: 4eb9000001cc  jsr $1cc.l
@@ -10292,7 +10292,7 @@ L066_0000336E:
 L066_00003370:
 ; H066+$00003370: 2f02  move.l d2, -(a7)
         move.l d2, -(a7)
-; PASSO: Scrive il byte H005+$3DE2.
+; STEP: Writes the byte H005+$3DE2.
 ; -> H002+$01CC (wrapper_Write)
 L066_00003372:
 ; H066+$00003372: 4eb9000001cc  jsr $1cc.l
@@ -10303,7 +10303,7 @@ L066_00003378:
 L066_0000337C:
 ; H066+$0000337C: 2f2dfff8  move.l -$8(a5), -(a7)
         move.l -$8(a5), -(a7)
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L066_00003380:
 ; H066+$00003380: 47f900003de3  lea.l $3de3.l, a3
         lea.l (H005+$3DE3).l, a3
@@ -10316,7 +10316,7 @@ L066_00003388:
 L066_0000338A:
 ; H066+$0000338A: 2f02  move.l d2, -(a7)
         move.l d2, -(a7)
-; PASSO: Scrive il contesto nativo H005+$3DE3.
+; STEP: Writes the native context H005+$3DE3.
 ; -> H002+$01CC (wrapper_Write)
 L066_0000338C:
 ; H066+$0000338C: 4eb9000001cc  jsr $1cc.l
@@ -10324,7 +10324,7 @@ L066_0000338C:
 L066_00003392:
 ; H066+$00003392: 2b40fffc  move.l d0, -$4(a5)
         move.l d0, -$4(a5)
-; PASSO: Serializza tre elementi da 4 byte come due word da 2 byte per elemento.
+; STEP: Serialises three 4-byte elements as two 2-byte words per element.
 L066_00003396:
 ; H066+$00003396: 3b7c0001fea6  move.w #$1, -$15a(a5)
         move.w #$1, -$15a(a5)
@@ -10346,7 +10346,7 @@ L066_000033AE:
 L066_000033B0:
 ; H066+$000033B0: e542  asl.w #$2, d2
         asl.w #$2, d2
-; STATO: H005+$2810 = tre elementi di stato degli insiemi pareti
+; STATE: H005+$2810 = three state elements of the wall sets
 L066_000033B2:
 ; H066+$000033B2: 47f900002810  lea.l $2810.l, a3
         lea.l (H005+$2810).l, a3
@@ -10365,7 +10365,7 @@ L066_000033C2:
 L066_000033C4:
 ; H066+$000033C4: e542  asl.w #$2, d2
         asl.w #$2, d2
-; STATO: H005+$2810 = tre elementi di stato degli insiemi pareti
+; STATE: H005+$2810 = three state elements of the wall sets
 L066_000033C6:
 ; H066+$000033C6: 47f900002810  lea.l $2810.l, a3
         lea.l (H005+$2810).l, a3
@@ -10394,7 +10394,7 @@ L066_000033E2:
 L066_000033E4:
 ; H066+$000033E4: e542  asl.w #$2, d2
         asl.w #$2, d2
-; STATO: H005+$2810 = tre elementi di stato degli insiemi pareti
+; STATE: H005+$2810 = three state elements of the wall sets
 L066_000033E6:
 ; H066+$000033E6: 47f900002810  lea.l $2810.l, a3
         lea.l (H005+$2810).l, a3
@@ -10413,7 +10413,7 @@ L066_000033F6:
 L066_000033F8:
 ; H066+$000033F8: e542  asl.w #$2, d2
         asl.w #$2, d2
-; STATO: H005+$2810 = tre elementi di stato degli insiemi pareti
+; STATE: H005+$2810 = three state elements of the wall sets
 L066_000033FA:
 ; H066+$000033FA: 47f900002810  lea.l $2810.l, a3
         lea.l (H005+$2810).l, a3
@@ -10439,7 +10439,7 @@ L066_00003412:
 L066_00003414:
 ; H066+$00003414: 426dfea6  clr.w -$15a(a5)
         clr.w -$15a(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L066_00003418:
 ; H066+$00003418: 2b7900003364fea2  move.l $3364.l, -$15e(a5)
         move.l (H005+$3364).l, -$15e(a5)
@@ -10612,7 +10612,7 @@ L066_000034EA:
 L066_000034EC:
 ; H066+$000034EC: 2f02  move.l d2, -(a7)
         move.l d2, -(a7)
-; PASSO: Scrive il conteggio dei personaggi come word big-endian.
+; STEP: Writes the character count as a big-endian word.
 ; -> H002+$01CC (wrapper_Write)
 L066_000034EE:
 ; H066+$000034EE: 4eb9000001cc  jsr $1cc.l
@@ -10635,7 +10635,7 @@ L066_00003502:
 L066_00003508:
 ; H066+$00003508: 2f02  move.l d2, -(a7)
         move.l d2, -(a7)
-; PASSO: Scrive sempre 8 campi da 42 byte: 336 byte complessivi, inclusi gli slot non usati.
+; STEP: Always writes 8 fields of 42 bytes: 336 bytes in total, unused slots included.
 ; -> H002+$01CC (wrapper_Write)
 L066_0000350A:
 ; H066+$0000350A: 4eb9000001cc  jsr $1cc.l
@@ -10650,7 +10650,7 @@ L066_00003514:
 L066_00003518:
 ; H066+$00003518: 4eb900000014  jsr $14.l
         jsr (H002+$14).l
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L066_0000351E:
 ; H066+$0000351E: 2b7900003364fea2  move.l $3364.l, -$15e(a5)
         move.l (H005+$3364).l, -$15e(a5)
@@ -10801,15 +10801,15 @@ L066_000035D2:
 L066_000035D6:
 ; H066+$000035D6: 48732800  pea.l (a3, d2.l)
         pea.l (a3, d2.l)
-; PASSO: Scrive .sav e liste .swg/.fx per il personaggio corrente dello slot.
-; FLUSSO: Chiama Save_CharacterRecord (H066+$1640).
+; STEP: Writes .sav and the .swg/.fx lists for the current character of the slot.
+; FLOW: Calls Save_CharacterRecord (H066+$1640).
 L066_000035DA:
 ; H066+$000035DA: 6100e064  bsr.w $1640
         bsr.w H066+$1640
 L066_000035DE:
 ; H066+$000035DE: 2f2dfea2  move.l -$15e(a5), -(a7)
         move.l -$15e(a5), -(a7)
-; FLUSSO: Chiama Delete_CharacterSidecarFiles (H066+$1312).
+; FLOW: Calls Delete_CharacterSidecarFiles (H066+$1312).
 L066_000035E2:
 ; H066+$000035E2: 6100dd2e  bsr.w $1312
         bsr.w H066+$1312

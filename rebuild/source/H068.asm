@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H068
-; Esplorazione, scelte di movimento, porte e azioni del party.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H068
+; Exploration, movement choices, doors and party actions.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Esplorazione: menu Move/Area/Cast/View/Encamp/Search/Look, movimento, porte e azioni del party.
+; MODULE NOTE
+; Exploration: Move/Area/Cast/View/Encamp/Search/Look menu, movement, doors and party actions.
 ; --------------------------------------------------------------------------
 ; H068: 5788 original bytes; all offsets are section-relative.
         section H068,code
@@ -25,10 +25,10 @@ H068:
         dc.w $0020,$4578,$6974,$004C,$6F63,$6B65,$642E,$2000
         dc.l H068+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H068 [parziale]
-; Scopo: Ingresso del modulo esplorazione, scelte di movimento, porte e azioni del party; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H068+$1696.
-; Chiamanti diretti: H000+$0234
+; ROUTINE: module_init_H068 [partial]
+; Purpose: Entry of the exploration, movement choices, doors and party actions module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H068+$1696.
+; Direct callers: H000+$0234
 ; --------------------------------------------------------------------------
 L068_000000A4:
 ; H068+$000000A4: 2f0c  move.l a4, -(a7)
@@ -43,10 +43,10 @@ L068_000000AE:
 ; H068+$000000AE: 600015e6  bra.w $1696
         bra.w H068+$1696
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H068_00C0 [parziale]
-; Scopo: Trampolino verso H068+$00C0; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H068+$00C0.
-; Chiamanti diretti: H068+$1378, H068+$1514
+; ROUTINE: trampoline_H068_00C0 [partial]
+; Purpose: Trampoline to H068+$00C0; the actual body is there.
+;   - Jumps to the actual body at H068+$00C0.
+; Direct callers: H068+$1378, H068+$1514
 ; --------------------------------------------------------------------------
 L068_000000B2:
 ; H068+$000000B2: 2f0c  move.l a4, -(a7)
@@ -76,12 +76,12 @@ L068_000000C8:
 ; H068+$000000C8: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H068_000000CA [parziale]
-; Scopo: Routine del modulo esplorazione, scelte di movimento, porte e azioni del party; richiama H029+$0354, H029+$039A.
-;   - Richiama H029+$0354.
-;   - Richiama H029+$039A.
-;   - Usa lo stato globale: H005+$282A (puntatore ai quattro piani dati GEO).
-; Chiamanti diretti: H068+$06EA, H068+$0734, H068+$07CC, H068+$0816
+; ROUTINE: sub_H068_000000CA [partial]
+; Purpose: Routine of the exploration, movement choices, doors and party actions module; calls H029+$0354, H029+$039A.
+;   - Calls H029+$0354.
+;   - Calls H029+$039A.
+;   - Uses the global state: H005+$282A (pointer to the four GEO data planes).
+; Direct callers: H068+$06EA, H068+$0734, H068+$07CC, H068+$0816
 ; --------------------------------------------------------------------------
 L068_000000CA:
 ; H068+$000000CA: 2f0c  move.l a4, -(a7)
@@ -134,7 +134,7 @@ L068_00000106:
 L068_0000010A:
 ; H068+$0000010A: e942  asl.w #$4, d2
         asl.w #$4, d2
-; STATO: H005+$282A = puntatore ai quattro piani dati GEO
+; STATE: H005+$282A = pointer to the four GEO data planes
 L068_0000010C:
 ; H068+$0000010C: 26790000282a  movea.l $282a.l, a3
         movea.l (H005+$282A).l, a3
@@ -159,7 +159,7 @@ L068_00000126:
 L068_0000012A:
 ; H068+$0000012A: e942  asl.w #$4, d2
         asl.w #$4, d2
-; STATO: H005+$282A = puntatore ai quattro piani dati GEO
+; STATE: H005+$282A = pointer to the four GEO data planes
 L068_0000012C:
 ; H068+$0000012C: 24790000282a  movea.l $282a.l, a2
         movea.l (H005+$282A).l, a2
@@ -210,7 +210,7 @@ L068_00000166:
 L068_0000016A:
 ; H068+$0000016A: e942  asl.w #$4, d2
         asl.w #$4, d2
-; STATO: H005+$282A = puntatore ai quattro piani dati GEO
+; STATE: H005+$282A = pointer to the four GEO data planes
 L068_0000016C:
 ; H068+$0000016C: 26790000282a  movea.l $282a.l, a3
         movea.l (H005+$282A).l, a3
@@ -235,7 +235,7 @@ L068_00000186:
 L068_0000018A:
 ; H068+$0000018A: e942  asl.w #$4, d2
         asl.w #$4, d2
-; STATO: H005+$282A = puntatore ai quattro piani dati GEO
+; STATE: H005+$282A = pointer to the four GEO data planes
 L068_0000018C:
 ; H068+$0000018C: 24790000282a  movea.l $282a.l, a2
         movea.l (H005+$282A).l, a2
@@ -286,7 +286,7 @@ L068_000001C6:
 L068_000001CA:
 ; H068+$000001CA: e942  asl.w #$4, d2
         asl.w #$4, d2
-; STATO: H005+$282A = puntatore ai quattro piani dati GEO
+; STATE: H005+$282A = pointer to the four GEO data planes
 L068_000001CC:
 ; H068+$000001CC: 26790000282a  movea.l $282a.l, a3
         movea.l (H005+$282A).l, a3
@@ -311,7 +311,7 @@ L068_000001E6:
 L068_000001EA:
 ; H068+$000001EA: e942  asl.w #$4, d2
         asl.w #$4, d2
-; STATO: H005+$282A = puntatore ai quattro piani dati GEO
+; STATE: H005+$282A = pointer to the four GEO data planes
 L068_000001EC:
 ; H068+$000001EC: 24790000282a  movea.l $282a.l, a2
         movea.l (H005+$282A).l, a2
@@ -362,7 +362,7 @@ L068_00000226:
 L068_0000022A:
 ; H068+$0000022A: e942  asl.w #$4, d2
         asl.w #$4, d2
-; STATO: H005+$282A = puntatore ai quattro piani dati GEO
+; STATE: H005+$282A = pointer to the four GEO data planes
 L068_0000022C:
 ; H068+$0000022C: 26790000282a  movea.l $282a.l, a3
         movea.l (H005+$282A).l, a3
@@ -387,7 +387,7 @@ L068_00000246:
 L068_0000024A:
 ; H068+$0000024A: e942  asl.w #$4, d2
         asl.w #$4, d2
-; STATO: H005+$282A = puntatore ai quattro piani dati GEO
+; STATE: H005+$282A = pointer to the four GEO data planes
 L068_0000024C:
 ; H068+$0000024C: 24790000282a  movea.l $282a.l, a2
         movea.l (H005+$282A).l, a2
@@ -455,7 +455,7 @@ L068_000002A4:
 L068_000002A6:
 ; H068+$000002A6: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H068+$028A; indici 0..6, default -1.
+; DISPATCH: words relative to H068+$028A; indices 0..6, default -1.
 L068_000002AA:
 ; H068+$000002AA: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -475,11 +475,11 @@ L068_000002B6:
 ; H068+$000002B6: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H068_000002B8 [parziale]
-; Scopo: Routine del modulo esplorazione, scelte di movimento, porte e azioni del party; richiama H073+$130A.
-;   - Richiama H073+$130A.
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H068+$12C6, H068+$1462
+; ROUTINE: sub_H068_000002B8 [partial]
+; Purpose: Routine of the exploration, movement choices, doors and party actions module; calls H073+$130A.
+;   - Calls H073+$130A.
+;   - Uses the global state: H005+$3364 (head of the party list).
+; Direct callers: H068+$12C6, H068+$1462
 ; --------------------------------------------------------------------------
 L068_000002B8:
 ; H068+$000002B8: 2f0c  move.l a4, -(a7)
@@ -493,7 +493,7 @@ L068_000002BE:
 L068_000002C2:
 ; H068+$000002C2: 422dfffb  clr.b -$5(a5)
         clr.b -$5(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L068_000002C6:
 ; H068+$000002C6: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -595,12 +595,12 @@ L068_0000033E:
 ; H068+$0000033E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H068_00000340 [parziale]
-; Scopo: Routine del modulo esplorazione, scelte di movimento, porte e azioni del party; richiama H011+$09C8, H062+$156C.
-;   - Richiama H011+$09C8.
-;   - Richiama H062+$156C.
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party); H005+$281C (inizio del blocco coordinate/vista).
-; Chiamanti diretti: H068+$13C2, H068+$155E
+; ROUTINE: sub_H068_00000340 [partial]
+; Purpose: Routine of the exploration, movement choices, doors and party actions module; calls H011+$09C8, H062+$156C.
+;   - Calls H011+$09C8.
+;   - Calls H062+$156C.
+;   - Uses the global state: H005+$3364 (head of the party list); H005+$281C (start of the coordinates/view block).
+; Direct callers: H068+$13C2, H068+$155E
 ; --------------------------------------------------------------------------
 L068_00000340:
 ; H068+$00000340: 2f0c  move.l a4, -(a7)
@@ -614,7 +614,7 @@ L068_00000346:
 L068_0000034A:
 ; H068+$0000034A: 422dfffb  clr.b -$5(a5)
         clr.b -$5(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L068_0000034E:
 ; H068+$0000034E: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -636,7 +636,7 @@ L068_00000366:
 L068_0000036A:
 ; H068+$0000036A: 2f0b  move.l a3, -(a7)
         move.l a3, -(a7)
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L068_0000036C:
 ; H068+$0000036C: 3f390000281c  move.w $281c.l, -(a7)
         move.w (H005+$281C).l, -(a7)
@@ -929,7 +929,7 @@ L068_000004D0:
 L068_000004D2:
 ; H068+$000004D2: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H068+$04B0; indici 0..7, default -1.
+; DISPATCH: words relative to H068+$04B0; indices 0..7, default -1.
 L068_000004D6:
 ; H068+$000004D6: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -1313,7 +1313,7 @@ L068_000006B8:
 L068_000006BA:
 ; H068+$000006BA: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H068+$067C; indici 0..22, default -1.
+; DISPATCH: words relative to H068+$067C; indices 0..22, default -1.
 L068_000006BE:
 ; H068+$000006BE: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -1332,7 +1332,7 @@ L068_000006D0:
 L068_000006D4:
 ; H068+$000006D4: 67000064  beq.w $73a
         beq.w H068+$73A
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L068_000006D8:
 ; H068+$000006D8: 47f90000281c  lea.l $281c.l, a3
         lea.l (H005+$281C).l, a3
@@ -1439,11 +1439,11 @@ L068_00000746:
 ; H068+$00000746: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H068_00000748 [parziale]
-; Scopo: Routine del modulo esplorazione, scelte di movimento, porte e azioni del party; richiama H062+$156C.
-;   - Richiama H062+$156C.
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party); H005+$281C (inizio del blocco coordinate/vista).
-; Chiamanti diretti: H068+$13D0
+; ROUTINE: sub_H068_00000748 [partial]
+; Purpose: Routine of the exploration, movement choices, doors and party actions module; calls H062+$156C.
+;   - Calls H062+$156C.
+;   - Uses the global state: H005+$3364 (head of the party list); H005+$281C (start of the coordinates/view block).
+; Direct callers: H068+$13D0
 ; --------------------------------------------------------------------------
 L068_00000748:
 ; H068+$00000748: 2f0c  move.l a4, -(a7)
@@ -1457,7 +1457,7 @@ L068_0000074E:
 L068_00000752:
 ; H068+$00000752: 422dfffb  clr.b -$5(a5)
         clr.b -$5(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L068_00000756:
 ; H068+$00000756: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -1534,7 +1534,7 @@ L068_000007B2:
 L068_000007B6:
 ; H068+$000007B6: 67000064  beq.w $81c
         beq.w H068+$81C
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L068_000007BA:
 ; H068+$000007BA: 47f90000281c  lea.l $281c.l, a3
         lea.l (H005+$281C).l, a3
@@ -1641,10 +1641,10 @@ L068_00000828:
 ; H068+$00000828: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H068_0000082A [parziale]
-; Scopo: Routine del modulo esplorazione, scelte di movimento, porte e azioni del party; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H068+$08B2, H068+$0906
+; ROUTINE: sub_H068_0000082A [partial]
+; Purpose: Routine of the exploration, movement choices, doors and party actions module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H068+$08B2, H068+$0906
 ; --------------------------------------------------------------------------
 L068_0000082A:
 ; H068+$0000082A: 2f0c  move.l a4, -(a7)
@@ -1736,10 +1736,10 @@ L068_0000088E:
 ; H068+$0000088E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H068_00000890 [parziale]
-; Scopo: Routine del modulo esplorazione, scelte di movimento, porte e azioni del party; opera su H005+$3364 (testa della lista del party).
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H068+$12FE, H068+$149A, H068+$08F0
+; ROUTINE: sub_H068_00000890 [partial]
+; Purpose: Routine of the exploration, movement choices, doors and party actions module; works on H005+$3364 (head of the party list).
+;   - Uses the global state: H005+$3364 (head of the party list).
+; Direct callers: H068+$12FE, H068+$149A, H068+$08F0
 ; --------------------------------------------------------------------------
 L068_00000890:
 ; H068+$00000890: 2f0c  move.l a4, -(a7)
@@ -1750,7 +1750,7 @@ L068_00000892:
 L068_00000896:
 ; H068+$00000896: 4e55fffc  link.w a5, #$fffc
         link.w a5, #$fffc
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L068_0000089A:
 ; H068+$0000089A: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -1812,10 +1812,10 @@ L068_000008E0:
 ; H068+$000008E0: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H068_000008E2 [parziale]
-; Scopo: Routine del modulo esplorazione, scelte di movimento, porte e azioni del party; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H068+$13DE, H068+$1574
+; ROUTINE: sub_H068_000008E2 [partial]
+; Purpose: Routine of the exploration, movement choices, doors and party actions module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H068+$13DE, H068+$1574
 ; --------------------------------------------------------------------------
 L068_000008E2:
 ; H068+$000008E2: 2f0c  move.l a4, -(a7)
@@ -1889,11 +1889,11 @@ L068_00000930:
 ; H068+$00000930: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H068_00000932 [parziale]
-; Scopo: Routine del modulo esplorazione, scelte di movimento, porte e azioni del party; richiama H011+$09C8.
-;   - Richiama H011+$09C8.
-;   - Usa lo stato globale: H005+$281C (inizio del blocco coordinate/vista); H005+$3E00 (puntatore stato persistente B, 2048 byte).
-; Chiamanti diretti: H068+$0EB6
+; ROUTINE: sub_H068_00000932 [partial]
+; Purpose: Routine of the exploration, movement choices, doors and party actions module; calls H011+$09C8.
+;   - Calls H011+$09C8.
+;   - Uses the global state: H005+$281C (start of the coordinates/view block); H005+$3E00 (pointer to persistent state B, 2048 bytes).
+; Direct callers: H068+$0EB6
 ; --------------------------------------------------------------------------
 L068_00000932:
 ; H068+$00000932: 2f0c  move.l a4, -(a7)
@@ -1904,7 +1904,7 @@ L068_00000934:
 L068_00000938:
 ; H068+$00000938: 4e55fffa  link.w a5, #$fffa
         link.w a5, #$fffa
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L068_0000093C:
 ; H068+$0000093C: 3b790000281cfffe  move.w $281c.l, -$2(a5)
         move.w (H005+$281C).l, -$2(a5)
@@ -1920,7 +1920,7 @@ L068_0000094E:
 L068_00000954:
 ; H068+$00000954: 3b42fffa  move.w d2, -$6(a5)
         move.w d2, -$6(a5)
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L068_00000958:
 ; H068+$00000958: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -1985,11 +1985,11 @@ L068_000009A4:
 L068_000009AA:
 ; H068+$000009AA: 6f000016  ble.w $9c2
         ble.w H068+$9C2
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L068_000009AE:
 ; H068+$000009AE: 33fc000f0000281c  move.w #$f, $281c.l
         move.w #$f, (H005+$281C).l
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L068_000009B6:
 ; H068+$000009B6: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -2002,11 +2002,11 @@ L068_000009C2:
 L068_000009C6:
 ; H068+$000009C6: 6c000014  bge.w $9dc
         bge.w H068+$9DC
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L068_000009CA:
 ; H068+$000009CA: 42790000281c  clr.w $281c.l
         clr.w (H005+$281C).l
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L068_000009D0:
 ; H068+$000009D0: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -2022,7 +2022,7 @@ L068_000009E2:
 L068_000009E6:
 ; H068+$000009E6: 33fc000f0000281e  move.w #$f, $281e.l
         move.w #$f, (H005+$281E).l
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L068_000009EE:
 ; H068+$000009EE: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -2038,7 +2038,7 @@ L068_000009FE:
 L068_00000A02:
 ; H068+$00000A02: 42790000281e  clr.w $281e.l
         clr.w (H005+$281E).l
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L068_00000A08:
 ; H068+$00000A08: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -2055,17 +2055,17 @@ L068_00000A18:
 ; H068+$00000A18: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H068_00000A1A [parziale]
-; Scopo: Routine del modulo esplorazione, scelte di movimento, porte e azioni del party; richiama H043+$190E, H036+$0034, H011+$01AA, H029+$0312.
-;   - Richiama H043+$190E.
-;   - Richiama H036+$0034.
-;   - Richiama H011+$01AA.
-;   - Richiama H029+$0312.
-;   - Richiama H011+$04E2.
-;   - Richiama H029+$0354.
-;   - Richiama H058+$064A.
-;   - Usa lo stato globale: H005+$281C (inizio del blocco coordinate/vista); H005+$3E00 (puntatore stato persistente B, 2048 byte).
-; Chiamanti diretti: H068+$15EA
+; ROUTINE: sub_H068_00000A1A [partial]
+; Purpose: Routine of the exploration, movement choices, doors and party actions module; calls H043+$190E, H036+$0034, H011+$01AA, H029+$0312.
+;   - Calls H043+$190E.
+;   - Calls H036+$0034.
+;   - Calls H011+$01AA.
+;   - Calls H029+$0312.
+;   - Calls H011+$04E2.
+;   - Calls H029+$0354.
+;   - Calls H058+$064A.
+;   - Uses the global state: H005+$281C (start of the coordinates/view block); H005+$3E00 (pointer to persistent state B, 2048 bytes).
+; Direct callers: H068+$15EA
 ; --------------------------------------------------------------------------
 L068_00000A1A:
 ; H068+$00000A1A: 2f0c  move.l a4, -(a7)
@@ -2079,7 +2079,7 @@ L068_00000A20:
 L068_00000A24:
 ; H068+$00000A24: 3f3c0011  move.w #$11, -(a7)
         move.w #$11, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L068_00000A28:
 ; H068+$00000A28: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
@@ -2093,7 +2093,7 @@ L068_00000A30:
 L068_00000A32:
 ; H068+$00000A32: 4eb900000034  jsr $34.l
         jsr (H036+$34).l
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L068_00000A38:
 ; H068+$00000A38: 47f90000281c  lea.l $281c.l, a3
         lea.l (H005+$281C).l, a3
@@ -2187,7 +2187,7 @@ L068_00000AA2:
 L068_00000AA6:
 ; H068+$00000AA6: 3f02  move.w d2, -(a7)
         move.w d2, -(a7)
-; FLUSSO: Chiama Map_QueryWall (H011+$01AA).
+; FLOW: Calls Map_QueryWall (H011+$01AA).
 L068_00000AA8:
 ; H068+$00000AA8: 4eb9000001aa  jsr $1aa.l
         jsr (H011+$1AA).l
@@ -2238,7 +2238,7 @@ L068_00000ADE:
 L068_00000AE0:
 ; H068+$00000AE0: 17400006  move.b d0, $6(a3)
         move.b d0, $6(a3)
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L068_00000AE4:
 ; H068+$00000AE4: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -2300,13 +2300,13 @@ L068_00000B2A:
 ; H068+$00000B2A: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H068_00000B2C [parziale]
-; Scopo: Routine del modulo esplorazione, scelte di movimento, porte e azioni del party; richiama H069+$00A8, H069+$0012, H058+$064A.
-;   - Richiama H069+$00A8.
-;   - Richiama H069+$0012.
-;   - Richiama H058+$064A.
-;   - Usa lo stato globale: H005+$3E04 (puntatore stato persistente A, 2048 byte).
-; Chiamanti diretti: H068+$161C
+; ROUTINE: sub_H068_00000B2C [partial]
+; Purpose: Routine of the exploration, movement choices, doors and party actions module; calls H069+$00A8, H069+$0012, H058+$064A.
+;   - Calls H069+$00A8.
+;   - Calls H069+$0012.
+;   - Calls H058+$064A.
+;   - Uses the global state: H005+$3E04 (pointer to persistent state A, 2048 bytes).
+; Direct callers: H068+$161C
 ; --------------------------------------------------------------------------
 L068_00000B2C:
 ; H068+$00000B2C: 2f0c  move.l a4, -(a7)
@@ -2321,22 +2321,22 @@ L068_00000B32:
 L068_00000B36:
 ; H068+$00000B36: 4eb9000000a8  jsr $a8.l
         jsr (H069+$A8).l
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L068_00000B3C:
 ; H068+$00000B3C: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L068_00000B42:
 ; H068+$00000B42: 247900003e04  movea.l $3e04.l, a2
         movea.l (H005+$3E04).l, a2
 L068_00000B48:
 ; H068+$00000B48: 356b018601e0  move.w $186(a3), $1e0(a2)
         move.w $186(a3), $1e0(a2)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L068_00000B4E:
 ; H068+$00000B4E: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L068_00000B54:
 ; H068+$00000B54: 247900003e04  movea.l $3e04.l, a2
         movea.l (H005+$3E04).l, a2
@@ -2355,7 +2355,7 @@ L068_00000B68:
 L068_00000B6A:
 ; H068+$00000B6A: 47f900003ee2  lea.l $3ee2.l, a3
         lea.l (H005+$3EE2).l, a3
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L068_00000B70:
 ; H068+$00000B70: 247900003e04  movea.l $3e04.l, a2
         movea.l (H005+$3E04).l, a2
@@ -2380,7 +2380,7 @@ L068_00000B8A:
 L068_00000B8C:
 ; H068+$00000B8C: 47f900003ed0  lea.l $3ed0.l, a3
         lea.l (H005+$3ED0).l, a3
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L068_00000B92:
 ; H068+$00000B92: 247900003e04  movea.l $3e04.l, a2
         movea.l (H005+$3E04).l, a2
@@ -2429,14 +2429,14 @@ L068_00000BD2:
 L068_00000BD6:
 ; H068+$00000BD6: 3b7c000efffa  move.w #$e, -$6(a5)
         move.w #$e, -$6(a5)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L068_00000BDC:
 ; H068+$00000BDC: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
 L068_00000BE2:
 ; H068+$00000BE2: 376dfffc0186  move.w -$4(a5), $186(a3)
         move.w -$4(a5), $186(a3)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L068_00000BE8:
 ; H068+$00000BE8: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -2468,12 +2468,12 @@ L068_00000C0C:
         rts 
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Exploration_CommandMenu [verificato]
-; Scopo: Legge e smista il comando del menu di esplorazione.
-;   - Propone Move, Area, Cast, View, Encamp, Search e Look.
-;   - Richiama il menu UI e i sottosistemi mappa, personaggio e riposo.
-;   - La routine restituisce la scelta al ciclo scenario.
-; Chiamanti diretti: H012+$32FE, H012+$33F2
+; ROUTINE: Exploration_CommandMenu [verified]
+; Purpose: Reads and dispatches the command of the exploration menu.
+;   - Offers Move, Area, Cast, View, Encamp, Search and Look.
+;   - Calls the UI menu and the map, character and rest subsystems.
+;   - The routine returns the choice to the scenario loop.
+; Direct callers: H012+$32FE, H012+$33F2
 ; --------------------------------------------------------------------------
 L068_00000C0E:
 ; H068+$00000C0E: 2f0c  move.l a4, -(a7)
@@ -2484,7 +2484,7 @@ L068_00000C10:
 L068_00000C14:
 ; H068+$00000C14: 4e55ffc6  link.w a5, #$ffc6
         link.w a5, #$ffc6
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L068_00000C18:
 ; H068+$00000C18: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -2494,7 +2494,7 @@ L068_00000C1E:
 L068_00000C22:
 ; H068+$00000C22: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L068_00000C24:
 ; H068+$00000C24: 143900003de3  move.b $3de3.l, d2
         move.b (H005+$3DE3).l, d2
@@ -2543,7 +2543,7 @@ L068_00000C5E:
 L068_00000C60:
 ; H068+$00000C60: 486dfffc  pea.l -$4(a5)
         pea.l -$4(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L068_00000C64:
 ; H068+$00000C64: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -2575,7 +2575,7 @@ L068_00000C86:
 L068_00000C8E:
 ; H068+$00000C8E: 4e75  rts 
         rts 
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L068_00000C90:
 ; H068+$00000C90: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -2628,7 +2628,7 @@ L068_00000CD0:
 L068_00000CD2:
 ; H068+$00000CD2: 13c200002825  move.b d2, $2825.l
         move.b d2, (H005+$2825).l
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L068_00000CD8:
 ; H068+$00000CD8: 47f90000281c  lea.l $281c.l, a3
         lea.l (H005+$281C).l, a3
@@ -2679,7 +2679,7 @@ L068_00000D08:
 L068_00000D0E:
 ; H068+$00000D0E: 4e75  rts 
         rts 
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L068_00000D10:
 ; H068+$00000D10: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -2721,7 +2721,7 @@ L068_00000D48:
 L068_00000D50:
 ; H068+$00000D50: 4e75  rts 
         rts 
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L068_00000D52:
 ; H068+$00000D52: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -2744,7 +2744,7 @@ L068_00000D68:
 L068_00000D6A:
 ; H068+$00000D6A: 024200ff  andi.w #$ff, d2
         andi.w #$ff, d2
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L068_00000D6E:
 ; H068+$00000D6E: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -2758,7 +2758,7 @@ L068_00000D78:
 L068_00000D7E:
 ; H068+$00000D7E: 4e75  rts 
         rts 
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L068_00000D80:
 ; H068+$00000D80: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -2781,7 +2781,7 @@ L068_00000D96:
 L068_00000D98:
 ; H068+$00000D98: 024200ff  andi.w #$ff, d2
         andi.w #$ff, d2
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L068_00000D9C:
 ; H068+$00000D9C: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -2802,7 +2802,7 @@ L068_00000DB0:
 L068_00000DB4:
 ; H068+$00000DB4: 4eb90000064a  jsr $64a.l
         jsr (H058+$64A).l
-; STATO: H005+$3DEA = PC logico ECL
+; STATE: H005+$3DEA = logical ECL PC
 L068_00000DBA:
 ; H068+$00000DBA: 33f900003df200003dea  move.w $3df2.l, $3dea.l
         move.w (H005+$3DF2).l, (H005+$3DEA).l
@@ -2840,7 +2840,7 @@ L068_00000E0C:
 L068_00000E0E:
 ; H068+$00000E0E: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H068+$0DD0; indici 0..21, default -1.
+; DISPATCH: words relative to H068+$0DD0; indices 0..21, default -1.
 L068_00000E12:
 ; H068+$00000E12: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -2854,7 +2854,7 @@ L068_00000E1A:
 L068_00000E1E:
 ; H068+$00000E1E: 4eb900003390  jsr $3390.l
         jsr (H065+$3390).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L068_00000E24:
 ; H068+$00000E24: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -2899,14 +2899,14 @@ L068_00000E58:
 L068_00000E5A:
 ; H068+$00000E5A: 486dfffc  pea.l -$4(a5)
         pea.l -$4(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L068_00000E5E:
 ; H068+$00000E5E: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
 L068_00000E64:
 ; H068+$00000E64: 1b40ffff  move.b d0, -$1(a5)
         move.b d0, -$1(a5)
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L068_00000E68:
 ; H068+$00000E68: 47f90000281c  lea.l $281c.l, a3
         lea.l (H005+$281C).l, a3
@@ -2957,7 +2957,7 @@ L068_00000E9C:
 L068_00000E9E:
 ; H068+$00000E9E: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H068+$0E8C; indici 0..0, default -1.
+; DISPATCH: words relative to H068+$0E8C; indices 0..0, default -1.
 L068_00000EA2:
 ; H068+$00000EA2: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -3037,7 +3037,7 @@ L068_00000EF2:
 L068_00000EF6:
 ; H068+$00000EF6: 3f02  move.w d2, -(a7)
         move.w d2, -(a7)
-; FLUSSO: Chiama Map_QueryWall (H011+$01AA).
+; FLOW: Calls Map_QueryWall (H011+$01AA).
 L068_00000EF8:
 ; H068+$00000EF8: 4eb9000001aa  jsr $1aa.l
         jsr (H011+$1AA).l
@@ -3112,7 +3112,7 @@ L068_00000F42:
 L068_00000F44:
 ; H068+$00000F44: 3f3c0011  move.w #$11, -(a7)
         move.w #$11, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L068_00000F48:
 ; H068+$00000F48: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
@@ -3137,7 +3137,7 @@ L068_00000F5A:
 L068_00000F5E:
 ; H068+$00000F5E: 3f02  move.w d2, -(a7)
         move.w d2, -(a7)
-; FLUSSO: Chiama Map_QueryWall (H011+$01AA).
+; FLOW: Calls Map_QueryWall (H011+$01AA).
 L068_00000F60:
 ; H068+$00000F60: 4eb9000001aa  jsr $1aa.l
         jsr (H011+$1AA).l
@@ -3212,7 +3212,7 @@ L068_00000FAA:
 L068_00000FAC:
 ; H068+$00000FAC: 3f3c0011  move.w #$11, -(a7)
         move.w #$11, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L068_00000FB0:
 ; H068+$00000FB0: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
@@ -3237,7 +3237,7 @@ L068_00000FC2:
 L068_00000FC6:
 ; H068+$00000FC6: 3f02  move.w d2, -(a7)
         move.w d2, -(a7)
-; FLUSSO: Chiama Map_QueryWall (H011+$01AA).
+; FLOW: Calls Map_QueryWall (H011+$01AA).
 L068_00000FC8:
 ; H068+$00000FC8: 4eb9000001aa  jsr $1aa.l
         jsr (H011+$1AA).l
@@ -3315,7 +3315,7 @@ L068_00001022:
 L068_00001024:
 ; H068+$00001024: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H068+$1000; indici 0..8, default -1.
+; DISPATCH: words relative to H068+$1000; indices 0..8, default -1.
 L068_00001028:
 ; H068+$00001028: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -3328,7 +3328,7 @@ L068_00001030:
 L068_00001034:
 ; H068+$00001034: 4e75  rts 
         rts 
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L068_00001036:
 ; H068+$00001036: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -3377,7 +3377,7 @@ L068_00001070:
 L068_00001072:
 ; H068+$00001072: 486dfffc  pea.l -$4(a5)
         pea.l -$4(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L068_00001076:
 ; H068+$00001076: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -3445,7 +3445,7 @@ L068_000010D8:
 L068_000010DA:
 ; H068+$000010DA: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H068+$10B6; indici 0..8, default -1.
+; DISPATCH: words relative to H068+$10B6; indices 0..8, default -1.
 L068_000010DE:
 ; H068+$000010DE: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -3491,14 +3491,14 @@ L068_00001110:
 L068_00001112:
 ; H068+$00001112: 486dfffc  pea.l -$4(a5)
         pea.l -$4(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L068_00001116:
 ; H068+$00001116: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
 L068_0000111C:
 ; H068+$0000111C: 1b40ffff  move.b d0, -$1(a5)
         move.b d0, -$1(a5)
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L068_00001120:
 ; H068+$00001120: 47f90000281c  lea.l $281c.l, a3
         lea.l (H005+$281C).l, a3
@@ -3607,7 +3607,7 @@ L068_000011BA:
 L068_000011BC:
 ; H068+$000011BC: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H068+$1194; indici 0..10, default -1.
+; DISPATCH: words relative to H068+$1194; indices 0..10, default -1.
 L068_000011C0:
 ; H068+$000011C0: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -3656,7 +3656,7 @@ L068_000011EE:
 L068_000011F0:
 ; H068+$000011F0: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H068+$11DC; indici 0..1, default -1.
+; DISPATCH: words relative to H068+$11DC; indices 0..1, default -1.
 L068_000011F4:
 ; H068+$000011F4: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -3702,12 +3702,12 @@ L068_0000122C:
         rts 
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Exploration_MoveOrDoor [parziale]
-; Scopo: Gestisce il percorso di movimento/interazione con le porte.
-;   - Costruisce opzioni quali Bash, Pick e Knock in base a stato e disponibilità.
-;   - Aggiorna posizione/stato attraverso i rami di comando.
-;   - La formula dei controlli e tutti i bit di porta restano da completare.
-; Chiamanti diretti: H012+$345A
+; ROUTINE: Exploration_MoveOrDoor [partial]
+; Purpose: Handles the movement/door interaction path.
+;   - Builds options such as Bash, Pick and Knock according to state and availability.
+;   - Updates position/state through the command branches.
+;   - The formula of the checks and all the door bits are still to be completed.
+; Direct callers: H012+$345A
 ; --------------------------------------------------------------------------
 L068_0000122E:
 ; H068+$0000122E: 2f0c  move.l a4, -(a7)
@@ -3721,21 +3721,21 @@ L068_00001234:
 L068_00001238:
 ; H068+$00001238: 422dffff  clr.b -$1(a5)
         clr.b -$1(a5)
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L068_0000123C:
 ; H068+$0000123C: 47f90000281c  lea.l $281c.l, a3
         lea.l (H005+$281C).l, a3
 L068_00001242:
 ; H068+$00001242: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L068_00001244:
 ; H068+$00001244: 143900003de3  move.b $3de3.l, d2
         move.b (H005+$3DE3).l, d2
 L068_0000124A:
 ; H068+$0000124A: 600003f8  bra.w $1644
         bra.w H068+$1644
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L068_0000124E:
 ; H068+$0000124E: 247900003e00  movea.l $3e00.l, a2
         movea.l (H005+$3E00).l, a2
@@ -3972,7 +3972,7 @@ L068_0000135C:
 L068_00001360:
 ; H068+$00001360: 66000022  bne.w $1384
         bne.w H068+$1384
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L068_00001364:
 ; H068+$00001364: 45f90000281c  lea.l $281c.l, a2
         lea.l (H005+$281C).l, a2
@@ -4030,7 +4030,7 @@ L068_000013A4:
 L068_000013A6:
 ; H068+$000013A6: 486dfffe  pea.l -$2(a5)
         pea.l -$2(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L068_000013AA:
 ; H068+$000013AA: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -4121,7 +4121,7 @@ L068_0000141C:
 L068_0000141E:
 ; H068+$0000141E: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H068+$13EE; indici 0..14, default -1.
+; DISPATCH: words relative to H068+$13EE; indices 0..14, default -1.
 L068_00001422:
 ; H068+$00001422: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -4315,7 +4315,7 @@ L068_000014F8:
 L068_000014FC:
 ; H068+$000014FC: 66000022  bne.w $1520
         bne.w H068+$1520
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L068_00001500:
 ; H068+$00001500: 45f90000281c  lea.l $281c.l, a2
         lea.l (H005+$281C).l, a2
@@ -4373,7 +4373,7 @@ L068_00001540:
 L068_00001542:
 ; H068+$00001542: 486dfffe  pea.l -$2(a5)
         pea.l -$2(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L068_00001546:
 ; H068+$00001546: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -4455,7 +4455,7 @@ L068_000015B2:
 L068_000015B4:
 ; H068+$000015B4: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H068+$1584; indici 0..14, default -1.
+; DISPATCH: words relative to H068+$1584; indices 0..14, default -1.
 L068_000015B8:
 ; H068+$000015B8: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -4488,7 +4488,7 @@ L068_000015D6:
 L068_000015D8:
 ; H068+$000015D8: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H068+$15C2; indici 0..2, default -1.
+; DISPATCH: words relative to H068+$15C2; indices 0..2, default -1.
 L068_000015DC:
 ; H068+$000015DC: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -4520,7 +4520,7 @@ L068_000015F8:
 L068_000015FA:
 ; H068+$000015FA: 6000000c  bra.w $1608
         bra.w H068+$1608
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L068_000015FE:
 ; H068+$000015FE: 247900003e00  movea.l $3e00.l, a2
         movea.l (H005+$3E00).l, a2
@@ -4530,7 +4530,7 @@ L068_00001604:
 L068_00001608:
 ; H068+$00001608: 4e75  rts 
         rts 
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L068_0000160A:
 ; H068+$0000160A: 247900003e00  movea.l $3e00.l, a2
         movea.l (H005+$3E00).l, a2
@@ -4562,7 +4562,7 @@ L068_0000162A:
 L068_0000162C:
 ; H068+$0000162C: 6000000c  bra.w $163a
         bra.w H068+$163A
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L068_00001630:
 ; H068+$00001630: 247900003e00  movea.l $3e00.l, a2
         movea.l (H005+$3E00).l, a2
@@ -4598,28 +4598,28 @@ L068_00001652:
 L068_00001654:
 ; H068+$00001654: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H068+$1640; indici 0..1, default -1.
+; DISPATCH: words relative to H068+$1640; indices 0..1, default -1.
 L068_00001658:
 ; H068+$00001658: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
 L068_0000165C:
 ; H068+$0000165C: 4879000027bc  pea.l $27bc.l
         pea.l (H005+$27BC).l
-; FLUSSO: Chiama Free_Sequence (H042+$0300).
+; FLOW: Calls Free_Sequence (H042+$0300).
 L068_00001662:
 ; H068+$00001662: 4eb900000300  jsr $300.l
         jsr (H042+$300).l
 L068_00001668:
 ; H068+$00001668: 4879000027b2  pea.l $27b2.l
         pea.l (H005+$27B2).l
-; FLUSSO: Chiama Free_GraphicRecord (H029+$067A).
+; FLOW: Calls Free_GraphicRecord (H029+$067A).
 L068_0000166E:
 ; H068+$0000166E: 4eb90000067a  jsr $67a.l
         jsr (H029+$67A).l
 L068_00001674:
 ; H068+$00001674: 4879000027b8  pea.l $27b8.l
         pea.l (H005+$27B8).l
-; FLUSSO: Chiama Free_GraphicRecord (H029+$067A).
+; FLOW: Calls Free_GraphicRecord (H029+$067A).
 L068_0000167A:
 ; H068+$0000167A: 4eb90000067a  jsr $67a.l
         jsr (H029+$67A).l

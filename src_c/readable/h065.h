@@ -1,4 +1,4 @@
-/* H065: schermate dei personaggi, oggetti ed equipaggiamento. */
+/* H065: character, item and equipment screens. */
 #ifndef COK_H065_H
 #define COK_H065_H
 

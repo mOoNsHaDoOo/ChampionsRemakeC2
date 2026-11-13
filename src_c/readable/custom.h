@@ -1,15 +1,15 @@
 /*
- * Accesso ai registri dei chip custom ($DFF000) scritti direttamente dal
- * gioco (blitter).  Sull'Amiga sono scritture in memoria; sull'host vanno
- * all'emulatore del blitter di host/blitter.c.  I registri puntatore
- * (BLTxPT) prendono un puntatore C.
+ * Access to the custom chip registers ($DFF000) written directly by the
+ * game (blitter).  On the Amiga they are memory writes; on the host they go
+ * to the blitter emulator in host/blitter.c.  The pointer registers
+ * (BLTxPT) take a C pointer.
  */
 #ifndef COK_CUSTOM_H
 #define COK_CUSTOM_H
 
 #include "cok.h"
 
-/* Offset dei registri del blitter. */
+/* Offsets of the blitter registers. */
 #define BLTCON0  0x040
 #define BLTCON1  0x042
 #define BLTAFWM  0x044

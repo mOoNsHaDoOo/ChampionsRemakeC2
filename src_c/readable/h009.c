@@ -1,4 +1,4 @@
-/* H009: Verifica preliminare della distribuzione fornita; non modificata. */
+/* H009: Preliminary check of the supplied distribution; not modified. */
 #include "h009.h"
 #include "h023_shared.h"
 #include "h026_string.h"
@@ -8,14 +8,14 @@
 #include "h049.h"
 #include "globals.h"
 
-/* PORT H009+$0070: link/unlk, nessun effetto. */
+/* PORT H009+$0070: link/unlk, no effect. */
 void h009_init(void)
 {
 }
 
 /*
- * PORT H009+$007E: decodifica la risposta della voce: carattere = byte +
- * $46 + lunghezza (lunghezza >= 40 vale 0).
+ * PORT H009+$007E: decodes the answer of the entry: character = byte +
+ * $46 + length (a length >= 40 counts as 0).
  */
 static void decode_answer(char *out, QuizEntry *entry)
 {
@@ -33,13 +33,13 @@ static void decode_answer(char *out, QuizEntry *entry)
 }
 
 /*
- * PORT H009+$010C: verifica del manuale.  Chiede la parola di una pagina e
- * riga del manuale ("the best quartex" o "tavern tale", scelta a caso) e la
- * legge con H030+$0718.  Nella versione dei dati i due salti dopo il
- * confronto della risposta sono stati sostituiti da NOP: qualunque
- * risposta e' accettata e il risultato e' sempre 1.  Lungo il percorso
- * somma $2001 + $402 + $1B04 + $88 = $3F8F nella word di controllo
- * (H009+$0000), che il main verifica.
+ * PORT H009+$010C: manual check.  Asks for the word of a page and
+ * line of the manual ("the best quartex" or "tavern tale", chosen at random) and
+ * reads it with H030+$0718.  In the data version the two branches after the
+ * comparison of the answer have been replaced by NOPs: any answer is
+ * accepted and the result is always 1.  Along the way it adds
+ * $2001 + $402 + $1B04 + $88 = $3F8F to the check word
+ * (H009+$0000), which main verifies.
  */
 u8 manual_check(void)
 {
@@ -87,10 +87,10 @@ u8 manual_check(void)
 
     input_line(6, "Enter ", 0x0E, 0, 0x14, 0x28, reply);
     if (tries != 3) {
-        (void)h026_compare(0x28, answer, 0x28, reply);  /* esito ignorato */
+        (void)h026_compare(0x28, answer, 0x28, reply);  /* result ignored */
     }
     g_distribution_check = (u16)(g_distribution_check + 0x1B04);
-    (void)h026_compare(0x28, answer, 0x28, reply);      /* esito ignorato */
+    (void)h026_compare(0x28, answer, 0x28, reply);      /* result ignored */
     g_distribution_check = (u16)(g_distribution_check + 0x88);
     return 1;
 }

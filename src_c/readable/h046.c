@@ -1,17 +1,17 @@
-/* H046: direzione del cursore rispetto a un punto. */
+/* H046: cursor direction relative to a point. */
 #include "cok.h"
 #include "h046.h"
 
-/* PORT H046+$0004: link/unlk, nessun effetto. */
+/* PORT H046+$0004: link/unlk, no effect. */
 void h046_init(void)
 {
 }
 
 /*
- * PORT H046+$0012: tasto di direzione (H I M Q P O K G, come il
- * tastierino) da (px, py) verso (x, y): i settori sono separati dalle
- * pendenze $26A/$100 (circa 2,41) e $6A/$100 (circa 0,41), cioe' 67,5 e
- * 22,5 gradi.  Si provano gli otto casi in ordine.
+ * PORT H046+$0012: direction key (H I M Q P O K G, like the numeric
+ * keypad) from (px, py) towards (x, y): the sectors are separated by the
+ * slopes $26A/$100 (about 2.41) and $6A/$100 (about 0.41), that is 67.5
+ * and 22.5 degrees.  The eight cases are tried in order.
  */
 u8 cursor_direction(u16 px, u16 py, u16 x, u16 y)
 {

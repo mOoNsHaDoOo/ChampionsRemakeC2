@@ -1,4 +1,4 @@
-/* H020: scrittura sulla console del processo (runtime Pascal). */
+/* H020: writing to the process console (Pascal runtime). */
 #ifndef COK_H020_IO_H
 #define COK_H020_IO_H
 #include "cok.h"

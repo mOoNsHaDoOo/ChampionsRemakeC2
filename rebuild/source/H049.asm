@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H049
-; Disegno di testo/glifi, blitter diretto e nodi QBSBlit.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H049
+; Text/glyph drawing, direct blitter and QBSBlit nodes.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Disegno di testo/glifi, blitter diretto e nodi QBSBlit. H049+$0224 programma i registri custom fra OwnBlitter e DisownBlitter; H049+$06EC e' la callback del blit accodato.
+; MODULE NOTE
+; Text/glyph drawing, direct blitter and QBSBlit nodes. H049+$0224 programs the custom registers between OwnBlitter and DisownBlitter; H049+$06EC is the callback of the queued blit.
 ; --------------------------------------------------------------------------
 ; H049: 2992 original bytes; all offsets are section-relative.
         section H049,code
@@ -16,10 +16,10 @@ H049:
         dc.w $0000,$0000
         dc.l H049+$00000004
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H049_00000008 [parziale]
-; Scopo: Routine del modulo disegno di testo/glifi, blitter diretto e nodi QBSBlit; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H000+$0084
+; ROUTINE: sub_H049_00000008 [partial]
+; Purpose: Routine of the text/glyph drawing, direct blitter and QBSBlit nodes module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H000+$0084
 ; --------------------------------------------------------------------------
 L049_00000008:
 ; H049+$00000008: 41fafffa  lea.l $4(pc), a0
@@ -31,10 +31,10 @@ L049_00000012:
 ; H049+$00000012: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H049_0082 [parziale]
-; Scopo: Trampolino verso H049+$0082; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H049+$0082.
-; Chiamanti diretti: H011+$09A0
+; ROUTINE: trampoline_H049_0082 [partial]
+; Purpose: Trampoline to H049+$0082; the actual body is there.
+;   - Jumps to the actual body at H049+$0082.
+; Direct callers: H011+$09A0
 ; --------------------------------------------------------------------------
 L049_00000014:
 ; H049+$00000014: 4e550000  link.w a5, #$0
@@ -262,10 +262,10 @@ L049_00000128:
 ; H049+$00000128: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H049_0198 [parziale]
-; Scopo: Trampolino verso H049+$0198; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H049+$0198.
-; Chiamanti diretti: H034+$01C0
+; ROUTINE: trampoline_H049_0198 [partial]
+; Purpose: Trampoline to H049+$0198; the actual body is there.
+;   - Jumps to the actual body at H049+$0198.
+; Direct callers: H034+$01C0
 ; --------------------------------------------------------------------------
 L049_0000012A:
 ; H049+$0000012A: 4e550000  link.w a5, #$0
@@ -467,13 +467,13 @@ L049_00000222:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Draw_TextWithBlitter [verificato]
-; Scopo: Disegna testo usando direttamente il blitter, con arbitraggio graphics.library.
-;   - Carica $DFF000 in A3 e prepara geometria, maschere e bitplane.
-;   - OwnBlitter acquisisce la risorsa e WaitBlit attende prima di programmare i registri.
-;   - Scrive controllo, maschere, puntatori, moduli e BLTSIZE.
-;   - DisownBlitter rilascia la risorsa.
-; Chiamanti diretti: H030+$0278
+; ROUTINE: Draw_TextWithBlitter [verified]
+; Purpose: Draws text using the blitter directly, with graphics.library arbitration.
+;   - Loads $DFF000 into A3 and prepares geometry, masks and bitplanes.
+;   - OwnBlitter acquires the resource and WaitBlit waits before programming the registers.
+;   - Writes control, masks, pointers, modulos and BLTSIZE.
+;   - DisownBlitter releases the resource.
+; Direct callers: H030+$0278
 ; --------------------------------------------------------------------------
 L049_00000224:
 ; H049+$00000224: 4e550000  link.w a5, #$0
@@ -484,7 +484,7 @@ L049_00000228:
 L049_0000022A:
 ; H049+$0000022A: 48e7071a  movem.l d5-d7/a3-a4/a6, -(a7)
         movem.l d5-d7/a3-a4/a6, -(a7)
-; PASSO: Base hardware dei custom register, NON la base di una libreria.
+; STEP: Hardware base of the custom registers, NOT the base of a library.
 L049_0000022E:
 ; H049+$0000022E: 267c00dff000  movea.l #$dff000, a3
         movea.l #$dff000, a3
@@ -608,7 +608,7 @@ L049_000002BE:
 L049_000002C2:
 ; H049+$000002C2: 2c6efffc  movea.l -$4(a6), a6
         movea.l -$4(a6), a6
-; PASSO: OwnBlitter: acquisisce il blitter prima delle scritture hardware.
+; STEP: OwnBlitter: acquires the blitter before the hardware writes.
 L049_000002C6:
 ; H049+$000002C6: 4eaefe38  jsr -$1c8(a6) ; graphics.library/OwnBlitter
         jsr LVO_graphics_OwnBlitter(a6)
@@ -660,7 +660,7 @@ L049_000002F2:
 L049_000002F6:
 ; H049+$000002F6: 2c6efffc  movea.l -$4(a6), a6
         movea.l -$4(a6), a6
-; PASSO: WaitBlit: attende il trasferimento precedente.
+; STEP: WaitBlit: waits for the previous transfer.
 L049_000002FA:
 ; H049+$000002FA: 4eaeff1c  jsr -$e4(a6) ; graphics.library/WaitBlit
         jsr LVO_graphics_WaitBlit(a6)
@@ -715,7 +715,7 @@ L049_00000340:
 L049_00000344:
 ; H049+$00000344: 27490054  move.l a1, $54(a3)
         move.l a1, $54(a3)
-; PASSO: Scrivendo BLTSIZE viene avviato il blit.
+; STEP: Writing BLTSIZE starts the blit.
 L049_00000348:
 ; H049+$00000348: 376c00080058  move.w $8(a4), $58(a3)
         move.w $8(a4), $58(a3)
@@ -869,7 +869,7 @@ L049_0000040C:
 L049_00000410:
 ; H049+$00000410: 206d0004  movea.l $4(a5), a0
         movea.l $4(a5), a0
-; FLUSSO: Chiama Draw_GlyphRowsCPU (H049+$045A).
+; FLOW: Calls Draw_GlyphRowsCPU (H049+$045A).
 L049_00000414:
 ; H049+$00000414: 61000044  bsr.w $45a
         bsr.w H049+$45A
@@ -882,7 +882,7 @@ L049_0000041C:
 L049_00000420:
 ; H049+$00000420: 2c6efffc  movea.l -$4(a6), a6
         movea.l -$4(a6), a6
-; PASSO: DisownBlitter: rilascia l’uso esclusivo del blitter.
+; STEP: DisownBlitter: releases exclusive use of the blitter.
 L049_00000424:
 ; H049+$00000424: 4eaefe32  jsr -$1ce(a6) ; graphics.library/DisownBlitter
         jsr LVO_graphics_DisownBlitter(a6)
@@ -905,10 +905,10 @@ L049_00000436:
 ; H049+$00000436: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H049_00000438 [parziale]
-; Scopo: Routine del modulo disegno di testo/glifi, blitter diretto e nodi QBSBlit; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H030+$0C78
+; ROUTINE: sub_H049_00000438 [partial]
+; Purpose: Routine of the text/glyph drawing, direct blitter and QBSBlit nodes module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H030+$0C78
 ; --------------------------------------------------------------------------
 L049_00000438:
 ; H049+$00000438: 41fa0582  lea.l $9bc(pc), a0
@@ -929,10 +929,10 @@ L049_0000044C:
 ; H049+$0000044C: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H049_0450 [parziale]
-; Scopo: Trampolino verso H049+$0450; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H049+$0450.
-; Chiamanti diretti: H049+$0240
+; ROUTINE: trampoline_H049_0450 [partial]
+; Purpose: Trampoline to H049+$0450; the actual body is there.
+;   - Jumps to the actual body at H049+$0450.
+; Direct callers: H049+$0240
 ; --------------------------------------------------------------------------
 L049_0000044E:
 ; H049+$0000044E: 4280  clr.l d0
@@ -954,12 +954,12 @@ L049_00000458:
         rts 
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Draw_GlyphRowsCPU [verificato]
-; Scopo: Scrive righe di glifi nel bitmap usando la CPU.
-;   - Normalizza il codice del carattere e calcola l’indice nella tabella font.
-;   - Legge otto righe del glifo e scrive byte nella destinazione con passo D5.
-;   - Il percorso non scrive nei custom register: opera sulla memoria dei pixel.
-; Chiamanti diretti: H049+$0414
+; ROUTINE: Draw_GlyphRowsCPU [verified]
+; Purpose: Writes rows of glyphs into the bitmap using the CPU.
+;   - Normalises the character code and computes the index into the font table.
+;   - Reads eight rows of the glyph and writes bytes to the destination with stride D5.
+;   - The path does not write to the custom registers: it works on the pixel memory.
+; Direct callers: H049+$0414
 ; --------------------------------------------------------------------------
 L049_0000045A:
 ; H049+$0000045A: 48e73820  movem.l d2-d4/a2, -(a7)
@@ -1044,12 +1044,12 @@ L049_000004AC:
         rts 
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Queue_BitplaneBlit [verificato]
-; Scopo: Prepara un nodo per un blit accodato a graphics.library.
-;   - Alloca 74 byte azzerati e compila geometria, puntatori, minterm e maschere.
-;   - Registra callback di lavoro H049+$06EC e pulizia H049+$0782.
-;   - Accoda il nodo con QBSBlit.
-; Chiamanti diretti: H029+$0C4E, H029+$0C94, H035+$0662, H042+$0FEC
+; ROUTINE: Queue_BitplaneBlit [verified]
+; Purpose: Prepares a node for a blit queued to graphics.library.
+;   - Allocates 74 zeroed bytes and fills in geometry, pointers, minterms and masks.
+;   - Registers the work callback H049+$06EC and the clean-up H049+$0782.
+;   - Queues the node with QBSBlit.
+; Direct callers: H029+$0C4E, H029+$0C94, H035+$0662, H042+$0FEC
 ; --------------------------------------------------------------------------
 L049_000004AE:
 ; H049+$000004AE: 4e550000  link.w a5, #$0
@@ -1495,7 +1495,7 @@ L049_000006CE:
 L049_000006D2:
 ; H049+$000006D2: 2c6efffc  movea.l -$4(a6), a6
         movea.l -$4(a6), a6
-; PASSO: QBSBlit: accoda il nodo con le due callback già impostate.
+; STEP: QBSBlit: queues the node with the two callbacks already set.
 L049_000006D6:
 ; H049+$000006D6: 4eaefeda  jsr -$126(a6) ; graphics.library/QBSBlit
         jsr LVO_graphics_QBSBlit(a6)
@@ -1524,11 +1524,11 @@ L049_000006EA:
 FN_queued_blitter_callback:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: QueuedBlit_Callback [verificato]
-; Scopo: Callback del nodo QBSBlit che programma i registri hardware.
-;   - A1 è il nodo di lavoro e A0 la base custom fornita dal servizio grafico.
-;   - Trasferisce nel blitter i parametri del nodo e avvia il blit con BLTSIZE.
-;   - Restituisce uno stato usato per la prosecuzione della coda.
+; ROUTINE: QueuedBlit_Callback [verified]
+; Purpose: Callback of the QBSBlit node that programs the hardware registers.
+;   - A1 is the work node and A0 the custom base supplied by the graphics service.
+;   - Transfers the node parameters to the blitter and starts the blit with BLTSIZE.
+;   - Returns a state used for the continuation of the queue.
 ; --------------------------------------------------------------------------
 L049_000006EC:
 ; H049+$000006EC: 48e70c28  movem.l d4-d5/a2/a4, -(a7)
@@ -1659,9 +1659,9 @@ L049_0000077C:
 FN_queued_blitter_cleanup:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: QueuedBlit_Cleanup [verificato]
-; Scopo: Callback di pulizia del nodo accodato.
-;   - Recupera il puntatore conservato e libera i 74 byte del nodo con FreeMem.
+; ROUTINE: QueuedBlit_Cleanup [verified]
+; Purpose: Clean-up callback of the queued node.
+;   - Retrieves the kept pointer and frees the 74 bytes of the node with FreeMem.
 ; --------------------------------------------------------------------------
 L049_00000782:
 ; H049+$00000782: 48e70042  movem.l a1/a6, -(a7)
@@ -1685,10 +1685,10 @@ L049_0000079C:
 ; H049+$0000079C: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H049_0000079E [parziale]
-; Scopo: Routine del modulo disegno di testo/glifi, blitter diretto e nodi QBSBlit; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H009+$01EA
+; ROUTINE: sub_H049_0000079E [partial]
+; Purpose: Routine of the text/glyph drawing, direct blitter and QBSBlit nodes module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H009+$01EA
 ; --------------------------------------------------------------------------
 L049_0000079E:
 ; H049+$0000079E: 302f0004  move.w $4(a7), d0
@@ -1784,10 +1784,10 @@ L049_000007E2:
         dc.w $0000,$0000,$0000,$0000,$0000,$0000,$0000,$0000
         dc.w $0000
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H049_000009D6 [parziale]
-; Scopo: Routine del modulo disegno di testo/glifi, blitter diretto e nodi QBSBlit; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H063+$2026, H035+$05E6, H042+$0232
+; ROUTINE: sub_H049_000009D6 [partial]
+; Purpose: Routine of the text/glyph drawing, direct blitter and QBSBlit nodes module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H063+$2026, H035+$05E6, H042+$0232
 ; --------------------------------------------------------------------------
 L049_000009D6:
 ; H049+$000009D6: 4e550000  link.w a5, #$0
@@ -1952,10 +1952,10 @@ L049_00000A78:
 ; H049+$00000A78: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H049_0A8E [parziale]
-; Scopo: Trampolino verso H049+$0A8E; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H049+$0A8E.
-; Chiamanti diretti: H049+$0A4A, H049+$0A64
+; ROUTINE: trampoline_H049_0A8E [partial]
+; Purpose: Trampoline to H049+$0A8E; the actual body is there.
+;   - Jumps to the actual body at H049+$0A8E.
+; Direct callers: H049+$0A4A, H049+$0A64
 ; --------------------------------------------------------------------------
 L049_00000A7A:
 ; H049+$00000A7A: 4280  clr.l d0

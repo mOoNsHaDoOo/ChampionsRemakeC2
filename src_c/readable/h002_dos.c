@@ -1,14 +1,14 @@
 /*
- * H002: adattatori dos.library.
+ * H002: dos.library adapters.
  *
- * Ogni routine sposta gli argomenti dallo stack nei registri e salta nella
- * libreria.  Quelle che finiscono con neg.b d0 trasformano DOSTRUE (-1) in
- * un booleano 1.  Sull'host non esiste dos.library: le implementazioni
- * #else sono l'ambiente minimo per far girare il port.
- * PORT H002+$00C0 (wrapper_IoErr): usata solo dal runtime H074+$0010,
- * sostituito da stdio; nessuna funzione C.
+ * Each routine moves the arguments from the stack into the registers and jumps into the
+ * library.  Those ending with neg.b d0 turn DOSTRUE (-1) into
+ * a boolean 1.  The host has no dos.library: the #else implementations
+ * are the minimal environment needed to run the port.
+ * PORT H002+$00C0 (wrapper_IoErr): used only by the runtime H074+$0010,
+ * replaced by stdio; no C function.
  */
-/* Host: opendir/strncasecmp di POSIX (prima di ogni header di sistema). */
+/* Host: POSIX opendir/strncasecmp (before any system header). */
 #if !defined(__SASC) && !defined(__AMIGA__) && !defined(AMIGA) && !defined(_WIN32)
 #define _POSIX_C_SOURCE 200809L
 #endif
@@ -30,12 +30,12 @@
 #endif
 
 /*
- * Host: i nomi AmigaDOS "volume:percorso" (df0:, Disk Two:, ...) diventano
- * percorsi relativi alla directory dei dati (COK_DATA, altrimenti quella
- * corrente): si toglie tutto fino ai due punti.  Come AmigaDOS, i nomi non
- * distinguono maiuscole e minuscole: ogni componente del percorso che non
- * esiste cosi' com'e' viene cercato nella sua directory ignorando le
- * maiuscole.
+ * Host: the AmigaDOS names "volume:path" (df0:, Disk Two:, ...) become
+ * paths relative to the data directory (COK_DATA, otherwise the current
+ * one): everything up to the colon is removed.  As in AmigaDOS, names are
+ * case insensitive: each path component that does not
+ * exist as it is gets looked up in its directory ignoring
+ * case.
  */
 #if defined(_WIN32)
 static const char *host_path(const char *name)
@@ -44,7 +44,7 @@ static const char *host_path(const char *name)
     const char *colon = strchr(name, ':');
     const char *dir = getenv("COK_DATA");
 
-    /* "C:\..." e "\\server\..." sono percorsi Windows assoluti: invariati. */
+    /* "C:\..." and "\\server\..." are absolute Windows paths: unchanged. */
     if ((colon == name + 1 && (name[2] == '\\' || name[2] == '/')) ||
         (name[0] == '\\' && name[1] == '\\')) {
         sprintf(path, "%.1000s", name);
@@ -69,7 +69,7 @@ static const char *host_path(const char *name)
     struct stat st;
 
     if (rest[0] == '/') {
-        path[0] = 0;            /* percorso assoluto dell'host */
+        path[0] = 0;            /* absolute host path */
     } else {
         sprintf(path, "%.500s", dir != NULL && dir[0] != 0 ? dir : ".");
     }
@@ -114,9 +114,9 @@ static const char *host_path(const char *name)
 #endif
 
 /*
- * PORT H002+$0008: inizializzazione del modulo.  Copia DOSBase (-$8(a4)
- * di H001) nella cella H002+$0000 usata dagli adattatori; in C la base
- * della libreria e' gia' globale, quindi non resta niente da fare.
+ * PORT H002+$0008: module initialisation.  Copies DOSBase (-$8(a4)
+ * of H001) into the cell H002+$0000 used by the adapters; in C the
+ * library base is already global, so there is nothing left to do.
  */
 void h002_init(void)
 {
@@ -124,15 +124,15 @@ void h002_init(void)
 
 #if !COK_AMIGA
 /*
- * Host: i lock sono indici (da 1) in questa tabella: il percorso dell'host
- * e, dopo Examine di una directory, la sua scansione per ExNext.
+ * Host: locks are indices (from 1) into this table: the host path
+ * and, after Examine of a directory, its scan for ExNext.
  */
 #define HOST_LOCKS 16
 typedef struct HostLock {
     int used;
     char path[1024];
 #if defined(_WIN32)
-    intptr_t find;              /* _findfirst, -1 se nessuna scansione */
+    intptr_t find;              /* _findfirst, -1 if no scan */
     struct _finddata_t data;
     int have_data;
 #else
@@ -147,7 +147,7 @@ static HostLock *host_lock(cok_bptr lock)
            &s_locks[lock - 1] : NULL;
 }
 
-/* Ultimo componente di un percorso dell'host. */
+/* Last component of a host path. */
 static const char *host_base_name(const char *path)
 {
     const char *slash = strrchr(path, '/');
@@ -173,7 +173,7 @@ cok_bptr dos_lock(const char *name, s32 mode)
     int i;
 
     (void)mode;
-    /* "" e solo il volume ("df0:") sono la directory dei dati. */
+    /* "" and the volume alone ("df0:") are the data directory. */
     if (name[0] == 0 ||
         (strchr(name, ':') != NULL && strchr(name, ':')[1] == 0)) {
         path = host_path("");
@@ -222,7 +222,7 @@ void dos_unlock(cok_bptr lock)
 #endif
 }
 
-/* PORT H002+$00A0: Info, poi neg.b d0. */
+/* PORT H002+$00A0: Info, then neg.b d0. */
 u8 dos_info(cok_bptr lock, cok_info_data *info)
 {
 #if COK_AMIGA
@@ -230,8 +230,8 @@ u8 dos_info(cok_bptr lock, cok_info_data *info)
 #else
     (void)lock;
     /*
-     * Host: nessun dischetto.  Un numero di blocchi da disco fisso fa
-     * scegliere a H001+$0066 il prefisso "" (directory corrente).
+     * Host: no floppy disk.  A hard-disk number of blocks makes
+     * H001+$0066 choose the prefix "" (current directory).
      */
     info->id_NumBlocks = 0x708;
     info->id_NumBlocksUsed = 0;
@@ -243,8 +243,8 @@ u8 dos_info(cok_bptr lock, cok_info_data *info)
 #if !COK_AMIGA
 
 /*
- * Host: i file handle di AmigaDOS sono indici (da 1) in questa tabella di
- * FILE *.  0 resta "nessun file", come il BPTR nullo restituito da Open.
+ * Host: AmigaDOS file handles are indices (from 1) into this table of
+ * FILE *.  0 stays "no file", like the null BPTR returned by Open.
  */
 #define HOST_FILES 16
 static FILE *s_files[HOST_FILES];
@@ -284,7 +284,7 @@ cok_bptr dos_open(const char *name, s32 mode)
         if (s_files[i] == NULL) {
             s_files[i] = fopen(host_path(name), how);
             if (s_files[i] == NULL && mode == MODE_READWRITE) {
-                /* MODE_READWRITE crea il file */
+                /* MODE_READWRITE creates the file */
                 s_files[i] = fopen(host_path(name), "w+b");
             }
             return s_files[i] != NULL ? i + 1 : 0;
@@ -318,7 +318,7 @@ s32 dos_write(cok_bptr file, const void *buf, s32 len)
 #endif
 }
 
-/* PORT H002+$0156: restituisce la posizione precedente, come Seek. */
+/* PORT H002+$0156: returns the previous position, like Seek. */
 s32 dos_seek(cok_bptr file, s32 pos, s32 mode)
 {
 #if COK_AMIGA
@@ -336,15 +336,15 @@ s32 dos_seek(cok_bptr file, s32 pos, s32 mode)
 #endif
 }
 
-/* PORT H002+$01E8: Execute, poi neg.b d0. */
+/* PORT H002+$01E8: Execute, then neg.b d0. */
 u8 dos_execute(const char *cmd, cok_bptr in, cok_bptr out)
 {
 #if COK_AMIGA
     return (u8)(-(s8)Execute((STRPTR)cmd, in, out));
 #else
     /*
-     * Host: i comandi del gioco sono solo Assign dei nomi dei dischi, che
-     * non hanno equivalente; si riporta successo senza eseguire nulla.
+     * Host: the game's commands are only Assigns of the disk names, which
+     * have no equivalent; success is reported without running anything.
      */
     (void)cmd;
     (void)in;
@@ -367,7 +367,7 @@ cok_bptr dos_create_dir(const char *name)
 #endif
 }
 
-/* PORT H002+$004A: DeleteFile, poi neg.b d0. */
+/* PORT H002+$004A: DeleteFile, then neg.b d0. */
 u8 dos_delete_file(const char *name)
 {
 #if COK_AMIGA
@@ -378,8 +378,8 @@ u8 dos_delete_file(const char *name)
 }
 
 /*
- * PORT H002+$0070: Examine, poi neg.b d0.  Host: nome (ultimo componente)
- * e dimensione; per una directory comincia la scansione usata da ExNext.
+ * PORT H002+$0070: Examine, then neg.b d0.  Host: name (last component)
+ * and size; for a directory it starts the scan used by ExNext.
  */
 u8 dos_examine(cok_bptr lock, cok_fib *fib)
 {
@@ -414,8 +414,8 @@ u8 dos_examine(cok_bptr lock, cok_fib *fib)
 }
 
 /*
- * PORT H002+$0088: ExNext, poi neg.b d0.  Host: voce successiva della
- * directory (senza "." e ".."), 0 alla fine.
+ * PORT H002+$0088: ExNext, then neg.b d0.  Host: next entry of the
+ * directory (without "." and ".."), 0 at the end.
  */
 u8 dos_exnext(cok_bptr lock, cok_fib *fib)
 {

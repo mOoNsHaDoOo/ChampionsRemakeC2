@@ -1,4 +1,4 @@
-/* H030: Presentazione testo e interfaccia. */
+/* H030: Text presentation and user interface. */
 #include "h030.h"
 #include "h036.h"
 #include "h003_exec.h"
@@ -13,16 +13,16 @@
 #include "h026_string.h"
 #include "globals.h"
 
-/* PORT H030+$0070: link/unlk, nessun effetto. */
+/* PORT H030+$0070: link/unlk, no effect. */
 void h030_init(void)
 {
 }
 
 /*
- * PORT H030+$019A: riempie con pen width celle di testo (8x8) dalla
- * colonna col della riga row (griglia 40x25), tagliando a destra alla
- * colonna 40.  Fuori griglia o con width 0 non fa nulla.  I controlli
- * "col < 0" e "row < 0" dell'originale (tst.w / bcc) non scattano mai.
+ * PORT H030+$019A: fills with pen width text cells (8x8) from
+ * column col of row row (40x25 grid), clipping on the right at
+ * column 40.  Outside the grid or with width 0 it does nothing.  The checks
+ * "col < 0" and "row < 0" of the original (tst.w / bcc) never trigger.
  */
 void fill_text_cells(u16 col, u16 row, u16 pen, u16 width)
 {
@@ -39,7 +39,7 @@ void fill_text_cells(u16 col, u16 row, u16 pen, u16 width)
                        (u16)((row << 3) + 7));
 }
 
-/* PORT H030+$0256 (UI_DrawText): testo nella griglia 40x25 (H049+$0224). */
+/* PORT H030+$0256 (UI_DrawText): text in the 40x25 grid (H049+$0224). */
 void ui_draw_text(u16 col, u16 row, u16 fg, u16 bg, u16 len,
                   const char *text)
 {
@@ -47,8 +47,8 @@ void ui_draw_text(u16 col, u16 row, u16 fg, u16 bg, u16 len,
 }
 
 /*
- * PORT H030+$0B6C: cancella (penne 0) il rettangolo di celle 8x8 da
- * (col1, row1) a (col2, row2) compresi.
+ * PORT H030+$0B6C: clears (pens 0) the rectangle of 8x8 cells from
+ * (col1, row1) to (col2, row2) included.
  */
 void clear_text_cells(u16 col1, u16 row1, u16 col2, u16 row2)
 {
@@ -60,9 +60,9 @@ void clear_text_cells(u16 col1, u16 row1, u16 col2, u16 row2)
 }
 
 /*
- * PORT H030+$00B6: count volte il carattere ch nella cella (col, row) e
- * seguenti; uno spazio riempie le celle con il colore bg.  Fuori griglia o
- * count 0: niente; a destra si taglia alla colonna 40.
+ * PORT H030+$00B6: count times the character ch in the cell (col, row) and
+ * the following ones; a space fills the cells with colour bg.  Outside the grid or
+ * count 0: nothing; on the right it is clipped at column 40.
  */
 void draw_char_run(u16 col, u16 row, u16 fg, u16 bg, u16 count, u8 ch,
                    u8 unused)
@@ -89,8 +89,8 @@ void draw_char_run(u16 col, u16 row, u16 fg, u16 bg, u16 count, u8 ch,
 }
 
 /*
- * PORT H030+$0A40: ora corrente in centesimi di secondo (CurrentTime:
- * secondi * 100 + microsecondi / 10000).
+ * PORT H030+$0A40: current time in hundredths of a second (CurrentTime:
+ * seconds * 100 + microseconds / 10000).
  */
 s32 time_hundredths(void)
 {
@@ -103,16 +103,16 @@ s32 time_hundredths(void)
 }
 
 /*
- * PORT H030+$0718: legge una riga di testo nella riga 24 dopo il prompt:
- * caratteri da ' ' a 'z' (al massimo max_chars, eco con la penna 15),
- * backspace cancella, Invio o Esc (o la demo) terminano.  Il testo, in
- * maiuscolo, va in out (al massimo out_max caratteri).
+ * PORT H030+$0718: reads a line of text on row 24 after the prompt:
+ * characters from ' ' to 'z' (at most max_chars, echoed with pen 15),
+ * backspace deletes, Enter or Esc (or the demo) end it.  The text, in
+ * upper case, goes into out (at most out_max characters).
  */
 void input_line(u16 prompt_len, const char *prompt, u16 fg, u16 bg,
                 u16 max_chars, u16 out_max, char *out)
 {
     char text[0x52];                    /* -$54(a5) */
-    char key[2];                        /* -$56(a5): tasto e NUL */
+    char key[2];                        /* -$56(a5): key and NUL */
     u16 col;                            /* -$2(a5) */
 
     fill_text_cells(0, 0x18, 0, 0x28);
@@ -122,7 +122,7 @@ void input_line(u16 prompt_len, const char *prompt, u16 fg, u16 bg,
     key[1] = 0;
     do {
         wait_for_key();
-        key[0] = (char)G_KEY; /* $5305: tasto/azione pendente dall'input (G_KEY) */
+        key[0] = (char)G_KEY; /* $5305: key/action pending from the input (G_KEY) */
         if ((u8)key[0] >= 0x20 && (u8)key[0] <= 0x7A) {
             if (h026_strlen(0x50, text) < max_chars) {
                 h026_append(0x50, text, 1, key);
@@ -137,20 +137,20 @@ void input_line(u16 prompt_len, const char *prompt, u16 fg, u16 bg,
                 --col;
             }
         }
-    /* $24D7: 1 se e' stata scelta la dimostrazione (Demo) */
+    /* $24D7: 1 if the demonstration (Demo) was chosen */
     } while (key[0] != 0x0D && key[0] != 0x1B && !G_DEMO_FLAG);
     fill_text_cells(0, 0x18, 0, 0x28);
     h026_upcase(0x50, text);
     h026_copy(out_max, out, 0x50, text);
 }
 
-/* Dati del modulo (sotto a4). */
+/* Module data (below a4). */
 struct BitMap g_gothic_bitmap;          /* -$2C: font "gothic.lbm" */
-u32 g_h030_alloc_size;                  /* -$4: ultima allocazione */
+u32 g_h030_alloc_size;                  /* -$4: last allocation */
 
 /*
- * PORT H030+$0BDA: allocatore per Read_ILBM (memoria chip azzerata); la
- * dimensione resta in -$4(a4).
+ * PORT H030+$0BDA: allocator for Read_ILBM (cleared chip memory); the
+ * size stays in -$4(a4).
  */
 static u8 *alloc_chip_planes(u32 size)
 {
@@ -159,10 +159,10 @@ static u8 *alloc_chip_planes(u32 size)
 }
 
 /*
- * PORT H030+$0C10: carica "gothic.lbm" (font del testo) in
- * g_gothic_bitmap e lo registra in H049 come sorgente dei glifi, con
- * destinazione la bitmap della finestra.  Se il file manca resta solo la
- * registrazione (con i piani a NULL), come nell'originale.
+ * PORT H030+$0C10: loads "gothic.lbm" (text font) into
+ * g_gothic_bitmap and registers it in H049 as the glyph source, with
+ * the window bitmap as destination.  If the file is missing only the
+ * registration remains (with the planes NULL), as in the original.
  */
 void load_gothic_font(void)
 {
@@ -179,21 +179,21 @@ void load_gothic_font(void)
                           g_rastport->BitMap);
 }
 
-/* PORT H030+$0C84: libera i piani del font (dimensione dell'allocazione). */
+/* PORT H030+$0C84: frees the planes of the font (allocation size). */
 void free_gothic_font(void)
 {
     exec_free_mem(g_gothic_bitmap.Planes[0], g_h030_alloc_size);
 }
 
-/* PORT H030+$0B4A: pausa dei messaggi: H005+$3DF6 * 5 tick. */
+/* PORT H030+$0B4A: message pause: H005+$3DF6 * 5 ticks. */
 void message_delay(void)
 {
-    dos_delay((u32)H005_W(0x3DF6) * 5); /* $3DF6: (word) velocita' del gioco 0..9 (pausa dei messaggi) */
+    dos_delay((u32)H005_W(0x3DF6) * 5); /* $3DF6: (word) game speed 0..9 (message pause) */
 }
 
 /*
- * PORT H030+$0AD2: messaggio sulla riga $18 (testo copiato, parametro per
- * valore), pausa, poi riga cancellata.
+ * PORT H030+$0AD2: message on row $18 (text copied, parameter by
+ * value), pause, then the row is cleared.
  */
 void show_message(u16 len, const char *text, u16 fg, u16 bg)
 {
@@ -211,8 +211,8 @@ void show_message(u16 len, const char *text, u16 fg, u16 bg)
 }
 
 /*
- * PORT H030+$028A: messaggio sulla riga $18 (testo per valore) finche' non
- * si preme un tasto, poi riga cancellata.
+ * PORT H030+$028A: message on row $18 (text by value) until a key
+ * is pressed, then the row is cleared.
  */
 void show_message_wait(u16 fg, u16 bg, u16 len, const char *text)
 {
@@ -229,7 +229,7 @@ void show_message_wait(u16 fg, u16 bg, u16 len, const char *text)
     fill_text_cells(0, 0x18, 0, 0x28);
 }
 
-/* Stato di H030+$0302 condiviso con le procedure annidate. */
+/* State of H030+$0302 shared with the nested procedures. */
 typedef struct WrapFrame {
     const char *text;                   /* $c(a5) */
     u16 fg;                             /* $16(a5) */
@@ -239,32 +239,32 @@ typedef struct WrapFrame {
     u16 end;                            /* -$8(a5) */
 } WrapFrame;
 
-/* Cursore del testo (H005+$334E colonna, $334C riga). */
-#define TEXT_COL H005_W(0x334E) /* $334E: (word) cursore del testo: colonna */
-#define TEXT_ROW H005_W(0x334C) /* $334C: (word) cursore del testo: riga */
+/* Text cursor (H005+$334E column, $334C row). */
+#define TEXT_COL H005_W(0x334E) /* $334E: (word) text cursor: column */
+#define TEXT_ROW H005_W(0x334C) /* $334C: (word) text cursor: row */
 
 /*
- * PORT H030+$0310: procedura annidata: scrive i caratteri da pos a end al
- * cursore (con $24CE una pausa per carattere).
+ * PORT H030+$0310: nested procedure: writes the characters from pos to end at the
+ * cursor (with $24CE a pause per character).
  */
 static void wrap_emit(WrapFrame *f)
 {
     while (f->pos <= f->end) {
         if (f->text[f->pos] != 0) {
-            /* $334E: (word) cursore del testo: colonna; $334C: (word) cursore del testo: riga */
+            /* $334E: (word) text cursor: column; $334C: (word) text cursor: row */
             draw_char_run(TEXT_COL, TEXT_ROW, f->fg, f->bg, 1,
                           (u8)f->text[f->pos], 1);
-            if (H005_B(0x24CE)) { /* $24CE: 1: pausa per carattere nella scrittura del testo */
-                /* $3DF6: (word) velocita' del gioco 0..9 (pausa dei messaggi) */
+            if (H005_B(0x24CE)) { /* $24CE: 1: per-character pause when writing text */
+                /* $3DF6: (word) game speed 0..9 (message pause) */
                 dos_delay((u32)(H005_W(0x3DF6) >> 1));
             }
-            H005_SET_W(0x334E, (u16)(TEXT_COL + 1)); /* $334E: (word) cursore del testo: colonna */
+            H005_SET_W(0x334E, (u16)(TEXT_COL + 1)); /* $334E: (word) text cursor: column */
         }
         ++f->pos;
     }
 }
 
-/* PORT H030+$03B8: procedura annidata: salta gli spazi. */
+/* PORT H030+$03B8: nested procedure: skips the spaces. */
 static void wrap_skip_spaces(WrapFrame *f)
 {
     while (f->pos < f->len && f->text[f->pos] == ' ') {
@@ -272,7 +272,7 @@ static void wrap_skip_spaces(WrapFrame *f)
     }
 }
 
-/* PORT H030+$03FC: procedura annidata: punteggiatura "-.,?!:;". */
+/* PORT H030+$03FC: nested procedure: punctuation "-.,?!:;". */
 static u8 wrap_is_punct(u8 ch)
 {
     static const char punct[7] = { '-', '.', ',', '?', '!', ':', ';' };
@@ -288,10 +288,10 @@ static u8 wrap_is_punct(u8 ch)
 }
 
 /*
- * PORT H030+$0302 (corpo a $0470): scrive text (per valore) nel rettangolo
- * di celle (x1, y1)-(x2, y2) andando a capo tra le parole dal cursore
- * H005+$334E/$334C (riportato all'inizio se fuori, o se clear cancella
- * il rettangolo); a pagina piena "Press any key to continue".
+ * PORT H030+$0302 (body at $0470): writes text (by value) in the rectangle
+ * of cells (x1, y1)-(x2, y2) wrapping between words from the cursor
+ * H005+$334E/$334C (moved back to the start if outside, or if clear clears
+ * the rectangle); when the page is full "Press any key to continue".
  */
 void word_wrap_text(u16 x1, u16 y1, u16 x2, u16 y2, u16 fg, u16 bg,
                     u8 clear, u16 len, const char *text)
@@ -307,15 +307,15 @@ void word_wrap_text(u16 x1, u16 y1, u16 x2, u16 y2, u16 fg, u16 bg,
     if (x1 > 0x27 || y1 > 0x18 || x2 > 0x27 || y2 > 0x27) {
         return;
     }
-    /* $334E: (word) cursore del testo: colonna; $334C: (word) cursore del testo: riga */
+    /* $334E: (word) text cursor: column; $334C: (word) text cursor: row */
     if (TEXT_COL < x1 || TEXT_COL > x2 || TEXT_ROW < y1 || TEXT_ROW > y2) {
-        H005_SET_W(0x334E, x1); /* $334E: (word) cursore del testo: colonna */
-        H005_SET_W(0x334C, y1); /* $334C: (word) cursore del testo: riga */
+        H005_SET_W(0x334E, x1); /* $334E: (word) text cursor: column */
+        H005_SET_W(0x334C, y1); /* $334C: (word) text cursor: row */
     }
     if (clear) {
         clear_text_cells(x1, y1, x2, y2);
-        H005_SET_W(0x334E, x1); /* $334E: (word) cursore del testo: colonna */
-        H005_SET_W(0x334C, y1); /* $334C: (word) cursore del testo: riga */
+        H005_SET_W(0x334E, x1); /* $334E: (word) text cursor: column */
+        H005_SET_W(0x334C, y1); /* $334C: (word) text cursor: row */
     }
     f.text = copy;
     f.fg = fg;
@@ -341,19 +341,19 @@ void word_wrap_text(u16 x1, u16 y1, u16 x2, u16 y2, u16 fg, u16 bg,
                 ++f.end;
             }
         }
-        if ((u16)(f.end - f.pos + TEXT_COL) > x2) { /* $334E: (word) cursore del testo: colonna */
-            /* Uguaglianza impossibile qui: ramo morto nell'originale. */
-            if ((u16)(f.end - f.pos + TEXT_COL) == x2 && /* $334E: (word) cursore del testo: colonna */
+        if ((u16)(f.end - f.pos + TEXT_COL) > x2) { /* $334E: (word) text cursor: column */
+            /* Equality impossible here: dead branch in the original. */
+            if ((u16)(f.end - f.pos + TEXT_COL) == x2 && /* $334E: (word) text cursor: column */
                 copy[f.end] == ' ') {
                 --f.end;
                 wrap_emit(&f);
             }
-            H005_SET_W(0x334E, x1); /* $334E: (word) cursore del testo: colonna */
-            H005_SET_W(0x334C, (u16)(TEXT_ROW + 1)); /* $334C: (word) cursore del testo: riga */
+            H005_SET_W(0x334E, x1); /* $334E: (word) text cursor: column */
+            H005_SET_W(0x334C, (u16)(TEXT_ROW + 1)); /* $334C: (word) text cursor: row */
             wrap_skip_spaces(&f);
-            if (TEXT_ROW > y2 && f.pos < f.len) { /* $334C: (word) cursore del testo: riga */
-                H005_SET_W(0x334E, x1); /* $334E: (word) cursore del testo: colonna */
-                H005_SET_W(0x334C, y1); /* $334C: (word) cursore del testo: riga */
+            if (TEXT_ROW > y2 && f.pos < f.len) { /* $334C: (word) text cursor: row */
+                H005_SET_W(0x334E, x1); /* $334E: (word) text cursor: column */
+                H005_SET_W(0x334C, y1); /* $334C: (word) text cursor: row */
                 show_message_wait(0x0D, 0, 0x19,
                                   "Press any key to continue");
                 clear_text_cells(x1, y1, x2, y2);
@@ -363,15 +363,15 @@ void word_wrap_text(u16 x1, u16 y1, u16 x2, u16 y2, u16 fg, u16 bg,
             wrap_emit(&f);
         }
     } while (f.pos <= (u16)(f.len - 1));
-    if (TEXT_COL > x2) { /* $334E: (word) cursore del testo: colonna */
-        H005_SET_W(0x334E, x1); /* $334E: (word) cursore del testo: colonna */
-        H005_SET_W(0x334C, (u16)(TEXT_ROW + 1)); /* $334C: (word) cursore del testo: riga */
+    if (TEXT_COL > x2) { /* $334E: (word) text cursor: column */
+        H005_SET_W(0x334E, x1); /* $334E: (word) text cursor: column */
+        H005_SET_W(0x334C, (u16)(TEXT_ROW + 1)); /* $334C: (word) text cursor: row */
     }
 }
 
 /*
- * PORT H030+$09A6: chiede un numero (6 cifre al massimo) finche' non e'
- * valido e compreso fra 0 e $FFFF.
+ * PORT H030+$09A6: asks for a number (at most 6 digits) until it is
+ * valid and between 0 and $FFFF.
  */
 u16 input_number(u16 len, const char *prompt, u16 fg, u16 bg)
 {

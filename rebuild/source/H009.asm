@@ -1,8 +1,8 @@
 ; ============================================================================
-; GUIDA DEL MODULO H009
-; Verifica preliminare della distribuzione fornita; non modificata.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H009
+; Preliminary check of the supplied distribution; not modified.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; H009: 988 original bytes; all offsets are section-relative.
@@ -18,10 +18,10 @@ H009:
         dc.w $2020,$2020,$0045,$6E74,$6572,$2000
         dc.l H009+$00000002
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H009 [parziale]
-; Scopo: Ingresso del modulo verifica preliminare della distribuzione fornita; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H009+$03D6.
-; Chiamanti diretti: H000+$01F2
+; ROUTINE: module_init_H009 [partial]
+; Purpose: Entry of the preliminary check of the supplied distribution module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H009+$03D6.
+; Direct callers: H000+$01F2
 ; --------------------------------------------------------------------------
 L009_00000070:
 ; H009+$00000070: 2f0c  move.l a4, -(a7)
@@ -36,10 +36,10 @@ L009_0000007A:
 ; H009+$0000007A: 6000035a  bra.w $3d6
         bra.w H009+$3D6
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H009_0000007E [parziale]
-; Scopo: Routine del modulo verifica preliminare della distribuzione fornita; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H009+$01FC
+; ROUTINE: sub_H009_0000007E [partial]
+; Purpose: Routine of the preliminary check of the supplied distribution module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H009+$01FC
 ; --------------------------------------------------------------------------
 L009_0000007E:
 ; H009+$0000007E: 2f0c  move.l a4, -(a7)
@@ -168,16 +168,16 @@ L009_0000010A:
 ; H009+$0000010A: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H009_0000010C [parziale]
-; Scopo: Routine del modulo verifica preliminare della distribuzione fornita; richiama H044+$01C2, H023+$0010, H030+$0256, H026+$0188.
-;   - Richiama H044+$01C2.
-;   - Richiama H023+$0010.
-;   - Richiama H030+$0256.
-;   - Richiama H026+$0188.
-;   - Richiama H049+$079E.
-;   - Richiama H045+$01D6.
-;   - Richiama H026+$01E0.
-; Chiamanti diretti: H001+$01A0
+; ROUTINE: sub_H009_0000010C [partial]
+; Purpose: Routine of the preliminary check of the supplied distribution module; calls H044+$01C2, H023+$0010, H030+$0256, H026+$0188.
+;   - Calls H044+$01C2.
+;   - Calls H023+$0010.
+;   - Calls H030+$0256.
+;   - Calls H026+$0188.
+;   - Calls H049+$079E.
+;   - Calls H045+$01D6.
+;   - Calls H026+$01E0.
+; Direct callers: H001+$01A0
 ; --------------------------------------------------------------------------
 L009_0000010C:
 ; H009+$0000010C: 2f0c  move.l a4, -(a7)
@@ -241,7 +241,7 @@ L009_00000152:
 L009_00000156:
 ; H009+$00000156: 486c0000  pea.l $0(a4)
         pea.l $0(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L009_0000015A:
 ; H009+$0000015A: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -437,7 +437,7 @@ L009_0000024C:
 L009_00000250:
 ; H009+$00000250: 486dff74  pea.l -$8c(a5)
         pea.l -$8c(a5)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L009_00000254:
 ; H009+$00000254: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -528,7 +528,7 @@ L009_000002BE:
 L009_000002C2:
 ; H009+$000002C2: 486dff74  pea.l -$8c(a5)
         pea.l -$8c(a5)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L009_000002C6:
 ; H009+$000002C6: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -619,7 +619,7 @@ L009_00000330:
 L009_00000334:
 ; H009+$00000334: 486dff74  pea.l -$8c(a5)
         pea.l -$8c(a5)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L009_00000338:
 ; H009+$00000338: 4eb900000256  jsr $256.l
         jsr (H030+$256).l

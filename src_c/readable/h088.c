@@ -1,17 +1,17 @@
-/* H088: UnPackRow ByteRun1 con aggiornamento dei puntatori. */
+/* H088: ByteRun1 UnPackRow with pointer update. */
 #include "h087.h"
 
-/* PORT H088+$0004: link/unlk, nessun effetto. */
+/* PORT H088+$0004: link/unlk, no effect. */
 void h088_init(void)
 {
 }
 
 /*
- * PORT H088+$000C (UnPackRow, ByteRun1): decodifica dst_bytes byte da
- * *source a *dest consumando al massimo src_bytes byte; aggiorna i due
- * puntatori.  Restituisce 1 se i dati non bastano o eccedono, 0 se la riga
- * e' completa.  n >= 0: n+1 byte letterali; -127..-1: il byte seguente
- * ripetuto 1-n volte; -128: nessuna operazione.
+ * PORT H088+$000C (UnPackRow, ByteRun1): decodes dst_bytes bytes from
+ * *source to *dest using at most src_bytes bytes; updates both
+ * pointers.  Returns 1 if the data is too short or too long, 0 if the row
+ * is complete.  n >= 0: n+1 literal bytes; -127..-1: the next byte
+ * repeated 1-n times; -128: no operation.
  */
 u8 ilbm_unpack_row(u8 **source, u8 **dest, s16 src_bytes, s16 dst_bytes)
 {

@@ -1,7 +1,7 @@
-/* H052: inizializzazione di uno slot di stato. */
+/* H052: initialisation of a state slot. */
 #include "cok.h"
 
-/* H052+$0000: struttura di $1C byte (tipo non ancora identificato), BE. */
+/* H052+$0000: $1C-byte structure (type not identified yet), BE. */
 u8 g_h052_0000[0x1C];
 
 /* PORT H052+$0024 */

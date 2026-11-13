@@ -1,4 +1,4 @@
-/* H020: servizi di I/O e diagnostica testuale. */
+/* H020: I/O services and text diagnostics. */
 #include <stdio.h>
 #include "cok.h"
 #include "h020_io.h"
@@ -6,10 +6,10 @@
 u8 g_h020_0055;                 /* H020+$0055 */
 
 /*
- * Runtime di I/O del compilatore Pascal, sostituito da stdio (nessuna
- * funzione C corrispondente):
- * PORT H020+$00C2: svuota il buffer di riga del runtime (via H020+$085A).
- * PORT H020+$00F0: aggiunge un carattere al buffer di riga; pieno a $4F.
+ * I/O runtime of the Pascal compiler, replaced by stdio (no
+ * corresponding C function):
+ * PORT H020+$00C2: flushes the line buffer of the runtime (via H020+$085A).
+ * PORT H020+$00F0: adds a character to the line buffer; full at $4F.
  */
 
 /* PORT H020+$00BA */
@@ -19,10 +19,10 @@ void h020_init(void)
 }
 
 /*
- * PORT H020+$085A: write del runtime su Output: al piu' len caratteri,
- * fino allo zero.  Con la console interattiva (H020+$2) un carattere
- * alla volta (H074+$0450), altrimenti in blocco (H075+$0132); qui stdio
- * in entrambi i casi.
+ * PORT H020+$085A: runtime write to Output: at most len characters,
+ * up to the zero.  With the interactive console (H020+$2) one character
+ * at a time (H074+$0450), otherwise as a block (H075+$0132); here stdio
+ * in both cases.
  */
 void console_write(u16 len, const char *text)
 {
@@ -34,7 +34,7 @@ void console_write(u16 len, const char *text)
     fflush(stdout);
 }
 
-/* PORT H020+$082E: writeln senza argomenti: a capo. */
+/* PORT H020+$082E: writeln without arguments: newline. */
 void console_newline(void)
 {
     fputc('\n', stdout);
@@ -42,8 +42,8 @@ void console_newline(void)
 }
 
 /*
- * PORT H020+$08C2: write di un intero: value in decimale (col segno
- * meno), allineato a destra su width caratteri.
+ * PORT H020+$08C2: write of an integer: value in decimal (with the minus
+ * sign), right-aligned on width characters.
  */
 void console_write_int(s16 value, u16 width)
 {

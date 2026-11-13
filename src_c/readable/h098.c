@@ -1,26 +1,26 @@
 /*
- * H098: I/O con buffer per il parser IFF (gio.c di Electronic Arts).
+ * H098: buffered I/O for the IFF parser (Electronic Arts' gio.c).
  *
- * Dati del modulo (nel codice, H098+$0000..$0013):
+ * Module data (in the code, H098+$0000..$0013):
  *   $00 wWaterline  $04 wIndex  $08 wNBytes  $0C wBuffer  $10 wFile
- * La scrittura con buffer serve solo a GWrite; in lettura wFile e' nullo e
- * le routine vanno direttamente a Read/Seek.
+ * Buffered writing is used only by GWrite; when reading wFile is null and
+ * the routines go straight to Read/Seek.
  */
 #include "h098.h"
 
 static s32 s_waterline;         /* H098+$0000 */
 static s32 s_index;             /* H098+$0004 */
-static s32 s_nbytes;            /* H098+$0008 (usato da GWriteDeclare) */
+static s32 s_nbytes;            /* H098+$0008 (used by GWriteDeclare) */
 static u8 *s_buffer;            /* H098+$000C */
 static cok_bptr s_file;         /* H098+$0010 */
 
-/* PORT H098+$0018: link/unlk, nessun effetto. */
+/* PORT H098+$0018: link/unlk, no effect. */
 void h098_init(void)
 {
     (void)s_nbytes;
 }
 
-/* PORT H098+$007C (GRead): svuota prima il buffer di scrittura del file. */
+/* PORT H098+$007C (GRead): first flushes the write buffer of the file. */
 s32 gio_read(cok_bptr file, void *buffer, s32 n_bytes)
 {
     s32 result = 0;
@@ -49,9 +49,9 @@ s32 gio_write_flush(cok_bptr file)
 }
 
 /*
- * PORT H098+$0276 (GSeek): dentro il buffer di scrittura si sposta solo
- * l'indice (OFFSET_CURRENT entro il livello raggiunto); altrimenti svuota il
- * buffer e chiama Seek.  -2 significa "usa Seek".
+ * PORT H098+$0276 (GSeek): inside the write buffer only the index moves
+ * (OFFSET_CURRENT within the level reached); otherwise flushes the
+ * buffer and calls Seek.  -2 means "use Seek".
  */
 s32 gio_seek(cok_bptr file, s32 position, s32 mode)
 {

@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H063
-; Helper per personaggi, inventario e aggiornamento UI; mappa parziale.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H063
+; Helpers for characters, inventory and UI update; partial map.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Personaggi, inventario e aggiornamento UI: 52 funzioni, fra cui copia/confronto stringhe, stato del personaggio, liste di oggetti e refresh della scheda.
+; MODULE NOTE
+; Characters, inventory and UI update: 52 functions, including string copy/comparison, character status, item lists and refresh of the sheet.
 ; --------------------------------------------------------------------------
 ; H063: 16496 original bytes; all offsets are section-relative.
         section H063,code
@@ -31,10 +31,10 @@ H063:
         dc.w $2000,$2045,$7869,$7400,$5365,$6C65,$6374,$0000
         dc.l H063+$00000002
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H063 [parziale]
-; Scopo: Ingresso del modulo helper per personaggi, inventario e aggiornamento UI; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H063+$406A.
-; Chiamanti diretti: H000+$01B6
+; ROUTINE: module_init_H063 [partial]
+; Purpose: Entry of the helpers for characters, inventory and UI update module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H063+$406A.
+; Direct callers: H000+$01B6
 ; --------------------------------------------------------------------------
 L063_00000104:
 ; H063+$00000104: 2f0c  move.l a4, -(a7)
@@ -49,10 +49,10 @@ L063_0000010E:
 ; H063+$0000010E: 60003f5a  bra.w $406a
         bra.w H063+$406A
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00000112 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H062+$2272, H063+$0FE6, H063+$10AC, H063+$1116, H064+$0DB8, H065+$0F7E e altri 6
+; ROUTINE: sub_H063_00000112 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H062+$2272, H063+$0FE6, H063+$10AC, H063+$1116, H064+$0DB8, H065+$0F7E and 6 more
 ; --------------------------------------------------------------------------
 L063_00000112:
 ; H063+$00000112: 2f0c  move.l a4, -(a7)
@@ -133,10 +133,10 @@ L063_00000168:
 ; H063+$00000168: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_0000016A [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H027+$05A8, H063+$04A2, H096+$039E
+; ROUTINE: sub_H063_0000016A [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H027+$05A8, H063+$04A2, H096+$039E
 ; --------------------------------------------------------------------------
 L063_0000016A:
 ; H063+$0000016A: 2f0c  move.l a4, -(a7)
@@ -242,7 +242,7 @@ L063_0000020C:
 L063_0000020E:
 ; H063+$0000020E: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H063+$01CC; indici 0..25, default -1.
+; DISPATCH: words relative to H063+$01CC; indices 0..25, default -1.
 L063_00000212:
 ; H063+$00000212: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -268,10 +268,10 @@ L063_00000226:
 ; H063+$00000226: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H063_032C [parziale]
-; Scopo: Trampolino verso H063+$032C; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H063+$032C.
-; Chiamanti diretti: H063+$19C8, H063+$0366, H063+$1A98
+; ROUTINE: trampoline_H063_032C [partial]
+; Purpose: Trampoline to H063+$032C; the actual body is there.
+;   - Jumps to the actual body at H063+$032C.
+; Direct callers: H063+$19C8, H063+$0366, H063+$1A98
 ; --------------------------------------------------------------------------
 L063_00000228:
 ; H063+$00000228: 2f0c  move.l a4, -(a7)
@@ -464,7 +464,7 @@ L063_00000338:
 L063_0000033A:
 ; H063+$0000033A: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H063+$02F8; indici 0..25, default -1.
+; DISPATCH: words relative to H063+$02F8; indices 0..25, default -1.
 L063_0000033E:
 ; H063+$0000033E: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -490,10 +490,10 @@ L063_00000352:
 ; H063+$00000352: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00000354 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H027+$055A, H063+$16DA, H063+$0504
+; ROUTINE: sub_H063_00000354 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H027+$055A, H063+$16DA, H063+$0504
 ; --------------------------------------------------------------------------
 L063_00000354:
 ; H063+$00000354: 2f0c  move.l a4, -(a7)
@@ -614,7 +614,7 @@ L063_00000416:
 L063_00000418:
 ; H063+$00000418: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H063+$03CC; indici 0..29, default -1.
+; DISPATCH: words relative to H063+$03CC; indices 0..29, default -1.
 L063_0000041C:
 ; H063+$0000041C: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -640,10 +640,10 @@ L063_00000430:
 ; H063+$00000430: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00000432 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; richiama H029+$0354.
-;   - Richiama H029+$0354.
-; Chiamanti diretti: H063+$170C
+; ROUTINE: sub_H063_00000432 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; calls H029+$0354.
+;   - Calls H029+$0354.
+; Direct callers: H063+$170C
 ; --------------------------------------------------------------------------
 L063_00000432:
 ; H063+$00000432: 2f0c  move.l a4, -(a7)
@@ -1144,10 +1144,10 @@ L063_000006AC:
 ; H063+$000006AC: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_000006AE [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H063+$1736
+; ROUTINE: sub_H063_000006AE [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H063+$1736
 ; --------------------------------------------------------------------------
 L063_000006AE:
 ; H063+$000006AE: 2f0c  move.l a4, -(a7)
@@ -1282,10 +1282,10 @@ L063_00000756:
 ; H063+$00000756: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00000758 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; richiama H029+$0354.
-;   - Richiama H029+$0354.
-; Chiamanti diretti: H063+$174A
+; ROUTINE: sub_H063_00000758 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; calls H029+$0354.
+;   - Calls H029+$0354.
+; Direct callers: H063+$174A
 ; --------------------------------------------------------------------------
 L063_00000758:
 ; H063+$00000758: 2f0c  move.l a4, -(a7)
@@ -1538,10 +1538,10 @@ L063_000008A0:
 ; H063+$000008A0: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_000008A2 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H063+$17B0
+; ROUTINE: sub_H063_000008A2 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H063+$17B0
 ; --------------------------------------------------------------------------
 L063_000008A2:
 ; H063+$000008A2: 2f0c  move.l a4, -(a7)
@@ -1673,10 +1673,10 @@ L063_00000944:
 ; H063+$00000944: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00000946 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H027+$0B16, H027+$0D90, H027+$2BEC, H027+$2C42, H027+$3240, H027+$3676 e altri 53
+; ROUTINE: sub_H063_00000946 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H027+$0B16, H027+$0D90, H027+$2BEC, H027+$2C42, H027+$3240, H027+$3676 and 53 more
 ; --------------------------------------------------------------------------
 L063_00000946:
 ; H063+$00000946: 2f0c  move.l a4, -(a7)
@@ -1775,15 +1775,15 @@ L063_000009B0:
 ; H063+$000009B0: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_000009B2 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; richiama H026+$01E0, H045+$01D6, H026+$03F6, H029+$0354.
-;   - Richiama H026+$01E0.
-;   - Richiama H045+$01D6.
-;   - Richiama H026+$03F6.
-;   - Richiama H029+$0354.
-;   - Richiama H030+$0256.
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H063+$125C, H065+$2EBC, H071+$09A8, H065+$0AA6, H065+$0AD2, H065+$27B2 e altri 11
+; ROUTINE: sub_H063_000009B2 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; calls H026+$01E0, H045+$01D6, H026+$03F6, H029+$0354.
+;   - Calls H026+$01E0.
+;   - Calls H045+$01D6.
+;   - Calls H026+$03F6.
+;   - Calls H029+$0354.
+;   - Calls H030+$0256.
+;   - Uses the global state: H005+$3364 (head of the party list).
+; Direct callers: H063+$125C, H065+$2EBC, H071+$09A8, H065+$0AA6, H065+$0AD2, H065+$27B2 and 11 more
 ; --------------------------------------------------------------------------
 L063_000009B2:
 ; H063+$000009B2: 2f0c  move.l a4, -(a7)
@@ -1860,7 +1860,7 @@ L063_00000A00:
 L063_00000A04:
 ; H063+$00000A04: 422dfff7  clr.b -$9(a5)
         clr.b -$9(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L063_00000A08:
 ; H063+$00000A08: 2b7900003364fff2  move.l $3364.l, -$e(a5)
         move.l (H005+$3364).l, -$e(a5)
@@ -2577,7 +2577,7 @@ L063_00000D66:
 L063_00000D6A:
 ; H063+$00000D6A: 2f2d0014  move.l $14(a5), -(a7)
         move.l $14(a5), -(a7)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L063_00000D6E:
 ; H063+$00000D6E: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -2597,13 +2597,13 @@ L063_00000D7E:
 ; H063+$00000D7E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00000D80 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; richiama H030+$0256, H029+$03E2, H030+$0B6C.
-;   - Richiama H030+$0256.
-;   - Richiama H029+$03E2.
-;   - Richiama H030+$0B6C.
-;   - Usa lo stato globale: H005+$3DE3 (contesto nativo, 5 nel combattimento); H005+$3E04 (puntatore stato persistente A, 2048 byte); H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H027+$097C, H027+$19C0, H062+$03E0, H063+$2B3E, H063+$3ADE, H013+$4DCE e altri 36
+; ROUTINE: sub_H063_00000D80 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; calls H030+$0256, H029+$03E2, H030+$0B6C.
+;   - Calls H030+$0256.
+;   - Calls H029+$03E2.
+;   - Calls H030+$0B6C.
+;   - Uses the global state: H005+$3DE3 (native context, 5 in combat); H005+$3E04 (pointer to persistent state A, 2048 bytes); H005+$3364 (head of the party list).
+; Direct callers: H027+$097C, H027+$19C0, H062+$03E0, H063+$2B3E, H063+$3ADE, H013+$4DCE and 36 more
 ; --------------------------------------------------------------------------
 L063_00000D80:
 ; H063+$00000D80: 2f0c  move.l a4, -(a7)
@@ -2614,14 +2614,14 @@ L063_00000D82:
 L063_00000D86:
 ; H063+$00000D86: 4e55fff6  link.w a5, #$fff6
         link.w a5, #$fff6
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L063_00000D8A:
 ; H063+$00000D8A: 0c39000300003de3  cmpi.b #$3, $3de3.l
         cmpi.b #$3, (H005+$3DE3).l
 L063_00000D92:
 ; H063+$00000D92: 66000010  bne.w $da4
         bne.w H063+$DA4
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L063_00000D96:
 ; H063+$00000D96: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -2640,7 +2640,7 @@ L063_00000DAA:
 L063_00000DAE:
 ; H063+$00000DAE: 600001e6  bra.w $f96
         bra.w H063+$F96
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L063_00000DB2:
 ; H063+$00000DB2: 4a3900003de3  tst.b $3de3.l
         tst.b (H005+$3DE3).l
@@ -2692,7 +2692,7 @@ L063_00000E02:
 L063_00000E06:
 ; H063+$00000E06: 486c001c  pea.l $1c(a4)
         pea.l $1c(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L063_00000E0A:
 ; H063+$00000E0A: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -2714,14 +2714,14 @@ L063_00000E1E:
 L063_00000E22:
 ; H063+$00000E22: 486c0021  pea.l $21(a4)
         pea.l $21(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L063_00000E26:
 ; H063+$00000E26: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
 L063_00000E2C:
 ; H063+$00000E2C: 546dfff8  addq.w #$2, -$8(a5)
         addq.w #$2, -$8(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L063_00000E30:
 ; H063+$00000E30: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -2784,7 +2784,7 @@ L063_00000E80:
 L063_00000E84:
 ; H063+$00000E84: 2f2dfffc  move.l -$4(a5), -(a7)
         move.l -$4(a5), -(a7)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L063_00000E88:
 ; H063+$00000E88: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -3003,12 +3003,12 @@ L063_00000F9E:
 ; H063+$00000F9E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00000FA0 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; richiama H045+$01D6, H026+$0254, H030+$0256.
-;   - Richiama H045+$01D6.
-;   - Richiama H026+$0254.
-;   - Richiama H030+$0256.
-; Chiamanti diretti: H063+$1222, H063+$0F10, H065+$0DA2
+; ROUTINE: sub_H063_00000FA0 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; calls H045+$01D6, H026+$0254, H030+$0256.
+;   - Calls H045+$01D6.
+;   - Calls H026+$0254.
+;   - Calls H030+$0256.
+; Direct callers: H063+$1222, H063+$0F10, H065+$0DA2
 ; --------------------------------------------------------------------------
 L063_00000FA0:
 ; H063+$00000FA0: 2f0c  move.l a4, -(a7)
@@ -3129,7 +3129,7 @@ L063_00001022:
 L063_00001026:
 ; H063+$00001026: 486dffae  pea.l -$52(a5)
         pea.l -$52(a5)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L063_0000102A:
 ; H063+$0000102A: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -3149,13 +3149,13 @@ L063_00001038:
 ; H063+$00001038: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_0000103A [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; richiama H045+$01D6, H030+$0256, H026+$000C, H026+$0254.
-;   - Richiama H045+$01D6.
-;   - Richiama H030+$0256.
-;   - Richiama H026+$000C.
-;   - Richiama H026+$0254.
-; Chiamanti diretti: H063+$11EA, H063+$0F68, H013+$3228, H065+$0C8A
+; ROUTINE: sub_H063_0000103A [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; calls H045+$01D6, H030+$0256, H026+$000C, H026+$0254.
+;   - Calls H045+$01D6.
+;   - Calls H030+$0256.
+;   - Calls H026+$000C.
+;   - Calls H026+$0254.
+; Direct callers: H063+$11EA, H063+$0F68, H013+$3228, H065+$0C8A
 ; --------------------------------------------------------------------------
 L063_0000103A:
 ; H063+$0000103A: 2f0c  move.l a4, -(a7)
@@ -3269,7 +3269,7 @@ L063_000010BE:
 L063_000010C2:
 ; H063+$000010C2: 486dffae  pea.l -$52(a5)
         pea.l -$52(a5)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L063_000010C6:
 ; H063+$000010C6: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -3378,7 +3378,7 @@ L063_00001146:
 L063_0000114A:
 ; H063+$0000114A: 486dffae  pea.l -$52(a5)
         pea.l -$52(a5)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L063_0000114E:
 ; H063+$0000114E: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -3398,10 +3398,10 @@ L063_0000115E:
 ; H063+$0000115E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H063_1350 [parziale]
-; Scopo: Trampolino verso H063+$1350; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H063+$1350.
-; Chiamanti diretti: H027+$0FBC, H027+$25A8, H096+$3C06, H096+$40CA, H096+$2286, H059+$1560 e altri 5
+; ROUTINE: trampoline_H063_1350 [partial]
+; Purpose: Trampoline to H063+$1350; the actual body is there.
+;   - Jumps to the actual body at H063+$1350.
+; Direct callers: H027+$0FBC, H027+$25A8, H096+$3C06, H096+$40CA, H096+$2286, H059+$1560 and 5 more
 ; --------------------------------------------------------------------------
 L063_00001160:
 ; H063+$00001160: 2f0c  move.l a4, -(a7)
@@ -3488,7 +3488,7 @@ L063_000011C8:
 L063_000011CC:
 ; H063+$000011CC: 486c002e  pea.l $2e(a4)
         pea.l $2e(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L063_000011D0:
 ; H063+$000011D0: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -3543,7 +3543,7 @@ L063_00001204:
 L063_00001208:
 ; H063+$00001208: 486c0038  pea.l $38(a4)
         pea.l $38(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L063_0000120C:
 ; H063+$0000120C: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -3722,7 +3722,7 @@ L063_000012D6:
 L063_000012DA:
 ; H063+$000012DA: 48732800  pea.l (a3, d2.l)
         pea.l (a3, d2.l)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L063_000012DE:
 ; H063+$000012DE: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -3768,7 +3768,7 @@ L063_0000130C:
 L063_00001310:
 ; H063+$00001310: 486c003b  pea.l $3b(a4)
         pea.l $3b(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L063_00001314:
 ; H063+$00001314: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -3817,7 +3817,7 @@ L063_00001342:
 L063_00001346:
 ; H063+$00001346: 486c0046  pea.l $46(a4)
         pea.l $46(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L063_0000134A:
 ; H063+$0000134A: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -3837,10 +3837,10 @@ L063_00001358:
 ; H063+$00001358: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_0000135A [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H063+$12EC, H096+$2978, H096+$1C2E, H096+$1F4C, H062+$0276, H097+$0258 e altri 5
+; ROUTINE: sub_H063_0000135A [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H063+$12EC, H096+$2978, H096+$1C2E, H096+$1F4C, H062+$0276, H097+$0258 and 5 more
 ; --------------------------------------------------------------------------
 L063_0000135A:
 ; H063+$0000135A: 2f0c  move.l a4, -(a7)
@@ -3930,11 +3930,11 @@ L063_000013BC:
 ; H063+$000013BC: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_000013BE [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; richiama H029+$03E2, H073+$130A.
-;   - Richiama H029+$03E2.
-;   - Richiama H073+$130A.
-; Chiamanti diretti: H027+$0F56, H027+$0D5E, H085+$08E0, H012+$2576, H012+$2C06, H096+$2490 e altri 18
+; ROUTINE: sub_H063_000013BE [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; calls H029+$03E2, H073+$130A.
+;   - Calls H029+$03E2.
+;   - Calls H073+$130A.
+; Direct callers: H027+$0F56, H027+$0D5E, H085+$08E0, H012+$2576, H012+$2C06, H096+$2490 and 18 more
 ; --------------------------------------------------------------------------
 L063_000013BE:
 ; H063+$000013BE: 2f0c  move.l a4, -(a7)
@@ -4204,7 +4204,7 @@ L063_0000151E:
 L063_00001520:
 ; H063+$00001520: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H063+$14FE; indici 0..9, default -1.
+; DISPATCH: words relative to H063+$14FE; indices 0..9, default -1.
 L063_00001524:
 ; H063+$00001524: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -4978,10 +4978,10 @@ L063_000018F6:
 ; H063+$000018F6: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_000018F8 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H063+$16B4
+; ROUTINE: sub_H063_000018F8 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H063+$16B4
 ; --------------------------------------------------------------------------
 L063_000018F8:
 ; H063+$000018F8: 2f0c  move.l a4, -(a7)
@@ -5090,7 +5090,7 @@ L063_0000199A:
 L063_0000199C:
 ; H063+$0000199C: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H063+$195A; indici 0..24, default -1.
+; DISPATCH: words relative to H063+$195A; indices 0..24, default -1.
 L063_000019A0:
 ; H063+$000019A0: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -5116,10 +5116,10 @@ L063_000019B4:
 ; H063+$000019B4: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_000019B6 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H027+$0526, H063+$16F0, H063+$051A
+; ROUTINE: sub_H063_000019B6 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H027+$0526, H063+$16F0, H063+$051A
 ; --------------------------------------------------------------------------
 L063_000019B6:
 ; H063+$000019B6: 2f0c  move.l a4, -(a7)
@@ -5234,7 +5234,7 @@ L063_00001A6E:
 L063_00001A70:
 ; H063+$00001A70: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H063+$1A24; indici 0..29, default -1.
+; DISPATCH: words relative to H063+$1A24; indices 0..29, default -1.
 L063_00001A74:
 ; H063+$00001A74: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -5260,10 +5260,10 @@ L063_00001A88:
 ; H063+$00001A88: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H063_1B66 [parziale]
-; Scopo: Trampolino verso H063+$1B66; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H063+$1B66.
-; Chiamanti diretti: H063+$08B0, H065+$3364, H067+$01D6
+; ROUTINE: trampoline_H063_1B66 [partial]
+; Purpose: Trampoline to H063+$1B66; the actual body is there.
+;   - Jumps to the actual body at H063+$1B66.
+; Direct callers: H063+$08B0, H065+$3364, H067+$01D6
 ; --------------------------------------------------------------------------
 L063_00001A8A:
 ; H063+$00001A8A: 2f0c  move.l a4, -(a7)
@@ -5417,7 +5417,7 @@ L063_00001B74:
 L063_00001B76:
 ; H063+$00001B76: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H063+$1B2A; indici 0..29, default -1.
+; DISPATCH: words relative to H063+$1B2A; indices 0..29, default -1.
 L063_00001B7A:
 ; H063+$00001B7A: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -5443,10 +5443,10 @@ L063_00001B8E:
 ; H063+$00001B8E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00001B90 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H062+$2426, H033+$14E0, H033+$1706, H033+$17A6, H096+$079A
+; ROUTINE: sub_H063_00001B90 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H062+$2426, H033+$14E0, H033+$1706, H033+$17A6, H096+$079A
 ; --------------------------------------------------------------------------
 L063_00001B90:
 ; H063+$00001B90: 2f0c  move.l a4, -(a7)
@@ -5524,12 +5524,12 @@ L063_00001BE6:
 ; H063+$00001BE6: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00001BE8 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; richiama H056+$0886, H030+$028A, H003+$00F6.
-;   - Richiama H056+$0886.
-;   - Richiama H030+$028A.
-;   - Richiama H003+$00F6.
-; Chiamanti diretti: H027+$0BF8, H027+$2592, H012+$2BF4, H096+$2486, H096+$246C, H061+$3E66 e altri 6
+; ROUTINE: sub_H063_00001BE8 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; calls H056+$0886, H030+$028A, H003+$00F6.
+;   - Calls H056+$0886.
+;   - Calls H030+$028A.
+;   - Calls H003+$00F6.
+; Direct callers: H027+$0BF8, H027+$2592, H012+$2BF4, H096+$2486, H096+$246C, H061+$3E66 and 6 more
 ; --------------------------------------------------------------------------
 L063_00001BE8:
 ; H063+$00001BE8: 2f0c  move.l a4, -(a7)
@@ -5707,11 +5707,11 @@ L063_00001CBE:
 ; H063+$00001CBE: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00001CC0 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; richiama H003+$0068, H003+$0090.
-;   - Richiama H003+$0068.
-;   - Richiama H003+$0090.
-; Chiamanti diretti: H027+$0C7C, H065+$1E02
+; ROUTINE: sub_H063_00001CC0 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; calls H003+$0068, H003+$0090.
+;   - Calls H003+$0068.
+;   - Calls H003+$0090.
+; Direct callers: H027+$0C7C, H065+$1E02
 ; --------------------------------------------------------------------------
 L063_00001CC0:
 ; H063+$00001CC0: 2f0c  move.l a4, -(a7)
@@ -5821,12 +5821,12 @@ L063_00001D42:
 ; H063+$00001D42: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00001D44 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; richiama H030+$0B6C, H030+$0256, H030+$0B4A.
-;   - Richiama H030+$0B6C.
-;   - Richiama H030+$0256.
-;   - Richiama H030+$0B4A.
-; Chiamanti diretti: H065+$2C4C, H027+$147C, H027+$3316, H096+$301E, H096+$3030, H065+$2E92 e altri 48
+; ROUTINE: sub_H063_00001D44 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; calls H030+$0B6C, H030+$0256, H030+$0B4A.
+;   - Calls H030+$0B6C.
+;   - Calls H030+$0256.
+;   - Calls H030+$0B4A.
+; Direct callers: H065+$2C4C, H027+$147C, H027+$3316, H096+$301E, H096+$3030, H065+$2E92 and 48 more
 ; --------------------------------------------------------------------------
 L063_00001D44:
 ; H063+$00001D44: 2f0c  move.l a4, -(a7)
@@ -5907,7 +5907,7 @@ L063_00001D90:
 L063_00001D94:
 ; H063+$00001D94: 2f2d000c  move.l $c(a5), -(a7)
         move.l $c(a5), -(a7)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L063_00001D98:
 ; H063+$00001D98: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -5947,13 +5947,13 @@ L063_00001DC0:
 ; H063+$00001DC0: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00001DC2 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; richiama H030+$0B6C, H030+$0302, H030+$0B4A.
-;   - Richiama H030+$0B6C.
-;   - Richiama H030+$0302.
-;   - Richiama H030+$0B4A.
-;   - Usa lo stato globale: H005+$3DE3 (contesto nativo, 5 nel combattimento).
-; Chiamanti diretti: H027+$0AD0, H027+$0E80, H027+$0F2E, H027+$13C8, H027+$18F8, H027+$1AA6 e altri 60
+; ROUTINE: sub_H063_00001DC2 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; calls H030+$0B6C, H030+$0302, H030+$0B4A.
+;   - Calls H030+$0B6C.
+;   - Calls H030+$0302.
+;   - Calls H030+$0B4A.
+;   - Uses the global state: H005+$3DE3 (native context, 5 in combat).
+; Direct callers: H027+$0AD0, H027+$0E80, H027+$0F2E, H027+$13C8, H027+$18F8, H027+$1AA6 and 60 more
 ; --------------------------------------------------------------------------
 L063_00001DC2:
 ; H063+$00001DC2: 2f0c  move.l a4, -(a7)
@@ -6000,7 +6000,7 @@ L063_00001DE8:
 L063_00001DEA:
 ; H063+$00001DEA: 51cafffc  dbra d2, $1de8
         dbra d2, H063+$1DE8
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L063_00001DEE:
 ; H063+$00001DEE: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
@@ -6196,11 +6196,11 @@ L063_00001EE6:
 ; H063+$00001EE6: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00001EE8 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; richiama H030+$0B6C.
-;   - Richiama H030+$0B6C.
-;   - Usa lo stato globale: H005+$3DE3 (contesto nativo, 5 nel combattimento).
-; Chiamanti diretti: H027+$045A, H063+$1ED6, H062+$03C8, H027+$1224, H027+$129A, H062+$020C e altri 17
+; ROUTINE: sub_H063_00001EE8 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; calls H030+$0B6C.
+;   - Calls H030+$0B6C.
+;   - Uses the global state: H005+$3DE3 (native context, 5 in combat).
+; Direct callers: H027+$045A, H063+$1ED6, H062+$03C8, H027+$1224, H027+$129A, H062+$020C and 17 more
 ; --------------------------------------------------------------------------
 L063_00001EE8:
 ; H063+$00001EE8: 2f0c  move.l a4, -(a7)
@@ -6211,7 +6211,7 @@ L063_00001EEA:
 L063_00001EEE:
 ; H063+$00001EEE: 4e550000  link.w a5, #$0
         link.w a5, #$0
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L063_00001EF2:
 ; H063+$00001EF2: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
@@ -6263,12 +6263,12 @@ L063_00001F32:
 ; H063+$00001F32: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H063_1F7E [parziale]
-; Scopo: Trampolino verso H063+$1F7E; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H063+$1F7E.
-;   - Richiama H030+$0256.
-;   - Richiama H026+$000C.
-; Chiamanti diretti: H063+$1E1E, H063+$1E96, H063+$0EA0, H065+$04DE, H013+$5DE4, H065+$27EC e altri 5
+; ROUTINE: trampoline_H063_1F7E [partial]
+; Purpose: Trampoline to H063+$1F7E; the actual body is there.
+;   - Jumps to the actual body at H063+$1F7E.
+;   - Calls H030+$0256.
+;   - Calls H026+$000C.
+; Direct callers: H063+$1E1E, H063+$1E96, H063+$0EA0, H065+$04DE, H013+$5DE4, H065+$27EC and 5 more
 ; --------------------------------------------------------------------------
 L063_00001F34:
 ; H063+$00001F34: 2f0c  move.l a4, -(a7)
@@ -6303,7 +6303,7 @@ L063_00001F58:
 L063_00001F5E:
 ; H063+$00001F5E: 66000018  bne.w $1f78
         bne.w H063+$1F78
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L063_00001F62:
 ; H063+$00001F62: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
@@ -6337,7 +6337,7 @@ L063_00001F8C:
 L063_00001F90:
 ; H063+$00001F90: 2f2d0012  move.l $12(a5), -(a7)
         move.l $12(a5), -(a7)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L063_00001F94:
 ; H063+$00001F94: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -6381,7 +6381,7 @@ L063_00001FC2:
 L063_00001FC6:
 ; H063+$00001FC6: 486c008b  pea.l $8b(a4)
         pea.l $8b(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L063_00001FCA:
 ; H063+$00001FCA: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -6401,13 +6401,13 @@ L063_00001FDA:
 ; H063+$00001FDA: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00001FDC [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; richiama H029+$0408, H049+$09D6, H016+$0014, H029+$067A.
-;   - Richiama H029+$0408.
-;   - Richiama H049+$09D6.
-;   - Richiama H016+$0014.
-;   - Richiama H029+$067A.
-; Chiamanti diretti: H063+$218C, H063+$219E, H063+$21B2, H063+$21C4, H096+$46EE, H096+$36A4 e altri 9
+; ROUTINE: sub_H063_00001FDC [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; calls H029+$0408, H049+$09D6, H016+$0014, H029+$067A.
+;   - Calls H029+$0408.
+;   - Calls H049+$09D6.
+;   - Calls H016+$0014.
+;   - Calls H029+$067A.
+; Direct callers: H063+$218C, H063+$219E, H063+$21B2, H063+$21C4, H096+$46EE, H096+$36A4 and 9 more
 ; --------------------------------------------------------------------------
 L063_00001FDC:
 ; H063+$00001FDC: 2f0c  move.l a4, -(a7)
@@ -6439,7 +6439,7 @@ L063_00001FFA:
 L063_00001FFE:
 ; H063+$00001FFE: 486dfff8  pea.l -$8(a5)
         pea.l -$8(a5)
-; FLUSSO: Chiama Allocate_GraphicRecord (H029+$0408).
+; FLOW: Calls Allocate_GraphicRecord (H029+$0408).
 L063_00002002:
 ; H063+$00002002: 4eb900000408  jsr $408.l
         jsr (H029+$408).l
@@ -6590,7 +6590,7 @@ L063_000020AC:
 L063_000020B0:
 ; H063+$000020B0: 486dfff8  pea.l -$8(a5)
         pea.l -$8(a5)
-; FLUSSO: Chiama Free_GraphicRecord (H029+$067A).
+; FLOW: Calls Free_GraphicRecord (H029+$067A).
 L063_000020B4:
 ; H063+$000020B4: 4eb90000067a  jsr $67a.l
         jsr (H029+$67A).l
@@ -6765,10 +6765,10 @@ L063_00002176:
 ; H063+$00002176: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00002178 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H027+$2AD2, H085+$1318, H085+$1AF8, H063+$27B4, H085+$12F4, H033+$15BA e altri 2
+; ROUTINE: sub_H063_00002178 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H027+$2AD2, H085+$1318, H085+$1AF8, H063+$27B4, H085+$12F4, H033+$15BA and 2 more
 ; --------------------------------------------------------------------------
 L063_00002178:
 ; H063+$00002178: 2f0c  move.l a4, -(a7)
@@ -6855,16 +6855,16 @@ L063_000021D0:
 ; H063+$000021D0: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H063_22B4 [parziale]
-; Scopo: Trampolino verso H063+$22B4; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H063+$22B4.
-;   - Richiama H048+$01E8.
-;   - Richiama H048+$0DF2.
-;   - Richiama H029+$1520.
-;   - Richiama H029+$1576.
-;   - Richiama H016+$0014.
-;   - Richiama H029+$0B94.
-; Chiamanti diretti: H027+$2B18, H085+$1B3A, H085+$14E2, H096+$46B2, H096+$37B0, H033+$1698
+; ROUTINE: trampoline_H063_22B4 [partial]
+; Purpose: Trampoline to H063+$22B4; the actual body is there.
+;   - Jumps to the actual body at H063+$22B4.
+;   - Calls H048+$01E8.
+;   - Calls H048+$0DF2.
+;   - Calls H029+$1520.
+;   - Calls H029+$1576.
+;   - Calls H016+$0014.
+;   - Calls H029+$0B94.
+; Direct callers: H027+$2B18, H085+$1B3A, H085+$14E2, H096+$46B2, H096+$37B0, H033+$1698
 ; --------------------------------------------------------------------------
 L063_000021D2:
 ; H063+$000021D2: 2f0c  move.l a4, -(a7)
@@ -6879,16 +6879,16 @@ L063_000021DC:
 ; H063+$000021DC: 600000d6  bra.w $22b4
         bra.w H063+$22B4
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_000021E0 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; richiama H016+$0014, H048+$01E8, H048+$0DF2, H029+$1520.
-;   - Richiama H016+$0014.
-;   - Richiama H048+$01E8.
-;   - Richiama H048+$0DF2.
-;   - Richiama H029+$1520.
-;   - Richiama H029+$1576.
-;   - Richiama H029+$0B94.
-;   - Usa lo stato globale: H005+$52F2 (puntatore allo schermo del gioco).
-; Chiamanti diretti: H063+$259A, H063+$2736
+; ROUTINE: sub_H063_000021E0 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; calls H016+$0014, H048+$01E8, H048+$0DF2, H029+$1520.
+;   - Calls H016+$0014.
+;   - Calls H048+$01E8.
+;   - Calls H048+$0DF2.
+;   - Calls H029+$1520.
+;   - Calls H029+$1576.
+;   - Calls H029+$0B94.
+;   - Uses the global state: H005+$52F2 (pointer to the game screen).
+; Direct callers: H063+$259A, H063+$2736
 ; --------------------------------------------------------------------------
 L063_000021E0:
 ; H063+$000021E0: 4e550000  link.w a5, #$0
@@ -6923,7 +6923,7 @@ L063_0000220A:
 L063_00002210:
 ; H063+$00002210: 60000014  bra.w $2226
         bra.w H063+$2226
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L063_00002214:
 ; H063+$00002214: 2679000052f2  movea.l $52f2.l, a3
         movea.l (H005+$52F2).l, a3
@@ -7753,7 +7753,7 @@ L063_00002616:
 L063_0000261C:
 ; H063+$0000261C: 2f3900003d8e  move.l $3d8e.l, -(a7)
         move.l (H005+$3D8E).l, -(a7)
-; FLUSSO: Chiama Draw_GraphicTile24 (H029+$0B94).
+; FLOW: Calls Draw_GraphicTile24 (H029+$0B94).
 L063_00002622:
 ; H063+$00002622: 4eb900000b94  jsr $b94.l
         jsr (H029+$B94).l
@@ -7993,17 +7993,17 @@ L063_0000275E:
 ; H063+$0000275E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00002760 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; richiama H048+$0230, H048+$0F88, H048+$0FBA, H048+$0DF2.
-;   - Richiama H048+$0230.
-;   - Richiama H048+$0F88.
-;   - Richiama H048+$0FBA.
-;   - Richiama H048+$0DF2.
-;   - Richiama H043+$190E.
-;   - Richiama H048+$0AA8.
-;   - Richiama H029+$0D58.
-;   - Usa lo stato globale: H005+$3DE3 (contesto nativo, 5 nel combattimento).
-; Chiamanti diretti: H027+$325E, H085+$2DEE, H085+$2EF8, H085+$3476, H085+$3E3E, H027+$0454 e altri 8
+; ROUTINE: sub_H063_00002760 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; calls H048+$0230, H048+$0F88, H048+$0FBA, H048+$0DF2.
+;   - Calls H048+$0230.
+;   - Calls H048+$0F88.
+;   - Calls H048+$0FBA.
+;   - Calls H048+$0DF2.
+;   - Calls H043+$190E.
+;   - Calls H048+$0AA8.
+;   - Calls H029+$0D58.
+;   - Uses the global state: H005+$3DE3 (native context, 5 in combat).
+; Direct callers: H027+$325E, H085+$2DEE, H085+$2EF8, H085+$3476, H085+$3E3E, H027+$0454 and 8 more
 ; --------------------------------------------------------------------------
 L063_00002760:
 ; H063+$00002760: 2f0c  move.l a4, -(a7)
@@ -8050,7 +8050,7 @@ L063_00002786:
 L063_00002788:
 ; H063+$00002788: 51cafffc  dbra d2, $2786
         dbra d2, H063+$2786
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L063_0000278C:
 ; H063+$0000278C: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
@@ -8136,7 +8136,7 @@ L063_000027F8:
 L063_000027FC:
 ; H063+$000027FC: 3f3c0007  move.w #$7, -(a7)
         move.w #$7, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L063_00002800:
 ; H063+$00002800: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
@@ -8182,7 +8182,7 @@ L063_00002836:
 L063_0000283A:
 ; H063+$0000283A: 3f3c0003  move.w #$3, -(a7)
         move.w #$3, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L063_0000283E:
 ; H063+$0000283E: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
@@ -8192,7 +8192,7 @@ L063_00002844:
 L063_00002848:
 ; H063+$00002848: 3f3c0013  move.w #$13, -(a7)
         move.w #$13, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L063_0000284C:
 ; H063+$0000284C: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
@@ -8452,10 +8452,10 @@ L063_00002982:
 ; H063+$00002982: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00002984 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; opera su H005+$3DE3 (contesto nativo, 5 nel combattimento).
-;   - Usa lo stato globale: H005+$3DE3 (contesto nativo, 5 nel combattimento).
-; Chiamanti diretti: H062+$23CA, H061+$41F0, H096+$06DC
+; ROUTINE: sub_H063_00002984 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; works on H005+$3DE3 (native context, 5 in combat).
+;   - Uses the global state: H005+$3DE3 (native context, 5 in combat).
+; Direct callers: H062+$23CA, H061+$41F0, H096+$06DC
 ; --------------------------------------------------------------------------
 L063_00002984:
 ; H063+$00002984: 2f0c  move.l a4, -(a7)
@@ -8565,7 +8565,7 @@ L063_00002A08:
 L063_00002A0C:
 ; H063+$00002A0C: 177c00050197  move.b #$5, $197(a3)
         move.b #$5, $197(a3)
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L063_00002A12:
 ; H063+$00002A12: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
@@ -8629,7 +8629,7 @@ L063_00002A66:
 L063_00002A6A:
 ; H063+$00002A6A: 422b01a8  clr.b $1a8(a3)
         clr.b $1a8(a3)
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L063_00002A6E:
 ; H063+$00002A6E: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
@@ -8709,10 +8709,10 @@ L063_00002ACA:
 ; H063+$00002ACA: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00002ACC [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; opera su H005+$3DE3 (contesto nativo, 5 nel combattimento); H005+$3368 (personaggio corrente).
-;   - Usa lo stato globale: H005+$3DE3 (contesto nativo, 5 nel combattimento); H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H027+$2126, H085+$1D30, H085+$3312
+; ROUTINE: sub_H063_00002ACC [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; works on H005+$3DE3 (native context, 5 in combat); H005+$3368 (current character).
+;   - Uses the global state: H005+$3DE3 (native context, 5 in combat); H005+$3368 (current character).
+; Direct callers: H027+$2126, H085+$1D30, H085+$3312
 ; --------------------------------------------------------------------------
 L063_00002ACC:
 ; H063+$00002ACC: 2f0c  move.l a4, -(a7)
@@ -8798,14 +8798,14 @@ L063_00002B24:
 L063_00002B28:
 ; H063+$00002B28: 6100f298  bsr.w $1dc2
         bsr.w H063+$1DC2
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L063_00002B2C:
 ; H063+$00002B2C: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
 L063_00002B34:
 ; H063+$00002B34: 6700000c  beq.w $2b42
         beq.w H063+$2B42
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L063_00002B38:
 ; H063+$00002B38: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -8828,10 +8828,10 @@ L063_00002B4A:
 ; H063+$00002B4A: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H063_2B72 [parziale]
-; Scopo: Trampolino verso H063+$2B72; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H063+$2B72.
-; Chiamanti diretti: H085+$1C9E, H085+$3238, H063+$2C78, H096+$38EA, H097+$08CA, H096+$3874 e altri 2
+; ROUTINE: trampoline_H063_2B72 [partial]
+; Purpose: Trampoline to H063+$2B72; the actual body is there.
+;   - Jumps to the actual body at H063+$2B72.
+; Direct callers: H085+$1C9E, H085+$3238, H063+$2C78, H096+$38EA, H097+$08CA, H096+$3874 and 2 more
 ; --------------------------------------------------------------------------
 L063_00002B4C:
 ; H063+$00002B4C: 2f0c  move.l a4, -(a7)
@@ -8881,11 +8881,11 @@ L063_00002B7A:
 ; H063+$00002B7A: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00002B7C [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; richiama H029+$03E2.
-;   - Richiama H029+$03E2.
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H027+$07DA, H062+$2712, H096+$39BA, H059+$17FE, H095+$1FCC, H059+$16BE e altri 1
+; ROUTINE: sub_H063_00002B7C [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; calls H029+$03E2.
+;   - Calls H029+$03E2.
+;   - Uses the global state: H005+$3364 (head of the party list).
+; Direct callers: H027+$07DA, H062+$2712, H096+$39BA, H059+$17FE, H095+$1FCC, H059+$16BE and 1 more
 ; --------------------------------------------------------------------------
 L063_00002B7C:
 ; H063+$00002B7C: 2f0c  move.l a4, -(a7)
@@ -8902,7 +8902,7 @@ L063_00002B86:
 L063_00002B8C:
 ; H063+$00002B8C: 423900002a1d  clr.b $2a1d.l
         clr.b (H005+$2A1D).l
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L063_00002B92:
 ; H063+$00002B92: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -8962,13 +8962,13 @@ L063_00002BDC:
 ; H063+$00002BDC: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00002BDE [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; richiama H048+$0F88, H048+$0FBA, H048+$110C, H077+$08AC.
-;   - Richiama H048+$0F88.
-;   - Richiama H048+$0FBA.
-;   - Richiama H048+$110C.
-;   - Richiama H077+$08AC.
-; Chiamanti diretti: H085+$0B60, H096+$4C54, H096+$3B70, H096+$1398, H096+$41A4, H097+$07D2 e altri 8
+; ROUTINE: sub_H063_00002BDE [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; calls H048+$0F88, H048+$0FBA, H048+$110C, H077+$08AC.
+;   - Calls H048+$0F88.
+;   - Calls H048+$0FBA.
+;   - Calls H048+$110C.
+;   - Calls H077+$08AC.
+; Direct callers: H085+$0B60, H096+$4C54, H096+$3B70, H096+$1398, H096+$41A4, H097+$07D2 and 8 more
 ; --------------------------------------------------------------------------
 L063_00002BDE:
 ; H063+$00002BDE: 2f0c  move.l a4, -(a7)
@@ -9362,13 +9362,13 @@ L063_00002DC4:
 ; H063+$00002DC4: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00002DC6 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; richiama H048+$0F88, H048+$0FBA, H048+$110C, H077+$08AC.
-;   - Richiama H048+$0F88.
-;   - Richiama H048+$0FBA.
-;   - Richiama H048+$110C.
-;   - Richiama H077+$08AC.
-; Chiamanti diretti: H027+$04E8, H027+$2474, H027+$3CCC, H027+$3F88, H027+$1772, H096+$1380 e altri 5
+; ROUTINE: sub_H063_00002DC6 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; calls H048+$0F88, H048+$0FBA, H048+$110C, H077+$08AC.
+;   - Calls H048+$0F88.
+;   - Calls H048+$0FBA.
+;   - Calls H048+$110C.
+;   - Calls H077+$08AC.
+; Direct callers: H027+$04E8, H027+$2474, H027+$3CCC, H027+$3F88, H027+$1772, H096+$1380 and 5 more
 ; --------------------------------------------------------------------------
 L063_00002DC6:
 ; H063+$00002DC6: 2f0c  move.l a4, -(a7)
@@ -9645,10 +9645,10 @@ L063_00002F10:
 ; H063+$00002F10: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00002F12 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H027+$0322, H027+$23EA, H027+$3D12, H027+$0466, H062+$2430, H096+$3D0E e altri 28
+; ROUTINE: sub_H063_00002F12 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H027+$0322, H027+$23EA, H027+$3D12, H027+$0466, H062+$2430, H096+$3D0E and 28 more
 ; --------------------------------------------------------------------------
 L063_00002F12:
 ; H063+$00002F12: 2f0c  move.l a4, -(a7)
@@ -9717,10 +9717,10 @@ L063_00002F58:
 ; H063+$00002F58: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00002F5A [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H059+$0FAA, H097+$029E
+; ROUTINE: sub_H063_00002F5A [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H059+$0FAA, H097+$029E
 ; --------------------------------------------------------------------------
 L063_00002F5A:
 ; H063+$00002F5A: 2f0c  move.l a4, -(a7)
@@ -9792,11 +9792,11 @@ L063_00002FA8:
 ; H063+$00002FA8: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00002FAA [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; richiama H073+$130A.
-;   - Richiama H073+$130A.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente); H005+$3E04 (puntatore stato persistente A, 2048 byte).
-; Chiamanti diretti: H085+$1DC8, H085+$1EE0, H085+$20F2, H085+$21A6, H085+$2656, H085+$26DC e altri 13
+; ROUTINE: sub_H063_00002FAA [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; calls H073+$130A.
+;   - Calls H073+$130A.
+;   - Uses the global state: H005+$3368 (current character); H005+$3E04 (pointer to persistent state A, 2048 bytes).
+; Direct callers: H085+$1DC8, H085+$1EE0, H085+$20F2, H085+$21A6, H085+$2656, H085+$26DC and 13 more
 ; --------------------------------------------------------------------------
 L063_00002FAA:
 ; H063+$00002FAA: 2f0c  move.l a4, -(a7)
@@ -9807,7 +9807,7 @@ L063_00002FAC:
 L063_00002FB0:
 ; H063+$00002FB0: 4e55fff8  link.w a5, #$fff8
         link.w a5, #$fff8
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L063_00002FB4:
 ; H063+$00002FB4: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -9817,7 +9817,7 @@ L063_00002FBA:
 L063_00002FBE:
 ; H063+$00002FBE: 6600003a  bne.w $2ffa
         bne.w H063+$2FFA
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L063_00002FC2:
 ; H063+$00002FC2: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -9827,7 +9827,7 @@ L063_00002FC8:
 L063_00002FCC:
 ; H063+$00002FCC: 6600002c  bne.w $2ffa
         bne.w H063+$2FFA
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L063_00002FD0:
 ; H063+$00002FD0: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -9837,7 +9837,7 @@ L063_00002FD6:
 L063_00002FDC:
 ; H063+$00002FDC: 6400001c  bcc.w $2ffa
         bcc.w H063+$2FFA
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L063_00002FE0:
 ; H063+$00002FE0: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -9877,7 +9877,7 @@ L063_0000300E:
 L063_00003012:
 ; H063+$00003012: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L063_00003014:
 ; H063+$00003014: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -9887,7 +9887,7 @@ L063_0000301A:
 L063_0000301E:
 ; H063+$0000301E: 7800  moveq #$0, d4
         moveq #0, d4
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L063_00003020:
 ; H063+$00003020: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -9897,7 +9897,7 @@ L063_00003026:
 L063_0000302A:
 ; H063+$0000302A: 48e72800  movem.l d2/d4, -(a7)
         movem.l d2/d4, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L063_0000302E:
 ; H063+$0000302E: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -9926,7 +9926,7 @@ L063_00003048:
 L063_0000304C:
 ; H063+$0000304C: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L063_0000304E:
 ; H063+$0000304E: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -9936,7 +9936,7 @@ L063_00003054:
 L063_00003058:
 ; H063+$00003058: 7800  moveq #$0, d4
         moveq #0, d4
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L063_0000305A:
 ; H063+$0000305A: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -9946,7 +9946,7 @@ L063_00003060:
 L063_00003064:
 ; H063+$00003064: 48e72800  movem.l d2/d4, -(a7)
         movem.l d2/d4, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L063_00003068:
 ; H063+$00003068: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -10005,7 +10005,7 @@ L063_000030AA:
 L063_000030AC:
 ; H063+$000030AC: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L063_000030AE:
 ; H063+$000030AE: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -10015,7 +10015,7 @@ L063_000030B4:
 L063_000030B8:
 ; H063+$000030B8: 7800  moveq #$0, d4
         moveq #0, d4
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L063_000030BA:
 ; H063+$000030BA: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -10025,7 +10025,7 @@ L063_000030C0:
 L063_000030C4:
 ; H063+$000030C4: 48e72800  movem.l d2/d4, -(a7)
         movem.l d2/d4, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L063_000030C8:
 ; H063+$000030C8: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -10054,7 +10054,7 @@ L063_000030E2:
 L063_000030E6:
 ; H063+$000030E6: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L063_000030E8:
 ; H063+$000030E8: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -10064,7 +10064,7 @@ L063_000030EE:
 L063_000030F2:
 ; H063+$000030F2: 7800  moveq #$0, d4
         moveq #0, d4
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L063_000030F4:
 ; H063+$000030F4: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -10074,7 +10074,7 @@ L063_000030FA:
 L063_000030FE:
 ; H063+$000030FE: 48e72800  movem.l d2/d4, -(a7)
         movem.l d2/d4, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L063_00003102:
 ; H063+$00003102: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -10103,7 +10103,7 @@ L063_0000311C:
 L063_0000311E:
 ; H063+$0000311E: 3b42fffc  move.w d2, -$4(a5)
         move.w d2, -$4(a5)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L063_00003122:
 ; H063+$00003122: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -10116,7 +10116,7 @@ L063_0000312C:
 L063_00003130:
 ; H063+$00003130: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L063_00003132:
 ; H063+$00003132: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -10132,7 +10132,7 @@ L063_0000313E:
 L063_00003142:
 ; H063+$00003142: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L063_00003144:
 ; H063+$00003144: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -10151,7 +10151,7 @@ L063_00003156:
 L063_0000315A:
 ; H063+$0000315A: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L063_0000315C:
 ; H063+$0000315C: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -10196,7 +10196,7 @@ L063_0000318C:
 L063_0000318E:
 ; H063+$0000318E: 38334000  move.w (a3, d4.w), d4
         move.w (a3, d4.w), d4
-; DISPATCH: word relative a H063+$317A; indici 0..2, default -1.
+; DISPATCH: words relative to H063+$317A; indices 0..2, default -1.
 L063_00003192:
 ; H063+$00003192: 4eb34000  jsr (a3, d4.w)
         jsr (a3, d4.w)
@@ -10250,7 +10250,7 @@ L063_000031D6:
 L063_000031D8:
 ; H063+$000031D8: 38334000  move.w (a3, d4.w), d4
         move.w (a3, d4.w), d4
-; DISPATCH: word relative a H063+$31C0; indici 0..4, default -1.
+; DISPATCH: words relative to H063+$31C0; indices 0..4, default -1.
 L063_000031DC:
 ; H063+$000031DC: 4eb34000  jsr (a3, d4.w)
         jsr (a3, d4.w)
@@ -10303,10 +10303,10 @@ L063_00003218:
 ; H063+$00003218: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H063_3384 [parziale]
-; Scopo: Trampolino verso H063+$3384; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H063+$3384.
-; Chiamanti diretti: H033+$1328, H012+$32C4, H012+$294C, H057+$2F8E, H065+$1C38, H065+$12E6 e altri 20
+; ROUTINE: trampoline_H063_3384 [partial]
+; Purpose: Trampoline to H063+$3384; the actual body is there.
+;   - Jumps to the actual body at H063+$3384.
+; Direct callers: H033+$1328, H012+$32C4, H012+$294C, H057+$2F8E, H065+$1C38, H065+$12E6 and 20 more
 ; --------------------------------------------------------------------------
 L063_0000321A:
 ; H063+$0000321A: 2f0c  move.l a4, -(a7)
@@ -10323,7 +10323,7 @@ L063_00003224:
 L063_0000322C:
 ; H063+$0000322C: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L063_0000322E:
 ; H063+$0000322E: 143900003de3  move.b $3de3.l, d2
         move.b (H005+$3DE3).l, d2
@@ -10350,7 +10350,7 @@ L063_0000324A:
 L063_0000324E:
 ; H063+$0000324E: 4eb900000330  jsr $330.l
         jsr (H044+$330).l
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L063_00003254:
 ; H063+$00003254: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -10397,7 +10397,7 @@ L063_0000328A:
 L063_00003290:
 ; H063+$00003290: 3f02  move.w d2, -(a7)
         move.w d2, -(a7)
-; FLUSSO: Chiama Load_HeadBody (H042+$0D70).
+; FLOW: Calls Load_HeadBody (H042+$0D70).
 L063_00003292:
 ; H063+$00003292: 4eb900000d70  jsr $d70.l
         jsr (H042+$D70).l
@@ -10414,7 +10414,7 @@ L063_000032A0:
 L063_000032A4:
 ; H063+$000032A4: 4eb900000ed2  jsr $ed2.l
         jsr (H042+$ED2).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L063_000032AA:
 ; H063+$000032AA: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -10446,11 +10446,11 @@ L063_000032CE:
 L063_000032D0:
 ; H063+$000032D0: 4879000027bc  pea.l $27bc.l
         pea.l (H005+$27BC).l
-; FLUSSO: Chiama Load_Sequence (H042+$0406).
+; FLOW: Calls Load_Sequence (H042+$0406).
 L063_000032D6:
 ; H063+$000032D6: 4eb900000406  jsr $406.l
         jsr (H042+$406).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L063_000032DC:
 ; H063+$000032DC: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -10467,7 +10467,7 @@ L063_000032EC:
 L063_000032EE:
 ; H063+$000032EE: 4eb900000330  jsr $330.l
         jsr (H044+$330).l
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L063_000032F4:
 ; H063+$000032F4: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -10481,7 +10481,7 @@ L063_000032FE:
 L063_00003302:
 ; H063+$00003302: 4eb900000018  jsr $18.l
         jsr (H060+$18).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L063_00003308:
 ; H063+$00003308: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -10509,7 +10509,7 @@ L063_00003328:
 L063_0000332C:
 ; H063+$0000332C: 67000016  beq.w $3344
         beq.w H063+$3344
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L063_00003330:
 ; H063+$00003330: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -10545,11 +10545,11 @@ L063_00003358:
 L063_0000335A:
 ; H063+$0000335A: 4879000027bc  pea.l $27bc.l
         pea.l (H005+$27BC).l
-; FLUSSO: Chiama Load_Sequence (H042+$0406).
+; FLOW: Calls Load_Sequence (H042+$0406).
 L063_00003360:
 ; H063+$00003360: 4eb900000406  jsr $406.l
         jsr (H042+$406).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L063_00003366:
 ; H063+$00003366: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -10582,7 +10582,7 @@ L063_00003390:
 L063_00003392:
 ; H063+$00003392: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H063+$3376; indici 0..6, default -1.
+; DISPATCH: words relative to H063+$3376; indices 0..6, default -1.
 L063_00003396:
 ; H063+$00003396: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -10596,10 +10596,10 @@ L063_0000339E:
 ; H063+$0000339E: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H063_3652 [parziale]
-; Scopo: Trampolino verso H063+$3652; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H063+$3652.
-; Chiamanti diretti: H063+$32E6, H063+$3312, H063+$32B4, H057+$31E6, H012+$2444, H012+$246C e altri 15
+; ROUTINE: trampoline_H063_3652 [partial]
+; Purpose: Trampoline to H063+$3652; the actual body is there.
+;   - Jumps to the actual body at H063+$3652.
+; Direct callers: H063+$32E6, H063+$3312, H063+$32B4, H057+$31E6, H012+$2444, H012+$246C and 15 more
 ; --------------------------------------------------------------------------
 L063_000033A0:
 ; H063+$000033A0: 2f0c  move.l a4, -(a7)
@@ -10610,7 +10610,7 @@ L063_000033A2:
 L063_000033A6:
 ; H063+$000033A6: 4e55ff9e  link.w a5, #$ff9e
         link.w a5, #$ff9e
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L063_000033AA:
 ; H063+$000033AA: 0c39000300003de3  cmpi.b #$3, $3de3.l
         cmpi.b #$3, (H005+$3DE3).l
@@ -10635,7 +10635,7 @@ L063_000033C4:
 L063_000033C6:
 ; H063+$000033C6: 57cafffc  dbeq d2, $33c4
         dbeq d2, H063+$33C4
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L063_000033CA:
 ; H063+$000033CA: 3b790000281cfffe  move.w $281c.l, -$2(a5)
         move.w (H005+$281C).l, -$2(a5)
@@ -10651,7 +10651,7 @@ L063_000033DE:
 L063_000033E2:
 ; H063+$000033E2: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L063_000033E4:
 ; H063+$000033E4: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -10683,7 +10683,7 @@ L063_00003404:
 L063_00003408:
 ; H063+$00003408: 486dfff4  pea.l -$c(a5)
         pea.l -$c(a5)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L063_0000340C:
 ; H063+$0000340C: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -10693,7 +10693,7 @@ L063_00003412:
 L063_00003416:
 ; H063+$00003416: c4fc000a  mulu.w #$a, d2
         mulu.w #$a, d2
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L063_0000341A:
 ; H063+$0000341A: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -10722,7 +10722,7 @@ L063_00003436:
 L063_0000343A:
 ; H063+$0000343A: 4eb9000001d6  jsr $1d6.l
         jsr (H045+$1D6).l
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L063_00003440:
 ; H063+$00003440: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -10842,7 +10842,7 @@ L063_000034CE:
 L063_000034D2:
 ; H063+$000034D2: 4eb9000001e0  jsr $1e0.l
         jsr (H026+$1E0).l
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L063_000034D8:
 ; H063+$000034D8: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -10852,7 +10852,7 @@ L063_000034DE:
 L063_000034E2:
 ; H063+$000034E2: 67000020  beq.w $3504
         beq.w H063+$3504
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L063_000034E6:
 ; H063+$000034E6: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -10883,7 +10883,7 @@ L063_00003504:
 L063_00003506:
 ; H063+$00003506: 143900002820  move.b $2820.l, d2
         move.b (H005+$2820).l, d2
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L063_0000350C:
 ; H063+$0000350C: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -11013,7 +11013,7 @@ L063_000035B8:
 L063_000035BC:
 ; H063+$000035BC: 4eb9000001e0  jsr $1e0.l
         jsr (H026+$1E0).l
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L063_000035C2:
 ; H063+$000035C2: 0c39000200003de3  cmpi.b #$2, $3de3.l
         cmpi.b #$2, (H005+$3DE3).l
@@ -11039,7 +11039,7 @@ L063_000035DE:
 L063_000035E4:
 ; H063+$000035E4: 6000003a  bra.w $3620
         bra.w H063+$3620
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L063_000035E8:
 ; H063+$000035E8: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -11118,7 +11118,7 @@ L063_00003644:
 L063_00003648:
 ; H063+$00003648: 486dffca  pea.l -$36(a5)
         pea.l -$36(a5)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L063_0000364C:
 ; H063+$0000364C: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -11132,11 +11132,11 @@ L063_00003656:
 ; H063+$00003656: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00003658 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; richiama H044+$0586, H048+$0DF2.
-;   - Richiama H044+$0586.
-;   - Richiama H048+$0DF2.
-; Chiamanti diretti: H095+$25D6, H065+$3046, H059+$1228, H059+$11DA, H096+$3182
+; ROUTINE: sub_H063_00003658 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; calls H044+$0586, H048+$0DF2.
+;   - Calls H044+$0586.
+;   - Calls H048+$0DF2.
+; Direct callers: H095+$25D6, H065+$3046, H059+$1228, H059+$11DA, H096+$3182
 ; --------------------------------------------------------------------------
 L063_00003658:
 ; H063+$00003658: 2f0c  move.l a4, -(a7)
@@ -11195,10 +11195,10 @@ L063_00003696:
 ; H063+$00003696: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00003698 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H096+$3B2E, H063+$3742, H096+$3D2E, H096+$4178, H096+$1202, H096+$253C e altri 6
+; ROUTINE: sub_H063_00003698 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H096+$3B2E, H063+$3742, H096+$3D2E, H096+$4178, H096+$1202, H096+$253C and 6 more
 ; --------------------------------------------------------------------------
 L063_00003698:
 ; H063+$00003698: 2f0c  move.l a4, -(a7)
@@ -11278,10 +11278,10 @@ L063_000036EC:
 ; H063+$000036EC: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_000036EE [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H096+$2368
+; ROUTINE: sub_H063_000036EE [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H096+$2368
 ; --------------------------------------------------------------------------
 L063_000036EE:
 ; H063+$000036EE: 2f0c  move.l a4, -(a7)
@@ -11349,10 +11349,10 @@ L063_00003732:
 ; H063+$00003732: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00003734 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; richiama H029+$0354.
-;   - Richiama H029+$0354.
-; Chiamanti diretti: H096+$3B82, H096+$3D56, H096+$41B6, H096+$23B6, H059+$0ED6, H059+$0690 e altri 3
+; ROUTINE: sub_H063_00003734 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; calls H029+$0354.
+;   - Calls H029+$0354.
+; Direct callers: H096+$3B82, H096+$3D56, H096+$41B6, H096+$23B6, H059+$0ED6, H059+$0690 and 3 more
 ; --------------------------------------------------------------------------
 L063_00003734:
 ; H063+$00003734: 2f0c  move.l a4, -(a7)
@@ -11466,10 +11466,10 @@ L063_000037B0:
 ; H063+$000037B0: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_000037B2 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; richiama H029+$0354.
-;   - Richiama H029+$0354.
-; Chiamanti diretti: H027+$1800, H096+$3B5A, H096+$3D44, H096+$418E, H096+$1218, H097+$1CCC
+; ROUTINE: sub_H063_000037B2 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; calls H029+$0354.
+;   - Calls H029+$0354.
+; Direct callers: H027+$1800, H096+$3B5A, H096+$3D44, H096+$418E, H096+$1218, H097+$1CCC
 ; --------------------------------------------------------------------------
 L063_000037B2:
 ; H063+$000037B2: 2f0c  move.l a4, -(a7)
@@ -11696,10 +11696,10 @@ L063_000038A4:
         dc.w $342D,$000C,$266D,$FFFC,$1742,$0046,$202D,$FFFC
         dc.w $6000,$0002,$4E5D,$285F,$205F,$4FEF,$001E,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00003980 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; opera su H005+$3364 (testa della lista del party).
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H059+$16A2, H059+$0F12, H097+$1916, H059+$106E
+; ROUTINE: sub_H063_00003980 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; works on H005+$3364 (head of the party list).
+;   - Uses the global state: H005+$3364 (head of the party list).
+; Direct callers: H059+$16A2, H059+$0F12, H097+$1916, H059+$106E
 ; --------------------------------------------------------------------------
 L063_00003980:
 ; H063+$00003980: 2f0c  move.l a4, -(a7)
@@ -11713,7 +11713,7 @@ L063_00003986:
 L063_0000398A:
 ; H063+$0000398A: 422dfffb  clr.b -$5(a5)
         clr.b -$5(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L063_0000398E:
 ; H063+$0000398E: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -11829,12 +11829,12 @@ L063_00003A24:
 ; H063+$00003A24: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00003A26 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; richiama H026+$01E0, H008+$01FC.
-;   - Richiama H026+$01E0.
-;   - Richiama H008+$01FC.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente); H005+$3DE3 (contesto nativo, 5 nel combattimento); H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H033+$1344, H012+$24EE, H065+$1300, H065+$1DBE
+; ROUTINE: sub_H063_00003A26 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; calls H026+$01E0, H008+$01FC.
+;   - Calls H026+$01E0.
+;   - Calls H008+$01FC.
+;   - Uses the global state: H005+$3368 (current character); H005+$3DE3 (native context, 5 in combat); H005+$3364 (head of the party list).
+; Direct callers: H033+$1344, H012+$24EE, H065+$1300, H065+$1DBE
 ; --------------------------------------------------------------------------
 L063_00003A26:
 ; H063+$00003A26: 2f0c  move.l a4, -(a7)
@@ -11887,7 +11887,7 @@ L063_00003A52:
 L063_00003A5A:
 ; H063+$00003A5A: 13ed0010000024d8  move.b $10(a5), $24d8.l
         move.b $10(a5), (H005+$24D8).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L063_00003A62:
 ; H063+$00003A62: 23f90000336800002508  move.l $3368.l, $2508.l
         move.l (H005+$3368).l, (H005+$2508).l
@@ -11979,14 +11979,14 @@ L063_00003ADC:
 L063_00003ADE:
 ; H063+$00003ADE: 6100d2a0  bsr.w $d80
         bsr.w H063+$D80
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L063_00003AE2:
 ; H063+$00003AE2: 0c39000200003de3  cmpi.b #$2, $3de3.l
         cmpi.b #$2, (H005+$3DE3).l
 L063_00003AEA:
 ; H063+$00003AEA: 6700000e  beq.w $3afa
         beq.w H063+$3AFA
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L063_00003AEE:
 ; H063+$00003AEE: 0c39000600003de3  cmpi.b #$6, $3de3.l
         cmpi.b #$6, (H005+$3DE3).l
@@ -12002,7 +12002,7 @@ L063_00003B00:
 L063_00003B04:
 ; H063+$00003B04: 422dfffd  clr.b -$3(a5)
         clr.b -$3(a5)
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L063_00003B08:
 ; H063+$00003B08: 4a3900003de3  tst.b $3de3.l
         tst.b (H005+$3DE3).l
@@ -12073,7 +12073,7 @@ L063_00003B60:
 L063_00003B64:
 ; H063+$00003B64: 486dfffe  pea.l -$2(a5)
         pea.l -$2(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L063_00003B68:
 ; H063+$00003B68: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -12116,7 +12116,7 @@ L063_00003B9E:
 L063_00003BA2:
 ; H063+$00003BA2: 6600000a  bne.w $3bae
         bne.w H063+$3BAE
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L063_00003BA6:
 ; H063+$00003BA6: 2b7900003364fff8  move.l $3364.l, -$8(a5)
         move.l (H005+$3364).l, -$8(a5)
@@ -12141,14 +12141,14 @@ L063_00003BC4:
 L063_00003BCC:
 ; H063+$00003BCC: 6000000a  bra.w $3bd8
         bra.w H063+$3BD8
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L063_00003BD0:
 ; H063+$00003BD0: 2b7900003368fff8  move.l $3368.l, -$8(a5)
         move.l (H005+$3368).l, -$8(a5)
 L063_00003BD8:
 ; H063+$00003BD8: 60000054  bra.w $3c2e
         bra.w H063+$3C2E
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L063_00003BDC:
 ; H063+$00003BDC: 2b7900003364fff8  move.l $3364.l, -$8(a5)
         move.l (H005+$3364).l, -$8(a5)
@@ -12158,7 +12158,7 @@ L063_00003BE4:
 L063_00003BE8:
 ; H063+$00003BE8: 2413  move.l (a3), d2
         move.l (a3), d2
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L063_00003BEA:
 ; H063+$00003BEA: b4b900003364  cmp.l $3364.l, d2
         cmp.l (H005+$3364).l, d2
@@ -12240,7 +12240,7 @@ L063_00003C56:
 L063_00003C58:
 ; H063+$00003C58: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H063+$3C34; indici 0..8, default -1.
+; DISPATCH: words relative to H063+$3C34; indices 0..8, default -1.
 L063_00003C5C:
 ; H063+$00003C5C: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -12296,11 +12296,11 @@ L063_00003C9E:
 ; H063+$00003C9E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H063_00003CA0 [parziale]
-; Scopo: Routine del modulo helper per personaggi, inventario e aggiornamento UI; richiama H048+$0F88, H048+$0FBA.
-;   - Richiama H048+$0F88.
-;   - Richiama H048+$0FBA.
-; Chiamanti diretti: H096+$210E, H096+$21D4, H096+$2278, H096+$34A4, H096+$3468, H096+$1E06 e altri 2
+; ROUTINE: sub_H063_00003CA0 [partial]
+; Purpose: Routine of the helpers for characters, inventory and UI update module; calls H048+$0F88, H048+$0FBA.
+;   - Calls H048+$0F88.
+;   - Calls H048+$0FBA.
+; Direct callers: H096+$210E, H096+$21D4, H096+$2278, H096+$34A4, H096+$3468, H096+$1E06 and 2 more
 ; --------------------------------------------------------------------------
 L063_00003CA0:
 ; H063+$00003CA0: 2f0c  move.l a4, -(a7)
@@ -12873,7 +12873,7 @@ L063_00003F38:
 L063_00003F3A:
 ; H063+$00003F3A: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H063+$3F1C; indici 0..7, default -1.
+; DISPATCH: words relative to H063+$3F1C; indices 0..7, default -1.
 L063_00003F3E:
 ; H063+$00003F3E: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -12920,10 +12920,10 @@ L063_00003F70:
 ; H063+$00003F70: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H063_4042 [parziale]
-; Scopo: Trampolino verso H063+$4042; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H063+$4042.
-; Chiamanti diretti: H013+$5A0C, H013+$621A
+; ROUTINE: trampoline_H063_4042 [partial]
+; Purpose: Trampoline to H063+$4042; the actual body is there.
+;   - Jumps to the actual body at H063+$4042.
+; Direct callers: H013+$5A0C, H013+$621A
 ; --------------------------------------------------------------------------
 L063_00003F72:
 ; H063+$00003F72: 2f0c  move.l a4, -(a7)
@@ -13026,7 +13026,7 @@ L063_00003FE6:
 L063_00003FE8:
 ; H063+$00003FE8: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H063+$3FD2; indici 0..2, default -1.
+; DISPATCH: words relative to H063+$3FD2; indices 0..2, default -1.
 L063_00003FEC:
 ; H063+$00003FEC: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -13102,7 +13102,7 @@ L063_0000404E:
 L063_00004050:
 ; H063+$00004050: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H063+$4032; indici 0..7, default -1.
+; DISPATCH: words relative to H063+$4032; indices 0..7, default -1.
 L063_00004054:
 ; H063+$00004054: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)

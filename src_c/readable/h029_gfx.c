@@ -1,4 +1,4 @@
-/* H029: record grafici, bitplane, maschere e disegno dei tile. */
+/* H029: graphic records, bitplanes, masks and tile drawing. */
 #include "h029_gfx.h"
 #include "h038.h"
 #include "h002_dos.h"
@@ -22,22 +22,22 @@
 #include "h010_input.h"
 #include "h049.h"
 
-/* Dati del modulo (offset rispetto ad a4). */
-struct RastPort *g_offscreen_rp;   /* -$4: RastPort sulla bitmap di $3D8E */
+/* Module data (offsets from a4). */
+struct RastPort *g_offscreen_rp;   /* -$4: RastPort on the bitmap of $3D8E */
 u8  g_h029_m5;                  /* -$5 */
 u8  g_h029_m6;                  /* -$6 */
 u8  g_h029_m9;                  /* -$9 */
 u16 g_h029_m10;                 /* -$10 */
-u8 *g_pointer_data;             /* -$14: contenuto di pointers.daa */
-u32 g_pointer_size;             /* -$18: sua dimensione */
-struct Task *g_h029_task;       /* -$20: task del gioco */
-struct View *g_saved_view;      /* -$24: GfxBase->ActiView all'avvio */
-struct View g_offscreen_view;   /* -$36: View della bitmap di $3D8E */
+u8 *g_pointer_data;             /* -$14: contents of pointers.daa */
+u32 g_pointer_size;             /* -$18: its size */
+struct Task *g_h029_task;       /* -$20: task of the game */
+struct View *g_saved_view;      /* -$24: GfxBase->ActiView at start-up */
+struct View g_offscreen_view;   /* -$36: View of the bitmap of $3D8E */
 struct ViewPort g_offscreen_vp; /* -$5E */
 struct RasInfo g_offscreen_ri;  /* -$6A */
-struct Library *g_h029_intuition; /* -$E: intuition.library aperta qui */
-u16 g_h029_m1a;                 /* -$1A: profondita' del disegno fuori schermo */
-u16 g_h029_m8;                  /* -$8: View mostrata da H029+$1576 */
+struct Library *g_h029_intuition; /* -$E: intuition.library opened here */
+u16 g_h029_m1a;                 /* -$1A: depth of the off-screen drawing */
+u16 g_h029_m8;                  /* -$8: View shown by H029+$1576 */
 u16 g_h029_m1c;                 /* -$1C */
 
 /* PORT H029+$0118 */
@@ -54,9 +54,9 @@ void h029_init(void)
 }
 
 /*
- * PORT H029+$0312: scrive value in dst[0..count-1].  Il primo argomento non
- * e' letto.  Il ciclo confronta l'indice (word) con count-1 senza segno:
- * con count = 0 riempie 65536 byte, come l'originale.
+ * PORT H029+$0312: writes value into dst[0..count-1].  The first argument is not
+ * read.  The loop compares the index (word) with count-1 unsigned:
+ * with count = 0 it fills 65536 bytes, like the original.
  */
 void h029_fill_bytes(u16 unused, u8 *dst, u16 count, u8 value)
 {
@@ -74,15 +74,15 @@ void h029_fill_bytes(u16 unused, u8 *dst, u16 count, u8 value)
 }
 
 /*
- * Le 12 voci da $A byte all'inizio di pointers.daa iniziano con l'offset
- * (long) dei dati del puntatore.  L'originale lo trasforma sul posto in un
- * indirizzo assoluto (offset + base); qui l'indirizzo va in questa tabella,
- * perche' sull'host un puntatore non sta in 32 bit, e il buffer resta come
- * e' stato letto.  Chi legge la voce i usa g_pointer_image[i].
+ * The 12 entries of $A bytes at the start of pointers.daa begin with the offset
+ * (long) of the pointer data.  The original turns it in place into an
+ * absolute address (offset + base); here the address goes into this table,
+ * because on the host a pointer does not fit in 32 bits, and the buffer stays as
+ * it was read.  Whoever reads entry i uses g_pointer_image[i].
  */
 u8 *g_pointer_image[12];
 
-/* PORT H029+$0180: libera pointers.daa e toglie il puntatore del mouse. */
+/* PORT H029+$0180: frees pointers.daa and removes the mouse pointer. */
 void free_pointer_data(void)
 {
     if (g_pointer_data != NULL) {
@@ -92,7 +92,7 @@ void free_pointer_data(void)
     }
 }
 
-/* PORT H029+$0234: carica pointers.daa (memoria chip). */
+/* PORT H029+$0234: loads pointers.daa (chip memory). */
 static void load_pointer_data(void)
 {
     cok_bptr file;
@@ -102,7 +102,7 @@ static void load_pointer_data(void)
     if (file == 0) {
         return;
     }
-    /* Seek restituisce la posizione precedente: la seconda da' la lunghezza. */
+    /* Seek returns the previous position: the second one gives the length. */
     g_pointer_size = (u32)dos_seek(file, 0, OFFSET_END);
     g_pointer_size = (u32)dos_seek(file, 0, OFFSET_BEGINNING);
     g_pointer_data = (u8 *)exec_alloc_mem(g_pointer_size, COK_MEMF_CHIP);
@@ -120,7 +120,7 @@ static void load_pointer_data(void)
     dos_close(file);
 }
 
-/* PORT H029+$115C: palette iniziale di 16 colori RGB4 in H005+$52AE. */
+/* PORT H029+$115C: initial palette of 16 RGB4 colours in H005+$52AE. */
 static void set_game_palette(void)
 {
     static const u16 colors[16] = {
@@ -130,21 +130,21 @@ static void set_game_palette(void)
     unsigned i;
 
     for (i = 0; i < 16; ++i) {
-        /* $52AE: palette corrente dello schermo, RGB4 (16 o 32 colori) */
+        /* $52AE: current screen palette, RGB4 (16 or 32 colours) */
         H005_SET_W(0x52AE + i * 2, colors[i]);
     }
-    /* $52AE: palette corrente dello schermo, RGB4 (16 o 32 colori) */
+    /* $52AE: current screen palette, RGB4 (16 or 32 colours) */
     graphics_load_rgb4(&g_screen->ViewPort, &g_h005[0x52AE], 0x10);
 }
 
 /*
- * PORT H029+$1206: apre lo schermo 320x200 a 5 piani senza titolo e la
- * finestra a schermo intero (BACKDROP|BORDERLESS|ACTIVATE|RMBTRAP, IDCMP
- * MOUSEBUTTONS|RAWKEY), indirizza le richieste di sistema alla finestra,
- * imposta la palette e carica i puntatori del mouse.  La prima scrittura
- * va in H024+$4 (move.w #$10F, (H024+$4).l), il Type della NewScreen:
- * CUSTOMSCREEN | SCREENQUIET ($100), lo schermo senza barra del titolo
- * ne' gadget.
+ * PORT H029+$1206: opens the 320x200 5-plane screen without a title and the
+ * full-screen window (BACKDROP|BORDERLESS|ACTIVATE|RMBTRAP, IDCMP
+ * MOUSEBUTTONS|RAWKEY), routes the system requests to the window,
+ * sets the palette and loads the mouse pointers.  The first write
+ * goes to H024+$4 (move.w #$10F, (H024+$4).l), the Type of the NewScreen:
+ * CUSTOMSCREEN | SCREENQUIET ($100), the screen without title bar
+ * or gadgets.
  */
 void open_game_display(void)
 {
@@ -163,7 +163,7 @@ void open_game_display(void)
     load_pointer_data();
 }
 
-/* PORT H029+$12BC: chiude finestra e schermo e riapre il Workbench. */
+/* PORT H029+$12BC: closes window and screen and reopens the Workbench. */
 void close_game_display(void)
 {
     free_pointer_data();
@@ -175,11 +175,11 @@ void close_game_display(void)
 }
 
 /*
- * PORT H029+$0408 (Allocate_GraphicRecord): larghezza = width8 * 8 * count
- * pixel, allineata a 16; record e BitMap a 5 piani, ogni piano allocato e
- * azzerato.  Con with_mask = 1 anche una BitMap di maschera con un solo
- * raster, ripetuto nei 5 piani.  Gli errori di allocazione vanno a
- * H014+$0018 con il numero del piano e "plane alloc problem".
+ * PORT H029+$0408 (Allocate_GraphicRecord): width = width8 * 8 * count
+ * pixels, aligned to 16; record and 5-plane BitMap, every plane allocated and
+ * cleared.  With with_mask = 1 also a mask BitMap with a single
+ * raster, repeated in the 5 planes.  Allocation errors go to
+ * H014+$0018 with the plane number and "plane alloc problem".
  */
 void allocate_gfx_record(u16 rows, u16 count, u16 width8, u16 with_mask,
                          struct GfxRecord **rec)
@@ -232,7 +232,7 @@ void allocate_gfx_record(u16 rows, u16 count, u16 width8, u16 with_mask,
     r->width8 = width8;
 }
 
-/* PORT H029+$1308: byte con segno esteso a word. */
+/* PORT H029+$1308: signed byte extended to a word. */
 static s16 signed_byte(u8 b)
 {
     s16 v = (s16)b;
@@ -244,11 +244,11 @@ static s16 signed_byte(u8 b)
 }
 
 /*
- * PORT H029+$1346 (Prepare_DisplayResources), solo la prima volta
- * ($3D8E nullo): record grafico 320x200 a 5 piani in $3D8E con un suo
- * RastPort, una View con un ViewPort che lo mostra (spostamenti presi
- * dalle Preferences, ColorMap da 32 colori, liste Copper costruite),
- * apertura di intuition.library e salvataggio di GfxBase->ActiView.
+ * PORT H029+$1346 (Prepare_DisplayResources), only the first time
+ * ($3D8E null): 320x200 5-plane graphic record in $3D8E with its own
+ * RastPort, a View with a ViewPort that shows it (offsets taken
+ * from the Preferences, 32-colour ColorMap, Copper lists built),
+ * opening of intuition.library and saving of GfxBase->ActiView.
  */
 void prepare_display_resources(void)
 {
@@ -289,7 +289,7 @@ void prepare_display_resources(void)
     exec_close_library(gfx);
 }
 
-/* Larghezza in pixel del record (unita' * 8 * byte), allineata a 16. */
+/* Width in pixels of the record (units * 8 * bytes), aligned to 16. */
 static u16 gfx_record_width(const struct GfxRecord *r)
 {
     u16 width = (u16)((u16)(r->count << 3) * r->width8);
@@ -301,8 +301,8 @@ static u16 gfx_record_width(const struct GfxRecord *r)
 }
 
 /*
- * PORT H029+$067A (Free_GraphicRecord): libera raster, maschera, BitMap e
- * record; *rec diventa NULL.
+ * PORT H029+$067A (Free_GraphicRecord): frees raster, mask, BitMap and
+ * record; *rec becomes NULL.
  */
 void free_gfx_record(struct GfxRecord **rec)
 {
@@ -326,7 +326,7 @@ void free_gfx_record(struct GfxRecord **rec)
     *rec = NULL;
 }
 
-/* PORT H029+$0354: value AND mask (byte); usata anche come test di bit. */
+/* PORT H029+$0354: value AND mask (byte); also used as a bit test. */
 u8 mask_byte(u8 value, u16 mask)
 {
     return (u8)(mask & value);
@@ -345,12 +345,12 @@ u8 or_byte(u8 value, u16 mask)
 }
 
 /*
- * PORT H029+$0766: costruisce la maschera (un solo raster ripetuto nei 5
- * piani) dell'immagine.  Con un colore trasparente: per ogni piano OR
- * ($E0) del piano dove il bit del colore e' 0, OR del complemento ($B0)
- * dove e' 1, cioe' maschera = pixel diversi dal colore; con meno di 3
- * unita' l'immagine viene poi ridotta alla maschera (AND, $80).  Senza
- * colore (0): maschera = OR di tutti i piani.
+ * PORT H029+$0766: builds the mask (a single raster repeated in the 5
+ * planes) of the picture.  With a transparent colour: for every plane OR
+ * ($E0) of the plane where the colour bit is 0, OR of the complement ($B0)
+ * where it is 1, that is mask = pixels different from the colour; with fewer than 3
+ * units the picture is then reduced to the mask (AND, $80).  Without a
+ * colour (0): mask = OR of all the planes.
  */
 void build_gfx_mask(u8 color, struct GfxRecord *r)
 {
@@ -382,9 +382,9 @@ void build_gfx_mask(u8 color, struct GfxRecord *r)
 }
 
 /*
- * PORT H029+$091E: copia i piani 0..last_plane dal blocco caricato
- * (a partire da offset, un piano dopo l'altro) nell'immagine, poi
- * costruisce la maschera se il record ne ha una.
+ * PORT H029+$091E: copies the planes 0..last_plane from the loaded block
+ * (starting at offset, one plane after the other) into the picture, then
+ * builds the mask if the record has one.
  */
 void transfer_gfx_planes(const u8 *data, u16 offset, u16 last_plane,
                                 u8 mask_color, struct GfxRecord **rec)
@@ -408,11 +408,11 @@ void transfer_gfx_planes(const u8 *data, u16 offset, u16 last_plane,
 }
 
 /*
- * PORT H029+$0A0E (Load_IndexedGraphicRecord): carica il blocco id di
- * name.daa e ne fa un record grafico in *rec (liberando il precedente).
- * Intestazione di 9 byte: righe, unita', due word, larghezza unitaria;
- * i set "8x8..." hanno 4 piani dopo l'intestazione, gli altri una palette
- * di 32 colori (copiata in H005+$522E) e 5 piani.
+ * PORT H029+$0A0E (Load_IndexedGraphicRecord): loads block id of
+ * name.daa and makes a graphic record of it in *rec (freeing the previous one).
+ * 9-byte header: rows, units, two words, unit width;
+ * the "8x8..." sets have 4 planes after the header, the others a palette
+ * of 32 colours (copied into H005+$522E) and 5 planes.
  */
 void load_indexed_gfx_record(u16 name_len, const char *name, u16 id,
                              u16 with_mask, u8 mask_color,
@@ -444,12 +444,12 @@ void load_indexed_gfx_record(u16 name_len, const char *name, u16 id,
     }
     exec_copy_mem(data, header, 9);
     if (last_plane == 4) {
-        /* $522E: palette dell'immagine caricata, 32 colori RGB4 ($40 byte) */
+        /* $522E: palette of the loaded picture, 32 RGB4 colours ($40 bytes) */
         exec_copy_mem(data + 9, &g_h005[0x522E], 0x40);
     }
     allocate_gfx_record(COK_GET16(header), COK_GET16(header + 2), header[8],
                         with_mask, rec);
-    /* Come l'originale: entrambe le word vanno nel campo +$04. */
+    /* As in the original: both words go into the +$04 field. */
     (*rec)->w4 = COK_GET16(header + 4);
     (*rec)->w4 = COK_GET16(header + 6);
     transfer_gfx_planes(data, offset, last_plane, mask_color, rec);
@@ -457,13 +457,13 @@ void load_indexed_gfx_record(u16 name_len, const char *name, u16 id,
 }
 
 /*
- * PORT H029+$0EFE: ricolora il record: ogni colore from[i] diverso da
- * to[i] diventa to[i].  frame < 0: tutto il record; altrimenti la colonna
- * di unita' frame (larghezza count*8 + 1, come nell'originale).  Lavora su
- * una copia temporanea con maschera: per ogni colore, maschera dei pixel
- * di quel colore (H029+$0766) e inversione ($90) dei piani in cui from e
- * to differiscono.  Le due tabelle sono passate per valore (16 byte sullo
- * stack ciascuna); qui si copiano.
+ * PORT H029+$0EFE: recolours the record: every colour from[i] different from
+ * to[i] becomes to[i].  frame < 0: the whole record; otherwise the column
+ * of units frame (width count*8 + 1, as in the original).  It works on
+ * a temporary copy with a mask: for every colour, mask of the pixels
+ * of that colour (H029+$0766) and inversion ($90) of the planes in which from and
+ * to differ.  The two tables are passed by value (16 bytes on the
+ * stack each); here they are copied.
  */
 void remap_gfx_colors(const u8 from[16], const u8 to[16], s16 frame,
                       struct GfxRecord *rec)
@@ -512,10 +512,10 @@ void remap_gfx_colors(const u8 from[16], const u8 to[16], s16 frame,
 }
 
 /*
- * PORT H029+$01B6: imposta il puntatore del mouse shape (0..11) da
- * pointers.daa, se diverso da quello attuale (H029 -$10).  Voce di $A
- * byte: dati (g_pointer_image), +4 e +6 punto caldo, +8 altezza;
- * larghezza 16.
+ * PORT H029+$01B6: sets the mouse pointer shape (0..11) from
+ * pointers.daa, if different from the current one (H029 -$10).  Entry of $A
+ * bytes: data (g_pointer_image), +4 and +6 hot spot, +8 height;
+ * width 16.
  */
 void set_pointer_shape(s16 shape)
 {
@@ -542,9 +542,9 @@ void add_to_byte(u8 *value, u16 delta)
 }
 
 /*
- * PORT H029+$148E: libera la View fuori schermo di H029+$1346 (ColorMap,
- * liste Copper, RastPort), chiude intuition.library aperta li' e libera il
- * record di $3D8E.
+ * PORT H029+$148E: frees the off-screen View of H029+$1346 (ColorMap,
+ * Copper lists, RastPort), closes the intuition.library opened there and frees the
+ * record of $3D8E.
  */
 void release_display_resources(void)
 {
@@ -565,9 +565,9 @@ void release_display_resources(void)
 }
 
 /*
- * PORT H029+$10B8: riempie con pen il rettangolo di celle 8x8 da (col, row)
- * largo width e alto height nella RastPort della finestra.  Il record non
- * e' usato.
+ * PORT H029+$10B8: fills with pen the rectangle of 8x8 cells from (col, row)
+ * width wide and height high in the RastPort of the window.  The record is not
+ * used.
  */
 void fill_cells(u16 col, u16 row, u16 width, u16 height, u8 pen,
                 struct GfxRecord *unused)
@@ -580,8 +580,8 @@ void fill_cells(u16 col, u16 row, u16 width, u16 height, u8 pen,
 }
 
 /*
- * PORT H029+$14F6: aspetta (H010+$0974) finche' lo schermo del gioco e'
- * in primo piano (IntuitionBase->FirstScreen).
+ * PORT H029+$14F6: waits (H010+$0974) until the game screen is
+ * at the front (IntuitionBase->FirstScreen).
  */
 void wait_screen_in_front(void)
 {
@@ -591,8 +591,8 @@ void wait_screen_in_front(void)
 }
 
 /*
- * PORT H029+$1520: copia lo schermo (320x200) nella bitmap fuori schermo
- * di $3D8E; il risultato di BltBitMap va in H005+$3358.
+ * PORT H029+$1520: copies the screen (320x200) into the off-screen bitmap
+ * of $3D8E; the result of BltBitMap goes into H005+$3358.
  */
 void copy_screen_to_offscreen(void)
 {
@@ -601,15 +601,15 @@ void copy_screen_to_offscreen(void)
     r = graphics_blt_bitmap(g_screen->RastPort.BitMap, 0, 0,
                             g_gfx_3d8e->image, 0, 0, 0x140, 0xC8, 0xC0, 0xFF,
                             NULL);
-    H005_SET_W(0x3358, (u16)r); /* $3358: (word) risultato di BltBitMap nella copia dello schermo */
+    H005_SET_W(0x3358, (u16)r); /* $3358: (word) result of BltBitMap in the screen copy */
     g_h029_m8 = 0;
     g_h029_m9 = 0;
 }
 
 /*
- * PORT H029+$1576: scambia la View mostrata: con -$8 = 0 la View fuori
- * schermo (e si disegna sullo schermo), con 1 quella di Intuition (e si
- * disegna fuori schermo); poi aspetta il quadro.
+ * PORT H029+$1576: swaps the View shown: with -$8 = 0 the off-screen
+ * View (and drawing goes to the screen), with 1 the Intuition one (and
+ * drawing goes off screen); then waits for the frame.
  */
 void swap_display_view(void)
 {
@@ -627,9 +627,9 @@ void swap_display_view(void)
 }
 
 /*
- * PORT H029+$16A2: inizio di un aggiornamento: alla prima chiamata copia
- * lo schermo fuori schermo e mostra quella copia (la View di $3D8E) mentre
- * si disegna sullo schermo; le chiamate si annidano (-$1A).
+ * PORT H029+$16A2: start of an update: on the first call copies
+ * the screen off screen and shows that copy (the View of $3D8E) while
+ * drawing on the screen; the calls nest (-$1A).
  */
 void begin_screen_update(void)
 {
@@ -645,8 +645,8 @@ void begin_screen_update(void)
 }
 
 /*
- * PORT H029+$16DE: fine dell'aggiornamento: all'ultima chiamata torna la
- * View di Intuition e il disegno passa al blitter in coda (-$6 = 1).
+ * PORT H029+$16DE: end of the update: on the last call the Intuition
+ * View comes back and drawing passes to the queued blitter (-$6 = 1).
  */
 void end_screen_update(void)
 {
@@ -661,12 +661,12 @@ void end_screen_update(void)
 }
 
 /*
- * PORT H029+$0B94 (Draw_GraphicTile24): disegna il fotogramma frame (24x24,
- * colonna frame*24) di src in (x, y), spostati di 8 pixel in combattimento.
- * Con masked = 1 e una maschera usa il cookie-cut (minterm $CA col blitter
- * in coda, $E0 con BltMaskBitMapRastPort), altrimenti copia.  La RastPort
- * e' quella fuori schermo se attiva (-$5), altrimenti quella dello schermo
- * (-$9 = 1).  unused ($3D8E) non e' letto.
+ * PORT H029+$0B94 (Draw_GraphicTile24): draws frame frame (24x24,
+ * column frame*24) of src at (x, y), moved by 8 pixels in combat.
+ * With masked = 1 and a mask it uses the cookie-cut (minterm $CA with the queued
+ * blitter, $E0 with BltMaskBitMapRastPort), otherwise it copies.  The RastPort
+ * is the off-screen one if active (-$5), otherwise the screen one
+ * (-$9 = 1).  unused ($3D8E) is not read.
  */
 void draw_tile24(u16 x, u16 y, u8 frame, u8 masked, struct GfxRecord *src,
                  struct GfxRecord *unused)
@@ -677,7 +677,7 @@ void draw_tile24(u16 x, u16 y, u8 frame, u8 masked, struct GfxRecord *src,
 
     (void)unused;
     src_x = (u16)(frame * 0x18);
-    /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
+    /* $3DE3: game mode (0 menu, 1 view, 2 camp, 5 combat) */
     off = H005_B(0x3DE3) ? 8 : 0;
     if (g_h029_m5) {
         rp = g_offscreen_rp;
@@ -708,9 +708,9 @@ void draw_tile24(u16 x, u16 y, u8 frame, u8 masked, struct GfxRecord *src,
 }
 
 /*
- * PORT H029+$0D58: come H029+$0B94; con mode = 5 prima salva in $3D8A la
- * casella 24x24 di destinazione (dallo schermo o da $3D8E) e disegna con
- * la maschera.
+ * PORT H029+$0D58: like H029+$0B94; with mode = 5 it first saves in $3D8A the
+ * destination 24x24 square (from the screen or from $3D8E) and draws with
+ * the mask.
  */
 void draw_tile24_saving(u16 x, u16 y, u8 frame, u8 mode,
                         struct GfxRecord *src, struct GfxRecord *unused)
@@ -735,9 +735,9 @@ void draw_tile24_saving(u16 x, u16 y, u8 frame, u8 mode,
 }
 
 /*
- * PORT H029+$1718: copia nella View fuori schermo i 32 colori dello
- * schermo di Intuition, letti dalla sua lista Copper (View di avvio, -$24):
- * dalla MOVE COLOR00 = 0 si prendono i valori di 32 MOVE consecutive.
+ * PORT H029+$1718: copies into the off-screen View the 32 colours of the
+ * Intuition screen, read from its Copper list (start-up View, -$24):
+ * from the MOVE COLOR00 = 0 the values of 32 consecutive MOVEs are taken.
  */
 void copy_intuition_colors(void)
 {
@@ -758,8 +758,8 @@ void copy_intuition_colors(void)
 }
 
 /*
- * PORT H029+$0E26: copia nel record (BitMap +$10) il riquadro dello
- * schermo alla cella (x, y) da 8 pixel, largo count*8 e alto rows.
+ * PORT H029+$0E26: copies into the record (BitMap +$10) the screen box
+ * at the cell (x, y) of 8 pixels, count*8 wide and rows high.
  */
 void save_screen_cell(u16 x, u16 y, struct GfxRecord *rec)
 {
@@ -771,7 +771,7 @@ void save_screen_cell(u16 x, u16 y, struct GfxRecord *rec)
                               rec->rows, 0xC0, 0xFF, NULL);
 }
 
-/* PORT H029+$0E92: rimette sullo schermo il riquadro salvato da $0E26. */
+/* PORT H029+$0E92: puts back on the screen the box saved by $0E26. */
 void restore_screen_cell(u16 x, u16 y, struct GfxRecord *rec)
 {
     if (rec == NULL) {

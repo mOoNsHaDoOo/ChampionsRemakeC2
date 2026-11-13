@@ -1,18 +1,18 @@
-/* H014: Presentazione/gestione degli errori del programma. */
+/* H014: Presentation/handling of the program errors. */
 #include "h014.h"
 #include "h010_input.h"
 #include "h026_string.h"
 #include "h030.h"
 #include "h045.h"
 
-/* PORT H014+$000A: link/unlk, nessun effetto. */
+/* PORT H014+$000A: link/unlk, no effect. */
 void h014_init(void)
 {
 }
 
 /*
- * PORT H014+$0018: "msg>valore. " (valore su 8 cifre con zeri) in alto a
- * sinistra, poi attende un tasto.
+ * PORT H014+$0018: "msg>value. " (value in 8 digits with zeros) at the top
+ * left, then waits for a key.
  */
 void error_message(u16 len, const char *msg, u16 value)
 {

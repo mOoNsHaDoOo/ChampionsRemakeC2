@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H048
-; Servizi grafici e geometrici usati dal combattimento; dettaglio parziale.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H048
+; Graphic and geometric services used by combat; partial detail.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Servizi grafici e geometrici usati dal combattimento: posizioni, riquadri, proiezioni e supporto al disegno degli attori.
+; MODULE NOTE
+; Graphic and geometric services used by combat: positions, boxes, projections and support for drawing the actors.
 ; --------------------------------------------------------------------------
 ; H048: 6636 original bytes; all offsets are section-relative.
         section H048,code
@@ -16,10 +16,10 @@ H048:
         dc.w $0000,$0000
         dc.l H048+$00000004
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H048 [parziale]
-; Scopo: Ingresso del modulo servizi grafici e geometrici usati dal combattimento; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H048+$19E0.
-; Chiamanti diretti: H000+$018C
+; ROUTINE: module_init_H048 [partial]
+; Purpose: Entry of the graphics and geometry services used by combat module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H048+$19E0.
+; Direct callers: H000+$018C
 ; --------------------------------------------------------------------------
 L048_00000008:
 ; H048+$00000008: 2f0c  move.l a4, -(a7)
@@ -42,10 +42,10 @@ L048_00000012:
         dc.l H005+$0000247B
         dc.w $4E5D,$285F,$4E75
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H048_00B6 [parziale]
-; Scopo: Trampolino verso H048+$00B6; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H048+$00B6.
-; Chiamanti diretti: H077+$08D4, H048+$065E, H077+$09A0, H048+$11D2, H048+$09DE, H048+$0390 e altri 2
+; ROUTINE: trampoline_H048_00B6 [partial]
+; Purpose: Trampoline to H048+$00B6; the actual body is there.
+;   - Jumps to the actual body at H048+$00B6.
+; Direct callers: H077+$08D4, H048+$065E, H077+$09A0, H048+$11D2, H048+$09DE, H048+$0390 and 2 more
 ; --------------------------------------------------------------------------
 L048_00000044:
 ; H048+$00000044: 2f0c  move.l a4, -(a7)
@@ -161,10 +161,10 @@ L048_000000C0:
 ; H048+$000000C0: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H048_000000C2 [parziale]
-; Scopo: Routine del modulo servizi grafici e geometrici usati dal combattimento; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H048+$0DD0
+; ROUTINE: sub_H048_000000C2 [partial]
+; Purpose: Routine of the graphics and geometry services used by combat module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H048+$0DD0
 ; --------------------------------------------------------------------------
 L048_000000C2:
 ; H048+$000000C2: 2f0c  move.l a4, -(a7)
@@ -287,10 +287,10 @@ L048_00000152:
 ; H048+$00000152: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H048_00000154 [parziale]
-; Scopo: Routine del modulo servizi grafici e geometrici usati dal combattimento; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H027+$27BC, H085+$283C, H085+$124E, H085+$1332, H048+$05CE, H085+$144A e altri 9
+; ROUTINE: sub_H048_00000154 [partial]
+; Purpose: Routine of the graphics and geometry services used by combat module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H027+$27BC, H085+$283C, H085+$124E, H085+$1332, H048+$05CE, H085+$144A and 9 more
 ; --------------------------------------------------------------------------
 L048_00000154:
 ; H048+$00000154: 2f0c  move.l a4, -(a7)
@@ -416,10 +416,10 @@ L048_000001E6:
 ; H048+$000001E6: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H048_000001E8 [parziale]
-; Scopo: Routine del modulo servizi grafici e geometrici usati dal combattimento; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H048+$067E, H048+$0F20, H048+$07A2, H048+$03B0, H048+$02E0, H063+$244E e altri 3
+; ROUTINE: sub_H048_000001E8 [partial]
+; Purpose: Routine of the graphics and geometry services used by combat module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H048+$067E, H048+$0F20, H048+$07A2, H048+$03B0, H048+$02E0, H063+$244E and 3 more
 ; --------------------------------------------------------------------------
 L048_000001E8:
 ; H048+$000001E8: 2f0c  move.l a4, -(a7)
@@ -484,10 +484,10 @@ L048_0000022E:
 ; H048+$0000022E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H048_00000230 [parziale]
-; Scopo: Routine del modulo servizi grafici e geometrici usati dal combattimento; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H063+$27C0, H048+$138A, H096+$2204, H096+$224E, H048+$1010, H096+$24BE e altri 3
+; ROUTINE: sub_H048_00000230 [partial]
+; Purpose: Routine of the graphics and geometry services used by combat module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H063+$27C0, H048+$138A, H096+$2204, H096+$224E, H048+$1010, H096+$24BE and 3 more
 ; --------------------------------------------------------------------------
 L048_00000230:
 ; H048+$00000230: 2f0c  move.l a4, -(a7)
@@ -706,13 +706,13 @@ L048_00000332:
 ; H048+$00000332: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H048_00000334 [parziale]
-; Scopo: Routine del modulo servizi grafici e geometrici usati dal combattimento; richiama H029+$16A2, H035+$019A, H035+$0460, H029+$16DE.
-;   - Richiama H029+$16A2.
-;   - Richiama H035+$019A.
-;   - Richiama H035+$0460.
-;   - Richiama H029+$16DE.
-; Chiamanti diretti: H048+$0F74
+; ROUTINE: sub_H048_00000334 [partial]
+; Purpose: Routine of the graphics and geometry services used by combat module; calls H029+$16A2, H035+$019A, H035+$0460, H029+$16DE.
+;   - Calls H029+$16A2.
+;   - Calls H035+$019A.
+;   - Calls H035+$0460.
+;   - Calls H029+$16DE.
+; Direct callers: H048+$0F74
 ; --------------------------------------------------------------------------
 L048_00000334:
 ; H048+$00000334: 2f0c  move.l a4, -(a7)
@@ -1210,10 +1210,10 @@ L048_00000586:
 ; H048+$00000586: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H048_00000588 [parziale]
-; Scopo: Routine del modulo servizi grafici e geometrici usati dal combattimento; richiama H035+$019A.
-;   - Richiama H035+$019A.
-; Chiamanti diretti: H085+$38CC, H048+$08C2, H048+$13B2, H048+$1652, H048+$1090, H062+$1738 e altri 2
+; ROUTINE: sub_H048_00000588 [partial]
+; Purpose: Routine of the graphics and geometry services used by combat module; calls H035+$019A.
+;   - Calls H035+$019A.
+; Direct callers: H085+$38CC, H048+$08C2, H048+$13B2, H048+$1652, H048+$1090, H062+$1738 and 2 more
 ; --------------------------------------------------------------------------
 L048_00000588:
 ; H048+$00000588: 2f0c  move.l a4, -(a7)
@@ -1832,12 +1832,12 @@ L048_00000882:
 ; H048+$00000882: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H048_00000884 [parziale]
-; Scopo: Routine del modulo servizi grafici e geometrici usati dal combattimento; richiama H029+$16A2, H035+$0460, H029+$16DE.
-;   - Richiama H029+$16A2.
-;   - Richiama H035+$0460.
-;   - Richiama H029+$16DE.
-; Chiamanti diretti: H048+$0EFC, H096+$3056, H096+$2CF2, H096+$45B0, H096+$4A40, H096+$4314 e altri 2
+; ROUTINE: sub_H048_00000884 [partial]
+; Purpose: Routine of the graphics and geometry services used by combat module; calls H029+$16A2, H035+$0460, H029+$16DE.
+;   - Calls H029+$16A2.
+;   - Calls H035+$0460.
+;   - Calls H029+$16DE.
+; Direct callers: H048+$0EFC, H096+$3056, H096+$2CF2, H096+$45B0, H096+$4A40, H096+$4314 and 2 more
 ; --------------------------------------------------------------------------
 L048_00000884:
 ; H048+$00000884: 2f0c  move.l a4, -(a7)
@@ -2017,10 +2017,10 @@ L048_00000954:
 ; H048+$00000954: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H048_00000956 [parziale]
-; Scopo: Routine del modulo servizi grafici e geometrici usati dal combattimento; richiama H029+$0312.
-;   - Richiama H029+$0312.
-; Chiamanti diretti: H048+$193C, H048+$1670, H095+$2004, H095+$23E4, H062+$1752, H096+$0B86
+; ROUTINE: sub_H048_00000956 [partial]
+; Purpose: Routine of the graphics and geometry services used by combat module; calls H029+$0312.
+;   - Calls H029+$0312.
+; Direct callers: H048+$193C, H048+$1670, H095+$2004, H095+$23E4, H062+$1752, H096+$0B86
 ; --------------------------------------------------------------------------
 L048_00000956:
 ; H048+$00000956: 2f0c  move.l a4, -(a7)
@@ -2291,10 +2291,10 @@ L048_00000AA6:
 ; H048+$00000AA6: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H048_00000AA8 [parziale]
-; Scopo: Routine del modulo servizi grafici e geometrici usati dal combattimento; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H085+$38C4, H048+$0F96, H048+$0FC8, H048+$111A, H048+$16F2, H048+$1978 e altri 16
+; ROUTINE: sub_H048_00000AA8 [partial]
+; Purpose: Routine of the graphics and geometry services used by combat module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H085+$38C4, H048+$0F96, H048+$0FC8, H048+$111A, H048+$16F2, H048+$1978 and 16 more
 ; --------------------------------------------------------------------------
 L048_00000AA8:
 ; H048+$00000AA8: 2f0c  move.l a4, -(a7)
@@ -2395,12 +2395,12 @@ L048_00000B18:
 ; H048+$00000B18: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H048_00000B1A [parziale]
-; Scopo: Routine del modulo servizi grafici e geometrici usati dal combattimento; richiama H029+$16A2, H035+$019A, H029+$16DE.
-;   - Richiama H029+$16A2.
-;   - Richiama H035+$019A.
-;   - Richiama H029+$16DE.
-; Chiamanti diretti: H048+$0E40
+; ROUTINE: sub_H048_00000B1A [partial]
+; Purpose: Routine of the graphics and geometry services used by combat module; calls H029+$16A2, H035+$019A, H029+$16DE.
+;   - Calls H029+$16A2.
+;   - Calls H035+$019A.
+;   - Calls H029+$16DE.
+; Direct callers: H048+$0E40
 ; --------------------------------------------------------------------------
 L048_00000B1A:
 ; H048+$00000B1A: 2f0c  move.l a4, -(a7)
@@ -2962,12 +2962,12 @@ L048_00000DF0:
 ; H048+$00000DF0: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H048_00000DF2 [parziale]
-; Scopo: Routine del modulo servizi grafici e geometrici usati dal combattimento; richiama H029+$16A2, H035+$0460, H029+$16DE.
-;   - Richiama H029+$16A2.
-;   - Richiama H035+$0460.
-;   - Richiama H029+$16DE.
-; Chiamanti diretti: H085+$3910, H085+$16F2, H048+$19BC, H027+$29B6, H063+$27EE, H085+$2AFE e altri 21
+; ROUTINE: sub_H048_00000DF2 [partial]
+; Purpose: Routine of the graphics and geometry services used by combat module; calls H029+$16A2, H035+$0460, H029+$16DE.
+;   - Calls H029+$16A2.
+;   - Calls H035+$0460.
+;   - Calls H029+$16DE.
+; Direct callers: H085+$3910, H085+$16F2, H048+$19BC, H027+$29B6, H063+$27EE, H085+$2AFE and 21 more
 ; --------------------------------------------------------------------------
 L048_00000DF2:
 ; H048+$00000DF2: 2f0c  move.l a4, -(a7)
@@ -3300,10 +3300,10 @@ L048_00000F86:
 ; H048+$00000F86: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H048_00000F88 [parziale]
-; Scopo: Routine del modulo servizi grafici e geometrici usati dal combattimento; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H027+$1A52, H027+$1E54, H027+$22A2, H027+$2A64, H027+$2ADE, H027+$2AFA e altri 53
+; ROUTINE: sub_H048_00000F88 [partial]
+; Purpose: Routine of the graphics and geometry services used by combat module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H027+$1A52, H027+$1E54, H027+$22A2, H027+$2A64, H027+$2ADE, H027+$2AFA and 53 more
 ; --------------------------------------------------------------------------
 L048_00000F88:
 ; H048+$00000F88: 2f0c  move.l a4, -(a7)
@@ -3354,10 +3354,10 @@ L048_00000FB8:
 ; H048+$00000FB8: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H048_00000FBA [parziale]
-; Scopo: Routine del modulo servizi grafici e geometrici usati dal combattimento; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H027+$1A60, H027+$1E62, H027+$22B0, H027+$2A76, H027+$2AEC, H027+$2B08 e altri 53
+; ROUTINE: sub_H048_00000FBA [partial]
+; Purpose: Routine of the graphics and geometry services used by combat module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H027+$1A60, H027+$1E62, H027+$22B0, H027+$2A76, H027+$2AEC, H027+$2B08 and 53 more
 ; --------------------------------------------------------------------------
 L048_00000FBA:
 ; H048+$00000FBA: 2f0c  move.l a4, -(a7)
@@ -3408,12 +3408,12 @@ L048_00000FEA:
 ; H048+$00000FEA: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H048_00000FEC [parziale]
-; Scopo: Routine del modulo servizi grafici e geometrici usati dal combattimento; richiama H029+$16A2, H035+$0460, H029+$16DE.
-;   - Richiama H029+$16A2.
-;   - Richiama H035+$0460.
-;   - Richiama H029+$16DE.
-; Chiamanti diretti: H096+$226A, H096+$229C, H096+$24EA, H096+$2504, H033+$1624, H033+$16CA e altri 3
+; ROUTINE: sub_H048_00000FEC [partial]
+; Purpose: Routine of the graphics and geometry services used by combat module; calls H029+$16A2, H035+$0460, H029+$16DE.
+;   - Calls H029+$16A2.
+;   - Calls H035+$0460.
+;   - Calls H029+$16DE.
+; Direct callers: H096+$226A, H096+$229C, H096+$24EA, H096+$2504, H033+$1624, H033+$16CA and 3 more
 ; --------------------------------------------------------------------------
 L048_00000FEC:
 ; H048+$00000FEC: 2f0c  move.l a4, -(a7)
@@ -3659,10 +3659,10 @@ L048_0000110A:
 ; H048+$0000110A: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H048_0000110C [parziale]
-; Scopo: Routine del modulo servizi grafici e geometrici usati dal combattimento; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H027+$1A76, H027+$1E78, H027+$22C6, H027+$2B72, H027+$31AE, H063+$2E3A e altri 6
+; ROUTINE: sub_H048_0000110C [partial]
+; Purpose: Routine of the graphics and geometry services used by combat module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H027+$1A76, H027+$1E78, H027+$22C6, H027+$2B72, H027+$31AE, H063+$2E3A and 6 more
 ; --------------------------------------------------------------------------
 L048_0000110C:
 ; H048+$0000110C: 2f0c  move.l a4, -(a7)
@@ -3713,10 +3713,10 @@ L048_0000113C:
 ; H048+$0000113C: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H048_0000113E [parziale]
-; Scopo: Routine del modulo servizi grafici e geometrici usati dal combattimento; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H048+$1774, H062+$106A, H096+$02FC, H095+$19FA, H059+$0A7C, H097+$125A
+; ROUTINE: sub_H048_0000113E [partial]
+; Purpose: Routine of the graphics and geometry services used by combat module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H048+$1774, H062+$106A, H096+$02FC, H095+$19FA, H059+$0A7C, H097+$125A
 ; --------------------------------------------------------------------------
 L048_0000113E:
 ; H048+$0000113E: 2f0c  move.l a4, -(a7)
@@ -4050,7 +4050,7 @@ L048_000012D6:
 L048_000012D8:
 ; H048+$000012D8: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H048+$12C2; indici 0..1, default -1.
+; DISPATCH: words relative to H048+$12C2; indices 0..1, default -1.
 L048_000012DC:
 ; H048+$000012DC: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -4076,14 +4076,14 @@ L048_000012F2:
 ; H048+$000012F2: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H048_000012F4 [parziale]
-; Scopo: Routine del modulo servizi grafici e geometrici usati dal combattimento; richiama H043+$190E, H030+$0B4A, H029+$0D58, H036+$0034.
-;   - Richiama H043+$190E.
-;   - Richiama H030+$0B4A.
-;   - Richiama H029+$0D58.
-;   - Richiama H036+$0034.
-;   - Usa lo stato globale: H005+$3DE3 (contesto nativo, 5 nel combattimento).
-; Chiamanti diretti: H062+$28C0, H062+$03BC, H062+$251A, H096+$0890, H096+$1A72
+; ROUTINE: sub_H048_000012F4 [partial]
+; Purpose: Routine of the graphics and geometry services used by combat module; calls H043+$190E, H030+$0B4A, H029+$0D58, H036+$0034.
+;   - Calls H043+$190E.
+;   - Calls H030+$0B4A.
+;   - Calls H029+$0D58.
+;   - Calls H036+$0034.
+;   - Uses the global state: H005+$3DE3 (native context, 5 in combat).
+; Direct callers: H062+$28C0, H062+$03BC, H062+$251A, H096+$0890, H096+$1A72
 ; --------------------------------------------------------------------------
 L048_000012F4:
 ; H048+$000012F4: 2f0c  move.l a4, -(a7)
@@ -4094,7 +4094,7 @@ L048_000012F6:
 L048_000012FA:
 ; H048+$000012FA: 4e55ffee  link.w a5, #$ffee
         link.w a5, #$ffee
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L048_000012FE:
 ; H048+$000012FE: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
@@ -4104,7 +4104,7 @@ L048_00001306:
 L048_0000130A:
 ; H048+$0000130A: 3f3c000a  move.w #$a, -(a7)
         move.w #$a, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L048_0000130E:
 ; H048+$0000130E: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
@@ -4280,7 +4280,7 @@ L048_000013EA:
 L048_000013EE:
 ; H048+$000013EE: 3f3c0008  move.w #$8, -(a7)
         move.w #$8, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L048_000013F2:
 ; H048+$000013F2: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
@@ -4290,7 +4290,7 @@ L048_000013F8:
 L048_000013FC:
 ; H048+$000013FC: 3f3c0009  move.w #$9, -(a7)
         move.w #$9, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L048_00001400:
 ; H048+$00001400: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
@@ -4300,7 +4300,7 @@ L048_00001406:
 L048_0000140A:
 ; H048+$0000140A: 3f3c000a  move.w #$a, -(a7)
         move.w #$a, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L048_0000140E:
 ; H048+$0000140E: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
@@ -4310,7 +4310,7 @@ L048_00001414:
 L048_00001416:
 ; H048+$00001416: 3f3c000b  move.w #$b, -(a7)
         move.w #$b, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L048_0000141A:
 ; H048+$0000141A: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
@@ -4320,7 +4320,7 @@ L048_00001420:
 L048_00001422:
 ; H048+$00001422: 3f3c000c  move.w #$c, -(a7)
         move.w #$c, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L048_00001426:
 ; H048+$00001426: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
@@ -4353,7 +4353,7 @@ L048_00001448:
 L048_0000144A:
 ; H048+$0000144A: 38334000  move.w (a3, d4.w), d4
         move.w (a3, d4.w), d4
-; DISPATCH: word relative a H048+$1432; indici 0..3, default -1.
+; DISPATCH: words relative to H048+$1432; indices 0..3, default -1.
 L048_0000144E:
 ; H048+$0000144E: 4eb34000  jsr (a3, d4.w)
         jsr (a3, d4.w)
@@ -4871,12 +4871,12 @@ L048_000016D2:
 ; H048+$000016D2: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H048_000016D4 [parziale]
-; Scopo: Routine del modulo servizi grafici e geometrici usati dal combattimento; richiama H029+$0354, H029+$0312.
-;   - Richiama H029+$0354.
-;   - Richiama H029+$0312.
-;   - Usa lo stato globale: H005+$3DE3 (contesto nativo, 5 nel combattimento).
-; Chiamanti diretti: H085+$38E8, H062+$269C, H059+$0788
+; ROUTINE: sub_H048_000016D4 [partial]
+; Purpose: Routine of the graphics and geometry services used by combat module; calls H029+$0354, H029+$0312.
+;   - Calls H029+$0354.
+;   - Calls H029+$0312.
+;   - Uses the global state: H005+$3DE3 (native context, 5 in combat).
+; Direct callers: H085+$38E8, H062+$269C, H059+$0788
 ; --------------------------------------------------------------------------
 L048_000016D4:
 ; H048+$000016D4: 2f0c  move.l a4, -(a7)
@@ -4887,7 +4887,7 @@ L048_000016D6:
 L048_000016DA:
 ; H048+$000016DA: 4e55fff4  link.w a5, #$fff4
         link.w a5, #$fff4
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L048_000016DE:
 ; H048+$000016DE: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
@@ -5392,10 +5392,10 @@ L048_0000195C:
 ; H048+$0000195C: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H048_0000195E [parziale]
-; Scopo: Routine del modulo servizi grafici e geometrici usati dal combattimento; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H062+$26EE, H096+$3BF4, H059+$1544, H059+$1460, H059+$1408, H096+$31A4 e altri 2
+; ROUTINE: sub_H048_0000195E [partial]
+; Purpose: Routine of the graphics and geometry services used by combat module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H062+$26EE, H096+$3BF4, H059+$1544, H059+$1460, H059+$1408, H096+$31A4 and 2 more
 ; --------------------------------------------------------------------------
 L048_0000195E:
 ; H048+$0000195E: 2f0c  move.l a4, -(a7)

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Ricostruisce i byte di un hunk da rebuild/source/Hnnn.asm.
+"""Rebuilds the bytes of a hunk from rebuild/source/Hnnn.asm.
 
-Usa le righe di commento '; Hnnn+$OFFSET: HEX  ...' (codice) e i blocchi
-'Preserved bytes Hnnn+$A..$B' seguiti da dc.w/dc.l/dc.b (dati).
-Uso: hunkbytes.py SRC_DIR HUNK OFFSET [LEN] | --str HUNK OFFSET | --ptr HUNK OFFSET
+Uses the comment lines '; Hnnn+$OFFSET: HEX  ...' (code) and the blocks
+'Preserved bytes Hnnn+$A..$B' followed by dc.w/dc.l/dc.b (data).
+Usage: hunkbytes.py SRC_DIR HUNK OFFSET [LEN] | --str HUNK OFFSET | --ptr HUNK OFFSET
 """
 import re, sys, os
 
@@ -31,7 +31,7 @@ def load(src, hunk):
                 if item.startswith("$"):
                     v = int(item[1:], 16)
                     n = {"b": 1, "w": 2, "l": 4}[kind]
-                elif kind == "l":            # rilocazione: Hnnn+$X -> 4 byte segnaposto
+                elif kind == "l":            # relocation: Hnnn+$X -> 4 placeholder bytes
                     v, n = None, 4
                 else:
                     continue

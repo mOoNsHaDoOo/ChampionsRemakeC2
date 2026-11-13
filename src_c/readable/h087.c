@@ -1,16 +1,16 @@
-/* H087: Lettura BMHD, palette e BODY delle immagini ILBM. */
+/* H087: Reading of BMHD, palette and BODY of ILBM pictures. */
 #include "h087.h"
 #include "h003_exec.h"
 #include "h015_runtime.h"
 
-/* PORT H087+$0004: link/unlk, nessun effetto. */
+/* PORT H087+$0004: link/unlk, no effect. */
 void h087_init(void)
 {
 }
 
 /*
- * PORT H087+$000C (GetBMHD): 20 byte del chunk BMHD.  L'originale li legge
- * direttamente nella struttura; qui in un buffer, convertiti da big-endian.
+ * PORT H087+$000C (GetBMHD): 20 bytes of the BMHD chunk.  The original reads
+ * them straight into the structure; here into a buffer, converted from big-endian.
  */
 s32 ilbm_get_bmhd(GroupContext *context, BitMapHeader *bm_hdr)
 {
@@ -36,8 +36,8 @@ s32 ilbm_get_bmhd(GroupContext *context, BitMapHeader *bm_hdr)
 }
 
 /*
- * PORT H087+$009C (GetCMAP): al massimo *n_color_regs colori (terne RGB a
- * 8 bit ridotte a RGB4); *n_color_regs diventa il numero letto.
+ * PORT H087+$009C (GetCMAP): at most *n_color_regs colours (8-bit RGB
+ * triples reduced to RGB4); *n_color_regs becomes the number read.
  */
 s32 ilbm_get_cmap(GroupContext *context, u16 *color_map, u8 *n_color_regs)
 {
@@ -62,10 +62,10 @@ s32 ilbm_get_cmap(GroupContext *context, u16 *color_map, u8 *n_color_regs)
 }
 
 /*
- * PORT H087+$0166 (GetBODY): legge il BODY riga per riga nei piani della
- * bitmap (piani in piu' del file e maschera senza destinazione vanno nel
- * primo blocco del buffer, che fa da cestino).  buffer/buf_size sono il
- * buffer di lettura del chunk; servono almeno due righe compresse.
+ * PORT H087+$0166 (GetBODY): reads the BODY row by row into the planes of
+ * the bitmap (extra planes of the file and a mask without a destination go
+ * into the first block of the buffer, which acts as a bin).  buffer/buf_size
+ * are the read buffer of the chunk; at least two compressed rows are needed.
  */
 s32 ilbm_get_body(GroupContext *context, struct BitMap *bitmap, u8 *mask,
                   BitMapHeader *bm_hdr, u8 *buffer, s32 buf_size)
@@ -102,7 +102,7 @@ s32 ilbm_get_body(GroupContext *context, struct BitMap *bitmap, u8 *mask,
         planes[i_plane] = NULL;
     }
     if (bm_hdr->masking == MSK_HAS_MASK) {
-        planes[src_plane_cnt] = mask;   /* NULL se non richiesta */
+        planes[src_plane_cnt] = mask;   /* NULL if not requested */
         ++src_plane_cnt;
     }
 
@@ -121,7 +121,7 @@ s32 ilbm_get_body(GroupContext *context, struct BitMap *bitmap, u8 *mask,
             n_empty = (u16)(buf - buffer);
             n_filled = (u16)(buf_size - n_empty);
             if ((s32)n_filled < buf_row_bytes) {
-                /* Sposta i dati rimasti all'inizio e riempie il resto. */
+                /* Moves the remaining data to the start and fills the rest. */
                 exec_copy_mem(buf, buffer, n_filled);
                 if ((s32)n_empty > iff_chunk_more_bytes(context)) {
                     n_empty = (u16)iff_chunk_more_bytes(context);

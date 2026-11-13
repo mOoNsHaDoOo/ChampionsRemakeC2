@@ -1,29 +1,29 @@
 /*
- * H086: parser IFF generico (iff.c "IFF85" di Electronic Arts, 1985).
+ * H086: generic IFF parser (Electronic Arts' "IFF85" iff.c, 1985).
  *
- * Differenza dall'originale: intestazioni dei chunk e sottotipi sono letti
- * in un buffer di byte e convertiti da big-endian (COK_GET32), invece di
- * essere letti direttamente nei campi LONG; sull'Amiga il risultato e' lo
- * stesso, sull'host (little-endian) e' quello corretto.
+ * Difference from the original: chunk headers and subtypes are read
+ * into a byte buffer and converted from big-endian (COK_GET32), instead of
+ * being read straight into the LONG fields; on the Amiga the result is the
+ * same, on the host (little-endian) it is the correct one.
  */
 #include "h086.h"
 #include "h098.h"
 
-/* PORT H086+$0004: link/unlk, nessun effetto. */
+/* PORT H086+$0004: link/unlk, no effect. */
 void h086_init(void)
 {
 }
 
 /*
- * PORT H086+$000C (FileLength): va alla fine del file; la seconda GSeek
- * (spostamento 0 da OFFSET_CURRENT) restituisce quella posizione, cioe' la
- * lunghezza.  Il file resta alla fine: lo riavvolge OpenRIFF.
+ * PORT H086+$000C (FileLength): goes to the end of the file; the second GSeek
+ * (offset 0 from OFFSET_CURRENT) returns that position, that is the
+ * length.  The file stays at the end: OpenRIFF rewinds it.
  */
 s32 iff_file_length(cok_bptr file)
 {
     s32 length = NO_FILE;
 
-    /* tst.l / bls: con file 0 resta NO_FILE (confronto senza segno). */
+    /* tst.l / bls: with file 0 it stays NO_FILE (unsigned comparison). */
     if (file != 0) {
         (void)gio_seek(file, 0, OFFSET_END);
         length = gio_seek(file, 0, OFFSET_CURRENT);
@@ -49,7 +49,7 @@ s32 iff_skip_fwd(GroupContext *context, s32 bytes)
     return iffp;
 }
 
-/* PORT H086+$00C0 (OpenRIFF): contesto del file intero. */
+/* PORT H086+$00C0 (OpenRIFF): context of the whole file. */
 s32 iff_open_riff(cok_bptr file, GroupContext *new_ctx,
                   ClientFrame *client_frame)
 {
@@ -74,7 +74,7 @@ s32 iff_open_riff(cok_bptr file, GroupContext *new_ctx,
     return iffp;
 }
 
-/* PORT H086+$015C (OpenRGroup): contesto del gruppo nel chunk corrente. */
+/* PORT H086+$015C (OpenRGroup): context of the group in the current chunk. */
 s32 iff_open_rgroup(GroupContext *parent, GroupContext *new_ctx)
 {
     s32 iffp = IFF_OKAY;
@@ -94,7 +94,7 @@ s32 iff_open_rgroup(GroupContext *parent, GroupContext *new_ctx)
     return iffp;
 }
 
-/* PORT H086+$01F8 (CloseRGroup): riporta la posizione nel genitore. */
+/* PORT H086+$01F8 (CloseRGroup): moves the position back in the parent. */
 s32 iff_close_rgroup(GroupContext *context)
 {
     s32 position;
@@ -108,9 +108,9 @@ s32 iff_close_rgroup(GroupContext *context)
 }
 
 /*
- * PORT H086+$022E (GetChunkHdr): salta il resto del chunk corrente (con il
- * byte di riempimento) e legge l'intestazione del successivo.  Restituisce
- * l'ID del chunk oppure un IFFP negativo, lasciato anche in ck_id.
+ * PORT H086+$022E (GetChunkHdr): skips the rest of the current chunk (with the
+ * pad byte) and reads the header of the next one.  Returns
+ * the chunk ID or a negative IFFP, which is also left in ck_id.
  */
 s32 iff_get_chunk_hdr(GroupContext *context)
 {
@@ -171,8 +171,8 @@ s32 iff_get_chunk_hdr(GroupContext *context)
 }
 
 /*
- * PORT H086+$03F2 (IFFReadBytes): legge dal chunk corrente senza
- * superarne la fine.
+ * PORT H086+$03F2 (IFFReadBytes): reads from the current chunk without
+ * going past its end.
  */
 s32 iff_read_bytes(GroupContext *context, void *buffer, s32 n_bytes)
 {
@@ -197,7 +197,7 @@ s32 iff_read_bytes(GroupContext *context, void *buffer, s32 n_bytes)
     return iffp;
 }
 
-/* Chiamata del callback del client per il gruppo letto. */
+/* Call of the client callback for the group read. */
 static s32 call_group(GroupContext *context, ClientFrame *frame, s32 id)
 {
     if (id == ID_FORM) {
@@ -213,9 +213,9 @@ static s32 call_group(GroupContext *context, ClientFrame *frame, s32 id)
 }
 
 /*
- * PORT H086+$04BA (ReadIFF): legge il file come un unico gruppo FORM, LIST
- * o CAT chiamando il callback corrispondente.  Un risultato positivo (un ID
- * non gestito) diventa NOT_IFF.
+ * PORT H086+$04BA (ReadIFF): reads the file as a single FORM, LIST
+ * or CAT group calling the matching callback.  A positive result (an ID
+ * not handled) becomes NOT_IFF.
  */
 s32 iff_read_iff(cok_bptr file, ClientFrame *client_frame)
 {
@@ -235,8 +235,8 @@ s32 iff_read_iff(cok_bptr file, ClientFrame *client_frame)
 }
 
 /*
- * PORT H086+$0578 (ReadIList): legge un LIST (o un CAT con client_frame
- * NULL): i PROP sono ammessi solo all'inizio di un LIST.
+ * PORT H086+$0578 (ReadIList): reads a LIST (or a CAT with client_frame
+ * NULL): PROPs are allowed only at the start of a LIST.
  */
 s32 iff_read_ilist(GroupContext *parent, ClientFrame *client_frame)
 {
@@ -284,7 +284,7 @@ s32 iff_read_icat(GroupContext *parent)
     return iff_read_ilist(parent, NULL);
 }
 
-/* PORT H086+$06D6 (GetFChunkHdr): dentro un FORM un PROP e' un errore. */
+/* PORT H086+$06D6 (GetFChunkHdr): inside a FORM a PROP is an error. */
 s32 iff_get_fchunk_hdr(GroupContext *context)
 {
     s32 id = iff_get_chunk_hdr(context);
@@ -297,8 +297,8 @@ s32 iff_get_fchunk_hdr(GroupContext *context)
 }
 
 /*
- * PORT H086+$0714 (GetF1ChunkHdr): come GetFChunkHdr, ma legge subito i
- * gruppi annidati con i callback del client.
+ * PORT H086+$0714 (GetF1ChunkHdr): like GetFChunkHdr, but reads the
+ * nested groups at once with the client callbacks.
  */
 s32 iff_get_f1chunk_hdr(GroupContext *context)
 {
@@ -314,7 +314,7 @@ s32 iff_get_f1chunk_hdr(GroupContext *context)
     return iffp;
 }
 
-/* PORT H086+$07C0 (GetPChunkHdr): dentro un PROP i gruppi sono errori. */
+/* PORT H086+$07C0 (GetPChunkHdr): inside a PROP groups are errors. */
 s32 iff_get_pchunk_hdr(GroupContext *context)
 {
     s32 id = iff_get_chunk_hdr(context);

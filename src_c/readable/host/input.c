@@ -1,9 +1,9 @@
 /*
- * Build host: input e tempo.  Gli eventi SDL diventano messaggi IDCMP
- * (IntuiMessage) nella porta della finestra aperta, come li consegnerebbe
- * Intuition: tasti come RAWKEY con il codice della tastiera Amiga (bit 7 =
- * rilascio), pulsanti del mouse come MOUSEBUTTONS (SELECTDOWN/UP, e con
- * RMBTRAP MENUDOWN/UP) con la posizione nello schermo 320x200.
+ * Host build: input and time.  SDL events become IDCMP messages
+ * (IntuiMessage) on the port of the open window, as Intuition would
+ * deliver them: keys as RAWKEY with the Amiga keyboard code (bit 7 =
+ * release), mouse buttons as MOUSEBUTTONS (SELECTDOWN/UP, and with
+ * RMBTRAP MENUDOWN/UP) with the position in the 320x200 screen.
  */
 #include <stdlib.h>
 #include <string.h>
@@ -12,21 +12,21 @@
 
 #define QUEUE_SIZE 64
 
-static struct Window *s_window;         /* finestra con la porta IDCMP */
+static struct Window *s_window;         /* window with the IDCMP port */
 static struct MsgPort s_port;
 static struct IntuiMessage s_queue[QUEUE_SIZE];
-static unsigned s_head;                 /* prossimo da consegnare */
+static unsigned s_head;                 /* next one to deliver */
 static unsigned s_count;
 #ifdef COK_AUDIO
 struct Message *host_port_get(struct MsgPort *port);
 void host_port_put(struct MsgPort *port, struct Message *msg);
 #endif
 
-static struct IntuiMessage s_current;   /* messaggio consegnato da GetMsg */
+static struct IntuiMessage s_current;   /* message delivered by GetMsg */
 static int s_mouse_x;
 static int s_mouse_y;
 
-/* Codici RAWKEY della tastiera Amiga per gli scancode SDL. */
+/* Amiga keyboard RAWKEY codes for the SDL scancodes. */
 static int amiga_rawkey(SDL_Scancode sc)
 {
     static const struct { SDL_Scancode sc; int raw; } map[] = {
@@ -171,7 +171,7 @@ int host_input_pending(void)
     return s_count != 0;
 }
 
-/* exec: la porta IDCMP dell'unica finestra. */
+/* exec: the IDCMP port of the only window. */
 struct Message *GetMsg(struct MsgPort *port)
 {
     if (port != &s_port) {
@@ -184,8 +184,8 @@ struct Message *GetMsg(struct MsgPort *port)
     host_display_refresh(0);
     if (s_count == 0) {
         /*
-         * Il gioco interroga la porta in cicli di attesa attiva: una pausa
-         * di 1 ms evita di occupare tutta la CPU dell'host.
+         * The game polls the port in busy-wait loops: a 1 ms pause
+         * avoids using all of the host CPU.
          */
         SDL_Delay(1);
         return NULL;
@@ -216,14 +216,14 @@ struct Message *WaitPort(struct MsgPort *port)
     return port == &s_port ? &s_queue[s_head].ExecMessage : NULL;
 }
 
-/* Memoria libera: sull'host non ha significato; valore fisso di 512K. */
+/* Free memory: meaningless on the host; fixed value of 512K. */
 ULONG AvailMem(ULONG requirements)
 {
     (void)requirements;
     return 0x80000UL;
 }
 
-/* dos.library Delay: ticks a 50 Hz, elaborando gli eventi nel frattempo. */
+/* dos.library Delay: ticks at 50 Hz, processing events meanwhile. */
 void Delay(LONG ticks)
 {
     unsigned long end = host_ticks_ms() + (unsigned long)ticks * 20UL;
@@ -237,9 +237,9 @@ void Delay(LONG ticks)
 }
 
 /*
- * COK_KEYS="ms=Nome,ms=Nome,...": per i test senza finestra, preme e
- * rilascia il tasto SDL Nome (es. P, Return, Escape, Left) al tempo
- * indicato in millisecondi dall'avvio del display.
+ * COK_KEYS="ms=Name,ms=Name,...": for tests without a window, presses and
+ * releases the SDL key Name (e.g. P, Return, Escape, Left) at the time
+ * given in milliseconds from the start of the display.
  */
 void host_input_script(unsigned long now)
 {

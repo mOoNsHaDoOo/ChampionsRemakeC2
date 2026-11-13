@@ -1,15 +1,15 @@
-/* H026: funzioni su stringhe e buffer con limiti passati dai chiamanti. */
+/* H026: string and buffer functions with limits passed by the callers. */
 #include "h026_string.h"
 #include "h003_exec.h"
 
-/* PORT H026+$0004: link/unlk, nessun effetto. */
+/* PORT H026+$0004: link/unlk, no effect. */
 void h026_init(void)
 {
 }
 
 /*
- * PORT H026+$003A: porta in maiuscolo ('a'..'z' and $5F) fino al NUL.  Il
- * limite len e' passato ma non usato.
+ * PORT H026+$003A: converts to upper case ('a'..'z' and $5F) up to the NUL.  The
+ * limit len is passed but not used.
  */
 void h026_upcase(u16 len, char *s)
 {
@@ -27,8 +27,8 @@ void h026_upcase(u16 len, char *s)
 }
 
 /*
- * PORT H026+$0088: confronto byte per byte (senza segno) fino al NUL di a.
- * Restituisce 1 se uguali, 2 se a > b, 0 se a < b.  I limiti non sono usati.
+ * PORT H026+$0088: byte by byte comparison (unsigned) up to the NUL of a.
+ * Returns 1 if equal, 2 if a > b, 0 if a < b.  The limits are not used.
  */
 u8 h026_compare(u16 len_a, const char *a, u16 len_b, const char *b)
 {
@@ -46,7 +46,7 @@ u8 h026_compare(u16 len_a, const char *a, u16 len_b, const char *b)
     }
 }
 
-/* Copia locale di H026+$0106: (len + 1) arrotondato a pari, dbra. */
+/* Local copy of H026+$0106: (len + 1) rounded up to even, dbra. */
 static char *copy_arg(u16 len, const char *src, u16 *size)
 {
     u16 n = (u16)(len + 1);
@@ -56,13 +56,13 @@ static char *copy_arg(u16 len, const char *src, u16 *size)
     if (n & 1) {
         ++n;
     }
-    *size = (u16)(n + 1);       /* + un NUL garantito, vedi sotto */
+    *size = (u16)(n + 1);       /* + a guaranteed NUL, see below */
     copy = (char *)exec_alloc_mem(*size, COK_MEMF_CLEAR);
     /*
-     * L'originale copia sempre n byte dalla sorgente; qui la copia si ferma
-     * al NUL (i byte dopo non cambiano il risultato: maiuscolo e confronto
-     * si fermano al NUL) per non leggere oltre gli oggetti C; il byte in
-     * piu' azzerato termina anche una sorgente senza NUL entro n byte.
+     * The original always copies n bytes from the source; here the copy stops
+     * at the NUL (the bytes after it do not change the result: upper case and comparison
+     * stop at the NUL) so as not to read past the C objects; the extra
+     * cleared byte also terminates a source without a NUL within n bytes.
      */
     for (i = 0; i < n; ++i) {
         copy[i] = src[i];
@@ -74,9 +74,9 @@ static char *copy_arg(u16 len, const char *src, u16 *size)
 }
 
 /*
- * PORT H026+$0106: confronto senza distinzione di maiuscole.  Copia le due
- * stringhe (nell'originale sullo stack), le porta in maiuscolo con
- * H026+$003A e le confronta con H026+$0088.
+ * PORT H026+$0106: case-insensitive comparison.  Copies the two
+ * strings (on the stack in the original), converts them to upper case with
+ * H026+$003A and compares them with H026+$0088.
  */
 u8 h026_compare_nocase(u16 len_a, const char *a, u16 len_b, const char *b)
 {
@@ -95,12 +95,12 @@ u8 h026_compare_nocase(u16 len_a, const char *a, u16 len_b, const char *b)
 }
 
 /*
- * Nelle funzioni seguenti gli argomenti "len" sono i limiti che i chiamanti
- * passano per la stringa sorgente: l'originale non li usa (salvo dove
- * detto), si ferma al NUL.
+ * In the following functions the "len" arguments are the limits that the callers
+ * pass for the source string: the original does not use them (except where
+ * stated), it stops at the NUL.
  */
 
-/* PORT H026+$000C: lunghezza fino al NUL (word). */
+/* PORT H026+$000C: length up to the NUL (word). */
 u16 h026_strlen(u16 len, const char *s)
 {
     u16 i = 0;
@@ -112,7 +112,7 @@ u16 h026_strlen(u16 len, const char *s)
     return i;
 }
 
-/* PORT H026+$0188: copia al massimo dst_max byte, poi il NUL. */
+/* PORT H026+$0188: copies at most dst_max bytes, then the NUL. */
 void h026_copy(u16 dst_max, char *dst, u16 src_len, const char *src)
 {
     u16 i = 0;
@@ -126,8 +126,8 @@ void h026_copy(u16 dst_max, char *dst, u16 src_len, const char *src)
 }
 
 /*
- * PORT H026+$01E0: accoda src a dst finche' la lunghezza di dst resta
- * minore di dst_max, poi il NUL.
+ * PORT H026+$01E0: appends src to dst while the length of dst stays
+ * below dst_max, then the NUL.
  */
 void h026_append(u16 dst_max, char *dst, u16 src_len, const char *src)
 {
@@ -146,7 +146,7 @@ void h026_append(u16 dst_max, char *dst, u16 src_len, const char *src)
     dst[d] = 0;
 }
 
-/* PORT H026+$03F6: toglie count caratteri da start (sul posto). */
+/* PORT H026+$03F6: removes count characters from start (in place). */
 void h026_delete(u16 len, char *s, u16 start, u16 count)
 {
     u16 from = (u16)(start + count);
@@ -162,8 +162,8 @@ void h026_delete(u16 len, char *s, u16 start, u16 count)
 }
 
 /*
- * PORT H026+$0452: al massimo count caratteri di src da start, non oltre il
- * NUL di src ne' dst_max byte, poi il NUL.
+ * PORT H026+$0452: at most count characters of src from start, not past the
+ * NUL of src nor dst_max bytes, then the NUL.
  */
 void h026_substr(u16 dst_max, char *dst, u16 src_len, const char *src,
                  u16 start, u16 count)
@@ -182,8 +182,8 @@ void h026_substr(u16 dst_max, char *dst, u16 src_len, const char *src,
 }
 
 /*
- * PORT H026+$054E: indice del primo ch tra start e last (compreso) prima del
- * NUL, altrimenti -1.
+ * PORT H026+$054E: index of the first ch between start and last (included) before the
+ * NUL, otherwise -1.
  */
 s16 h026_find_char(u16 len, const char *s, u8 ch, u16 start, u16 last)
 {
@@ -202,8 +202,8 @@ s16 h026_find_char(u16 len, const char *s, u8 ch, u16 start, u16 last)
 }
 
 /*
- * PORT H026+$0254: inserisce src in dst alla posizione pos, senza superare
- * dst_max caratteri (cio' che non ci sta viene tagliato).
+ * PORT H026+$0254: inserts src into dst at position pos, without exceeding
+ * dst_max characters (what does not fit is cut).
  */
 void h026_insert(u16 dst_max, char *dst, u16 src_len, const char *src,
                  u16 pos)
@@ -211,7 +211,7 @@ void h026_insert(u16 dst_max, char *dst, u16 src_len, const char *src,
     u16 ls = h026_strlen(src_len, src);     /* -$2 */
     u16 ld = h026_strlen(dst_max, dst);     /* -$4 */
     u16 max = dst_max;                      /* -$6 */
-    u16 count = (u16)(ld - pos + 1);        /* -$8: coda con il NUL */
+    u16 count = (u16)(ld - pos + 1);        /* -$8: tail with the NUL */
     u16 from = ld;                          /* -$A */
     u16 to = (u16)(from + ls);              /* -$C */
     u16 i;

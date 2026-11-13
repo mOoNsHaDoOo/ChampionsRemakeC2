@@ -1,16 +1,16 @@
 /*
- * H086: parser IFF generico (iff.c "IFF85" di Electronic Arts, 1985):
- * gruppi FORM/LIST/PROP/CAT, intestazioni dei chunk, lettura dei byte.
+ * H086: generic IFF parser (Electronic Arts' "IFF85" iff.c, 1985):
+ * FORM/LIST/PROP/CAT groups, chunk headers, reading of bytes.
  */
 #ifndef COK_H086_H
 #define COK_H086_H
 
 #include "h002_dos.h"
 
-/* Valori IFFP restituiti dalle routine (negativi = fine o errore). */
+/* IFFP values returned by the routines (negative = end or error). */
 #define IFF_OKAY      0
-#define END_MARK     (-1)       /* fine del gruppo */
-#define IFF_DONE     (-2)       /* il client ha finito */
+#define END_MARK     (-1)       /* end of the group */
+#define IFF_DONE     (-2)       /* the client is done */
 #define DOS_ERROR    (-3)
 #define NOT_IFF      (-4)
 #define NO_FILE      (-5)
@@ -29,7 +29,7 @@
 struct GroupContext;
 typedef s32 (*IffGroupFn)(struct GroupContext *parent);
 
-/* ClientFrame: callback per i gruppi (16 byte nell'originale). */
+/* ClientFrame: callbacks for the groups (16 bytes in the original). */
 typedef struct ClientFrame {
     IffGroupFn get_list;        /* +$00 */
     IffGroupFn get_prop;        /* +$04 */
@@ -38,19 +38,19 @@ typedef struct ClientFrame {
 } ClientFrame;
 
 /*
- * GroupContext ($24 byte nell'originale).  ck_id, ck_size e subtype sono
- * letti dal file big-endian e qui tenuti come valori numerici.
+ * GroupContext ($24 bytes in the original).  ck_id, ck_size and subtype are
+ * read big-endian from the file and kept here as numeric values.
  */
 typedef struct GroupContext {
-    struct GroupContext *parent; /* +$00: NULL al livello del file */
+    struct GroupContext *parent; /* +$00: NULL at file level */
     ClientFrame *client_frame;  /* +$04 */
     cok_bptr file;              /* +$08 */
-    s32 position;               /* +$0C: posizione nel file */
-    s32 bound;                  /* +$10: fine del gruppo */
+    s32 position;               /* +$0C: position in the file */
+    s32 bound;                  /* +$10: end of the group */
     s32 ck_id;                  /* +$14: chunk corrente (o IFFP) */
     s32 ck_size;                /* +$18 */
-    s32 subtype;                /* +$1C: sottotipo di FORM/LIST/PROP/CAT */
-    s32 bytes_so_far;           /* +$20: byte del chunk gia' letti */
+    s32 subtype;                /* +$1C: subtype of FORM/LIST/PROP/CAT */
+    s32 bytes_so_far;           /* +$20: chunk bytes already read */
 } GroupContext;
 
 s32 iff_file_length(cok_bptr file);                          /* H086+$000C */

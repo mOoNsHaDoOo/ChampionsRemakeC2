@@ -1,4 +1,4 @@
-/* H024: costruzione di NewScreen e OpenScreen. */
+/* H024: building of NewScreen and OpenScreen. */
 #include "h024_screen.h"
 #include "h021_intuition.h"
 
@@ -7,20 +7,20 @@
 extern struct GfxBase *GfxBase;
 #endif
 
-/* Dati del modulo (offset rispetto ad a4). */
+/* Module data (offsets from a4). */
 u16 g_h024_m2;                  /* -$2: GfxBase->NormalDisplayColumns */
 u16 g_h024_m4;                  /* -$4: GfxBase->NormalDisplayRows */
-u8  g_h024_m5;                  /* -$5: DetailPen (mai scritto, 0) */
+u8  g_h024_m5;                  /* -$5: DetailPen (never written, 0) */
 u8  g_h024_m6;                  /* -$6: BlockPen */
 u16 g_h024_m8;                  /* -$8: LeftEdge (0) */
 u16 g_h024_ma;                  /* -$A: TopEdge (0) */
 struct TextAttr *g_h024_me;     /* -$E: Font (NULL) */
 struct BitMap *g_h024_m12;      /* -$12: CustomBitMap (NULL) */
-u16 g_h024_m14;                 /* -$14 (H024+$4): bit di Type oltre CUSTOMSCREEN; H029+$1210 vi scrive $10F */
+u16 g_h024_m14;                 /* -$14 (H024+$4): Type bits besides CUSTOMSCREEN; H029+$1210 writes $10F there */
 
 /*
- * PORT H024+$001C.  Sull'host non c'e' GfxBase: si usano i valori NTSC
- * (640 colonne, 200 righe).
+ * PORT H024+$001C.  On the host there is no GfxBase: the NTSC values are
+ * used (640 columns, 200 rows).
  */
 void h024_init(void)
 {
@@ -35,9 +35,9 @@ void h024_init(void)
 }
 
 /*
- * PORT H024+$002A (Open_GameScreen): HIRES se la larghezza supera meta'
- * delle colonne del display, LACE se l'altezza supera le righe, HAM con
- * profondita' 6.  Il confronto della larghezza e' con segno (ble).
+ * PORT H024+$002A (Open_GameScreen): HIRES if the width exceeds half
+ * the display columns, LACE if the height exceeds the rows, HAM with
+ * depth 6.  The width comparison is signed (ble).
  */
 struct Screen *open_game_screen(u16 width, u16 height, u16 depth,
                                 const char *title)

@@ -1,4 +1,4 @@
-/* H030: presentazione testo e interfaccia. */
+/* H030: text presentation and user interface. */
 #ifndef COK_H030_H
 #define COK_H030_H
 

@@ -65,7 +65,7 @@ The playtest reports, and the fixes they led to, are kept in `backlog.md`.
 - **Commented accesses:** every read or write of an anonymous array or record
   field (`g_h005`, the state blocks, `->b[]`, the module-local data arrays)
   carries a comment that explains the element, for example
-  `/* $3DF6: game speed (0..9) */`. Descriptions starting with `uso:` record
+  `/* $3DF6: game speed (0..9) */`. Descriptions starting with `use:` record
   the observed use where the exact meaning is not yet known.
 - **Comments and identifiers** are in Italian, as in the rest of the port.
 

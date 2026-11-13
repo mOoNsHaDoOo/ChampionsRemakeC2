@@ -1,7 +1,7 @@
-/* H021: adattatori intuition.library. */
+/* H021: intuition.library adapters. */
 #include "h021_intuition.h"
 
-/* PORT H021+$0008: copia IntuitionBase (-$10(a4) del runtime H015). */
+/* PORT H021+$0008: copies IntuitionBase (-$10(a4) of the H015 runtime). */
 void h021_init(void)
 {
 }
@@ -18,15 +18,15 @@ void intuition_current_time(u32 *seconds, u32 *micros)
 #if COK_AMIGA
     CurrentTime((ULONG *)seconds, (ULONG *)micros);
 #else
-    /* Host: secondi dall'orologio di sistema, microsecondi dal clock(). */
+    /* Host: seconds from the system clock, microseconds from clock(). */
     *seconds = (u32)time(NULL);
     *micros = (u32)(clock() % 1000000);
 #endif
 }
 
 /*
- * Adattatori semplici: argomenti dallo stack ai registri e salto nella
- * libreria (sull'host la libreria e' emulata in host/intuition.c).
+ * Simple adapters: arguments from the stack to the registers and a jump into
+ * the library (on the host the library is emulated in host/intuition.c).
  */
 
 /* PORT H021+$010C */
@@ -35,7 +35,7 @@ void intuition_close_screen(struct Screen *screen)
     CloseScreen(screen);
 }
 
-/* PORT H021+$011E: restituisce d0 cosi' com'e' (nessun neg.b). */
+/* PORT H021+$011E: returns d0 as it is (no neg.b). */
 u32 intuition_close_workbench(void)
 {
     return (u32)CloseWorkBench();
@@ -53,7 +53,7 @@ u32 intuition_open_workbench(void)
     return (u32)OpenWorkBench();
 }
 
-/* PORT H021+$01D2: il flag e' un byte esteso a long (moveq #0 / move.b). */
+/* PORT H021+$01D2: the flag is a byte extended to a long (moveq #0 / move.b). */
 void intuition_show_title(struct Screen *screen, u8 show)
 {
     ShowTitle(screen, (LONG)show);
@@ -93,7 +93,7 @@ u32 intuition_auto_request(struct Window *window, struct IntuiText *body,
                             (LONG)width, (LONG)height);
 }
 
-/* PORT H021+$02EE: le misure sono word estese con segno (move.w). */
+/* PORT H021+$02EE: the sizes are sign-extended words (move.w). */
 void intuition_set_pointer(struct Window *window, u8 *data, u16 height,
                            u16 width, u16 x_offset, u16 y_offset)
 {

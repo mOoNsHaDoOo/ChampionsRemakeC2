@@ -1,7 +1,7 @@
-/* H022: adattatori graphics.library per view, palette e viewport. */
+/* H022: graphics.library adapters for view, palette and viewport. */
 #include "h022_view.h"
 
-/* PORT H022+$0008: copia GfxBase nella cella del modulo (vedi H016). */
+/* PORT H022+$0008: copies GfxBase into the module cell (see H016). */
 void h022_init(void)
 {
 }
@@ -11,9 +11,9 @@ void h022_init(void)
 #endif
 
 /*
- * PORT H022+$0084.  colors sono word RGB4 big-endian (dati del gioco): su
- * Amiga e' gia' il formato di LoadRGB4; sull'host LoadRGB4 emulata le
- * legge a byte (vedi host/ndk.h).
+ * PORT H022+$0084.  colors are big-endian RGB4 words (game data): on the
+ * Amiga this is already the LoadRGB4 format; on the host the emulated
+ * LoadRGB4 reads them byte by byte (see host/ndk.h).
  */
 void graphics_load_rgb4(struct ViewPort *vp, const u8 *colors, u16 count)
 {

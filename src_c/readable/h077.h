@@ -1,13 +1,13 @@
-/* H077: aree, linee di vista e direzioni sulla mappa del combattimento. */
+/* H077: areas, lines of sight and directions on the combat map. */
 #ifndef COK_H077_H
 #define COK_H077_H
 
 #include "cok.h"
 
 /*
- * Linea fra due caselle (Bresenham), record di $18 byte nell'originale:
- * estremi, errore, differenze, posizione, passi, costo (2 per passo, +1
- * in diagonale) e direzione dell'ultimo passo (tabella H005+$3DD2).
+ * Line between two squares (Bresenham), $18-byte record in the original:
+ * end points, error, differences, position, steps, cost (2 per step, +1
+ * diagonally) and direction of the last step (table H005+$3DD2).
  */
 typedef struct CokLine {
     s16 x0;                             /* +$00 */

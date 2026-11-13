@@ -1,4 +1,4 @@
-/* H050: adattatori exec per i messaggi. */
+/* H050: exec adapters for messages. */
 #ifndef COK_H050_H
 #define COK_H050_H
 

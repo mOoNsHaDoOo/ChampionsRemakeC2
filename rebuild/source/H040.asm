@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H040
-; Lettore ILBM basato sulle callback del parser IFF.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H040
+; ILBM reader based on the callbacks of the IFF parser.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Lettore ILBM basato sulle callback del parser IFF: FORM/ILBM, BMHD, CMAP, BODY, LIST e PROP. I piani sono limitati a cinque.
+; MODULE NOTE
+; ILBM reader based on the callbacks of the IFF parser: FORM/ILBM, BMHD, CMAP, BODY, LIST and PROP. The planes are limited to five.
 ; --------------------------------------------------------------------------
 ; H040: 1632 original bytes; all offsets are section-relative.
         section H040,code
@@ -48,10 +48,10 @@ H040:
         dc.w $0000,$0000,$0000,$0000,$0000,$0000
         dc.l H040+$0000020C
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H040_065C [parziale]
-; Scopo: Trampolino verso H040+$065C; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H040+$065C.
-; Chiamanti diretti: H000+$00DE
+; ROUTINE: trampoline_H040_065C [partial]
+; Purpose: Trampoline to H040+$065C; the actual body is there.
+;   - Jumps to the actual body at H040+$065C.
+; Direct callers: H000+$00DE
 ; --------------------------------------------------------------------------
 L040_00000210:
 ; H040+$00000210: 4e550000  link.w a5, #$0
@@ -61,13 +61,13 @@ L040_00000214:
         bra.w H040+$65C
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: IFF_FORM_ILBM [verificato]
-; Scopo: Callback che gestisce FORM ILBM e i suoi chunk grafici.
-;   - Verifica il tipo ILBM; per altri FORM percorre la struttura generica.
-;   - BMHD riempie il bitmap header, CMAP carica i colori.
-;   - BODY richiede un BMHD già letto, prepara la bitmap e la memoria dei piani.
-;   - Il percorso limita il numero di piani utilizzati a cinque.
-;   - H087+$0166 trasferisce/decomprime le righe del BODY.
+; ROUTINE: IFF_FORM_ILBM [verified]
+; Purpose: Callback that handles FORM ILBM and its graphic chunks.
+;   - Checks the ILBM type; for other FORMs it walks the generic structure.
+;   - BMHD fills the bitmap header, CMAP loads the colours.
+;   - BODY requires a BMHD already read, prepares the bitmap and the plane memory.
+;   - The path limits the number of planes used to five.
+;   - H087+$0166 transfers/decompresses the rows of the BODY.
 ; --------------------------------------------------------------------------
 L040_00000218:
 ; H040+$00000218: 4e55ff62  link.w a5, #$ff62
@@ -203,7 +203,7 @@ L040_000002C8:
 L040_000002CE:
 ; H040+$000002CE: 2b40fffc  move.l d0, -$4(a5)
         move.l d0, -$4(a5)
-; PASSO: Chunk BMHD: descrizione di larghezza, altezza, piani, maschera e compressione.
+; STEP: BMHD chunk: description of width, height, planes, mask and compression.
 L040_000002D2:
 ; H040+$000002D2: 0cad424d4844fffc  cmpi.l #$424d4844, -$4(a5)
         cmpi.l #$424d4844, -$4(a5)
@@ -229,7 +229,7 @@ L040_000002F2:
 L040_000002F6:
 ; H040+$000002F6: 60000184  bra.w $47c
         bra.w H040+$47C
-; PASSO: Chunk CMAP: palette dell’immagine.
+; STEP: CMAP chunk: palette of the picture.
 L040_000002FA:
 ; H040+$000002FA: 0cad434d4150fffc  cmpi.l #$434d4150, -$4(a5)
         cmpi.l #$434d4150, -$4(a5)
@@ -261,7 +261,7 @@ L040_00000320:
 L040_00000324:
 ; H040+$00000324: 60000156  bra.w $47c
         bra.w H040+$47C
-; PASSO: Chunk BODY: pixel planari; richiede il bitmap header già acquisito.
+; STEP: BODY chunk: planar pixels; requires the bitmap header already acquired.
 L040_00000328:
 ; H040+$00000328: 0cad424f4459fffc  cmpi.l #$424f4459, -$4(a5)
         cmpi.l #$424f4459, -$4(a5)
@@ -361,7 +361,7 @@ L040_000003A2:
 L040_000003A4:
 ; H040+$000003A4: 267900000208  movea.l $208.l, a3
         movea.l (H040+$208).l, a3
-; PASSO: Callback di allocazione della memoria dei piani: indirizzo registrato da Read_ILBM.
+; STEP: Allocation callback of the plane memory: address registered by Read_ILBM.
 L040_000003AA:
 ; H040+$000003AA: 4e93  jsr (a3)
         jsr (a3)
@@ -465,8 +465,8 @@ L040_00000424:
 L040_0000042A:
 ; H040+$0000042A: 2f02  move.l d2, -(a7)
         move.l d2, -(a7)
-; PASSO: Lettura del BODY, con eventuale decompressione per riga/piano.
-; FLUSSO: Chiama Read_ILBM_BODY (H087+$0166).
+; STEP: Reading of the BODY, with possible decompression per row/plane.
+; FLOW: Calls Read_ILBM_BODY (H087+$0166).
 L040_0000042C:
 ; H040+$0000042C: 4eb900000166  jsr $166.l
         jsr (H087+$166).l
@@ -563,11 +563,11 @@ L040_000004B4:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: IFF_PROP_ILBM [verificato]
-; Scopo: Callback per proprietà ILBM ereditate da un gruppo IFF.
-;   - Accetta il tipo ILBM.
-;   - Riconosce BMHD e CMAP e aggiorna la struttura delle proprietà.
-;   - Il parser generico gestisce il passaggio al chunk successivo.
+; ROUTINE: IFF_PROP_ILBM [verified]
+; Purpose: Callback for ILBM properties inherited from an IFF group.
+;   - Accepts the ILBM type.
+;   - Recognises BMHD and CMAP and updates the property structure.
+;   - The generic parser handles the move to the next chunk.
 ; --------------------------------------------------------------------------
 L040_000004B6:
 ; H040+$000004B6: 4e55ffd0  link.w a5, #$ffd0
@@ -746,10 +746,10 @@ L040_000005A8:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: IFF_LIST [verificato]
-; Scopo: Callback di attraversamento LIST del parser IFF.
-;   - Copia il contesto delle proprietà e passa la visita al parser generico.
-;   - Le proprietà possono essere ereditate dai FORM contenuti.
+; ROUTINE: IFF_LIST [verified]
+; Purpose: LIST traversal callback of the IFF parser.
+;   - Copies the property context and passes the visit to the generic parser.
+;   - The properties can be inherited by the contained FORMs.
 ; --------------------------------------------------------------------------
 L040_000005AA:
 ; H040+$000005AA: 4e55ff96  link.w a5, #$ff96
@@ -805,12 +805,12 @@ L040_000005E2:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Read_ILBM [verificato]
-; Scopo: Configura il parser IFF e legge un’immagine ILBM.
-;   - Registra le callback LIST, PROP, FORM e CAT nella struttura del parser.
-;   - Conserva i puntatori di output alla bitmap e il callback di allocazione.
-;   - Delega il riconoscimento dei gruppi al parser generico H086+$04BA.
-; Chiamanti diretti: H007+$057A, H028+$0CEC, H030+$0C54
+; ROUTINE: Read_ILBM [verified]
+; Purpose: Configures the IFF parser and reads an ILBM picture.
+;   - Registers the LIST, PROP, FORM and CAT callbacks in the parser structure.
+;   - Keeps the output pointers to the bitmap and the allocation callback.
+;   - Delegates the recognition of the groups to the generic parser H086+$04BA.
+; Direct callers: H007+$057A, H028+$0CEC, H030+$0C54
 ; --------------------------------------------------------------------------
 L040_000005E4:
 ; H040+$000005E4: 4e55fffc  link.w a5, #$fffc

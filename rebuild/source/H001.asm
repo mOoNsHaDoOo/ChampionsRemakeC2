@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H001
-; Coordinamento principale: ambiente, introduzione, menu party e scenario.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H001
+; Main coordination: environment, introduction, party menu and scenario.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Il main coordina ambiente, introduzione, menu party e ingresso nello scenario. Le routine chiamate qui sono i punti di snodo fra i sottosistemi.
+; MODULE NOTE
+; main coordinates environment, introduction, party menu and entry into the scenario. The routines called here are the junctions between the subsystems.
 ; --------------------------------------------------------------------------
 ; H001: 664 original bytes; all offsets are section-relative.
         section H001,code
@@ -24,12 +24,12 @@ H001:
 FN_main_entry:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Game_Main [verificato]
-; Scopo: Coordina avvio, menu di composizione del party e sessione di gioco.
-;   - Inizializza tabelle; determina il prefisso dei file e prepara ambiente e schermate.
-;   - Normalizza la risposta alla scelta demo: D seleziona il ramo dimostrativo.
-;   - Il ramo normale richiama H013+$4BFC; il ramo demo imposta gruppo risorse 2 e valore iniziale 9.
-;   - Passa al ciclo scenario H012+$3150; al ritorno esegue pulizia e ripropone il percorso iniziale.
+; ROUTINE: Game_Main [verified]
+; Purpose: Coordinates start-up, party composition menu and game session.
+;   - Initialises tables; determines the file prefix and prepares environment and screens.
+;   - Normalises the answer to the demo choice: D selects the demonstration branch.
+;   - The normal branch calls H013+$4BFC; the demo branch sets resource group 2 and initial value 9.
+;   - Moves to the scenario loop H012+$3150; on return it cleans up and offers the initial path again.
 ; --------------------------------------------------------------------------
 L001_00000058:
 ; H001+$00000058: 2f0c  move.l a4, -(a7)
@@ -47,13 +47,13 @@ L001_00000062:
 FN_select_volume_prefix:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Select_DataPrefix [verificato]
-; Scopo: Sceglie il prefisso dei percorsi in base alle informazioni sul volume corrente.
-;   - Lock sul nome vuoto con modalità -2.
-;   - Info scrive un buffer di 36 byte; id_NumBlocks viene confrontato con 1800.
-;   - Sotto soglia copia df0: in H005+$3D26, altrimenti una stringa vuota.
-;   - Libera buffer e lock.
-; Chiamanti diretti: H001+$0108
+; ROUTINE: Select_DataPrefix [verified]
+; Purpose: Chooses the path prefix according to the information about the current volume.
+;   - Lock on the empty name with mode -2.
+;   - Info writes a 36-byte buffer; id_NumBlocks is compared with 1800.
+;   - Below the threshold it copies df0: into H005+$3D26, otherwise an empty string.
+;   - Frees buffer and lock.
+; Direct callers: H001+$0108
 ; --------------------------------------------------------------------------
 L001_00000066:
 ; H001+$00000066: 2f0c  move.l a4, -(a7)
@@ -121,7 +121,7 @@ L001_000000B8:
 L001_000000BC:
 ; H001+$000000BC: 47ec0002  lea.l $2(a4), a3
         lea.l $2(a4), a3
-; STATO: H005+$3D26 = prefisso dei file dati
+; STATE: H005+$3D26 = prefix of the data files
 L001_000000C0:
 ; H001+$000000C0: 45f900003d26  lea.l $3d26.l, a2
         lea.l (H005+$3D26).l, a2
@@ -140,7 +140,7 @@ L001_000000CE:
 L001_000000D2:
 ; H001+$000000D2: 47ec0007  lea.l $7(a4), a3
         lea.l $7(a4), a3
-; STATO: H005+$3D26 = prefisso dei file dati
+; STATE: H005+$3D26 = prefix of the data files
 L001_000000D6:
 ; H001+$000000D6: 45f900003d26  lea.l $3d26.l, a2
         lea.l (H005+$3D26).l, a2
@@ -186,17 +186,17 @@ L001_00000100:
 L001_00000102:
 ; H001+$00000102: 4eb900000c28  jsr $c28.l
         jsr (H004+$C28).l
-; FLUSSO: Chiama Select_DataPrefix (H001+$0066).
+; FLOW: Calls Select_DataPrefix (H001+$0066).
 L001_00000108:
 ; H001+$00000108: 6100ff5c  bsr.w $66
         bsr.w H001+$66
-; PASSO: Inizializzazione comune: percorsi, buffer di stato, bitmap e risorse condivise.
-; FLUSSO: Chiama Initialize_GameEnvironment (H006+$01AE).
+; STEP: Common initialisation: paths, state buffers, bitmaps and shared resources.
+; FLOW: Calls Initialize_GameEnvironment (H006+$01AE).
 L001_0000010C:
 ; H001+$0000010C: 4eb9000001ae  jsr $1ae.l
         jsr (H006+$1AE).l
-; PASSO: Schermate introduttive e inizializzazione audio.
-; FLUSSO: Chiama Intro_LoadAndShow (H007+$09D8).
+; STEP: Introductory screens and audio initialisation.
+; FLOW: Calls Intro_LoadAndShow (H007+$09D8).
 L001_00000112:
 ; H001+$00000112: 4eb9000009d8  jsr $9d8.l
         jsr (H007+$9D8).l
@@ -239,7 +239,7 @@ L001_0000014A:
 L001_0000014C:
 ; H001+$0000014C: 486cfffe  pea.l -$2(a4)
         pea.l -$2(a4)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L001_00000150:
 ; H001+$00000150: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -279,18 +279,18 @@ L001_0000017C:
 L001_00000180:
 ; H001+$00000180: 6600000e  bne.w $190
         bne.w H001+$190
-; STATO: H005+$24D7 = flag del ramo demo
+; STATE: H005+$24D7 = flag of the demo branch
 L001_00000184:
 ; H001+$00000184: 13fc0001000024d7  move.b #$1, $24d7.l
         move.b #$1, (H005+$24D7).l
 L001_0000018C:
 ; H001+$0000018C: 60000008  bra.w $196
         bra.w H001+$196
-; STATO: H005+$24D7 = flag del ramo demo
+; STATE: H005+$24D7 = flag of the demo branch
 L001_00000190:
 ; H001+$00000190: 4239000024d7  clr.b $24d7.l
         clr.b (H005+$24D7).l
-; STATO: H005+$24D7 = flag del ramo demo
+; STATE: H005+$24D7 = flag of the demo branch
 L001_00000196:
 ; H001+$00000196: 4a39000024d7  tst.b $24d7.l
         tst.b (H005+$24D7).l
@@ -324,19 +324,19 @@ L001_000001BC:
 L001_000001C0:
 ; H001+$000001C0: 4eb900000332  jsr $332.l
         jsr (H010+$332).l
-; STATO: H005+$246E = selettore del gruppo risorse
+; STATE: H005+$246E = resource group selector
 L001_000001C6:
 ; H001+$000001C6: 13fc00010000246e  move.b #$1, $246e.l
         move.b #$1, (H005+$246E).l
-; PASSO: Il menu permette anche Load/Save; il ritorno conduce al ciclo dello scenario.
-; FLUSSO: Chiama Party_MainMenu (H013+$4BFC).
+; STEP: The menu also allows Load/Save; the return leads to the scenario loop.
+; FLOW: Calls Party_MainMenu (H013+$4BFC).
 L001_000001CE:
 ; H001+$000001CE: 4eb900004bfc  jsr $4bfc.l
         jsr (H013+$4BFC).l
 L001_000001D4:
 ; H001+$000001D4: 60000012  bra.w $1e8
         bra.w H001+$1E8
-; STATO: H005+$246E = selettore del gruppo risorse
+; STATE: H005+$246E = resource group selector
 L001_000001D8:
 ; H001+$000001D8: 13fc00020000246e  move.b #$2, $246e.l
         move.b #$2, (H005+$246E).l
@@ -383,8 +383,8 @@ L001_0000020E:
 L001_00000210:
 ; H001+$00000210: 4eb9000004a6  jsr $4a6.l
         jsr (H011+$4A6).l
-; PASSO: Ingresso nel ciclo nativo dello scenario, dopo la selezione delle risorse.
-; FLUSSO: Chiama Scenario_MainLoop (H012+$3150).
+; STEP: Entry into the native scenario loop, after the selection of the resources.
+; FLOW: Calls Scenario_MainLoop (H012+$3150).
 L001_00000216:
 ; H001+$00000216: 4eb900003150  jsr $3150.l
         jsr (H012+$3150).l
@@ -392,18 +392,18 @@ L001_00000216:
 L001_0000021C:
 ; H001+$0000021C: 4eb900000914  jsr $914.l
         jsr (H006+$914).l
-; STATO: H005+$24D7 = flag del ramo demo
+; STATE: H005+$24D7 = flag of the demo branch
 L001_00000222:
 ; H001+$00000222: 4a39000024d7  tst.b $24d7.l
         tst.b (H005+$24D7).l
 L001_00000228:
 ; H001+$00000228: 6700005e  beq.w $288
         beq.w H001+$288
-; STATO: H005+$246E = selettore del gruppo risorse
+; STATE: H005+$246E = resource group selector
 L001_0000022C:
 ; H001+$0000022C: 42390000246e  clr.b $246e.l
         clr.b (H005+$246E).l
-; FLUSSO: Chiama Intro_LoadAndShow (H007+$09D8).
+; FLOW: Calls Intro_LoadAndShow (H007+$09D8).
 L001_00000232:
 ; H001+$00000232: 4eb9000009d8  jsr $9d8.l
         jsr (H007+$9D8).l
@@ -446,7 +446,7 @@ L001_0000026A:
 L001_0000026C:
 ; H001+$0000026C: 486cfffe  pea.l -$2(a4)
         pea.l -$2(a4)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L001_00000270:
 ; H001+$00000270: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l

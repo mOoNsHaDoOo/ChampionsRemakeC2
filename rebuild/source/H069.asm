@@ -1,12 +1,12 @@
 ; ============================================================================
-; GUIDA DEL MODULO H069
-; composizione della vista 3D e servizi di disegno.
-; I commenti descrivono l'analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H069
+; composition of the 3D view and drawing services.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Composizione della vista 3D e servizi di disegno: usa i record grafici H029 e le penne H038.
+; MODULE NOTE
+; 3D view composition and drawing services: uses the H029 graphic records and the H038 pens.
 ; --------------------------------------------------------------------------
 ; H069: 232 original bytes; all offsets are section-relative.
         section H069,code
@@ -14,10 +14,10 @@ H069:
 ; Preserved bytes H069+$00000000..$00000004; code/data not fully classified.
         dc.l H069+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H069 [parziale]
-; Scopo: Ingresso del modulo composizione della vista 3D e servizi di disegno; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H069+$00E0.
-; Chiamanti diretti: H000+$0228
+; ROUTINE: module_init_H069 [partial]
+; Purpose: Entry of the 3D view composition and drawing services module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H069+$00E0.
+; Direct callers: H000+$0228
 ; --------------------------------------------------------------------------
 L069_00000004:
 ; H069+$00000004: 2f0c  move.l a4, -(a7)
@@ -32,14 +32,14 @@ L069_0000000E:
 ; H069+$0000000E: 600000d0  bra.w $e0
         bra.w H069+$E0
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H069_00000012 [parziale]
-; Scopo: Routine del modulo composizione della vista 3D e servizi di disegno; richiama H029+$0E26, H038+$013C, H038+$01B4, H038+$0118.
-;   - Richiama H029+$0E26.
-;   - Richiama H038+$013C.
-;   - Richiama H038+$01B4.
-;   - Richiama H038+$0118.
-;   - Usa lo stato globale: H005+$3E04 (puntatore stato persistente A, 2048 byte).
-; Chiamanti diretti: H012+$299A, H064+$0B88, H068+$0BF4, H012+$0B04
+; ROUTINE: sub_H069_00000012 [partial]
+; Purpose: Routine of the 3D view composition and drawing services module; calls H029+$0E26, H038+$013C, H038+$01B4, H038+$0118.
+;   - Calls H029+$0E26.
+;   - Calls H038+$013C.
+;   - Calls H038+$01B4.
+;   - Calls H038+$0118.
+;   - Uses the global state: H005+$3E04 (pointer to persistent state A, 2048 bytes).
+; Direct callers: H012+$299A, H064+$0B88, H068+$0BF4, H012+$0B04
 ; --------------------------------------------------------------------------
 L069_00000012:
 ; H069+$00000012: 2f0c  move.l a4, -(a7)
@@ -50,7 +50,7 @@ L069_00000014:
 L069_00000018:
 ; H069+$00000018: 4e55fffc  link.w a5, #$fffc
         link.w a5, #$fffc
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L069_0000001C:
 ; H069+$0000001C: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -63,7 +63,7 @@ L069_00000026:
 L069_00000028:
 ; H069+$00000028: 3b42fffe  move.w d2, -$2(a5)
         move.w d2, -$2(a5)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L069_0000002C:
 ; H069+$0000002C: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -174,11 +174,11 @@ L069_000000A6:
 ; H069+$000000A6: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H069_000000A8 [parziale]
-; Scopo: Routine del modulo composizione della vista 3D e servizi di disegno; richiama H029+$0E92.
-;   - Richiama H029+$0E92.
-;   - Usa lo stato globale: H005+$3E04 (puntatore stato persistente A, 2048 byte).
-; Chiamanti diretti: H068+$0B36
+; ROUTINE: sub_H069_000000A8 [partial]
+; Purpose: Routine of the 3D view composition and drawing services module; calls H029+$0E92.
+;   - Calls H029+$0E92.
+;   - Uses the global state: H005+$3E04 (pointer to persistent state A, 2048 bytes).
+; Direct callers: H068+$0B36
 ; --------------------------------------------------------------------------
 L069_000000A8:
 ; H069+$000000A8: 2f0c  move.l a4, -(a7)
@@ -189,7 +189,7 @@ L069_000000AA:
 L069_000000AE:
 ; H069+$000000AE: 4e550000  link.w a5, #$0
         link.w a5, #$0
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L069_000000B2:
 ; H069+$000000B2: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -202,7 +202,7 @@ L069_000000BC:
 L069_000000BE:
 ; H069+$000000BE: 3f02  move.w d2, -(a7)
         move.w d2, -(a7)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L069_000000C0:
 ; H069+$000000C0: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3

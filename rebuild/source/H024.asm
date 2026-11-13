@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H024
-; Costruzione NewScreen e OpenScreen.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H024
+; Building of NewScreen and OpenScreen.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Costruzione di NewScreen e chiamata OpenScreen. La struttura e' preparata sullo stack e passata al wrapper Intuition.
+; MODULE NOTE
+; Building of NewScreen and OpenScreen call. The structure is prepared on the stack and passed to the Intuition wrapper.
 ; --------------------------------------------------------------------------
 ; H024: 268 original bytes; all offsets are section-relative.
         section H024,code
@@ -17,10 +17,10 @@ H024:
         dc.w $0000,$0000,$0000,$0000
         dc.l H024+$00000018
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H024 [parziale]
-; Scopo: Ingresso del modulo costruzione NewScreen e OpenScreen; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H024+$00E2.
-; Chiamanti diretti: H000+$0060
+; ROUTINE: module_init_H024 [partial]
+; Purpose: Entry of the NewScreen and OpenScreen building module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H024+$00E2.
+; Direct callers: H000+$0060
 ; --------------------------------------------------------------------------
 L024_0000001C:
 ; H024+$0000001C: 2f0c  move.l a4, -(a7)
@@ -38,12 +38,12 @@ L024_00000026:
 FN_build_NewScreen_OpenScreen:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Open_GameScreen [verificato]
-; Scopo: Compone una NewScreen sullo stack e chiama OpenScreen.
-;   - Deriva i mode ID/flag da geometria e argomenti.
-;   - Compila dimensioni, profondità, colori, font, titolo e bitmap custom.
-;   - Inoltra la struttura al wrapper H021+$0184.
-; Chiamanti diretti: H029+$1226
+; ROUTINE: Open_GameScreen [verified]
+; Purpose: Builds a NewScreen on the stack and calls OpenScreen.
+;   - Derives the mode ID/flags from geometry and arguments.
+;   - Fills in sizes, depth, colours, font, title and custom bitmap.
+;   - Forwards the structure to the wrapper H021+$0184.
+; Direct callers: H029+$1226
 ; --------------------------------------------------------------------------
 L024_0000002A:
 ; H024+$0000002A: 2f0c  move.l a4, -(a7)

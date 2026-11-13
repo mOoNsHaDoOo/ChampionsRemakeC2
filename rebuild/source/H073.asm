@@ -1,12 +1,12 @@
 ; ============================================================================
-; GUIDA DEL MODULO H073
-; disegno di interfaccia e composizione di schermate.
-; I commenti descrivono l'analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H073
+; interface drawing and screen composition.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Disegno di interfaccia e composizione di schermate: dieci routine principali e una tabella di dispatch con 50 voci. Usa intensivamente H029.
+; MODULE NOTE
+; Interface drawing and screen composition: ten main routines and a dispatch table with 50 entries. Uses H029 heavily.
 ; --------------------------------------------------------------------------
 ; H073: 4928 original bytes; all offsets are section-relative.
         section H073,code
@@ -14,10 +14,10 @@ H073:
 ; Preserved bytes H073+$00000000..$00000004; code/data not fully classified.
         dc.l H073+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H073 [parziale]
-; Scopo: Ingresso del modulo disegno di interfaccia e composizione di schermate; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H073+$133A.
-; Chiamanti diretti: H000+$019E
+; ROUTINE: module_init_H073 [partial]
+; Purpose: Entry of the interface drawing and screen composition module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H073+$133A.
+; Direct callers: H000+$019E
 ; --------------------------------------------------------------------------
 L073_00000004:
 ; H073+$00000004: 2f0c  move.l a4, -(a7)
@@ -32,10 +32,10 @@ L073_0000000E:
 ; H073+$0000000E: 6000132a  bra.w $133a
         bra.w H073+$133A
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H073_00000012 [parziale]
-; Scopo: Routine del modulo disegno di interfaccia e composizione di schermate; richiama H029+$0312.
-;   - Richiama H029+$0312.
-; Chiamanti diretti: H073+$071E
+; ROUTINE: sub_H073_00000012 [partial]
+; Purpose: Routine of the interface drawing and screen composition module; calls H029+$0312.
+;   - Calls H029+$0312.
+; Direct callers: H073+$071E
 ; --------------------------------------------------------------------------
 L073_00000012:
 ; H073+$00000012: 2f0c  move.l a4, -(a7)
@@ -1082,7 +1082,7 @@ L073_00000500:
 L073_00000502:
 ; H073+$00000502: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H073+$04E4; indici 0..7, default -1.
+; DISPATCH: words relative to H073+$04E4; indices 0..7, default -1.
 L073_00000506:
 ; H073+$00000506: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -1228,10 +1228,10 @@ L073_000005AC:
 ; H073+$000005AC: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H073_000005AE [parziale]
-; Scopo: Routine del modulo disegno di interfaccia e composizione di schermate; richiama H029+$0354.
-;   - Richiama H029+$0354.
-; Chiamanti diretti: H066+$290E, H066+$1FC8, H013+$60F4, H013+$44F8
+; ROUTINE: sub_H073_000005AE [partial]
+; Purpose: Routine of the interface drawing and screen composition module; calls H029+$0354.
+;   - Calls H029+$0354.
+; Direct callers: H066+$290E, H066+$1FC8, H013+$60F4, H013+$44F8
 ; --------------------------------------------------------------------------
 L073_000005AE:
 ; H073+$000005AE: 2f0c  move.l a4, -(a7)
@@ -1442,7 +1442,7 @@ L073_000006BC:
 L073_000006BE:
 ; H073+$000006BE: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H073+$06A2; indici 0..5, default -1.
+; DISPATCH: words relative to H073+$06A2; indices 0..5, default -1.
 L073_000006C2:
 ; H073+$000006C2: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -1893,7 +1893,7 @@ L073_000008FE:
 L073_00000900:
 ; H073+$00000900: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H073+$08E4; indici 0..5, default -1.
+; DISPATCH: words relative to H073+$08E4; indices 0..5, default -1.
 L073_00000904:
 ; H073+$00000904: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -2039,10 +2039,10 @@ L073_000009B8:
 ; H073+$000009B8: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H073_000009BA [parziale]
-; Scopo: Routine del modulo disegno di interfaccia e composizione di schermate; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H013+$4274, H073+$011C, H013+$2784
+; ROUTINE: sub_H073_000009BA [partial]
+; Purpose: Routine of the interface drawing and screen composition module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H013+$4274, H073+$011C, H013+$2784
 ; --------------------------------------------------------------------------
 L073_000009BA:
 ; H073+$000009BA: 2f0c  move.l a4, -(a7)
@@ -2483,11 +2483,11 @@ L073_00000BA6:
 ; H073+$00000BA6: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H073_00000BA8 [parziale]
-; Scopo: Routine del modulo disegno di interfaccia e composizione di schermate; richiama H029+$0354, H029+$03E2.
-;   - Richiama H029+$0354.
-;   - Richiama H029+$03E2.
-; Chiamanti diretti: H013+$123E, H073+$0726
+; ROUTINE: sub_H073_00000BA8 [partial]
+; Purpose: Routine of the interface drawing and screen composition module; calls H029+$0354, H029+$03E2.
+;   - Calls H029+$0354.
+;   - Calls H029+$03E2.
+; Direct callers: H013+$123E, H073+$0726
 ; --------------------------------------------------------------------------
 L073_00000BA8:
 ; H073+$00000BA8: 2f0c  move.l a4, -(a7)
@@ -3161,7 +3161,7 @@ L073_00000EEA:
 L073_00000EEC:
 ; H073+$00000EEC: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H073+$0EBE; indici 0..14, default -1.
+; DISPATCH: words relative to H073+$0EBE; indices 0..14, default -1.
 L073_00000EF0:
 ; H073+$00000EF0: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -3309,7 +3309,7 @@ L073_00000FA4:
 L073_00000FA6:
 ; H073+$00000FA6: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H073+$0F86; indici 0..6, default -1.
+; DISPATCH: words relative to H073+$0F86; indices 0..6, default -1.
 L073_00000FAA:
 ; H073+$00000FAA: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -3341,11 +3341,11 @@ L073_00000FC6:
 ; H073+$00000FC6: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H073_00000FC8 [parziale]
-; Scopo: Routine del modulo disegno di interfaccia e composizione di schermate; richiama H029+$0354, H029+$03E2.
-;   - Richiama H029+$0354.
-;   - Richiama H029+$03E2.
-; Chiamanti diretti: H013+$117C, H073+$073C, H073+$09AA
+; ROUTINE: sub_H073_00000FC8 [partial]
+; Purpose: Routine of the interface drawing and screen composition module; calls H029+$0354, H029+$03E2.
+;   - Calls H029+$0354.
+;   - Calls H029+$03E2.
+; Direct callers: H013+$117C, H073+$073C, H073+$09AA
 ; --------------------------------------------------------------------------
 L073_00000FC8:
 ; H073+$00000FC8: 2f0c  move.l a4, -(a7)
@@ -3632,7 +3632,7 @@ L073_00001130:
 L073_00001132:
 ; H073+$00001132: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H073+$111E; indici 0..1, default -1.
+; DISPATCH: words relative to H073+$111E; indices 0..1, default -1.
 L073_00001136:
 ; H073+$00001136: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -3947,10 +3947,10 @@ L073_00001292:
 ; H073+$00001292: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H073_12A4 [parziale]
-; Scopo: Trampolino verso H073+$12A4; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H073+$12A4.
-; Chiamanti diretti: H065+$3102, H065+$312E
+; ROUTINE: trampoline_H073_12A4 [partial]
+; Purpose: Trampoline to H073+$12A4; the actual body is there.
+;   - Jumps to the actual body at H073+$12A4.
+; Direct callers: H065+$3102, H065+$312E
 ; --------------------------------------------------------------------------
 L073_00001294:
 ; H073+$00001294: 2f0c  move.l a4, -(a7)
@@ -3983,10 +3983,10 @@ L073_000012AC:
 ; H073+$000012AC: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H073_12BE [parziale]
-; Scopo: Trampolino verso H073+$12BE; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H073+$12BE.
-; Chiamanti diretti: H065+$3118, H065+$3142
+; ROUTINE: trampoline_H073_12BE [partial]
+; Purpose: Trampoline to H073+$12BE; the actual body is there.
+;   - Jumps to the actual body at H073+$12BE.
+; Direct callers: H065+$3118, H065+$3142
 ; --------------------------------------------------------------------------
 L073_000012AE:
 ; H073+$000012AE: 2f0c  move.l a4, -(a7)
@@ -4019,10 +4019,10 @@ L073_000012C6:
 ; H073+$000012C6: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H073_12D8 [parziale]
-; Scopo: Trampolino verso H073+$12D8; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H073+$12D8.
-; Chiamanti diretti: H073+$1318, H065+$0878, H013+$294C
+; ROUTINE: trampoline_H073_12D8 [partial]
+; Purpose: Trampoline to H073+$12D8; the actual body is there.
+;   - Jumps to the actual body at H073+$12D8.
+; Direct callers: H073+$1318, H065+$0878, H013+$294C
 ; --------------------------------------------------------------------------
 L073_000012C8:
 ; H073+$000012C8: 2f0c  move.l a4, -(a7)
@@ -4059,10 +4059,10 @@ L073_000012E0:
         dc.w $0006,$005B,$57C2,$4402,$1002,$6000,$0002,$4E5D
         dc.w $285F,$205F,$588F,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H073_0000130A [parziale]
-; Scopo: Routine del modulo disegno di interfaccia e composizione di schermate; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H027+$3EEC, H063+$1846, H063+$3034, H063+$306E, H063+$30CE, H063+$3108 e altri 9
+; ROUTINE: sub_H073_0000130A [partial]
+; Purpose: Routine of the interface drawing and screen composition module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H027+$3EEC, H063+$1846, H063+$3034, H063+$306E, H063+$30CE, H063+$3108 and 9 more
 ; --------------------------------------------------------------------------
 L073_0000130A:
 ; H073+$0000130A: 2f0c  move.l a4, -(a7)

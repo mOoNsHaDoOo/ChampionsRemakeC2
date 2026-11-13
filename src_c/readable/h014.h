@@ -1,4 +1,4 @@
-/* H014: messaggi di errore del programma. */
+/* H014: program error messages. */
 #ifndef COK_H014_H
 #define COK_H014_H
 

@@ -1,4 +1,4 @@
-/* H084: adattatore intuition.library/GetPrefs. */
+/* H084: intuition.library/GetPrefs adapter. */
 #ifndef COK_H084_H
 #define COK_H084_H
 

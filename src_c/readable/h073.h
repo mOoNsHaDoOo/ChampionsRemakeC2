@@ -1,4 +1,4 @@
-/* H073: valori derivati dei personaggi (tiri salvezza, abilita', magie). */
+/* H073: derived character values (saving throws, abilities, spells). */
 #ifndef COK_H073_H
 #define COK_H073_H
 

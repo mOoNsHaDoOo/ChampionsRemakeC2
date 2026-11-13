@@ -1,4 +1,4 @@
-/* H048: mappa e figure del combattimento. */
+/* H048: combat map and figures. */
 #ifndef COK_H048_H
 #define COK_H048_H
 #include "character.h"

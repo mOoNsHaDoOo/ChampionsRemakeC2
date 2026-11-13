@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H092
-; Helper per liste Exec.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H092
+; Helpers for Exec lists.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Helper per liste Exec: inserimento, rimozione e scorrimento dei nodi.
+; MODULE NOTE
+; Helpers for Exec lists: insertion, removal and walking of the nodes.
 ; --------------------------------------------------------------------------
 ; H092: 200 original bytes; all offsets are section-relative.
         section H092,code
@@ -15,10 +15,10 @@ H092:
 ; Preserved bytes H092+$00000000..$00000004; code/data not fully classified.
         dc.l H092+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H092_00000004 [parziale]
-; Scopo: Routine del modulo helper per liste Exec; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H000+$00F6
+; ROUTINE: sub_H092_00000004 [partial]
+; Purpose: Routine of the helpers for Exec lists module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H000+$00F6
 ; --------------------------------------------------------------------------
 L092_00000004:
 ; H092+$00000004: 4e75  rts 
@@ -33,10 +33,10 @@ L092_00000004:
         dc.w $246F,$0004,$2C78,$0004,$2F57,$000C,$4FEF,$000C
         dc.w $4EEE,$FF16
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H092_0000007A [parziale]
-; Scopo: Routine del modulo helper per liste Exec; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H043+$032C
+; ROUTINE: sub_H092_0000007A [partial]
+; Purpose: Routine of the helpers for Exec lists module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H043+$032C
 ; --------------------------------------------------------------------------
 L092_0000007A:
 ; H092+$0000007A: 206f0004  movea.l $4(a7), a0

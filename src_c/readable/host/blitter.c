@@ -1,18 +1,18 @@
 /*
- * Build host: emulatore del blitter dell'Amiga (registri $DFF040..$DFF074),
- * per il codice del gioco che lo programma direttamente.
+ * Host build: emulator of the Amiga blitter (registers $DFF040..$DFF074),
+ * for the game code that programs it directly.
  *
- * Emula la modalita' area: canali A, B, C, D, minterm (BLTCON0), shift di A
- * e B, maschere di prima/ultima word su A, modulo, modo discendente.  La
- * scrittura di BLTSIZE esegue subito il blit (sull'host non c'e'
- * parallelismo: WaitBlit non deve aspettare).  Modalita' linea e
- * riempimento non sono emulate: se richieste il programma si ferma.
+ * Emulates area mode: channels A, B, C, D, minterm (BLTCON0), shift of A
+ * and B, first/last word masks on A, modulo, descending mode.  Writing
+ * BLTSIZE runs the blit at once (the host has no parallelism: WaitBlit
+ * does not need to wait).  Line and fill modes are not emulated: if
+ * requested the program stops.
  */
 #include <stdio.h>
 #include <stdlib.h>
 #include "../custom.h"
 
-static u16 s_reg[0x100];                /* registri a word, per offset/2 */
+static u16 s_reg[0x100];                /* word registers, by offset/2 */
 static u8 *s_ptr[4];                    /* A, B, C, D */
 
 static int ptr_index(unsigned reg)
@@ -31,7 +31,7 @@ void host_custom_pointer(unsigned reg, void *p)
     int i = ptr_index(reg);
 
     if (i < 0) {
-        fprintf(stderr, "blitter: registro puntatore $%03X non gestito\n", reg);
+        fprintf(stderr, "blitter: pointer register $%03X not handled\n", reg);
         exit(20);
     }
     s_ptr[i] = (u8 *)p;
@@ -67,11 +67,11 @@ static void blit(u16 size)
     unsigned y;
 
     if (con1 & 0x0001) {
-        fprintf(stderr, "blitter: modalita' linea non emulata\n");
+        fprintf(stderr, "blitter: line mode not emulated\n");
         exit(20);
     }
     if (con1 & 0x0018) {
-        fprintf(stderr, "blitter: modalita' riempimento non emulata\n");
+        fprintf(stderr, "blitter: fill mode not emulated\n");
         exit(20);
     }
     for (y = 0; y < height; ++y) {
@@ -91,7 +91,7 @@ static void blit(u16 size)
             if (x == width - 1) {
                 am &= s_reg[BLTALWM / 2];
             }
-            /* Shift: in discesa verso sinistra, altrimenti verso destra. */
+            /* Shift: to the left when descending, otherwise to the right. */
             if (desc) {
                 as = (u16)(((u32)am << 16 | prev_a) >> (16 - ash));
                 bs = (u16)(((u32)b << 16 | prev_b) >> (16 - bsh));
@@ -146,7 +146,7 @@ static void blit(u16 size)
 void host_custom_write(unsigned reg, u16 value)
 {
     if (reg >= 0x200 || (reg & 1) != 0) {
-        fprintf(stderr, "custom: registro $%03X non valido\n", reg);
+        fprintf(stderr, "custom: invalid register $%03X\n", reg);
         exit(20);
     }
     s_reg[reg / 2] = value;
@@ -155,7 +155,7 @@ void host_custom_write(unsigned reg, u16 value)
     }
 }
 
-/* graphics.library: con il blitter emulato in modo sincrono non c'e' attesa. */
+/* graphics.library: with the blitter emulated synchronously there is no wait. */
 void OwnBlitter(void)
 {
 }

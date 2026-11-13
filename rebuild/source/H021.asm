@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H021
-; Adattatori intuition.library.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H021
+; intuition.library adapters.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Adattatori intuition.library: screen, window, IDCMP, pointer e title. Le funzioni sono wrapper sottili attorno agli LVO.
+; MODULE NOTE
+; intuition.library adapters: screen, window, IDCMP, pointer and title. The functions are thin wrappers around the LVOs.
 ; --------------------------------------------------------------------------
 ; H021: 1632 original bytes; all offsets are section-relative.
         section H021,code
@@ -16,10 +16,10 @@ H021:
         dc.w $0000,$0000
         dc.l H021+$00000004
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H021_00000008 [parziale]
-; Scopo: Routine del modulo adattatori intuition.library; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H000+$0048
+; ROUTINE: sub_H021_00000008 [partial]
+; Purpose: Routine of the intuition.library adapters module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H000+$0048
 ; --------------------------------------------------------------------------
 L021_00000008:
 ; H021+$00000008: 41fafffa  lea.l $4(pc), a0
@@ -34,10 +34,10 @@ L021_00000012:
         dc.w $206F,$000C,$202F,$0008,$222F,$0004,$2C7A,$FFDE
         dc.w $2F57,$000C,$4FEF,$000C,$4EEE,$FE74
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_CurrentTime [parziale]
-; Scopo: Adattatore a intuition.library/CurrentTime; incapsula la chiamata alla libreria.
-;   - Chiama intuition.library/CurrentTime (LVO -84).
-; Chiamanti diretti: H006+$0274, H030+$0A56
+; ROUTINE: wrapper_CurrentTime [partial]
+; Purpose: Adapter to intuition.library/CurrentTime; wraps the library call.
+;   - Calls intuition.library/CurrentTime (LVO -84).
+; Direct callers: H006+$0274, H030+$0A56
 ; --------------------------------------------------------------------------
 L021_00000030:
 ; H021+$00000030: 206f0008  movea.l $8(a7), a0
@@ -72,10 +72,10 @@ L021_00000042:
         dc.w $0006,$322F,$0004,$2C7A,$FF02,$2F57,$000C,$4FEF
         dc.w $000C,$4EEE,$FF28
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_CloseScreen [parziale]
-; Scopo: Adattatore a intuition.library/CloseScreen; incapsula la chiamata alla libreria.
-;   - Chiama intuition.library/CloseScreen (LVO -66).
-; Chiamanti diretti: H029+$12F0
+; ROUTINE: wrapper_CloseScreen [partial]
+; Purpose: Adapter to intuition.library/CloseScreen; wraps the library call.
+;   - Calls intuition.library/CloseScreen (LVO -66).
+; Direct callers: H029+$12F0
 ; --------------------------------------------------------------------------
 L021_0000010C:
 ; H021+$0000010C: 206f0004  movea.l $4(a7), a0
@@ -93,10 +93,10 @@ L021_0000011A:
 ; H021+$0000011A: 4eeeffbe  jmp -$42(a6) ; intuition.library/CloseScreen
         jmp LVO_intuition_CloseScreen(a6)
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_CloseWorkBench [parziale]
-; Scopo: Adattatore a intuition.library/CloseWorkBench; incapsula la chiamata alla libreria.
-;   - Chiama intuition.library/CloseWorkBench (LVO -78).
-; Chiamanti diretti: H029+$127C
+; ROUTINE: wrapper_CloseWorkBench [partial]
+; Purpose: Adapter to intuition.library/CloseWorkBench; wraps the library call.
+;   - Calls intuition.library/CloseWorkBench (LVO -78).
+; Direct callers: H029+$127C
 ; --------------------------------------------------------------------------
 L021_0000011E:
 ; H021+$0000011E: 2c7afee0  movea.l $0(pc), a6
@@ -112,10 +112,10 @@ L021_00000122:
         dc.w $4EEE,$FE86,$206F,$0008,$302F,$0006,$322F,$0004
         dc.w $2C7A,$FE88,$2F57,$0008,$508F,$4EEE,$FF5E
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_OpenScreen [parziale]
-; Scopo: Adattatore a intuition.library/OpenScreen; incapsula la chiamata alla libreria.
-;   - Chiama intuition.library/OpenScreen (LVO -198).
-; Chiamanti diretti: H024+$00CC
+; ROUTINE: wrapper_OpenScreen [partial]
+; Purpose: Adapter to intuition.library/OpenScreen; wraps the library call.
+;   - Calls intuition.library/OpenScreen (LVO -198).
+; Direct callers: H024+$00CC
 ; --------------------------------------------------------------------------
 L021_00000184:
 ; H021+$00000184: 206f0004  movea.l $4(a7), a0
@@ -133,10 +133,10 @@ L021_00000192:
 ; H021+$00000192: 4eeeff3a  jmp -$c6(a6) ; intuition.library/OpenScreen
         jmp LVO_intuition_OpenScreen(a6)
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_OpenWorkBench [parziale]
-; Scopo: Adattatore a intuition.library/OpenWorkBench; incapsula la chiamata alla libreria.
-;   - Chiama intuition.library/OpenWorkBench (LVO -210).
-; Chiamanti diretti: H029+$12F6
+; ROUTINE: wrapper_OpenWorkBench [partial]
+; Purpose: Adapter to intuition.library/OpenWorkBench; wraps the library call.
+;   - Calls intuition.library/OpenWorkBench (LVO -210).
+; Direct callers: H029+$12F6
 ; --------------------------------------------------------------------------
 L021_00000196:
 ; H021+$00000196: 2c7afe68  movea.l $0(pc), a6
@@ -150,10 +150,10 @@ L021_0000019A:
         dc.w $FF0A,$206F,$0004,$2C7A,$FE3A,$2F57,$0004,$588F
         dc.w $4EEE,$FF04
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_ShowTitle [parziale]
-; Scopo: Adattatore a intuition.library/ShowTitle; incapsula la chiamata alla libreria.
-;   - Chiama intuition.library/ShowTitle (LVO -282).
-; Chiamanti diretti: H029+$123A
+; ROUTINE: wrapper_ShowTitle [partial]
+; Purpose: Adapter to intuition.library/ShowTitle; wraps the library call.
+;   - Calls intuition.library/ShowTitle (LVO -282).
+; Direct callers: H029+$123A
 ; --------------------------------------------------------------------------
 L021_000001D2:
 ; H021+$000001D2: 206f0006  movea.l $6(a7), a0
@@ -179,10 +179,10 @@ L021_000001E6:
 ; Preserved bytes H021+$000001EA..$000001FA; code/data not fully classified.
         dc.w $2C7A,$FE14,$4EEE,$FEB0,$2C7A,$FE0C,$4EEE,$FEAA
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_ActivateWindow [parziale]
-; Scopo: Adattatore a intuition.library/ActivateWindow; incapsula la chiamata alla libreria.
-;   - Chiama intuition.library/ActivateWindow (LVO -450).
-; Chiamanti diretti: H029+$1290
+; ROUTINE: wrapper_ActivateWindow [partial]
+; Purpose: Adapter to intuition.library/ActivateWindow; wraps the library call.
+;   - Calls intuition.library/ActivateWindow (LVO -450).
+; Direct callers: H029+$1290
 ; --------------------------------------------------------------------------
 L021_000001FA:
 ; H021+$000001FA: 206f0004  movea.l $4(a7), a0
@@ -204,10 +204,10 @@ L021_00000208:
         dc.w $FE9E,$206F,$0004,$2C7A,$FDDC,$2F57,$0004,$588F
         dc.w $4EEE,$FFD0
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_ClearPointer [parziale]
-; Scopo: Adattatore a intuition.library/ClearPointer; incapsula la chiamata alla libreria.
-;   - Chiama intuition.library/ClearPointer (LVO -60).
-; Chiamanti diretti: H007+$0B94, H029+$01AA
+; ROUTINE: wrapper_ClearPointer [partial]
+; Purpose: Adapter to intuition.library/ClearPointer; wraps the library call.
+;   - Calls intuition.library/ClearPointer (LVO -60).
+; Direct callers: H007+$0B94, H029+$01AA
 ; --------------------------------------------------------------------------
 L021_00000230:
 ; H021+$00000230: 206f0004  movea.l $4(a7), a0
@@ -225,10 +225,10 @@ L021_0000023E:
 ; H021+$0000023E: 4eeeffc4  jmp -$3c(a6) ; intuition.library/ClearPointer
         jmp LVO_intuition_ClearPointer(a6)
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_CloseWindow [parziale]
-; Scopo: Adattatore a intuition.library/CloseWindow; incapsula la chiamata alla libreria.
-;   - Chiama intuition.library/CloseWindow (LVO -72).
-; Chiamanti diretti: H029+$12E4
+; ROUTINE: wrapper_CloseWindow [partial]
+; Purpose: Adapter to intuition.library/CloseWindow; wraps the library call.
+;   - Calls intuition.library/CloseWindow (LVO -72).
+; Direct callers: H029+$12E4
 ; --------------------------------------------------------------------------
 L021_00000242:
 ; H021+$00000242: 206f0004  movea.l $4(a7), a0
@@ -249,10 +249,10 @@ L021_00000250:
         dc.w $206F,$0006,$7000,$102F,$0004,$2C7A,$FDA0,$2F57
         dc.w $0006,$5C8F,$4EEE,$FE92
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_ModifyIDCMP [parziale]
-; Scopo: Adattatore a intuition.library/ModifyIDCMP; incapsula la chiamata alla libreria.
-;   - Chiama intuition.library/ModifyIDCMP (LVO -150).
-; Chiamanti diretti: H008+$05D0, H008+$1384, H008+$0F72
+; ROUTINE: wrapper_ModifyIDCMP [partial]
+; Purpose: Adapter to intuition.library/ModifyIDCMP; wraps the library call.
+;   - Calls intuition.library/ModifyIDCMP (LVO -150).
+; Direct callers: H008+$05D0, H008+$1384, H008+$0F72
 ; --------------------------------------------------------------------------
 L021_0000026C:
 ; H021+$0000026C: 206f0008  movea.l $8(a7), a0
@@ -276,10 +276,10 @@ L021_0000027E:
         dc.w $206F,$0008,$302F,$0006,$322F,$0004,$2C7A,$FD70
         dc.w $2F57,$0008,$508F,$4EEE,$FF58
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_OpenWindow [parziale]
-; Scopo: Adattatore a intuition.library/OpenWindow; incapsula la chiamata alla libreria.
-;   - Chiama intuition.library/OpenWindow (LVO -204).
-; Chiamanti diretti: H025+$00B6
+; ROUTINE: wrapper_OpenWindow [partial]
+; Purpose: Adapter to intuition.library/OpenWindow; wraps the library call.
+;   - Calls intuition.library/OpenWindow (LVO -204).
+; Direct callers: H025+$00B6
 ; --------------------------------------------------------------------------
 L021_0000029C:
 ; H021+$0000029C: 206f0004  movea.l $4(a7), a0
@@ -302,10 +302,10 @@ L021_000002AA:
         dc.w $2F57,$0006,$5C8F,$4EEE,$FF16,$206F,$0008,$226F
         dc.w $0004,$2C7A,$FD1E,$2F57,$0008,$508F,$4EEE,$FEFE
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_SetPointer [parziale]
-; Scopo: Adattatore a intuition.library/SetPointer; incapsula la chiamata alla libreria.
-;   - Chiama intuition.library/SetPointer (LVO -270).
-; Chiamanti diretti: H007+$0A34, H029+$0222
+; ROUTINE: wrapper_SetPointer [partial]
+; Purpose: Adapter to intuition.library/SetPointer; wraps the library call.
+;   - Calls intuition.library/SetPointer (LVO -270).
+; Direct callers: H007+$0A34, H029+$0222
 ; --------------------------------------------------------------------------
 L021_000002EE:
 ; H021+$000002EE: 206f0010  movea.l $10(a7), a0
@@ -349,10 +349,10 @@ L021_00000312:
         dc.w $588F,$4EEE,$FECE,$206F,$0004,$2C7A,$FC5E,$2F57
         dc.w $0004,$588F,$4EEE,$FEC8
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_AutoRequest [parziale]
-; Scopo: Adattatore a intuition.library/AutoRequest; incapsula la chiamata alla libreria.
-;   - Chiama intuition.library/AutoRequest (LVO -348).
-; Chiamanti diretti: H028+$02B6
+; ROUTINE: wrapper_AutoRequest [partial]
+; Purpose: Adapter to intuition.library/AutoRequest; wraps the library call.
+;   - Calls intuition.library/AutoRequest (LVO -348).
+; Direct callers: H028+$02B6
 ; --------------------------------------------------------------------------
 L021_000003AE:
 ; H021+$000003AE: 206f001c  movea.l $1c(a7), a0

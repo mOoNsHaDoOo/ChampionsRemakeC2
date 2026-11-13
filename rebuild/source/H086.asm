@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H086
-; Parser generico IFF: chunk e gruppi FORM/LIST/PROP/CAT.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H086
+; Generic IFF parser: chunks and FORM/LIST/PROP/CAT groups.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Parser IFF generico: attraversa FORM/LIST/PROP/CAT e richiama le callback registrate dal chiamante.
+; MODULE NOTE
+; Generic IFF parser: walks FORM/LIST/PROP/CAT and calls the callbacks registered by the caller.
 ; --------------------------------------------------------------------------
 ; H086: 2088 original bytes; all offsets are section-relative.
         section H086,code
@@ -15,10 +15,10 @@ H086:
 ; Preserved bytes H086+$00000000..$00000004; code/data not fully classified.
         dc.l H086+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H086_0822 [parziale]
-; Scopo: Trampolino verso H086+$0822; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H086+$0822.
-; Chiamanti diretti: H000+$00C6
+; ROUTINE: trampoline_H086_0822 [partial]
+; Purpose: Trampoline to H086+$0822; the actual body is there.
+;   - Jumps to the actual body at H086+$0822.
+; Direct callers: H000+$00C6
 ; --------------------------------------------------------------------------
 L086_00000004:
 ; H086+$00000004: 4e550000  link.w a5, #$0
@@ -27,10 +27,10 @@ L086_00000008:
 ; H086+$00000008: 60000818  bra.w $822
         bra.w H086+$822
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H086_0000000C [parziale]
-; Scopo: Routine del modulo parser generico IFF: chunk e gruppi FORM/LIST/PROP/CAT; richiama H098+$0276.
-;   - Richiama H098+$0276.
-; Chiamanti diretti: H086+$00F2
+; ROUTINE: sub_H086_0000000C [partial]
+; Purpose: Routine of the generic IFF parser: chunks and FORM/LIST/PROP/CAT groups module; calls H098+$0276.
+;   - Calls H098+$0276.
+; Direct callers: H086+$00F2
 ; --------------------------------------------------------------------------
 L086_0000000C:
 ; H086+$0000000C: 4e55fff8  link.w a5, #$fff8
@@ -104,10 +104,10 @@ L086_00000066:
 ; H086+$00000066: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H086_00000068 [parziale]
-; Scopo: Routine del modulo parser generico IFF: chunk e gruppi FORM/LIST/PROP/CAT; richiama H098+$0276.
-;   - Richiama H098+$0276.
-; Chiamanti diretti: H086+$0254
+; ROUTINE: sub_H086_00000068 [partial]
+; Purpose: Routine of the generic IFF parser: chunks and FORM/LIST/PROP/CAT groups module; calls H098+$0276.
+;   - Calls H098+$0276.
+; Direct callers: H086+$0254
 ; --------------------------------------------------------------------------
 L086_00000068:
 ; H086+$00000068: 4e55fffc  link.w a5, #$fffc
@@ -180,10 +180,10 @@ L086_000000BE:
 ; H086+$000000BE: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H086_000000C0 [parziale]
-; Scopo: Routine del modulo parser generico IFF: chunk e gruppi FORM/LIST/PROP/CAT; richiama H098+$0276.
-;   - Richiama H098+$0276.
-; Chiamanti diretti: H086+$04D0
+; ROUTINE: sub_H086_000000C0 [partial]
+; Purpose: Routine of the generic IFF parser: chunks and FORM/LIST/PROP/CAT groups module; calls H098+$0276.
+;   - Calls H098+$0276.
+; Direct callers: H086+$04D0
 ; --------------------------------------------------------------------------
 L086_000000C0:
 ; H086+$000000C0: 4e55fff8  link.w a5, #$fff8
@@ -298,10 +298,10 @@ L086_0000015A:
 ; H086+$0000015A: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H086_0000015C [parziale]
-; Scopo: Routine del modulo parser generico IFF: chunk e gruppi FORM/LIST/PROP/CAT; richiama H039+$000C.
-;   - Richiama H039+$000C.
-; Chiamanti diretti: H040+$0234, H040+$02AA, H040+$04E2, H086+$0590
+; ROUTINE: sub_H086_0000015C [partial]
+; Purpose: Routine of the generic IFF parser: chunks and FORM/LIST/PROP/CAT groups module; calls H039+$000C.
+;   - Calls H039+$000C.
+; Direct callers: H040+$0234, H040+$02AA, H040+$04E2, H086+$0590
 ; --------------------------------------------------------------------------
 L086_0000015C:
 ; H086+$0000015C: 4e55fffc  link.w a5, #$fffc
@@ -425,10 +425,10 @@ L086_000001F6:
 ; H086+$000001F6: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H086_000001F8 [parziale]
-; Scopo: Routine del modulo parser generico IFF: chunk e gruppi FORM/LIST/PROP/CAT; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H040+$0276, H040+$057A, H040+$049C, H086+$0684, H086+$0550
+; ROUTINE: sub_H086_000001F8 [partial]
+; Purpose: Routine of the generic IFF parser: chunks and FORM/LIST/PROP/CAT groups module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H040+$0276, H040+$057A, H040+$049C, H086+$0684, H086+$0550
 ; --------------------------------------------------------------------------
 L086_000001F8:
 ; H086+$000001F8: 4e55fffc  link.w a5, #$fffc
@@ -479,11 +479,11 @@ L086_0000022C:
 ; H086+$0000022C: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H086_0000022E [parziale]
-; Scopo: Routine del modulo parser generico IFF: chunk e gruppi FORM/LIST/PROP/CAT; richiama H039+$000C, H098+$007C.
-;   - Richiama H039+$000C.
-;   - Richiama H098+$007C.
-; Chiamanti diretti: H086+$0726, H086+$06DE, H086+$07C8, H086+$05CA, H086+$04E4
+; ROUTINE: sub_H086_0000022E [partial]
+; Purpose: Routine of the generic IFF parser: chunks and FORM/LIST/PROP/CAT groups module; calls H039+$000C, H098+$007C.
+;   - Calls H039+$000C.
+;   - Calls H098+$007C.
+; Direct callers: H086+$0726, H086+$06DE, H086+$07C8, H086+$05CA, H086+$04E4
 ; --------------------------------------------------------------------------
 L086_0000022E:
 ; H086+$0000022E: 4e55fff4  link.w a5, #$fff4
@@ -790,10 +790,10 @@ L086_000003F0:
 ; H086+$000003F0: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H086_049E [parziale]
-; Scopo: Trampolino verso H086+$049E; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H086+$049E.
-; Chiamanti diretti: H087+$001E, H087+$00FA, H086+$03C8, H087+$03A8
+; ROUTINE: trampoline_H086_049E [partial]
+; Purpose: Trampoline to H086+$049E; the actual body is there.
+;   - Jumps to the actual body at H086+$049E.
+; Direct callers: H087+$001E, H087+$00FA, H086+$03C8, H087+$03A8
 ; --------------------------------------------------------------------------
 L086_000003F2:
 ; H086+$000003F2: 4e55fff8  link.w a5, #$fff8
@@ -927,10 +927,10 @@ L086_000004A6:
         dc.w $4E55,$0000,$7000,$6000,$0002,$4E5D,$205F,$588F
         dc.w $4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H086_000004BA [parziale]
-; Scopo: Routine del modulo parser generico IFF: chunk e gruppi FORM/LIST/PROP/CAT; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H040+$0640
+; ROUTINE: sub_H086_000004BA [partial]
+; Purpose: Routine of the generic IFF parser: chunks and FORM/LIST/PROP/CAT groups module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H040+$0640
 ; --------------------------------------------------------------------------
 L086_000004BA:
 ; H086+$000004BA: 4e55ffd0  link.w a5, #$ffd0
@@ -1074,10 +1074,10 @@ L086_00000576:
 ; H086+$00000576: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H086_00000578 [parziale]
-; Scopo: Routine del modulo parser generico IFF: chunk e gruppi FORM/LIST/PROP/CAT; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H040+$05D2, H086+$06C6
+; ROUTINE: sub_H086_00000578 [partial]
+; Purpose: Routine of the generic IFF parser: chunks and FORM/LIST/PROP/CAT groups module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H040+$05D2, H086+$06C6
 ; --------------------------------------------------------------------------
 L086_00000578:
 ; H086+$00000578: 4e55ffce  link.w a5, #$ffce
@@ -1332,10 +1332,10 @@ L086_000006D4:
 ; H086+$000006D4: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H086_000006D6 [parziale]
-; Scopo: Routine del modulo parser generico IFF: chunk e gruppi FORM/LIST/PROP/CAT; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H040+$02C8
+; ROUTINE: sub_H086_000006D6 [partial]
+; Purpose: Routine of the generic IFF parser: chunks and FORM/LIST/PROP/CAT groups module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H040+$02C8
 ; --------------------------------------------------------------------------
 L086_000006D6:
 ; H086+$000006D6: 4e55fffc  link.w a5, #$fffc
@@ -1383,10 +1383,10 @@ L086_00000712:
 ; H086+$00000712: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H086_00000714 [parziale]
-; Scopo: Routine del modulo parser generico IFF: chunk e gruppi FORM/LIST/PROP/CAT; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H040+$0252
+; ROUTINE: sub_H086_00000714 [partial]
+; Purpose: Routine of the generic IFF parser: chunks and FORM/LIST/PROP/CAT groups module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H040+$0252
 ; --------------------------------------------------------------------------
 L086_00000714:
 ; H086+$00000714: 4e55fff8  link.w a5, #$fff8
@@ -1512,10 +1512,10 @@ L086_000007BE:
 ; H086+$000007BE: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H086_000007C0 [parziale]
-; Scopo: Routine del modulo parser generico IFF: chunk e gruppi FORM/LIST/PROP/CAT; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H040+$0500
+; ROUTINE: sub_H086_000007C0 [partial]
+; Purpose: Routine of the generic IFF parser: chunks and FORM/LIST/PROP/CAT groups module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H040+$0500
 ; --------------------------------------------------------------------------
 L086_000007C0:
 ; H086+$000007C0: 4e55fffc  link.w a5, #$fffc

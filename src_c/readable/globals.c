@@ -1,4 +1,4 @@
-/* Definizioni dei dati globali (vedi globals.h). */
+/* Definitions of the global data (see globals.h). */
 #include "globals.h"
 
 u8  g_h005[H005_SIZE];

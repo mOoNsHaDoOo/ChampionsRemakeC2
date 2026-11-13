@@ -1,4 +1,4 @@
-/* H071: Negozio e acquisto di oggetti. */
+/* H071: Shop and buying of items. */
 #include <string.h>
 #include "cok.h"
 #include "h071.h"
@@ -15,14 +15,14 @@
 #include "h061.h"
 #include "h067.h"
 
-/* PORT H071+$011C: link/unlk, nessun effetto. */
+/* PORT H071+$011C: link/unlk, no effect. */
 void h071_init(void)
 {
 }
 
 /*
- * PORT H071+$047C: il personaggio corrente prende una copia di it in
- * fondo ai suoi oggetti, se non lo sovraccarica ("OverLoaded", *fail).
+ * PORT H071+$047C: the current character takes a copy of it at the
+ * end of its items, if it does not overload it ("OverLoaded", *fail).
  */
 void take_item(CokItem *it, u8 *fail)
 {
@@ -50,15 +50,15 @@ void take_item(CokItem *it, u8 *fail)
     recompute_stats(g_current_char);
 }
 
-/* Dati del modulo sotto a4: -$1(a4), ridisegnare l'elenco del negozio. */
+/* Module data below a4: -$1(a4), redraw the shop list. */
 static u8 s_list_redraw;
 
-#define TEXT_BUF ((char *)&g_h005[0x3C82]) /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
+#define TEXT_BUF ((char *)&g_h005[0x3C82]) /* $3C82: generic 80-character text buffer (TEXT_BUF) */
 
 /*
- * Nell'originale la lista degli oggetti ($2A3A) e' passata al menu a
- * elenco; qui una lista di voci con gli stessi nomi, e l'oggetto nella
- * stessa posizione della voce scelta.
+ * In the original the item list ($2A3A) is passed to the list menu;
+ * here a list of entries with the same names, and the item in the
+ * same position as the chosen entry.
  */
 static CokMenuItem *s_shop_menu;
 
@@ -73,7 +73,7 @@ static CokMenuItem *shop_as_menu(void)
                                                        COK_MEMF_CLEAR);
 
         memcpy(n->text, it->b, 0x2A);
-        n->header = it->b[0x2A]; /* ogg+$2A: flag intestazione: copiato in header della voce di menu */
+        n->header = it->b[0x2A]; /* ogg+$2A: header flag: copied into the header of the menu entry */
         if (tail == NULL) {
             s_shop_menu = n;
         } else {
@@ -100,11 +100,11 @@ static CokItem *shop_menu_item(CokMenuItem *node)
 }
 
 /*
- * PORT H071+$012A: elenco degli oggetti in vendita ("Items:", Buy): a
- * ogni nome si affianca il prezzo (valore +$42, almeno 1, scalato dal
- * livello dei prezzi di g_state_b +$6DA) allineato a destra su 30
- * colonne; poi i nomi si ricompongono.  Restituisce tasto e oggetto.
- * Un nome vuoto copierebbe 64K byte nell'originale; qui nulla.
+ * PORT H071+$012A: list of the items for sale ("Items:", Buy): next to
+ * each name goes the price (value +$42, at least 1, scaled by the
+ * price level of g_state_b +$6DA) right-aligned on 30
+ * columns; then the names are restored.  Returns key and item.
+ * An empty name would copy 64K bytes in the original; here nothing.
  */
 static void shop_list(u16 *index, CokMenuItem **cursor, CokItem **item,
                       u8 *key)
@@ -117,10 +117,10 @@ static void shop_list(u16 *index, CokMenuItem **cursor, CokItem **item,
     u16 price;
 
     for (it = g_treasure_items; it != NULL; it = it->next) {
-        if (COK_GET16(&it->b[0x42]) == 0) { /* ogg+$42: (word) valore in monete (Sell offre la meta') */
-            COK_PUT16(&it->b[0x42], 1); /* ogg+$42: (word) valore in monete (Sell offre la meta') */
+        if (COK_GET16(&it->b[0x42]) == 0) { /* item+$42: (word) value in coins (Sell offers half) */
+            COK_PUT16(&it->b[0x42], 1); /* item+$42: (word) value in coins (Sell offers half) */
         }
-        /* B+$6DA: (word) livello prezzi del negozio: bit piu' alto del byte basso */
+        /* B+$6DA: (word) shop price level: highest bit of the low byte */
         level = (u16)(COK_GET16(g_state_b + 0x6DA) >> 1);
         if (level > 2) {
             if (level == 4) {
@@ -133,7 +133,7 @@ static void shop_list(u16 *index, CokMenuItem **cursor, CokItem **item,
                 level = 6;
             }
         }
-        price = COK_GET16(&it->b[0x42]); /* ogg+$42: (word) valore in monete (Sell offre la meta') */
+        price = COK_GET16(&it->b[0x42]); /* item+$42: (word) value in coins (Sell offers half) */
         switch (level) {
         case 0: price = (u16)(price >> 4); break;
         case 1: price = (u16)(price >> 3); break;
@@ -151,7 +151,7 @@ static void shop_list(u16 *index, CokMenuItem **cursor, CokItem **item,
         }
         h026_copy(0x28, (char *)it->b, 0x1E, buf);
     }
-    H005_B(0x2483) = 0; /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
+    H005_B(0x2483) = 0; /* $2483: index of the selected option in the row menus (persistent) */
     *key = list_menu(7, "Items: ", 3, "Buy", 0x0D, 0x0A, 0x0F, 1, 1, 0x26,
                      0x16, shop_as_menu(), 1, &s_list_redraw, index, cursor);
     *item = shop_menu_item(*cursor);
@@ -160,28 +160,28 @@ static void shop_list(u16 *index, CokMenuItem **cursor, CokItem **item,
     }
 }
 
-/* Messaggio "<nome> buys <oggetto>" (plural: +$40, quantita'). */
+/* Message "<name> buys <item>" (plural: +$40, quantity). */
 static void buys_message(CokItem *it)
 {
-    /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
+    /* $3C82: generic 80-character text buffer (TEXT_BUF) */
     h026_copy(0x50, TEXT_BUF, 0x0F, (const char *)g_current_char->b);
-    if (it->b[0x40] > 0) { /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
-        /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
+    if (it->b[0x40] > 0) { /* item+$40: quantity (identical pieces grouped, max 255) */
+        /* $3C82: generic 80-character text buffer (TEXT_BUF) */
         h026_append(0x50, TEXT_BUF, 6, " buys ");
     } else {
-        /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
+        /* $3C82: generic 80-character text buffer (TEXT_BUF) */
         h026_append(0x50, TEXT_BUF, 8, " buys a ");
     }
-    /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
+    /* $3C82: generic 80-character text buffer (TEXT_BUF) */
     h026_append(0x50, TEXT_BUF, 0x28, (const char *)it->b);
-    show_message_line(0x50, TEXT_BUF); /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
+    show_message_line(0x50, TEXT_BUF); /* $3C82: generic 80-character text buffer (TEXT_BUF) */
 }
 
 /*
- * PORT H071+$0572: Buy.  Il prezzo e' il valore scalato dal bit piu' alto
- * (byte basso) di g_state_b +$6DA; si paga col denaro del personaggio (tutto in
- * acciaio) o, se non basta, con la cassa.  Il bit non inizializzato
- * dell'originale (nessun bit acceso) qui vale 0.
+ * PORT H071+$0572: Buy.  The price is the value scaled by the highest bit
+ * (low byte) of g_state_b +$6DA; payment is with the character's money (all in
+ * steel) or, if that is not enough, with the pool.  The uninitialised bit
+ * of the original (no bit set) is 0 here.
  */
 static void shop_buy(void)
 {
@@ -208,12 +208,12 @@ static void shop_buy(void)
         }
         done = 0;
         for (i = 0; i <= 7; ++i) {
-            /* B+$6DA: (word) livello prezzi del negozio: bit piu' alto del byte basso */
+            /* B+$6DA: (word) shop price level: highest bit of the low byte */
             if (mask_byte((u8)((u8)COK_GET16(g_state_b + 0x6DA) >> i), 1) > 0) {
                 bit = i;
             }
         }
-        v = COK_GET16(&it->b[0x42]); /* ogg+$42: (word) valore in monete (Sell offre la meta') */
+        v = COK_GET16(&it->b[0x42]); /* item+$42: (word) value in coins (Sell offers half) */
         switch (bit) {
         case 0: price = (u16)(v >> 4); break;
         case 1: price = (u16)(v >> 3); break;
@@ -250,9 +250,9 @@ static void shop_buy(void)
 }
 
 /*
- * PORT H071+$092C: il negozio (contesto 1): Buy, View, Take, Pool, Share,
- * Appraise, Exit.  Uscendo con denaro lasciato nella cassa il negoziante
- * chiede se tornare a prenderlo.
+ * PORT H071+$092C: the shop (context 1): Buy, View, Take, Pool, Share,
+ * Appraise, Exit.  When leaving with money left in the pool the shopkeeper
+ * asks whether to come back for it.
  */
 void shop(void)
 {
@@ -266,16 +266,16 @@ void shop(void)
     u8 redraw;                          /* -$33(a5) */
     CokItem *it;                        /* -$38(a5) */
 
-    H005_B(0x3DE3) = 1; /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
-    H005_B(0x24C2) = 0; /* $24C2: 1: nel contesto 1 il ridisegno include la cornice esplorazione */
+    H005_B(0x3DE3) = 1; /* $3DE3: game mode (0 menu, 1 view, 2 camp, 5 combat) */
+    H005_B(0x24C2) = 0; /* $24C2: 1: in context 1 the redraw includes the exploration frame */
     redraw_game_screen();
-    H005_B(0x24C2) = 1; /* $24C2: 1: nel contesto 1 il ridisegno include la cornice esplorazione */
+    H005_B(0x24C2) = 1; /* $24C2: 1: in context 1 the redraw includes the exploration frame */
     draw_party(g_current_char);
-    /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
+    /* $2A1E: party pool: 7 longs, coins per type 0..6 (4 = steel) */
     h029_fill_bytes(0x1B, &g_h005[0x2A1E], 0x1C, 0);
     title[0] = 0;
     title[1] = 0;
-    H005_B(0x24E3) = 0; /* $24E3: uso: 1 se la cassa comune ha monete (Pool/Share/Take), mai letto */
+    H005_B(0x24E3) = 0; /* $24E3: use: 1 if the shared pool has coins (Pool/Share/Take), never read */
     done = 0;
     for (it = g_treasure_items; it != NULL; it = it->next) {
         build_item_name(NULL, it, 0, 0, 0, 0);

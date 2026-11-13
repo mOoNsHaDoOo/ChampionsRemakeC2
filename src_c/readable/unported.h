@@ -1,7 +1,7 @@
 /*
- * Routine chiamate dal codice portato ma non ancora portate.  Ognuna sta in
- * unported.c e ferma il programma con il suo indirizzo: quando viene
- * portata, la dichiarazione passa all'header del suo modulo.
+ * Routines called by the ported code but not ported yet.  Each one lives in
+ * unported.c and stops the program with its address: when it is ported,
+ * the declaration moves to the header of its module.
  */
 #ifndef COK_UNPORTED_H
 #define COK_UNPORTED_H
@@ -13,9 +13,9 @@
 void h043_0584(void);
 void h043_190e(u16 command);
 
-/* Gestori delle tabelle H005+$25C0 e H005+$2832. */
+/* Handlers of the tables H005+$25C0 and H005+$2832. */
 
-/* Funzioni del menu principale (H013+$4BFC). */
+/* Functions of the main menu (H013+$4BFC). */
 void h043_0840(void);
 
 
@@ -23,16 +23,16 @@ void h043_0840(void);
                                         /* Load_Sequence */
 
 
-/* Dipendenze del lancio degli incantesimi (H033+$1426, H065+$2F82). */
+/* Dependencies of spell casting (H033+$1426, H065+$2F82). */
 
-/* Caricamenti per l'avventura dopo Load Saved Game (H066+$291E). */
+/* Loading for the adventure after Load Saved Game (H066+$291E). */
 
-/* Parti solo da combattimento del motore degli effetti. */
+/* Combat-only parts of the effect engine. */
 
 
 /*
- * H048+$16D4: posiziona c sulla mappa del combattimento; fuori dal
- * combattimento restituisce 1 (portato quel ramo), il resto non e' portato.
+ * H048+$16D4: places c on the combat map; outside combat it returns 1
+ * (that branch is ported), the rest is not ported.
  */
 
 #endif
@@ -41,4 +41,4 @@ void h043_0840(void);
 
 
 
-/* Usati dai comandi ECL di H012. */
+/* Used by the ECL commands of H012. */

@@ -1,4 +1,4 @@
-/* H010: input Intuition, conversione degli eventi, uscita ed errori. */
+/* H010: Intuition input, event conversion, exit and errors. */
 #include <stdio.h>
 #include "h010_input.h"
 #include "h045.h"
@@ -17,7 +17,7 @@
 #include "unported.h"
 #include "h020_io.h"
 
-/* Modificatori tenuti premuti (H010+$043C). */
+/* Modifiers held down (H010+$043C). */
 u8 g_input_alt;                 /* -$53(a4) */
 u8 g_input_shift;               /* -$54(a4) */
 u8 g_input_ctrl;                /* -$55(a4) */
@@ -31,9 +31,9 @@ void h010_init(void)
 }
 
 /*
- * Conversione dei codici RAWKEY 1..$4F (tabella di salto H010+$0712): il
- * carattere ASCII, 0 per i tasti senza significato.  Tastierino e frecce
- * danno le cifre delle direzioni (su 8, giu' 2, destra 6, sinistra 4).
+ * Conversion of the RAWKEY codes 1..$4F (jump table H010+$0712): the
+ * ASCII character, 0 for the keys without a meaning.  Keypad and arrows
+ * give the direction digits (up 8, down 2, right 6, left 4).
  */
 static const u8 s_rawkey_ascii[0x4F] = {
     '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',   /* $01..$0A */
@@ -49,12 +49,12 @@ static const u8 s_rawkey_ascii[0x4F] = {
     '8', '2', '6', '4'                                  /* $4C..$4F */
 };
 
-/* Dati del modulo sotto a4: -$52(a4), testo di $52 byte. */
+/* Module data below a4: -$52(a4), $52-byte text. */
 static char s_free_text[0x52];
 
 /*
- * PORT H010+$03AA (tasto 'c'): "max free block is NNNNNNNN bytes." in
- * alto a sinistra, con il blocco libero piu' grande (MEMF_LARGEST).
+ * PORT H010+$03AA (key 'c'): "max free block is NNNNNNNN bytes." at the
+ * top left, with the largest free block (MEMF_LARGEST).
  */
 static void show_free_memory(void)
 {
@@ -66,57 +66,57 @@ static void show_free_memory(void)
 }
 
 /*
- * PORT H010+$043C: converte il codice RAWKEY in G_KEY.  Shift, Ctrl e Alt
- * (premuti $60/$61, $63, $64/$65; rilasciati con il bit 7) aggiornano i
- * flag e azzerano il tasto; i rilasci degli altri tasti danno 0.  Con Alt
- * premuto (e senza Shift/Ctrl) il flag si azzera e a, m, q, x diventano
- * 1..4, c mostra la memoria libera (H010+$03AA); gli altri tasti lo
- * rimettono.
+ * PORT H010+$043C: converts the RAWKEY code into G_KEY.  Shift, Ctrl and Alt
+ * (pressed $60/$61, $63, $64/$65; released with bit 7) update the
+ * flags and clear the key; releases of the other keys give 0.  With Alt
+ * pressed (and without Shift/Ctrl) the flag is cleared and a, m, q, x become
+ * 1..4, c shows the free memory (H010+$03AA); the other keys set it
+ * again.
  */
 static void convert_rawkey(void)
 {
-    u8 key = G_KEY; /* $5305: tasto/azione pendente dall'input (G_KEY) */
+    u8 key = G_KEY; /* $5305: key/action pending from the input (G_KEY) */
 
     if (key == 0x60 || key == 0x61) {
         g_input_shift = 1;
-        G_KEY = 0; /* $5305: tasto/azione pendente dall'input (G_KEY) */
+        G_KEY = 0; /* $5305: key/action pending from the input (G_KEY) */
     } else if (key == 0xE0 || key == 0xE1) {
         g_input_shift = 0;
-        G_KEY = 0; /* $5305: tasto/azione pendente dall'input (G_KEY) */
+        G_KEY = 0; /* $5305: key/action pending from the input (G_KEY) */
     } else if (key == 0x64 || key == 0x65) {
         g_input_alt = 1;
-        G_KEY = 0; /* $5305: tasto/azione pendente dall'input (G_KEY) */
+        G_KEY = 0; /* $5305: key/action pending from the input (G_KEY) */
     } else if (key == 0xE4 || key == 0xE5) {
         g_input_alt = 0;
-        G_KEY = 0; /* $5305: tasto/azione pendente dall'input (G_KEY) */
+        G_KEY = 0; /* $5305: key/action pending from the input (G_KEY) */
     } else if (key == 0x63) {
         g_input_ctrl = 1;
-        G_KEY = 0; /* $5305: tasto/azione pendente dall'input (G_KEY) */
+        G_KEY = 0; /* $5305: key/action pending from the input (G_KEY) */
     } else if (key == 0xE3) {
         g_input_ctrl = 0;
-        G_KEY = 0; /* $5305: tasto/azione pendente dall'input (G_KEY) */
+        G_KEY = 0; /* $5305: key/action pending from the input (G_KEY) */
     } else {
         u16 index = (u16)(key - 1);
 
-        /* $5305: tasto/azione pendente dall'input (G_KEY) */
+        /* $5305: key/action pending from the input (G_KEY) */
         G_KEY = index <= 0x4E ? s_rawkey_ascii[index] : 0;
     }
     if (g_input_shift || g_input_ctrl || !g_input_alt) {
         return;
     }
     g_input_alt = 0;
-    switch (G_KEY) { /* $5305: tasto/azione pendente dall'input (G_KEY) */
+    switch (G_KEY) { /* $5305: key/action pending from the input (G_KEY) */
     case 'a':
-        G_KEY = 1; /* $5305: tasto/azione pendente dall'input (G_KEY) */
+        G_KEY = 1; /* $5305: key/action pending from the input (G_KEY) */
         break;
     case 'm':
-        G_KEY = 2; /* $5305: tasto/azione pendente dall'input (G_KEY) */
+        G_KEY = 2; /* $5305: key/action pending from the input (G_KEY) */
         break;
     case 'q':
-        G_KEY = 3; /* $5305: tasto/azione pendente dall'input (G_KEY) */
+        G_KEY = 3; /* $5305: key/action pending from the input (G_KEY) */
         break;
     case 'x':
-        G_KEY = 4; /* $5305: tasto/azione pendente dall'input (G_KEY) */
+        G_KEY = 4; /* $5305: key/action pending from the input (G_KEY) */
         break;
     case 'c':
         show_free_memory();
@@ -128,36 +128,36 @@ static void convert_rawkey(void)
 }
 
 /*
- * PORT H010+$042E (corpo a H010+$0882, Poll_IntuitionEvents): svuota la
- * porta IDCMP della finestra.  Il primo tasto (RAWKEY) va in G_KEY e viene
- * convertito; un clic (MOUSEBUTTONS) aggiorna la posizione del mouse
- * (H005+$2356/$2354) e il pulsante sinistro vale Invio, il destro Esc, con
+ * PORT H010+$042E (body at H010+$0882, Poll_IntuitionEvents): drains the
+ * IDCMP port of the window.  The first key (RAWKEY) goes into G_KEY and is
+ * converted; a click (MOUSEBUTTONS) updates the mouse position
+ * (H005+$2356/$2354) and the left button counts as Enter, the right one as Esc, with
  * G_MOUSE_CLICK = 1.
- * PORT H010+$0882 (Poll_IntuitionEvents): il corpo, qui nella stessa funzione.
+ * PORT H010+$0882 (Poll_IntuitionEvents): the body, here in the same function.
  */
 void poll_intuition_events(void)
 {
     struct IntuiMessage *msg;
 
-    G_KEY = 0; /* $5305: tasto/azione pendente dall'input (G_KEY) */
-    G_MOUSE_CLICK = 0; /* $249E: 1 se il tasto viene dal mouse (clic) */
+    G_KEY = 0; /* $5305: key/action pending from the input (G_KEY) */
+    G_MOUSE_CLICK = 0; /* $249E: 1 if the key comes from the mouse (click) */
     do {
         msg = (struct IntuiMessage *)exec_get_msg(g_window->UserPort);
         if (msg != NULL) {
             if (msg->Class == 0x400) {             /* RAWKEY */
-                if (G_KEY == 0) { /* $5305: tasto/azione pendente dall'input (G_KEY) */
-                    G_KEY = (u8)msg->Code; /* $5305: tasto/azione pendente dall'input (G_KEY) */
+                if (G_KEY == 0) { /* $5305: key/action pending from the input (G_KEY) */
+                    G_KEY = (u8)msg->Code; /* $5305: key/action pending from the input (G_KEY) */
                     convert_rawkey();
                 }
             } else if (msg->Class == 0x8) {        /* MOUSEBUTTONS */
-                H005_SET_W(0x2356, (u16)msg->MouseX); /* $2356: X del mouse (word, iniziale $A0) */
-                H005_SET_W(0x2354, (u16)msg->MouseY); /* $2354: Y del mouse (word, iniziale $64) */
+                H005_SET_W(0x2356, (u16)msg->MouseX); /* $2356: mouse X (word, initial $A0) */
+                H005_SET_W(0x2354, (u16)msg->MouseY); /* $2354: mouse Y (word, initial $64) */
                 if (msg->Code == 0x68) {           /* SELECTDOWN */
-                    G_KEY = 0x0D; /* $5305: tasto/azione pendente dall'input (G_KEY) */
-                    G_MOUSE_CLICK = 1; /* $249E: 1 se il tasto viene dal mouse (clic) */
+                    G_KEY = 0x0D; /* $5305: key/action pending from the input (G_KEY) */
+                    G_MOUSE_CLICK = 1; /* $249E: 1 if the key comes from the mouse (click) */
                 } else if (msg->Code == 0x69) {    /* MENUDOWN */
-                    G_KEY = 0x1B; /* $5305: tasto/azione pendente dall'input (G_KEY) */
-                    G_MOUSE_CLICK = 1; /* $249E: 1 se il tasto viene dal mouse (clic) */
+                    G_KEY = 0x1B; /* $5305: key/action pending from the input (G_KEY) */
+                    G_MOUSE_CLICK = 1; /* $249E: 1 if the key comes from the mouse (click) */
                 }
             }
             exec_reply_msg(&msg->ExecMessage);
@@ -165,21 +165,21 @@ void poll_intuition_events(void)
     } while (msg != NULL);
 }
 
-/* PORT H010+$0974: aspetta sulla porta IDCMP finche' arriva un tasto. */
+/* PORT H010+$0974: waits on the IDCMP port until a key arrives. */
 void wait_for_key(void)
 {
     do {
         (void)exec_wait_port(g_window->UserPort);
         poll_intuition_events();
-    } while (G_KEY == 0); /* $5305: tasto/azione pendente dall'input (G_KEY) */
+    } while (G_KEY == 0); /* $5305: key/action pending from the input (G_KEY) */
 }
 
 /*
- * PORT H010+$00C4: libera le risorse del gioco: schermate dei personaggi,
- * blocchi di stato, record grafici, set di tile e sprite, l'insieme di
- * immagini, i personaggi del party, i blocchi di $52FC/$5300 e il font.
- * Installato su disco fisso (prefisso diverso da "df0:"), toglie gli
- * Assign dei tre dischi.
+ * PORT H010+$00C4: frees the game resources: character screens,
+ * state blocks, graphic records, tile and sprite sets, the picture
+ * set, the party characters, the blocks $52FC/$5300 and the font.
+ * When installed on a hard disk (prefix other than "df0:"), removes the
+ * Assigns of the three disks.
  */
 static void free_game_resources(void)
 {
@@ -234,8 +234,8 @@ static void free_game_resources(void)
 }
 
 /*
- * PORT H010+$0332: uscita dal gioco: ferma l'audio, libera la View fuori
- * schermo, chiude finestra e schermo, libera le risorse e termina (H015).
+ * PORT H010+$0332: exit from the game: stops the audio, frees the off-screen
+ * View, closes window and screen, frees the resources and terminates (H015).
  */
 void quit_game(void)
 {
@@ -247,8 +247,8 @@ void quit_game(void)
 }
 
 /*
- * PORT H010+$0360: scrive il testo (passato per valore) e va a capo sulla
- * console del processo: H020+$085A e H020+$082E.
+ * PORT H010+$0360: writes the text (passed by value) and a newline to the
+ * process console: H020+$085A and H020+$082E.
  */
 void console_writeln(u16 len, const char *text)
 {

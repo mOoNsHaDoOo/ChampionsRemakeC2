@@ -1,12 +1,12 @@
 ; ============================================================================
-; GUIDA DEL MODULO H045
-; helper aritmetici e di supporto condivisi.
-; I commenti descrivono l'analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H045
+; shared arithmetic and support helpers.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Helper aritmetici e di supporto condivisi: conversioni, divisioni/moltiplicazioni e piccoli calcoli usati da UI e combattimento.
+; MODULE NOTE
+; Shared arithmetic and support helpers: conversions, divisions/multiplications and small calculations used by UI and combat.
 ; --------------------------------------------------------------------------
 ; H045: 828 original bytes; all offsets are section-relative.
         section H045,code
@@ -14,10 +14,10 @@ H045:
 ; Preserved bytes H045+$00000000..$00000004; code/data not fully classified.
         dc.l H045+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H045_0336 [parziale]
-; Scopo: Trampolino verso H045+$0336; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H045+$0336.
-; Chiamanti diretti: H000+$007E
+; ROUTINE: trampoline_H045_0336 [partial]
+; Purpose: Trampoline to H045+$0336; the actual body is there.
+;   - Jumps to the actual body at H045+$0336.
+; Direct callers: H000+$007E
 ; --------------------------------------------------------------------------
 L045_00000004:
 ; H045+$00000004: 4e550000  link.w a5, #$0
@@ -26,10 +26,10 @@ L045_00000008:
 ; H045+$00000008: 6000032c  bra.w $336
         bra.w H045+$336
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H045_01CC [parziale]
-; Scopo: Trampolino verso H045+$01CC; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H045+$01CC.
-; Chiamanti diretti: H030+$0A06, H067+$054A, H067+$06D0
+; ROUTINE: trampoline_H045_01CC [partial]
+; Purpose: Trampoline to H045+$01CC; the actual body is there.
+;   - Jumps to the actual body at H045+$01CC.
+; Direct callers: H030+$0A06, H067+$054A, H067+$06D0
 ; --------------------------------------------------------------------------
 L045_0000000C:
 ; H045+$0000000C: 4e55fff4  link.w a5, #$fff4
@@ -38,10 +38,10 @@ L045_00000010:
 ; H045+$00000010: 60000056  bra.w $68
         bra.w H045+$68
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H045_00000014 [parziale]
-; Scopo: Routine del modulo helper aritmetici e di supporto condivisi; richiama H015+$004A.
-;   - Richiama H015+$004A.
-; Chiamanti diretti: H045+$006E, H045+$00CA
+; ROUTINE: sub_H045_00000014 [partial]
+; Purpose: Routine of the shared arithmetic and support helpers module; calls H015+$004A.
+;   - Calls H015+$004A.
+; Direct callers: H045+$006E, H045+$00CA
 ; --------------------------------------------------------------------------
 L045_00000014:
 ; H045+$00000014: 4e550000  link.w a5, #$0
@@ -420,10 +420,10 @@ L045_000001D4:
 ; H045+$000001D4: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H045_000001D6 [parziale]
-; Scopo: Routine del modulo helper aritmetici e di supporto condivisi; richiama H015+$006E.
-;   - Richiama H015+$006E.
-; Chiamanti diretti: H056+$07AE, H062+$2264, H056+$08DA, H056+$08FE, H056+$0922, H063+$0FD8 e altri 77
+; ROUTINE: sub_H045_000001D6 [partial]
+; Purpose: Routine of the shared arithmetic and support helpers module; calls H015+$006E.
+;   - Calls H015+$006E.
+; Direct callers: H056+$07AE, H062+$2264, H056+$08DA, H056+$08FE, H056+$0922, H063+$0FD8 and 77 more
 ; --------------------------------------------------------------------------
 L045_000001D6:
 ; H045+$000001D6: 4e55ffa2  link.w a5, #$ffa2

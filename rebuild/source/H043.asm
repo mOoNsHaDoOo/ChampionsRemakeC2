@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H043
-; Sottosistema audio.device e richieste sonore.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H043
+; audio.device subsystem and sound requests.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Audio.device: apertura del device, richieste IOAudio, code dei canali, callback verticale e interrupt software. Il lavoro pesante e' demandato al soft-interrupt H094+$0016.
+; MODULE NOTE
+; Audio.device: opening of the device, IOAudio requests, channel queues, vertical callback and software interrupt. The heavy work is left to the soft interrupt H094+$0016.
 ; --------------------------------------------------------------------------
 ; H043: 6680 original bytes; all offsets are section-relative.
         section H043,code
@@ -43,10 +43,10 @@ H043:
         dc.w $006B,$7279,$6E6E,$0000
         dc.l H043+$00000092
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H043 [parziale]
-; Scopo: Ingresso del modulo sottosistema audio.device e richieste sonore; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H043+$19FC.
-; Chiamanti diretti: H000+$0144
+; ROUTINE: module_init_H043 [partial]
+; Purpose: Entry of the audio.device subsystem and sound requests module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H043+$19FC.
+; Direct callers: H000+$0144
 ; --------------------------------------------------------------------------
 L043_000001BC:
 ; H043+$000001BC: 2f0c  move.l a4, -(a7)
@@ -61,14 +61,14 @@ L043_000001C6:
 ; H043+$000001C6: 60001834  bra.w $19fc
         bra.w H043+$19FC
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H043_165A [parziale]
-; Scopo: Trampolino verso H043+$165A; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H043+$165A.
-;   - Richiama H020+$085A.
-;   - Richiama H020+$08C2.
-;   - Richiama H020+$082E.
-;   - Richiama H010+$0332.
-; Chiamanti diretti: H043+$0644, H043+$06D2, H043+$023E, H043+$0AAC, H043+$0200
+; ROUTINE: trampoline_H043_165A [partial]
+; Purpose: Trampoline to H043+$165A; the actual body is there.
+;   - Jumps to the actual body at H043+$165A.
+;   - Calls H020+$085A.
+;   - Calls H020+$08C2.
+;   - Calls H020+$082E.
+;   - Calls H010+$0332.
+; Direct callers: H043+$0644, H043+$06D2, H043+$023E, H043+$0AAC, H043+$0200
 ; --------------------------------------------------------------------------
 L043_000001CA:
 ; H043+$000001CA: 6000148e  bra.w $165a
@@ -76,25 +76,25 @@ L043_000001CA:
 ; Preserved bytes H043+$000001CE..$000001D2; code/data not fully classified.
         dc.w $6000,$02E6
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H043_113E [parziale]
-; Scopo: Trampolino verso H043+$113E; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H043+$113E.
-;   - Richiama H026+$003A.
-;   - Richiama H026+$0188.
-;   - Richiama H026+$01E0.
-;   - Richiama H002+$00F2.
-;   - Richiama H002+$0156.
-;   - Richiama H026+$0088.
-; Chiamanti diretti: H043+$0AD6, H043+$0E16, H043+$0E7E, H043+$0EE8
+; ROUTINE: trampoline_H043_113E [partial]
+; Purpose: Trampoline to H043+$113E; the actual body is there.
+;   - Jumps to the actual body at H043+$113E.
+;   - Calls H026+$003A.
+;   - Calls H026+$0188.
+;   - Calls H026+$01E0.
+;   - Calls H002+$00F2.
+;   - Calls H002+$0156.
+;   - Calls H026+$0088.
+; Direct callers: H043+$0AD6, H043+$0E16, H043+$0E7E, H043+$0EE8
 ; --------------------------------------------------------------------------
 L043_000001D2:
 ; H043+$000001D2: 60000f6a  bra.w $113e
         bra.w H043+$113E
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H043_000001D6 [parziale]
-; Scopo: Routine del modulo sottosistema audio.device e richieste sonore; richiama H003+$0068.
-;   - Richiama H003+$0068.
-; Chiamanti diretti: H043+$0C9A
+; ROUTINE: sub_H043_000001D6 [partial]
+; Purpose: Routine of the audio.device subsystem and sound requests module; calls H003+$0068.
+;   - Calls H003+$0068.
+; Direct callers: H043+$0C9A
 ; --------------------------------------------------------------------------
 L043_000001D6:
 ; H043+$000001D6: 2f0c  move.l a4, -(a7)
@@ -152,10 +152,10 @@ L043_00000212:
 ; H043+$00000212: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H043_00000214 [parziale]
-; Scopo: Routine del modulo sottosistema audio.device e richieste sonore; richiama H003+$0068.
-;   - Richiama H003+$0068.
-; Chiamanti diretti: H043+$05B2, H043+$05CA, H043+$0312, H043+$1388, H043+$0998, H043+$14FC e altri 5
+; ROUTINE: sub_H043_00000214 [partial]
+; Purpose: Routine of the audio.device subsystem and sound requests module; calls H003+$0068.
+;   - Calls H003+$0068.
+; Direct callers: H043+$05B2, H043+$05CA, H043+$0312, H043+$1388, H043+$0998, H043+$14FC and 5 more
 ; --------------------------------------------------------------------------
 L043_00000214:
 ; H043+$00000214: 2f0c  move.l a4, -(a7)
@@ -213,10 +213,10 @@ L043_00000250:
 ; H043+$00000250: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H043_00000252 [parziale]
-; Scopo: Routine del modulo sottosistema audio.device e richieste sonore; richiama H003+$00F6.
-;   - Richiama H003+$00F6.
-; Chiamanti diretti: H043+$08A8, H043+$08B6, H043+$0376, H043+$0560, H043+$056E, H043+$04A8 e altri 6
+; ROUTINE: sub_H043_00000252 [partial]
+; Purpose: Routine of the audio.device subsystem and sound requests module; calls H003+$00F6.
+;   - Calls H003+$00F6.
+; Direct callers: H043+$08A8, H043+$08B6, H043+$0376, H043+$0560, H043+$056E, H043+$04A8 and 6 more
 ; --------------------------------------------------------------------------
 L043_00000252:
 ; H043+$00000252: 2f0c  move.l a4, -(a7)
@@ -271,10 +271,10 @@ L043_00000284:
 ; H043+$00000284: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H043_00000286 [parziale]
-; Scopo: Routine del modulo sottosistema audio.device e richieste sonore; richiama H002+$0156.
-;   - Richiama H002+$0156.
-; Chiamanti diretti: H043+$125E, H043+$137A, H043+$09D8, H043+$0BFC, H043+$0CEE, H043+$0B98 e altri 2
+; ROUTINE: sub_H043_00000286 [partial]
+; Purpose: Routine of the audio.device subsystem and sound requests module; calls H002+$0156.
+;   - Calls H002+$0156.
+; Direct callers: H043+$125E, H043+$137A, H043+$09D8, H043+$0BFC, H043+$0CEE, H043+$0B98 and 2 more
 ; --------------------------------------------------------------------------
 L043_00000286:
 ; H043+$00000286: 2f0c  move.l a4, -(a7)
@@ -332,10 +332,10 @@ L043_000002C2:
 ; H043+$000002C2: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H043_000002C4 [parziale]
-; Scopo: Routine del modulo sottosistema audio.device e richieste sonore; richiama H002+$0122.
-;   - Richiama H002+$0122.
-; Chiamanti diretti: H043+$065A, H043+$1282, H043+$12BA, H043+$12D0, H043+$12FA, H043+$1352 e altri 17
+; ROUTINE: sub_H043_000002C4 [partial]
+; Purpose: Routine of the audio.device subsystem and sound requests module; calls H002+$0122.
+;   - Calls H002+$0122.
+; Direct callers: H043+$065A, H043+$1282, H043+$12BA, H043+$12D0, H043+$12FA, H043+$1352 and 17 more
 ; --------------------------------------------------------------------------
 L043_000002C4:
 ; H043+$000002C4: 2f0c  move.l a4, -(a7)
@@ -447,10 +447,10 @@ L043_0000033E:
 ; H043+$0000033E: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H043_00000340 [parziale]
-; Scopo: Routine del modulo sottosistema audio.device e richieste sonore; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H043+$0888, H043+$0894
+; ROUTINE: sub_H043_00000340 [partial]
+; Purpose: Routine of the audio.device subsystem and sound requests module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H043+$0888, H043+$0894
 ; --------------------------------------------------------------------------
 L043_00000340:
 ; H043+$00000340: 2f0c  move.l a4, -(a7)
@@ -522,10 +522,10 @@ L043_00000388:
 ; H043+$00000388: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H043_0000038A [parziale]
-; Scopo: Routine del modulo sottosistema audio.device e richieste sonore; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H043+$0400, H043+$0534
+; ROUTINE: sub_H043_0000038A [partial]
+; Purpose: Routine of the audio.device subsystem and sound requests module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H043+$0400, H043+$0534
 ; --------------------------------------------------------------------------
 L043_0000038A:
 ; H043+$0000038A: 2f0c  move.l a4, -(a7)
@@ -591,10 +591,10 @@ L043_000003C8:
 ; H043+$000003C8: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H043_000003CA [parziale]
-; Scopo: Routine del modulo sottosistema audio.device e richieste sonore; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H043+$04E2
+; ROUTINE: sub_H043_000003CA [partial]
+; Purpose: Routine of the audio.device subsystem and sound requests module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H043+$04E2
 ; --------------------------------------------------------------------------
 L043_000003CA:
 ; H043+$000003CA: 2f0c  move.l a4, -(a7)
@@ -681,10 +681,10 @@ L043_00000420:
 ; H043+$00000420: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H043_00000422 [parziale]
-; Scopo: Routine del modulo sottosistema audio.device e richieste sonore; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H043+$0518
+; ROUTINE: sub_H043_00000422 [partial]
+; Purpose: Routine of the audio.device subsystem and sound requests module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H043+$0518
 ; --------------------------------------------------------------------------
 L043_00000422:
 ; H043+$00000422: 2f0c  move.l a4, -(a7)
@@ -744,10 +744,10 @@ L043_0000045C:
 ; H043+$0000045C: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H043_0000045E [parziale]
-; Scopo: Routine del modulo sottosistema audio.device e richieste sonore; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H043+$0550
+; ROUTINE: sub_H043_0000045E [partial]
+; Purpose: Routine of the audio.device subsystem and sound requests module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H043+$0550
 ; --------------------------------------------------------------------------
 L043_0000045E:
 ; H043+$0000045E: 2f0c  move.l a4, -(a7)
@@ -801,10 +801,10 @@ L043_0000048C:
 ; H043+$0000048C: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H043_0000048E [parziale]
-; Scopo: Routine del modulo sottosistema audio.device e richieste sonore; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H043+$04FE
+; ROUTINE: sub_H043_0000048E [partial]
+; Purpose: Routine of the audio.device subsystem and sound requests module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H043+$04FE
 ; --------------------------------------------------------------------------
 L043_0000048E:
 ; H043+$0000048E: 2f0c  move.l a4, -(a7)
@@ -849,10 +849,10 @@ L043_000004B4:
 ; H043+$000004B4: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H043_000004B6 [parziale]
-; Scopo: Routine del modulo sottosistema audio.device e richieste sonore; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H043+$081A, H043+$0834, H043+$14DC
+; ROUTINE: sub_H043_000004B6 [partial]
+; Purpose: Routine of the audio.device subsystem and sound requests module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H043+$081A, H043+$0834, H043+$14DC
 ; --------------------------------------------------------------------------
 L043_000004B6:
 ; H043+$000004B6: 2f0c  move.l a4, -(a7)
@@ -1048,12 +1048,12 @@ L043_00000582:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Audio_Initialize [verificato]
-; Scopo: Prepara il sottosistema sonoro e le callback.
-;   - Carica la tabella dei periodi e lo stato sonoro.
-;   - Apre audio.device e prepara le richieste IOAudio.
-;   - Registra l’interrupt verticale e il nodo software richiamato con Cause.
-; Chiamanti diretti: H007+$09EE, H012+$07D2, H012+$080E, H012+$0836, H012+$0878, H012+$08B4, H012+$08DC, H012+$0904, H012+$093C, H012+$0964 ...
+; ROUTINE: Audio_Initialize [verified]
+; Purpose: Prepares the sound subsystem and the callbacks.
+;   - Loads the period table and the sound state.
+;   - Opens audio.device and prepares the IOAudio requests.
+;   - Registers the vertical interrupt and the software node called with Cause.
+; Direct callers: H007+$09EE, H012+$07D2, H012+$080E, H012+$0836, H012+$0878, H012+$08B4, H012+$08DC, H012+$0904, H012+$093C, H012+$0964 ...
 ; --------------------------------------------------------------------------
 L043_00000584:
 ; H043+$00000584: 2f0c  move.l a4, -(a7)
@@ -1181,7 +1181,7 @@ L043_00000628:
 L043_0000062A:
 ; H043+$0000062A: 486dffae  pea.l -$52(a5)
         pea.l -$52(a5)
-; FLUSSO: Chiama Open_ResourceFile (H028+$05FA).
+; FLOW: Calls Open_ResourceFile (H028+$05FA).
 L043_0000062E:
 ; H043+$0000062E: 4eb9000005fa  jsr $5fa.l
         jsr (H028+$5FA).l
@@ -1294,7 +1294,7 @@ L043_000006BC:
 L043_000006BE:
 ; H043+$000006BE: 42a7  clr.l -(a7)
         clr.l -(a7)
-; PASSO: OpenDevice per audio.device; controlla il codice restituito.
+; STEP: OpenDevice for audio.device; checks the returned code.
 ; -> H090+$002A (wrapper_OpenDevice)
 L043_000006C0:
 ; H043+$000006C0: 4eb90000002a  jsr $2a.l
@@ -1501,7 +1501,7 @@ L043_000007DC:
 L043_000007E0:
 ; H043+$000007E0: 486cff90  pea.l -$70(a4)
         pea.l -$70(a4)
-; PASSO: Registra il server verticale che chiamerà Cause sul nodo software.
+; STEP: Registers the vertical server that will call Cause on the software node.
 ; -> H079+$0006 (wrapper_AddIntServer)
 L043_000007E4:
 ; H043+$000007E4: 4eb900000006  jsr $6.l
@@ -1519,25 +1519,25 @@ L043_000007F4:
 ; H043+$000007F4: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H043_15C6 [parziale]
-; Scopo: Trampolino verso H043+$15C6; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H043+$15C6.
-;   - Richiama H079+$002E.
-;   - Richiama H079+$0036.
-;   - Richiama H020+$085A.
-;   - Richiama H020+$08C2.
-;   - Richiama H020+$082E.
-;   - Richiama H010+$0332.
-; Chiamanti diretti: H043+$0804, H043+$1072
+; ROUTINE: trampoline_H043_15C6 [partial]
+; Purpose: Trampoline to H043+$15C6; the actual body is there.
+;   - Jumps to the actual body at H043+$15C6.
+;   - Calls H079+$002E.
+;   - Calls H079+$0036.
+;   - Calls H020+$085A.
+;   - Calls H020+$08C2.
+;   - Calls H020+$082E.
+;   - Calls H010+$0332.
+; Direct callers: H043+$0804, H043+$1072
 ; --------------------------------------------------------------------------
 L043_000007F6:
 ; H043+$000007F6: 60000dce  bra.w $15c6
         bra.w H043+$15C6
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H043_000007FA [parziale]
-; Scopo: Routine del modulo sottosistema audio.device e richieste sonore; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H043+$0860, H043+$196A
+; ROUTINE: sub_H043_000007FA [partial]
+; Purpose: Routine of the audio.device subsystem and sound requests module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H043+$0860, H043+$196A
 ; --------------------------------------------------------------------------
 L043_000007FA:
 ; H043+$000007FA: 2f0c  move.l a4, -(a7)
@@ -1604,11 +1604,11 @@ L043_0000083E:
         rts 
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Audio_Shutdown [parziale]
-; Scopo: Arresta l’audio e rilascia le risorse del sottosistema.
-;   - Rimuove il server di interrupt nel percorso previsto.
-;   - Chiude audio.device se aperto e libera stato/richieste allocate.
-; Chiamanti diretti: H010+$033C, H013+$51D8, H043+$1686
+; ROUTINE: Audio_Shutdown [partial]
+; Purpose: Stops the audio and releases the resources of the subsystem.
+;   - Removes the interrupt server in the expected path.
+;   - Closes audio.device if open and frees the allocated state/requests.
+; Direct callers: H010+$033C, H013+$51D8, H043+$1686
 ; --------------------------------------------------------------------------
 L043_00000840:
 ; H043+$00000840: 2f0c  move.l a4, -(a7)
@@ -1724,10 +1724,10 @@ L043_000008C2:
 ; H043+$000008C2: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H043_000008C4 [parziale]
-; Scopo: Routine del modulo sottosistema audio.device e richieste sonore; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H043+$107E
+; ROUTINE: sub_H043_000008C4 [partial]
+; Purpose: Routine of the audio.device subsystem and sound requests module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H043+$107E
 ; --------------------------------------------------------------------------
 L043_000008C4:
 ; H043+$000008C4: 2f0c  move.l a4, -(a7)
@@ -1895,11 +1895,11 @@ L043_00000984:
 ; H043+$00000984: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H043_00000986 [parziale]
-; Scopo: Routine del modulo sottosistema audio.device e richieste sonore; richiama H026+$0088, H026+$003A.
-;   - Richiama H026+$0088.
-;   - Richiama H026+$003A.
-; Chiamanti diretti: H043+$13D8
+; ROUTINE: sub_H043_00000986 [partial]
+; Purpose: Routine of the audio.device subsystem and sound requests module; calls H026+$0088, H026+$003A.
+;   - Calls H026+$0088.
+;   - Calls H026+$003A.
+; Direct callers: H043+$13D8
 ; --------------------------------------------------------------------------
 L043_00000986:
 ; H043+$00000986: 2f0c  move.l a4, -(a7)
@@ -2341,10 +2341,10 @@ L043_00000BB0:
 ; H043+$00000BB0: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H043_00000BB2 [parziale]
-; Scopo: Routine del modulo sottosistema audio.device e richieste sonore; richiama H026+$0088.
-;   - Richiama H026+$0088.
-; Chiamanti diretti: H043+$141A
+; ROUTINE: sub_H043_00000BB2 [partial]
+; Purpose: Routine of the audio.device subsystem and sound requests module; calls H026+$0088.
+;   - Calls H026+$0088.
+; Direct callers: H043+$141A
 ; --------------------------------------------------------------------------
 L043_00000BB2:
 ; H043+$00000BB2: 2f0c  move.l a4, -(a7)
@@ -2646,10 +2646,10 @@ L043_00000D38:
 ; H043+$00000D38: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H043_00000D3A [parziale]
-; Scopo: Routine del modulo sottosistema audio.device e richieste sonore; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H043+$149E
+; ROUTINE: sub_H043_00000D3A [partial]
+; Purpose: Routine of the audio.device subsystem and sound requests module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H043+$149E
 ; --------------------------------------------------------------------------
 L043_00000D3A:
 ; H043+$00000D3A: 2f0c  move.l a4, -(a7)
@@ -2724,10 +2724,10 @@ L043_00000D82:
 ; H043+$00000D82: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H043_00000D84 [parziale]
-; Scopo: Routine del modulo sottosistema audio.device e richieste sonore; richiama H026+$0088.
-;   - Richiama H026+$0088.
-; Chiamanti diretti: H043+$145C
+; ROUTINE: sub_H043_00000D84 [partial]
+; Purpose: Routine of the audio.device subsystem and sound requests module; calls H026+$0088.
+;   - Calls H026+$0088.
+; Direct callers: H043+$145C
 ; --------------------------------------------------------------------------
 L043_00000D84:
 ; H043+$00000D84: 2f0c  move.l a4, -(a7)
@@ -3089,12 +3089,12 @@ L043_00000F3E:
 ; Preserved bytes H043+$00000F40..$00000F50; code/data not fully classified.
         dc.w $2F0C,$287A,$F274,$4E55,$0000,$4E5D,$285F,$4E75
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H043_00000F50 [parziale]
-; Scopo: Routine del modulo sottosistema audio.device e richieste sonore; richiama H079+$002E, H026+$0088, H079+$0036.
-;   - Richiama H079+$002E.
-;   - Richiama H026+$0088.
-;   - Richiama H079+$0036.
-; Chiamanti diretti: H043+$1162, H043+$1366
+; ROUTINE: sub_H043_00000F50 [partial]
+; Purpose: Routine of the audio.device subsystem and sound requests module; calls H079+$002E, H026+$0088, H079+$0036.
+;   - Calls H079+$002E.
+;   - Calls H026+$0088.
+;   - Calls H079+$0036.
+; Direct callers: H043+$1162, H043+$1366
 ; --------------------------------------------------------------------------
 L043_00000F50:
 ; H043+$00000F50: 2f0c  move.l a4, -(a7)
@@ -3298,11 +3298,11 @@ L043_00001056:
 ; H043+$00001056: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H043_00001058 [parziale]
-; Scopo: Routine del modulo sottosistema audio.device e richieste sonore; richiama H079+$002E, H079+$0036.
-;   - Richiama H079+$002E.
-;   - Richiama H079+$0036.
-; Chiamanti diretti: H043+$158E, H043+$1548, H043+$155C
+; ROUTINE: sub_H043_00001058 [partial]
+; Purpose: Routine of the audio.device subsystem and sound requests module; calls H079+$002E, H079+$0036.
+;   - Calls H079+$002E.
+;   - Calls H079+$0036.
+; Direct callers: H043+$158E, H043+$1548, H043+$155C
 ; --------------------------------------------------------------------------
 L043_00001058:
 ; H043+$00001058: 2f0c  move.l a4, -(a7)
@@ -3487,16 +3487,16 @@ L043_0000113C:
 ; H043+$0000113C: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H043_0000113E [parziale]
-; Scopo: Routine del modulo sottosistema audio.device e richieste sonore; richiama H026+$003A, H026+$0188, H026+$01E0, H002+$00F2.
-;   - Richiama H026+$003A.
-;   - Richiama H026+$0188.
-;   - Richiama H026+$01E0.
-;   - Richiama H002+$00F2.
-;   - Richiama H002+$0156.
-;   - Richiama H026+$0088.
-;   - Richiama H002+$0014.
-; Chiamanti diretti: H043+$19B4, H043+$19EA
+; ROUTINE: sub_H043_0000113E [partial]
+; Purpose: Routine of the audio.device subsystem and sound requests module; calls H026+$003A, H026+$0188, H026+$01E0, H002+$00F2.
+;   - Calls H026+$003A.
+;   - Calls H026+$0188.
+;   - Calls H026+$01E0.
+;   - Calls H002+$00F2.
+;   - Calls H002+$0156.
+;   - Calls H026+$0088.
+;   - Calls H002+$0014.
+; Direct callers: H043+$19B4, H043+$19EA
 ; --------------------------------------------------------------------------
 L043_0000113E:
 ; H043+$0000113E: 2f0c  move.l a4, -(a7)
@@ -4356,15 +4356,15 @@ L043_000015A2:
         dc.l H026+$0000003A
         dc.w $4E5D,$285F,$205F,$588F,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H043_000015C6 [parziale]
-; Scopo: Routine del modulo sottosistema audio.device e richieste sonore; richiama H079+$002E, H079+$0036, H020+$085A, H020+$08C2.
-;   - Richiama H079+$002E.
-;   - Richiama H079+$0036.
-;   - Richiama H020+$085A.
-;   - Richiama H020+$08C2.
-;   - Richiama H020+$082E.
-;   - Richiama H010+$0332.
-; Chiamanti diretti: H043+$1922, H043+$1932
+; ROUTINE: sub_H043_000015C6 [partial]
+; Purpose: Routine of the audio.device subsystem and sound requests module; calls H079+$002E, H079+$0036, H020+$085A, H020+$08C2.
+;   - Calls H079+$002E.
+;   - Calls H079+$0036.
+;   - Calls H020+$085A.
+;   - Calls H020+$08C2.
+;   - Calls H020+$082E.
+;   - Calls H010+$0332.
+; Direct callers: H043+$1922, H043+$1932
 ; --------------------------------------------------------------------------
 L043_000015C6:
 ; H043+$000015C6: 2f0c  move.l a4, -(a7)
@@ -4521,7 +4521,7 @@ L043_0000167A:
 L043_00001680:
 ; H043+$00001680: 4eb90000082e  jsr $82e.l
         jsr (H020+$82E).l
-; FLUSSO: Chiama Audio_Shutdown (H043+$0840).
+; FLOW: Calls Audio_Shutdown (H043+$0840).
 L043_00001686:
 ; H043+$00001686: 6100f1b8  bsr.w $840
         bsr.w H043+$840
@@ -4545,10 +4545,10 @@ L043_00001698:
 ; H043+$00001698: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H043_18EC [parziale]
-; Scopo: Trampolino verso H043+$18EC; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H043+$18EC.
-; Chiamanti diretti: H043+$19AA, H043+$19DE
+; ROUTINE: trampoline_H043_18EC [partial]
+; Purpose: Trampoline to H043+$18EC; the actual body is there.
+;   - Jumps to the actual body at H043+$18EC.
+; Direct callers: H043+$19AA, H043+$19DE
 ; --------------------------------------------------------------------------
 L043_0000169A:
 ; H043+$0000169A: 2f0c  move.l a4, -(a7)
@@ -5011,7 +5011,7 @@ L043_000018FA:
 L043_000018FC:
 ; H043+$000018FC: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H043+$18C0; indici 0..21, default -1.
+; DISPATCH: words relative to H043+$18C0; indices 0..21, default -1.
 L043_00001900:
 ; H043+$00001900: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -5032,12 +5032,12 @@ L043_0000190C:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Audio_Command [parziale]
-; Scopo: Smista un comando/richiesta di suono.
-;   - Gestisce valori speciali per arresto, attivazione e altre operazioni.
-;   - Per i normali identificatori prepara il nome/risorsa e la richiesta di riproduzione.
-;   - La corrispondenza completa fra ID e suono non è ancora stabilita.
-; Chiamanti diretti: H007+$0A76, H007+$0BB8, H007+$0BC2, H012+$07C2, H012+$07FE, H012+$0826, H012+$0868, H012+$08A4, H012+$08CC, H012+$08F4 ...
+; ROUTINE: Audio_Command [partial]
+; Purpose: Dispatches a sound command/request.
+;   - Handles special values for stop, activation and other operations.
+;   - For the normal identifiers it prepares the name/resource and the playback request.
+;   - The complete mapping between ID and sound is not established yet.
+; Direct callers: H007+$0A76, H007+$0BB8, H007+$0BC2, H012+$07C2, H012+$07FE, H012+$0826, H012+$0868, H012+$08A4, H012+$08CC, H012+$08F4 ...
 ; --------------------------------------------------------------------------
 L043_0000190E:
 ; H043+$0000190E: 2f0c  move.l a4, -(a7)

@@ -1,4 +1,4 @@
-/* H041: memoria preceduta dalla dimensione dell'allocazione. */
+/* H041: memory preceded by the allocation size. */
 #ifndef COK_H041_H
 #define COK_H041_H
 

@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H087
-; Lettura BMHD, palette e BODY delle immagini ILBM.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H087
+; Reading of BMHD, palette and BODY of ILBM pictures.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Lettore ILBM: BMHD, palette CMAP e BODY; prepara la bitmap e trasferisce le righe dei piani tramite UnPackRow.
+; MODULE NOTE
+; ILBM reader: BMHD, CMAP palette and BODY; prepares the bitmap and transfers the rows of the planes through UnPackRow.
 ; --------------------------------------------------------------------------
 ; H087: 1132 original bytes; all offsets are section-relative.
         section H087,code
@@ -15,10 +15,10 @@ H087:
 ; Preserved bytes H087+$00000000..$00000004; code/data not fully classified.
         dc.l H087+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H087_0468 [parziale]
-; Scopo: Trampolino verso H087+$0468; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H087+$0468.
-; Chiamanti diretti: H000+$00D8
+; ROUTINE: trampoline_H087_0468 [partial]
+; Purpose: Trampoline to H087+$0468; the actual body is there.
+;   - Jumps to the actual body at H087+$0468.
+; Direct callers: H000+$00D8
 ; --------------------------------------------------------------------------
 L087_00000004:
 ; H087+$00000004: 4e550000  link.w a5, #$0
@@ -27,10 +27,10 @@ L087_00000008:
 ; H087+$00000008: 6000045e  bra.w $468
         bra.w H087+$468
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H087_0028 [parziale]
-; Scopo: Trampolino verso H087+$0028; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H087+$0028.
-; Chiamanti diretti: H040+$02EC, H040+$052C
+; ROUTINE: trampoline_H087_0028 [partial]
+; Purpose: Trampoline to H087+$0028; the actual body is there.
+;   - Jumps to the actual body at H087+$0028.
+; Direct callers: H040+$02EC, H040+$052C
 ; --------------------------------------------------------------------------
 L087_0000000C:
 ; H087+$0000000C: 4e550000  link.w a5, #$0
@@ -81,11 +81,11 @@ L087_0000002E:
         dc.l H086+$000003F2
         dc.w $6000,$0002,$4E5D,$205F,$508F,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H087_0000009C [parziale]
-; Scopo: Routine del modulo lettura BMHD, palette e BODY delle immagini ILBM; richiama H015+$00BC, H086+$03F2.
-;   - Richiama H015+$00BC.
-;   - Richiama H086+$03F2.
-; Chiamanti diretti: H040+$031A, H040+$0566
+; ROUTINE: sub_H087_0000009C [partial]
+; Purpose: Routine of the reading of BMHD, palette and BODY of ILBM pictures module; calls H015+$00BC, H086+$03F2.
+;   - Calls H015+$00BC.
+;   - Calls H086+$03F2.
+; Direct callers: H040+$031A, H040+$0566
 ; --------------------------------------------------------------------------
 L087_0000009C:
 ; H087+$0000009C: 4e55fff2  link.w a5, #$fff2
@@ -274,13 +274,13 @@ L087_00000164:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Read_ILBM_BODY [verificato]
-; Scopo: Legge BODY trasferendo righe e piani nella bitmap di destinazione.
-;   - Calcola i byte per riga e verifica geometria, buffer e compressione.
-;   - Controlla il flag masking e prepara i puntatori ai piani.
-;   - Per ogni riga e piano legge/copia i dati o richiama la decompressione di riga.
-;   - La modalità di compressione accettata viene limitata a 0 o 1.
-; Chiamanti diretti: H040+$042C
+; ROUTINE: Read_ILBM_BODY [verified]
+; Purpose: Reads BODY transferring rows and planes into the destination bitmap.
+;   - Computes the bytes per row and checks geometry, buffer and compression.
+;   - Checks the masking flag and prepares the pointers to the planes.
+;   - For every row and plane it reads/copies the data or calls the row decompression.
+;   - The accepted compression mode is limited to 0 or 1.
+; Direct callers: H040+$042C
 ; --------------------------------------------------------------------------
 L087_00000166:
 ; H087+$00000166: 4e55ff94  link.w a5, #$ff94
@@ -865,7 +865,7 @@ L087_0000042C:
 L087_00000430:
 ; H087+$00000430: 3f2dfff8  move.w -$8(a5), -(a7)
         move.w -$8(a5), -(a7)
-; FLUSSO: Chiama UnPackRow_ByteRun1 (H088+$000C).
+; FLOW: Calls UnPackRow_ByteRun1 (H088+$000C).
 L087_00000434:
 ; H087+$00000434: 4eb90000000c  jsr $c.l
         jsr (H088+$C).l

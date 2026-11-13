@@ -1,4 +1,4 @@
-/* H025: costruzione di NewWindow e OpenWindow. */
+/* H025: building of NewWindow and OpenWindow. */
 #include "h025_window.h"
 #include "h021_intuition.h"
 
@@ -7,7 +7,7 @@
 extern struct GfxBase *GfxBase;
 #endif
 
-/* Dati del modulo (offset rispetto ad a4). */
+/* Module data (offsets from a4). */
 u8  g_h025_m1;                  /* -$1 */
 u8  g_h025_m2;                  /* -$2 */
 struct Image *g_h025_m6;        /* -$6: CheckMark (NULL) */
@@ -17,7 +17,7 @@ u16 g_h025_me;                  /* -$E: GfxBase->NormalDisplayColumns */
 u16 g_h025_m10;                 /* -$10 */
 u16 g_h025_m12;                 /* -$12: GfxBase->NormalDisplayRows */
 
-/* PORT H025+$001A (sull'host: valori NTSC, vedi H024). */
+/* PORT H025+$001A (on the host: NTSC values, see H024). */
 void h025_init(void)
 {
     g_h025_m1 = 0xFF;
@@ -34,8 +34,8 @@ void h025_init(void)
 }
 
 /*
- * PORT H025+$0028 (Open_GameWindow): Type WBENCHSCREEN senza schermo,
- * altrimenti CUSTOMSCREEN.
+ * PORT H025+$0028 (Open_GameWindow): Type WBENCHSCREEN without a screen,
+ * otherwise CUSTOMSCREEN.
  */
 struct Window *open_game_window(u16 left, u16 top, u16 width, u16 height,
                                 u32 idcmp, u32 flags, struct Gadget *gadgets,

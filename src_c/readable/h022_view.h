@@ -1,4 +1,4 @@
-/* H022: adattatori graphics.library per view, palette e viewport. */
+/* H022: graphics.library adapters for view, palette and viewport. */
 #ifndef COK_H022_VIEW_H
 #define COK_H022_VIEW_H
 

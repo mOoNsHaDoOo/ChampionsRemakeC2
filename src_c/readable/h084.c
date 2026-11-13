@@ -2,8 +2,8 @@
 #include "h084.h"
 
 /*
- * PORT H084+$0008: copia IntuitionBase del runtime H015 nella cella del modulo.
- * In C la base della libreria e' gia' globale: niente da fare.
+ * PORT H084+$0008: copies IntuitionBase of the H015 runtime into the module cell.
+ * In C the library base is already global: nothing to do.
  */
 void h084_init(void)
 {

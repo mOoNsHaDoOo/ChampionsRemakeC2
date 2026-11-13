@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H038
-; Adattatori RectFill e selezione delle penne.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H038
+; RectFill and pen selection adapters.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Adattatori RectFill, SetAPen e SetBPen; usati dal disegno di riquadri e dal testo.
+; MODULE NOTE
+; RectFill, SetAPen and SetBPen adapters; used by the drawing of boxes and by the text.
 ; --------------------------------------------------------------------------
 ; H038: 504 original bytes; all offsets are section-relative.
         section H038,code
@@ -16,10 +16,10 @@ H038:
         dc.w $0000,$0000
         dc.l H038+$00000004
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H038_00000008 [parziale]
-; Scopo: Routine del modulo adattatori RectFill e selezione delle penne; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H000+$0096
+; ROUTINE: sub_H038_00000008 [partial]
+; Purpose: Routine of the RectFill and pen selection adapters module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H000+$0096
 ; --------------------------------------------------------------------------
 L038_00000008:
 ; H038+$00000008: 41fafffa  lea.l $4(pc), a0
@@ -49,10 +49,10 @@ L038_00000012:
         dc.w $0006,$322F,$0004,$2C7A,$FEF4,$2F57,$0008,$508F
         dc.w $4EEE,$FEC2
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_RectFill [parziale]
-; Scopo: Adattatore a graphics.library/RectFill; incapsula la chiamata alla libreria.
-;   - Chiama graphics.library/RectFill (LVO -306).
-; Chiamanti diretti: H030+$0BCA, H007+$06DE, H030+$0246, H069+$009C, H011+$05C4, H029+$1108
+; ROUTINE: wrapper_RectFill [partial]
+; Purpose: Adapter to graphics.library/RectFill; wraps the library call.
+;   - Calls graphics.library/RectFill (LVO -306).
+; Direct callers: H030+$0BCA, H007+$06DE, H030+$0246, H069+$009C, H011+$05C4, H029+$1108
 ; --------------------------------------------------------------------------
 L038_00000118:
 ; H038+$00000118: 226f000c  movea.l $c(a7), a1
@@ -82,10 +82,10 @@ L038_00000138:
 ; H038+$00000138: 4eeefece  jmp -$132(a6) ; graphics.library/RectFill
         jmp LVO_graphics_RectFill(a6)
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_SetAPen [parziale]
-; Scopo: Adattatore a graphics.library/SetAPen; incapsula la chiamata alla libreria.
-;   - Chiama graphics.library/SetAPen (LVO -342).
-; Chiamanti diretti: H030+$0B7E, H007+$06C6, H030+$0202, H069+$005A, H011+$05A8, H029+$10D0
+; ROUTINE: wrapper_SetAPen [partial]
+; Purpose: Adapter to graphics.library/SetAPen; wraps the library call.
+;   - Calls graphics.library/SetAPen (LVO -342).
+; Direct callers: H030+$0B7E, H007+$06C6, H030+$0202, H069+$005A, H011+$05A8, H029+$10D0
 ; --------------------------------------------------------------------------
 L038_0000013C:
 ; H038+$0000013C: 226f0006  movea.l $6(a7), a1
@@ -109,10 +109,10 @@ L038_0000014E:
         dc.w $206F,$000A,$216F,$0006,$0008,$302F,$0004,$1140
         dc.w $001D,$205F,$4FEF,$000A,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_SetBPen [parziale]
-; Scopo: Adattatore a graphics.library/SetBPen; incapsula la chiamata alla libreria.
-;   - Chiama graphics.library/SetBPen (LVO -348).
-; Chiamanti diretti: H030+$0B8C
+; ROUTINE: wrapper_SetBPen [partial]
+; Purpose: Adapter to graphics.library/SetBPen; wraps the library call.
+;   - Calls graphics.library/SetBPen (LVO -348).
+; Direct callers: H030+$0B8C
 ; --------------------------------------------------------------------------
 L038_0000016C:
 ; H038+$0000016C: 226f0006  movea.l $6(a7), a1
@@ -138,10 +138,10 @@ L038_0000017E:
         dc.w $0068,$0001,$0020,$117C,$000F,$001F,$205F,$5C8F
         dc.w $4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H038_000001B4 [parziale]
-; Scopo: Routine del modulo adattatori RectFill e selezione delle penne; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H030+$0B9A, H030+$0212, H069+$0068
+; ROUTINE: sub_H038_000001B4 [partial]
+; Purpose: Routine of the RectFill and pen selection adapters module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H030+$0B9A, H030+$0212, H069+$0068
 ; --------------------------------------------------------------------------
 L038_000001B4:
 ; H038+$000001B4: 206f0006  movea.l $6(a7), a0

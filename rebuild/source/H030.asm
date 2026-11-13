@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H030
-; Presentazione testo e interfaccia.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H030
+; Text and interface presentation.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Presentazione testo e UI: disegno di stringhe, box, menu e messaggi. Usa i servizi grafici e i font 8x8.
+; MODULE NOTE
+; Text and UI presentation: drawing of strings, boxes, menus and messages. Uses the graphics services and the 8x8 fonts.
 ; --------------------------------------------------------------------------
 ; H030: 3240 original bytes; all offsets are section-relative.
         section H030,code
@@ -22,10 +22,10 @@ H030:
         dc.w $696E,$7472,$6F20,$6766,$7821,$0000
         dc.l H030+$00000030
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H030 [parziale]
-; Scopo: Ingresso del modulo presentazione testo e interfaccia; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H030+$0CA2.
-; Chiamanti diretti: H000+$0174
+; ROUTINE: module_init_H030 [partial]
+; Purpose: Entry of the text presentation and interface module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H030+$0CA2.
+; Direct callers: H000+$0174
 ; --------------------------------------------------------------------------
 L030_00000070:
 ; H030+$00000070: 2f0c  move.l a4, -(a7)
@@ -49,10 +49,10 @@ L030_0000007A:
         dc.l H020+$0000082E
         dc.w $4E5D,$285F,$205F,$4FEF,$0054,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H030_000000B6 [parziale]
-; Scopo: Routine del modulo presentazione testo e interfaccia; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H008+$046E, H008+$0566, H008+$04C8, H008+$0506, H030+$0378, H008+$15B4
+; ROUTINE: sub_H030_000000B6 [partial]
+; Purpose: Routine of the text presentation and interface module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H008+$046E, H008+$0566, H008+$04C8, H008+$0506, H030+$0378, H008+$15B4
 ; --------------------------------------------------------------------------
 L030_000000B6:
 ; H030+$000000B6: 2f0c  move.l a4, -(a7)
@@ -213,7 +213,7 @@ L030_00000180:
 L030_00000184:
 ; H030+$00000184: 486dffd4  pea.l -$2c(a5)
         pea.l -$2c(a5)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L030_00000188:
 ; H030+$00000188: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -233,12 +233,12 @@ L030_00000198:
 ; H030+$00000198: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H030_0000019A [parziale]
-; Scopo: Routine del modulo presentazione testo e interfaccia; richiama H038+$013C, H038+$01B4, H038+$0118.
-;   - Richiama H038+$013C.
-;   - Richiama H038+$01B4.
-;   - Richiama H038+$0118.
-; Chiamanti diretti: H030+$02C2, H030+$02F2, H008+$13B4, H030+$0750, H030+$00DA, H030+$0972 e altri 9
+; ROUTINE: sub_H030_0000019A [partial]
+; Purpose: Routine of the text presentation and interface module; calls H038+$013C, H038+$01B4, H038+$0118.
+;   - Calls H038+$013C.
+;   - Calls H038+$01B4.
+;   - Calls H038+$0118.
+; Direct callers: H030+$02C2, H030+$02F2, H008+$13B4, H030+$0750, H030+$00DA, H030+$0972 and 9 more
 ; --------------------------------------------------------------------------
 L030_0000019A:
 ; H030+$0000019A: 2f0c  move.l a4, -(a7)
@@ -398,12 +398,12 @@ L030_00000254:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: UI_DrawText [parziale]
-; Scopo: Servizio di presentazione testo usato dai menu e dai messaggi.
-;   - Riceve posizione, attributi e puntatore alla stringa.
-;   - I chiamanti forniscono anche il limite di lunghezza della stringa.
-;   - La mappa completa dei colori e delle aree resta da completare.
-; Chiamanti diretti: H006+$0702, H007+$0710, H007+$072C, H007+$0748, H007+$0764, H007+$0780, H007+$079C, H007+$07B8, H007+$07D4, H007+$07F0 ...
+; ROUTINE: UI_DrawText [partial]
+; Purpose: Text presentation service used by the menus and the messages.
+;   - Receives position, attributes and pointer to the string.
+;   - The callers also supply the length limit of the string.
+;   - The complete map of the colours and of the areas is still to be completed.
+; Direct callers: H006+$0702, H007+$0710, H007+$072C, H007+$0748, H007+$0764, H007+$0780, H007+$079C, H007+$07B8, H007+$07D4, H007+$07F0 ...
 ; --------------------------------------------------------------------------
 L030_00000256:
 ; H030+$00000256: 2f0c  move.l a4, -(a7)
@@ -432,7 +432,7 @@ L030_00000270:
 L030_00000274:
 ; H030+$00000274: 2f2d000c  move.l $c(a5), -(a7)
         move.l $c(a5), -(a7)
-; FLUSSO: Chiama Draw_TextWithBlitter (H049+$0224).
+; FLOW: Calls Draw_TextWithBlitter (H049+$0224).
 L030_00000278:
 ; H030+$00000278: 4eb900000224  jsr $224.l
         jsr (H049+$224).l
@@ -452,10 +452,10 @@ L030_00000288:
 ; H030+$00000288: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H030_0000028A [parziale]
-; Scopo: Routine del modulo presentazione testo e interfaccia; richiama H010+$0974.
-;   - Richiama H010+$0974.
-; Chiamanti diretti: H063+$1C1C, H056+$09B6, H063+$1C88, H042+$0E24, H042+$0EB8, H030+$06B6 e altri 10
+; ROUTINE: sub_H030_0000028A [partial]
+; Purpose: Routine of the text presentation and interface module; calls H010+$0974.
+;   - Calls H010+$0974.
+; Direct callers: H063+$1C1C, H056+$09B6, H063+$1C88, H042+$0E24, H042+$0EB8, H030+$06B6 and 10 more
 ; --------------------------------------------------------------------------
 L030_0000028A:
 ; H030+$0000028A: 2f0c  move.l a4, -(a7)
@@ -535,7 +535,7 @@ L030_000002D4:
 L030_000002D8:
 ; H030+$000002D8: 2f2d000c  move.l $c(a5), -(a7)
         move.l $c(a5), -(a7)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L030_000002DC:
 ; H030+$000002DC: 6100ff78  bsr.w $256
         bsr.w H030+$256
@@ -574,11 +574,11 @@ L030_00000300:
 ; H030+$00000300: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H030_0470 [parziale]
-; Scopo: Trampolino verso H030+$0470; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H030+$0470.
-;   - Richiama H026+$000C.
-; Chiamanti diretti: H063+$1E4A, H063+$1EC2, H063+$1292, H064+$0DF0, H064+$1472, H012+$2C92 e altri 27
+; ROUTINE: trampoline_H030_0470 [partial]
+; Purpose: Trampoline to H030+$0470; the actual body is there.
+;   - Jumps to the actual body at H030+$0470.
+;   - Calls H026+$000C.
+; Direct callers: H063+$1E4A, H063+$1EC2, H063+$1292, H064+$0DF0, H064+$1472, H012+$2C92 and 27 more
 ; --------------------------------------------------------------------------
 L030_00000302:
 ; H030+$00000302: 2f0c  move.l a4, -(a7)
@@ -593,10 +593,10 @@ L030_0000030C:
 ; H030+$0000030C: 60000162  bra.w $470
         bra.w H030+$470
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H030_00000310 [parziale]
-; Scopo: Routine del modulo presentazione testo e interfaccia; richiama H036+$0034.
-;   - Richiama H036+$0034.
-; Chiamanti diretti: H030+$0666, H030+$06D2, H030+$06DC
+; ROUTINE: sub_H030_00000310 [partial]
+; Purpose: Routine of the text presentation and interface module; calls H036+$0034.
+;   - Calls H036+$0034.
+; Direct callers: H030+$0666, H030+$06D2, H030+$06DC
 ; --------------------------------------------------------------------------
 L030_00000310:
 ; H030+$00000310: 4e550000  link.w a5, #$0
@@ -726,10 +726,10 @@ L030_000003B6:
 ; H030+$000003B6: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H030_000003B8 [parziale]
-; Scopo: Routine del modulo presentazione testo e interfaccia; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H030+$067A
+; ROUTINE: sub_H030_000003B8 [partial]
+; Purpose: Routine of the text presentation and interface module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H030+$067A
 ; --------------------------------------------------------------------------
 L030_000003B8:
 ; H030+$000003B8: 4e550000  link.w a5, #$0
@@ -789,10 +789,10 @@ L030_000003FA:
 ; H030+$000003FA: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H030_000003FC [parziale]
-; Scopo: Routine del modulo presentazione testo e interfaccia; richiama H026+$000C.
-;   - Richiama H026+$000C.
-; Chiamanti diretti: H030+$0588, H030+$05B8, H030+$0610
+; ROUTINE: sub_H030_000003FC [partial]
+; Purpose: Routine of the text presentation and interface module; calls H026+$000C.
+;   - Calls H026+$000C.
+; Direct callers: H030+$0588, H030+$05B8, H030+$0610
 ; --------------------------------------------------------------------------
 L030_000003FC:
 ; H030+$000003FC: 4e55fff4  link.w a5, #$fff4
@@ -1390,16 +1390,16 @@ L030_00000716:
 ; H030+$00000716: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H030_00000718 [parziale]
-; Scopo: Routine del modulo presentazione testo e interfaccia; richiama H026+$000C, H010+$0974, H026+$01E0, H026+$03F6.
-;   - Richiama H026+$000C.
-;   - Richiama H010+$0974.
-;   - Richiama H026+$01E0.
-;   - Richiama H026+$03F6.
-;   - Richiama H026+$003A.
-;   - Richiama H026+$0188.
-;   - Usa lo stato globale: H005+$5305 (byte del tasto/azione pendente); H005+$24D7 (flag del ramo demo).
-; Chiamanti diretti: H009+$035E, H064+$0D14, H030+$09EE, H066+$1986, H013+$2A7E
+; ROUTINE: sub_H030_00000718 [partial]
+; Purpose: Routine of the text presentation and interface module; calls H026+$000C, H010+$0974, H026+$01E0, H026+$03F6.
+;   - Calls H026+$000C.
+;   - Calls H010+$0974.
+;   - Calls H026+$01E0.
+;   - Calls H026+$03F6.
+;   - Calls H026+$003A.
+;   - Calls H026+$0188.
+;   - Uses the global state: H005+$5305 (byte of the pending key/action); H005+$24D7 (flag of the demo branch).
+; Direct callers: H009+$035E, H064+$0D14, H030+$09EE, H066+$1986, H013+$2A7E
 ; --------------------------------------------------------------------------
 L030_00000718:
 ; H030+$00000718: 2f0c  move.l a4, -(a7)
@@ -1479,7 +1479,7 @@ L030_00000762:
 L030_00000766:
 ; H030+$00000766: 2f2d0018  move.l $18(a5), -(a7)
         move.l $18(a5), -(a7)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L030_0000076A:
 ; H030+$0000076A: 6100faea  bsr.w $256
         bsr.w H030+$256
@@ -1512,7 +1512,7 @@ L030_00000788:
 L030_0000078C:
 ; H030+$0000078C: 4eb900000974  jsr $974.l
         jsr (H010+$974).l
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L030_00000792:
 ; H030+$00000792: 1b7900005305ffaa  move.b $5305.l, -$56(a5)
         move.b (H005+$5305).l, -$56(a5)
@@ -1581,7 +1581,7 @@ L030_000007E4:
 L030_000007E8:
 ; H030+$000007E8: 486dffaa  pea.l -$56(a5)
         pea.l -$56(a5)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L030_000007EC:
 ; H030+$000007EC: 6100fa68  bsr.w $256
         bsr.w H030+$256
@@ -1700,7 +1700,7 @@ L030_0000093E:
 L030_00000940:
 ; H030+$00000940: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H030+$084A; indici 0..114, default -1.
+; DISPATCH: words relative to H030+$084A; indices 0..114, default -1.
 L030_00000944:
 ; H030+$00000944: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -1716,7 +1716,7 @@ L030_00000952:
 L030_00000958:
 ; H030+$00000958: 6700000c  beq.w $966
         beq.w H030+$966
-; STATO: H005+$24D7 = flag del ramo demo
+; STATE: H005+$24D7 = flag of the demo branch
 L030_0000095C:
 ; H030+$0000095C: 4a39000024d7  tst.b $24d7.l
         tst.b (H005+$24D7).l
@@ -1780,10 +1780,10 @@ L030_000009A4:
 ; H030+$000009A4: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H030_000009A6 [parziale]
-; Scopo: Routine del modulo presentazione testo e interfaccia; richiama H045+$000C.
-;   - Richiama H045+$000C.
-; Chiamanti diretti: H064+$0CA6
+; ROUTINE: sub_H030_000009A6 [partial]
+; Purpose: Routine of the text presentation and interface module; calls H045+$000C.
+;   - Calls H045+$000C.
+; Direct callers: H064+$0CA6
 ; --------------------------------------------------------------------------
 L030_000009A6:
 ; H030+$000009A6: 2f0c  move.l a4, -(a7)
@@ -1919,12 +1919,12 @@ L030_00000A3E:
 ; H030+$00000A3E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H030_00000A40 [parziale]
-; Scopo: Routine del modulo presentazione testo e interfaccia; richiama H021+$0030, H015+$004A, H015+$00BC.
-;   - Richiama H021+$0030.
-;   - Richiama H015+$004A.
-;   - Richiama H015+$00BC.
-; Chiamanti diretti: H008+$065C, H008+$06BE, H008+$0A1C
+; ROUTINE: sub_H030_00000A40 [partial]
+; Purpose: Routine of the text presentation and interface module; calls H021+$0030, H015+$004A, H015+$00BC.
+;   - Calls H021+$0030.
+;   - Calls H015+$004A.
+;   - Calls H015+$00BC.
+; Direct callers: H008+$065C, H008+$06BE, H008+$0A1C
 ; --------------------------------------------------------------------------
 L030_00000A40:
 ; H030+$00000A40: 2f0c  move.l a4, -(a7)
@@ -2016,10 +2016,10 @@ L030_00000A8C:
         dc.l H038+$00000118
         dc.w $4E5D,$285F,$4E75
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H030_00000AD2 [parziale]
-; Scopo: Routine del modulo presentazione testo e interfaccia; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H013+$3434, H013+$5928, H013+$5D1C, H013+$5D6A, H068+$0D08
+; ROUTINE: sub_H030_00000AD2 [partial]
+; Purpose: Routine of the text presentation and interface module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H013+$3434, H013+$5928, H013+$5D1C, H013+$5D6A, H068+$0D08
 ; --------------------------------------------------------------------------
 L030_00000AD2:
 ; H030+$00000AD2: 2f0c  move.l a4, -(a7)
@@ -2099,7 +2099,7 @@ L030_00000B1C:
 L030_00000B20:
 ; H030+$00000B20: 2f2d0010  move.l $10(a5), -(a7)
         move.l $10(a5), -(a7)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L030_00000B24:
 ; H030+$00000B24: 6100f730  bsr.w $256
         bsr.w H030+$256
@@ -2137,10 +2137,10 @@ L030_00000B48:
 ; H030+$00000B48: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H030_00000B4A [parziale]
-; Scopo: Routine del modulo presentazione testo e interfaccia; richiama H036+$0034.
-;   - Richiama H036+$0034.
-; Chiamanti diretti: H063+$1ED0, H062+$03C2, H048+$1314, H027+$220C, H063+$1D9E, H085+$2B04 e altri 21
+; ROUTINE: sub_H030_00000B4A [partial]
+; Purpose: Routine of the text presentation and interface module; calls H036+$0034.
+;   - Calls H036+$0034.
+; Direct callers: H063+$1ED0, H062+$03C2, H048+$1314, H027+$220C, H063+$1D9E, H085+$2B04 and 21 more
 ; --------------------------------------------------------------------------
 L030_00000B4A:
 ; H030+$00000B4A: 2f0c  move.l a4, -(a7)
@@ -2174,13 +2174,13 @@ L030_00000B6A:
 ; H030+$00000B6A: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H030_00000B6C [parziale]
-; Scopo: Routine del modulo presentazione testo e interfaccia; richiama H038+$013C, H038+$016C, H038+$01B4, H038+$0118.
-;   - Richiama H038+$013C.
-;   - Richiama H038+$016C.
-;   - Richiama H038+$01B4.
-;   - Richiama H038+$0118.
-; Chiamanti diretti: H063+$1E0A, H063+$1F0E, H063+$1D7E, H063+$1DB2, H063+$1F28, H063+$0E60 e altri 44
+; ROUTINE: sub_H030_00000B6C [partial]
+; Purpose: Routine of the text presentation and interface module; calls H038+$013C, H038+$016C, H038+$01B4, H038+$0118.
+;   - Calls H038+$013C.
+;   - Calls H038+$016C.
+;   - Calls H038+$01B4.
+;   - Calls H038+$0118.
+; Direct callers: H063+$1E0A, H063+$1F0E, H063+$1D7E, H063+$1DB2, H063+$1F28, H063+$0E60 and 44 more
 ; --------------------------------------------------------------------------
 L030_00000B6C:
 ; H030+$00000B6C: 2f0c  move.l a4, -(a7)
@@ -2292,13 +2292,13 @@ L030_00000BD8:
         dc.w $2B40,$FFFC,$202D,$FFFC,$6000,$0002,$4E5D,$285F
         dc.w $205F,$588F,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H030_00000C10 [parziale]
-; Scopo: Routine del modulo presentazione testo e interfaccia; richiama H028+$05FA, H040+$05E4, H002+$0014, H049+$0438.
-;   - Richiama H028+$05FA.
-;   - Richiama H040+$05E4.
-;   - Richiama H002+$0014.
-;   - Richiama H049+$0438.
-; Chiamanti diretti: H006+$06E2
+; ROUTINE: sub_H030_00000C10 [partial]
+; Purpose: Routine of the text presentation and interface module; calls H028+$05FA, H040+$05E4, H002+$0014, H049+$0438.
+;   - Calls H028+$05FA.
+;   - Calls H040+$05E4.
+;   - Calls H002+$0014.
+;   - Calls H049+$0438.
+; Direct callers: H006+$06E2
 ; --------------------------------------------------------------------------
 L030_00000C10:
 ; H030+$00000C10: 2f0c  move.l a4, -(a7)
@@ -2327,7 +2327,7 @@ L030_00000C2A:
 L030_00000C2E:
 ; H030+$00000C2E: 486dff92  pea.l -$6e(a5)
         pea.l -$6e(a5)
-; FLUSSO: Chiama Open_ResourceFile (H028+$05FA).
+; FLOW: Calls Open_ResourceFile (H028+$05FA).
 L030_00000C32:
 ; H030+$00000C32: 4eb9000005fa  jsr $5fa.l
         jsr (H028+$5FA).l
@@ -2352,7 +2352,7 @@ L030_00000C4C:
 L030_00000C50:
 ; H030+$00000C50: 487aff88  pea.l $bda(pc)
         pea.l H030+$BDA(pc)
-; FLUSSO: Chiama Read_ILBM (H040+$05E4).
+; FLOW: Calls Read_ILBM (H040+$05E4).
 L030_00000C54:
 ; H030+$00000C54: 4eb9000005e4  jsr $5e4.l
         jsr (H040+$5E4).l
@@ -2392,10 +2392,10 @@ L030_00000C82:
 ; H030+$00000C82: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H030_00000C84 [parziale]
-; Scopo: Routine del modulo presentazione testo e interfaccia; richiama H003+$00F6.
-;   - Richiama H003+$00F6.
-; Chiamanti diretti: H010+$02BC
+; ROUTINE: sub_H030_00000C84 [partial]
+; Purpose: Routine of the text presentation and interface module; calls H003+$00F6.
+;   - Calls H003+$00F6.
+; Direct callers: H010+$02BC
 ; --------------------------------------------------------------------------
 L030_00000C84:
 ; H030+$00000C84: 2f0c  move.l a4, -(a7)

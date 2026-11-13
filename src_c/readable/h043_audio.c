@@ -1,20 +1,20 @@
 /*
- * H043: "SoundX", caricamento e gestione di brani SMUS e campioni 8SVX,
- * avvio e chiusura di audio.device e del server del VBlank (H094).
- * Tutto il lettore e' compilato solo con COK_AUDIO; senza, h043_0584,
- * h043_0840 e h043_190e sono gli stub di unported.c.
+ * H043: "SoundX", loading and handling of SMUS scores and 8SVX samples,
+ * start-up and shutdown of audio.device and of the VBlank server (H094).
+ * The whole player is compiled only with COK_AUDIO; without it h043_0584,
+ * h043_0840 and h043_190e are the stubs of unported.c.
  */
 #include <string.h>
 #include "h043_audio.h"
 
-/* Dati del modulo (offset rispetto ad a4). */
-u8  g_h043_m1;                  /* -$1: soundData aperto da load_object */
-u8  g_h043_m2;                  /* -$2: lettore avviato */
-u8  g_h043_m3;                  /* -$3: audio.device aperto */
-u8  g_h043_m5;                  /* -$5: musica abilitata */
-u32 g_h043_m8a;                 /* -$8A (il puntatore e' g_sound) */
+/* Module data (offsets from a4). */
+u8  g_h043_m1;                  /* -$1: soundData opened by load_object */
+u8  g_h043_m2;                  /* -$2: player started */
+u8  g_h043_m3;                  /* -$3: audio.device open */
+u8  g_h043_m5;                  /* -$5: music enabled */
+u32 g_h043_m8a;                 /* -$8A (the pointer is g_sound) */
 
-/* PORT H043+$01BC (corpo a $19FC) */
+/* PORT H043+$01BC (body at $19FC) */
 void h043_init(void)
 {
     g_h043_m5 = 1;
@@ -53,7 +53,7 @@ static struct Interrupt s_vblank_int;   /* -$70(a4) */
 
 static void sx_error(u16 code);
 
-/* PORT H043+$01D6: memoria CHIP, altrimenti errore 1. */
+/* PORT H043+$01D6: CHIP memory, otherwise error 1. */
 static void *sx_alloc_chip(u32 size)
 {
     void *p = exec_alloc_mem(size, COK_MEMF_CHIP);
@@ -64,7 +64,7 @@ static void *sx_alloc_chip(u32 size)
     return p;
 }
 
-/* PORT H043+$0214: memoria azzerata, altrimenti errore 2. */
+/* PORT H043+$0214: cleared memory, otherwise error 2. */
 static void *sx_alloc(u32 size)
 {
     void *p = exec_alloc_mem(size, COK_MEMF_CLEAR);
@@ -75,7 +75,7 @@ static void *sx_alloc(u32 size)
     return p;
 }
 
-/* PORT H043+$0252: libera *pp di size byte e lo azzera. */
+/* PORT H043+$0252: frees *pp of size bytes and clears it. */
 static void sx_free(void **pp, u32 size)
 {
     if (*pp != NULL) {
@@ -84,7 +84,7 @@ static void sx_free(void **pp, u32 size)
     }
 }
 
-/* PORT H043+$0286: salta n byte del file (errore se Seek fallisce). */
+/* PORT H043+$0286: skips n bytes of the file (error if Seek fails). */
 static void sx_skip(cok_bptr file, s32 n)
 {
     if (!s_error && dos_seek(file, n, 0) == -1) {
@@ -92,7 +92,7 @@ static void sx_skip(cok_bptr file, s32 n)
     }
 }
 
-/* PORT H043+$02C4: legge n byte (errore se ne arrivano meno). */
+/* PORT H043+$02C4: reads n bytes (error if fewer arrive). */
 static void sx_read(cok_bptr file, void *buf, s32 n)
 {
     if (!s_error && dos_read(file, buf, n) != n) {
@@ -100,7 +100,7 @@ static void sx_read(cok_bptr file, void *buf, s32 n)
     }
 }
 
-/* Lunghezze dei blocchi IFF: long big-endian. */
+/* Lengths of the IFF blocks: big-endian long. */
 static s32 sx_read_long(cok_bptr file)
 {
     u8 b[4];
@@ -110,7 +110,7 @@ static s32 sx_read_long(cok_bptr file)
     return (s32)COK_GET32(b);
 }
 
-/* PORT H043+$0304: porta messaggi senza segnale (tipo 4, lista vuota). */
+/* PORT H043+$0304: message port without a signal (type 4, empty list). */
 static struct MsgPort *sx_create_port(void)
 {
     struct MsgPort *p = (struct MsgPort *)sx_alloc(sizeof(struct MsgPort));
@@ -120,7 +120,7 @@ static struct MsgPort *sx_create_port(void)
     return p;
 }
 
-/* PORT H043+$0340: chiude la porta (tipo $FF, lista -1) e la libera. */
+/* PORT H043+$0340: closes the port (type $FF, list -1) and frees it. */
 static void sx_delete_port(struct MsgPort **pp)
 {
     if (*pp != NULL) {
@@ -131,14 +131,14 @@ static void sx_delete_port(struct MsgPort **pp)
     }
 }
 
-/* PORT H043+$038A: libera una traccia. */
+/* PORT H043+$038A: frees a track. */
 static void sx_free_track(SxTrack *t)
 {
     sx_free((void **)&t->data, (u32)(t->end - t->data));
     sx_free((void **)&t, sizeof(SxTrack));
 }
 
-/* PORT H043+$03CA: libera un brano con le sue tracce. */
+/* PORT H043+$03CA: frees a score with its tracks. */
 static void sx_free_score(SxScore *s)
 {
     s16 i;
@@ -152,7 +152,7 @@ static void sx_free_score(SxScore *s)
     sx_free((void **)&s, sizeof(SxScore));
 }
 
-/* PORT H043+$0422: libera un campione 8SVX. */
+/* PORT H043+$0422: frees an 8SVX sample. */
 static void sx_free_8svx(Sx8svx *v)
 {
     if (v == NULL) {
@@ -162,7 +162,7 @@ static void sx_free_8svx(Sx8svx *v)
     sx_free((void **)&v, sizeof(Sx8svx));
 }
 
-/* PORT H043+$045E: libera un inviluppo (word della lunghezza + dati). */
+/* PORT H043+$045E: frees an envelope (length word + data). */
 static void sx_free_envl(u8 *e)
 {
     if (e == NULL) {
@@ -171,7 +171,7 @@ static void sx_free_envl(u8 *e)
     sx_free((void **)&e, (u32)COK_GET16(e) + 2);
 }
 
-/* PORT H043+$048E: libera uno strumento (non i suoi oggetti). */
+/* PORT H043+$048E: frees an instrument (not its objects). */
 static void sx_free_inst(SxInst *i)
 {
     if (i == NULL) {
@@ -180,7 +180,7 @@ static void sx_free_inst(SxInst *i)
     sx_free((void **)&i, sizeof(SxInst));
 }
 
-/* PORT H043+$04B6: libera *pp secondo il tipo e lo sostituisce col seguente. */
+/* PORT H043+$04B6: frees *pp according to the type and replaces it with the next one. */
 static void sx_free_object(SxObject **pp)
 {
     SxObject *o = *pp;
@@ -202,11 +202,11 @@ static void sx_free_object(SxObject **pp)
     *pp = next;
 }
 
-/* PORT H043+$07F6: trampolino (bra.w) verso H043+$15C6, la routine qui sotto. */
+/* PORT H043+$07F6: trampoline (bra.w) to H043+$15C6, the routine below. */
 /*
- * PORT H043+$15C6 (anche $07F6): ferma tutto: gli oggetti attivi non
- * suonano piu' in questo turno (bit 4), le voci finiscono subito e la
- * lista delle note da assegnare si svuota.
+ * PORT H043+$15C6 (also $07F6): stops everything: the active objects no
+ * longer play in this turn (bit 4), the voices end at once and the
+ * list of the notes to assign is emptied.
  */
 static void sx_stop_all(void)
 {
@@ -226,7 +226,7 @@ static void sx_stop_all(void)
     exec_enable();
 }
 
-/* PORT H043+$07FA: ferma tutto e libera tutti gli oggetti. */
+/* PORT H043+$07FA: stops everything and frees all the objects. */
 static void sx_free_all(void)
 {
     sx_stop_all();
@@ -239,8 +239,8 @@ static void sx_free_all(void)
 }
 
 /*
- * PORT H043+$0840: chiusura: toglie il server del VBlank, libera gli
- * oggetti, chiude audio.device, le porte e la memoria del lettore.
+ * PORT H043+$0840: shutdown: removes the VBlank server, frees the
+ * objects, closes audio.device, the ports and the player memory.
  */
 void h043_0840(void)
 {
@@ -261,9 +261,9 @@ void h043_0840(void)
 }
 
 /*
- * PORT H043+$08C4: riporta all'inizio le tracce del brano, assegna gli
- * strumenti (le tracce oltre gli strumenti usano il primo) e segna attive
- * tutte le tracce.
+ * PORT H043+$08C4: rewinds the tracks of the score, assigns the
+ * instruments (tracks beyond the instruments use the first one) and marks all
+ * the tracks active.
  */
 static void sx_rewind_score(SxScore *s)
 {
@@ -293,17 +293,17 @@ static void sx_rewind_score(SxScore *s)
 static SxObject *sx_load_object(char *name, u8 play);
 
 /*
- * PORT H043+$0986: FORM SMUS di len byte: SHDR (tempo / $44), INS1 (nome
- * dello strumento, caricato), TRAK (dati della traccia).  Il nome di INS1
- * non e' terminato nell'originale se riempie il buffer: qui il buffer
- * parte azzerato.
+ * PORT H043+$0986: FORM SMUS of len bytes: SHDR (tempo / $44), INS1 (name
+ * of the instrument, loaded), TRAK (track data).  The INS1 name
+ * is not terminated in the original if it fills the buffer: here the buffer
+ * starts cleared.
  */
 static SxScore *sx_load_smus(s32 len, cok_bptr file)
 {
     SxScore *s;                         /* -$3E(a5) */
     SxTrack *t;                         /* -$42(a5) */
     SxObject *ins;                      /* -$46(a5) */
-    char id[5];                         /* -$6(a5); -$2(a5) azzerato fa da NUL */
+    char id[5];                         /* -$6(a5); -$2(a5) cleared acts as the NUL */
     s32 size;                           /* -$A(a5) */
     u8 shdr[4];                         /* -$E(a5) */
     u8 skip4[4];                        /* -$12(a5) */
@@ -353,15 +353,15 @@ static SxScore *sx_load_smus(s32 len, cok_bptr file)
 }
 
 /*
- * PORT H043+$0BB2: FORM 8SVX di len byte: VHDR (letto com'e'), BODY (in
- * memoria CHIP), ATAK e il resto saltati.  Un VHDR piu' lungo di $14 byte
- * scriverebbe oltre il record nell'originale: qui si legge $14 e si salta
- * il resto.
+ * PORT H043+$0BB2: FORM 8SVX of len bytes: VHDR (read as it is), BODY (in
+ * CHIP memory), ATAK and the rest skipped.  A VHDR longer than $14 bytes
+ * would write past the record in the original: here $14 is read and the
+ * rest skipped.
  */
 static Sx8svx *sx_load_8svx(s32 len, cok_bptr file)
 {
     Sx8svx *v;                          /* -$12(a5) */
-    char id[5];                         /* -$6(a5); -$2(a5) azzerato fa da NUL */
+    char id[5];                         /* -$6(a5); -$2(a5) cleared acts as the NUL */
     s32 size;                           /* -$A(a5) */
 
     memset(id, 0, sizeof(id));
@@ -401,7 +401,7 @@ static Sx8svx *sx_load_8svx(s32 len, cok_bptr file)
     return v;
 }
 
-/* PORT H043+$0D3A: FORM ENVL: word della lunghezza e i len byte. */
+/* PORT H043+$0D3A: FORM ENVL: length word and the len bytes. */
 static u8 *sx_load_envl(s32 len, cok_bptr file)
 {
     u8 *e = (u8 *)sx_alloc((u32)len + 2);  /* -$4(a5) */
@@ -412,13 +412,13 @@ static u8 *sx_load_envl(s32 len, cok_bptr file)
 }
 
 /*
- * PORT H043+$0D84: FORM INST: PTCH e VLUM (inviluppi, dopo la word della
- * lunghezza) e SAMP (campione), caricati per nome.
+ * PORT H043+$0D84: FORM INST: PTCH and VLUM (envelopes, after the length
+ * word) and SAMP (sample), loaded by name.
  */
 static SxInst *sx_load_inst(s32 len, cok_bptr file)
 {
     SxInst *i;                          /* -$E(a5) */
-    char id[5];                         /* -$6(a5); -$2(a5) azzerato fa da NUL */
+    char id[5];                         /* -$6(a5); -$2(a5) cleared acts as the NUL */
     s32 size;                           /* -$A(a5) */
     char name[0x28];                    /* -$36(a5) */
 
@@ -456,8 +456,8 @@ static SxInst *sx_load_inst(s32 len, cok_bptr file)
 }
 
 /*
- * PORT H043+$0F50: cerca per nome fra gli attivi e i caricati e, se lo
- * trova, lo toglie dalla sua lista.
+ * PORT H043+$0F50: looks for name among the active and loaded ones and, if it
+ * finds it, removes it from its list.
  */
 static SxObject *sx_find_object(const char *name)
 {
@@ -501,8 +501,8 @@ static SxObject *sx_find_object(const char *name)
 }
 
 /*
- * PORT H043+$1058: mette o fra gli attivi (play: suona da ora, segnato col
- * bit 4) o fra i caricati.  Un brano prima ferma tutto e si riavvolge.
+ * PORT H043+$1058: puts o among the active ones (play: plays from now, marked with
+ * bit 4) or among the loaded ones.  A score first stops everything and rewinds.
  */
 static void sx_add_object(u8 play, SxObject *o)
 {
@@ -535,21 +535,21 @@ static void sx_add_object(u8 play, SxObject *o)
     exec_enable();
 }
 
-/* PORT H043+$01D2: trampolino (bra.w) verso H043+$113E, la routine qui sotto. */
+/* PORT H043+$01D2: trampoline (bra.w) to H043+$113E, the routine below. */
 /*
- * PORT H043+$113E (anche $01D2): l'oggetto name (gia' caricato, oppure
- * dal file SOUND/name o, la prima volta che manca, da SOUND/soundData).
- * Il file e' una sequenza di FORM (con un NAME facoltativo davanti); gli
- * oggetti con altro nome si caricano e restano fra i caricati.  Come
- * nell'originale, un FORM gia' presente viene saltato e l'oggetto trovato
- * esce dalla sua lista.
+ * PORT H043+$113E (also $01D2): the object name (already loaded, or
+ * from the file SOUND/name or, the first time it is missing, from SOUND/soundData).
+ * The file is a sequence of FORMs (with an optional NAME in front); the
+ * objects with another name are loaded and stay among the loaded ones.  As
+ * in the original, a FORM already present is skipped and the object found
+ * leaves its list.
  */
 static SxObject *sx_load_object(char *name, u8 play)
 {
     cok_bptr file;                      /* -$4(a5) */
     char path[0x2C];                    /* -$2C(a5) */
     char fname[0x28];                   /* -$54(a5) */
-    char id[5];                         /* -$5A(a5); -$56(a5) azzerato fa da NUL */
+    char id[5];                         /* -$5A(a5); -$56(a5) cleared acts as the NUL */
     s32 total;                          /* -$5E(a5) */
     s32 size;                           /* -$62(a5) */
     SxObject *result;                   /* -$66(a5) */
@@ -651,10 +651,10 @@ static SxObject *sx_load_object(char *name, u8 play)
     return result;
 }
 
-/* PORT H043+$01CA: trampolino (bra.w) verso H043+$165A, la routine qui sotto. */
+/* PORT H043+$01CA: trampoline (bra.w) to H043+$165A, the routine below. */
 /*
- * PORT H043+$165A (anche $01CA): "SoundX is quiting, exit code =", il
- * codice, chiusura dell'audio e uscita dal gioco.
+ * PORT H043+$165A (also $01CA): "SoundX is quiting, exit code =", the
+ * code, audio shutdown and exit from the game.
  */
 static void sx_error(u16 code)
 {
@@ -665,7 +665,7 @@ static void sx_error(u16 code)
     quit_game();
 }
 
-/* PORT H043+$169A: nome del suono numero 2..$17 (gli altri: invariato). */
+/* PORT H043+$169A: name of sound number 2..$17 (the others: unchanged). */
 static void sx_sound_name(u16 n, char *buf, u16 max)
 {
     static const char *const names[0x16] = {
@@ -680,12 +680,12 @@ static void sx_sound_name(u16 n, char *buf, u16 max)
 }
 
 /*
- * PORT H043+$0584: avvio: "SOUND/periodTable" ($80 periodi e $40
- * durate), due porte, audio.device con la maschera dei canali $F, 16
- * richieste CMD_WRITE (rese libere con ReplyMsg) e il server del VBlank
- * che fa partire l'interrupt software del lettore (H094).  La porta delle
- * risposte dell'apertura e' una variabile locale non inizializzata
- * nell'originale: qui azzerata.
+ * PORT H043+$0584: start-up: "SOUND/periodTable" ($80 periods and $40
+ * durations), two ports, audio.device with the channel mask $F, 16
+ * CMD_WRITE requests (made free with ReplyMsg) and the VBlank server
+ * that triggers the software interrupt of the player (H094).  The reply
+ * port of the open call is an uninitialised local variable
+ * in the original: here cleared.
  */
 void h043_0584(void)
 {
@@ -756,10 +756,10 @@ void h043_0584(void)
 }
 
 /*
- * PORT H043+$190E: comando audio: $FF ferma tutto; 0 ferma e disabilita;
- * 1 abilita; $FE ricarica (toglie il server, libera tutto, lo rimette);
- * $FD carica in anticipo i suoni 1..$16; altrimenti, se abilitata, suona
- * il suono numero command.
+ * PORT H043+$190E: audio command: $FF stops everything; 0 stops and disables;
+ * 1 enables; $FE reloads (removes the server, frees everything, puts it back);
+ * $FD preloads the sounds 1..$16; otherwise, if enabled, plays
+ * sound number command.
  */
 void h043_190e(u16 command)
 {

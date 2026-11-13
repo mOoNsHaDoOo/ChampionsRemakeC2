@@ -1,4 +1,4 @@
-/* H033: vettori e servizi condivisi di azioni/oggetti e incantesimi. */
+/* H033: shared vectors and services of actions/items and spells. */
 #ifndef COK_H033_H
 #define COK_H033_H
 

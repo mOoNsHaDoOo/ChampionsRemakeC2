@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H042
-; Sequenze grafiche, cache, HEAD/BODY e BIGPIC.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H042
+; Graphic sequences, cache, HEAD/BODY and BIGPIC.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Sequenze grafiche: cache, caricamento HEAD/BODY, BIGPIC, frame e distruzione delle sequenze. Usa il lettore ILBM e i record grafici.
+; MODULE NOTE
+; Graphic sequences: cache, HEAD/BODY loading, BIGPIC, frames and destruction of the sequences. Uses the ILBM reader and the graphic records.
 ; --------------------------------------------------------------------------
 ; H042: 4420 original bytes; all offsets are section-relative.
         section H042,code
@@ -36,10 +36,10 @@ H042:
         dc.w $0000
         dc.l H042+$00000002
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H042 [parziale]
-; Scopo: Ingresso del modulo sequenze grafiche, cache, HEAD/BODY e BIGPIC; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H042+$1134.
-; Chiamanti diretti: H000+$0156
+; ROUTINE: module_init_H042 [partial]
+; Purpose: Entry of the graphic sequences, cache, HEAD/BODY and BIGPIC module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H042+$1134.
+; Direct callers: H000+$0156
 ; --------------------------------------------------------------------------
 L042_00000146:
 ; H042+$00000146: 2f0c  move.l a4, -(a7)
@@ -66,12 +66,12 @@ L042_00000150:
         dc.l H014+$00000018
         dc.w $4E5D,$285F,$205F,$548F,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H042_000001AE [parziale]
-; Scopo: Routine del modulo sequenze grafiche, cache, HEAD/BODY e BIGPIC; richiama H029+$0408, H049+$09D6, H029+$067A.
-;   - Richiama H029+$0408.
-;   - Richiama H049+$09D6.
-;   - Richiama H029+$067A.
-; Chiamanti diretti: H042+$0BA8, H042+$0BC0, H042+$0CEA, H042+$08C6, H042+$0A08
+; ROUTINE: sub_H042_000001AE [partial]
+; Purpose: Routine of the graphic sequences, cache, HEAD/BODY and BIGPIC module; calls H029+$0408, H049+$09D6, H029+$067A.
+;   - Calls H029+$0408.
+;   - Calls H049+$09D6.
+;   - Calls H029+$067A.
+; Direct callers: H042+$0BA8, H042+$0BC0, H042+$0CEA, H042+$08C6, H042+$0A08
 ; --------------------------------------------------------------------------
 L042_000001AE:
 ; H042+$000001AE: 2f0c  move.l a4, -(a7)
@@ -145,7 +145,7 @@ L042_000001FA:
 L042_000001FE:
 ; H042+$000001FE: 486dfffc  pea.l -$4(a5)
         pea.l -$4(a5)
-; FLUSSO: Chiama Allocate_GraphicRecord (H029+$0408).
+; FLOW: Calls Allocate_GraphicRecord (H029+$0408).
 L042_00000202:
 ; H042+$00000202: 4eb900000408  jsr $408.l
         jsr (H029+$408).l
@@ -189,7 +189,7 @@ L042_00000232:
 L042_00000238:
 ; H042+$00000238: 2f2d000c  move.l $c(a5), -(a7)
         move.l $c(a5), -(a7)
-; FLUSSO: Chiama Free_GraphicRecord (H029+$067A).
+; FLOW: Calls Free_GraphicRecord (H029+$067A).
 L042_0000023C:
 ; H042+$0000023C: 4eb90000067a  jsr $67a.l
         jsr (H029+$67A).l
@@ -215,15 +215,15 @@ L042_00000252:
 ; H042+$00000252: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H042_00000254 [parziale]
-; Scopo: Routine del modulo sequenze grafiche, cache, HEAD/BODY e BIGPIC; richiama H029+$1718, H029+$16A2, H022+$0084, H029+$0E92.
-;   - Richiama H029+$1718.
-;   - Richiama H029+$16A2.
-;   - Richiama H022+$0084.
-;   - Richiama H029+$0E92.
-;   - Richiama H029+$16DE.
-;   - Usa lo stato globale: H005+$52F2 (puntatore allo schermo del gioco).
-; Chiamanti diretti: H008+$075C, H063+$3274, H042+$0F3C, H042+$02CA, H042+$02F2, H012+$2466 e altri 3
+; ROUTINE: sub_H042_00000254 [partial]
+; Purpose: Routine of the graphic sequences, cache, HEAD/BODY and BIGPIC module; calls H029+$1718, H029+$16A2, H022+$0084, H029+$0E92.
+;   - Calls H029+$1718.
+;   - Calls H029+$16A2.
+;   - Calls H022+$0084.
+;   - Calls H029+$0E92.
+;   - Calls H029+$16DE.
+;   - Uses the global state: H005+$52F2 (pointer to the game screen).
+; Direct callers: H008+$075C, H063+$3274, H042+$0F3C, H042+$02CA, H042+$02F2, H012+$2466 and 3 more
 ; --------------------------------------------------------------------------
 L042_00000254:
 ; H042+$00000254: 2f0c  move.l a4, -(a7)
@@ -248,7 +248,7 @@ L042_00000266:
 L042_0000026C:
 ; H042+$0000026C: 4eb9000016a2  jsr $16a2.l
         jsr (H029+$16A2).l
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L042_00000272:
 ; H042+$00000272: 2679000052f2  movea.l $52f2.l, a3
         movea.l (H005+$52F2).l, a3
@@ -301,10 +301,10 @@ L042_000002B0:
 ; H042+$000002B0: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H042_000002B2 [parziale]
-; Scopo: Routine del modulo sequenze grafiche, cache, HEAD/BODY e BIGPIC; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H042+$0F12
+; ROUTINE: sub_H042_000002B2 [partial]
+; Purpose: Routine of the graphic sequences, cache, HEAD/BODY and BIGPIC module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H042+$0F12
 ; --------------------------------------------------------------------------
 L042_000002B2:
 ; H042+$000002B2: 2f0c  move.l a4, -(a7)
@@ -346,10 +346,10 @@ L042_000002D4:
 ; H042+$000002D4: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H042_000002D6 [parziale]
-; Scopo: Routine del modulo sequenze grafiche, cache, HEAD/BODY e BIGPIC; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H042+$0F24
+; ROUTINE: sub_H042_000002D6 [partial]
+; Purpose: Routine of the graphic sequences, cache, HEAD/BODY and BIGPIC module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H042+$0F24
 ; --------------------------------------------------------------------------
 L042_000002D6:
 ; H042+$000002D6: 2f0c  move.l a4, -(a7)
@@ -398,12 +398,12 @@ L042_000002FE:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Free_Sequence [verificato]
-; Scopo: Libera la sequenza grafica corrente.
-;   - Libera i due record grafici agli offset +6 e +$0A della struttura.
-;   - Scorre i buffer dei frame successivi e li libera con la dimensione registrata.
-;   - Azzera il numero di frame e invalida nome/ID della cache di sequenza.
-; Chiamanti diretti: H007+$0A02, H010+$0252, H012+$09D2, H012+$3030, H042+$0666, H042+$1016, H068+$1662
+; ROUTINE: Free_Sequence [verified]
+; Purpose: Frees the current graphic sequence.
+;   - Frees the two graphic records at offsets +6 and +$0A of the structure.
+;   - Walks the buffers of the following frames and frees them with the recorded size.
+;   - Clears the number of frames and invalidates name/ID of the sequence cache.
+; Direct callers: H007+$0A02, H010+$0252, H012+$09D2, H012+$3030, H042+$0666, H042+$1016, H068+$1662
 ; --------------------------------------------------------------------------
 L042_00000300:
 ; H042+$00000300: 2f0c  move.l a4, -(a7)
@@ -426,7 +426,7 @@ L042_00000312:
 L042_00000314:
 ; H042+$00000314: 486b0006  pea.l $6(a3)
         pea.l $6(a3)
-; FLUSSO: Chiama Free_GraphicRecord (H029+$067A).
+; FLOW: Calls Free_GraphicRecord (H029+$067A).
 L042_00000318:
 ; H042+$00000318: 4eb90000067a  jsr $67a.l
         jsr (H029+$67A).l
@@ -439,7 +439,7 @@ L042_00000320:
 L042_00000322:
 ; H042+$00000322: 486b000a  pea.l $a(a3)
         pea.l $a(a3)
-; FLUSSO: Chiama Free_GraphicRecord (H029+$067A).
+; FLOW: Calls Free_GraphicRecord (H029+$067A).
 L042_00000326:
 ; H042+$00000326: 4eb90000067a  jsr $67a.l
         jsr (H029+$67A).l
@@ -580,10 +580,10 @@ L042_000003BA:
 ; H042+$000003BA: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H042_000003BC [parziale]
-; Scopo: Routine del modulo sequenze grafiche, cache, HEAD/BODY e BIGPIC; richiama H016+$0014.
-;   - Richiama H016+$0014.
-; Chiamanti diretti: H042+$0D06, H042+$0A24
+; ROUTINE: sub_H042_000003BC [partial]
+; Purpose: Routine of the graphic sequences, cache, HEAD/BODY and BIGPIC module; calls H016+$0014.
+;   - Calls H016+$0014.
+; Direct callers: H042+$0D06, H042+$0A24
 ; --------------------------------------------------------------------------
 L042_000003BC:
 ; H042+$000003BC: 2f0c  move.l a4, -(a7)
@@ -663,14 +663,14 @@ L042_00000404:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Load_Sequence [parziale]
-; Scopo: Carica una sequenza grafica indicizzata e la prepara per visualizzazione.
-;   - Evita il ricaricamento quando nome e ID sono già quelli correnti.
-;   - Apre il contenitore .daa e cerca la sequenza richiesta.
-;   - Legge header e blocchi compressi; usa UnPackRow per ricostruire porzioni di dati.
-;   - Prepara i record grafici e conserva i buffer dei frame successivi.
-;   - Non sono ancora attribuiti tutti i campi dell’header della sequenza.
-; Chiamanti diretti: H057+$31CE, H061+$1DE0, H061+$1EB4, H063+$32D6, H063+$3360, H064+$0BC8
+; ROUTINE: Load_Sequence [partial]
+; Purpose: Loads an indexed graphic sequence and prepares it for display.
+;   - Avoids reloading when name and ID are already the current ones.
+;   - Opens the .daa container and looks for the requested sequence.
+;   - Reads header and compressed blocks; uses UnPackRow to rebuild portions of data.
+;   - Prepares the graphic records and keeps the buffers of the following frames.
+;   - Not all the fields of the sequence header are assigned yet.
+; Direct callers: H057+$31CE, H061+$1DE0, H061+$1EB4, H063+$32D6, H063+$3360, H064+$0BC8
 ; --------------------------------------------------------------------------
 L042_00000406:
 ; H042+$00000406: 2f0c  move.l a4, -(a7)
@@ -877,7 +877,7 @@ L042_000004E2:
 L042_000004E6:
 ; H042+$000004E6: 486c0029  pea.l $29(a4)
         pea.l $29(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L042_000004EA:
 ; H042+$000004EA: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -998,7 +998,7 @@ L042_00000570:
 L042_00000574:
 ; H042+$00000574: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$246E = selettore del gruppo risorse
+; STATE: H005+$246E = resource group selector
 L042_00000576:
 ; H042+$00000576: 14390000246e  move.b $246e.l, d2
         move.b (H005+$246E).l, d2
@@ -1219,7 +1219,7 @@ L042_00000660:
 L042_00000662:
 ; H042+$00000662: 2f2d000c  move.l $c(a5), -(a7)
         move.l $c(a5), -(a7)
-; FLUSSO: Chiama Free_Sequence (H042+$0300).
+; FLOW: Calls Free_Sequence (H042+$0300).
 L042_00000666:
 ; H042+$00000666: 6100fc98  bsr.w $300
         bsr.w H042+$300
@@ -1390,7 +1390,7 @@ L042_00000720:
 L042_00000724:
 ; H042+$00000724: 3f3c0056  move.w #$56, -(a7)
         move.w #$56, -(a7)
-; FLUSSO: Chiama UnPackRow_ByteRun1 (H088+$000C).
+; FLOW: Calls UnPackRow_ByteRun1 (H088+$000C).
 L042_00000728:
 ; H042+$00000728: 4eb90000000c  jsr $c.l
         jsr (H088+$C).l
@@ -1577,7 +1577,7 @@ L042_000007E6:
 L042_000007EA:
 ; H042+$000007EA: 486b0006  pea.l $6(a3)
         pea.l $6(a3)
-; FLUSSO: Chiama Allocate_GraphicRecord (H029+$0408).
+; FLOW: Calls Allocate_GraphicRecord (H029+$0408).
 L042_000007EE:
 ; H042+$000007EE: 4eb900000408  jsr $408.l
         jsr (H029+$408).l
@@ -1645,7 +1645,7 @@ L042_0000083E:
 L042_00000842:
 ; H042+$00000842: 3f2dffa2  move.w -$5e(a5), -(a7)
         move.w -$5e(a5), -(a7)
-; FLUSSO: Chiama UnPackRow_ByteRun1 (H088+$000C).
+; FLOW: Calls UnPackRow_ByteRun1 (H088+$000C).
 L042_00000846:
 ; H042+$00000846: 4eb90000000c  jsr $c.l
         jsr (H088+$C).l
@@ -1735,7 +1735,7 @@ L042_000008A4:
 L042_000008A6:
 ; H042+$000008A6: 486b0006  pea.l $6(a3)
         pea.l $6(a3)
-; FLUSSO: Chiama Populate_GraphicPlanes (H029+$091E).
+; FLOW: Calls Populate_GraphicPlanes (H029+$091E).
 L042_000008AA:
 ; H042+$000008AA: 4eb90000091e  jsr $91e.l
         jsr (H029+$91E).l
@@ -1811,7 +1811,7 @@ L042_0000090A:
 L042_0000090E:
 ; H042+$0000090E: 486b000a  pea.l $a(a3)
         pea.l $a(a3)
-; FLUSSO: Chiama Allocate_GraphicRecord (H029+$0408).
+; FLOW: Calls Allocate_GraphicRecord (H029+$0408).
 L042_00000912:
 ; H042+$00000912: 4eb900000408  jsr $408.l
         jsr (H029+$408).l
@@ -1935,7 +1935,7 @@ L042_0000099C:
 L042_000009A0:
 ; H042+$000009A0: 3f2dffa2  move.w -$5e(a5), -(a7)
         move.w -$5e(a5), -(a7)
-; FLUSSO: Chiama UnPackRow_ByteRun1 (H088+$000C).
+; FLOW: Calls UnPackRow_ByteRun1 (H088+$000C).
 L042_000009A4:
 ; H042+$000009A4: 4eb90000000c  jsr $c.l
         jsr (H088+$C).l
@@ -2006,7 +2006,7 @@ L042_000009EC:
 L042_000009EE:
 ; H042+$000009EE: 486b000a  pea.l $a(a3)
         pea.l $a(a3)
-; FLUSSO: Chiama Populate_GraphicPlanes (H029+$091E).
+; FLOW: Calls Populate_GraphicPlanes (H029+$091E).
 L042_000009F2:
 ; H042+$000009F2: 4eb90000091e  jsr $91e.l
         jsr (H029+$91E).l
@@ -2372,16 +2372,16 @@ L042_00000B7E:
 ; H042+$00000B7E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H042_00000B80 [parziale]
-; Scopo: Routine del modulo sequenze grafiche, cache, HEAD/BODY e BIGPIC; richiama H036+$0034, H003+$0068, H088+$000C, H020+$085A.
-;   - Richiama H036+$0034.
-;   - Richiama H003+$0068.
-;   - Richiama H088+$000C.
-;   - Richiama H020+$085A.
-;   - Richiama H029+$091E.
-;   - Richiama H029+$0766.
-;   - Richiama H003+$00F6.
-; Chiamanti diretti: H008+$0752, H042+$0F8A, H012+$283C
+; ROUTINE: sub_H042_00000B80 [partial]
+; Purpose: Routine of the graphic sequences, cache, HEAD/BODY and BIGPIC module; calls H036+$0034, H003+$0068, H088+$000C, H020+$085A.
+;   - Calls H036+$0034.
+;   - Calls H003+$0068.
+;   - Calls H088+$000C.
+;   - Calls H020+$085A.
+;   - Calls H029+$091E.
+;   - Calls H029+$0766.
+;   - Calls H003+$00F6.
+; Direct callers: H008+$0752, H042+$0F8A, H012+$283C
 ; --------------------------------------------------------------------------
 L042_00000B80:
 ; H042+$00000B80: 2f0c  move.l a4, -(a7)
@@ -2581,7 +2581,7 @@ L042_00000C82:
 L042_00000C86:
 ; H042+$00000C86: 3f2dfffa  move.w -$6(a5), -(a7)
         move.w -$6(a5), -(a7)
-; FLUSSO: Chiama UnPackRow_ByteRun1 (H088+$000C).
+; FLOW: Calls UnPackRow_ByteRun1 (H088+$000C).
 L042_00000C8A:
 ; H042+$00000C8A: 4eb90000000c  jsr $c.l
         jsr (H088+$C).l
@@ -2640,7 +2640,7 @@ L042_00000CCC:
 L042_00000CD0:
 ; H042+$00000CD0: 486b000a  pea.l $a(a3)
         pea.l $a(a3)
-; FLUSSO: Chiama Populate_GraphicPlanes (H029+$091E).
+; FLOW: Calls Populate_GraphicPlanes (H029+$091E).
 L042_00000CD4:
 ; H042+$00000CD4: 4eb90000091e  jsr $91e.l
         jsr (H029+$91E).l
@@ -2767,11 +2767,11 @@ L042_00000D6E:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Load_HeadBody [parziale]
-; Scopo: Carica le risorse HEAD e BODY usate dalla visualizzazione dei personaggi.
-;   - Compone i nomi HEAD e BODY.
-;   - Usa il caricamento grafico con l’ID richiesto e segnala la mancata risorsa.
-; Chiamanti diretti: H061+$1D4C, H063+$3292
+; ROUTINE: Load_HeadBody [partial]
+; Purpose: Loads the HEAD and BODY resources used by the display of the characters.
+;   - Builds the HEAD and BODY names.
+;   - Uses the graphics loading with the requested ID and reports the missing resource.
+; Direct callers: H061+$1D4C, H063+$3292
 ; --------------------------------------------------------------------------
 L042_00000D70:
 ; H042+$00000D70: 2f0c  move.l a4, -(a7)
@@ -2791,7 +2791,7 @@ L042_00000D7E:
 L042_00000D82:
 ; H042+$00000D82: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$246E = selettore del gruppo risorse
+; STATE: H005+$246E = resource group selector
 L042_00000D84:
 ; H042+$00000D84: 14390000246e  move.b $246e.l, d2
         move.b (H005+$246E).l, d2
@@ -2893,7 +2893,7 @@ L042_00000DFE:
 L042_00000E00:
 ; H042+$00000E00: 4879000027b2  pea.l $27b2.l
         pea.l (H005+$27B2).l
-; FLUSSO: Chiama Load_IndexedGraphicRecord (H029+$0A0E).
+; FLOW: Calls Load_IndexedGraphicRecord (H029+$0A0E).
 L042_00000E06:
 ; H042+$00000E06: 4eb900000a0e  jsr $a0e.l
         jsr (H029+$A0E).l
@@ -3004,7 +3004,7 @@ L042_00000E92:
 L042_00000E94:
 ; H042+$00000E94: 4879000027b8  pea.l $27b8.l
         pea.l (H005+$27B8).l
-; FLUSSO: Chiama Load_IndexedGraphicRecord (H029+$0A0E).
+; FLOW: Calls Load_IndexedGraphicRecord (H029+$0A0E).
 L042_00000E9A:
 ; H042+$00000E9A: 4eb900000a0e  jsr $a0e.l
         jsr (H029+$A0E).l
@@ -3052,12 +3052,12 @@ L042_00000ED0:
 ; H042+$00000ED0: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H042_00000ED2 [parziale]
-; Scopo: Routine del modulo sequenze grafiche, cache, HEAD/BODY e BIGPIC; richiama H029+$1718, H029+$16A2, H029+$16DE.
-;   - Richiama H029+$1718.
-;   - Richiama H029+$16A2.
-;   - Richiama H029+$16DE.
-; Chiamanti diretti: H063+$32A4, H061+$1D5E
+; ROUTINE: sub_H042_00000ED2 [partial]
+; Purpose: Routine of the graphic sequences, cache, HEAD/BODY and BIGPIC module; calls H029+$1718, H029+$16A2, H029+$16DE.
+;   - Calls H029+$1718.
+;   - Calls H029+$16A2.
+;   - Calls H029+$16DE.
+; Direct callers: H063+$32A4, H061+$1D5E
 ; --------------------------------------------------------------------------
 L042_00000ED2:
 ; H042+$00000ED2: 2f0c  move.l a4, -(a7)
@@ -3160,12 +3160,12 @@ L042_00000F4E:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Show3DSprite [parziale]
-; Scopo: Percorso di visualizzazione di uno sprite nella scena 3D.
-;   - Verifica il range richiesto e usa i record grafici/sequence del contesto.
-;   - Il messaggio Illegal range in Show3DSprite identifica il sottosistema.
-;   - I parametri geometrici completi restano da documentare.
-; Chiamanti diretti: H061+$1E1E
+; ROUTINE: Show3DSprite [partial]
+; Purpose: Display path of a sprite in the 3D scene.
+;   - Checks the requested range and uses the graphic/sequence records of the context.
+;   - The message Illegal range in Show3DSprite identifies the subsystem.
+;   - The complete geometric parameters are still to be documented.
+; Direct callers: H061+$1E1E
 ; --------------------------------------------------------------------------
 L042_00000F50:
 ; H042+$00000F50: 2f0c  move.l a4, -(a7)
@@ -3220,7 +3220,7 @@ L042_00000F92:
 L042_00000F96:
 ; H042+$00000F96: 67000060  beq.w $ff8
         beq.w H042+$FF8
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L042_00000F9A:
 ; H042+$00000F9A: 2679000052f2  movea.l $52f2.l, a3
         movea.l (H005+$52F2).l, a3
@@ -3255,7 +3255,7 @@ L042_00000FC0:
 L042_00000FC2:
 ; H042+$00000FC2: 4267  clr.w -(a7)
         clr.w -(a7)
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L042_00000FC4:
 ; H042+$00000FC4: 2479000052f2  movea.l $52f2.l, a2
         movea.l (H005+$52F2).l, a2
@@ -3286,7 +3286,7 @@ L042_00000FE4:
 L042_00000FE8:
 ; H042+$00000FE8: 2f2a0008  move.l $8(a2), -(a7)
         move.l $8(a2), -(a7)
-; FLUSSO: Chiama Queue_BitplaneBlit (H049+$04AE).
+; FLOW: Calls Queue_BitplaneBlit (H049+$04AE).
 L042_00000FEC:
 ; H042+$00000FEC: 4eb9000004ae  jsr $4ae.l
         jsr (H049+$4AE).l
@@ -3316,11 +3316,11 @@ L042_00001004:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Load_BigPicture [parziale]
-; Scopo: Carica la risorsa BIGPIC richiesta.
-;   - Costruisce il nome BIGPIC e richiama i servizi di caricamento grafico.
-;   - La relazione con tutti i formati di picture resta da completare.
-; Chiamanti diretti: H012+$0A3E, H064+$0B72, H066+$2FDE
+; ROUTINE: Load_BigPicture [partial]
+; Purpose: Loads the requested BIGPIC resource.
+;   - Builds the BIGPIC name and calls the graphics loading services.
+;   - The relation with all the picture formats is still to be completed.
+; Direct callers: H012+$0A3E, H064+$0B72, H066+$2FDE
 ; --------------------------------------------------------------------------
 L042_00001006:
 ; H042+$00001006: 2f0c  move.l a4, -(a7)
@@ -3334,7 +3334,7 @@ L042_0000100C:
 L042_00001010:
 ; H042+$00001010: 4879000027bc  pea.l $27bc.l
         pea.l (H005+$27BC).l
-; FLUSSO: Chiama Free_Sequence (H042+$0300).
+; FLOW: Calls Free_Sequence (H042+$0300).
 L042_00001016:
 ; H042+$00001016: 6100f2e8  bsr.w $300
         bsr.w H042+$300
@@ -3377,7 +3377,7 @@ L042_00001042:
 L042_00001046:
 ; H042+$00001046: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$246E = selettore del gruppo risorse
+; STATE: H005+$246E = resource group selector
 L042_00001048:
 ; H042+$00001048: 14390000246e  move.b $246e.l, d2
         move.b (H005+$246E).l, d2
@@ -3434,7 +3434,7 @@ L042_00001088:
 L042_0000108A:
 ; H042+$0000108A: 487900002798  pea.l $2798.l
         pea.l (H005+$2798).l
-; FLUSSO: Chiama Load_IndexedGraphicRecord (H029+$0A0E).
+; FLOW: Calls Load_IndexedGraphicRecord (H029+$0A0E).
 L042_00001090:
 ; H042+$00001090: 4eb900000a0e  jsr $a0e.l
         jsr (H029+$A0E).l
@@ -3496,16 +3496,16 @@ L042_000010DA:
 ; H042+$000010DA: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H042_000010DC [parziale]
-; Scopo: Routine del modulo sequenze grafiche, cache, HEAD/BODY e BIGPIC; richiama H029+$1718, H029+$16A2, H044+$0452, H022+$0084.
-;   - Richiama H029+$1718.
-;   - Richiama H029+$16A2.
-;   - Richiama H044+$0452.
-;   - Richiama H022+$0084.
-;   - Richiama H029+$0E92.
-;   - Richiama H029+$16DE.
-;   - Usa lo stato globale: H005+$52F2 (puntatore allo schermo del gioco).
-; Chiamanti diretti: H060+$0174, H064+$0B78
+; ROUTINE: sub_H042_000010DC [partial]
+; Purpose: Routine of the graphic sequences, cache, HEAD/BODY and BIGPIC module; calls H029+$1718, H029+$16A2, H044+$0452, H022+$0084.
+;   - Calls H029+$1718.
+;   - Calls H029+$16A2.
+;   - Calls H044+$0452.
+;   - Calls H022+$0084.
+;   - Calls H029+$0E92.
+;   - Calls H029+$16DE.
+;   - Uses the global state: H005+$52F2 (pointer to the game screen).
+; Direct callers: H060+$0174, H064+$0B78
 ; --------------------------------------------------------------------------
 L042_000010DC:
 ; H042+$000010DC: 2f0c  move.l a4, -(a7)
@@ -3528,7 +3528,7 @@ L042_000010EC:
 L042_000010F2:
 ; H042+$000010F2: 4eb900000452  jsr $452.l
         jsr (H044+$452).l
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L042_000010F8:
 ; H042+$000010F8: 2679000052f2  movea.l $52f2.l, a3
         movea.l (H005+$52F2).l, a3

@@ -1,12 +1,12 @@
 ; ============================================================================
-; GUIDA DEL MODULO H060
-; inizializzazione di area/vista e transizioni.
-; I commenti descrivono l'analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H060
+; area/view initialisation and transitions.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Inizializzazione di area/vista e transizioni: usa la mappa H011, le sequenze H042 e la diagnostica H056.
+; MODULE NOTE
+; Area/view initialisation and transitions: uses the H011 map, the H042 sequences and the H056 diagnostics.
 ; --------------------------------------------------------------------------
 ; H060: 396 original bytes; all offsets are section-relative.
         section H060,code
@@ -15,10 +15,10 @@ H060:
         dc.w $6C6F,$7374,$0000
         dc.l H060+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H060 [parziale]
-; Scopo: Ingresso del modulo inizializzazione di area/vista e transizioni; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H060+$0186.
-; Chiamanti diretti: H000+$0186
+; ROUTINE: module_init_H060 [partial]
+; Purpose: Entry of the area/view initialisation and transitions module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H060+$0186.
+; Direct callers: H000+$0186
 ; --------------------------------------------------------------------------
 L060_0000000A:
 ; H060+$0000000A: 2f0c  move.l a4, -(a7)
@@ -33,14 +33,14 @@ L060_00000014:
 ; H060+$00000014: 60000170  bra.w $186
         bra.w H060+$186
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H060_00000018 [parziale]
-; Scopo: Routine del modulo inizializzazione di area/vista e transizioni; richiama H011+$04E2, H056+$0886, H011+$0B78, H042+$10DC.
-;   - Richiama H011+$04E2.
-;   - Richiama H056+$0886.
-;   - Richiama H011+$0B78.
-;   - Richiama H042+$10DC.
-;   - Usa lo stato globale: H005+$24D0 (richiesta di uscita dal ciclo scenario); H005+$3E04 (puntatore stato persistente A, 2048 byte); H005+$281C (inizio del blocco coordinate/vista).
-; Chiamanti diretti: H063+$333E, H063+$3302, H012+$32D2, H012+$30EC, H012+$33B8, H012+$2972 e altri 6
+; ROUTINE: sub_H060_00000018 [partial]
+; Purpose: Routine of the area/view initialisation and transitions module; calls H011+$04E2, H056+$0886, H011+$0B78, H042+$10DC.
+;   - Calls H011+$04E2.
+;   - Calls H056+$0886.
+;   - Calls H011+$0B78.
+;   - Calls H042+$10DC.
+;   - Uses the global state: H005+$24D0 (request to exit the scenario loop); H005+$3E04 (pointer to persistent state A, 2048 bytes); H005+$281C (start of the coordinates/view block).
+; Direct callers: H063+$333E, H063+$3302, H012+$32D2, H012+$30EC, H012+$33B8, H012+$2972 and 6 more
 ; --------------------------------------------------------------------------
 L060_00000018:
 ; H060+$00000018: 2f0c  move.l a4, -(a7)
@@ -114,7 +114,7 @@ L060_0000008A:
 L060_0000008E:
 ; H060+$0000008E: 4239000024e1  clr.b $24e1.l
         clr.b (H005+$24E1).l
-; STATO: H005+$24D0 = richiesta di uscita dal ciclo scenario
+; STATE: H005+$24D0 = request to exit the scenario loop
 L060_00000094:
 ; H060+$00000094: 4a39000024d0  tst.b $24d0.l
         tst.b (H005+$24D0).l
@@ -124,7 +124,7 @@ L060_0000009A:
 L060_0000009E:
 ; H060+$0000009E: 600000e0  bra.w $180
         bra.w H060+$180
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L060_000000A2:
 ; H060+$000000A2: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -134,7 +134,7 @@ L060_000000A8:
 L060_000000AC:
 ; H060+$000000AC: 670000bc  beq.w $16a
         beq.w H060+$16A
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L060_000000B0:
 ; H060+$000000B0: 47f90000281c  lea.l $281c.l, a3
         lea.l (H005+$281C).l, a3
@@ -169,7 +169,7 @@ L060_000000D0:
 L060_000000D4:
 ; H060+$000000D4: 63000020  bls.w $f6
         bls.w H060+$F6
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L060_000000D8:
 ; H060+$000000D8: 247900003e04  movea.l $3e04.l, a2
         movea.l (H005+$3E04).l, a2
@@ -191,7 +191,7 @@ L060_000000EC:
 L060_000000F2:
 ; H060+$000000F2: 6000001c  bra.w $110
         bra.w H060+$110
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L060_000000F6:
 ; H060+$000000F6: 247900003e04  movea.l $3e04.l, a2
         movea.l (H005+$3E04).l, a2
@@ -222,7 +222,7 @@ L060_0000011A:
 L060_0000011E:
 ; H060+$0000011E: 486c0000  pea.l $0(a4)
         pea.l $0(a4)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L060_00000122:
 ; H060+$00000122: 247900003e04  movea.l $3e04.l, a2
         movea.l (H005+$3E04).l, a2
@@ -245,7 +245,7 @@ L060_00000132:
 L060_00000138:
 ; H060+$00000138: 265f  movea.l (a7)+, a3
         movea.l (a7)+, a3
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L060_0000013A:
 ; H060+$0000013A: 247900003e04  movea.l $3e04.l, a2
         movea.l (H005+$3E04).l, a2

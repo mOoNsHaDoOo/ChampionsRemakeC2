@@ -1,4 +1,4 @@
-/* H090: Adattatori Exec per OpenDevice/CloseDevice. */
+/* H090: Exec adapters for OpenDevice/CloseDevice. */
 #include "h090.h"
 
 /* PORT H090+$0004: rts. */

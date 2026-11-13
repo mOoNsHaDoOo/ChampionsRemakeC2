@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H072
-; Servizi di cura/tempio e richieste relative al costo.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H072
+; Healing/temple services and requests related to the cost.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Tempio/cura: richieste, costo del servizio e applicazione della cura.
+; MODULE NOTE
+; Temple/healing: requests, cost of the service and application of the healing.
 ; --------------------------------------------------------------------------
 ; H072: 5404 original bytes; all offsets are section-relative.
         section H072,code
@@ -63,10 +63,10 @@ H072:
         dc.w $6520,$796F,$7572,$206D,$6F6E,$6579,$3F00,$0000
         dc.l H072+$0000000C
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H072 [parziale]
-; Scopo: Ingresso del modulo servizi di cura/tempio e richieste relative al costo; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H072+$14F2.
-; Chiamanti diretti: H000+$0246
+; ROUTINE: module_init_H072 [partial]
+; Purpose: Entry of the healing/temple services and cost-related requests module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H072+$14F2.
+; Direct callers: H000+$0246
 ; --------------------------------------------------------------------------
 L072_00000304:
 ; H072+$00000304: 2f0c  move.l a4, -(a7)
@@ -81,13 +81,13 @@ L072_0000030E:
 ; H072+$0000030E: 600011e2  bra.w $14f2
         bra.w H072+$14F2
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H072_00000312 [parziale]
-; Scopo: Routine del modulo servizi di cura/tempio e richieste relative al costo; richiama H063+$1DC2, H008+$203C, H063+$1EE8.
-;   - Richiama H063+$1DC2.
-;   - Richiama H008+$203C.
-;   - Richiama H063+$1EE8.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H072+$0558, H072+$062C, H072+$0C64, H072+$0E4C, H072+$09D0, H072+$0DB8 e altri 1
+; ROUTINE: sub_H072_00000312 [partial]
+; Purpose: Routine of the healing/temple services and cost-related requests module; calls H063+$1DC2, H008+$203C, H063+$1EE8.
+;   - Calls H063+$1DC2.
+;   - Calls H008+$203C.
+;   - Calls H063+$1EE8.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H072+$0558, H072+$062C, H072+$0C64, H072+$0E4C, H072+$09D0, H072+$0DB8 and 1 more
 ; --------------------------------------------------------------------------
 L072_00000312:
 ; H072+$00000312: 2f0c  move.l a4, -(a7)
@@ -98,7 +98,7 @@ L072_00000314:
 L072_00000318:
 ; H072+$00000318: 4e55fffe  link.w a5, #$fffe
         link.w a5, #$fffe
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_0000031C:
 ; H072+$0000031C: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -166,17 +166,17 @@ L072_0000036A:
 ; H072+$0000036A: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H072_0000036C [parziale]
-; Scopo: Routine del modulo servizi di cura/tempio e richieste relative al costo; richiama H026+$01E0, H045+$01D6, H063+$0112, H030+$0302.
-;   - Richiama H026+$01E0.
-;   - Richiama H045+$01D6.
-;   - Richiama H063+$0112.
-;   - Richiama H030+$0302.
-;   - Richiama H008+$203C.
-;   - Richiama H065+$347E.
-;   - Richiama H067+$032A.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H072+$0580, H072+$0654, H072+$0C8C, H072+$0E74, H072+$0DE0, H072+$06E4 e altri 4
+; ROUTINE: sub_H072_0000036C [partial]
+; Purpose: Routine of the healing/temple services and cost-related requests module; calls H026+$01E0, H045+$01D6, H063+$0112, H030+$0302.
+;   - Calls H026+$01E0.
+;   - Calls H045+$01D6.
+;   - Calls H063+$0112.
+;   - Calls H030+$0302.
+;   - Calls H008+$203C.
+;   - Calls H065+$347E.
+;   - Calls H067+$032A.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H072+$0580, H072+$0654, H072+$0C8C, H072+$0E74, H072+$0DE0, H072+$06E4 and 4 more
 ; --------------------------------------------------------------------------
 L072_0000036C:
 ; H072+$0000036C: 2f0c  move.l a4, -(a7)
@@ -335,7 +335,7 @@ L072_00000436:
 L072_0000043C:
 ; H072+$0000043C: 6600008e  bne.w $4cc
         bne.w H072+$4CC
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_00000440:
 ; H072+$00000440: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -453,7 +453,7 @@ L072_000004D2:
 L072_000004D6:
 ; H072+$000004D6: 4eb900001ee8  jsr $1ee8.l
         jsr (H063+$1EE8).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_000004DC:
 ; H072+$000004DC: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -495,12 +495,12 @@ L072_00000508:
 ; H072+$00000508: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H072_0000050A [parziale]
-; Scopo: Routine del modulo servizi di cura/tempio e richieste relative al costo; richiama H063+$0946, H062+$0452.
-;   - Richiama H063+$0946.
-;   - Richiama H062+$0452.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H072+$10A8
+; ROUTINE: sub_H072_0000050A [partial]
+; Purpose: Routine of the healing/temple services and cost-related requests module; calls H063+$0946, H062+$0452.
+;   - Calls H063+$0946.
+;   - Calls H062+$0452.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H072+$10A8
 ; --------------------------------------------------------------------------
 L072_0000050A:
 ; H072+$0000050A: 2f0c  move.l a4, -(a7)
@@ -529,7 +529,7 @@ L072_00000520:
 L072_00000524:
 ; H072+$00000524: 1b7c0059ffa9  move.b #$59, -$57(a5)
         move.b #$59, -$57(a5)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_0000052A:
 ; H072+$0000052A: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -615,7 +615,7 @@ L072_00000588:
 L072_0000058E:
 ; H072+$0000058E: 66000014  bne.w $5a4
         bne.w H072+$5A4
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_00000592:
 ; H072+$00000592: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -639,13 +639,13 @@ L072_000005A8:
 ; H072+$000005A8: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H072_000005AA [parziale]
-; Scopo: Routine del modulo servizi di cura/tempio e richieste relative al costo; richiama H063+$0946, H062+$0452, H062+$1A32.
-;   - Richiama H063+$0946.
-;   - Richiama H062+$0452.
-;   - Richiama H062+$1A32.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H072+$10AE
+; ROUTINE: sub_H072_000005AA [partial]
+; Purpose: Routine of the healing/temple services and cost-related requests module; calls H063+$0946, H062+$0452, H062+$1A32.
+;   - Calls H063+$0946.
+;   - Calls H062+$0452.
+;   - Calls H062+$1A32.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H072+$10AE
 ; --------------------------------------------------------------------------
 L072_000005AA:
 ; H072+$000005AA: 2f0c  move.l a4, -(a7)
@@ -686,7 +686,7 @@ L072_000005D4:
 L072_000005DA:
 ; H072+$000005DA: 62000036  bhi.w $612
         bhi.w H072+$612
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_000005DE:
 ; H072+$000005DE: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -811,7 +811,7 @@ L072_00000674:
 L072_0000067A:
 ; H072+$0000067A: 62000026  bhi.w $6a2
         bhi.w H072+$6A2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_0000067E:
 ; H072+$0000067E: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -843,7 +843,7 @@ L072_0000069C:
 L072_000006A0:
 ; H072+$000006A0: 64d2  bcc.b $674
         bcc.b H072+$674
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_000006A2:
 ; H072+$000006A2: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -867,10 +867,10 @@ L072_000006BA:
 ; H072+$000006BA: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H072_08EE [parziale]
-; Scopo: Trampolino verso H072+$08EE; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H072+$08EE.
-; Chiamanti diretti: H072+$10B8, H072+$10C2, H072+$10CC, H072+$10D6
+; ROUTINE: trampoline_H072_08EE [partial]
+; Purpose: Trampoline to H072+$08EE; the actual body is there.
+;   - Jumps to the actual body at H072+$08EE.
+; Direct callers: H072+$10B8, H072+$10C2, H072+$10CC, H072+$10D6
 ; --------------------------------------------------------------------------
 L072_000006BC:
 ; H072+$000006BC: 2f0c  move.l a4, -(a7)
@@ -933,7 +933,7 @@ L072_000006FE:
 L072_00000704:
 ; H072+$00000704: 3b40fffe  move.w d0, -$2(a5)
         move.w d0, -$2(a5)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_00000708:
 ; H072+$00000708: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -1005,7 +1005,7 @@ L072_00000758:
 L072_0000075A:
 ; H072+$0000075A: 3b42fffe  move.w d2, -$2(a5)
         move.w d2, -$2(a5)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_0000075E:
 ; H072+$0000075E: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -1077,7 +1077,7 @@ L072_000007AE:
 L072_000007B0:
 ; H072+$000007B0: 3b42fffe  move.w d2, -$2(a5)
         move.w d2, -$2(a5)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_000007B4:
 ; H072+$000007B4: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -1146,7 +1146,7 @@ L072_00000802:
 L072_00000806:
 ; H072+$00000806: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_00000808:
 ; H072+$00000808: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -1159,7 +1159,7 @@ L072_00000812:
 L072_00000816:
 ; H072+$00000816: 7800  moveq #$0, d4
         moveq #0, d4
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_00000818:
 ; H072+$00000818: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -1181,7 +1181,7 @@ L072_0000082C:
 L072_00000830:
 ; H072+$00000830: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_00000832:
 ; H072+$00000832: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -1191,7 +1191,7 @@ L072_00000838:
 L072_0000083C:
 ; H072+$0000083C: 7800  moveq #$0, d4
         moveq #0, d4
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_0000083E:
 ; H072+$0000083E: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -1207,7 +1207,7 @@ L072_0000084A:
 L072_0000084E:
 ; H072+$0000084E: 3b42fffe  move.w d2, -$2(a5)
         move.w d2, -$2(a5)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_00000852:
 ; H072+$00000852: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -1224,7 +1224,7 @@ L072_0000085E:
 L072_00000864:
 ; H072+$00000864: 1b40fffa  move.b d0, -$6(a5)
         move.b d0, -$6(a5)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_00000868:
 ; H072+$00000868: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -1247,7 +1247,7 @@ L072_00000880:
 L072_00000886:
 ; H072+$00000886: 62000058  bhi.w $8e0
         bhi.w H072+$8E0
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_0000088A:
 ; H072+$0000088A: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -1273,7 +1273,7 @@ L072_000008A0:
 L072_000008A2:
 ; H072+$000008A2: 4eb900000452  jsr $452.l
         jsr (H062+$452).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_000008A8:
 ; H072+$000008A8: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -1287,7 +1287,7 @@ L072_000008B2:
 L072_000008B4:
 ; H072+$000008B4: 4eb900000452  jsr $452.l
         jsr (H062+$452).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_000008BA:
 ; H072+$000008BA: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -1298,7 +1298,7 @@ L072_000008C0:
 L072_000008C4:
 ; H072+$000008C4: 4eb900001a32  jsr $1a32.l
         jsr (H062+$1A32).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_000008CA:
 ; H072+$000008CA: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -1344,7 +1344,7 @@ L072_000008FC:
 L072_000008FE:
 ; H072+$000008FE: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H072+$08E6; indici 0..3, default -1.
+; DISPATCH: words relative to H072+$08E6; indices 0..3, default -1.
 L072_00000902:
 ; H072+$00000902: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -1364,12 +1364,12 @@ L072_0000090E:
 ; H072+$0000090E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H072_00000910 [parziale]
-; Scopo: Routine del modulo servizi di cura/tempio e richieste relative al costo; richiama H062+$0452, H029+$03E2.
-;   - Richiama H062+$0452.
-;   - Richiama H029+$03E2.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H072+$10E2
+; ROUTINE: sub_H072_00000910 [partial]
+; Purpose: Routine of the healing/temple services and cost-related requests module; calls H062+$0452, H029+$03E2.
+;   - Calls H062+$0452.
+;   - Calls H029+$03E2.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H072+$10E2
 ; --------------------------------------------------------------------------
 L072_00000910:
 ; H072+$00000910: 2f0c  move.l a4, -(a7)
@@ -1380,7 +1380,7 @@ L072_00000912:
 L072_00000916:
 ; H072+$00000916: 4e55ff9a  link.w a5, #$ff9a
         link.w a5, #$ff9a
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_0000091A:
 ; H072+$0000091A: 2b7900003368ff9c  move.l $3368.l, -$64(a5)
         move.l (H005+$3368).l, -$64(a5)
@@ -1974,12 +1974,12 @@ L072_00000C02:
 ; H072+$00000C02: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H072_00000C04 [parziale]
-; Scopo: Routine del modulo servizi di cura/tempio e richieste relative al costo; richiama H063+$0946, H062+$0452.
-;   - Richiama H063+$0946.
-;   - Richiama H062+$0452.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H072+$10DC
+; ROUTINE: sub_H072_00000C04 [partial]
+; Purpose: Routine of the healing/temple services and cost-related requests module; calls H063+$0946, H062+$0452.
+;   - Calls H063+$0946.
+;   - Calls H062+$0452.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H072+$10DC
 ; --------------------------------------------------------------------------
 L072_00000C04:
 ; H072+$00000C04: 2f0c  move.l a4, -(a7)
@@ -2011,7 +2011,7 @@ L072_00000C1E:
 L072_00000C22:
 ; H072+$00000C22: 1b7c0059ffa9  move.b #$59, -$57(a5)
         move.b #$59, -$57(a5)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_00000C28:
 ; H072+$00000C28: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -2115,7 +2115,7 @@ L072_00000CA2:
 L072_00000CA6:
 ; H072+$00000CA6: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_00000CA8:
 ; H072+$00000CA8: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -2128,7 +2128,7 @@ L072_00000CB2:
 L072_00000CB4:
 ; H072+$00000CB4: 6600000e  bne.w $cc4
         bne.w H072+$CC4
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_00000CB8:
 ; H072+$00000CB8: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -2138,7 +2138,7 @@ L072_00000CBE:
 L072_00000CC4:
 ; H072+$00000CC4: 13fc0001000024aa  move.b #$1, $24aa.l
         move.b #$1, (H005+$24AA).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_00000CCC:
 ; H072+$00000CCC: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -2152,7 +2152,7 @@ L072_00000CD6:
 L072_00000CD8:
 ; H072+$00000CD8: 4eb900000452  jsr $452.l
         jsr (H062+$452).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_00000CDE:
 ; H072+$00000CDE: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -2166,7 +2166,7 @@ L072_00000CE8:
 L072_00000CEA:
 ; H072+$00000CEA: 4eb900000452  jsr $452.l
         jsr (H062+$452).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_00000CF0:
 ; H072+$00000CF0: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -2183,14 +2183,14 @@ L072_00000CFC:
 L072_00000D02:
 ; H072+$00000D02: 4239000024aa  clr.b $24aa.l
         clr.b (H005+$24AA).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_00000D08:
 ; H072+$00000D08: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
 L072_00000D0E:
 ; H072+$00000D0E: 177c00010198  move.b #$1, $198(a3)
         move.b #$1, $198(a3)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_00000D14:
 ; H072+$00000D14: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -2207,11 +2207,11 @@ L072_00000D22:
 ; H072+$00000D22: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H072_00000D24 [parziale]
-; Scopo: Routine del modulo servizi di cura/tempio e richieste relative al costo; richiama H063+$0946.
-;   - Richiama H063+$0946.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H072+$10E8
+; ROUTINE: sub_H072_00000D24 [partial]
+; Purpose: Routine of the healing/temple services and cost-related requests module; calls H063+$0946.
+;   - Calls H063+$0946.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H072+$10E8
 ; --------------------------------------------------------------------------
 L072_00000D24:
 ; H072+$00000D24: 2f0c  move.l a4, -(a7)
@@ -2243,7 +2243,7 @@ L072_00000D3E:
 L072_00000D44:
 ; H072+$00000D44: 422dffff  clr.b -$1(a5)
         clr.b -$1(a5)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_00000D48:
 ; H072+$00000D48: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -2289,7 +2289,7 @@ L072_00000D82:
 L072_00000D86:
 ; H072+$00000D86: 66000038  bne.w $dc0
         bne.w H072+$DC0
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_00000D8A:
 ; H072+$00000D8A: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -2375,7 +2375,7 @@ L072_00000DE8:
 L072_00000DEE:
 ; H072+$00000DEE: 66000014  bne.w $e04
         bne.w H072+$E04
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_00000DF2:
 ; H072+$00000DF2: 23f90000336800002520  move.l $3368.l, $2520.l
         move.l (H005+$3368).l, (H005+$2520).l
@@ -2395,10 +2395,10 @@ L072_00000E08:
 ; H072+$00000E08: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H072_00000E0A [parziale]
-; Scopo: Routine del modulo servizi di cura/tempio e richieste relative al costo; opera su H005+$3368 (personaggio corrente).
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H072+$10EE
+; ROUTINE: sub_H072_00000E0A [partial]
+; Purpose: Routine of the healing/temple services and cost-related requests module; works on H005+$3368 (current character).
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H072+$10EE
 ; --------------------------------------------------------------------------
 L072_00000E0A:
 ; H072+$00000E0A: 2f0c  move.l a4, -(a7)
@@ -2427,7 +2427,7 @@ L072_00000E20:
 L072_00000E24:
 ; H072+$00000E24: 1b7c0059ffa9  move.b #$59, -$57(a5)
         move.b #$59, -$57(a5)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_00000E2A:
 ; H072+$00000E2A: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -2500,7 +2500,7 @@ L072_00000E7C:
 L072_00000E82:
 ; H072+$00000E82: 66000034  bne.w $eb8
         bne.w H072+$EB8
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_00000E86:
 ; H072+$00000E86: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -2510,21 +2510,21 @@ L072_00000E8C:
 L072_00000E92:
 ; H072+$00000E92: 66000024  bne.w $eb8
         bne.w H072+$EB8
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_00000E96:
 ; H072+$00000E96: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
 L072_00000E9C:
 ; H072+$00000E9C: 422b0197  clr.b $197(a3)
         clr.b $197(a3)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_00000EA0:
 ; H072+$00000EA0: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
 L072_00000EA6:
 ; H072+$00000EA6: 177c00010198  move.b #$1, $198(a3)
         move.b #$1, $198(a3)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_00000EAC:
 ; H072+$00000EAC: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -2541,17 +2541,17 @@ L072_00000EBC:
 ; H072+$00000EBC: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H072_00000EBE [parziale]
-; Scopo: Routine del modulo servizi di cura/tempio e richieste relative al costo; richiama H008+$20C2, H030+$0B6C, H044+$0452, H026+$0188.
-;   - Richiama H008+$20C2.
-;   - Richiama H030+$0B6C.
-;   - Richiama H044+$0452.
-;   - Richiama H026+$0188.
-;   - Richiama H026+$01E0.
-;   - Richiama H030+$0256.
-;   - Richiama H008+$13C0.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H072+$12F8
+; ROUTINE: sub_H072_00000EBE [partial]
+; Purpose: Routine of the healing/temple services and cost-related requests module; calls H008+$20C2, H030+$0B6C, H044+$0452, H026+$0188.
+;   - Calls H008+$20C2.
+;   - Calls H030+$0B6C.
+;   - Calls H044+$0452.
+;   - Calls H026+$0188.
+;   - Calls H026+$01E0.
+;   - Calls H030+$0256.
+;   - Calls H008+$13C0.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H072+$12F8
 ; --------------------------------------------------------------------------
 L072_00000EBE:
 ; H072+$00000EBE: 2f0c  move.l a4, -(a7)
@@ -2838,7 +2838,7 @@ L072_00001006:
 L072_0000100A:
 ; H072+$0000100A: 3f3c000f  move.w #$f, -(a7)
         move.w #$f, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_0000100E:
 ; H072+$0000100E: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -2880,7 +2880,7 @@ L072_0000103E:
 L072_00001042:
 ; H072+$00001042: 486dfdf8  pea.l -$208(a5)
         pea.l -$208(a5)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L072_00001046:
 ; H072+$00001046: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -3059,7 +3059,7 @@ L072_00001122:
 L072_00001124:
 ; H072+$00001124: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H072+$1100; indici 0..10, default -1.
+; DISPATCH: words relative to H072+$1100; indices 0..10, default -1.
 L072_00001128:
 ; H072+$00001128: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -3104,7 +3104,7 @@ L072_000011D8:
 L072_000011DA:
 ; H072+$000011DA: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H072+$113A; indici 0..72, default -1.
+; DISPATCH: words relative to H072+$113A; indices 0..72, default -1.
 L072_000011DE:
 ; H072+$000011DE: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -3125,7 +3125,7 @@ L072_000011EE:
 L072_000011F4:
 ; H072+$000011F4: 4eb90000321a  jsr $321a.l
         jsr (H063+$321A).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_000011FA:
 ; H072+$000011FA: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -3143,17 +3143,17 @@ L072_0000120A:
 ; H072+$0000120A: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H072_0000120C [parziale]
-; Scopo: Routine del modulo servizi di cura/tempio e richieste relative al costo; richiama H063+$321A, H063+$0D80, H029+$0312, H067+$11F4.
-;   - Richiama H063+$321A.
-;   - Richiama H063+$0D80.
-;   - Richiama H029+$0312.
-;   - Richiama H067+$11F4.
-;   - Richiama H008+$01FC.
-;   - Richiama H065+$3390.
-;   - Richiama H065+$196E.
-;   - Usa lo stato globale: H005+$3DE3 (contesto nativo, 5 nel combattimento); H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H012+$087E
+; ROUTINE: sub_H072_0000120C [partial]
+; Purpose: Routine of the healing/temple services and cost-related requests module; calls H063+$321A, H063+$0D80, H029+$0312, H067+$11F4.
+;   - Calls H063+$321A.
+;   - Calls H063+$0D80.
+;   - Calls H029+$0312.
+;   - Calls H067+$11F4.
+;   - Calls H008+$01FC.
+;   - Calls H065+$3390.
+;   - Calls H065+$196E.
+;   - Uses the global state: H005+$3DE3 (native context, 5 in combat); H005+$3368 (current character).
+; Direct callers: H012+$087E
 ; --------------------------------------------------------------------------
 L072_0000120C:
 ; H072+$0000120C: 2f0c  move.l a4, -(a7)
@@ -3194,7 +3194,7 @@ L072_00001230:
 L072_00001232:
 ; H072+$00001232: 57cafffc  dbeq d2, $1230
         dbeq d2, H072+$1230
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L072_00001236:
 ; H072+$00001236: 13fc000100003de3  move.b #$1, $3de3.l
         move.b #$1, (H005+$3DE3).l
@@ -3208,7 +3208,7 @@ L072_00001244:
 L072_0000124A:
 ; H072+$0000124A: 13fc0001000024c2  move.b #$1, $24c2.l
         move.b #$1, (H005+$24C2).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_00001252:
 ; H072+$00001252: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -3317,7 +3317,7 @@ L072_000012D6:
 L072_000012D8:
 ; H072+$000012D8: 486dffa9  pea.l -$57(a5)
         pea.l -$57(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L072_000012DC:
 ; H072+$000012DC: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -3604,7 +3604,7 @@ L072_00001466:
 L072_00001468:
 ; H072+$00001468: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H072+$142A; indici 0..21, default -1.
+; DISPATCH: words relative to H072+$142A; indices 0..21, default -1.
 L072_0000146C:
 ; H072+$0000146C: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -3665,11 +3665,11 @@ L072_000014CE:
 L072_000014D0:
 ; H072+$000014D0: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H072+$1496; indici 0..19, default -1.
+; DISPATCH: words relative to H072+$1496; indices 0..19, default -1.
 L072_000014D4:
 ; H072+$000014D4: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L072_000014D8:
 ; H072+$000014D8: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)

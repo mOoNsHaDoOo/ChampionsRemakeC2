@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H067
-; Monete, gemme, gioielli e condivisione del denaro.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H067
+; Coins, gems, jewellery and sharing of money.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Monete, gemme, gioielli e condivisione del denaro: conversioni, somme e distribuzione al party.
+; MODULE NOTE
+; Coins, gems, jewellery and sharing of money: conversions, sums and distribution to the party.
 ; --------------------------------------------------------------------------
 ; H067: 9820 original bytes; all offsets are section-relative.
         section H067,code
@@ -43,10 +43,10 @@ H067:
         dc.w $2020,$3A20,$2000
         dc.l H067+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H067 [parziale]
-; Scopo: Ingresso del modulo monete, gemme, gioielli e condivisione del denaro; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H067+$2654.
-; Chiamanti diretti: H000+$01C2
+; ROUTINE: module_init_H067 [partial]
+; Purpose: Entry of the coins, gems, jewellery and sharing of money module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H067+$2654.
+; Direct callers: H000+$01C2
 ; --------------------------------------------------------------------------
 L067_000001BA:
 ; H067+$000001BA: 2f0c  move.l a4, -(a7)
@@ -61,10 +61,10 @@ L067_000001C4:
 ; H067+$000001C4: 6000248e  bra.w $2654
         bra.w H067+$2654
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H067_000001C8 [parziale]
-; Scopo: Routine del modulo monete, gemme, gioielli e condivisione del denaro; richiama H063+$1A8A.
-;   - Richiama H063+$1A8A.
-; Chiamanti diretti: H067+$0718, H067+$0240, H067+$0B48
+; ROUTINE: sub_H067_000001C8 [partial]
+; Purpose: Routine of the coins, gems, jewellery and sharing of money module; calls H063+$1A8A.
+;   - Calls H063+$1A8A.
+; Direct callers: H067+$0718, H067+$0240, H067+$0B48
 ; --------------------------------------------------------------------------
 L067_000001C8:
 ; H067+$000001C8: 2f0c  move.l a4, -(a7)
@@ -110,10 +110,10 @@ L067_000001F0:
 ; H067+$000001F0: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H067_000001F2 [parziale]
-; Scopo: Routine del modulo monete, gemme, gioielli e condivisione del denaro; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H067+$0CB6, H067+$074A, H067+$0838
+; ROUTINE: sub_H067_000001F2 [partial]
+; Purpose: Routine of the coins, gems, jewellery and sharing of money module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H067+$0CB6, H067+$074A, H067+$0838
 ; --------------------------------------------------------------------------
 L067_000001F2:
 ; H067+$000001F2: 2f0c  move.l a4, -(a7)
@@ -149,10 +149,10 @@ L067_00000210:
 ; H067+$00000210: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H067_00000212 [parziale]
-; Scopo: Routine del modulo monete, gemme, gioielli e condivisione del denaro; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H067+$0772, H067+$0A40, H067+$0A8C, H067+$0B9A, H067+$0AF8, H067+$0BFE e altri 3
+; ROUTINE: sub_H067_00000212 [partial]
+; Purpose: Routine of the coins, gems, jewellery and sharing of money module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H067+$0772, H067+$0A40, H067+$0A8C, H067+$0B9A, H067+$0AF8, H067+$0BFE and 3 more
 ; --------------------------------------------------------------------------
 L067_00000212:
 ; H067+$00000212: 2f0c  move.l a4, -(a7)
@@ -188,10 +188,10 @@ L067_00000230:
 ; H067+$00000230: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H067_00000232 [parziale]
-; Scopo: Routine del modulo monete, gemme, gioielli e condivisione del denaro; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H065+$2274, H067+$09FC, H067+$0A64, H067+$0D20, H067+$214A, H067+$243C e altri 1
+; ROUTINE: sub_H067_00000232 [partial]
+; Purpose: Routine of the coins, gems, jewellery and sharing of money module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H065+$2274, H067+$09FC, H067+$0A64, H067+$0D20, H067+$214A, H067+$243C and 1 more
 ; --------------------------------------------------------------------------
 L067_00000232:
 ; H067+$00000232: 2f0c  move.l a4, -(a7)
@@ -299,11 +299,11 @@ L067_000002AC:
 ; H067+$000002AC: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H067_000002AE [parziale]
-; Scopo: Routine del modulo monete, gemme, gioielli e condivisione del denaro; richiama H015+$004A, H015+$00BC.
-;   - Richiama H015+$004A.
-;   - Richiama H015+$00BC.
-; Chiamanti diretti: H065+$23EC, H071+$07FC, H072+$0486
+; ROUTINE: sub_H067_000002AE [partial]
+; Purpose: Routine of the coins, gems, jewellery and sharing of money module; calls H015+$004A, H015+$00BC.
+;   - Calls H015+$004A.
+;   - Calls H015+$00BC.
+; Direct callers: H065+$23EC, H071+$07FC, H072+$0486
 ; --------------------------------------------------------------------------
 L067_000002AE:
 ; H067+$000002AE: 2f0c  move.l a4, -(a7)
@@ -413,10 +413,10 @@ L067_00000328:
 ; H067+$00000328: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H067_0000032A [parziale]
-; Scopo: Routine del modulo monete, gemme, gioielli e condivisione del denaro; opera su H005+$3368 (personaggio corrente).
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H065+$23CE, H071+$0716, H072+$0468
+; ROUTINE: sub_H067_0000032A [partial]
+; Purpose: Routine of the coins, gems, jewellery and sharing of money module; works on H005+$3368 (current character).
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H065+$23CE, H071+$0716, H072+$0468
 ; --------------------------------------------------------------------------
 L067_0000032A:
 ; H067+$0000032A: 2f0c  move.l a4, -(a7)
@@ -445,7 +445,7 @@ L067_00000344:
 L067_00000348:
 ; H067+$00000348: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_0000034A:
 ; H067+$0000034A: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -461,7 +461,7 @@ L067_00000358:
 L067_0000035C:
 ; H067+$0000035C: 64da  bcc.b $338
         bcc.b H067+$338
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_0000035E:
 ; H067+$0000035E: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -484,10 +484,10 @@ L067_00000372:
 ; H067+$00000372: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H067_00000374 [parziale]
-; Scopo: Routine del modulo monete, gemme, gioielli e condivisione del denaro; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H065+$2416, H071+$083E, H072+$04AE
+; ROUTINE: sub_H067_00000374 [partial]
+; Purpose: Routine of the coins, gems, jewellery and sharing of money module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H065+$2416, H071+$083E, H072+$04AE
 ; --------------------------------------------------------------------------
 L067_00000374:
 ; H067+$00000374: 2f0c  move.l a4, -(a7)
@@ -556,11 +556,11 @@ L067_000003BA:
 ; H067+$000003BA: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H067_000003BC [parziale]
-; Scopo: Routine del modulo monete, gemme, gioielli e condivisione del denaro; richiama H063+$1D44.
-;   - Richiama H063+$1D44.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H067+$2286, H067+$2578
+; ROUTINE: sub_H067_000003BC [partial]
+; Purpose: Routine of the coins, gems, jewellery and sharing of money module; calls H063+$1D44.
+;   - Calls H063+$1D44.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H067+$2286, H067+$2578
 ; --------------------------------------------------------------------------
 L067_000003BC:
 ; H067+$000003BC: 2f0c  move.l a4, -(a7)
@@ -571,7 +571,7 @@ L067_000003BE:
 L067_000003C2:
 ; H067+$000003C2: 4e55fffe  link.w a5, #$fffe
         link.w a5, #$fffe
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_000003C6:
 ; H067+$000003C6: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -606,14 +606,14 @@ L067_000003E8:
 L067_000003EE:
 ; H067+$000003EE: 342dfffe  move.w -$2(a5), d2
         move.w -$2(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_000003F2:
 ; H067+$000003F2: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
 L067_000003F8:
 ; H067+$000003F8: d56b00f8  add.w d2, $f8(a3)
         add.w d2, $f8(a3)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_000003FC:
 ; H067+$000003FC: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -650,14 +650,14 @@ L067_00000424:
 L067_00000428:
 ; H067+$00000428: 342d000c  move.w $c(a5), d2
         move.w $c(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_0000042C:
 ; H067+$0000042C: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
 L067_00000432:
 ; H067+$00000432: d56b00f8  add.w d2, $f8(a3)
         add.w d2, $f8(a3)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_00000436:
 ; H067+$00000436: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -683,17 +683,17 @@ L067_0000044C:
 ; H067+$0000044C: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H067_0000044E [parziale]
-; Scopo: Routine del modulo monete, gemme, gioielli e condivisione del denaro; richiama H030+$019A, H030+$0256, H026+$000C, H045+$01D6.
-;   - Richiama H030+$019A.
-;   - Richiama H030+$0256.
-;   - Richiama H026+$000C.
-;   - Richiama H045+$01D6.
-;   - Richiama H063+$0112.
-;   - Richiama H010+$0974.
-;   - Richiama H026+$01E0.
-;   - Usa lo stato globale: H005+$5305 (byte del tasto/azione pendente).
-; Chiamanti diretti: H065+$18F2, H065+$15A8, H067+$117E
+; ROUTINE: sub_H067_0000044E [partial]
+; Purpose: Routine of the coins, gems, jewellery and sharing of money module; calls H030+$019A, H030+$0256, H026+$000C, H045+$01D6.
+;   - Calls H030+$019A.
+;   - Calls H030+$0256.
+;   - Calls H026+$000C.
+;   - Calls H045+$01D6.
+;   - Calls H063+$0112.
+;   - Calls H010+$0974.
+;   - Calls H026+$01E0.
+;   - Uses the global state: H005+$5305 (byte of the pending key/action).
+; Direct callers: H065+$18F2, H065+$15A8, H067+$117E
 ; --------------------------------------------------------------------------
 L067_0000044E:
 ; H067+$0000044E: 2f0c  move.l a4, -(a7)
@@ -774,7 +774,7 @@ L067_00000498:
 L067_0000049C:
 ; H067+$0000049C: 2f2d000e  move.l $e(a5), -(a7)
         move.l $e(a5), -(a7)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L067_000004A0:
 ; H067+$000004A0: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -854,7 +854,7 @@ L067_000004FC:
 L067_00000500:
 ; H067+$00000500: 4eb900000974  jsr $974.l
         jsr (H010+$974).l
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L067_00000506:
 ; H067+$00000506: 1b7900005305ffeb  move.b $5305.l, -$15(a5)
         move.b (H005+$5305).l, -$15(a5)
@@ -979,7 +979,7 @@ L067_000005A4:
 L067_000005A8:
 ; H067+$000005A8: 486dffec  pea.l -$14(a5)
         pea.l -$14(a5)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L067_000005AC:
 ; H067+$000005AC: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1081,7 +1081,7 @@ L067_00000674:
 L067_00000676:
 ; H067+$00000676: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H067+$0602; indici 0..49, default -1.
+; DISPATCH: words relative to H067+$0602; indices 0..49, default -1.
 L067_0000067A:
 ; H067+$0000067A: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -1184,10 +1184,10 @@ L067_000006F6:
 ; H067+$000006F6: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H067_000006F8 [parziale]
-; Scopo: Routine del modulo monete, gemme, gioielli e condivisione del denaro; richiama H063+$1D44.
-;   - Richiama H063+$1D44.
-; Chiamanti diretti: H065+$15C4
+; ROUTINE: sub_H067_000006F8 [partial]
+; Purpose: Routine of the coins, gems, jewellery and sharing of money module; calls H063+$1D44.
+;   - Calls H063+$1D44.
+; Direct callers: H065+$15C4
 ; --------------------------------------------------------------------------
 L067_000006F8:
 ; H067+$000006F8: 2f0c  move.l a4, -(a7)
@@ -1335,11 +1335,11 @@ L067_00000792:
 ; H067+$00000792: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H067_00000794 [parziale]
-; Scopo: Routine del modulo monete, gemme, gioielli e condivisione del denaro; richiama H029+$0312.
-;   - Richiama H029+$0312.
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H072+$1328, H071+$0A5C, H070+$1336
+; ROUTINE: sub_H067_00000794 [partial]
+; Purpose: Routine of the coins, gems, jewellery and sharing of money module; calls H029+$0312.
+;   - Calls H029+$0312.
+;   - Uses the global state: H005+$3364 (head of the party list).
+; Direct callers: H072+$1328, H071+$0A5C, H070+$1336
 ; --------------------------------------------------------------------------
 L067_00000794:
 ; H067+$00000794: 2f0c  move.l a4, -(a7)
@@ -1350,7 +1350,7 @@ L067_00000796:
 L067_0000079A:
 ; H067+$0000079A: 4e55fff8  link.w a5, #$fff8
         link.w a5, #$fff8
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L067_0000079E:
 ; H067+$0000079E: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -1521,10 +1521,10 @@ L067_0000086C:
 ; H067+$0000086C: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H067_0000086E [parziale]
-; Scopo: Routine del modulo monete, gemme, gioielli e condivisione del denaro; opera su H005+$3364 (testa della lista del party).
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H067+$08E2
+; ROUTINE: sub_H067_0000086E [partial]
+; Purpose: Routine of the coins, gems, jewellery and sharing of money module; works on H005+$3364 (head of the party list).
+;   - Uses the global state: H005+$3364 (head of the party list).
+; Direct callers: H067+$08E2
 ; --------------------------------------------------------------------------
 L067_0000086E:
 ; H067+$0000086E: 2f0c  move.l a4, -(a7)
@@ -1535,7 +1535,7 @@ L067_00000870:
 L067_00000874:
 ; H067+$00000874: 4e55fffa  link.w a5, #$fffa
         link.w a5, #$fffa
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L067_00000878:
 ; H067+$00000878: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -1606,11 +1606,11 @@ L067_000008CA:
 ; H067+$000008CA: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H067_000008CC [parziale]
-; Scopo: Routine del modulo monete, gemme, gioielli e condivisione del denaro; richiama H029+$0312.
-;   - Richiama H029+$0312.
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H072+$133E, H071+$0A72, H070+$133E
+; ROUTINE: sub_H067_000008CC [partial]
+; Purpose: Routine of the coins, gems, jewellery and sharing of money module; calls H029+$0312.
+;   - Calls H029+$0312.
+;   - Uses the global state: H005+$3364 (head of the party list).
+; Direct callers: H072+$133E, H071+$0A72, H070+$133E
 ; --------------------------------------------------------------------------
 L067_000008CC:
 ; H067+$000008CC: 2f0c  move.l a4, -(a7)
@@ -1621,7 +1621,7 @@ L067_000008CE:
 L067_000008D2:
 ; H067+$000008D2: 4e55ffd4  link.w a5, #$ffd4
         link.w a5, #$ffd4
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L067_000008D6:
 ; H067+$000008D6: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -2131,7 +2131,7 @@ L067_00000B2C:
 L067_00000B30:
 ; H067+$00000B30: 630000ee  bls.w $c20
         bls.w H067+$C20
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L067_00000B34:
 ; H067+$00000B34: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -2421,10 +2421,10 @@ L067_00000C8A:
 ; H067+$00000C8A: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H067_00000C8C [parziale]
-; Scopo: Routine del modulo monete, gemme, gioielli e condivisione del denaro; opera su H005+$3DE3 (contesto nativo, 5 nel combattimento).
-;   - Usa lo stato globale: H005+$3DE3 (contesto nativo, 5 nel combattimento).
-; Chiamanti diretti: H065+$190A
+; ROUTINE: sub_H067_00000C8C [partial]
+; Purpose: Routine of the coins, gems, jewellery and sharing of money module; works on H005+$3DE3 (native context, 5 in combat).
+;   - Uses the global state: H005+$3DE3 (native context, 5 in combat).
+; Direct callers: H065+$190A
 ; --------------------------------------------------------------------------
 L067_00000C8C:
 ; H067+$00000C8C: 2f0c  move.l a4, -(a7)
@@ -2465,14 +2465,14 @@ L067_00000CB2:
 L067_00000CB6:
 ; H067+$00000CB6: 6100f53a  bsr.w $1f2
         bsr.w H067+$1F2
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L067_00000CBA:
 ; H067+$00000CBA: 0c39000600003de3  cmpi.b #$6, $3de3.l
         cmpi.b #$6, (H005+$3DE3).l
 L067_00000CC2:
 ; H067+$00000CC2: 6700000e  beq.w $cd2
         beq.w H067+$CD2
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L067_00000CC6:
 ; H067+$00000CC6: 0c39000100003de3  cmpi.b #$1, $3de3.l
         cmpi.b #$1, (H005+$3DE3).l
@@ -2531,10 +2531,10 @@ L067_00000D08:
 ; H067+$00000D08: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H067_00000D0A [parziale]
-; Scopo: Routine del modulo monete, gemme, gioielli e condivisione del denaro; richiama H063+$1D44.
-;   - Richiama H063+$1D44.
-; Chiamanti diretti: H067+$1194
+; ROUTINE: sub_H067_00000D0A [partial]
+; Purpose: Routine of the coins, gems, jewellery and sharing of money module; calls H063+$1D44.
+;   - Calls H063+$1D44.
+; Direct callers: H067+$1194
 ; --------------------------------------------------------------------------
 L067_00000D0A:
 ; H067+$00000D0A: 2f0c  move.l a4, -(a7)
@@ -2706,10 +2706,10 @@ L067_00000DC8:
 ; H067+$00000DC8: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H067_00000DCA [parziale]
-; Scopo: Routine del modulo monete, gemme, gioielli e condivisione del denaro; richiama H026+$0188.
-;   - Richiama H026+$0188.
-; Chiamanti diretti: H065+$1872, H065+$154E, H067+$1128
+; ROUTINE: sub_H067_00000DCA [partial]
+; Purpose: Routine of the coins, gems, jewellery and sharing of money module; calls H026+$0188.
+;   - Calls H026+$0188.
+; Direct callers: H065+$1872, H065+$154E, H067+$1128
 ; --------------------------------------------------------------------------
 L067_00000DCA:
 ; H067+$00000DCA: 2f0c  move.l a4, -(a7)
@@ -3007,7 +3007,7 @@ L067_00000F54:
 L067_00000F56:
 ; H067+$00000F56: 38334000  move.w (a3, d4.w), d4
         move.w (a3, d4.w), d4
-; DISPATCH: word relative a H067+$0F20; indici 0..17, default -1.
+; DISPATCH: words relative to H067+$0F20; indices 0..17, default -1.
 L067_00000F5A:
 ; H067+$00000F5A: 4eb34000  jsr (a3, d4.w)
         jsr (a3, d4.w)
@@ -3033,17 +3033,17 @@ L067_00000F70:
 ; H067+$00000F70: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H067_00000F72 [parziale]
-; Scopo: Routine del modulo monete, gemme, gioielli e condivisione del denaro; richiama H044+$01C2, H003+$0068, H045+$01D6, H026+$0188.
-;   - Richiama H044+$01C2.
-;   - Richiama H003+$0068.
-;   - Richiama H045+$01D6.
-;   - Richiama H026+$0188.
-;   - Richiama H026+$01E0.
-;   - Richiama H008+$13C0.
-;   - Richiama H026+$0254.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H072+$1318, H071+$0A4C, H070+$1118, H070+$0FE8
+; ROUTINE: sub_H067_00000F72 [partial]
+; Purpose: Routine of the coins, gems, jewellery and sharing of money module; calls H044+$01C2, H003+$0068, H045+$01D6, H026+$0188.
+;   - Calls H044+$01C2.
+;   - Calls H003+$0068.
+;   - Calls H045+$01D6.
+;   - Calls H026+$0188.
+;   - Calls H026+$01E0.
+;   - Calls H008+$13C0.
+;   - Calls H026+$0254.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H072+$1318, H071+$0A4C, H070+$1118, H070+$0FE8
 ; --------------------------------------------------------------------------
 L067_00000F72:
 ; H067+$00000F72: 2f0c  move.l a4, -(a7)
@@ -3442,7 +3442,7 @@ L067_0000117E:
 L067_00001182:
 ; H067+$00001182: 3b40ff96  move.w d0, -$6a(a5)
         move.w d0, -$6a(a5)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_00001186:
 ; H067+$00001186: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -3526,10 +3526,10 @@ L067_000011F2:
 ; H067+$000011F2: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H067_000011F4 [parziale]
-; Scopo: Routine del modulo monete, gemme, gioielli e condivisione del denaro; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H072+$1286, H071+$09C2, H072+$135A, H071+$0A8E, H070+$1164, H070+$1362 e altri 1
+; ROUTINE: sub_H067_000011F4 [partial]
+; Purpose: Routine of the coins, gems, jewellery and sharing of money module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H072+$1286, H071+$09C2, H072+$135A, H071+$0A8E, H070+$1164, H070+$1362 and 1 more
 ; --------------------------------------------------------------------------
 L067_000011F4:
 ; H067+$000011F4: 2f0c  move.l a4, -(a7)
@@ -3622,10 +3622,10 @@ L067_00001258:
 ; H067+$00001258: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H067_0000125A [parziale]
-; Scopo: Routine del modulo monete, gemme, gioielli e condivisione del denaro; richiama H062+$156C.
-;   - Richiama H062+$156C.
-; Chiamanti diretti: H067+$1450
+; ROUTINE: sub_H067_0000125A [partial]
+; Purpose: Routine of the coins, gems, jewellery and sharing of money module; calls H062+$156C.
+;   - Calls H062+$156C.
+; Direct callers: H067+$1450
 ; --------------------------------------------------------------------------
 L067_0000125A:
 ; H067+$0000125A: 2f0c  move.l a4, -(a7)
@@ -3679,12 +3679,12 @@ L067_00001290:
 ; H067+$00001290: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H067_00001292 [parziale]
-; Scopo: Routine del modulo monete, gemme, gioielli e condivisione del denaro; richiama H029+$0312, H062+$156C, H029+$039A.
-;   - Richiama H029+$0312.
-;   - Richiama H062+$156C.
-;   - Richiama H029+$039A.
-; Chiamanti diretti: H012+$1402
+; ROUTINE: sub_H067_00001292 [partial]
+; Purpose: Routine of the coins, gems, jewellery and sharing of money module; calls H029+$0312, H062+$156C, H029+$039A.
+;   - Calls H029+$0312.
+;   - Calls H062+$156C.
+;   - Calls H029+$039A.
+; Direct callers: H012+$1402
 ; --------------------------------------------------------------------------
 L067_00001292:
 ; H067+$00001292: 2f0c  move.l a4, -(a7)
@@ -4169,7 +4169,7 @@ L067_000015C8:
 L067_000015CA:
 ; H067+$000015CA: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H067+$1550; indici 0..52, default -1.
+; DISPATCH: words relative to H067+$1550; indices 0..52, default -1.
 L067_000015CE:
 ; H067+$000015CE: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -4345,7 +4345,7 @@ L067_0000172E:
 L067_00001730:
 ; H067+$00001730: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H067+$1692; indici 0..70, default -1.
+; DISPATCH: words relative to H067+$1692; indices 0..70, default -1.
 L067_00001734:
 ; H067+$00001734: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -4479,7 +4479,7 @@ L067_000017EE:
 L067_000017F0:
 ; H067+$000017F0: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H067+$17B4; indici 0..20, default -1.
+; DISPATCH: words relative to H067+$17B4; indices 0..20, default -1.
 L067_000017F4:
 ; H067+$000017F4: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -4970,7 +4970,7 @@ L067_00001A52:
 L067_00001A54:
 ; H067+$00001A54: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H067+$1A3C; indici 0..3, default -1.
+; DISPATCH: words relative to H067+$1A3C; indices 0..3, default -1.
 L067_00001A58:
 ; H067+$00001A58: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -5145,7 +5145,7 @@ L067_00001B1A:
 L067_00001B1C:
 ; H067+$00001B1C: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H067+$1B04; indici 0..3, default -1.
+; DISPATCH: words relative to H067+$1B04; indices 0..3, default -1.
 L067_00001B20:
 ; H067+$00001B20: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -5261,7 +5261,7 @@ L067_00001B9E:
 L067_00001BA0:
 ; H067+$00001BA0: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H067+$1B8C; indici 0..1, default -1.
+; DISPATCH: words relative to H067+$1B8C; indices 0..1, default -1.
 L067_00001BA4:
 ; H067+$00001BA4: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -5344,7 +5344,7 @@ L067_00001C0A:
 L067_00001C0C:
 ; H067+$00001C0C: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H067+$1BEC; indici 0..7, default -1.
+; DISPATCH: words relative to H067+$1BEC; indices 0..7, default -1.
 L067_00001C10:
 ; H067+$00001C10: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -5385,7 +5385,7 @@ L067_00001CB6:
 L067_00001CB8:
 ; H067+$00001CB8: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H067+$1C1A; indici 0..70, default -1.
+; DISPATCH: words relative to H067+$1C1A; indices 0..70, default -1.
 L067_00001CBC:
 ; H067+$00001CBC: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -5552,17 +5552,17 @@ L067_00001D7A:
 ; H067+$00001D7A: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H067_00001D7C [parziale]
-; Scopo: Routine del modulo monete, gemme, gioielli e condivisione del denaro; richiama H063+$1D44, H045+$01D6, H026+$01E0, H030+$0B6C.
-;   - Richiama H063+$1D44.
-;   - Richiama H045+$01D6.
-;   - Richiama H026+$01E0.
-;   - Richiama H030+$0B6C.
-;   - Richiama H063+$1F34.
-;   - Richiama H030+$0256.
-;   - Richiama H008+$01FC.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H072+$134A, H071+$0A7E
+; ROUTINE: sub_H067_00001D7C [partial]
+; Purpose: Routine of the coins, gems, jewellery and sharing of money module; calls H063+$1D44, H045+$01D6, H026+$01E0, H030+$0B6C.
+;   - Calls H063+$1D44.
+;   - Calls H045+$01D6.
+;   - Calls H026+$01E0.
+;   - Calls H030+$0B6C.
+;   - Calls H063+$1F34.
+;   - Calls H030+$0256.
+;   - Calls H008+$01FC.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H072+$134A, H071+$0A7E
 ; --------------------------------------------------------------------------
 L067_00001D7C:
 ; H067+$00001D7C: 2f0c  move.l a4, -(a7)
@@ -5579,7 +5579,7 @@ L067_00001D86:
 L067_00001D8A:
 ; H067+$00001D8A: 16bc0001  move.b #$1, (a3)
         move.b #$1, (a3)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_00001D8E:
 ; H067+$00001D8E: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -5589,7 +5589,7 @@ L067_00001D94:
 L067_00001D98:
 ; H067+$00001D98: 66000028  bne.w $1dc2
         bne.w H067+$1DC2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_00001D9C:
 ; H067+$00001D9C: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -5618,7 +5618,7 @@ L067_00001DBC:
 L067_00001DBE:
 ; H067+$00001DBE: 6000088a  bra.w $264a
         bra.w H067+$264A
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_00001DC2:
 ; H067+$00001DC2: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -5628,7 +5628,7 @@ L067_00001DC8:
 L067_00001DCC:
 ; H067+$00001DCC: 6600001a  bne.w $1de8
         bne.w H067+$1DE8
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_00001DD0:
 ; H067+$00001DD0: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -5656,7 +5656,7 @@ L067_00001DF0:
 L067_00001DF4:
 ; H067+$00001DF4: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_00001DF6:
 ; H067+$00001DF6: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -5691,7 +5691,7 @@ L067_00001E1A:
 L067_00001E1E:
 ; H067+$00001E1E: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_00001E20:
 ; H067+$00001E20: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -5717,7 +5717,7 @@ L067_00001E36:
 L067_00001E3A:
 ; H067+$00001E3A: 4eb9000001d6  jsr $1d6.l
         jsr (H045+$1D6).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_00001E40:
 ; H067+$00001E40: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -5803,11 +5803,11 @@ L067_00001EA2:
 L067_00001EA4:
 ; H067+$00001EA4: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H067+$1E92; indici 0..1, default -1.
+; DISPATCH: words relative to H067+$1E92; indices 0..1, default -1.
 L067_00001EA8:
 ; H067+$00001EA8: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_00001EAC:
 ; H067+$00001EAC: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -5893,7 +5893,7 @@ L067_00001F0E:
 L067_00001F10:
 ; H067+$00001F10: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H067+$1EFE; indici 0..1, default -1.
+; DISPATCH: words relative to H067+$1EFE; indices 0..1, default -1.
 L067_00001F14:
 ; H067+$00001F14: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -5913,7 +5913,7 @@ L067_00001F24:
 L067_00001F28:
 ; H067+$00001F28: 4eb900000b6c  jsr $b6c.l
         jsr (H030+$B6C).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_00001F2E:
 ; H067+$00001F2E: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -5948,7 +5948,7 @@ L067_00001F52:
 L067_00001F56:
 ; H067+$00001F56: 486c00f8  pea.l $f8(a4)
         pea.l $f8(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L067_00001F5A:
 ; H067+$00001F5A: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -5970,7 +5970,7 @@ L067_00001F6E:
 L067_00001F72:
 ; H067+$00001F72: 486dff82  pea.l -$7e(a5)
         pea.l -$7e(a5)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L067_00001F76:
 ; H067+$00001F76: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -5992,7 +5992,7 @@ L067_00001F8A:
 L067_00001F8E:
 ; H067+$00001F8E: 486dff58  pea.l -$a8(a5)
         pea.l -$a8(a5)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L067_00001F92:
 ; H067+$00001F92: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -6011,7 +6011,7 @@ L067_00001FA2:
 L067_00001FA4:
 ; H067+$00001FA4: 57cafffc  dbeq d2, $1fa2
         dbeq d2, H067+$1FA2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_00001FA8:
 ; H067+$00001FA8: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -6036,7 +6036,7 @@ L067_00001FC0:
 L067_00001FC2:
 ; H067+$00001FC2: 57cafffc  dbeq d2, $1fc0
         dbeq d2, H067+$1FC0
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_00001FC6:
 ; H067+$00001FC6: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -6108,7 +6108,7 @@ L067_00002020:
 L067_00002022:
 ; H067+$00002022: 486dff46  pea.l -$ba(a5)
         pea.l -$ba(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L067_00002026:
 ; H067+$00002026: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -6124,7 +6124,7 @@ L067_00002032:
 L067_00002036:
 ; H067+$00002036: 600005e8  bra.w $2620
         bra.w H067+$2620
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_0000203A:
 ; H067+$0000203A: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -6134,7 +6134,7 @@ L067_00002040:
 L067_00002044:
 ; H067+$00002044: 67000244  beq.w $228a
         beq.w H067+$228A
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_00002048:
 ; H067+$00002048: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -6301,11 +6301,11 @@ L067_0000212E:
 L067_00002132:
 ; H067+$00002132: 486dff82  pea.l -$7e(a5)
         pea.l -$7e(a5)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L067_00002136:
 ; H067+$00002136: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_0000213C:
 ; H067+$0000213C: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -6330,7 +6330,7 @@ L067_00002152:
 L067_00002156:
 ; H067+$00002156: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_00002158:
 ; H067+$00002158: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -6412,7 +6412,7 @@ L067_000021B8:
 L067_000021BA:
 ; H067+$000021BA: 486dff46  pea.l -$ba(a5)
         pea.l -$ba(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L067_000021BE:
 ; H067+$000021BE: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -6501,7 +6501,7 @@ L067_00002236:
 L067_0000223A:
 ; H067+$0000223A: 422b003b  clr.b $3b(a3)
         clr.b $3b(a3)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_0000223E:
 ; H067+$0000223E: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -6556,7 +6556,7 @@ L067_00002286:
 L067_0000228A:
 ; H067+$0000228A: 4e75  rts 
         rts 
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_0000228C:
 ; H067+$0000228C: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -6566,7 +6566,7 @@ L067_00002292:
 L067_00002296:
 ; H067+$00002296: 670002e4  beq.w $257c
         beq.w H067+$257C
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_0000229A:
 ; H067+$0000229A: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -6869,11 +6869,11 @@ L067_00002420:
 L067_00002424:
 ; H067+$00002424: 486dff82  pea.l -$7e(a5)
         pea.l -$7e(a5)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L067_00002428:
 ; H067+$00002428: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_0000242E:
 ; H067+$0000242E: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -6898,7 +6898,7 @@ L067_00002444:
 L067_00002448:
 ; H067+$00002448: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_0000244A:
 ; H067+$0000244A: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -6980,7 +6980,7 @@ L067_000024AA:
 L067_000024AC:
 ; H067+$000024AC: 486dff46  pea.l -$ba(a5)
         pea.l -$ba(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L067_000024B0:
 ; H067+$000024B0: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -7069,7 +7069,7 @@ L067_00002528:
 L067_0000252C:
 ; H067+$0000252C: 422b003b  clr.b $3b(a3)
         clr.b $3b(a3)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_00002530:
 ; H067+$00002530: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -7162,11 +7162,11 @@ L067_0000262C:
 L067_0000262E:
 ; H067+$0000262E: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H067+$258A; indici 0..74, default -1.
+; DISPATCH: words relative to H067+$258A; indices 0..74, default -1.
 L067_00002632:
 ; H067+$00002632: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L067_00002636:
 ; H067+$00002636: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)

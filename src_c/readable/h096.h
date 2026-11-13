@@ -1,9 +1,9 @@
-/* H096: azioni, attacchi, mira e calcoli del combattimento. */
+/* H096: combat actions, attacks, aiming and calculations. */
 #ifndef COK_H096_H
 #define COK_H096_H
 #include "character.h"
 
-/* Mira/bersaglio scelto (9 byte nell'originale: puntatore, x, y). */
+/* Chosen aim/target (9 bytes in the original: pointer, x, y). */
 typedef struct CokAim {
     Character *who;                     /* +$0 */
     u16 x;                              /* +$4 */

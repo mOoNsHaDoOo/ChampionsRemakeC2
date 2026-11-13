@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H033
-; Vettori e servizi condivisi di azioni/oggetti; dettaglio parziale.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H033
+; Shared vectors and services for actions/items; partial detail.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Vettori e servizi condivisi di azioni/oggetti. Le routine sono richiamate da combattimento, incantesimi e UI; la semantica dei singoli vettori resta parziale.
+; MODULE NOTE
+; Shared vectors and services for actions/items. The routines are called by combat, spells and UI; the semantics of the single vectors remain partial.
 ; --------------------------------------------------------------------------
 ; H033: 8140 original bytes; all offsets are section-relative.
         section H033,code
@@ -29,10 +29,10 @@ H033:
         dc.w $0053,$7065,$6C6C,$2020,$3A20,$2000
         dc.l H033+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H033 [parziale]
-; Scopo: Ingresso del modulo vettori e servizi condivisi di azioni/oggetti; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H033+$1FC4.
-; Chiamanti diretti: H000+$01CE
+; ROUTINE: module_init_H033 [partial]
+; Purpose: Entry of the shared vectors and services of actions/items module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H033+$1FC4.
+; Direct callers: H000+$01CE
 ; --------------------------------------------------------------------------
 L033_000000E0:
 ; H033+$000000E0: 2f0c  move.l a4, -(a7)
@@ -47,12 +47,12 @@ L033_000000EA:
 ; H033+$000000EA: 60001ed8  bra.w $1fc4
         bra.w H033+$1FC4
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H033_0164 [parziale]
-; Scopo: Trampolino verso H033+$0164; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H033+$0164.
-;   - Richiama H008+$13C0.
-;   - Richiama H008+$2178.
-; Chiamanti diretti: H065+$3680
+; ROUTINE: trampoline_H033_0164 [partial]
+; Purpose: Trampoline to H033+$0164; the actual body is there.
+;   - Jumps to the actual body at H033+$0164.
+;   - Calls H008+$13C0.
+;   - Calls H008+$2178.
+; Direct callers: H065+$3680
 ; --------------------------------------------------------------------------
 L033_000000EE:
 ; H033+$000000EE: 2f0c  move.l a4, -(a7)
@@ -182,7 +182,7 @@ L033_00000172:
 L033_00000174:
 ; H033+$00000174: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H033+$015C; indici 0..3, default -1.
+; DISPATCH: words relative to H033+$015C; indices 0..3, default -1.
 L033_00000178:
 ; H033+$00000178: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -525,13 +525,13 @@ L033_00000364:
 ; H033+$00000364: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H033_00000366 [parziale]
-; Scopo: Routine del modulo vettori e servizi condivisi di azioni/oggetti; richiama H003+$0068, H029+$0354, H026+$0188, H026+$01E0.
-;   - Richiama H003+$0068.
-;   - Richiama H029+$0354.
-;   - Richiama H026+$0188.
-;   - Richiama H026+$01E0.
-; Chiamanti diretti: H033+$068E
+; ROUTINE: sub_H033_00000366 [partial]
+; Purpose: Routine of the shared vectors and services of actions/items module; calls H003+$0068, H029+$0354, H026+$0188, H026+$01E0.
+;   - Calls H003+$0068.
+;   - Calls H029+$0354.
+;   - Calls H026+$0188.
+;   - Calls H026+$01E0.
+; Direct callers: H033+$068E
 ; --------------------------------------------------------------------------
 L033_00000366:
 ; H033+$00000366: 2f0c  move.l a4, -(a7)
@@ -942,12 +942,12 @@ L033_0000056C:
 ; H033+$0000056C: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H033_0000056E [parziale]
-; Scopo: Routine del modulo vettori e servizi condivisi di azioni/oggetti; richiama H063+$0946, H029+$0354.
-;   - Richiama H063+$0946.
-;   - Richiama H029+$0354.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H033+$0F48, H033+$0784
+; ROUTINE: sub_H033_0000056E [partial]
+; Purpose: Routine of the shared vectors and services of actions/items module; calls H063+$0946, H029+$0354.
+;   - Calls H063+$0946.
+;   - Calls H029+$0354.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H033+$0F48, H033+$0784
 ; --------------------------------------------------------------------------
 L033_0000056E:
 ; H033+$0000056E: 2f0c  move.l a4, -(a7)
@@ -958,7 +958,7 @@ L033_00000570:
 L033_00000574:
 ; H033+$00000574: 4e55fffa  link.w a5, #$fffa
         link.w a5, #$fffa
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L033_00000578:
 ; H033+$00000578: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -981,7 +981,7 @@ L033_0000058E:
 L033_00000590:
 ; H033+$00000590: 6600004c  bne.w $5de
         bne.w H033+$5DE
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L033_00000594:
 ; H033+$00000594: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -991,14 +991,14 @@ L033_0000059A:
 L033_0000059E:
 ; H033+$0000059E: 6200001a  bhi.w $5ba
         bhi.w H033+$5BA
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L033_000005A2:
 ; H033+$000005A2: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
 L033_000005A8:
 ; H033+$000005A8: 142b0106  move.b $106(a3), d2
         move.b $106(a3), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L033_000005AC:
 ; H033+$000005AC: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -1209,11 +1209,11 @@ L033_000006BE:
 ; H033+$000006BE: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H033_000006C0 [parziale]
-; Scopo: Routine del modulo vettori e servizi condivisi di azioni/oggetti; richiama H029+$0354.
-;   - Richiama H029+$0354.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H033+$0F54, H033+$0F62
+; ROUTINE: sub_H033_000006C0 [partial]
+; Purpose: Routine of the shared vectors and services of actions/items module; calls H029+$0354.
+;   - Calls H029+$0354.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H033+$0F54, H033+$0F62
 ; --------------------------------------------------------------------------
 L033_000006C0:
 ; H033+$000006C0: 2f0c  move.l a4, -(a7)
@@ -1254,7 +1254,7 @@ L033_000006EC:
 L033_000006EE:
 ; H033+$000006EE: 427900000004  clr.w $4.l
         clr.w (H085+$4).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L033_000006F4:
 ; H033+$000006F4: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -1285,7 +1285,7 @@ L033_0000071C:
 L033_00000720:
 ; H033+$00000720: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L033_00000722:
 ; H033+$00000722: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -1323,7 +1323,7 @@ L033_0000074C:
 L033_00000750:
 ; H033+$00000750: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L033_00000752:
 ; H033+$00000752: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -1389,10 +1389,10 @@ L033_000007A2:
 ; H033+$000007A2: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H033_000007A4 [parziale]
-; Scopo: Routine del modulo vettori e servizi condivisi di azioni/oggetti; richiama H029+$0354.
-;   - Richiama H029+$0354.
-; Chiamanti diretti: H033+$0F2A
+; ROUTINE: sub_H033_000007A4 [partial]
+; Purpose: Routine of the shared vectors and services of actions/items module; calls H029+$0354.
+;   - Calls H029+$0354.
+; Direct callers: H033+$0F2A
 ; --------------------------------------------------------------------------
 L033_000007A4:
 ; H033+$000007A4: 2f0c  move.l a4, -(a7)
@@ -1529,14 +1529,14 @@ L033_0000084A:
 ; H033+$0000084A: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H033_0000084C [parziale]
-; Scopo: Routine del modulo vettori e servizi condivisi di azioni/oggetti; richiama H029+$0354, H029+$0312, H003+$0068, H026+$01E0.
-;   - Richiama H029+$0354.
-;   - Richiama H029+$0312.
-;   - Richiama H003+$0068.
-;   - Richiama H026+$01E0.
-;   - Richiama H045+$01D6.
-; Chiamanti diretti: H033+$0E52, H033+$0F3A, H033+$0ED6, H033+$1032
+; ROUTINE: sub_H033_0000084C [partial]
+; Purpose: Routine of the shared vectors and services of actions/items module; calls H029+$0354, H029+$0312, H003+$0068, H026+$01E0.
+;   - Calls H029+$0354.
+;   - Calls H029+$0312.
+;   - Calls H003+$0068.
+;   - Calls H026+$01E0.
+;   - Calls H045+$01D6.
+; Direct callers: H033+$0E52, H033+$0F3A, H033+$0ED6, H033+$1032
 ; --------------------------------------------------------------------------
 L033_0000084C:
 ; H033+$0000084C: 2f0c  move.l a4, -(a7)
@@ -2325,11 +2325,11 @@ L033_00000C62:
 ; H033+$00000C62: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H033_00000C64 [parziale]
-; Scopo: Routine del modulo vettori e servizi condivisi di azioni/oggetti; richiama H029+$0354.
-;   - Richiama H029+$0354.
-;   - Usa lo stato globale: H005+$3DE3 (contesto nativo, 5 nel combattimento).
-; Chiamanti diretti: H033+$0E14, H033+$0F14, H033+$0EB4
+; ROUTINE: sub_H033_00000C64 [partial]
+; Purpose: Routine of the shared vectors and services of actions/items module; calls H029+$0354.
+;   - Calls H029+$0354.
+;   - Uses the global state: H005+$3DE3 (native context, 5 in combat).
+; Direct callers: H033+$0E14, H033+$0F14, H033+$0EB4
 ; --------------------------------------------------------------------------
 L033_00000C64:
 ; H033+$00000C64: 2f0c  move.l a4, -(a7)
@@ -2473,7 +2473,7 @@ L033_00000D06:
 L033_00000D0A:
 ; H033+$00000D0A: 6700000e  beq.w $d1a
         beq.w H033+$D1A
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L033_00000D0E:
 ; H033+$00000D0E: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
@@ -2542,7 +2542,7 @@ L033_00000D60:
 L033_00000D62:
 ; H033+$00000D62: 38334000  move.w (a3, d4.w), d4
         move.w (a3, d4.w), d4
-; DISPATCH: word relative a H033+$0D4A; indici 0..4, default -1.
+; DISPATCH: words relative to H033+$0D4A; indices 0..4, default -1.
 L033_00000D66:
 ; H033+$00000D66: 4eb34000  jsr (a3, d4.w)
         jsr (a3, d4.w)
@@ -2568,13 +2568,13 @@ L033_00000D7A:
 ; H033+$00000D7A: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H033_00000D7C [parziale]
-; Scopo: Routine del modulo vettori e servizi condivisi di azioni/oggetti; richiama H029+$0354, H003+$0068, H026+$0188.
-;   - Richiama H029+$0354.
-;   - Richiama H003+$0068.
-;   - Richiama H026+$0188.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H065+$35C8
+; ROUTINE: sub_H033_00000D7C [partial]
+; Purpose: Routine of the shared vectors and services of actions/items module; calls H029+$0354, H003+$0068, H026+$0188.
+;   - Calls H029+$0354.
+;   - Calls H003+$0068.
+;   - Calls H026+$0188.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H065+$35C8
 ; --------------------------------------------------------------------------
 L033_00000D7C:
 ; H033+$00000D7C: 2f0c  move.l a4, -(a7)
@@ -2639,7 +2639,7 @@ L033_00000DCC:
 L033_00000DD0:
 ; H033+$00000DD0: 342dfffe  move.w -$2(a5), d2
         move.w -$2(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L033_00000DD4:
 ; H033+$00000DD4: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -2658,14 +2658,14 @@ L033_00000DE4:
 L033_00000DE6:
 ; H033+$00000DE6: 6300006e  bls.w $e56
         bls.w H033+$E56
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L033_00000DEA:
 ; H033+$00000DEA: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
 L033_00000DF0:
 ; H033+$00000DF0: 342dfffe  move.w -$2(a5), d2
         move.w -$2(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L033_00000DF4:
 ; H033+$00000DF4: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -2706,7 +2706,7 @@ L033_00000E1C:
 L033_00000E20:
 ; H033+$00000E20: 342dfffe  move.w -$2(a5), d2
         move.w -$2(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L033_00000E24:
 ; H033+$00000E24: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -2728,7 +2728,7 @@ L033_00000E38:
 L033_00000E3C:
 ; H033+$00000E3C: 342dfffe  move.w -$2(a5), d2
         move.w -$2(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L033_00000E40:
 ; H033+$00000E40: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -2768,7 +2768,7 @@ L033_00000E6A:
 L033_00000E6E:
 ; H033+$00000E6E: 342dfffe  move.w -$2(a5), d2
         move.w -$2(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L033_00000E72:
 ; H033+$00000E72: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -2787,14 +2787,14 @@ L033_00000E82:
 L033_00000E86:
 ; H033+$00000E86: 63000052  bls.w $eda
         bls.w H033+$EDA
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L033_00000E8A:
 ; H033+$00000E8A: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
 L033_00000E90:
 ; H033+$00000E90: 342dfffe  move.w -$2(a5), d2
         move.w -$2(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L033_00000E94:
 ; H033+$00000E94: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -2835,7 +2835,7 @@ L033_00000EBC:
 L033_00000EC0:
 ; H033+$00000EC0: 342dfffe  move.w -$2(a5), d2
         move.w -$2(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L033_00000EC4:
 ; H033+$00000EC4: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -2878,7 +2878,7 @@ L033_00000EF2:
 L033_00000EF6:
 ; H033+$00000EF6: 5342  subq.w #$1, d2
         subq.w #$1, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L033_00000EF8:
 ; H033+$00000EF8: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -2891,7 +2891,7 @@ L033_00000F02:
 L033_00000F06:
 ; H033+$00000F06: 67000036  beq.w $f3e
         beq.w H033+$F3E
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L033_00000F0A:
 ; H033+$00000F0A: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -2910,7 +2910,7 @@ L033_00000F1A:
 L033_00000F1C:
 ; H033+$00000F1C: 67000020  beq.w $f3e
         beq.w H033+$F3E
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L033_00000F20:
 ; H033+$00000F20: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -2983,7 +2983,7 @@ L033_00000F6A:
 L033_00000F6C:
 ; H033+$00000F6C: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L033_00000F6E:
 ; H033+$00000F6E: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3023,7 +3023,7 @@ L033_00000FA2:
 L033_00000FA6:
 ; H033+$00000FA6: 5342  subq.w #$1, d2
         subq.w #$1, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L033_00000FA8:
 ; H033+$00000FA8: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3114,7 +3114,7 @@ L033_00001016:
 L033_0000101A:
 ; H033+$0000101A: 5342  subq.w #$1, d2
         subq.w #$1, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L033_0000101C:
 ; H033+$0000101C: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3171,7 +3171,7 @@ L033_00001064:
 L033_00001066:
 ; H033+$00001066: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H033+$104A; indici 0..6, default -1.
+; DISPATCH: words relative to H033+$104A; indices 0..6, default -1.
 L033_0000106A:
 ; H033+$0000106A: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -3459,14 +3459,14 @@ L033_000011FA:
 ; H033+$000011FA: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H033_000011FC [parziale]
-; Scopo: Routine del modulo vettori e servizi condivisi di azioni/oggetti; richiama H063+$2FAA, H063+$321A, H063+$3A26, H029+$03E2.
-;   - Richiama H063+$2FAA.
-;   - Richiama H063+$321A.
-;   - Richiama H063+$3A26.
-;   - Richiama H029+$03E2.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente); H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H096+$287A, H096+$2948, H097+$07CA
+; ROUTINE: sub_H033_000011FC [partial]
+; Purpose: Routine of the shared vectors and services of actions/items module; calls H063+$2FAA, H063+$321A, H063+$3A26, H029+$03E2.
+;   - Calls H063+$2FAA.
+;   - Calls H063+$321A.
+;   - Calls H063+$3A26.
+;   - Calls H029+$03E2.
+;   - Uses the global state: H005+$3368 (current character); H005+$3364 (head of the party list).
+; Direct callers: H096+$287A, H096+$2948, H097+$07CA
 ; --------------------------------------------------------------------------
 L033_000011FC:
 ; H033+$000011FC: 2f0c  move.l a4, -(a7)
@@ -3670,11 +3670,11 @@ L033_000012DE:
 L033_000012E4:
 ; H033+$000012E4: 6600000c  bne.w $12f2
         bne.w H033+$12F2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L033_000012E8:
 ; H033+$000012E8: 23f9000033680000251c  move.l $3368.l, $251c.l
         move.l (H005+$3368).l, (H005+$251C).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L033_000012F2:
 ; H033+$000012F2: 23f90000336800002520  move.l $3368.l, $2520.l
         move.l (H005+$3368).l, (H005+$2520).l
@@ -3779,7 +3779,7 @@ L033_00001380:
 L033_00001382:
 ; H033+$00001382: 47f900002520  lea.l $2520.l, a3
         lea.l (H005+$2520).l, a3
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L033_00001388:
 ; H033+$00001388: 27b9000033642000  move.l $3364.l, (a3, d2.w)
         move.l (H005+$3364).l, (a3, d2.w)
@@ -3894,7 +3894,7 @@ L033_00001412:
 L033_00001414:
 ; H033+$00001414: 38334000  move.w (a3, d4.w), d4
         move.w (a3, d4.w), d4
-; DISPATCH: word relative a H033+$13FC; indici 0..3, default -1.
+; DISPATCH: words relative to H033+$13FC; indices 0..3, default -1.
 L033_00001418:
 ; H033+$00001418: 4eb34000  jsr (a3, d4.w)
         jsr (a3, d4.w)
@@ -3914,17 +3914,17 @@ L033_00001424:
 ; H033+$00001424: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H033_00001426 [parziale]
-; Scopo: Routine del modulo vettori e servizi condivisi di azioni/oggetti; richiama H030+$0256, H008+$203C, H063+$1B90, H063+$2178.
-;   - Richiama H030+$0256.
-;   - Richiama H008+$203C.
-;   - Richiama H063+$1B90.
-;   - Richiama H063+$2178.
-;   - Richiama H048+$0F88.
-;   - Richiama H048+$0FBA.
-;   - Richiama H077+$0508.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente); H005+$3DE3 (contesto nativo, 5 nel combattimento).
-; Chiamanti diretti: H057+$0C80, H059+$1160, H097+$1EDC, H065+$3180, H070+$1352, H065+$320A e altri 2
+; ROUTINE: sub_H033_00001426 [partial]
+; Purpose: Routine of the shared vectors and services of actions/items module; calls H030+$0256, H008+$203C, H063+$1B90, H063+$2178.
+;   - Calls H030+$0256.
+;   - Calls H008+$203C.
+;   - Calls H063+$1B90.
+;   - Calls H063+$2178.
+;   - Calls H048+$0F88.
+;   - Calls H048+$0FBA.
+;   - Calls H077+$0508.
+;   - Uses the global state: H005+$3368 (current character); H005+$3DE3 (native context, 5 in combat).
+; Direct callers: H057+$0C80, H059+$1160, H097+$1EDC, H065+$3180, H070+$1352, H065+$320A and 2 more
 ; --------------------------------------------------------------------------
 L033_00001426:
 ; H033+$00001426: 2f0c  move.l a4, -(a7)
@@ -3935,14 +3935,14 @@ L033_00001428:
 L033_0000142C:
 ; H033+$0000142C: 4e55ffee  link.w a5, #$ffee
         link.w a5, #$ffee
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L033_00001430:
 ; H033+$00001430: 2b7900003368fff2  move.l $3368.l, -$e(a5)
         move.l (H005+$3368).l, -$e(a5)
 L033_00001438:
 ; H033+$00001438: 1b7c0001ffff  move.b #$1, -$1(a5)
         move.b #$1, -$1(a5)
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L033_0000143E:
 ; H033+$0000143E: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
@@ -4009,7 +4009,7 @@ L033_0000148A:
 L033_0000148E:
 ; H033+$0000148E: 48732000  pea.l (a3, d2.w)
         pea.l (a3, d2.w)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L033_00001492:
 ; H033+$00001492: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -4031,7 +4031,7 @@ L033_000014A6:
 L033_000014AA:
 ; H033+$000014AA: 486c0055  pea.l $55(a4)
         pea.l $55(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L033_000014AE:
 ; H033+$000014AE: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -4094,7 +4094,7 @@ L033_000014F8:
 L033_000014FC:
 ; H033+$000014FC: 486c0075  pea.l $75(a4)
         pea.l $75(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L033_00001500:
 ; H033+$00001500: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -4116,7 +4116,7 @@ L033_00001514:
 L033_00001518:
 ; H033+$00001518: 486c007f  pea.l $7f(a4)
         pea.l $7f(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L033_0000151C:
 ; H033+$0000151C: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -4223,7 +4223,7 @@ L033_000015A2:
 L033_000015A6:
 ; H033+$000015A6: 422dffff  clr.b -$1(a5)
         clr.b -$1(a5)
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L033_000015AA:
 ; H033+$000015AA: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
@@ -4325,7 +4325,7 @@ L033_0000162E:
 L033_00001632:
 ; H033+$00001632: 3f3c0013  move.w #$13, -(a7)
         move.w #$13, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L033_00001636:
 ; H033+$00001636: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
@@ -4335,7 +4335,7 @@ L033_0000163C:
 L033_0000163E:
 ; H033+$0000163E: 3f3c000f  move.w #$f, -(a7)
         move.w #$f, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L033_00001642:
 ; H033+$00001642: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
@@ -4345,7 +4345,7 @@ L033_00001648:
 L033_0000164A:
 ; H033+$0000164A: 3f3c0002  move.w #$2, -(a7)
         move.w #$2, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L033_0000164E:
 ; H033+$0000164E: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
@@ -4375,7 +4375,7 @@ L033_00001672:
 L033_00001674:
 ; H033+$00001674: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H033+$1658; indici 0..4, default -1.
+; DISPATCH: words relative to H033+$1658; indices 0..4, default -1.
 L033_00001678:
 ; H033+$00001678: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -4529,7 +4529,7 @@ L033_0000173C:
 L033_00001742:
 ; H033+$00001742: 6000006c  bra.w $17b0
         bra.w H033+$17B0
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L033_00001746:
 ; H033+$00001746: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
@@ -4612,7 +4612,7 @@ L033_000017B0:
 L033_000017B4:
 ; H033+$000017B4: 4eb900001ee8  jsr $1ee8.l
         jsr (H063+$1EE8).l
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L033_000017BA:
 ; H033+$000017BA: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
@@ -4651,10 +4651,10 @@ L033_000017E4:
 ; H033+$000017E4: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H033_000017E6 [parziale]
-; Scopo: Routine del modulo vettori e servizi condivisi di azioni/oggetti; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H057+$0808, H057+$0670, H065+$28FA, H033+$0712, H065+$1C78, H065+$2FA0 e altri 5
+; ROUTINE: sub_H033_000017E6 [partial]
+; Purpose: Routine of the shared vectors and services of actions/items module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H057+$0808, H057+$0670, H065+$28FA, H033+$0712, H065+$1C78, H065+$2FA0 and 5 more
 ; --------------------------------------------------------------------------
 L033_000017E6:
 ; H033+$000017E6: 2f0c  move.l a4, -(a7)
@@ -4731,11 +4731,11 @@ L033_00001834:
 ; H033+$00001834: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H033_00001836 [parziale]
-; Scopo: Routine del modulo vettori e servizi condivisi di azioni/oggetti; richiama H029+$0354, H063+$1BE8.
-;   - Richiama H029+$0354.
-;   - Richiama H063+$1BE8.
-; Chiamanti diretti: H065+$3274, H058+$0E2E
+; ROUTINE: sub_H033_00001836 [partial]
+; Purpose: Routine of the shared vectors and services of actions/items module; calls H029+$0354, H063+$1BE8.
+;   - Calls H029+$0354.
+;   - Calls H063+$1BE8.
+; Direct callers: H065+$3274, H058+$0E2E
 ; --------------------------------------------------------------------------
 L033_00001836:
 ; H033+$00001836: 2f0c  move.l a4, -(a7)
@@ -4887,17 +4887,17 @@ L033_000018EC:
 ; H033+$000018EC: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H033_000018EE [parziale]
-; Scopo: Routine del modulo vettori e servizi condivisi di azioni/oggetti; richiama H063+$1DC2, H030+$0B6C, H026+$01E0, H030+$0256.
-;   - Richiama H063+$1DC2.
-;   - Richiama H030+$0B6C.
-;   - Richiama H026+$01E0.
-;   - Richiama H030+$0256.
-;   - Richiama H063+$1F34.
-;   - Richiama H026+$000C.
-;   - Richiama H030+$0B4A.
-;   - Usa lo stato globale: H005+$3DE3 (contesto nativo, 5 nel combattimento).
-; Chiamanti diretti: H033+$1578, H058+$0E4A, H058+$0D04
+; ROUTINE: sub_H033_000018EE [partial]
+; Purpose: Routine of the shared vectors and services of actions/items module; calls H063+$1DC2, H030+$0B6C, H026+$01E0, H030+$0256.
+;   - Calls H063+$1DC2.
+;   - Calls H030+$0B6C.
+;   - Calls H026+$01E0.
+;   - Calls H030+$0256.
+;   - Calls H063+$1F34.
+;   - Calls H026+$000C.
+;   - Calls H030+$0B4A.
+;   - Uses the global state: H005+$3DE3 (native context, 5 in combat).
+; Direct callers: H033+$1578, H058+$0E4A, H058+$0D04
 ; --------------------------------------------------------------------------
 L033_000018EE:
 ; H033+$000018EE: 2f0c  move.l a4, -(a7)
@@ -4944,7 +4944,7 @@ L033_00001914:
 L033_00001916:
 ; H033+$00001916: 51cafffc  dbra d2, $1914
         dbra d2, H033+$1914
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L033_0000191A:
 ; H033+$0000191A: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
@@ -5047,7 +5047,7 @@ L033_00001994:
 L033_00001998:
 ; H033+$00001998: 486dffae  pea.l -$52(a5)
         pea.l -$52(a5)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L033_0000199C:
 ; H033+$0000199C: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -5123,7 +5123,7 @@ L033_000019F0:
 L033_000019F4:
 ; H033+$000019F4: 2f2d000e  move.l $e(a5), -(a7)
         move.l $e(a5), -(a7)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L033_000019F8:
 ; H033+$000019F8: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -5157,7 +5157,7 @@ L033_00001A1A:
 L033_00001A1E:
 ; H033+$00001A1E: 48732000  pea.l (a3, d2.w)
         pea.l (a3, d2.w)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L033_00001A22:
 ; H033+$00001A22: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -5203,10 +5203,10 @@ L033_00001A4E:
 ; H033+$00001A4E: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H033_00001A50 [parziale]
-; Scopo: Routine del modulo vettori e servizi condivisi di azioni/oggetti; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H006+$0908
+; ROUTINE: sub_H033_00001A50 [partial]
+; Purpose: Routine of the shared vectors and services of actions/items module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H006+$0908
 ; --------------------------------------------------------------------------
 L033_00001A50:
 ; H033+$00001A50: 2f0c  move.l a4, -(a7)

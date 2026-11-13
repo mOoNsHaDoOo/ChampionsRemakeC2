@@ -1,27 +1,27 @@
-# Champions of Krynn - port asm -> C, build host con CMake e SDL2.
+# Champions of Krynn - asm -> C port, host build with CMake and SDL2.
 #
 # Linux / macOS:
 #   cmake -S . -B build-cmake -DCMAKE_BUILD_TYPE=Release
 #   cmake --build build-cmake
 #
-# Visual Studio 2022 (x86 o x64), con SDL2 scaricata da NuGet:
+# Visual Studio 2022 (x86 or x64), with SDL2 downloaded from NuGet:
 #   windows\get-sdl2-nuget.cmd
-#   cmake --preset vs2022-x64      oppure   cmake --preset vs2022-x86
+#   cmake --preset vs2022-x64      or       cmake --preset vs2022-x86
 #   cmake --build --preset vs2022-x64-release
 #
-# Il build Amiga (SAS/C) usa lo smakefile, non questo file.
+# The Amiga build (SAS/C) uses the smakefile, not this file.
 cmake_minimum_required(VERSION 3.16)
 project(ChampionsOfKrynn LANGUAGES C)
 
-option(COK_BUILD_TESTS "Compila i test delle singole routine" ON)
+option(COK_BUILD_TESTS "Build the tests of the single routines" ON)
 
-# SDL2, in quest'ordine:
-#  1. Windows: la cartella preparata da windows/get-sdl2-nuget.ps1
-#     (pacchetti NuGet sdl2.nuget / sdl2.nuget.redist), x86 o x64;
-#  2. il pacchetto CMake (vcpkg, SDL2-devel-VC, Homebrew, distribuzioni);
+# SDL2, in this order:
+#  1. Windows: the folder prepared by windows/get-sdl2-nuget.ps1
+#     (NuGet packages sdl2.nuget / sdl2.nuget.redist), x86 or x64;
+#  2. the CMake package (vcpkg, SDL2-devel-VC, Homebrew, distributions);
 #  3. pkg-config.
 set(COK_SDL2_NUGET_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/sdl2-nuget"
-    CACHE PATH "SDL2 scaricata da NuGet (windows/get-sdl2-nuget.ps1)")
+    CACHE PATH "SDL2 downloaded from NuGet (windows/get-sdl2-nuget.ps1)")
 if(WIN32 AND EXISTS "${COK_SDL2_NUGET_DIR}/include/SDL.h")
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
         set(COK_SDL2_ARCH x64)
@@ -34,7 +34,7 @@ if(WIN32 AND EXISTS "${COK_SDL2_NUGET_DIR}/include/SDL.h")
         IMPORTED_LOCATION "${COK_SDL2_NUGET_DIR}/bin/${COK_SDL2_ARCH}/SDL2.dll"
         INTERFACE_INCLUDE_DIRECTORIES "${COK_SDL2_NUGET_DIR}/include")
     set(COK_SDL2_TARGET cok_sdl2)
-    message(STATUS "SDL2 da NuGet: ${COK_SDL2_NUGET_DIR} (${COK_SDL2_ARCH})")
+    message(STATUS "SDL2 from NuGet: ${COK_SDL2_NUGET_DIR} (${COK_SDL2_ARCH})")
 endif()
 if(NOT COK_SDL2_TARGET)
     find_package(SDL2 CONFIG QUIET)
@@ -53,10 +53,10 @@ else()
         set(COK_SDL2_TARGET PkgConfig::SDL2)
     else()
         message(FATAL_ERROR
-            "SDL2 non trovata. Su Windows: windows\\get-sdl2-nuget.cmd. "
-            "Altrimenti installare SDL2 (libsdl2-dev, brew install sdl2, "
-            "vcpkg install sdl2) o indicare -DSDL2_DIR=<dir>/cmake del "
-            "pacchetto SDL2-devel.")
+            "SDL2 not found. On Windows: windows\\get-sdl2-nuget.cmd. "
+            "Otherwise install SDL2 (libsdl2-dev, brew install sdl2, "
+            "vcpkg install sdl2) or pass -DSDL2_DIR=<dir>/cmake of the "
+            "SDL2-devel package.")
     endif()
 endif()
 
@@ -83,7 +83,7 @@ else()
     target_compile_options(cok PRIVATE -Wall -Wextra -pedantic)
 endif()
 
-# Windows: copia SDL2.dll accanto all'eseguibile.
+# Windows: copies SDL2.dll next to the executable.
 if(WIN32)
     get_target_property(COK_SDL2_TYPE ${COK_SDL2_TARGET} TYPE)
     if(COK_SDL2_TYPE STREQUAL "SHARED_LIBRARY")
@@ -102,8 +102,8 @@ if(COK_BUILD_TESTS)
     endif()
     add_test(NAME h015_runtime COMMAND h015_test)
 
-    # Read_ILBM (H040..H099) su un file .lbm: ilbm_test file.lbm out.bin,
-    # poi scripts/check_ilbm.py file.lbm out.bin (decoder indipendente).
+    # Read_ILBM (H040..H099) on a .lbm file: ilbm_test file.lbm out.bin,
+    # then scripts/check_ilbm.py file.lbm out.bin (independent decoder).
     add_executable(ilbm_test tests/ilbm_test.c h040.c h086.c h087.c h088.c
                    h054.c h099.c h039.c h098.c h002_dos.c h003_exec.c
                    h015_runtime.c h037.c ${COK_HOST_SOURCES})
@@ -112,8 +112,8 @@ if(COK_BUILD_TESTS)
     if(MSVC)
         target_compile_definitions(ilbm_test PRIVATE _CRT_SECURE_NO_WARNINGS)
     endif()
-    # DAX_LoadBlock (H028): dax_test nome .ext id out.bin, poi
-    # scripts/check_dax.py file id out.bin (lettore indipendente).
+    # DAX_LoadBlock (H028): dax_test name .ext id out.bin, then
+    # scripts/check_dax.py file id out.bin (independent reader).
     add_executable(dax_test tests/dax_test.c h028_files.c h026_string.c h041.c
                    h031.c h021_intuition.c h002_dos.c h003_exec.c globals.c
                    ${COK_HOST_SOURCES})
@@ -123,8 +123,8 @@ if(COK_BUILD_TESTS)
         target_compile_definitions(dax_test PRIVATE _CRT_SECURE_NO_WARNINGS)
     endif()
 
-    # Con -DCOK_TEST_DATA=<cartella dei file del gioco> anche ctest lo usa.
-    set(COK_TEST_DATA "" CACHE PATH "Cartella dei file del gioco per i test")
+    # With -DCOK_TEST_DATA=<folder of the game files> ctest uses it too.
+    set(COK_TEST_DATA "" CACHE PATH "Folder of the game files for the tests")
     find_package(Python3 COMPONENTS Interpreter QUIET)
     if(COK_TEST_DATA AND Python3_FOUND)
         foreach(lbm gothic.lbm scrn1b.lbm scrn2.lbm text1.lbm text2.lbm

@@ -1,8 +1,8 @@
 ; ============================================================================
-; GUIDA DEL MODULO H018
-; Adattatori Exec per apertura/chiusura librerie.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H018
+; Exec adapters for opening/closing libraries.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; H018: 192 original bytes; all offsets are section-relative.
@@ -11,10 +11,10 @@ H018:
 ; Preserved bytes H018+$00000000..$00000004; code/data not fully classified.
         dc.l H018+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H018_00000004 [parziale]
-; Scopo: Routine del modulo adattatori Exec per apertura/chiusura librerie; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H000+$002A
+; ROUTINE: sub_H018_00000004 [partial]
+; Purpose: Routine of the Exec adapters for opening/closing libraries module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H000+$002A
 ; --------------------------------------------------------------------------
 L018_00000004:
 ; H018+$00000004: 4e75  rts 
@@ -23,10 +23,10 @@ L018_00000004:
         dc.w $226F,$0004,$2C78,$0004,$2F57,$0004,$588F,$4EEE
         dc.w $FE74
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_CloseLibrary [parziale]
-; Scopo: Adattatore a exec.library/CloseLibrary; incapsula la chiamata alla libreria.
-;   - Chiama exec.library/CloseLibrary (LVO -414).
-; Chiamanti diretti: H029+$1482, H029+$14E0
+; ROUTINE: wrapper_CloseLibrary [partial]
+; Purpose: Adapter to exec.library/CloseLibrary; wraps the library call.
+;   - Calls exec.library/CloseLibrary (LVO -414).
+; Direct callers: H029+$1482, H029+$14E0
 ; --------------------------------------------------------------------------
 L018_00000018:
 ; H018+$00000018: 226f0004  movea.l $4(a7), a1
@@ -49,10 +49,10 @@ L018_00000026:
         dc.w $226F,$0010,$246F,$000C,$202F,$0008,$222F,$0004
         dc.w $2C78,$0004,$2F57,$0014,$4FEF,$0014,$4EEE,$FFAC
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_OpenLibrary [parziale]
-; Scopo: Adattatore a exec.library/OpenLibrary; incapsula la chiamata alla libreria.
-;   - Chiama exec.library/OpenLibrary (LVO -552).
-; Chiamanti diretti: H029+$1450, H029+$1464
+; ROUTINE: wrapper_OpenLibrary [partial]
+; Purpose: Adapter to exec.library/OpenLibrary; wraps the library call.
+;   - Calls exec.library/OpenLibrary (LVO -552).
+; Direct callers: H029+$1450, H029+$1464
 ; --------------------------------------------------------------------------
 L018_0000006A:
 ; H018+$0000006A: 226f0008  movea.l $8(a7), a1

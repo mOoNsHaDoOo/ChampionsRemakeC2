@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H006
-; Preparazione ambiente, percorsi, stato e risorse comuni.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H006
+; Preparation of environment, paths, state and common resources.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Prepara percorsi, assegnazioni, buffer persistenti e risorse comuni. I quattro buffer principali sono H005+$3E04 (2048 byte), H005+$3E00 (2048), H005+$3DFC (1024) e H005+$3DF8 (7680, programma ECL).
+; MODULE NOTE
+; Prepares paths, assignments, persistent buffers and shared resources. The four main buffers are H005+$3E04 (2048 bytes), H005+$3E00 (2048), H005+$3DFC (1024) and H005+$3DF8 (7680, ECL program).
 ; --------------------------------------------------------------------------
 ; H006: 3020 original bytes; all offsets are section-relative.
         section H006,code
@@ -30,10 +30,10 @@ H006:
         dc.w $4D53,$0000,$0000,$0000
         dc.l H006+$00000040
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H006 [parziale]
-; Scopo: Ingresso del modulo preparazione ambiente, percorsi, stato e risorse comuni; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H006+$0BC4.
-; Chiamanti diretti: H000+$01E6
+; ROUTINE: module_init_H006 [partial]
+; Purpose: Entry of the setup of environment, paths, state and shared resources module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H006+$0BC4.
+; Direct callers: H000+$01E6
 ; --------------------------------------------------------------------------
 L006_000000EC:
 ; H006+$000000EC: 2f0c  move.l a4, -(a7)
@@ -48,12 +48,12 @@ L006_000000F6:
 ; H006+$000000F6: 60000acc  bra.w $bc4
         bra.w H006+$BC4
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H006_000000FA [parziale]
-; Scopo: Routine del modulo preparazione ambiente, percorsi, stato e risorse comuni; richiama H029+$0A0E, H016+$0014, H029+$067A.
-;   - Richiama H029+$0A0E.
-;   - Richiama H016+$0014.
-;   - Richiama H029+$067A.
-; Chiamanti diretti: H006+$0746
+; ROUTINE: sub_H006_000000FA [partial]
+; Purpose: Routine of the setup of environment, paths, state and shared resources module; calls H029+$0A0E, H016+$0014, H029+$067A.
+;   - Calls H029+$0A0E.
+;   - Calls H016+$0014.
+;   - Calls H029+$067A.
+; Direct callers: H006+$0746
 ; --------------------------------------------------------------------------
 L006_000000FA:
 ; H006+$000000FA: 2f0c  move.l a4, -(a7)
@@ -85,7 +85,7 @@ L006_00000118:
 L006_0000011C:
 ; H006+$0000011C: 486dfffc  pea.l -$4(a5)
         pea.l -$4(a5)
-; FLUSSO: Chiama Load_IndexedGraphicRecord (H029+$0A0E).
+; FLOW: Calls Load_IndexedGraphicRecord (H029+$0A0E).
 L006_00000120:
 ; H006+$00000120: 4eb900000a0e  jsr $a0e.l
         jsr (H029+$A0E).l
@@ -196,7 +196,7 @@ L006_0000019A:
 L006_0000019E:
 ; H006+$0000019E: 486dfffc  pea.l -$4(a5)
         pea.l -$4(a5)
-; FLUSSO: Chiama Free_GraphicRecord (H029+$067A).
+; FLOW: Calls Free_GraphicRecord (H029+$067A).
 L006_000001A2:
 ; H006+$000001A2: 4eb90000067a  jsr $67a.l
         jsr (H029+$67A).l
@@ -211,13 +211,13 @@ L006_000001AC:
         rts 
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Initialize_GameEnvironment [verificato]
-; Scopo: Alloca i blocchi di stato e prepara risorse condivise del gioco.
-;   - Imposta percorso save e assegnazioni Disk One/Two/Three nel ramo previsto.
-;   - Alloca 2048, 2048 e 1024 byte di stato e 7680 byte per il buffer ECL.
-;   - Predispone record bitmap e richiama la preparazione del display H029+$1346.
-;   - Inizializza campi di stato e tabelle usate dal gioco.
-; Chiamanti diretti: H001+$010C
+; ROUTINE: Initialize_GameEnvironment [verified]
+; Purpose: Allocates the state blocks and prepares shared resources of the game.
+;   - Sets the save path and the Disk One/Two/Three assignments in the expected branch.
+;   - Allocates 2048, 2048 and 1024 bytes of state and 7680 bytes for the ECL buffer.
+;   - Sets up the bitmap record and calls the display setup H029+$1346.
+;   - Initialises state fields and tables used by the game.
+; Direct callers: H001+$010C
 ; --------------------------------------------------------------------------
 L006_000001AE:
 ; H006+$000001AE: 2f0c  move.l a4, -(a7)
@@ -228,14 +228,14 @@ L006_000001B0:
 L006_000001B4:
 ; H006+$000001B4: 4e55fff2  link.w a5, #$fff2
         link.w a5, #$fff2
-; STATO: H005+$246E = selettore del gruppo risorse
+; STATE: H005+$246E = resource group selector
 L006_000001B8:
 ; H006+$000001B8: 42390000246e  clr.b $246e.l
         clr.b (H005+$246E).l
 L006_000001BE:
 ; H006+$000001BE: 3f3c0050  move.w #$50, -(a7)
         move.w #$50, -(a7)
-; STATO: H005+$3D26 = prefisso dei file dati
+; STATE: H005+$3D26 = prefix of the data files
 L006_000001C2:
 ; H006+$000001C2: 487900003d26  pea.l $3d26.l
         pea.l (H005+$3D26).l
@@ -261,7 +261,7 @@ L006_000001DC:
 L006_000001E0:
 ; H006+$000001E0: 47ec000c  lea.l $c(a4), a3
         lea.l $c(a4), a3
-; STATO: H005+$3CD4 = percorso del salvataggio
+; STATE: H005+$3CD4 = path of the saved games
 L006_000001E4:
 ; H006+$000001E4: 45f900003cd4  lea.l $3cd4.l, a2
         lea.l (H005+$3CD4).l, a2
@@ -280,7 +280,7 @@ L006_000001F2:
 L006_000001F6:
 ; H006+$000001F6: 47ec0015  lea.l $15(a4), a3
         lea.l $15(a4), a3
-; STATO: H005+$3CD4 = percorso del salvataggio
+; STATE: H005+$3CD4 = path of the saved games
 L006_000001FA:
 ; H006+$000001FA: 45f900003cd4  lea.l $3cd4.l, a2
         lea.l (H005+$3CD4).l, a2
@@ -413,11 +413,11 @@ L006_00000280:
 L006_00000288:
 ; H006+$00000288: 423900002489  clr.b $2489.l
         clr.b (H005+$2489).l
-; STATO: H005+$2356 = coordinata mouse X
+; STATE: H005+$2356 = mouse X coordinate
 L006_0000028E:
 ; H006+$0000028E: 33fc00a000002356  move.w #$a0, $2356.l
         move.w #$a0, (H005+$2356).l
-; STATO: H005+$2354 = coordinata mouse Y
+; STATE: H005+$2354 = mouse Y coordinate
 L006_00000296:
 ; H006+$00000296: 33fc006400002354  move.w #$64, $2354.l
         move.w #$64, (H005+$2354).l
@@ -427,7 +427,7 @@ L006_0000029E:
 L006_000002A4:
 ; H006+$000002A4: 427900002350  clr.w $2350.l
         clr.w (H005+$2350).l
-; PASSO: Alloca stato persistente A: 2048 byte, puntatore globale H005+$3E04.
+; STEP: Allocates persistent state A: 2048 bytes, global pointer H005+$3E04.
 L006_000002AA:
 ; H006+$000002AA: 243c00000800  move.l #$800, d2
         move.l #$800, d2
@@ -441,11 +441,11 @@ L006_000002B2:
 L006_000002B8:
 ; H006+$000002B8: 4eb900000068  jsr $68.l
         jsr (H003+$68).l
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L006_000002BE:
 ; H006+$000002BE: 23c000003e04  move.l d0, $3e04.l
         move.l d0, (H005+$3E04).l
-; PASSO: Alloca stato persistente B: 2048 byte, puntatore H005+$3E00.
+; STEP: Allocates persistent state B: 2048 bytes, pointer H005+$3E00.
 L006_000002C4:
 ; H006+$000002C4: 243c00000800  move.l #$800, d2
         move.l #$800, d2
@@ -459,11 +459,11 @@ L006_000002CC:
 L006_000002D2:
 ; H006+$000002D2: 4eb900000068  jsr $68.l
         jsr (H003+$68).l
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L006_000002D8:
 ; H006+$000002D8: 23c000003e00  move.l d0, $3e00.l
         move.l d0, (H005+$3E00).l
-; PASSO: Alloca stato persistente C: 1024 byte, puntatore H005+$3DFC.
+; STEP: Allocates persistent state C: 1024 bytes, pointer H005+$3DFC.
 L006_000002DE:
 ; H006+$000002DE: 243c00000400  move.l #$400, d2
         move.l #$400, d2
@@ -477,11 +477,11 @@ L006_000002E6:
 L006_000002EC:
 ; H006+$000002EC: 4eb900000068  jsr $68.l
         jsr (H003+$68).l
-; STATO: H005+$3DFC = puntatore stato persistente C, 1024 byte
+; STATE: H005+$3DFC = pointer to persistent state C, 1024 bytes
 L006_000002F2:
 ; H006+$000002F2: 23c000003dfc  move.l d0, $3dfc.l
         move.l d0, (H005+$3DFC).l
-; PASSO: Alloca il buffer di programma ECL: $1E00 = 7680 byte, puntatore H005+$3DF8.
+; STEP: Allocates the ECL program buffer: $1E00 = 7680 bytes, pointer H005+$3DF8.
 L006_000002F8:
 ; H006+$000002F8: 243c00001e00  move.l #$1e00, d2
         move.l #$1e00, d2
@@ -495,7 +495,7 @@ L006_00000300:
 L006_00000306:
 ; H006+$00000306: 4eb900000068  jsr $68.l
         jsr (H003+$68).l
-; STATO: H005+$3DF8 = puntatore al buffer ECL
+; STATE: H005+$3DF8 = pointer to the ECL buffer
 L006_0000030C:
 ; H006+$0000030C: 23c000003df8  move.l d0, $3df8.l
         move.l d0, (H005+$3DF8).l
@@ -528,7 +528,7 @@ L006_00000334:
 L006_0000033A:
 ; H006+$0000033A: 4eb900000068  jsr $68.l
         jsr (H003+$68).l
-; STATO: H005+$282A = puntatore ai quattro piani dati GEO
+; STATE: H005+$282A = pointer to the four GEO data planes
 L006_00000340:
 ; H006+$00000340: 23c00000282a  move.l d0, $282a.l
         move.l d0, (H005+$282A).l
@@ -547,7 +547,7 @@ L006_00000352:
 L006_00000354:
 ; H006+$00000354: 487900003334  pea.l $3334.l
         pea.l (H005+$3334).l
-; FLUSSO: Chiama Allocate_GraphicRecord (H029+$0408).
+; FLOW: Calls Allocate_GraphicRecord (H029+$0408).
 L006_0000035A:
 ; H006+$0000035A: 4eb900000408  jsr $408.l
         jsr (H029+$408).l
@@ -566,7 +566,7 @@ L006_0000036C:
 L006_0000036E:
 ; H006+$0000036E: 487900003d8a  pea.l $3d8a.l
         pea.l (H005+$3D8A).l
-; FLUSSO: Chiama Allocate_GraphicRecord (H029+$0408).
+; FLOW: Calls Allocate_GraphicRecord (H029+$0408).
 L006_00000374:
 ; H006+$00000374: 4eb900000408  jsr $408.l
         jsr (H029+$408).l
@@ -585,53 +585,53 @@ L006_00000386:
 L006_0000038A:
 ; H006+$0000038A: 48790000332c  pea.l $332c.l
         pea.l (H005+$332C).l
-; FLUSSO: Chiama Allocate_GraphicRecord (H029+$0408).
+; FLOW: Calls Allocate_GraphicRecord (H029+$0408).
 L006_00000390:
 ; H006+$00000390: 4eb900000408  jsr $408.l
         jsr (H029+$408).l
 L006_00000396:
 ; H006+$00000396: 42b900003d8e  clr.l $3d8e.l
         clr.l (H005+$3D8E).l
-; FLUSSO: Chiama Prepare_DisplayResources (H029+$1346).
+; FLOW: Calls Prepare_DisplayResources (H029+$1346).
 L006_0000039C:
 ; H006+$0000039C: 4eb900001346  jsr $1346.l
         jsr (H029+$1346).l
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L006_000003A2:
 ; H006+$000003A2: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
 L006_000003A8:
 ; H006+$000003A8: 377c000303e8  move.w #$3, $3e8(a3)
         move.w #$3, $3e8(a3)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L006_000003AE:
 ; H006+$000003AE: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
 L006_000003B4:
 ; H006+$000003B4: 377c000101cc  move.w #$1, $1cc(a3)
         move.w #$1, $1cc(a3)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L006_000003BA:
 ; H006+$000003BA: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
 L006_000003C0:
 ; H006+$000003C0: 426b01e4  clr.w $1e4(a3)
         clr.w $1e4(a3)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L006_000003C4:
 ; H006+$000003C4: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
 L006_000003CA:
 ; H006+$000003CA: 377c000203f2  move.w #$2, $3f2(a3)
         move.w #$2, $3f2(a3)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L006_000003D0:
 ; H006+$000003D0: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
 L006_000003D6:
 ; H006+$000003D6: 377c000203f4  move.w #$2, $3f4(a3)
         move.w #$2, $3f4(a3)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L006_000003DC:
 ; H006+$000003DC: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -785,7 +785,7 @@ L006_000004AE:
 L006_000004B4:
 ; H006+$000004B4: 3f3c0007  move.w #$7, -(a7)
         move.w #$7, -(a7)
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L006_000004B8:
 ; H006+$000004B8: 48790000281c  pea.l $281c.l
         pea.l (H005+$281C).l
@@ -799,7 +799,7 @@ L006_000004C2:
 L006_000004C4:
 ; H006+$000004C4: 4eb900000312  jsr $312.l
         jsr (H029+$312).l
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L006_000004CA:
 ; H006+$000004CA: 33fc00070000281c  move.w #$7, $281c.l
         move.w #$7, (H005+$281C).l
@@ -825,7 +825,7 @@ L006_000004EE:
 L006_000004F2:
 ; H006+$000004F2: 4eb900000312  jsr $312.l
         jsr (H029+$312).l
-; STATO: H005+$2810 = tre elementi di stato degli insiemi pareti
+; STATE: H005+$2810 = three state elements of the wall sets
 L006_000004F8:
 ; H006+$000004F8: 427900002810  clr.w $2810.l
         clr.w (H005+$2810).l
@@ -850,7 +850,7 @@ L006_0000051A:
 L006_0000051C:
 ; H006+$0000051C: e542  asl.w #$2, d2
         asl.w #$2, d2
-; STATO: H005+$2810 = tre elementi di stato degli insiemi pareti
+; STATE: H005+$2810 = three state elements of the wall sets
 L006_0000051E:
 ; H006+$0000051E: 47f900002810  lea.l $2810.l, a3
         lea.l (H005+$2810).l, a3
@@ -866,7 +866,7 @@ L006_0000052E:
 L006_00000530:
 ; H006+$00000530: e542  asl.w #$2, d2
         asl.w #$2, d2
-; STATO: H005+$2810 = tre elementi di stato degli insiemi pareti
+; STATE: H005+$2810 = three state elements of the wall sets
 L006_00000532:
 ; H006+$00000532: 47f900002810  lea.l $2810.l, a3
         lea.l (H005+$2810).l, a3
@@ -897,22 +897,22 @@ L006_00000562:
 L006_00000568:
 ; H006+$00000568: 427900003dde  clr.w $3dde.l
         clr.w (H005+$3DDE).l
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L006_0000056E:
 ; H006+$0000056E: 42b900003364  clr.l $3364.l
         clr.l (H005+$3364).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L006_00000574:
 ; H006+$00000574: 42b900003368  clr.l $3368.l
         clr.l (H005+$3368).l
-; STATO: H005+$3DEA = PC logico ECL
+; STATE: H005+$3DEA = logical ECL PC
 L006_0000057A:
 ; H006+$0000057A: 33fc350000003dea  move.w #$3500, $3dea.l
         move.w #$3500, (H005+$3DEA).l
 L006_00000582:
 ; H006+$00000582: 33fc000400003df6  move.w #$4, $3df6.l
         move.w #$4, (H005+$3DF6).l
-; STATO: H005+$24D7 = flag del ramo demo
+; STATE: H005+$24D7 = flag of the demo branch
 L006_0000058A:
 ; H006+$0000058A: 4239000024d7  clr.b $24d7.l
         clr.b (H005+$24D7).l
@@ -922,7 +922,7 @@ L006_00000590:
 L006_00000598:
 ; H006+$00000598: 423900002825  clr.b $2825.l
         clr.b (H005+$2825).l
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L006_0000059E:
 ; H006+$0000059E: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -950,7 +950,7 @@ L006_000005C8:
 L006_000005CE:
 ; H006+$000005CE: 4239000024bd  clr.b $24bd.l
         clr.b (H005+$24BD).l
-; STATO: H005+$24D0 = richiesta di uscita dal ciclo scenario
+; STATE: H005+$24D0 = request to exit the scenario loop
 L006_000005D4:
 ; H006+$000005D4: 4239000024d0  clr.b $24d0.l
         clr.b (H005+$24D0).l
@@ -1029,7 +1029,7 @@ L006_0000065A:
 L006_00000660:
 ; H006+$00000660: 13fc000100002483  move.b #$1, $2483.l
         move.b #$1, (H005+$2483).l
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L006_00000668:
 ; H006+$00000668: 13fc000400003de3  move.b #$4, $3de3.l
         move.b #$4, (H005+$3DE3).l
@@ -1120,7 +1120,7 @@ L006_000006FA:
 L006_000006FE:
 ; H006+$000006FE: 486c006d  pea.l $6d(a4)
         pea.l $6d(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L006_00000702:
 ; H006+$00000702: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1260,7 +1260,7 @@ L006_000007B6:
 L006_000007B8:
 ; H006+$000007B8: 48790000280c  pea.l $280c.l
         pea.l (H005+$280C).l
-; FLUSSO: Chiama Load_IndexedGraphicRecord (H029+$0A0E).
+; FLOW: Calls Load_IndexedGraphicRecord (H029+$0A0E).
 L006_000007BE:
 ; H006+$000007BE: 4eb900000a0e  jsr $a0e.l
         jsr (H029+$A0E).l
@@ -1282,7 +1282,7 @@ L006_000007D4:
 L006_000007D6:
 ; H006+$000007D6: 487900002808  pea.l $2808.l
         pea.l (H005+$2808).l
-; FLUSSO: Chiama Load_IndexedGraphicRecord (H029+$0A0E).
+; FLOW: Calls Load_IndexedGraphicRecord (H029+$0A0E).
 L006_000007DC:
 ; H006+$000007DC: 4eb900000a0e  jsr $a0e.l
         jsr (H029+$A0E).l
@@ -1304,7 +1304,7 @@ L006_000007F2:
 L006_000007F6:
 ; H006+$000007F6: 487900002804  pea.l $2804.l
         pea.l (H005+$2804).l
-; FLUSSO: Chiama Load_IndexedGraphicRecord (H029+$0A0E).
+; FLOW: Calls Load_IndexedGraphicRecord (H029+$0A0E).
 L006_000007FC:
 ; H006+$000007FC: 4eb900000a0e  jsr $a0e.l
         jsr (H029+$A0E).l
@@ -1502,12 +1502,12 @@ L006_00000912:
 ; H006+$00000912: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H006_00000914 [parziale]
-; Scopo: Routine del modulo preparazione ambiente, percorsi, stato e risorse comuni; richiama H029+$0312, H008+$139E.
-;   - Richiama H029+$0312.
-;   - Richiama H008+$139E.
-;   - Usa lo stato globale: H005+$3E04 (puntatore stato persistente A, 2048 byte); H005+$3E00 (puntatore stato persistente B, 2048 byte); H005+$3DFC (puntatore stato persistente C, 1024 byte).
-; Chiamanti diretti: H001+$021C
+; ROUTINE: sub_H006_00000914 [partial]
+; Purpose: Routine of the setup of environment, paths, state and shared resources module; calls H029+$0312, H008+$139E.
+;   - Calls H029+$0312.
+;   - Calls H008+$139E.
+;   - Uses the global state: H005+$3E04 (pointer to persistent state A, 2048 bytes); H005+$3E00 (pointer to persistent state B, 2048 bytes); H005+$3DFC (pointer to persistent state C, 1024 bytes).
+; Direct callers: H001+$021C
 ; --------------------------------------------------------------------------
 L006_00000914:
 ; H006+$00000914: 2f0c  move.l a4, -(a7)
@@ -1521,7 +1521,7 @@ L006_0000091A:
 L006_0000091E:
 ; H006+$0000091E: 3f3c07ff  move.w #$7ff, -(a7)
         move.w #$7ff, -(a7)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L006_00000922:
 ; H006+$00000922: 2f3900003e04  move.l $3e04.l, -(a7)
         move.l (H005+$3E04).l, -(a7)
@@ -1535,21 +1535,21 @@ L006_0000092C:
 L006_0000092E:
 ; H006+$0000092E: 4eb900000312  jsr $312.l
         jsr (H029+$312).l
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L006_00000934:
 ; H006+$00000934: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
 L006_0000093A:
 ; H006+$0000093A: 377c000303e8  move.w #$3, $3e8(a3)
         move.w #$3, $3e8(a3)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L006_00000940:
 ; H006+$00000940: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
 L006_00000946:
 ; H006+$00000946: 377c000101cc  move.w #$1, $1cc(a3)
         move.w #$1, $1cc(a3)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L006_0000094C:
 ; H006+$0000094C: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -1559,7 +1559,7 @@ L006_00000952:
 L006_00000956:
 ; H006+$00000956: 3f3c07ff  move.w #$7ff, -(a7)
         move.w #$7ff, -(a7)
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L006_0000095A:
 ; H006+$0000095A: 2f3900003e00  move.l $3e00.l, -(a7)
         move.l (H005+$3E00).l, -(a7)
@@ -1576,7 +1576,7 @@ L006_00000966:
 L006_0000096C:
 ; H006+$0000096C: 3f3c03ff  move.w #$3ff, -(a7)
         move.w #$3ff, -(a7)
-; STATO: H005+$3DFC = puntatore stato persistente C, 1024 byte
+; STATE: H005+$3DFC = pointer to persistent state C, 1024 bytes
 L006_00000970:
 ; H006+$00000970: 2f3900003dfc  move.l $3dfc.l, -(a7)
         move.l (H005+$3DFC).l, -(a7)
@@ -1593,7 +1593,7 @@ L006_0000097C:
 L006_00000982:
 ; H006+$00000982: 3f3c1dff  move.w #$1dff, -(a7)
         move.w #$1dff, -(a7)
-; STATO: H005+$3DF8 = puntatore al buffer ECL
+; STATE: H005+$3DF8 = pointer to the ECL buffer
 L006_00000986:
 ; H006+$00000986: 2f3900003df8  move.l $3df8.l, -(a7)
         move.l (H005+$3DF8).l, -(a7)
@@ -1610,7 +1610,7 @@ L006_00000992:
 L006_00000998:
 ; H006+$00000998: 3f3c0007  move.w #$7, -(a7)
         move.w #$7, -(a7)
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L006_0000099C:
 ; H006+$0000099C: 48790000281c  pea.l $281c.l
         pea.l (H005+$281C).l
@@ -1624,7 +1624,7 @@ L006_000009A6:
 L006_000009A8:
 ; H006+$000009A8: 4eb900000312  jsr $312.l
         jsr (H029+$312).l
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L006_000009AE:
 ; H006+$000009AE: 33fc00070000281c  move.w #$7, $281c.l
         move.w #$7, (H005+$281C).l
@@ -1653,7 +1653,7 @@ L006_000009D8:
 L006_000009DE:
 ; H006+$000009DE: 13fc0001000024a2  move.b #$1, $24a2.l
         move.b #$1, (H005+$24A2).l
-; STATO: H005+$2810 = tre elementi di stato degli insiemi pareti
+; STATE: H005+$2810 = three state elements of the wall sets
 L006_000009E6:
 ; H006+$000009E6: 427900002810  clr.w $2810.l
         clr.w (H005+$2810).l
@@ -1678,7 +1678,7 @@ L006_00000A08:
 L006_00000A0A:
 ; H006+$00000A0A: e542  asl.w #$2, d2
         asl.w #$2, d2
-; STATO: H005+$2810 = tre elementi di stato degli insiemi pareti
+; STATE: H005+$2810 = three state elements of the wall sets
 L006_00000A0C:
 ; H006+$00000A0C: 47f900002810  lea.l $2810.l, a3
         lea.l (H005+$2810).l, a3
@@ -1694,7 +1694,7 @@ L006_00000A1C:
 L006_00000A1E:
 ; H006+$00000A1E: e542  asl.w #$2, d2
         asl.w #$2, d2
-; STATO: H005+$2810 = tre elementi di stato degli insiemi pareti
+; STATE: H005+$2810 = three state elements of the wall sets
 L006_00000A20:
 ; H006+$00000A20: 47f900002810  lea.l $2810.l, a3
         lea.l (H005+$2810).l, a3
@@ -1710,21 +1710,21 @@ L006_00000A30:
 L006_00000A32:
 ; H006+$00000A32: 4239000024d2  clr.b $24d2.l
         clr.b (H005+$24D2).l
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L006_00000A38:
 ; H006+$00000A38: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
 L006_00000A3E:
 ; H006+$00000A3E: 377c000203f2  move.w #$2, $3f2(a3)
         move.w #$2, $3f2(a3)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L006_00000A44:
 ; H006+$00000A44: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
 L006_00000A4A:
 ; H006+$00000A4A: 377c000203f4  move.w #$2, $3f4(a3)
         move.w #$2, $3f4(a3)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L006_00000A50:
 ; H006+$00000A50: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -1740,22 +1740,22 @@ L006_00000A64:
 L006_00000A6A:
 ; H006+$00000A6A: 427900003dde  clr.w $3dde.l
         clr.w (H005+$3DDE).l
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L006_00000A70:
 ; H006+$00000A70: 42b900003364  clr.l $3364.l
         clr.l (H005+$3364).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L006_00000A76:
 ; H006+$00000A76: 42b900003368  clr.l $3368.l
         clr.l (H005+$3368).l
-; STATO: H005+$3DEA = PC logico ECL
+; STATE: H005+$3DEA = logical ECL PC
 L006_00000A7C:
 ; H006+$00000A7C: 33fc350000003dea  move.w #$3500, $3dea.l
         move.w #$3500, (H005+$3DEA).l
 L006_00000A84:
 ; H006+$00000A84: 33fc000400003df6  move.w #$4, $3df6.l
         move.w #$4, (H005+$3DF6).l
-; STATO: H005+$246E = selettore del gruppo risorse
+; STATE: H005+$246E = resource group selector
 L006_00000A8C:
 ; H006+$00000A8C: 13fc00010000246e  move.b #$1, $246e.l
         move.b #$1, (H005+$246E).l
@@ -1765,7 +1765,7 @@ L006_00000A94:
 L006_00000A9C:
 ; H006+$00000A9C: 423900002825  clr.b $2825.l
         clr.b (H005+$2825).l
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L006_00000AA2:
 ; H006+$00000AA2: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -1793,7 +1793,7 @@ L006_00000ACC:
 L006_00000AD2:
 ; H006+$00000AD2: 4239000024bd  clr.b $24bd.l
         clr.b (H005+$24BD).l
-; STATO: H005+$24D0 = richiesta di uscita dal ciclo scenario
+; STATE: H005+$24D0 = request to exit the scenario loop
 L006_00000AD8:
 ; H006+$00000AD8: 4239000024d0  clr.b $24d0.l
         clr.b (H005+$24D0).l
@@ -1873,7 +1873,7 @@ L006_00000B5E:
 L006_00000B64:
 ; H006+$00000B64: 13fc000100002483  move.b #$1, $2483.l
         move.b #$1, (H005+$2483).l
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L006_00000B6C:
 ; H006+$00000B6C: 13fc000400003de3  move.b #$4, $3de3.l
         move.b #$4, (H005+$3DE3).l

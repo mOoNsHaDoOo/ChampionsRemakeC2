@@ -1,4 +1,4 @@
-/* H090: adattatori Exec per i device (usati dall'audio). */
+/* H090: Exec adapters for devices (used by the audio). */
 #ifndef COK_H090_H
 #define COK_H090_H
 #include "cok.h"

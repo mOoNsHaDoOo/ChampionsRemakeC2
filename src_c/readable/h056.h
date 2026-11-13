@@ -1,4 +1,4 @@
-/* H056: diagnostica. */
+/* H056: diagnostics. */
 #ifndef COK_H056_H
 #define COK_H056_H
 

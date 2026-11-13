@@ -1,12 +1,12 @@
 ; ============================================================================
-; GUIDA DEL MODULO H046
-; servizi di messaggistica/menu e helper UI.
-; I commenti descrivono l'analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H046
+; messaging/menu services and UI helpers.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Servizi di messaggistica/menu e helper UI. Il modulo usa una tabella di dispatch per i tipi di messaggio.
+; MODULE NOTE
+; Messaging/menu services and UI helpers. The module uses a dispatch table for the message types.
 ; --------------------------------------------------------------------------
 ; H046: 724 original bytes; all offsets are section-relative.
         section H046,code
@@ -14,10 +14,10 @@ H046:
 ; Preserved bytes H046+$00000000..$00000004; code/data not fully classified.
         dc.l H046+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H046 [parziale]
-; Scopo: Ingresso del modulo servizi di messaggistica/menu e helper UI; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H046+$02CC.
-; Chiamanti diretti: H000+$0198
+; ROUTINE: module_init_H046 [partial]
+; Purpose: Entry of the messaging/menu services and UI helpers module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H046+$02CC.
+; Direct callers: H000+$0198
 ; --------------------------------------------------------------------------
 L046_00000004:
 ; H046+$00000004: 2f0c  move.l a4, -(a7)
@@ -32,10 +32,10 @@ L046_0000000E:
 ; H046+$0000000E: 600002bc  bra.w $2cc
         bra.w H046+$2CC
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H046_00000012 [parziale]
-; Scopo: Routine del modulo servizi di messaggistica/menu e helper UI; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H008+$0958, H008+$08A4, H008+$0EFC, H008+$0E3A
+; ROUTINE: sub_H046_00000012 [partial]
+; Purpose: Routine of the messaging/menu services and UI helpers module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H008+$0958, H008+$08A4, H008+$0EFC, H008+$0E3A
 ; --------------------------------------------------------------------------
 L046_00000012:
 ; H046+$00000012: 2f0c  move.l a4, -(a7)
@@ -592,7 +592,7 @@ L046_000002A0:
 L046_000002A2:
 ; H046+$000002A2: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H046+$0284; indici 0..7, default -1.
+; DISPATCH: words relative to H046+$0284; indices 0..7, default -1.
 L046_000002A6:
 ; H046+$000002A6: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)

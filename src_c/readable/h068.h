@@ -1,4 +1,4 @@
-/* H068: esplorazione, menu dei comandi, movimento e porte. */
+/* H068: exploration, command menu, movement and doors. */
 #ifndef COK_H068_H
 #define COK_H068_H
 #include "cok.h"

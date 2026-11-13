@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H004
-; Tabelle e inizializzazioni dei dati del gioco; semantica non tutta ricostruita.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H004
+; Tables and initialisations of the game data; semantics not fully reconstructed.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Il modulo contiene soprattutto tabelle (nomi di classi, razze, allineamenti, divinita', messaggi) e poche routine di inizializzazione. Le aree dati non sono state commentate come codice.
+; MODULE NOTE
+; The module contains mostly tables (names of classes, races, alignments, deities, messages) and a few initialisation routines. The data areas have not been commented as code.
 ; --------------------------------------------------------------------------
 ; H004: 24284 original bytes; all offsets are section-relative.
         section H004,code
@@ -209,10 +209,10 @@ H004:
         dc.w $616E,$6473,$0000
         dc.l H004+$00000006
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H004 [parziale]
-; Scopo: Ingresso del modulo tabelle e inizializzazioni dei dati del gioco; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H004+$0C38.
-; Chiamanti diretti: H000+$0018
+; ROUTINE: module_init_H004 [partial]
+; Purpose: Entry of the tables and initialisations of the game data module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H004+$0C38.
+; Direct callers: H000+$0018
 ; --------------------------------------------------------------------------
 L004_00000C1A:
 ; H004+$00000C1A: 2f0c  move.l a4, -(a7)
@@ -227,10 +227,10 @@ L004_00000C24:
 ; H004+$00000C24: 60000012  bra.w $c38
         bra.w H004+$C38
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H004_00000C28 [parziale]
-; Scopo: Routine del modulo tabelle e inizializzazioni dei dati del gioco; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H001+$0102
+; ROUTINE: sub_H004_00000C28 [partial]
+; Purpose: Routine of the tables and initialisations of the game data module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H001+$0102
 ; --------------------------------------------------------------------------
 L004_00000C28:
 ; H004+$00000C28: 2f0c  move.l a4, -(a7)

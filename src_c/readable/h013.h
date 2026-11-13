@@ -1,4 +1,4 @@
-/* H013: creazione/gestione dei personaggi e menu principale del party. */
+/* H013: character creation/management and the party main menu. */
 #ifndef COK_H013_H
 #define COK_H013_H
 

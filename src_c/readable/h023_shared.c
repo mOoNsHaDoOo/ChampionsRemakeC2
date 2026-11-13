@@ -1,4 +1,4 @@
-/* H023: servizi di inizializzazione condivisi. */
+/* H023: shared initialisation services. */
 #include "h023_shared.h"
 #include "h015_runtime.h"
 
@@ -11,9 +11,9 @@ void h023_init(void)
 }
 
 /*
- * PORT H023+$0010: generatore congruenziale: seme = (seme * 31415821 + 1)
- * mod 10^8 (moltiplicazione a 32 bit), risultato (seme / 10000) * n / 10000,
- * cioe' 0..n-1.
+ * PORT H023+$0010: linear congruential generator: seed = (seed * 31415821 + 1)
+ * mod 10^8 (32-bit multiplication), result (seed / 10000) * n / 10000,
+ * that is 0..n-1.
  */
 u32 random_below(u32 n)
 {

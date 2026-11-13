@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H011
-; Griglia 16x16, caricamento GEO/WALLDEF e servizi della vista 3D.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H011
+; 16x16 grid, GEO/WALLDEF loading and 3D view services.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Mappa e vista 3D: carica GEO<gruppo>.dax e WALLDEF<gruppo>.dax, indicizza la griglia 16x16 con y*16+x e compone la vista. I dati GEO hanno 256 byte per area; i WALLDEF sono blocchi da 780 o 1560 byte.
+; MODULE NOTE
+; Map and 3D view: loads GEO<group>.dax and WALLDEF<group>.dax, indexes the 16x16 grid with y*16+x and composes the view. The GEO data has 256 bytes per area; the WALLDEFs are blocks of 780 or 1560 bytes.
 ; --------------------------------------------------------------------------
 ; H011: 7004 original bytes; all offsets are section-relative.
         section H011,code
@@ -31,10 +31,10 @@ H011:
         dc.w $6F61,$6433,$444D,$6170,$2E00
         dc.l H011+$000000AC
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H011 [parziale]
-; Scopo: Ingresso del modulo griglia 16x16, caricamento GEO/WALLDEF e servizi della vista 3D; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H011+$1A02.
-; Chiamanti diretti: H000+$0180
+; ROUTINE: module_init_H011 [partial]
+; Purpose: Entry of the 16x16 grid, GEO/WALLDEF loading and 3D view services module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H011+$1A02.
+; Direct callers: H000+$0180
 ; --------------------------------------------------------------------------
 L011_000000FE:
 ; H011+$000000FE: 2f0c  move.l a4, -(a7)
@@ -49,12 +49,12 @@ L011_00000108:
 ; H011+$00000108: 600018f8  bra.w $1a02
         bra.w H011+$1A02
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H011_0000010C [parziale]
-; Scopo: Routine del modulo griglia 16x16, caricamento GEO/WALLDEF e servizi della vista 3D; richiama H003+$0090, H022+$0084.
-;   - Richiama H003+$0090.
-;   - Richiama H022+$0084.
-;   - Usa lo stato globale: H005+$52F2 (puntatore allo schermo del gioco).
-; Chiamanti diretti: H007+$0BAE, H011+$14DC
+; ROUTINE: sub_H011_0000010C [partial]
+; Purpose: Routine of the 16x16 grid, GEO/WALLDEF loading and 3D view services module; calls H003+$0090, H022+$0084.
+;   - Calls H003+$0090.
+;   - Calls H022+$0084.
+;   - Uses the global state: H005+$52F2 (pointer to the game screen).
+; Direct callers: H007+$0BAE, H011+$14DC
 ; --------------------------------------------------------------------------
 L011_0000010C:
 ; H011+$0000010C: 2f0c  move.l a4, -(a7)
@@ -93,7 +93,7 @@ L011_00000136:
 L011_0000013C:
 ; H011+$0000013C: 397c0fffff7a  move.w #$fff, -$86(a4)
         move.w #$fff, -$86(a4)
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L011_00000142:
 ; H011+$00000142: 2679000052f2  movea.l $52f2.l, a3
         movea.l (H005+$52F2).l, a3
@@ -123,10 +123,10 @@ L011_00000160:
 ; H011+$00000160: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H011_00000162 [parziale]
-; Scopo: Routine del modulo griglia 16x16, caricamento GEO/WALLDEF e servizi della vista 3D; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H011+$04F4, H011+$01BC, H011+$0C88, H011+$0DDC, H011+$09DA
+; ROUTINE: sub_H011_00000162 [partial]
+; Purpose: Routine of the 16x16 grid, GEO/WALLDEF loading and 3D view services module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H011+$04F4, H011+$01BC, H011+$0C88, H011+$0DDC, H011+$09DA
 ; --------------------------------------------------------------------------
 L011_00000162:
 ; H011+$00000162: 2f0c  move.l a4, -(a7)
@@ -192,13 +192,13 @@ L011_000001A8:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Map_QueryWall [verificato; bit completi ancora parziali]
-; Scopo: Interroga un valore di parete/cella nella mappa 16x16 per la direzione richiesta.
-;   - Normalizza le due coordinate nel range 0..15 nei percorsi previsti.
-;   - Calcola l’indice y*16+x nel buffer H005+$282A.
-;   - I rami selezionano nibble/bit dei dati di mappa in base alla direzione.
-;   - La routine non definisce da sola tutte le regole di attraversabilità.
-; Chiamanti diretti: H011+$03E2, H011+$03FE, H011+$041A, H011+$0436, H011+$0A5C, H011+$0C78, H011+$0CA0, H011+$0D36, H011+$0DCC, H011+$0DF4 ...
+; ROUTINE: Map_QueryWall [verified; complete bits still partial]
+; Purpose: Queries a wall/cell value in the 16x16 map for the requested direction.
+;   - Normalises the two coordinates into the range 0..15 in the expected paths.
+;   - Computes the index y*16+x in the buffer H005+$282A.
+;   - The branches select nibbles/bits of the map data according to the direction.
+;   - The routine alone does not define all the walkability rules.
+; Direct callers: H011+$03E2, H011+$03FE, H011+$041A, H011+$0436, H011+$0A5C, H011+$0C78, H011+$0CA0, H011+$0D36, H011+$0DCC, H011+$0DF4 ...
 ; --------------------------------------------------------------------------
 L011_000001AA:
 ; H011+$000001AA: 2f0c  move.l a4, -(a7)
@@ -305,14 +305,14 @@ L011_0000022A:
 L011_0000022E:
 ; H011+$0000022E: 600000d8  bra.w $308
         bra.w H011+$308
-; PASSO: Indice della griglia: una coordinata viene moltiplicata per 16, poi si aggiunge l’altra.
+; STEP: Grid index: one coordinate is multiplied by 16, then the other is added.
 L011_00000232:
 ; H011+$00000232: 342d000e  move.w $e(a5), d2
         move.w $e(a5), d2
 L011_00000236:
 ; H011+$00000236: e942  asl.w #$4, d2
         asl.w #$4, d2
-; STATO: H005+$282A = puntatore ai quattro piani dati GEO
+; STATE: H005+$282A = pointer to the four GEO data planes
 L011_00000238:
 ; H011+$00000238: 26790000282a  movea.l $282a.l, a3
         movea.l (H005+$282A).l, a3
@@ -353,7 +353,7 @@ L011_00000262:
 L011_00000266:
 ; H011+$00000266: e942  asl.w #$4, d2
         asl.w #$4, d2
-; STATO: H005+$282A = puntatore ai quattro piani dati GEO
+; STATE: H005+$282A = pointer to the four GEO data planes
 L011_00000268:
 ; H011+$00000268: 26790000282a  movea.l $282a.l, a3
         movea.l (H005+$282A).l, a3
@@ -391,7 +391,7 @@ L011_00000290:
 L011_00000294:
 ; H011+$00000294: e942  asl.w #$4, d2
         asl.w #$4, d2
-; STATO: H005+$282A = puntatore ai quattro piani dati GEO
+; STATE: H005+$282A = pointer to the four GEO data planes
 L011_00000296:
 ; H011+$00000296: 26790000282a  movea.l $282a.l, a3
         movea.l (H005+$282A).l, a3
@@ -435,7 +435,7 @@ L011_000002C4:
 L011_000002C8:
 ; H011+$000002C8: e942  asl.w #$4, d2
         asl.w #$4, d2
-; STATO: H005+$282A = puntatore ai quattro piani dati GEO
+; STATE: H005+$282A = pointer to the four GEO data planes
 L011_000002CA:
 ; H011+$000002CA: 26790000282a  movea.l $282a.l, a3
         movea.l (H005+$282A).l, a3
@@ -493,7 +493,7 @@ L011_00000314:
 L011_00000316:
 ; H011+$00000316: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H011+$02FA; indici 0..6, default -1.
+; DISPATCH: words relative to H011+$02FA; indices 0..6, default -1.
 L011_0000031A:
 ; H011+$0000031A: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -519,10 +519,10 @@ L011_0000032E:
 ; H011+$0000032E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H011_00000330 [parziale]
-; Scopo: Routine del modulo griglia 16x16, caricamento GEO/WALLDEF e servizi della vista 3D; richiama H034+$0178.
-;   - Richiama H034+$0178.
-; Chiamanti diretti: H011+$0BA4
+; ROUTINE: sub_H011_00000330 [partial]
+; Purpose: Routine of the 16x16 grid, GEO/WALLDEF loading and 3D view services module; calls H034+$0178.
+;   - Calls H034+$0178.
+; Direct callers: H011+$0BA4
 ; --------------------------------------------------------------------------
 L011_00000330:
 ; H011+$00000330: 2f0c  move.l a4, -(a7)
@@ -653,7 +653,7 @@ L011_000003DC:
 L011_000003E0:
 ; H011+$000003E0: 4267  clr.w -(a7)
         clr.w -(a7)
-; FLUSSO: Chiama Map_QueryWall (H011+$01AA).
+; FLOW: Calls Map_QueryWall (H011+$01AA).
 L011_000003E2:
 ; H011+$000003E2: 6100fdc6  bsr.w $1aa
         bsr.w H011+$1AA
@@ -678,7 +678,7 @@ L011_000003F6:
 L011_000003FA:
 ; H011+$000003FA: 3f3c0002  move.w #$2, -(a7)
         move.w #$2, -(a7)
-; FLUSSO: Chiama Map_QueryWall (H011+$01AA).
+; FLOW: Calls Map_QueryWall (H011+$01AA).
 L011_000003FE:
 ; H011+$000003FE: 6100fdaa  bsr.w $1aa
         bsr.w H011+$1AA
@@ -703,7 +703,7 @@ L011_00000412:
 L011_00000416:
 ; H011+$00000416: 3f3c0004  move.w #$4, -(a7)
         move.w #$4, -(a7)
-; FLUSSO: Chiama Map_QueryWall (H011+$01AA).
+; FLOW: Calls Map_QueryWall (H011+$01AA).
 L011_0000041A:
 ; H011+$0000041A: 6100fd8e  bsr.w $1aa
         bsr.w H011+$1AA
@@ -728,7 +728,7 @@ L011_0000042E:
 L011_00000432:
 ; H011+$00000432: 3f3c0006  move.w #$6, -(a7)
         move.w #$6, -(a7)
-; FLUSSO: Chiama Map_QueryWall (H011+$01AA).
+; FLOW: Calls Map_QueryWall (H011+$01AA).
 L011_00000436:
 ; H011+$00000436: 6100fd72  bsr.w $1aa
         bsr.w H011+$1AA
@@ -846,10 +846,10 @@ L011_000004A4:
 ; H011+$000004A4: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H011_000004A6 [parziale]
-; Scopo: Routine del modulo griglia 16x16, caricamento GEO/WALLDEF e servizi della vista 3D; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H001+$0210
+; ROUTINE: sub_H011_000004A6 [partial]
+; Purpose: Routine of the 16x16 grid, GEO/WALLDEF loading and 3D view services module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H001+$0210
 ; --------------------------------------------------------------------------
 L011_000004A6:
 ; H011+$000004A6: 2f0c  move.l a4, -(a7)
@@ -900,10 +900,10 @@ L011_000004E0:
 ; H011+$000004E0: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H011_000004E2 [parziale]
-; Scopo: Routine del modulo griglia 16x16, caricamento GEO/WALLDEF e servizi della vista 3D; opera su H005+$282A (puntatore ai quattro piani dati GEO).
-;   - Usa lo stato globale: H005+$282A (puntatore ai quattro piani dati GEO).
-; Chiamanti diretti: H060+$00BE, H012+$3062, H011+$05D6, H012+$2772, H068+$0AD8, H061+$3C10 e altri 1
+; ROUTINE: sub_H011_000004E2 [partial]
+; Purpose: Routine of the 16x16 grid, GEO/WALLDEF loading and 3D view services module; works on H005+$282A (pointer to the four GEO data planes).
+;   - Uses the global state: H005+$282A (pointer to the four GEO data planes).
+; Direct callers: H060+$00BE, H012+$3062, H011+$05D6, H012+$2772, H068+$0AD8, H061+$3C10 and 1 more
 ; --------------------------------------------------------------------------
 L011_000004E2:
 ; H011+$000004E2: 2f0c  move.l a4, -(a7)
@@ -1007,7 +1007,7 @@ L011_00000560:
 L011_00000564:
 ; H011+$00000564: e942  asl.w #$4, d2
         asl.w #$4, d2
-; STATO: H005+$282A = puntatore ai quattro piani dati GEO
+; STATE: H005+$282A = pointer to the four GEO data planes
 L011_00000566:
 ; H011+$00000566: 26790000282a  movea.l $282a.l, a3
         movea.l (H005+$282A).l, a3
@@ -1048,14 +1048,14 @@ L011_0000058C:
 ; H011+$0000058C: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H011_0000058E [parziale]
-; Scopo: Routine del modulo griglia 16x16, caricamento GEO/WALLDEF e servizi della vista 3D; richiama H038+$013C, H038+$0118, H016+$00A0, H016+$0014.
-;   - Richiama H038+$013C.
-;   - Richiama H038+$0118.
-;   - Richiama H016+$00A0.
-;   - Richiama H016+$0014.
-;   - Usa lo stato globale: H005+$281C (inizio del blocco coordinate/vista); H005+$3E04 (puntatore stato persistente A, 2048 byte); H005+$52F2 (puntatore allo schermo del gioco).
-; Chiamanti diretti: H011+$0BB4
+; ROUTINE: sub_H011_0000058E [partial]
+; Purpose: Routine of the 16x16 grid, GEO/WALLDEF loading and 3D view services module; calls H038+$013C, H038+$0118, H016+$00A0, H016+$0014.
+;   - Calls H038+$013C.
+;   - Calls H038+$0118.
+;   - Calls H016+$00A0.
+;   - Calls H016+$0014.
+;   - Uses the global state: H005+$281C (start of the coordinates/view block); H005+$3E04 (pointer to persistent state A, 2048 bytes); H005+$52F2 (pointer to the game screen).
+; Direct callers: H011+$0BB4
 ; --------------------------------------------------------------------------
 L011_0000058E:
 ; H011+$0000058E: 2f0c  move.l a4, -(a7)
@@ -1101,7 +1101,7 @@ L011_000005C0:
 L011_000005C4:
 ; H011+$000005C4: 4eb900000118  jsr $118.l
         jsr (H038+$118).l
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L011_000005CA:
 ; H011+$000005CA: 3f390000281c  move.w $281c.l, -(a7)
         move.w (H005+$281C).l, -(a7)
@@ -1144,7 +1144,7 @@ L011_000005FE:
 L011_00000604:
 ; H011+$00000604: 3b7c000cfff4  move.w #$c, -$c(a5)
         move.w #$c, -$c(a5)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L011_0000060A:
 ; H011+$0000060A: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -1252,7 +1252,7 @@ L011_0000068A:
 L011_0000068C:
 ; H011+$0000068C: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H011+$0676; indici 0..2, default -1.
+; DISPATCH: words relative to H011+$0676; indices 0..2, default -1.
 L011_00000690:
 ; H011+$00000690: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -1345,7 +1345,7 @@ L011_000006FC:
 L011_000006FE:
 ; H011+$000006FE: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H011+$06E8; indici 0..2, default -1.
+; DISPATCH: words relative to H011+$06E8; indices 0..2, default -1.
 L011_00000702:
 ; H011+$00000702: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -1380,7 +1380,7 @@ L011_0000073E:
 L011_00000740:
 ; H011+$00000740: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H011+$070C; indici 0..17, default -1.
+; DISPATCH: words relative to H011+$070C; indices 0..17, default -1.
 L011_00000744:
 ; H011+$00000744: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -1405,7 +1405,7 @@ L011_0000075E:
 L011_00000760:
 ; H011+$00000760: 4267  clr.w -(a7)
         clr.w -(a7)
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L011_00000762:
 ; H011+$00000762: 2679000052f2  movea.l $52f2.l, a3
         movea.l (H005+$52F2).l, a3
@@ -1497,7 +1497,7 @@ L011_000007CC:
 L011_000007CE:
 ; H011+$000007CE: 4267  clr.w -(a7)
         clr.w -(a7)
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L011_000007D0:
 ; H011+$000007D0: 2679000052f2  movea.l $52f2.l, a3
         movea.l (H005+$52F2).l, a3
@@ -1577,7 +1577,7 @@ L011_0000082C:
 L011_0000082E:
 ; H011+$0000082E: 3f3c0003  move.w #$3, -(a7)
         move.w #$3, -(a7)
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L011_00000832:
 ; H011+$00000832: 2479000052f2  movea.l $52f2.l, a2
         movea.l (H005+$52F2).l, a2
@@ -1625,11 +1625,11 @@ L011_00000866:
 ; H011+$00000866: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H011_00000868 [parziale]
-; Scopo: Routine del modulo griglia 16x16, caricamento GEO/WALLDEF e servizi della vista 3D; richiama H049+$0014.
-;   - Richiama H049+$0014.
-;   - Usa lo stato globale: H005+$52F2 (puntatore allo schermo del gioco).
-; Chiamanti diretti: H011+$1314, H011+$134A, H011+$110A, H011+$1140, H011+$0CD8, H011+$0CF6 e altri 12
+; ROUTINE: sub_H011_00000868 [partial]
+; Purpose: Routine of the 16x16 grid, GEO/WALLDEF loading and 3D view services module; calls H049+$0014.
+;   - Calls H049+$0014.
+;   - Uses the global state: H005+$52F2 (pointer to the game screen).
+; Direct callers: H011+$1314, H011+$134A, H011+$110A, H011+$1140, H011+$0CD8, H011+$0CF6 and 12 more
 ; --------------------------------------------------------------------------
 L011_00000868:
 ; H011+$00000868: 2f0c  move.l a4, -(a7)
@@ -1877,7 +1877,7 @@ L011_00000988:
 L011_0000098C:
 ; H011+$0000098C: 3f04  move.w d4, -(a7)
         move.w d4, -(a7)
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L011_0000098E:
 ; H011+$0000098E: 2679000052f2  movea.l $52f2.l, a3
         movea.l (H005+$52F2).l, a3
@@ -1931,11 +1931,11 @@ L011_000009C6:
 ; H011+$000009C6: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H011_000009C8 [parziale]
-; Scopo: Routine del modulo griglia 16x16, caricamento GEO/WALLDEF e servizi della vista 3D; richiama H029+$0354.
-;   - Richiama H029+$0354.
-;   - Usa lo stato globale: H005+$282A (puntatore ai quattro piani dati GEO).
-; Chiamanti diretti: H068+$1276, H068+$096E, H068+$0382, H095+$0734
+; ROUTINE: sub_H011_000009C8 [partial]
+; Purpose: Routine of the 16x16 grid, GEO/WALLDEF loading and 3D view services module; calls H029+$0354.
+;   - Calls H029+$0354.
+;   - Uses the global state: H005+$282A (pointer to the four GEO data planes).
+; Direct callers: H068+$1276, H068+$096E, H068+$0382, H095+$0734
 ; --------------------------------------------------------------------------
 L011_000009C8:
 ; H011+$000009C8: 2f0c  move.l a4, -(a7)
@@ -2048,7 +2048,7 @@ L011_00000A54:
 L011_00000A58:
 ; H011+$00000A58: 3f2d000c  move.w $c(a5), -(a7)
         move.w $c(a5), -(a7)
-; FLUSSO: Chiama Map_QueryWall (H011+$01AA).
+; FLOW: Calls Map_QueryWall (H011+$01AA).
 L011_00000A5C:
 ; H011+$00000A5C: 6100f74c  bsr.w $1aa
         bsr.w H011+$1AA
@@ -2073,7 +2073,7 @@ L011_00000A70:
 L011_00000A74:
 ; H011+$00000A74: e942  asl.w #$4, d2
         asl.w #$4, d2
-; STATO: H005+$282A = puntatore ai quattro piani dati GEO
+; STATE: H005+$282A = pointer to the four GEO data planes
 L011_00000A76:
 ; H011+$00000A76: 26790000282a  movea.l $282a.l, a3
         movea.l (H005+$282A).l, a3
@@ -2117,7 +2117,7 @@ L011_00000AA4:
 L011_00000AA8:
 ; H011+$00000AA8: e942  asl.w #$4, d2
         asl.w #$4, d2
-; STATO: H005+$282A = puntatore ai quattro piani dati GEO
+; STATE: H005+$282A = pointer to the four GEO data planes
 L011_00000AAA:
 ; H011+$00000AAA: 26790000282a  movea.l $282a.l, a3
         movea.l (H005+$282A).l, a3
@@ -2161,7 +2161,7 @@ L011_00000AD8:
 L011_00000ADC:
 ; H011+$00000ADC: e942  asl.w #$4, d2
         asl.w #$4, d2
-; STATO: H005+$282A = puntatore ai quattro piani dati GEO
+; STATE: H005+$282A = pointer to the four GEO data planes
 L011_00000ADE:
 ; H011+$00000ADE: 26790000282a  movea.l $282a.l, a3
         movea.l (H005+$282A).l, a3
@@ -2205,7 +2205,7 @@ L011_00000B0C:
 L011_00000B10:
 ; H011+$00000B10: e942  asl.w #$4, d2
         asl.w #$4, d2
-; STATO: H005+$282A = puntatore ai quattro piani dati GEO
+; STATE: H005+$282A = pointer to the four GEO data planes
 L011_00000B12:
 ; H011+$00000B12: 26790000282a  movea.l $282a.l, a3
         movea.l (H005+$282A).l, a3
@@ -2263,7 +2263,7 @@ L011_00000B5C:
 L011_00000B5E:
 ; H011+$00000B5E: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H011+$0B42; indici 0..6, default -1.
+; DISPATCH: words relative to H011+$0B42; indices 0..6, default -1.
 L011_00000B62:
 ; H011+$00000B62: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -2289,12 +2289,12 @@ L011_00000B76:
 ; H011+$00000B76: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H011_00000B78 [parziale]
-; Scopo: Routine del modulo griglia 16x16, caricamento GEO/WALLDEF e servizi della vista 3D; richiama H029+$1718, H029+$16A2, H029+$16DE.
-;   - Richiama H029+$1718.
-;   - Richiama H029+$16A2.
-;   - Richiama H029+$16DE.
-; Chiamanti diretti: H060+$015E, H068+$0CEE, H068+$0F7C, H068+$0FE4, H068+$0F14
+; ROUTINE: sub_H011_00000B78 [partial]
+; Purpose: Routine of the 16x16 grid, GEO/WALLDEF loading and 3D view services module; calls H029+$1718, H029+$16A2, H029+$16DE.
+;   - Calls H029+$1718.
+;   - Calls H029+$16A2.
+;   - Calls H029+$16DE.
+; Direct callers: H060+$015E, H068+$0CEE, H068+$0F7C, H068+$0FE4, H068+$0F14
 ; --------------------------------------------------------------------------
 L011_00000B78:
 ; H011+$00000B78: 2f0c  move.l a4, -(a7)
@@ -2472,7 +2472,7 @@ L011_00000C70:
 L011_00000C74:
 ; H011+$00000C74: 3f2d000c  move.w $c(a5), -(a7)
         move.w $c(a5), -(a7)
-; FLUSSO: Chiama Map_QueryWall (H011+$01AA).
+; FLOW: Calls Map_QueryWall (H011+$01AA).
 L011_00000C78:
 ; H011+$00000C78: 6100f530  bsr.w $1aa
         bsr.w H011+$1AA
@@ -2506,7 +2506,7 @@ L011_00000C98:
 L011_00000C9C:
 ; H011+$00000C9C: 3f2dfffc  move.w -$4(a5), -(a7)
         move.w -$4(a5), -(a7)
-; FLUSSO: Chiama Map_QueryWall (H011+$01AA).
+; FLOW: Calls Map_QueryWall (H011+$01AA).
 L011_00000CA0:
 ; H011+$00000CA0: 6100f508  bsr.w $1aa
         bsr.w H011+$1AA
@@ -2630,7 +2630,7 @@ L011_00000D30:
 L011_00000D32:
 ; H011+$00000D32: 3f2dfffe  move.w -$2(a5), -(a7)
         move.w -$2(a5), -(a7)
-; FLUSSO: Chiama Map_QueryWall (H011+$01AA).
+; FLOW: Calls Map_QueryWall (H011+$01AA).
 L011_00000D36:
 ; H011+$00000D36: 6100f472  bsr.w $1aa
         bsr.w H011+$1AA
@@ -2745,7 +2745,7 @@ L011_00000DC4:
 L011_00000DC8:
 ; H011+$00000DC8: 3f2d000c  move.w $c(a5), -(a7)
         move.w $c(a5), -(a7)
-; FLUSSO: Chiama Map_QueryWall (H011+$01AA).
+; FLOW: Calls Map_QueryWall (H011+$01AA).
 L011_00000DCC:
 ; H011+$00000DCC: 6100f3dc  bsr.w $1aa
         bsr.w H011+$1AA
@@ -2779,7 +2779,7 @@ L011_00000DEC:
 L011_00000DF0:
 ; H011+$00000DF0: 3f2dfffe  move.w -$2(a5), -(a7)
         move.w -$2(a5), -(a7)
-; FLUSSO: Chiama Map_QueryWall (H011+$01AA).
+; FLOW: Calls Map_QueryWall (H011+$01AA).
 L011_00000DF4:
 ; H011+$00000DF4: 6100f3b4  bsr.w $1aa
         bsr.w H011+$1AA
@@ -2903,7 +2903,7 @@ L011_00000E84:
 L011_00000E86:
 ; H011+$00000E86: 3f2dfffc  move.w -$4(a5), -(a7)
         move.w -$4(a5), -(a7)
-; FLUSSO: Chiama Map_QueryWall (H011+$01AA).
+; FLOW: Calls Map_QueryWall (H011+$01AA).
 L011_00000E8A:
 ; H011+$00000E8A: 6100f31e  bsr.w $1aa
         bsr.w H011+$1AA
@@ -3015,7 +3015,7 @@ L011_00000F14:
 L011_00000F18:
 ; H011+$00000F18: 3f2dfffe  move.w -$2(a5), -(a7)
         move.w -$2(a5), -(a7)
-; FLUSSO: Chiama Map_QueryWall (H011+$01AA).
+; FLOW: Calls Map_QueryWall (H011+$01AA).
 L011_00000F1C:
 ; H011+$00000F1C: 6100f28c  bsr.w $1aa
         bsr.w H011+$1AA
@@ -3154,7 +3154,7 @@ L011_00000FCC:
 L011_00000FD0:
 ; H011+$00000FD0: 3f2dfffc  move.w -$4(a5), -(a7)
         move.w -$4(a5), -(a7)
-; FLUSSO: Chiama Map_QueryWall (H011+$01AA).
+; FLOW: Calls Map_QueryWall (H011+$01AA).
 L011_00000FD4:
 ; H011+$00000FD4: 6100f1d4  bsr.w $1aa
         bsr.w H011+$1AA
@@ -3362,7 +3362,7 @@ L011_000010DC:
 L011_000010E0:
 ; H011+$000010E0: 3f2d000c  move.w $c(a5), -(a7)
         move.w $c(a5), -(a7)
-; FLUSSO: Chiama Map_QueryWall (H011+$01AA).
+; FLOW: Calls Map_QueryWall (H011+$01AA).
 L011_000010E4:
 ; H011+$000010E4: 6100f0c4  bsr.w $1aa
         bsr.w H011+$1AA
@@ -3405,7 +3405,7 @@ L011_00001112:
 L011_00001116:
 ; H011+$00001116: 3f2dfffe  move.w -$2(a5), -(a7)
         move.w -$2(a5), -(a7)
-; FLUSSO: Chiama Map_QueryWall (H011+$01AA).
+; FLOW: Calls Map_QueryWall (H011+$01AA).
 L011_0000111A:
 ; H011+$0000111A: 6100f08e  bsr.w $1aa
         bsr.w H011+$1AA
@@ -3577,7 +3577,7 @@ L011_000011F8:
 L011_000011FC:
 ; H011+$000011FC: 3f2d000c  move.w $c(a5), -(a7)
         move.w $c(a5), -(a7)
-; FLUSSO: Chiama Map_QueryWall (H011+$01AA).
+; FLOW: Calls Map_QueryWall (H011+$01AA).
 L011_00001200:
 ; H011+$00001200: 6100efa8  bsr.w $1aa
         bsr.w H011+$1AA
@@ -3620,7 +3620,7 @@ L011_0000122E:
 L011_00001232:
 ; H011+$00001232: 3f2dfffc  move.w -$4(a5), -(a7)
         move.w -$4(a5), -(a7)
-; FLUSSO: Chiama Map_QueryWall (H011+$01AA).
+; FLOW: Calls Map_QueryWall (H011+$01AA).
 L011_00001236:
 ; H011+$00001236: 6100ef72  bsr.w $1aa
         bsr.w H011+$1AA
@@ -3759,7 +3759,7 @@ L011_000012E6:
 L011_000012EA:
 ; H011+$000012EA: 3f2d000c  move.w $c(a5), -(a7)
         move.w $c(a5), -(a7)
-; FLUSSO: Chiama Map_QueryWall (H011+$01AA).
+; FLOW: Calls Map_QueryWall (H011+$01AA).
 L011_000012EE:
 ; H011+$000012EE: 6100eeba  bsr.w $1aa
         bsr.w H011+$1AA
@@ -3802,7 +3802,7 @@ L011_0000131C:
 L011_00001320:
 ; H011+$00001320: 3f2dfffe  move.w -$2(a5), -(a7)
         move.w -$2(a5), -(a7)
-; FLUSSO: Chiama Map_QueryWall (H011+$01AA).
+; FLOW: Calls Map_QueryWall (H011+$01AA).
 L011_00001324:
 ; H011+$00001324: 6100ee84  bsr.w $1aa
         bsr.w H011+$1AA
@@ -3938,7 +3938,7 @@ L011_000013D2:
 L011_000013D6:
 ; H011+$000013D6: 3f2d000c  move.w $c(a5), -(a7)
         move.w $c(a5), -(a7)
-; FLUSSO: Chiama Map_QueryWall (H011+$01AA).
+; FLOW: Calls Map_QueryWall (H011+$01AA).
 L011_000013DA:
 ; H011+$000013DA: 6100edce  bsr.w $1aa
         bsr.w H011+$1AA
@@ -3981,7 +3981,7 @@ L011_00001408:
 L011_0000140C:
 ; H011+$0000140C: 3f2dfffc  move.w -$4(a5), -(a7)
         move.w -$4(a5), -(a7)
-; FLUSSO: Chiama Map_QueryWall (H011+$01AA).
+; FLOW: Calls Map_QueryWall (H011+$01AA).
 L011_00001410:
 ; H011+$00001410: 6100ed98  bsr.w $1aa
         bsr.w H011+$1AA
@@ -4086,7 +4086,7 @@ L011_0000148E:
 L011_00001490:
 ; H011+$00001490: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H011+$147C; indici 0..2, default -1.
+; DISPATCH: words relative to H011+$147C; indices 0..2, default -1.
 L011_00001494:
 ; H011+$00001494: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -4159,13 +4159,13 @@ L011_000014E8:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Load_WallDefinitions [parziale]
-; Scopo: Carica una definizione WALLDEF per uno degli insiemi della vista 3D.
-;   - Accetta un indice di insieme compreso fra 1 e 3.
-;   - Compone WALLDEF<gruppo>.dax e carica il blocco richiesto.
-;   - Usa 780 byte ($030C) come unità per controllare dimensione/range.
-;   - Adatta i dati alle tabelle usate per disegnare la vista.
-; Chiamanti diretti: H061+$2AF4, H061+$2B28, H061+$2B5C, H064+$10C8, H064+$1100, H064+$1136, H064+$118E, H066+$2FCA
+; ROUTINE: Load_WallDefinitions [partial]
+; Purpose: Loads a WALLDEF definition for one of the sets of the 3D view.
+;   - Accepts a set index between 1 and 3.
+;   - Builds WALLDEF<group>.dax and loads the requested block.
+;   - Uses 780 bytes ($030C) as the unit to check size/range.
+;   - Adapts the data to the tables used to draw the view.
+; Direct callers: H061+$2AF4, H061+$2B28, H061+$2B5C, H064+$10C8, H064+$1100, H064+$1136, H064+$118E, H066+$2FCA
 ; --------------------------------------------------------------------------
 L011_000014EA:
 ; H011+$000014EA: 2f0c  move.l a4, -(a7)
@@ -4200,7 +4200,7 @@ L011_00001510:
 L011_00001514:
 ; H011+$00001514: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$246E = selettore del gruppo risorse
+; STATE: H005+$246E = resource group selector
 L011_00001516:
 ; H011+$00001516: 14390000246e  move.b $246e.l, d2
         move.b (H005+$246E).l, d2
@@ -4275,7 +4275,7 @@ L011_0000156C:
 L011_00001570:
 ; H011+$00001570: 486dfffa  pea.l -$6(a5)
         pea.l -$6(a5)
-; FLUSSO: Chiama DAX_LoadBlock (H028+$0DD8).
+; FLOW: Calls DAX_LoadBlock (H028+$0DD8).
 L011_00001574:
 ; H011+$00001574: 4eb900000dd8  jsr $dd8.l
         jsr (FN_DAX_load_block).l
@@ -4591,7 +4591,7 @@ L011_000016FA:
 L011_000016FC:
 ; H011+$000016FC: e542  asl.w #$2, d2
         asl.w #$2, d2
-; STATO: H005+$2810 = tre elementi di stato degli insiemi pareti
+; STATE: H005+$2810 = three state elements of the wall sets
 L011_000016FE:
 ; H011+$000016FE: 47f900002810  lea.l $2810.l, a3
         lea.l (H005+$2810).l, a3
@@ -4613,7 +4613,7 @@ L011_00001714:
 L011_00001716:
 ; H011+$00001716: e542  asl.w #$2, d2
         asl.w #$2, d2
-; STATO: H005+$2810 = tre elementi di stato degli insiemi pareti
+; STATE: H005+$2810 = three state elements of the wall sets
 L011_00001718:
 ; H011+$00001718: 47f900002810  lea.l $2810.l, a3
         lea.l (H005+$2810).l, a3
@@ -4859,7 +4859,7 @@ L011_00001848:
 L011_0000184A:
 ; H011+$0000184A: e542  asl.w #$2, d2
         asl.w #$2, d2
-; STATO: H005+$2810 = tre elementi di stato degli insiemi pareti
+; STATE: H005+$2810 = three state elements of the wall sets
 L011_0000184C:
 ; H011+$0000184C: 47f900002810  lea.l $2810.l, a3
         lea.l (H005+$2810).l, a3
@@ -4875,7 +4875,7 @@ L011_0000185C:
 L011_0000185E:
 ; H011+$0000185E: e542  asl.w #$2, d2
         asl.w #$2, d2
-; STATO: H005+$2810 = tre elementi di stato degli insiemi pareti
+; STATE: H005+$2810 = three state elements of the wall sets
 L011_00001860:
 ; H011+$00001860: 47f900002810  lea.l $2810.l, a3
         lea.l (H005+$2810).l, a3
@@ -4899,13 +4899,13 @@ L011_00001874:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Load3DMap_GEO [verificato]
-; Scopo: Carica una mappa GEO e distribuisce i dati nei buffer della mappa.
-;   - Compone GEO<gruppo>.dax e richiede l’ID passato.
-;   - Nel campione ogni blocco è lungo 1026 byte.
-;   - Salta i primi due byte e copia porzioni da 256 byte nel buffer H005+$282A.
-;   - La semantica completa dei singoli bit delle celle resta aperta.
-; Chiamanti diretti: H064+$109E, H066+$2F7A
+; ROUTINE: Load3DMap_GEO [verified]
+; Purpose: Loads a GEO map and distributes the data into the map buffers.
+;   - Builds GEO<group>.dax and requests the ID passed.
+;   - In the sample every block is 1026 bytes long.
+;   - Skips the first two bytes and copies 256-byte portions into the buffer H005+$282A.
+;   - The complete semantics of the single bits of the cells is still open.
+; Direct callers: H064+$109E, H066+$2F7A
 ; --------------------------------------------------------------------------
 L011_00001876:
 ; H011+$00001876: 2f0c  move.l a4, -(a7)
@@ -4925,7 +4925,7 @@ L011_00001884:
 L011_00001888:
 ; H011+$00001888: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$246E = selettore del gruppo risorse
+; STATE: H005+$246E = resource group selector
 L011_0000188A:
 ; H011+$0000188A: 14390000246e  move.b $246e.l, d2
         move.b (H005+$246E).l, d2
@@ -5000,7 +5000,7 @@ L011_000018E0:
 L011_000018E4:
 ; H011+$000018E4: 486dffa8  pea.l -$58(a5)
         pea.l -$58(a5)
-; FLUSSO: Chiama DAX_LoadBlock (H028+$0DD8).
+; FLOW: Calls DAX_LoadBlock (H028+$0DD8).
 L011_000018E8:
 ; H011+$000018E8: 4eb900000dd8  jsr $dd8.l
         jsr (FN_DAX_load_block).l
@@ -5043,7 +5043,7 @@ L011_0000191E:
 L011_00001922:
 ; H011+$00001922: 2f0b  move.l a3, -(a7)
         move.l a3, -(a7)
-; STATO: H005+$282A = puntatore ai quattro piani dati GEO
+; STATE: H005+$282A = pointer to the four GEO data planes
 L011_00001924:
 ; H011+$00001924: 26790000282a  movea.l $282a.l, a3
         movea.l (H005+$282A).l, a3
@@ -5075,7 +5075,7 @@ L011_00001948:
 L011_0000194C:
 ; H011+$0000194C: 2f0b  move.l a3, -(a7)
         move.l a3, -(a7)
-; STATO: H005+$282A = puntatore ai quattro piani dati GEO
+; STATE: H005+$282A = pointer to the four GEO data planes
 L011_0000194E:
 ; H011+$0000194E: 26790000282a  movea.l $282a.l, a3
         movea.l (H005+$282A).l, a3
@@ -5110,7 +5110,7 @@ L011_00001976:
 L011_0000197A:
 ; H011+$0000197A: 2f0b  move.l a3, -(a7)
         move.l a3, -(a7)
-; STATO: H005+$282A = puntatore ai quattro piani dati GEO
+; STATE: H005+$282A = pointer to the four GEO data planes
 L011_0000197C:
 ; H011+$0000197C: 26790000282a  movea.l $282a.l, a3
         movea.l (H005+$282A).l, a3
@@ -5145,7 +5145,7 @@ L011_000019A4:
 L011_000019A8:
 ; H011+$000019A8: 2f0b  move.l a3, -(a7)
         move.l a3, -(a7)
-; STATO: H005+$282A = puntatore ai quattro piani dati GEO
+; STATE: H005+$282A = pointer to the four GEO data planes
 L011_000019AA:
 ; H011+$000019AA: 26790000282a  movea.l $282a.l, a3
         movea.l (H005+$282A).l, a3
@@ -5181,7 +5181,7 @@ L011_000019CE:
 L011_000019D0:
 ; H011+$000019D0: 4eb9000000f6  jsr $f6.l
         jsr (H003+$F6).l
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L011_000019D6:
 ; H011+$000019D6: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3

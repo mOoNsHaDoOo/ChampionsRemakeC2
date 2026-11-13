@@ -1,12 +1,12 @@
 ; ============================================================================
-; GUIDA DEL MODULO H044
-; disegno di elementi 8x8 (glifi o tile) e servizi grafici/UI.
-; I commenti descrivono l'analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H044
+; drawing of 8x8 elements (glyphs or tiles) and graphics/UI services.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Disegno di elementi 8x8 (glifi o tile) e servizi grafici/UI. Chiama ripetutamente il loader H034 e i servizi di presentazione H030/H022.
+; MODULE NOTE
+; Drawing of 8x8 elements (glyphs or tiles) and graphics/UI services. Repeatedly calls the H034 loader and the H030/H022 presentation services.
 ; --------------------------------------------------------------------------
 ; H044: 2668 original bytes; all offsets are section-relative.
         section H044,code
@@ -26,10 +26,10 @@ H044:
         dc.w $0000,$0000,$0000
         dc.l H044+$000000B6
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H044 [parziale]
-; Scopo: Ingresso del modulo disegno di elementi 8x8 (glifi o tile) e servizi grafici/UI; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H044+$084A.
-; Chiamanti diretti: H000+$0150
+; ROUTINE: module_init_H044 [partial]
+; Purpose: Entry of the drawing of 8x8 elements (glyphs or tiles) and graphics/UI services module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H044+$084A.
+; Direct callers: H000+$0150
 ; --------------------------------------------------------------------------
 L044_000000BA:
 ; H044+$000000BA: 2f0c  move.l a4, -(a7)
@@ -44,11 +44,11 @@ L044_000000C4:
 ; H044+$000000C4: 60000784  bra.w $84a
         bra.w H044+$84A
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H044_016C [parziale]
-; Scopo: Trampolino verso H044+$016C; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H044+$016C.
-;   - Richiama H034+$0178.
-; Chiamanti diretti: H044+$0218, H044+$06D8, H044+$04C4, H044+$05D0
+; ROUTINE: trampoline_H044_016C [partial]
+; Purpose: Trampoline to H044+$016C; the actual body is there.
+;   - Jumps to the actual body at H044+$016C.
+;   - Calls H034+$0178.
+; Direct callers: H044+$0218, H044+$06D8, H044+$04C4, H044+$05D0
 ; --------------------------------------------------------------------------
 L044_000000C8:
 ; H044+$000000C8: 2f0c  move.l a4, -(a7)
@@ -101,7 +101,7 @@ L044_0000010E:
 L044_00000112:
 ; H044+$00000112: 60000058  bra.w $16c
         bra.w H044+$16C
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L044_00000116:
 ; H044+$00000116: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -117,7 +117,7 @@ L044_00000124:
 L044_00000128:
 ; H044+$00000128: 4e75  rts 
         rts 
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L044_0000012A:
 ; H044+$0000012A: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -133,7 +133,7 @@ L044_00000136:
 L044_0000013A:
 ; H044+$0000013A: 4e75  rts 
         rts 
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L044_0000013C:
 ; H044+$0000013C: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -187,7 +187,7 @@ L044_00000178:
 L044_0000017A:
 ; H044+$0000017A: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H044+$0166; indici 0..2, default -1.
+; DISPATCH: words relative to H044+$0166; indices 0..2, default -1.
 L044_0000017E:
 ; H044+$0000017E: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -253,13 +253,13 @@ L044_000001C0:
 ; H044+$000001C0: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H044_000001C2 [parziale]
-; Scopo: Routine del modulo disegno di elementi 8x8 (glifi o tile) e servizi grafici/UI; richiama H022+$0084, H030+$0B6C, H034+$0178.
-;   - Richiama H022+$0084.
-;   - Richiama H030+$0B6C.
-;   - Richiama H034+$0178.
-;   - Usa lo stato globale: H005+$52F2 (puntatore allo schermo del gioco).
-; Chiamanti diretti: H009+$011A, H044+$02E6, H013+$4DB8, H063+$323C, H044+$033C, H044+$045E e altri 11
+; ROUTINE: sub_H044_000001C2 [partial]
+; Purpose: Routine of the drawing of 8x8 elements (glyphs or tiles) and graphics/UI services module; calls H022+$0084, H030+$0B6C, H034+$0178.
+;   - Calls H022+$0084.
+;   - Calls H030+$0B6C.
+;   - Calls H034+$0178.
+;   - Uses the global state: H005+$52F2 (pointer to the game screen).
+; Direct callers: H009+$011A, H044+$02E6, H013+$4DB8, H063+$323C, H044+$033C, H044+$045E and 11 more
 ; --------------------------------------------------------------------------
 L044_000001C2:
 ; H044+$000001C2: 2f0c  move.l a4, -(a7)
@@ -273,7 +273,7 @@ L044_000001C8:
 L044_000001CC:
 ; H044+$000001CC: 33fc0f0f000052c8  move.w #$f0f, $52c8.l
         move.w #$f0f, (H005+$52C8).l
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L044_000001D4:
 ; H044+$000001D4: 2679000052f2  movea.l $52f2.l, a3
         movea.l (H005+$52F2).l, a3
@@ -484,10 +484,10 @@ L044_000002D6:
 ; H044+$000002D6: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H044_000002D8 [parziale]
-; Scopo: Routine del modulo disegno di elementi 8x8 (glifi o tile) e servizi grafici/UI; richiama H034+$0178.
-;   - Richiama H034+$0178.
-; Chiamanti diretti: H007+$06F4
+; ROUTINE: sub_H044_000002D8 [partial]
+; Purpose: Routine of the drawing of 8x8 elements (glyphs or tiles) and graphics/UI services module; calls H034+$0178.
+;   - Calls H034+$0178.
+; Direct callers: H007+$06F4
 ; --------------------------------------------------------------------------
 L044_000002D8:
 ; H044+$000002D8: 2f0c  move.l a4, -(a7)
@@ -567,10 +567,10 @@ L044_0000032E:
 ; H044+$0000032E: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H044_00000330 [parziale]
-; Scopo: Routine del modulo disegno di elementi 8x8 (glifi o tile) e servizi grafici/UI; richiama H034+$0178.
-;   - Richiama H034+$0178.
-; Chiamanti diretti: H063+$324E, H063+$32BC, H063+$32EE, H063+$3346, H013+$5124, H013+$50F2 e altri 3
+; ROUTINE: sub_H044_00000330 [partial]
+; Purpose: Routine of the drawing of 8x8 elements (glyphs or tiles) and graphics/UI services module; calls H034+$0178.
+;   - Calls H034+$0178.
+; Direct callers: H063+$324E, H063+$32BC, H063+$32EE, H063+$3346, H013+$5124, H013+$50F2 and 3 more
 ; --------------------------------------------------------------------------
 L044_00000330:
 ; H044+$00000330: 2f0c  move.l a4, -(a7)
@@ -822,10 +822,10 @@ L044_00000450:
 ; H044+$00000450: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H044_00000452 [parziale]
-; Scopo: Routine del modulo disegno di elementi 8x8 (glifi o tile) e servizi grafici/UI; richiama H034+$0178.
-;   - Richiama H034+$0178.
-; Chiamanti diretti: H013+$50E8, H042+$10F2, H072+$0FFC
+; ROUTINE: sub_H044_00000452 [partial]
+; Purpose: Routine of the drawing of 8x8 elements (glyphs or tiles) and graphics/UI services module; calls H034+$0178.
+;   - Calls H034+$0178.
+; Direct callers: H013+$50E8, H042+$10F2, H072+$0FFC
 ; --------------------------------------------------------------------------
 L044_00000452:
 ; H044+$00000452: 2f0c  move.l a4, -(a7)
@@ -886,11 +886,11 @@ L044_00000490:
 ; H044+$00000490: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H044_00000492 [parziale]
-; Scopo: Routine del modulo disegno di elementi 8x8 (glifi o tile) e servizi grafici/UI; richiama H030+$0B6C, H034+$0178.
-;   - Richiama H030+$0B6C.
-;   - Richiama H034+$0178.
-; Chiamanti diretti: H065+$35FC
+; ROUTINE: sub_H044_00000492 [partial]
+; Purpose: Routine of the drawing of 8x8 elements (glyphs or tiles) and graphics/UI services module; calls H030+$0B6C, H034+$0178.
+;   - Calls H030+$0B6C.
+;   - Calls H034+$0178.
+; Direct callers: H065+$35FC
 ; --------------------------------------------------------------------------
 L044_00000492:
 ; H044+$00000492: 2f0c  move.l a4, -(a7)
@@ -1099,13 +1099,13 @@ L044_00000584:
 ; H044+$00000584: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H044_00000586 [parziale]
-; Scopo: Routine del modulo disegno di elementi 8x8 (glifi o tile) e servizi grafici/UI; richiama H030+$0B6C, H022+$0084, H034+$0178.
-;   - Richiama H030+$0B6C.
-;   - Richiama H022+$0084.
-;   - Richiama H034+$0178.
-;   - Usa lo stato globale: H005+$52F2 (puntatore allo schermo del gioco).
-; Chiamanti diretti: H063+$3662
+; ROUTINE: sub_H044_00000586 [partial]
+; Purpose: Routine of the drawing of 8x8 elements (glyphs or tiles) and graphics/UI services module; calls H030+$0B6C, H022+$0084, H034+$0178.
+;   - Calls H030+$0B6C.
+;   - Calls H022+$0084.
+;   - Calls H034+$0178.
+;   - Uses the global state: H005+$52F2 (pointer to the game screen).
+; Direct callers: H063+$3662
 ; --------------------------------------------------------------------------
 L044_00000586:
 ; H044+$00000586: 2f0c  move.l a4, -(a7)
@@ -1132,7 +1132,7 @@ L044_00000598:
 L044_0000059C:
 ; H044+$0000059C: 4eb900000b6c  jsr $b6c.l
         jsr (H030+$B6C).l
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L044_000005A2:
 ; H044+$000005A2: 2679000052f2  movea.l $52f2.l, a3
         movea.l (H005+$52F2).l, a3
@@ -1334,13 +1334,13 @@ L044_0000068C:
 ; H044+$0000068C: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H044_0000068E [parziale]
-; Scopo: Routine del modulo disegno di elementi 8x8 (glifi o tile) e servizi grafici/UI; richiama H030+$0B6C, H022+$0084, H034+$0178.
-;   - Richiama H030+$0B6C.
-;   - Richiama H022+$0084.
-;   - Richiama H034+$0178.
-;   - Usa lo stato globale: H005+$52F2 (puntatore allo schermo del gioco).
-; Chiamanti diretti: H065+$04CA
+; ROUTINE: sub_H044_0000068E [partial]
+; Purpose: Routine of the drawing of 8x8 elements (glyphs or tiles) and graphics/UI services module; calls H030+$0B6C, H022+$0084, H034+$0178.
+;   - Calls H030+$0B6C.
+;   - Calls H022+$0084.
+;   - Calls H034+$0178.
+;   - Uses the global state: H005+$52F2 (pointer to the game screen).
+; Direct callers: H065+$04CA
 ; --------------------------------------------------------------------------
 L044_0000068E:
 ; H044+$0000068E: 2f0c  move.l a4, -(a7)
@@ -1367,7 +1367,7 @@ L044_000006A0:
 L044_000006A4:
 ; H044+$000006A4: 4eb900000b6c  jsr $b6c.l
         jsr (H030+$B6C).l
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L044_000006AA:
 ; H044+$000006AA: 2679000052f2  movea.l $52f2.l, a3
         movea.l (H005+$52F2).l, a3
@@ -1629,10 +1629,10 @@ L044_000007DC:
 ; H044+$000007DC: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H044_000007DE [parziale]
-; Scopo: Routine del modulo disegno di elementi 8x8 (glifi o tile) e servizi grafici/UI; richiama H034+$0178.
-;   - Richiama H034+$0178.
-; Chiamanti diretti: H065+$27D6, H065+$3606
+; ROUTINE: sub_H044_000007DE [partial]
+; Purpose: Routine of the drawing of 8x8 elements (glyphs or tiles) and graphics/UI services module; calls H034+$0178.
+;   - Calls H034+$0178.
+; Direct callers: H065+$27D6, H065+$3606
 ; --------------------------------------------------------------------------
 L044_000007DE:
 ; H044+$000007DE: 2f0c  move.l a4, -(a7)

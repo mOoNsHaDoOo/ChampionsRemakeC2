@@ -1,12 +1,12 @@
-/* H008: interazioni UI, richieste di scelta e menu. */
+/* H008: UI interactions, choice requests and menus. */
 #ifndef COK_H008_H
 #define COK_H008_H
 
 #include "cok.h"
 
 /*
- * Voce di un menu a elenco ($30 byte nell'originale): testo, flag di
- * intestazione (riga non selezionabile, saltata dal cursore) e successiva.
+ * Entry of a list menu ($30 bytes in the original): text, header flag
+ * (row that cannot be selected, skipped by the cursor) and next entry.
  */
 typedef struct CokMenuItem {
     char text[0x2A];            /* +$00 */
@@ -27,7 +27,7 @@ u8   list_menu(u16 title_len, const char *title, u16 options_len,
                u16 highlight_pen, u16 first_col, u16 first_row,
                u16 last_col, u16 last_row, CokMenuItem *list, u8 with_exit,
                u8 *redraw, u16 *index, CokMenuItem **chosen);
-                                        /* H008+$13C0 (corpo a $1AF4) */
+                                        /* H008+$13C0 (body at $1AF4) */
 u8   ask_yes_no(u16 text_len, const char *text, u16 title_pen,
                 u16 normal_pen, u16 highlight_pen);     /* H008+$203C */
 void menu_alloc(u16 count, CokMenuItem **list);            /* H008+$20C2 */

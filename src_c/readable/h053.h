@@ -1,4 +1,4 @@
-/* H053: gestione dei record dei personaggi. */
+/* H053: management of the character records. */
 #ifndef COK_H053_H
 #define COK_H053_H
 

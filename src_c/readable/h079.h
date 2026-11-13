@@ -1,4 +1,4 @@
-/* H079: adattatori Exec per gli interrupt (usati dall'audio). */
+/* H079: Exec adapters for interrupts (used by the audio). */
 #ifndef COK_H079_H
 #define COK_H079_H
 #include "cok.h"

@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H057
-; Interazioni e selezioni legate agli incantesimi; dettaglio parziale.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H057
+; Spell-related interactions and selections; partial detail.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Interazioni e selezioni legate agli incantesimi: scelta, lancio, bersagli e risoluzione. Le routine sono chiamate da ECL, UI e combattimento.
+; MODULE NOTE
+; Spell-related interactions and selections: choice, casting, targets and resolution. The routines are called by ECL, UI and combat.
 ; --------------------------------------------------------------------------
 ; H057: 12872 original bytes; all offsets are section-relative.
         section H057,code
@@ -106,10 +106,10 @@ H057:
         dc.w $0000
         dc.l H057+$000000A8
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H057 [parziale]
-; Scopo: Ingresso del modulo interazioni e selezioni legate agli incantesimi; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H057+$3202.
-; Chiamanti diretti: H000+$01FE
+; ROUTINE: module_init_H057 [partial]
+; Purpose: Entry of the spell-related interactions and selections module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H057+$3202.
+; Direct callers: H000+$01FE
 ; --------------------------------------------------------------------------
 L057_000005A6:
 ; H057+$000005A6: 2f0c  move.l a4, -(a7)
@@ -124,11 +124,11 @@ L057_000005B0:
 ; H057+$000005B0: 60002c50  bra.w $3202
         bra.w H057+$3202
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H057_000005B4 [parziale]
-; Scopo: Routine del modulo interazioni e selezioni legate agli incantesimi; richiama H029+$0354, H033+$17E6.
-;   - Richiama H029+$0354.
-;   - Richiama H033+$17E6.
-; Chiamanti diretti: H057+$11CE
+; ROUTINE: sub_H057_000005B4 [partial]
+; Purpose: Routine of the spell-related interactions and selections module; calls H029+$0354, H033+$17E6.
+;   - Calls H029+$0354.
+;   - Calls H033+$17E6.
+; Direct callers: H057+$11CE
 ; --------------------------------------------------------------------------
 L057_000005B4:
 ; H057+$000005B4: 2f0c  move.l a4, -(a7)
@@ -482,10 +482,10 @@ L057_00000776:
 ; H057+$00000776: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H057_0788 [parziale]
-; Scopo: Trampolino verso H057+$0788; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H057+$0788.
-; Chiamanti diretti: H057+$3070
+; ROUTINE: trampoline_H057_0788 [partial]
+; Purpose: Trampoline to H057+$0788; the actual body is there.
+;   - Jumps to the actual body at H057+$0788.
+; Direct callers: H057+$3070
 ; --------------------------------------------------------------------------
 L057_00000778:
 ; H057+$00000778: 2f0c  move.l a4, -(a7)
@@ -512,10 +512,10 @@ L057_0000078C:
 ; H057+$0000078C: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H057_0000078E [parziale]
-; Scopo: Routine del modulo interazioni e selezioni legate agli incantesimi; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H057+$0896, H057+$13C6, H057+$1578
+; ROUTINE: sub_H057_0000078E [partial]
+; Purpose: Routine of the spell-related interactions and selections module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H057+$0896, H057+$13C6, H057+$1578
 ; --------------------------------------------------------------------------
 L057_0000078E:
 ; H057+$0000078E: 2f0c  move.l a4, -(a7)
@@ -596,11 +596,11 @@ L057_000007E6:
 ; H057+$000007E6: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H057_000007E8 [parziale]
-; Scopo: Routine del modulo interazioni e selezioni legate agli incantesimi; richiama H033+$17E6, H029+$0354.
-;   - Richiama H033+$17E6.
-;   - Richiama H029+$0354.
-; Chiamanti diretti: H057+$089E, H057+$1604, H057+$18BE
+; ROUTINE: sub_H057_000007E8 [partial]
+; Purpose: Routine of the spell-related interactions and selections module; calls H033+$17E6, H029+$0354.
+;   - Calls H033+$17E6.
+;   - Calls H029+$0354.
+; Direct callers: H057+$089E, H057+$1604, H057+$18BE
 ; --------------------------------------------------------------------------
 L057_000007E8:
 ; H057+$000007E8: 2f0c  move.l a4, -(a7)
@@ -722,10 +722,10 @@ L057_00000876:
 ; H057+$00000876: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H057_00000878 [parziale]
-; Scopo: Routine del modulo interazioni e selezioni legate agli incantesimi; opera su H005+$3364 (testa della lista del party).
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H057+$2FC6, H057+$31D4
+; ROUTINE: sub_H057_00000878 [partial]
+; Purpose: Routine of the spell-related interactions and selections module; works on H005+$3364 (head of the party list).
+;   - Uses the global state: H005+$3364 (head of the party list).
+; Direct callers: H057+$2FC6, H057+$31D4
 ; --------------------------------------------------------------------------
 L057_00000878:
 ; H057+$00000878: 2f0c  move.l a4, -(a7)
@@ -736,7 +736,7 @@ L057_0000087A:
 L057_0000087E:
 ; H057+$0000087E: 4e55fffc  link.w a5, #$fffc
         link.w a5, #$fffc
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L057_00000882:
 ; H057+$00000882: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -777,11 +777,11 @@ L057_000008B2:
 ; H057+$000008B2: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H057_000008B4 [parziale]
-; Scopo: Routine del modulo interazioni e selezioni legate agli incantesimi; richiama H029+$0354.
-;   - Richiama H029+$0354.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H057+$0D7C, H057+$0E14, H057+$147C, H057+$0F74
+; ROUTINE: sub_H057_000008B4 [partial]
+; Purpose: Routine of the spell-related interactions and selections module; calls H029+$0354.
+;   - Calls H029+$0354.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H057+$0D7C, H057+$0E14, H057+$147C, H057+$0F74
 ; --------------------------------------------------------------------------
 L057_000008B4:
 ; H057+$000008B4: 2f0c  move.l a4, -(a7)
@@ -801,7 +801,7 @@ L057_000008C2:
 L057_000008C8:
 ; H057+$000008C8: 660000cc  bne.w $996
         bne.w H057+$996
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_000008CC:
 ; H057+$000008CC: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -814,7 +814,7 @@ L057_000008D6:
 L057_000008DA:
 ; H057+$000008DA: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_000008DC:
 ; H057+$000008DC: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -865,7 +865,7 @@ L057_00000916:
 L057_00000918:
 ; H057+$00000918: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H057+$0902; indici 0..2, default -1.
+; DISPATCH: words relative to H057+$0902; indices 0..2, default -1.
 L057_0000091C:
 ; H057+$0000091C: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -881,7 +881,7 @@ L057_0000092A:
 L057_0000092E:
 ; H057+$0000092E: 342dfffa  move.w -$6(a5), d2
         move.w -$6(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00000932:
 ; H057+$00000932: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -913,7 +913,7 @@ L057_00000954:
 L057_00000958:
 ; H057+$00000958: 342dfffa  move.w -$6(a5), d2
         move.w -$6(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_0000095C:
 ; H057+$0000095C: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -972,7 +972,7 @@ L057_000009A4:
 L057_000009A8:
 ; H057+$000009A8: 342dfffa  move.w -$6(a5), d2
         move.w -$6(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_000009AC:
 ; H057+$000009AC: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -994,7 +994,7 @@ L057_000009BE:
 L057_000009C2:
 ; H057+$000009C2: 342dfffa  move.w -$6(a5), d2
         move.w -$6(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_000009C6:
 ; H057+$000009C6: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -1038,7 +1038,7 @@ L057_000009F6:
 L057_000009FA:
 ; H057+$000009FA: 342dfffa  move.w -$6(a5), d2
         move.w -$6(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_000009FE:
 ; H057+$000009FE: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -1103,7 +1103,7 @@ L057_00000A48:
 L057_00000A4C:
 ; H057+$00000A4C: c5fc0006  muls.w #$6, d2
         muls.w #$6, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00000A50:
 ; H057+$00000A50: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -1146,7 +1146,7 @@ L057_00000A78:
 L057_00000A7C:
 ; H057+$00000A7C: c5fc0006  muls.w #$6, d2
         muls.w #$6, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00000A80:
 ; H057+$00000A80: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -1183,7 +1183,7 @@ L057_00000AA2:
 L057_00000AA6:
 ; H057+$00000AA6: c5fc0006  muls.w #$6, d2
         muls.w #$6, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00000AAA:
 ; H057+$00000AAA: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -1236,12 +1236,12 @@ L057_00000ADE:
 ; H057+$00000ADE: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H057_00000AE0 [parziale]
-; Scopo: Routine del modulo interazioni e selezioni legate agli incantesimi; richiama H026+$01E0, H063+$1DC2.
-;   - Richiama H026+$01E0.
-;   - Richiama H063+$1DC2.
-;   - Usa lo stato globale: H005+$3E04 (puntatore stato persistente A, 2048 byte); H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H057+$0C2A, H057+$1350, H057+$159E
+; ROUTINE: sub_H057_00000AE0 [partial]
+; Purpose: Routine of the spell-related interactions and selections module; calls H026+$01E0, H063+$1DC2.
+;   - Calls H026+$01E0.
+;   - Calls H063+$1DC2.
+;   - Uses the global state: H005+$3E04 (pointer to persistent state A, 2048 bytes); H005+$3368 (current character).
+; Direct callers: H057+$0C2A, H057+$1350, H057+$159E
 ; --------------------------------------------------------------------------
 L057_00000AE0:
 ; H057+$00000AE0: 2f0c  move.l a4, -(a7)
@@ -1273,7 +1273,7 @@ L057_00000AFA:
 L057_00000B00:
 ; H057+$00000B00: 66000024  bne.w $b26
         bne.w H057+$B26
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L057_00000B04:
 ; H057+$00000B04: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -1301,7 +1301,7 @@ L057_00000B1E:
 L057_00000B22:
 ; H057+$00000B22: 600000a2  bra.w $bc6
         bra.w H057+$BC6
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00000B26:
 ; H057+$00000B26: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -1311,7 +1311,7 @@ L057_00000B2C:
 L057_00000B32:
 ; H057+$00000B32: 67000010  beq.w $b44
         beq.w H057+$B44
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00000B36:
 ; H057+$00000B36: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -1425,7 +1425,7 @@ L057_00000BBC:
 L057_00000BBE:
 ; H057+$00000BBE: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H057+$0BA8; indici 0..2, default -1.
+; DISPATCH: words relative to H057+$0BA8; indices 0..2, default -1.
 L057_00000BC2:
 ; H057+$00000BC2: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -1443,7 +1443,7 @@ L057_00000BD0:
         bra.w H057+$BFA
 ; Preserved bytes H057+$00000BD4..$00000BD8; code/data not fully classified.
         dc.w $6000,$0024
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00000BD8:
 ; H057+$00000BD8: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -1485,15 +1485,15 @@ L057_00000C02:
 ; H057+$00000C02: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H057_00000C04 [parziale]
-; Scopo: Routine del modulo interazioni e selezioni legate agli incantesimi; richiama H065+$34FC, H030+$0B6C, H033+$1426, H063+$1DC2.
-;   - Richiama H065+$34FC.
-;   - Richiama H030+$0B6C.
-;   - Richiama H033+$1426.
-;   - Richiama H063+$1DC2.
-;   - Richiama H063+$321A.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H068+$0D26, H057+$1E68
+; ROUTINE: sub_H057_00000C04 [partial]
+; Purpose: Routine of the spell-related interactions and selections module; calls H065+$34FC, H030+$0B6C, H033+$1426, H063+$1DC2.
+;   - Calls H065+$34FC.
+;   - Calls H030+$0B6C.
+;   - Calls H033+$1426.
+;   - Calls H063+$1DC2.
+;   - Calls H063+$321A.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H068+$0D26, H057+$1E68
 ; --------------------------------------------------------------------------
 L057_00000C04:
 ; H057+$00000C04: 2f0c  move.l a4, -(a7)
@@ -1606,7 +1606,7 @@ L057_00000C92:
 L057_00000C98:
 ; H057+$00000C98: 6000001e  bra.w $cb8
         bra.w H057+$CB8
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00000C9C:
 ; H057+$00000C9C: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -1652,15 +1652,15 @@ L057_00000CD2:
 ; H057+$00000CD2: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H057_00000CD4 [parziale]
-; Scopo: Routine del modulo interazioni e selezioni legate agli incantesimi; richiama H026+$0188, H045+$01D6, H029+$03E2, H063+$1DC2.
-;   - Richiama H026+$0188.
-;   - Richiama H045+$01D6.
-;   - Richiama H029+$03E2.
-;   - Richiama H063+$1DC2.
-;   - Richiama H030+$0256.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente); H005+$3E04 (puntatore stato persistente A, 2048 byte).
-; Chiamanti diretti: H057+$13EA
+; ROUTINE: sub_H057_00000CD4 [partial]
+; Purpose: Routine of the spell-related interactions and selections module; calls H026+$0188, H045+$01D6, H029+$03E2, H063+$1DC2.
+;   - Calls H026+$0188.
+;   - Calls H045+$01D6.
+;   - Calls H029+$03E2.
+;   - Calls H063+$1DC2.
+;   - Calls H030+$0256.
+;   - Uses the global state: H005+$3368 (current character); H005+$3E04 (pointer to persistent state A, 2048 bytes).
+; Direct callers: H057+$13EA
 ; --------------------------------------------------------------------------
 L057_00000CD4:
 ; H057+$00000CD4: 2f0c  move.l a4, -(a7)
@@ -1704,7 +1704,7 @@ L057_00000D04:
 L057_00000D0A:
 ; H057+$00000D0A: 660000ca  bne.w $dd6
         bne.w H057+$DD6
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00000D0E:
 ; H057+$00000D0E: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -1714,7 +1714,7 @@ L057_00000D14:
 L057_00000D18:
 ; H057+$00000D18: 6300001e  bls.w $d38
         bls.w H057+$D38
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00000D1C:
 ; H057+$00000D1C: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -1944,7 +1944,7 @@ L057_00000E38:
 L057_00000E3C:
 ; H057+$00000E3C: c5fc0006  muls.w #$6, d2
         muls.w #$6, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00000E40:
 ; H057+$00000E40: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -2047,7 +2047,7 @@ L057_00000EAC:
 L057_00000EB0:
 ; H057+$00000EB0: 6400fe3a  bcc.w $cec
         bcc.w H057+$CEC
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00000EB4:
 ; H057+$00000EB4: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -2060,7 +2060,7 @@ L057_00000EBE:
 L057_00000EC2:
 ; H057+$00000EC2: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00000EC4:
 ; H057+$00000EC4: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -2076,7 +2076,7 @@ L057_00000ED0:
 L057_00000ED4:
 ; H057+$00000ED4: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00000ED6:
 ; H057+$00000ED6: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -2089,7 +2089,7 @@ L057_00000EE0:
 L057_00000EE4:
 ; H057+$00000EE4: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L057_00000EE6:
 ; H057+$00000EE6: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -2140,7 +2140,7 @@ L057_00000F24:
 L057_00000F26:
 ; H057+$00000F26: 38334000  move.w (a3, d4.w), d4
         move.w (a3, d4.w), d4
-; DISPATCH: word relative a H057+$0F12; indici 0..1, default -1.
+; DISPATCH: words relative to H057+$0F12; indices 0..1, default -1.
 L057_00000F2A:
 ; H057+$00000F2A: 4eb34000  jsr (a3, d4.w)
         jsr (a3, d4.w)
@@ -2174,7 +2174,7 @@ L057_00000F4E:
 L057_00000F52:
 ; H057+$00000F52: 5342  subq.w #$1, d2
         subq.w #$1, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00000F54:
 ; H057+$00000F54: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -2281,7 +2281,7 @@ L057_00000FDA:
 L057_00000FDE:
 ; H057+$00000FDE: 670001be  beq.w $119e
         beq.w H057+$119E
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00000FE2:
 ; H057+$00000FE2: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -2432,7 +2432,7 @@ L057_0000108A:
 L057_0000108C:
 ; H057+$0000108C: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H057+$1076; indici 0..3, default -1.
+; DISPATCH: words relative to H057+$1076; indices 0..3, default -1.
 L057_00001090:
 ; H057+$00001090: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -2460,7 +2460,7 @@ L057_000010A8:
 L057_000010AC:
 ; H057+$000010AC: 486dffd6  pea.l -$2a(a5)
         pea.l -$2a(a5)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L057_000010B0:
 ; H057+$000010B0: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -2533,7 +2533,7 @@ L057_000010FE:
 L057_00001102:
 ; H057+$00001102: 48734000  pea.l (a3, d4.w)
         pea.l (a3, d4.w)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L057_00001106:
 ; H057+$00001106: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -2591,7 +2591,7 @@ L057_00001144:
 L057_00001148:
 ; H057+$00001148: 486c00d8  pea.l $d8(a4)
         pea.l $d8(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L057_0000114C:
 ; H057+$0000114C: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -2650,7 +2650,7 @@ L057_0000118E:
 L057_00001192:
 ; H057+$00001192: 487900003c82  pea.l $3c82.l
         pea.l (H005+$3C82).l
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L057_00001198:
 ; H057+$00001198: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -2670,13 +2670,13 @@ L057_000011AA:
 ; H057+$000011AA: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H057_000011AC [parziale]
-; Scopo: Routine del modulo interazioni e selezioni legate agli incantesimi; richiama H058+$1014, H029+$0312, H063+$33A0.
-;   - Richiama H058+$1014.
-;   - Richiama H029+$0312.
-;   - Richiama H063+$33A0.
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H057+$30FC, H057+$1E84
+; ROUTINE: sub_H057_000011AC [partial]
+; Purpose: Routine of the spell-related interactions and selections module; calls H058+$1014, H029+$0312, H063+$33A0.
+;   - Calls H058+$1014.
+;   - Calls H029+$0312.
+;   - Calls H063+$33A0.
+;   - Uses the global state: H005+$3364 (head of the party list).
+; Direct callers: H057+$30FC, H057+$1E84
 ; --------------------------------------------------------------------------
 L057_000011AC:
 ; H057+$000011AC: 2f0c  move.l a4, -(a7)
@@ -2690,7 +2690,7 @@ L057_000011B2:
 L057_000011B6:
 ; H057+$000011B6: 426dfffa  clr.w -$6(a5)
         clr.w -$6(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L057_000011BA:
 ; H057+$000011BA: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -2827,11 +2827,11 @@ L057_0000126A:
 ; H057+$0000126A: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H057_0000126C [parziale]
-; Scopo: Routine del modulo interazioni e selezioni legate agli incantesimi; richiama H029+$0354.
-;   - Richiama H029+$0354.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H057+$1516
+; ROUTINE: sub_H057_0000126C [partial]
+; Purpose: Routine of the spell-related interactions and selections module; calls H029+$0354.
+;   - Calls H029+$0354.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H057+$1516
 ; --------------------------------------------------------------------------
 L057_0000126C:
 ; H057+$0000126C: 2f0c  move.l a4, -(a7)
@@ -2863,7 +2863,7 @@ L057_00001290:
 L057_00001294:
 ; H057+$00001294: 342dfffe  move.w -$2(a5), d2
         move.w -$2(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00001298:
 ; H057+$00001298: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -2892,7 +2892,7 @@ L057_000012B6:
 L057_000012B8:
 ; H057+$000012B8: 382dfffc  move.w -$4(a5), d4
         move.w -$4(a5), d4
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_000012BC:
 ; H057+$000012BC: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -2927,7 +2927,7 @@ L057_000012DE:
 L057_000012E2:
 ; H057+$000012E2: 342dfffe  move.w -$2(a5), d2
         move.w -$2(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_000012E6:
 ; H057+$000012E6: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -2940,7 +2940,7 @@ L057_000012F0:
 L057_000012F6:
 ; H057+$000012F6: 342dfffe  move.w -$2(a5), d2
         move.w -$2(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_000012FA:
 ; H057+$000012FA: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -2950,7 +2950,7 @@ L057_00001300:
 L057_00001304:
 ; H057+$00001304: 382dfffc  move.w -$4(a5), d4
         move.w -$4(a5), d4
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00001308:
 ; H057+$00001308: 247900003368  movea.l $3368.l, a2
         movea.l (H005+$3368).l, a2
@@ -2963,7 +2963,7 @@ L057_00001312:
 L057_00001318:
 ; H057+$00001318: 342dfffc  move.w -$4(a5), d2
         move.w -$4(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_0000131C:
 ; H057+$0000131C: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -2995,14 +2995,14 @@ L057_00001340:
 ; H057+$00001340: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H057_00001342 [parziale]
-; Scopo: Routine del modulo interazioni e selezioni legate agli incantesimi; richiama H065+$34FC, H008+$203C, H063+$1DC2, H063+$321A.
-;   - Richiama H065+$34FC.
-;   - Richiama H008+$203C.
-;   - Richiama H063+$1DC2.
-;   - Richiama H063+$321A.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H057+$1E6E
+; ROUTINE: sub_H057_00001342 [partial]
+; Purpose: Routine of the spell-related interactions and selections module; calls H065+$34FC, H008+$203C, H063+$1DC2, H063+$321A.
+;   - Calls H065+$34FC.
+;   - Calls H008+$203C.
+;   - Calls H063+$1DC2.
+;   - Calls H063+$321A.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H057+$1E6E
 ; --------------------------------------------------------------------------
 L057_00001342:
 ; H057+$00001342: 2f0c  move.l a4, -(a7)
@@ -3096,7 +3096,7 @@ L057_000013B8:
 L057_000013BC:
 ; H057+$000013BC: 66000010  bne.w $13ce
         bne.w H057+$13CE
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_000013C0:
 ; H057+$000013C0: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -3148,7 +3148,7 @@ L057_000013FA:
 L057_000013FE:
 ; H057+$000013FE: 67000022  beq.w $1422
         beq.w H057+$1422
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00001402:
 ; H057+$00001402: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -3313,7 +3313,7 @@ L057_000014D8:
 L057_000014DC:
 ; H057+$000014DC: 342dfff8  move.w -$8(a5), d2
         move.w -$8(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_000014E0:
 ; H057+$000014E0: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3341,7 +3341,7 @@ L057_000014FA:
 L057_000014FC:
 ; H057+$000014FC: 342dfff8  move.w -$8(a5), d2
         move.w -$8(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00001500:
 ; H057+$00001500: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3425,7 +3425,7 @@ L057_0000156A:
 L057_0000156E:
 ; H057+$0000156E: 6600000c  bne.w $157c
         bne.w H057+$157C
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00001572:
 ; H057+$00001572: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -3452,17 +3452,17 @@ L057_0000158E:
 ; H057+$0000158E: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H057_00001590 [parziale]
-; Scopo: Routine del modulo interazioni e selezioni legate agli incantesimi; richiama H065+$34FC, H008+$203C, H063+$1DC2, H063+$1D44.
-;   - Richiama H065+$34FC.
-;   - Richiama H008+$203C.
-;   - Richiama H063+$1DC2.
-;   - Richiama H063+$1D44.
-;   - Richiama H033+$17E6.
-;   - Richiama H029+$0354.
-;   - Richiama H029+$039A.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H057+$1E74
+; ROUTINE: sub_H057_00001590 [partial]
+; Purpose: Routine of the spell-related interactions and selections module; calls H065+$34FC, H008+$203C, H063+$1DC2, H063+$1D44.
+;   - Calls H065+$34FC.
+;   - Calls H008+$203C.
+;   - Calls H063+$1DC2.
+;   - Calls H063+$1D44.
+;   - Calls H033+$17E6.
+;   - Calls H029+$0354.
+;   - Calls H029+$039A.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H057+$1E74
 ; --------------------------------------------------------------------------
 L057_00001590:
 ; H057+$00001590: 2f0c  move.l a4, -(a7)
@@ -3550,7 +3550,7 @@ L057_000015F6:
 L057_000015FA:
 ; H057+$000015FA: 66000010  bne.w $160c
         bne.w H057+$160C
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_000015FE:
 ; H057+$000015FE: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -3612,7 +3612,7 @@ L057_00001650:
 L057_00001654:
 ; H057+$00001654: 66000022  bne.w $1678
         bne.w H057+$1678
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00001658:
 ; H057+$00001658: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -3650,7 +3650,7 @@ L057_00001688:
 L057_0000168C:
 ; H057+$0000168C: 5342  subq.w #$1, d2
         subq.w #$1, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_0000168E:
 ; H057+$0000168E: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3676,7 +3676,7 @@ L057_000016A8:
 L057_000016AE:
 ; H057+$000016AE: 600001b0  bra.w $1860
         bra.w H057+$1860
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_000016B2:
 ; H057+$000016B2: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3836,7 +3836,7 @@ L057_0000177A:
 L057_0000177E:
 ; H057+$0000177E: c9fc0006  muls.w #$6, d4
         muls.w #$6, d4
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00001782:
 ; H057+$00001782: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3879,7 +3879,7 @@ L057_000017AC:
 L057_000017AE:
 ; H057+$000017AE: 6300009e  bls.w $184e
         bls.w H057+$184E
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_000017B2:
 ; H057+$000017B2: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -4073,7 +4073,7 @@ L057_000018B0:
 L057_000018B4:
 ; H057+$000018B4: 6600000c  bne.w $18c2
         bne.w H057+$18C2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_000018B8:
 ; H057+$000018B8: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -4100,17 +4100,17 @@ L057_000018D4:
 ; H057+$000018D4: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H057_1976 [parziale]
-; Scopo: Trampolino verso H057+$1976; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H057+$1976.
-;   - Richiama H003+$0068.
-;   - Richiama H026+$0188.
-;   - Richiama H045+$01D6.
-;   - Richiama H026+$01E0.
-;   - Richiama H044+$01C2.
-;   - Richiama H008+$13C0.
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H057+$1E7A
+; ROUTINE: trampoline_H057_1976 [partial]
+; Purpose: Trampoline to H057+$1976; the actual body is there.
+;   - Jumps to the actual body at H057+$1976.
+;   - Calls H003+$0068.
+;   - Calls H026+$0188.
+;   - Calls H045+$01D6.
+;   - Calls H026+$01E0.
+;   - Calls H044+$01C2.
+;   - Calls H008+$13C0.
+;   - Uses the global state: H005+$3364 (head of the party list).
+; Direct callers: H057+$1E7A
 ; --------------------------------------------------------------------------
 L057_000018D6:
 ; H057+$000018D6: 2f0c  move.l a4, -(a7)
@@ -4125,17 +4125,17 @@ L057_000018E0:
 ; H057+$000018E0: 60000094  bra.w $1976
         bra.w H057+$1976
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H057_000018E4 [parziale]
-; Scopo: Routine del modulo interazioni e selezioni legate agli incantesimi; richiama H003+$0068, H026+$0188, H045+$01D6, H026+$01E0.
-;   - Richiama H003+$0068.
-;   - Richiama H026+$0188.
-;   - Richiama H045+$01D6.
-;   - Richiama H026+$01E0.
-;   - Richiama H044+$01C2.
-;   - Richiama H008+$13C0.
-;   - Richiama H008+$2178.
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H057+$19D2, H057+$1D46, H057+$1D56, H057+$1D20
+; ROUTINE: sub_H057_000018E4 [partial]
+; Purpose: Routine of the spell-related interactions and selections module; calls H003+$0068, H026+$0188, H045+$01D6, H026+$01E0.
+;   - Calls H003+$0068.
+;   - Calls H026+$0188.
+;   - Calls H045+$01D6.
+;   - Calls H026+$01E0.
+;   - Calls H044+$01C2.
+;   - Calls H008+$13C0.
+;   - Calls H008+$2178.
+;   - Uses the global state: H005+$3364 (head of the party list).
+; Direct callers: H057+$19D2, H057+$1D46, H057+$1D56, H057+$1D20
 ; --------------------------------------------------------------------------
 L057_000018E4:
 ; H057+$000018E4: 4e550000  link.w a5, #$0
@@ -4305,7 +4305,7 @@ L057_000019A8:
 L057_000019AC:
 ; H057+$000019AC: 42ab002c  clr.l $2c(a3)
         clr.l $2c(a3)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L057_000019B0:
 ; H057+$000019B0: 2b7900003364fff0  move.l $3364.l, -$10(a5)
         move.l (H005+$3364).l, -$10(a5)
@@ -4883,7 +4883,7 @@ L057_00001CD2:
 L057_00001CD4:
 ; H057+$00001CD4: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H057+$1C12; indici 0..88, default -1.
+; DISPATCH: words relative to H057+$1C12; indices 0..88, default -1.
 L057_00001CD8:
 ; H057+$00001CD8: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -5085,13 +5085,13 @@ L057_00001DD6:
 ; H057+$00001DD6: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H057_00001DD8 [parziale]
-; Scopo: Routine del modulo interazioni e selezioni legate agli incantesimi; richiama H008+$01FC, H065+$3390, H063+$0D80.
-;   - Richiama H008+$01FC.
-;   - Richiama H065+$3390.
-;   - Richiama H063+$0D80.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H057+$30EA
+; ROUTINE: sub_H057_00001DD8 [partial]
+; Purpose: Routine of the spell-related interactions and selections module; calls H008+$01FC, H065+$3390, H063+$0D80.
+;   - Calls H008+$01FC.
+;   - Calls H065+$3390.
+;   - Calls H063+$0D80.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H057+$30EA
 ; --------------------------------------------------------------------------
 L057_00001DD8:
 ; H057+$00001DD8: 2f0c  move.l a4, -(a7)
@@ -5156,7 +5156,7 @@ L057_00001E22:
 L057_00001E26:
 ; H057+$00001E26: 486dfffe  pea.l -$2(a5)
         pea.l -$2(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L057_00001E2A:
 ; H057+$00001E2A: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -5176,7 +5176,7 @@ L057_00001E3C:
 L057_00001E40:
 ; H057+$00001E40: 4eb900003390  jsr $3390.l
         jsr (H065+$3390).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00001E46:
 ; H057+$00001E46: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -5260,7 +5260,7 @@ L057_00001EC0:
 L057_00001EC2:
 ; H057+$00001EC2: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H057+$1E8E; indici 0..16, default -1.
+; DISPATCH: words relative to H057+$1E8E; indices 0..16, default -1.
 L057_00001EC6:
 ; H057+$00001EC6: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -5286,10 +5286,10 @@ L057_00001EDE:
 ; H057+$00001EDE: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H057_00001EE0 [parziale]
-; Scopo: Routine del modulo interazioni e selezioni legate agli incantesimi; opera su H005+$3364 (testa della lista del party); H005+$3368 (personaggio corrente).
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party); H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H057+$22E2
+; ROUTINE: sub_H057_00001EE0 [partial]
+; Purpose: Routine of the spell-related interactions and selections module; works on H005+$3364 (head of the party list); H005+$3368 (current character).
+;   - Uses the global state: H005+$3364 (head of the party list); H005+$3368 (current character).
+; Direct callers: H057+$22E2
 ; --------------------------------------------------------------------------
 L057_00001EE0:
 ; H057+$00001EE0: 2f0c  move.l a4, -(a7)
@@ -5300,7 +5300,7 @@ L057_00001EE2:
 L057_00001EE6:
 ; H057+$00001EE6: 4e55fff4  link.w a5, #$fff4
         link.w a5, #$fff4
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L057_00001EEA:
 ; H057+$00001EEA: 2b7900003364fff8  move.l $3364.l, -$8(a5)
         move.l (H005+$3364).l, -$8(a5)
@@ -5310,7 +5310,7 @@ L057_00001EF2:
 L057_00001EF6:
 ; H057+$00001EF6: 242dfff8  move.l -$8(a5), d2
         move.l -$8(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00001EFA:
 ; H057+$00001EFA: b4b900003368  cmp.l $3368.l, d2
         cmp.l (H005+$3368).l, d2
@@ -5344,7 +5344,7 @@ L057_00001F20:
 L057_00001F24:
 ; H057+$00001F24: 242b018e  move.l $18e(a3), d2
         move.l $18e(a3), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00001F28:
 ; H057+$00001F28: b4b900003368  cmp.l $3368.l, d2
         cmp.l (H005+$3368).l, d2
@@ -5363,18 +5363,18 @@ L057_00001F3C:
 L057_00001F42:
 ; H057+$00001F42: 60dc  bra.b $1f20
         bra.b H057+$1F20
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00001F44:
 ; H057+$00001F44: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
 L057_00001F4A:
 ; H057+$00001F4A: 2b6b018efff4  move.l $18e(a3), -$c(a5)
         move.l $18e(a3), -$c(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L057_00001F50:
 ; H057+$00001F50: 243900003364  move.l $3364.l, d2
         move.l (H005+$3364).l, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00001F56:
 ; H057+$00001F56: b4b900003368  cmp.l $3368.l, d2
         cmp.l (H005+$3368).l, d2
@@ -5387,18 +5387,18 @@ L057_00001F60:
 L057_00001F64:
 ; H057+$00001F64: 6700000a  beq.w $1f70
         beq.w H057+$1F70
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L057_00001F68:
 ; H057+$00001F68: 23edfff400003364  move.l -$c(a5), $3364.l
         move.l -$c(a5), (H005+$3364).l
 L057_00001F70:
 ; H057+$00001F70: 266dfff8  movea.l -$8(a5), a3
         movea.l -$8(a5), a3
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00001F74:
 ; H057+$00001F74: 277900003368018e  move.l $3368.l, $18e(a3)
         move.l (H005+$3368).l, $18e(a3)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00001F7C:
 ; H057+$00001F7C: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -5414,7 +5414,7 @@ L057_00001F8A:
 L057_00001F8E:
 ; H057+$00001F8E: 276dfff4018e  move.l -$c(a5), $18e(a3)
         move.l -$c(a5), $18e(a3)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00001F94:
 ; H057+$00001F94: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -5424,7 +5424,7 @@ L057_00001F9A:
 L057_00001FA0:
 ; H057+$00001FA0: 242dfff8  move.l -$8(a5), d2
         move.l -$8(a5), d2
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L057_00001FA4:
 ; H057+$00001FA4: b4b900003364  cmp.l $3364.l, d2
         cmp.l (H005+$3364).l, d2
@@ -5437,7 +5437,7 @@ L057_00001FAE:
 L057_00001FB2:
 ; H057+$00001FB2: 66000010  bne.w $1fc4
         bne.w H057+$1FC4
-; STATO: H005+$3364 = testa della lista del party; H005+$3368 = personaggio corrente
+; STATE: H005+$3364 = head of the party list; H005+$3368 = current character
 L057_00001FB6:
 ; H057+$00001FB6: 23f90000336800003364  move.l $3368.l, $3364.l
         move.l (H005+$3368).l, (H005+$3364).l
@@ -5447,7 +5447,7 @@ L057_00001FC0:
 L057_00001FC4:
 ; H057+$00001FC4: 266dfffc  movea.l -$4(a5), a3
         movea.l -$4(a5), a3
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00001FC8:
 ; H057+$00001FC8: 277900003368018e  move.l $3368.l, $18e(a3)
         move.l (H005+$3368).l, $18e(a3)
@@ -5461,10 +5461,10 @@ L057_00001FD4:
 ; H057+$00001FD4: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H057_00001FD6 [parziale]
-; Scopo: Routine del modulo interazioni e selezioni legate agli incantesimi; opera su H005+$3364 (testa della lista del party); H005+$3368 (personaggio corrente).
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party); H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H057+$22F4
+; ROUTINE: sub_H057_00001FD6 [partial]
+; Purpose: Routine of the spell-related interactions and selections module; works on H005+$3364 (head of the party list); H005+$3368 (current character).
+;   - Uses the global state: H005+$3364 (head of the party list); H005+$3368 (current character).
+; Direct callers: H057+$22F4
 ; --------------------------------------------------------------------------
 L057_00001FD6:
 ; H057+$00001FD6: 2f0c  move.l a4, -(a7)
@@ -5475,14 +5475,14 @@ L057_00001FD8:
 L057_00001FDC:
 ; H057+$00001FDC: 4e55fff8  link.w a5, #$fff8
         link.w a5, #$fff8
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L057_00001FE0:
 ; H057+$00001FE0: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
 L057_00001FE8:
 ; H057+$00001FE8: 242dfffc  move.l -$4(a5), d2
         move.l -$4(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00001FEC:
 ; H057+$00001FEC: b4b900003368  cmp.l $3368.l, d2
         cmp.l (H005+$3368).l, d2
@@ -5495,7 +5495,7 @@ L057_00001FF6:
 L057_00001FFA:
 ; H057+$00001FFA: 242b018e  move.l $18e(a3), d2
         move.l $18e(a3), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00001FFE:
 ; H057+$00001FFE: b4b900003368  cmp.l $3368.l, d2
         cmp.l (H005+$3368).l, d2
@@ -5511,7 +5511,7 @@ L057_0000200C:
 L057_00002012:
 ; H057+$00002012: 60e2  bra.b $1ff6
         bra.b H057+$1FF6
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00002014:
 ; H057+$00002014: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -5524,15 +5524,15 @@ L057_00002020:
 L057_00002024:
 ; H057+$00002024: 66000028  bne.w $204e
         bne.w H057+$204E
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00002028:
 ; H057+$00002028: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L057_0000202E:
 ; H057+$0000202E: 277900003364018e  move.l $3364.l, $18e(a3)
         move.l (H005+$3364).l, $18e(a3)
-; STATO: H005+$3364 = testa della lista del party; H005+$3368 = personaggio corrente
+; STATE: H005+$3364 = head of the party list; H005+$3368 = current character
 L057_00002036:
 ; H057+$00002036: 23f90000336800003364  move.l $3368.l, $3364.l
         move.l (H005+$3368).l, (H005+$3364).l
@@ -5548,32 +5548,32 @@ L057_0000204A:
 L057_0000204E:
 ; H057+$0000204E: 266dfff8  movea.l -$8(a5), a3
         movea.l -$8(a5), a3
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00002052:
 ; H057+$00002052: 247900003368  movea.l $3368.l, a2
         movea.l (H005+$3368).l, a2
 L057_00002058:
 ; H057+$00002058: 256b018e018e  move.l $18e(a3), $18e(a2)
         move.l $18e(a3), $18e(a2)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L057_0000205E:
 ; H057+$0000205E: 243900003364  move.l $3364.l, d2
         move.l (H005+$3364).l, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00002064:
 ; H057+$00002064: b4b900003368  cmp.l $3368.l, d2
         cmp.l (H005+$3368).l, d2
 L057_0000206A:
 ; H057+$0000206A: 6600000a  bne.w $2076
         bne.w H057+$2076
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L057_0000206E:
 ; H057+$0000206E: 23edfff800003364  move.l -$8(a5), $3364.l
         move.l -$8(a5), (H005+$3364).l
 L057_00002076:
 ; H057+$00002076: 242dfffc  move.l -$4(a5), d2
         move.l -$4(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_0000207A:
 ; H057+$0000207A: b4b900003368  cmp.l $3368.l, d2
         cmp.l (H005+$3368).l, d2
@@ -5589,7 +5589,7 @@ L057_00002088:
 L057_0000208E:
 ; H057+$0000208E: 266dfff8  movea.l -$8(a5), a3
         movea.l -$8(a5), a3
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00002092:
 ; H057+$00002092: 277900003368018e  move.l $3368.l, $18e(a3)
         move.l (H005+$3368).l, $18e(a3)
@@ -5603,10 +5603,10 @@ L057_0000209E:
 ; H057+$0000209E: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H057_2208 [parziale]
-; Scopo: Trampolino verso H057+$2208; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H057+$2208.
-; Chiamanti diretti: H057+$22D0
+; ROUTINE: trampoline_H057_2208 [partial]
+; Purpose: Trampoline to H057+$2208; the actual body is there.
+;   - Jumps to the actual body at H057+$2208.
+; Direct callers: H057+$22D0
 ; --------------------------------------------------------------------------
 L057_000020A0:
 ; H057+$000020A0: 2f0c  move.l a4, -(a7)
@@ -5617,7 +5617,7 @@ L057_000020A2:
 L057_000020A6:
 ; H057+$000020A6: 4e55fff4  link.w a5, #$fff4
         link.w a5, #$fff4
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_000020AA:
 ; H057+$000020AA: 243900003368  move.l $3368.l, d2
         move.l (H005+$3368).l, d2
@@ -5630,18 +5630,18 @@ L057_000020B6:
 L057_000020BA:
 ; H057+$000020BA: 6000014c  bra.w $2208
         bra.w H057+$2208
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_000020BE:
 ; H057+$000020BE: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
 L057_000020C4:
 ; H057+$000020C4: 2b6b018efff8  move.l $18e(a3), -$8(a5)
         move.l $18e(a3), -$8(a5)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_000020CA:
 ; H057+$000020CA: 243900003368  move.l $3368.l, d2
         move.l (H005+$3368).l, d2
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L057_000020D0:
 ; H057+$000020D0: b4b900003364  cmp.l $3364.l, d2
         cmp.l (H005+$3364).l, d2
@@ -5654,7 +5654,7 @@ L057_000020DA:
 L057_000020DE:
 ; H057+$000020DE: 6000003c  bra.w $211c
         bra.w H057+$211C
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L057_000020E2:
 ; H057+$000020E2: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -5670,7 +5670,7 @@ L057_000020F2:
 L057_000020F6:
 ; H057+$000020F6: 242b018e  move.l $18e(a3), d2
         move.l $18e(a3), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_000020FA:
 ; H057+$000020FA: b4b900003368  cmp.l $3368.l, d2
         cmp.l (H005+$3368).l, d2
@@ -5710,18 +5710,18 @@ L057_00002128:
 L057_0000212E:
 ; H057+$0000212E: 60000010  bra.w $2140
         bra.w H057+$2140
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00002132:
 ; H057+$00002132: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L057_00002138:
 ; H057+$00002138: 23eb018e00003364  move.l $18e(a3), $3364.l
         move.l $18e(a3), (H005+$3364).l
 L057_00002140:
 ; H057+$00002140: 243900002508  move.l $2508.l, d2
         move.l (H005+$2508).l, d2
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L057_00002146:
 ; H057+$00002146: b4b900003364  cmp.l $3364.l, d2
         cmp.l (H005+$3364).l, d2
@@ -5734,7 +5734,7 @@ L057_00002150:
 L057_00002154:
 ; H057+$00002154: 6000003c  bra.w $2192
         bra.w H057+$2192
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L057_00002158:
 ; H057+$00002158: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -5774,7 +5774,7 @@ L057_0000218A:
 L057_0000218E:
 ; H057+$0000218E: 60000078  bra.w $2208
         bra.w H057+$2208
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00002192:
 ; H057+$00002192: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -5790,7 +5790,7 @@ L057_000021A2:
 L057_000021A6:
 ; H057+$000021A6: 267900002508  movea.l $2508.l, a3
         movea.l (H005+$2508).l, a3
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_000021AC:
 ; H057+$000021AC: 247900003368  movea.l $3368.l, a2
         movea.l (H005+$3368).l, a2
@@ -5800,7 +5800,7 @@ L057_000021B2:
 L057_000021B8:
 ; H057+$000021B8: 267900002508  movea.l $2508.l, a3
         movea.l (H005+$2508).l, a3
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_000021BE:
 ; H057+$000021BE: 277900003368018e  move.l $3368.l, $18e(a3)
         move.l (H005+$3368).l, $18e(a3)
@@ -5813,7 +5813,7 @@ L057_000021CA:
 L057_000021CE:
 ; H057+$000021CE: 67000020  beq.w $21f0
         beq.w H057+$21F0
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_000021D2:
 ; H057+$000021D2: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -5823,21 +5823,21 @@ L057_000021D8:
 L057_000021E0:
 ; H057+$000021E0: 266dfffc  movea.l -$4(a5), a3
         movea.l -$4(a5), a3
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_000021E4:
 ; H057+$000021E4: 277900003368018e  move.l $3368.l, $18e(a3)
         move.l (H005+$3368).l, $18e(a3)
 L057_000021EC:
 ; H057+$000021EC: 6000001a  bra.w $2208
         bra.w H057+$2208
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_000021F0:
 ; H057+$000021F0: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
 L057_000021F6:
 ; H057+$000021F6: 277900002508018e  move.l $2508.l, $18e(a3)
         move.l (H005+$2508).l, $18e(a3)
-; STATO: H005+$3364 = testa della lista del party; H005+$3368 = personaggio corrente
+; STATE: H005+$3364 = head of the party list; H005+$3368 = current character
 L057_000021FE:
 ; H057+$000021FE: 23f90000336800003364  move.l $3368.l, $3364.l
         move.l (H005+$3368).l, (H005+$3364).l
@@ -5851,15 +5851,15 @@ L057_0000220C:
 ; H057+$0000220C: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H057_0000220E [parziale]
-; Scopo: Routine del modulo interazioni e selezioni legate agli incantesimi; richiama H008+$01FC, H065+$3390, H063+$0D80, H063+$1DC2.
-;   - Richiama H008+$01FC.
-;   - Richiama H065+$3390.
-;   - Richiama H063+$0D80.
-;   - Richiama H063+$1DC2.
-;   - Richiama H063+$1EE8.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H057+$283E
+; ROUTINE: sub_H057_0000220E [partial]
+; Purpose: Routine of the spell-related interactions and selections module; calls H008+$01FC, H065+$3390, H063+$0D80, H063+$1DC2.
+;   - Calls H008+$01FC.
+;   - Calls H065+$3390.
+;   - Calls H063+$0D80.
+;   - Calls H063+$1DC2.
+;   - Calls H063+$1EE8.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H057+$283E
 ; --------------------------------------------------------------------------
 L057_0000220E:
 ; H057+$0000220E: 2f0c  move.l a4, -(a7)
@@ -5963,7 +5963,7 @@ L057_0000228A:
 L057_0000228E:
 ; H057+$0000228E: 486dffaa  pea.l -$56(a5)
         pea.l -$56(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L057_00002292:
 ; H057+$00002292: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -5989,7 +5989,7 @@ L057_000022AC:
 L057_000022B0:
 ; H057+$000022B0: 4eb900003390  jsr $3390.l
         jsr (H065+$3390).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_000022B6:
 ; H057+$000022B6: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -6033,7 +6033,7 @@ L057_000022F0:
 L057_000022F4:
 ; H057+$000022F4: 6100fce0  bsr.w $1fd6
         bsr.w H057+$1FD6
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_000022F8:
 ; H057+$000022F8: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -6080,7 +6080,7 @@ L057_00002332:
 L057_00002336:
 ; H057+$00002336: 67000020  beq.w $2358
         beq.w H057+$2358
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_0000233A:
 ; H057+$0000233A: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -6120,16 +6120,16 @@ L057_00002366:
 ; H057+$00002366: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H057_00002368 [parziale]
-; Scopo: Routine del modulo interazioni e selezioni legate agli incantesimi; richiama H008+$203C, H053+$00CA, H010+$0332, H063+$1DC2.
-;   - Richiama H008+$203C.
-;   - Richiama H053+$00CA.
-;   - Richiama H010+$0332.
-;   - Richiama H063+$1DC2.
-;   - Richiama H030+$0B6C.
-;   - Richiama H063+$0D80.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente); H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H057+$2844
+; ROUTINE: sub_H057_00002368 [partial]
+; Purpose: Routine of the spell-related interactions and selections module; calls H008+$203C, H053+$00CA, H010+$0332, H063+$1DC2.
+;   - Calls H008+$203C.
+;   - Calls H053+$00CA.
+;   - Calls H010+$0332.
+;   - Calls H063+$1DC2.
+;   - Calls H030+$0B6C.
+;   - Calls H063+$0D80.
+;   - Uses the global state: H005+$3368 (current character); H005+$3364 (head of the party list).
+; Direct callers: H057+$2844
 ; --------------------------------------------------------------------------
 L057_00002368:
 ; H057+$00002368: 2f0c  move.l a4, -(a7)
@@ -6140,7 +6140,7 @@ L057_0000236A:
 L057_0000236E:
 ; H057+$0000236E: 4e550000  link.w a5, #$0
         link.w a5, #$0
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00002372:
 ; H057+$00002372: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -6150,11 +6150,11 @@ L057_00002378:
 L057_0000237C:
 ; H057+$0000237C: 66000054  bne.w $23d2
         bne.w H057+$23D2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00002380:
 ; H057+$00002380: 243900003368  move.l $3368.l, d2
         move.l (H005+$3368).l, d2
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L057_00002386:
 ; H057+$00002386: b4b900003364  cmp.l $3364.l, d2
         cmp.l (H005+$3364).l, d2
@@ -6212,7 +6212,7 @@ L057_000023CA:
 L057_000023CE:
 ; H057+$000023CE: 600000d8  bra.w $24a8
         bra.w H057+$24A8
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_000023D2:
 ; H057+$000023D2: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -6260,7 +6260,7 @@ L057_00002408:
 L057_0000240C:
 ; H057+$0000240C: 6600007e  bne.w $248c
         bne.w H057+$248C
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00002410:
 ; H057+$00002410: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -6270,7 +6270,7 @@ L057_00002416:
 L057_0000241A:
 ; H057+$0000241A: 67000022  beq.w $243e
         beq.w H057+$243E
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_0000241E:
 ; H057+$0000241E: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -6293,7 +6293,7 @@ L057_00002434:
 L057_0000243A:
 ; H057+$0000243A: 6000001e  bra.w $245a
         bra.w H057+$245A
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_0000243E:
 ; H057+$0000243E: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -6339,7 +6339,7 @@ L057_00002472:
 L057_00002476:
 ; H057+$00002476: 4eb900000b6c  jsr $b6c.l
         jsr (H030+$B6C).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_0000247C:
 ; H057+$0000247C: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -6350,7 +6350,7 @@ L057_00002482:
 L057_00002488:
 ; H057+$00002488: 6000001e  bra.w $24a8
         bra.w H057+$24A8
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_0000248C:
 ; H057+$0000248C: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -6380,13 +6380,13 @@ L057_000024AC:
 ; H057+$000024AC: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H057_000024AE [parziale]
-; Scopo: Routine del modulo interazioni e selezioni legate agli incantesimi; richiama H008+$01FC, H065+$3390, H063+$0D80.
-;   - Richiama H008+$01FC.
-;   - Richiama H065+$3390.
-;   - Richiama H063+$0D80.
-;   - Usa lo stato globale: H005+$3E04 (puntatore stato persistente A, 2048 byte); H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H057+$2838
+; ROUTINE: sub_H057_000024AE [partial]
+; Purpose: Routine of the spell-related interactions and selections module; calls H008+$01FC, H065+$3390, H063+$0D80.
+;   - Calls H008+$01FC.
+;   - Calls H065+$3390.
+;   - Calls H063+$0D80.
+;   - Uses the global state: H005+$3E04 (pointer to persistent state A, 2048 bytes); H005+$3368 (current character).
+; Direct callers: H057+$2838
 ; --------------------------------------------------------------------------
 L057_000024AE:
 ; H057+$000024AE: 2f0c  move.l a4, -(a7)
@@ -6397,7 +6397,7 @@ L057_000024B0:
 L057_000024B4:
 ; H057+$000024B4: 4e55fffc  link.w a5, #$fffc
         link.w a5, #$fffc
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L057_000024B8:
 ; H057+$000024B8: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -6440,7 +6440,7 @@ L057_000024EC:
 L057_000024F0:
 ; H057+$000024F0: 486dfffe  pea.l -$2(a5)
         pea.l -$2(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L057_000024F4:
 ; H057+$000024F4: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -6460,7 +6460,7 @@ L057_00002506:
 L057_0000250A:
 ; H057+$0000250A: 4eb900003390  jsr $3390.l
         jsr (H065+$3390).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00002510:
 ; H057+$00002510: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -6538,11 +6538,11 @@ L057_00002592:
 L057_00002594:
 ; H057+$00002594: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H057+$2556; indici 0..21, default -1.
+; DISPATCH: words relative to H057+$2556; indices 0..21, default -1.
 L057_00002598:
 ; H057+$00002598: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L057_0000259C:
 ; H057+$0000259C: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -6559,14 +6559,14 @@ L057_000025AC:
 ; H057+$000025AC: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H057_000025AE [parziale]
-; Scopo: Routine del modulo interazioni e selezioni legate agli incantesimi; richiama H045+$01D6, H026+$01E0, H030+$0256, H008+$01FC.
-;   - Richiama H045+$01D6.
-;   - Richiama H026+$01E0.
-;   - Richiama H030+$0256.
-;   - Richiama H008+$01FC.
-;   - Richiama H063+$1EE8.
-; Chiamanti diretti: H057+$284A
+; ROUTINE: sub_H057_000025AE [partial]
+; Purpose: Routine of the spell-related interactions and selections module; calls H045+$01D6, H026+$01E0, H030+$0256, H008+$01FC.
+;   - Calls H045+$01D6.
+;   - Calls H026+$01E0.
+;   - Calls H030+$0256.
+;   - Calls H008+$01FC.
+;   - Calls H063+$1EE8.
+; Direct callers: H057+$284A
 ; --------------------------------------------------------------------------
 L057_000025AE:
 ; H057+$000025AE: 2f0c  move.l a4, -(a7)
@@ -6673,7 +6673,7 @@ L057_0000262C:
 L057_00002630:
 ; H057+$00002630: 486dffd4  pea.l -$2c(a5)
         pea.l -$2c(a5)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L057_00002634:
 ; H057+$00002634: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -6782,7 +6782,7 @@ L057_000026C2:
 L057_000026C6:
 ; H057+$000026C6: 486dfffe  pea.l -$2(a5)
         pea.l -$2(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L057_000026CA:
 ; H057+$000026CA: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -6855,7 +6855,7 @@ L057_00002732:
 L057_00002734:
 ; H057+$00002734: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H057+$2710; indici 0..8, default -1.
+; DISPATCH: words relative to H057+$2710; indices 0..8, default -1.
 L057_00002738:
 ; H057+$00002738: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -6910,7 +6910,7 @@ L057_0000278A:
 L057_0000278C:
 ; H057+$0000278C: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H057+$275E; indici 0..13, default -1.
+; DISPATCH: words relative to H057+$275E; indices 0..13, default -1.
 L057_00002790:
 ; H057+$00002790: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -6940,16 +6940,16 @@ L057_000027B0:
 ; H057+$000027B0: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H057_000027B2 [parziale]
-; Scopo: Routine del modulo interazioni e selezioni legate agli incantesimi; richiama H008+$01FC, H065+$3390, H063+$0D80, H047+$00E6.
-;   - Richiama H008+$01FC.
-;   - Richiama H065+$3390.
-;   - Richiama H063+$0D80.
-;   - Richiama H047+$00E6.
-;   - Richiama H063+$321A.
-;   - Richiama H026+$01E0.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H057+$3114
+; ROUTINE: sub_H057_000027B2 [partial]
+; Purpose: Routine of the spell-related interactions and selections module; calls H008+$01FC, H065+$3390, H063+$0D80, H047+$00E6.
+;   - Calls H008+$01FC.
+;   - Calls H065+$3390.
+;   - Calls H063+$0D80.
+;   - Calls H047+$00E6.
+;   - Calls H063+$321A.
+;   - Calls H026+$01E0.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H057+$3114
 ; --------------------------------------------------------------------------
 L057_000027B2:
 ; H057+$000027B2: 2f0c  move.l a4, -(a7)
@@ -7005,7 +7005,7 @@ L057_000027F2:
 L057_000027F6:
 ; H057+$000027F6: 486dfffd  pea.l -$3(a5)
         pea.l -$3(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L057_000027FA:
 ; H057+$000027FA: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -7025,7 +7025,7 @@ L057_0000280C:
 L057_00002810:
 ; H057+$00002810: 4eb900003390  jsr $3390.l
         jsr (H065+$3390).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00002816:
 ; H057+$00002816: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -7209,7 +7209,7 @@ L057_000028F8:
 L057_000028FC:
 ; H057+$000028FC: 486dfffd  pea.l -$3(a5)
         pea.l -$3(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L057_00002900:
 ; H057+$00002900: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -7283,7 +7283,7 @@ L057_0000296C:
 L057_0000296E:
 ; H057+$0000296E: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H057+$293C; indici 0..15, default -1.
+; DISPATCH: words relative to H057+$293C; indices 0..15, default -1.
 L057_00002972:
 ; H057+$00002972: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -7330,7 +7330,7 @@ L057_000029BE:
 L057_000029C0:
 ; H057+$000029C0: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H057+$298E; indici 0..15, default -1.
+; DISPATCH: words relative to H057+$298E; indices 0..15, default -1.
 L057_000029C4:
 ; H057+$000029C4: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -7350,14 +7350,14 @@ L057_000029D8:
 ; H057+$000029D8: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H057_2E8A [parziale]
-; Scopo: Trampolino verso H057+$2E8A; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H057+$2E8A.
-;   - Richiama H063+$0D80.
-;   - Richiama H063+$33A0.
-;   - Richiama H058+$1014.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H057+$3106
+; ROUTINE: trampoline_H057_2E8A [partial]
+; Purpose: Trampoline to H057+$2E8A; the actual body is there.
+;   - Jumps to the actual body at H057+$2E8A.
+;   - Calls H063+$0D80.
+;   - Calls H063+$33A0.
+;   - Calls H058+$1014.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H057+$3106
 ; --------------------------------------------------------------------------
 L057_000029DA:
 ; H057+$000029DA: 2f0c  move.l a4, -(a7)
@@ -7372,10 +7372,10 @@ L057_000029E4:
 ; H057+$000029E4: 600004a4  bra.w $2e8a
         bra.w H057+$2E8A
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H057_29FE [parziale]
-; Scopo: Trampolino verso H057+$29FE; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H057+$29FE.
-; Chiamanti diretti: H057+$2A26, H057+$2C50
+; ROUTINE: trampoline_H057_29FE [partial]
+; Purpose: Trampoline to H057+$29FE; the actual body is there.
+;   - Jumps to the actual body at H057+$29FE.
+; Direct callers: H057+$2A26, H057+$2C50
 ; --------------------------------------------------------------------------
 L057_000029E8:
 ; H057+$000029E8: 4e550000  link.w a5, #$0
@@ -7411,11 +7411,11 @@ L057_00002A04:
 ; H057+$00002A04: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H057_00002A06 [parziale]
-; Scopo: Routine del modulo interazioni e selezioni legate agli incantesimi; richiama H062+$156C.
-;   - Richiama H062+$156C.
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H057+$2EA8
+; ROUTINE: sub_H057_00002A06 [partial]
+; Purpose: Routine of the spell-related interactions and selections module; calls H062+$156C.
+;   - Calls H062+$156C.
+;   - Uses the global state: H005+$3364 (head of the party list).
+; Direct callers: H057+$2EA8
 ; --------------------------------------------------------------------------
 L057_00002A06:
 ; H057+$00002A06: 4e55fff8  link.w a5, #$fff8
@@ -7423,7 +7423,7 @@ L057_00002A06:
 L057_00002A0A:
 ; H057+$00002A0A: 426dfffe  clr.w -$2(a5)
         clr.w -$2(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L057_00002A0E:
 ; H057+$00002A0E: 2b7900003364fff8  move.l $3364.l, -$8(a5)
         move.l (H005+$3364).l, -$8(a5)
@@ -7620,10 +7620,10 @@ L057_00002AFC:
 ; H057+$00002AFC: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H057_00002AFE [parziale]
-; Scopo: Routine del modulo interazioni e selezioni legate agli incantesimi; richiama H062+$156C.
-;   - Richiama H062+$156C.
-; Chiamanti diretti: H057+$2F02
+; ROUTINE: sub_H057_00002AFE [partial]
+; Purpose: Routine of the spell-related interactions and selections module; calls H062+$156C.
+;   - Calls H062+$156C.
+; Direct callers: H057+$2F02
 ; --------------------------------------------------------------------------
 L057_00002AFE:
 ; H057+$00002AFE: 4e55fffc  link.w a5, #$fffc
@@ -7788,10 +7788,10 @@ L057_00002BB8:
 ; H057+$00002BB8: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H057_00002BBA [parziale]
-; Scopo: Routine del modulo interazioni e selezioni legate agli incantesimi; opera su H005+$3364 (testa della lista del party).
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H057+$2E96, H057+$2EAE, H057+$2D3C, H057+$2D4E
+; ROUTINE: sub_H057_00002BBA [partial]
+; Purpose: Routine of the spell-related interactions and selections module; works on H005+$3364 (head of the party list).
+;   - Uses the global state: H005+$3364 (head of the party list).
+; Direct callers: H057+$2E96, H057+$2EAE, H057+$2D3C, H057+$2D4E
 ; --------------------------------------------------------------------------
 L057_00002BBA:
 ; H057+$00002BBA: 4e55fffa  link.w a5, #$fffa
@@ -7799,7 +7799,7 @@ L057_00002BBA:
 L057_00002BBE:
 ; H057+$00002BBE: 426dfffe  clr.w -$2(a5)
         clr.w -$2(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L057_00002BC2:
 ; H057+$00002BC2: 2b7900003364fffa  move.l $3364.l, -$6(a5)
         move.l (H005+$3364).l, -$6(a5)
@@ -7861,15 +7861,15 @@ L057_00002C06:
 ; H057+$00002C06: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H057_00002C08 [parziale]
-; Scopo: Routine del modulo interazioni e selezioni legate agli incantesimi; opera su H005+$3364 (testa della lista del party).
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H057+$2EE4
+; ROUTINE: sub_H057_00002C08 [partial]
+; Purpose: Routine of the spell-related interactions and selections module; works on H005+$3364 (head of the party list).
+;   - Uses the global state: H005+$3364 (head of the party list).
+; Direct callers: H057+$2EE4
 ; --------------------------------------------------------------------------
 L057_00002C08:
 ; H057+$00002C08: 4e55ffee  link.w a5, #$ffee
         link.w a5, #$ffee
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L057_00002C0C:
 ; H057+$00002C0C: 2b7900003364fffa  move.l $3364.l, -$6(a5)
         move.l (H005+$3364).l, -$6(a5)
@@ -8213,19 +8213,19 @@ L057_00002DC6:
 ; H057+$00002DC6: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H057_00002DC8 [parziale]
-; Scopo: Routine del modulo interazioni e selezioni legate agli incantesimi; richiama H062+$253C, H063+$0D80, H063+$33A0, H058+$1014.
-;   - Richiama H062+$253C.
-;   - Richiama H063+$0D80.
-;   - Richiama H063+$33A0.
-;   - Richiama H058+$1014.
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party); H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H057+$2F08
+; ROUTINE: sub_H057_00002DC8 [partial]
+; Purpose: Routine of the spell-related interactions and selections module; calls H062+$253C, H063+$0D80, H063+$33A0, H058+$1014.
+;   - Calls H062+$253C.
+;   - Calls H063+$0D80.
+;   - Calls H063+$33A0.
+;   - Calls H058+$1014.
+;   - Uses the global state: H005+$3364 (head of the party list); H005+$3368 (current character).
+; Direct callers: H057+$2F08
 ; --------------------------------------------------------------------------
 L057_00002DC8:
 ; H057+$00002DC8: 4e55fffa  link.w a5, #$fffa
         link.w a5, #$fffa
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L057_00002DCC:
 ; H057+$00002DCC: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -8428,7 +8428,7 @@ L057_00002EB4:
 L057_00002EB6:
 ; H057+$00002EB6: 66000018  bne.w $2ed0
         bne.w H057+$2ED0
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00002EBA:
 ; H057+$00002EBA: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -8498,7 +8498,7 @@ L057_00002F06:
 L057_00002F08:
 ; H057+$00002F08: 6100febe  bsr.w $2dc8
         bsr.w H057+$2DC8
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00002F0C:
 ; H057+$00002F0C: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -8541,17 +8541,17 @@ L057_00002F38:
 ; H057+$00002F38: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H057_00002F3A [parziale]
-; Scopo: Routine del modulo interazioni e selezioni legate agli incantesimi; richiama H029+$0312, H063+$321A, H030+$0B6C, H030+$0256.
-;   - Richiama H029+$0312.
-;   - Richiama H063+$321A.
-;   - Richiama H030+$0B6C.
-;   - Richiama H030+$0256.
-;   - Richiama H008+$01FC.
-;   - Richiama H065+$3390.
-;   - Richiama H063+$0D80.
-;   - Usa lo stato globale: H005+$3DE3 (contesto nativo, 5 nel combattimento); H005+$3368 (personaggio corrente); H005+$3E04 (puntatore stato persistente A, 2048 byte).
-; Chiamanti diretti: H012+$293E
+; ROUTINE: sub_H057_00002F3A [partial]
+; Purpose: Routine of the spell-related interactions and selections module; calls H029+$0312, H063+$321A, H030+$0B6C, H030+$0256.
+;   - Calls H029+$0312.
+;   - Calls H063+$321A.
+;   - Calls H030+$0B6C.
+;   - Calls H030+$0256.
+;   - Calls H008+$01FC.
+;   - Calls H065+$3390.
+;   - Calls H063+$0D80.
+;   - Uses the global state: H005+$3DE3 (native context, 5 in combat); H005+$3368 (current character); H005+$3E04 (pointer to persistent state A, 2048 bytes).
+; Direct callers: H012+$293E
 ; --------------------------------------------------------------------------
 L057_00002F3A:
 ; H057+$00002F3A: 2f0c  move.l a4, -(a7)
@@ -8562,11 +8562,11 @@ L057_00002F3C:
 L057_00002F40:
 ; H057+$00002F40: 4e55fffa  link.w a5, #$fffa
         link.w a5, #$fffa
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L057_00002F44:
 ; H057+$00002F44: 1b7900003de3ffff  move.b $3de3.l, -$1(a5)
         move.b (H005+$3DE3).l, -$1(a5)
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L057_00002F4C:
 ; H057+$00002F4C: 13fc000200003de3  move.b #$2, $3de3.l
         move.b #$2, (H005+$3DE3).l
@@ -8645,7 +8645,7 @@ L057_00002FB8:
 L057_00002FBC:
 ; H057+$00002FBC: 486c0432  pea.l $432(a4)
         pea.l $432(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L057_00002FC0:
 ; H057+$00002FC0: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -8712,7 +8712,7 @@ L057_00003010:
 L057_00003014:
 ; H057+$00003014: 486dfffc  pea.l -$4(a5)
         pea.l -$4(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L057_00003018:
 ; H057+$00003018: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -8732,7 +8732,7 @@ L057_0000302A:
 L057_0000302E:
 ; H057+$0000302E: 4eb900003390  jsr $3390.l
         jsr (H065+$3390).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L057_00003034:
 ; H057+$00003034: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -8755,14 +8755,14 @@ L057_0000304E:
 L057_00003052:
 ; H057+$00003052: 600000f6  bra.w $314a
         bra.w H057+$314A
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L057_00003056:
 ; H057+$00003056: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
 L057_0000305C:
 ; H057+$0000305C: 526b0278  addq.w #$1, $278(a3)
         addq.w #$1, $278(a3)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L057_00003060:
 ; H057+$00003060: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -8792,14 +8792,14 @@ L057_0000307C:
 L057_00003082:
 ; H057+$00003082: 4eb90000321a  jsr $321a.l
         jsr (H063+$321A).l
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L057_00003088:
 ; H057+$00003088: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
 L057_0000308E:
 ; H057+$0000308E: 426b0278  clr.w $278(a3)
         clr.w $278(a3)
-; FLUSSO: Chiama Save_GameSlot (H066+$3000).
+; FLOW: Calls Save_GameSlot (H066+$3000).
 L057_00003092:
 ; H057+$00003092: 4eb900003000  jsr $3000.l
         jsr (H066+$3000).l
@@ -8925,7 +8925,7 @@ L057_0000315A:
 L057_0000315C:
 ; H057+$0000315C: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H057+$311E; indici 0..21, default -1.
+; DISPATCH: words relative to H057+$311E; indices 0..21, default -1.
 L057_00003160:
 ; H057+$00003160: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -9003,7 +9003,7 @@ L057_000031C6:
 L057_000031C8:
 ; H057+$000031C8: 4879000027bc  pea.l $27bc.l
         pea.l (H005+$27BC).l
-; FLUSSO: Chiama Load_Sequence (H042+$0406).
+; FLOW: Calls Load_Sequence (H042+$0406).
 L057_000031CE:
 ; H057+$000031CE: 4eb900000406  jsr $406.l
         jsr (H042+$406).l
@@ -9013,7 +9013,7 @@ L057_000031D4:
 L057_000031D8:
 ; H057+$000031D8: 42b90000251c  clr.l $251c.l
         clr.l (H005+$251C).l
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L057_000031DE:
 ; H057+$000031DE: 13edffff00003de3  move.b -$1(a5), $3de3.l
         move.b -$1(a5), (H005+$3DE3).l

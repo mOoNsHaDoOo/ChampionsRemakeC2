@@ -1,4 +1,4 @@
-/* H037: adattatore graphics.library/InitBitMap. */
+/* H037: graphics.library/InitBitMap adapter. */
 #ifndef COK_H037_H
 #define COK_H037_H
 

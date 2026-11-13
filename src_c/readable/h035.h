@@ -1,4 +1,4 @@
-/* H035: caricamento set 24x24 e risorse COMSPR. */
+/* H035: loading of 24x24 sets and COMSPR resources. */
 #ifndef COK_H035_H
 #define COK_H035_H
 

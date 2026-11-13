@@ -1,4 +1,4 @@
-/* H098: I/O con buffer per il parser IFF (gio.c di Electronic Arts). */
+/* H098: buffered I/O for the IFF parser (Electronic Arts' gio.c). */
 #ifndef COK_H098_H
 #define COK_H098_H
 

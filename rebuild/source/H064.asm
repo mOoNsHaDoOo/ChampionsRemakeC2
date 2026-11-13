@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H064
-; Handler nativi dei comandi ECL.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H064
+; Native handlers of the ECL commands.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Handler nativi dei comandi ECL: EXIT, GOTO, GOSUB, COMPARE, aritmetica, SAVE, LOAD, PRINT, IF, menu, RETURN e altri. La tabella H012+$2F80 collega gli opcode ai gestori.
+; MODULE NOTE
+; Native handlers of the ECL commands: EXIT, GOTO, GOSUB, COMPARE, arithmetic, SAVE, LOAD, PRINT, IF, menus, RETURN and others. The table H012+$2F80 links the opcodes to the handlers.
 ; --------------------------------------------------------------------------
 ; H064: 6460 original bytes; all offsets are section-relative.
         section H064,code
@@ -30,10 +30,10 @@ H064:
         dc.w $0000,$007E,$0020,$007E,$0000
         dc.l H064+$0000005E
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H064 [parziale]
-; Scopo: Ingresso del modulo handler nativi dei comandi ECL; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H064+$1936.
-; Chiamanti diretti: H000+$022E
+; ROUTINE: module_init_H064 [partial]
+; Purpose: Entry of the native handlers of the ECL commands module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H064+$1936.
+; Direct callers: H000+$022E
 ; --------------------------------------------------------------------------
 L064_000000EE:
 ; H064+$000000EE: 2f0c  move.l a4, -(a7)
@@ -63,11 +63,11 @@ L064_000000F8:
 FN_ECL_0_EXIT:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_Handler_0 [nome verificato; semantica parziale]
-; Scopo: Gestore ECL collegato dalla tabella di esecuzione: 0=EXIT.
-;   - Il collegamento opcode/nome/indirizzo è verificato incrociando H056 e H012.
-;   - I singoli effetti sui campi e tutti i parametri di questo gestore non sono ancora commentati integralmente.
-; Chiamanti diretti: H012+$2A6A, H012+$2E08, H064+$0E92
+; ROUTINE: ECL_Handler_0 [name verified; semantics partial]
+; Purpose: ECL handler linked from the execution table: 0=EXIT.
+;   - The opcode/name/address link is verified by cross-checking H056 and H012.
+;   - The single effects on the fields and all the parameters of this handler are not yet fully commented.
+; Direct callers: H012+$2A6A, H012+$2E08, H064+$0E92
 ; --------------------------------------------------------------------------
 L064_00000156:
 ; H064+$00000156: 2f0c  move.l a4, -(a7)
@@ -94,7 +94,7 @@ L064_00000170:
 L064_00000174:
 ; H064+$00000174: 6700000e  beq.w $184
         beq.w H064+$184
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L064_00000178:
 ; H064+$00000178: 23ecffa200003368  move.l -$5e(a4), $3368.l
         move.l -$5e(a4), (H005+$3368).l
@@ -126,7 +126,7 @@ L064_000001A0:
 L064_000001A6:
 ; H064+$000001A6: 197c0001ffad  move.b #$1, -$53(a4)
         move.b #$1, -$53(a4)
-; STATO: H005+$3DEA = PC logico ECL
+; STATE: H005+$3DEA = logical ECL PC
 L064_000001AC:
 ; H064+$000001AC: 527900003dea  addq.w #$1, $3dea.l
         addq.w #$1, (H005+$3DEA).l
@@ -183,11 +183,11 @@ L064_00000200:
 FN_ECL_1_GOTO:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_GOTO [verificato]
-; Scopo: Sostituisce il PC logico con il destinatario dell’operando.
-;   - Legge un operando e usa ECL_DecodeAddress.
-;   - Scrive il nuovo indirizzo in H005+$3DEA.
-; Chiamanti diretti: H012+$2E10
+; ROUTINE: ECL_GOTO [verified]
+; Purpose: Replaces the logical PC with the target of the operand.
+;   - Reads one operand and uses ECL_DecodeAddress.
+;   - Writes the new address into H005+$3DEA.
+; Direct callers: H012+$2E10
 ; --------------------------------------------------------------------------
 L064_00000202:
 ; H064+$00000202: 2f0c  move.l a4, -(a7)
@@ -201,7 +201,7 @@ L064_00000208:
 L064_0000020C:
 ; H064+$0000020C: 3f3c0001  move.w #$1, -(a7)
         move.w #$1, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L064_00000210:
 ; H064+$00000210: 4eb900001670  jsr $1670.l
         jsr (FN_ECL_read_operands).l
@@ -211,11 +211,11 @@ L064_00000216:
 L064_0000021C:
 ; H064+$0000021C: 1f3900001492  move.b $1492.l, -(a7)
         move.b (H061+$1492).l, -(a7)
-; FLUSSO: Chiama ECL_DecodeAddress (H061+$1F3C).
+; FLOW: Calls ECL_DecodeAddress (H061+$1F3C).
 L064_00000222:
 ; H064+$00000222: 4eb900001f3c  jsr $1f3c.l
         jsr (H061+$1F3C).l
-; STATO: H005+$3DEA = PC logico ECL
+; STATE: H005+$3DEA = logical ECL PC
 L064_00000228:
 ; H064+$00000228: 33c000003dea  move.w d0, $3dea.l
         move.w d0, (H005+$3DEA).l
@@ -232,12 +232,12 @@ L064_00000232:
 FN_ECL_2_GOSUB:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_GOSUB [parziale]
-; Scopo: Legge il destinatario e delega al servizio di chiamata ECL.
-;   - Legge un operando.
-;   - H061+$3AAC gestisce la prosecuzione/chiamata dello script.
-;   - La struttura precisa di tutti i record dello stack ECL resta da completare.
-; Chiamanti diretti: H012+$2E18
+; ROUTINE: ECL_GOSUB [partial]
+; Purpose: Reads the target and delegates to the ECL call service.
+;   - Reads one operand.
+;   - H061+$3AAC handles the continuation/call of the script.
+;   - The exact structure of all the records of the ECL stack is still to be completed.
+; Direct callers: H012+$2E18
 ; --------------------------------------------------------------------------
 L064_00000234:
 ; H064+$00000234: 2f0c  move.l a4, -(a7)
@@ -251,7 +251,7 @@ L064_0000023A:
 L064_0000023E:
 ; H064+$0000023E: 3f3c0001  move.w #$1, -(a7)
         move.w #$1, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L064_00000242:
 ; H064+$00000242: 4eb900001670  jsr $1670.l
         jsr (FN_ECL_read_operands).l
@@ -275,11 +275,11 @@ L064_00000256:
 FN_ECL_3_COMPARE:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_Handler_3 [nome verificato; semantica parziale]
-; Scopo: Gestore ECL collegato dalla tabella di esecuzione: 3=COMPARE.
-;   - Il collegamento opcode/nome/indirizzo è verificato incrociando H056 e H012.
-;   - I singoli effetti sui campi e tutti i parametri di questo gestore non sono ancora commentati integralmente.
-; Chiamanti diretti: H012+$2E20
+; ROUTINE: ECL_Handler_3 [name verified; semantics partial]
+; Purpose: ECL handler linked from the execution table: 3=COMPARE.
+;   - The opcode/name/address link is verified by cross-checking H056 and H012.
+;   - The single effects on the fields and all the parameters of this handler are not yet fully commented.
+; Direct callers: H012+$2E20
 ; --------------------------------------------------------------------------
 L064_00000258:
 ; H064+$00000258: 2f0c  move.l a4, -(a7)
@@ -293,7 +293,7 @@ L064_0000025E:
 L064_00000262:
 ; H064+$00000262: 3f3c0002  move.w #$2, -(a7)
         move.w #$2, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L064_00000266:
 ; H064+$00000266: 4eb900001670  jsr $1670.l
         jsr (FN_ECL_read_operands).l
@@ -375,7 +375,7 @@ L064_000002D2:
 L064_000002D6:
 ; H064+$000002D6: 3f3c0001  move.w #$1, -(a7)
         move.w #$1, -(a7)
-; FLUSSO: Chiama ECL_EvaluateOperand (H061+$184E).
+; FLOW: Calls ECL_EvaluateOperand (H061+$184E).
 L064_000002DA:
 ; H064+$000002DA: 4eb90000184e  jsr $184e.l
         jsr (H061+$184E).l
@@ -385,7 +385,7 @@ L064_000002E0:
 L064_000002E4:
 ; H064+$000002E4: 3f3c0002  move.w #$2, -(a7)
         move.w #$2, -(a7)
-; FLUSSO: Chiama ECL_EvaluateOperand (H061+$184E).
+; FLOW: Calls ECL_EvaluateOperand (H061+$184E).
 L064_000002E8:
 ; H064+$000002E8: 4eb90000184e  jsr $184e.l
         jsr (H061+$184E).l
@@ -415,14 +415,14 @@ L064_00000304:
 FN_ECL_4_ADD__5_SUBTRAT__6_DIVIDE__7_MULTIPLY:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_Arithmetic [verificato]
-; Scopo: Esegue ADD, SUBTRAT, DIVIDE o MULTIPLY e memorizza il risultato nella destinazione del terzo operando.
-;   - Legge tre operandi e valuta i primi due come word.
-;   - ADD somma i due valori; SUBTRAT calcola secondo meno primo.
-;   - DIVIDE usa DIVU: primo diviso secondo; conserva anche il resto in stato B+$067E.
-;   - MULTIPLY usa MULU; il valore scritto dal percorso comune è una word.
-;   - Il terzo operando codifica il riferimento di destinazione passato al servizio di scrittura.
-; Chiamanti diretti: H012+$2E28
+; ROUTINE: ECL_Arithmetic [verified]
+; Purpose: Runs ADD, SUBTRAT, DIVIDE or MULTIPLY and stores the result in the destination of the third operand.
+;   - Reads three operands and evaluates the first two as words.
+;   - ADD adds the two values; SUBTRAT computes second minus first.
+;   - DIVIDE uses DIVU: first divided by second; also keeps the remainder in state B+$067E.
+;   - MULTIPLY uses MULU; the value written by the common path is a word.
+;   - The third operand encodes the destination reference passed to the writing service.
+; Direct callers: H012+$2E28
 ; --------------------------------------------------------------------------
 L064_00000306:
 ; H064+$00000306: 2f0c  move.l a4, -(a7)
@@ -436,7 +436,7 @@ L064_0000030C:
 L064_00000310:
 ; H064+$00000310: 3f3c0003  move.w #$3, -(a7)
         move.w #$3, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L064_00000314:
 ; H064+$00000314: 4eb900001670  jsr $1670.l
         jsr (FN_ECL_read_operands).l
@@ -467,7 +467,7 @@ L064_00000336:
 L064_0000033A:
 ; H064+$0000033A: 3f2dfff8  move.w -$8(a5), -(a7)
         move.w -$8(a5), -(a7)
-; FLUSSO: Chiama ECL_EvaluateOperand (H061+$184E).
+; FLOW: Calls ECL_EvaluateOperand (H061+$184E).
 L064_0000033E:
 ; H064+$0000033E: 4eb90000184e  jsr $184e.l
         jsr (H061+$184E).l
@@ -489,7 +489,7 @@ L064_00000352:
 L064_00000358:
 ; H064+$00000358: 1f3900001494  move.b $1494.l, -(a7)
         move.b (H061+$1494).l, -(a7)
-; FLUSSO: Chiama ECL_DecodeAddress (H061+$1F3C).
+; FLOW: Calls ECL_DecodeAddress (H061+$1F3C).
 L064_0000035E:
 ; H064+$0000035E: 4eb900001f3c  jsr $1f3c.l
         jsr (H061+$1F3C).l
@@ -499,7 +499,7 @@ L064_00000364:
 L064_00000368:
 ; H064+$00000368: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$2493 = opcode ECL corrente
+; STATE: H005+$2493 = current ECL opcode
 L064_0000036A:
 ; H064+$0000036A: 143900002493  move.b $2493.l, d2
         move.b (H005+$2493).l, d2
@@ -554,7 +554,7 @@ L064_000003A4:
 L064_000003A8:
 ; H064+$000003A8: 4842  swap d2
         swap d2
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L064_000003AA:
 ; H064+$000003AA: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -602,7 +602,7 @@ L064_000003DE:
 L064_000003E0:
 ; H064+$000003E0: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H064+$03C8; indici 0..3, default -1.
+; DISPATCH: words relative to H064+$03C8; indices 0..3, default -1.
 L064_000003E4:
 ; H064+$000003E4: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -629,11 +629,11 @@ L064_000003FA:
 FN_ECL_8_RANDOM:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_Handler_8 [nome verificato; semantica parziale]
-; Scopo: Gestore ECL collegato dalla tabella di esecuzione: 8=RANDOM.
-;   - Il collegamento opcode/nome/indirizzo è verificato incrociando H056 e H012.
-;   - I singoli effetti sui campi e tutti i parametri di questo gestore non sono ancora commentati integralmente.
-; Chiamanti diretti: H012+$2E30
+; ROUTINE: ECL_Handler_8 [name verified; semantics partial]
+; Purpose: ECL handler linked from the execution table: 8=RANDOM.
+;   - The opcode/name/address link is verified by cross-checking H056 and H012.
+;   - The single effects on the fields and all the parameters of this handler are not yet fully commented.
+; Direct callers: H012+$2E30
 ; --------------------------------------------------------------------------
 L064_000003FC:
 ; H064+$000003FC: 2f0c  move.l a4, -(a7)
@@ -647,14 +647,14 @@ L064_00000402:
 L064_00000406:
 ; H064+$00000406: 3f3c0002  move.w #$2, -(a7)
         move.w #$2, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L064_0000040A:
 ; H064+$0000040A: 4eb900001670  jsr $1670.l
         jsr (FN_ECL_read_operands).l
 L064_00000410:
 ; H064+$00000410: 3f3c0001  move.w #$1, -(a7)
         move.w #$1, -(a7)
-; FLUSSO: Chiama ECL_EvaluateOperand (H061+$184E).
+; FLOW: Calls ECL_EvaluateOperand (H061+$184E).
 L064_00000414:
 ; H064+$00000414: 4eb90000184e  jsr $184e.l
         jsr (H061+$184E).l
@@ -676,7 +676,7 @@ L064_0000042C:
 L064_00000432:
 ; H064+$00000432: 1f3900001493  move.b $1493.l, -(a7)
         move.b (H061+$1493).l, -(a7)
-; FLUSSO: Chiama ECL_DecodeAddress (H061+$1F3C).
+; FLOW: Calls ECL_DecodeAddress (H061+$1F3C).
 L064_00000438:
 ; H064+$00000438: 4eb900001f3c  jsr $1f3c.l
         jsr (H061+$1F3C).l
@@ -722,13 +722,13 @@ L064_00000466:
 FN_ECL_9_SAVE:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_SAVE_AssignVariable [verificato]
-; Scopo: Implementa l’opcode ECL SAVE come assegnazione a variabile/riferimento.
-;   - Legge due operandi.
-;   - Ricava la destinazione codificata dal secondo operando.
-;   - Memorizza valore numerico o stringa attraverso gli helper del modulo ECL.
-;   - Non apre né scrive savgam*.dat: il salvataggio su disco è H066+$3000.
-; Chiamanti diretti: H012+$2E38
+; ROUTINE: ECL_SAVE_AssignVariable [verified]
+; Purpose: Implements the ECL SAVE opcode as an assignment to a variable/reference.
+;   - Reads two operands.
+;   - Derives the encoded destination from the second operand.
+;   - Stores a numeric value or a string through the helpers of the ECL module.
+;   - It neither opens nor writes savgam*.dat: saving to disk is H066+$3000.
+; Direct callers: H012+$2E38
 ; --------------------------------------------------------------------------
 L064_00000468:
 ; H064+$00000468: 2f0c  move.l a4, -(a7)
@@ -742,7 +742,7 @@ L064_0000046E:
 L064_00000472:
 ; H064+$00000472: 3f3c0002  move.w #$2, -(a7)
         move.w #$2, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L064_00000476:
 ; H064+$00000476: 4eb900001670  jsr $1670.l
         jsr (FN_ECL_read_operands).l
@@ -752,7 +752,7 @@ L064_0000047C:
 L064_00000482:
 ; H064+$00000482: 1f3900001493  move.b $1493.l, -(a7)
         move.b (H061+$1493).l, -(a7)
-; FLUSSO: Chiama ECL_DecodeAddress (H061+$1F3C).
+; FLOW: Calls ECL_DecodeAddress (H061+$1F3C).
 L064_00000488:
 ; H064+$00000488: 4eb900001f3c  jsr $1f3c.l
         jsr (H061+$1F3C).l
@@ -774,7 +774,7 @@ L064_0000049E:
 L064_000004A2:
 ; H064+$000004A2: 3f3c0001  move.w #$1, -(a7)
         move.w #$1, -(a7)
-; FLUSSO: Chiama ECL_EvaluateOperand (H061+$184E).
+; FLOW: Calls ECL_EvaluateOperand (H061+$184E).
 L064_000004A6:
 ; H064+$000004A6: 4eb90000184e  jsr $184e.l
         jsr (H061+$184E).l
@@ -787,7 +787,7 @@ L064_000004B0:
 L064_000004B4:
 ; H064+$000004B4: 3f2dfffe  move.w -$2(a5), -(a7)
         move.w -$2(a5), -(a7)
-; PASSO: SAVE ECL numerico: memorizzazione di un valore, non salvataggio della partita su disco.
+; STEP: Numeric ECL SAVE: storing a value, not saving the game to disk.
 ; -> H061+$2BAA (sub_H061_00002BAA)
 L064_000004B8:
 ; H064+$000004B8: 4eb900002baa  jsr $2baa.l
@@ -804,7 +804,7 @@ L064_000004C6:
 L064_000004CA:
 ; H064+$000004CA: 487900000052  pea.l $52.l
         pea.l (H061+$52).l
-; PASSO: SAVE ECL stringa: memorizzazione nel riferimento destinazione.
+; STEP: String ECL SAVE: storing into the destination reference.
 ; -> H061+$3012 (sub_H061_00003012)
 L064_000004D0:
 ; H064+$000004D0: 4eb900003012  jsr $3012.l
@@ -822,11 +822,11 @@ L064_000004DA:
 FN_ECL_10_LOAD_CHARACTER:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_Handler_10 [nome verificato; semantica parziale]
-; Scopo: Gestore ECL collegato dalla tabella di esecuzione: 10=LOAD CHARACTER.
-;   - Il collegamento opcode/nome/indirizzo è verificato incrociando H056 e H012.
-;   - I singoli effetti sui campi e tutti i parametri di questo gestore non sono ancora commentati integralmente.
-; Chiamanti diretti: H012+$2E40
+; ROUTINE: ECL_Handler_10 [name verified; semantics partial]
+; Purpose: ECL handler linked from the execution table: 10=LOAD CHARACTER.
+;   - The opcode/name/address link is verified by cross-checking H056 and H012.
+;   - The single effects on the fields and all the parameters of this handler are not yet fully commented.
+; Direct callers: H012+$2E40
 ; --------------------------------------------------------------------------
 L064_000004DC:
 ; H064+$000004DC: 2f0c  move.l a4, -(a7)
@@ -843,7 +843,7 @@ L064_000004E6:
 L064_000004EC:
 ; H064+$000004EC: 3f3c0001  move.w #$1, -(a7)
         move.w #$1, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L064_000004F0:
 ; H064+$000004F0: 4eb900001670  jsr $1670.l
         jsr (FN_ECL_read_operands).l
@@ -853,14 +853,14 @@ L064_000004F6:
 L064_000004FA:
 ; H064+$000004FA: 3f3c0001  move.w #$1, -(a7)
         move.w #$1, -(a7)
-; FLUSSO: Chiama ECL_EvaluateOperand (H061+$184E).
+; FLOW: Calls ECL_EvaluateOperand (H061+$184E).
 L064_000004FE:
 ; H064+$000004FE: 4eb90000184e  jsr $184e.l
         jsr (H061+$184E).l
 L064_00000504:
 ; H064+$00000504: 1b40fff7  move.b d0, -$9(a5)
         move.b d0, -$9(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L064_00000508:
 ; H064+$00000508: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -941,7 +941,7 @@ L064_00000568:
 L064_0000056C:
 ; H064+$0000056C: 67000014  beq.w $582
         beq.w H064+$582
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L064_00000570:
 ; H064+$00000570: 23edfffc00003368  move.l -$4(a5), $3368.l
         move.l -$4(a5), (H005+$3368).l
@@ -975,7 +975,7 @@ L064_000005A2:
 L064_000005A6:
 ; H064+$000005A6: 242cffa2  move.l -$5e(a4), d2
         move.l -$5e(a4), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L064_000005AA:
 ; H064+$000005AA: b4b900003368  cmp.l $3368.l, d2
         cmp.l (H005+$3368).l, d2
@@ -995,7 +995,7 @@ L064_000005BA:
 L064_000005BE:
 ; H064+$000005BE: 4eb9000000ca  jsr $ca.l
         jsr (H053+$CA).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L064_000005C4:
 ; H064+$000005C4: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -1022,11 +1022,11 @@ L064_000005E0:
 FN_ECL_12_SETUP_MONSTER:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_Handler_12 [nome verificato; semantica parziale]
-; Scopo: Gestore ECL collegato dalla tabella di esecuzione: 12=SETUP MONSTER.
-;   - Il collegamento opcode/nome/indirizzo è verificato incrociando H056 e H012.
-;   - I singoli effetti sui campi e tutti i parametri di questo gestore non sono ancora commentati integralmente.
-; Chiamanti diretti: H012+$2E50
+; ROUTINE: ECL_Handler_12 [name verified; semantics partial]
+; Purpose: ECL handler linked from the execution table: 12=SETUP MONSTER.
+;   - The opcode/name/address link is verified by cross-checking H056 and H012.
+;   - The single effects on the fields and all the parameters of this handler are not yet fully commented.
+; Direct callers: H012+$2E50
 ; --------------------------------------------------------------------------
 L064_000005E2:
 ; H064+$000005E2: 2f0c  move.l a4, -(a7)
@@ -1040,14 +1040,14 @@ L064_000005E8:
 L064_000005EC:
 ; H064+$000005EC: 3f3c0003  move.w #$3, -(a7)
         move.w #$3, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L064_000005F0:
 ; H064+$000005F0: 4eb900001670  jsr $1670.l
         jsr (FN_ECL_read_operands).l
 L064_000005F6:
 ; H064+$000005F6: 3f3c0001  move.w #$1, -(a7)
         move.w #$1, -(a7)
-; FLUSSO: Chiama ECL_EvaluateOperand (H061+$184E).
+; FLOW: Calls ECL_EvaluateOperand (H061+$184E).
 L064_000005FA:
 ; H064+$000005FA: 4eb90000184e  jsr $184e.l
         jsr (H061+$184E).l
@@ -1057,11 +1057,11 @@ L064_00000600:
 L064_00000606:
 ; H064+$00000606: 3f3c0002  move.w #$2, -(a7)
         move.w #$2, -(a7)
-; FLUSSO: Chiama ECL_EvaluateOperand (H061+$184E).
+; FLOW: Calls ECL_EvaluateOperand (H061+$184E).
 L064_0000060A:
 ; H064+$0000060A: 4eb90000184e  jsr $184e.l
         jsr (H061+$184E).l
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L064_00000610:
 ; H064+$00000610: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -1071,14 +1071,14 @@ L064_00000616:
 L064_0000061A:
 ; H064+$0000061A: 3f3c0003  move.w #$3, -(a7)
         move.w #$3, -(a7)
-; FLUSSO: Chiama ECL_EvaluateOperand (H061+$184E).
+; FLOW: Calls ECL_EvaluateOperand (H061+$184E).
 L064_0000061E:
 ; H064+$0000061E: 4eb90000184e  jsr $184e.l
         jsr (H061+$184E).l
 L064_00000624:
 ; H064+$00000624: 13c000002490  move.b d0, $2490.l
         move.b d0, (H005+$2490).l
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L064_0000062A:
 ; H064+$0000062A: 3f390000281c  move.w $281c.l, -(a7)
         move.w (H005+$281C).l, -(a7)
@@ -1092,21 +1092,21 @@ L064_00000636:
 L064_0000063C:
 ; H064+$0000063C: 4eb900001c42  jsr $1c42.l
         jsr (H061+$1C42).l
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L064_00000642:
 ; H064+$00000642: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
 L064_00000648:
 ; H064+$00000648: 37400582  move.w d0, $582(a3)
         move.w d0, $582(a3)
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L064_0000064C:
 ; H064+$0000064C: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
 L064_00000652:
 ; H064+$00000652: 342b0580  move.w $580(a3), d2
         move.w $580(a3), d2
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L064_00000656:
 ; H064+$00000656: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -1116,11 +1116,11 @@ L064_0000065C:
 L064_00000660:
 ; H064+$00000660: 64000014  bcc.w $676
         bcc.w H064+$676
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L064_00000664:
 ; H064+$00000664: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L064_0000066A:
 ; H064+$0000066A: 247900003e00  movea.l $3e00.l, a2
         movea.l (H005+$3E00).l, a2
@@ -1133,7 +1133,7 @@ L064_00000676:
 L064_0000067C:
 ; H064+$0000067C: 1f3900002490  move.b $2490.l, -(a7)
         move.b (H005+$2490).l, -(a7)
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L064_00000682:
 ; H064+$00000682: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -1163,11 +1163,11 @@ L064_0000069E:
 FN_ECL_11_LOAD_MONSTER:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_Handler_11 [nome verificato; semantica parziale]
-; Scopo: Gestore ECL collegato dalla tabella di esecuzione: 11=LOAD MONSTER.
-;   - Il collegamento opcode/nome/indirizzo è verificato incrociando H056 e H012.
-;   - I singoli effetti sui campi e tutti i parametri di questo gestore non sono ancora commentati integralmente.
-; Chiamanti diretti: H012+$2E48
+; ROUTINE: ECL_Handler_11 [name verified; semantics partial]
+; Purpose: ECL handler linked from the execution table: 11=LOAD MONSTER.
+;   - The opcode/name/address link is verified by cross-checking H056 and H012.
+;   - The single effects on the fields and all the parameters of this handler are not yet fully commented.
+; Direct callers: H012+$2E48
 ; --------------------------------------------------------------------------
 L064_000006A0:
 ; H064+$000006A0: 2f0c  move.l a4, -(a7)
@@ -1178,7 +1178,7 @@ L064_000006A2:
 L064_000006A6:
 ; H064+$000006A6: 4e55fe1a  link.w a5, #$fe1a
         link.w a5, #$fe1a
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L064_000006AA:
 ; H064+$000006AA: 2b7900003368ffea  move.l $3368.l, -$16(a5)
         move.l (H005+$3368).l, -$16(a5)
@@ -1188,7 +1188,7 @@ L064_000006B2:
 L064_000006B8:
 ; H064+$000006B8: 3f3c0003  move.w #$3, -(a7)
         move.w #$3, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L064_000006BC:
 ; H064+$000006BC: 4eb900001670  jsr $1670.l
         jsr (FN_ECL_read_operands).l
@@ -1213,7 +1213,7 @@ L064_000006D4:
 L064_000006D8:
 ; H064+$000006D8: 3f3c0001  move.w #$1, -(a7)
         move.w #$1, -(a7)
-; FLUSSO: Chiama ECL_EvaluateOperand (H061+$184E).
+; FLOW: Calls ECL_EvaluateOperand (H061+$184E).
 L064_000006DC:
 ; H064+$000006DC: 4eb90000184e  jsr $184e.l
         jsr (H061+$184E).l
@@ -1245,7 +1245,7 @@ L064_00000700:
 L064_00000706:
 ; H064+$00000706: 66000098  bne.w $7a0
         bne.w H064+$7A0
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L064_0000070A:
 ; H064+$0000070A: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -1255,7 +1255,7 @@ L064_00000710:
 L064_00000714:
 ; H064+$00000714: 6300008a  bls.w $7a0
         bls.w H064+$7A0
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L064_00000718:
 ; H064+$00000718: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -1274,7 +1274,7 @@ L064_0000072A:
 L064_0000072E:
 ; H064+$0000072E: 142b01a8  move.b $1a8(a3), d2
         move.b $1a8(a3), d2
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L064_00000732:
 ; H064+$00000732: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -1305,7 +1305,7 @@ L064_0000074C:
 L064_00000750:
 ; H064+$00000750: 142b0064  move.b $64(a3), d2
         move.b $64(a3), d2
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L064_00000754:
 ; H064+$00000754: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -1412,7 +1412,7 @@ L064_000007D4:
 L064_000007DA:
 ; H064+$000007DA: 3f3c0002  move.w #$2, -(a7)
         move.w #$2, -(a7)
-; FLUSSO: Chiama ECL_EvaluateOperand (H061+$184E).
+; FLOW: Calls ECL_EvaluateOperand (H061+$184E).
 L064_000007DE:
 ; H064+$000007DE: 4eb90000184e  jsr $184e.l
         jsr (H061+$184E).l
@@ -1437,14 +1437,14 @@ L064_000007F4:
 L064_000007FA:
 ; H064+$000007FA: 3f3c0003  move.w #$3, -(a7)
         move.w #$3, -(a7)
-; FLUSSO: Chiama ECL_EvaluateOperand (H061+$184E).
+; FLOW: Calls ECL_EvaluateOperand (H061+$184E).
 L064_000007FE:
 ; H064+$000007FE: 4eb90000184e  jsr $184e.l
         jsr (H061+$184E).l
 L064_00000804:
 ; H064+$00000804: 1b40fffd  move.b d0, -$3(a5)
         move.b d0, -$3(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L064_00000808:
 ; H064+$00000808: 2b7900003364fff6  move.l $3364.l, -$a(a5)
         move.l (H005+$3364).l, -$a(a5)
@@ -1949,7 +1949,7 @@ L064_00000AA2:
 L064_00000AA8:
 ; H064+$00000AA8: 13fc0001000024b6  move.b #$1, $24b6.l
         move.b #$1, (H005+$24B6).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L064_00000AB0:
 ; H064+$00000AB0: 23edffea00003368  move.l -$16(a5), $3368.l
         move.l -$16(a5), (H005+$3368).l
@@ -1966,11 +1966,11 @@ L064_00000ABC:
 FN_ECL_13_APPROACH:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_Handler_13 [nome verificato; semantica parziale]
-; Scopo: Gestore ECL collegato dalla tabella di esecuzione: 13=APPROACH.
-;   - Il collegamento opcode/nome/indirizzo è verificato incrociando H056 e H012.
-;   - I singoli effetti sui campi e tutti i parametri di questo gestore non sono ancora commentati integralmente.
-; Chiamanti diretti: H012+$2E58
+; ROUTINE: ECL_Handler_13 [name verified; semantics partial]
+; Purpose: ECL handler linked from the execution table: 13=APPROACH.
+;   - The opcode/name/address link is verified by cross-checking H056 and H012.
+;   - The single effects on the fields and all the parameters of this handler are not yet fully commented.
+; Direct callers: H012+$2E58
 ; --------------------------------------------------------------------------
 L064_00000ABE:
 ; H064+$00000ABE: 2f0c  move.l a4, -(a7)
@@ -1981,7 +1981,7 @@ L064_00000AC0:
 L064_00000AC4:
 ; H064+$00000AC4: 4e550000  link.w a5, #$0
         link.w a5, #$0
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L064_00000AC8:
 ; H064+$00000AC8: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -1991,7 +1991,7 @@ L064_00000ACE:
 L064_00000AD2:
 ; H064+$00000AD2: 63000030  bls.w $b04
         bls.w H064+$B04
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L064_00000AD6:
 ; H064+$00000AD6: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -2004,7 +2004,7 @@ L064_00000AE0:
 L064_00000AE6:
 ; H064+$00000AE6: 1f3900002490  move.b $2490.l, -(a7)
         move.b (H005+$2490).l, -(a7)
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L064_00000AEC:
 ; H064+$00000AEC: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -2021,7 +2021,7 @@ L064_00000AF8:
 L064_00000AFE:
 ; H064+$00000AFE: 4eb900001d6e  jsr $1d6e.l
         jsr (H061+$1D6E).l
-; STATO: H005+$3DEA = PC logico ECL
+; STATE: H005+$3DEA = logical ECL PC
 L064_00000B04:
 ; H064+$00000B04: 527900003dea  addq.w #$1, $3dea.l
         addq.w #$1, (H005+$3DEA).l
@@ -2038,11 +2038,11 @@ L064_00000B0E:
 FN_ECL_14_PICTURE:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_Handler_14 [nome verificato; semantica parziale]
-; Scopo: Gestore ECL collegato dalla tabella di esecuzione: 14=PICTURE.
-;   - Il collegamento opcode/nome/indirizzo è verificato incrociando H056 e H012.
-;   - I singoli effetti sui campi e tutti i parametri di questo gestore non sono ancora commentati integralmente.
-; Chiamanti diretti: H012+$2E60
+; ROUTINE: ECL_Handler_14 [name verified; semantics partial]
+; Purpose: ECL handler linked from the execution table: 14=PICTURE.
+;   - The opcode/name/address link is verified by cross-checking H056 and H012.
+;   - The single effects on the fields and all the parameters of this handler are not yet fully commented.
+; Direct callers: H012+$2E60
 ; --------------------------------------------------------------------------
 L064_00000B10:
 ; H064+$00000B10: 2f0c  move.l a4, -(a7)
@@ -2056,14 +2056,14 @@ L064_00000B16:
 L064_00000B1A:
 ; H064+$00000B1A: 3f3c0001  move.w #$1, -(a7)
         move.w #$1, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L064_00000B1E:
 ; H064+$00000B1E: 4eb900001670  jsr $1670.l
         jsr (FN_ECL_read_operands).l
 L064_00000B24:
 ; H064+$00000B24: 3f3c0001  move.w #$1, -(a7)
         move.w #$1, -(a7)
-; FLUSSO: Chiama ECL_EvaluateOperand (H061+$184E).
+; FLOW: Calls ECL_EvaluateOperand (H061+$184E).
 L064_00000B28:
 ; H064+$00000B28: 4eb90000184e  jsr $184e.l
         jsr (H061+$184E).l
@@ -2082,7 +2082,7 @@ L064_00000B3C:
 L064_00000B44:
 ; H064+$00000B44: 13fc0001000024bd  move.b #$1, $24bd.l
         move.b #$1, (H005+$24BD).l
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L064_00000B4C:
 ; H064+$00000B4C: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -2104,7 +2104,7 @@ L064_00000B6A:
 L064_00000B6E:
 ; H064+$00000B6E: 3f2dfffe  move.w -$2(a5), -(a7)
         move.w -$2(a5), -(a7)
-; FLUSSO: Chiama Load_BigPicture (H042+$1006).
+; FLOW: Calls Load_BigPicture (H042+$1006).
 L064_00000B72:
 ; H064+$00000B72: 4eb900001006  jsr $1006.l
         jsr (H042+$1006).l
@@ -2164,7 +2164,7 @@ L064_00000BC0:
 L064_00000BC2:
 ; H064+$00000BC2: 4879000027bc  pea.l $27bc.l
         pea.l (H005+$27BC).l
-; FLUSSO: Chiama Load_Sequence (H042+$0406).
+; FLOW: Calls Load_Sequence (H042+$0406).
 L064_00000BC8:
 ; H064+$00000BC8: 4eb900000406  jsr $406.l
         jsr (H042+$406).l
@@ -2187,7 +2187,7 @@ L064_00000BE0:
 L064_00000BE6:
 ; H064+$00000BE6: 60000016  bra.w $bfe
         bra.w H064+$BFE
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L064_00000BEA:
 ; H064+$00000BEA: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -2210,7 +2210,7 @@ L064_00000C02:
 L064_00000C0A:
 ; H064+$00000C0A: 6600000e  bne.w $c1a
         bne.w H064+$C1A
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L064_00000C0E:
 ; H064+$00000C0E: 0c39000400003de3  cmpi.b #$4, $3de3.l
         cmpi.b #$4, (H005+$3DE3).l
@@ -2264,11 +2264,11 @@ L064_00000C60:
 FN_ECL_15_INPUT_NUMBER:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_Handler_15 [nome verificato; semantica parziale]
-; Scopo: Gestore ECL collegato dalla tabella di esecuzione: 15=INPUT NUMBER.
-;   - Il collegamento opcode/nome/indirizzo è verificato incrociando H056 e H012.
-;   - I singoli effetti sui campi e tutti i parametri di questo gestore non sono ancora commentati integralmente.
-; Chiamanti diretti: H012+$2E68
+; ROUTINE: ECL_Handler_15 [name verified; semantics partial]
+; Purpose: ECL handler linked from the execution table: 15=INPUT NUMBER.
+;   - The opcode/name/address link is verified by cross-checking H056 and H012.
+;   - The single effects on the fields and all the parameters of this handler are not yet fully commented.
+; Direct callers: H012+$2E68
 ; --------------------------------------------------------------------------
 L064_00000C62:
 ; H064+$00000C62: 2f0c  move.l a4, -(a7)
@@ -2282,7 +2282,7 @@ L064_00000C68:
 L064_00000C6C:
 ; H064+$00000C6C: 3f3c0002  move.w #$2, -(a7)
         move.w #$2, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L064_00000C70:
 ; H064+$00000C70: 4eb900001670  jsr $1670.l
         jsr (FN_ECL_read_operands).l
@@ -2304,7 +2304,7 @@ L064_00000C82:
 L064_00000C88:
 ; H064+$00000C88: 1f3900001493  move.b $1493.l, -(a7)
         move.b (H061+$1493).l, -(a7)
-; FLUSSO: Chiama ECL_DecodeAddress (H061+$1F3C).
+; FLOW: Calls ECL_DecodeAddress (H061+$1F3C).
 L064_00000C8E:
 ; H064+$00000C8E: 4eb900001f3c  jsr $1f3c.l
         jsr (H061+$1F3C).l
@@ -2353,11 +2353,11 @@ L064_00000CC2:
 FN_ECL_16_INPUT_STRING:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_Handler_16 [nome verificato; semantica parziale]
-; Scopo: Gestore ECL collegato dalla tabella di esecuzione: 16=INPUT STRING.
-;   - Il collegamento opcode/nome/indirizzo è verificato incrociando H056 e H012.
-;   - I singoli effetti sui campi e tutti i parametri di questo gestore non sono ancora commentati integralmente.
-; Chiamanti diretti: H012+$2E70
+; ROUTINE: ECL_Handler_16 [name verified; semantics partial]
+; Purpose: ECL handler linked from the execution table: 16=INPUT STRING.
+;   - The opcode/name/address link is verified by cross-checking H056 and H012.
+;   - The single effects on the fields and all the parameters of this handler are not yet fully commented.
+; Direct callers: H012+$2E70
 ; --------------------------------------------------------------------------
 L064_00000CC4:
 ; H064+$00000CC4: 2f0c  move.l a4, -(a7)
@@ -2371,7 +2371,7 @@ L064_00000CCA:
 L064_00000CCE:
 ; H064+$00000CCE: 3f3c0002  move.w #$2, -(a7)
         move.w #$2, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L064_00000CD2:
 ; H064+$00000CD2: 4eb900001670  jsr $1670.l
         jsr (FN_ECL_read_operands).l
@@ -2393,7 +2393,7 @@ L064_00000CE4:
 L064_00000CEA:
 ; H064+$00000CEA: 1f3900001493  move.b $1493.l, -(a7)
         move.b (H061+$1493).l, -(a7)
-; FLUSSO: Chiama ECL_DecodeAddress (H061+$1F3C).
+; FLOW: Calls ECL_DecodeAddress (H061+$1F3C).
 L064_00000CF0:
 ; H064+$00000CF0: 4eb900001f3c  jsr $1f3c.l
         jsr (H061+$1F3C).l
@@ -2472,11 +2472,11 @@ L064_00000D48:
 FN_ECL_17_PRINT__18_PRINTCLEAR:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_Handler_17 [nome verificato; semantica parziale]
-; Scopo: Gestore ECL collegato dalla tabella di esecuzione: 17=PRINT, 18=PRINTCLEAR.
-;   - Il collegamento opcode/nome/indirizzo è verificato incrociando H056 e H012.
-;   - I singoli effetti sui campi e tutti i parametri di questo gestore non sono ancora commentati integralmente.
-; Chiamanti diretti: H012+$2E78
+; ROUTINE: ECL_Handler_17 [name verified; semantics partial]
+; Purpose: ECL handler linked from the execution table: 17=PRINT, 18=PRINTCLEAR.
+;   - The opcode/name/address link is verified by cross-checking H056 and H012.
+;   - The single effects on the fields and all the parameters of this handler are not yet fully commented.
+; Direct callers: H012+$2E78
 ; --------------------------------------------------------------------------
 L064_00000D4A:
 ; H064+$00000D4A: 2f0c  move.l a4, -(a7)
@@ -2490,7 +2490,7 @@ L064_00000D50:
 L064_00000D54:
 ; H064+$00000D54: 3f3c0001  move.w #$1, -(a7)
         move.w #$1, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L064_00000D58:
 ; H064+$00000D58: 4eb900001670  jsr $1670.l
         jsr (FN_ECL_read_operands).l
@@ -2521,7 +2521,7 @@ L064_00000D80:
 L064_00000D86:
 ; H064+$00000D86: 3f3c0001  move.w #$1, -(a7)
         move.w #$1, -(a7)
-; FLUSSO: Chiama ECL_EvaluateOperand (H061+$184E).
+; FLOW: Calls ECL_EvaluateOperand (H061+$184E).
 L064_00000D8A:
 ; H064+$00000D8A: 4eb90000184e  jsr $184e.l
         jsr (H061+$184E).l
@@ -2563,7 +2563,7 @@ L064_00000DB8:
 L064_00000DBE:
 ; H064+$00000DBE: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$2493 = opcode ECL corrente
+; STATE: H005+$2493 = current ECL opcode
 L064_00000DC0:
 ; H064+$00000DC0: 143900002493  move.b $2493.l, d2
         move.b (H005+$2493).l, d2
@@ -2660,12 +2660,12 @@ L064_00000E3E:
 FN_ECL_19_RETURN:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_RETURN [verificato]
-; Scopo: Ripristina un indirizzo di ritorno dal piccolo stack collegato dell’ECL.
-;   - Se esiste un nodo in H005+$2388, ne legge la word PC e il link long a +2.
-;   - Libera il nodo di 6 byte e aggiorna la testa della lista.
-;   - Se lo stack è vuoto richiama il percorso EXIT della VM.
-; Chiamanti diretti: H012+$2E80
+; ROUTINE: ECL_RETURN [verified]
+; Purpose: Restores a return address from the small linked stack of the ECL.
+;   - If there is a node in H005+$2388, reads its PC word and the long link at +2.
+;   - Frees the 6-byte node and updates the head of the list.
+;   - If the stack is empty it calls the EXIT path of the VM.
+; Direct callers: H012+$2E80
 ; --------------------------------------------------------------------------
 L064_00000E40:
 ; H064+$00000E40: 2f0c  move.l a4, -(a7)
@@ -2676,7 +2676,7 @@ L064_00000E42:
 L064_00000E46:
 ; H064+$00000E46: 4e550000  link.w a5, #$0
         link.w a5, #$0
-; STATO: H005+$3DEA = PC logico ECL
+; STATE: H005+$3DEA = logical ECL PC
 L064_00000E4A:
 ; H064+$00000E4A: 527900003dea  addq.w #$1, $3dea.l
         addq.w #$1, (H005+$3DEA).l
@@ -2689,7 +2689,7 @@ L064_00000E56:
 L064_00000E5A:
 ; H064+$00000E5A: 267900002388  movea.l $2388.l, a3
         movea.l (H005+$2388).l, a3
-; STATO: H005+$3DEA = PC logico ECL
+; STATE: H005+$3DEA = logical ECL PC
 L064_00000E60:
 ; H064+$00000E60: 33d300003dea  move.w (a3), $3dea.l
         move.w (a3), (H005+$3DEA).l
@@ -2718,7 +2718,7 @@ L064_00000E84:
 L064_00000E8E:
 ; H064+$00000E8E: 60000006  bra.w $e96
         bra.w H064+$E96
-; FLUSSO: Chiama ECL_Handler_0 (H064+$0156).
+; FLOW: Calls ECL_Handler_0 (H064+$0156).
 L064_00000E92:
 ; H064+$00000E92: 6100f2c2  bsr.w $156
         bsr.w H064+$156
@@ -2735,11 +2735,11 @@ L064_00000E9A:
 FN_ECL_20_COMPARE_AND:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_Handler_20 [nome verificato; semantica parziale]
-; Scopo: Gestore ECL collegato dalla tabella di esecuzione: 20=COMPARE AND.
-;   - Il collegamento opcode/nome/indirizzo è verificato incrociando H056 e H012.
-;   - I singoli effetti sui campi e tutti i parametri di questo gestore non sono ancora commentati integralmente.
-; Chiamanti diretti: H012+$2E88
+; ROUTINE: ECL_Handler_20 [name verified; semantics partial]
+; Purpose: ECL handler linked from the execution table: 20=COMPARE AND.
+;   - The opcode/name/address link is verified by cross-checking H056 and H012.
+;   - The single effects on the fields and all the parameters of this handler are not yet fully commented.
+; Direct callers: H012+$2E88
 ; --------------------------------------------------------------------------
 L064_00000E9C:
 ; H064+$00000E9C: 2f0c  move.l a4, -(a7)
@@ -2769,7 +2769,7 @@ L064_00000EB6:
 L064_00000EBC:
 ; H064+$00000EBC: 3f3c0004  move.w #$4, -(a7)
         move.w #$4, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L064_00000EC0:
 ; H064+$00000EC0: 4eb900001670  jsr $1670.l
         jsr (FN_ECL_read_operands).l
@@ -2800,7 +2800,7 @@ L064_00000EE2:
 L064_00000EE6:
 ; H064+$00000EE6: 3f2dfff6  move.w -$a(a5), -(a7)
         move.w -$a(a5), -(a7)
-; FLUSSO: Chiama ECL_EvaluateOperand (H061+$184E).
+; FLOW: Calls ECL_EvaluateOperand (H061+$184E).
 L064_00000EEA:
 ; H064+$00000EEA: 4eb90000184e  jsr $184e.l
         jsr (H061+$184E).l
@@ -2856,11 +2856,11 @@ L064_00000F2E:
 FN_ECL_22_IF__23_IF__24_IF__25_IF__26_IF__27_IF:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_Handler_22 [nome verificato; semantica parziale]
-; Scopo: Gestore ECL collegato dalla tabella di esecuzione: 22=IF = , 23=IF <>, 24=IF <, 25=IF >, 26=IF <=, 27=IF >=.
-;   - Il collegamento opcode/nome/indirizzo è verificato incrociando H056 e H012.
-;   - I singoli effetti sui campi e tutti i parametri di questo gestore non sono ancora commentati integralmente.
-; Chiamanti diretti: H012+$2E98
+; ROUTINE: ECL_Handler_22 [name verified; semantics partial]
+; Purpose: ECL handler linked from the execution table: 22=IF = , 23=IF <>, 24=IF <, 25=IF >, 26=IF <=, 27=IF >=.
+;   - The opcode/name/address link is verified by cross-checking H056 and H012.
+;   - The single effects on the fields and all the parameters of this handler are not yet fully commented.
+; Direct callers: H012+$2E98
 ; --------------------------------------------------------------------------
 L064_00000F30:
 ; H064+$00000F30: 2f0c  move.l a4, -(a7)
@@ -2871,7 +2871,7 @@ L064_00000F32:
 L064_00000F36:
 ; H064+$00000F36: 4e55fffe  link.w a5, #$fffe
         link.w a5, #$fffe
-; STATO: H005+$3DEA = PC logico ECL
+; STATE: H005+$3DEA = logical ECL PC
 L064_00000F3A:
 ; H064+$00000F3A: 527900003dea  addq.w #$1, $3dea.l
         addq.w #$1, (H005+$3DEA).l
@@ -2887,7 +2887,7 @@ L064_00000F4C:
 L064_00000F50:
 ; H064+$00000F50: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$2493 = opcode ECL corrente
+; STATE: H005+$2493 = current ECL opcode
 L064_00000F52:
 ; H064+$00000F52: 143900002493  move.b $2493.l, d2
         move.b (H005+$2493).l, d2
@@ -2918,7 +2918,7 @@ L064_00000F72:
 L064_00000F76:
 ; H064+$00000F76: 6600000c  bne.w $f84
         bne.w H064+$F84
-; FLUSSO: Chiama ECL_SkipInstruction (H061+$3E80).
+; FLOW: Calls ECL_SkipInstruction (H061+$3E80).
 L064_00000F7A:
 ; H064+$00000F7A: 4eb900003e80  jsr $3e80.l
         jsr (FN_ECL_skip_instruction).l
@@ -2944,11 +2944,11 @@ L064_00000F8E:
 FN_ECL_32_NEWECL:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_Handler_32 [nome verificato; semantica parziale]
-; Scopo: Gestore ECL collegato dalla tabella di esecuzione: 32=NEWECL.
-;   - Il collegamento opcode/nome/indirizzo è verificato incrociando H056 e H012.
-;   - I singoli effetti sui campi e tutti i parametri di questo gestore non sono ancora commentati integralmente.
-; Chiamanti diretti: H012+$2EB6
+; ROUTINE: ECL_Handler_32 [name verified; semantics partial]
+; Purpose: ECL handler linked from the execution table: 32=NEWECL.
+;   - The opcode/name/address link is verified by cross-checking H056 and H012.
+;   - The single effects on the fields and all the parameters of this handler are not yet fully commented.
+; Direct callers: H012+$2EB6
 ; --------------------------------------------------------------------------
 L064_00000F90:
 ; H064+$00000F90: 2f0c  move.l a4, -(a7)
@@ -2962,7 +2962,7 @@ L064_00000F96:
 L064_00000F9A:
 ; H064+$00000F9A: 3f3c0001  move.w #$1, -(a7)
         move.w #$1, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L064_00000F9E:
 ; H064+$00000F9E: 4eb900001670  jsr $1670.l
         jsr (FN_ECL_read_operands).l
@@ -2972,7 +2972,7 @@ L064_00000FA4:
 L064_00000FA6:
 ; H064+$00000FA6: 143900002498  move.b $2498.l, d2
         move.b (H005+$2498).l, d2
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L064_00000FAC:
 ; H064+$00000FAC: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -2982,7 +2982,7 @@ L064_00000FB2:
 L064_00000FB6:
 ; H064+$00000FB6: 3f3c0001  move.w #$1, -(a7)
         move.w #$1, -(a7)
-; FLUSSO: Chiama ECL_EvaluateOperand (H061+$184E).
+; FLOW: Calls ECL_EvaluateOperand (H061+$184E).
 L064_00000FBA:
 ; H064+$00000FBA: 4eb90000184e  jsr $184e.l
         jsr (H061+$184E).l
@@ -2995,11 +2995,11 @@ L064_00000FC4:
 L064_00000FCC:
 ; H064+$00000FCC: 1f2dffff  move.b -$1(a5), -(a7)
         move.b -$1(a5), -(a7)
-; FLUSSO: Chiama ECL_LoadProgram (H061+$1ACC).
+; FLOW: Calls ECL_LoadProgram (H061+$1ACC).
 L064_00000FD0:
 ; H064+$00000FD0: 4eb900001acc  jsr $1acc.l
         jsr (H061+$1ACC).l
-; FLUSSO: Chiama ECL_ResetExecution (H061+$1928).
+; FLOW: Calls ECL_ResetExecution (H061+$1928).
 L064_00000FD6:
 ; H064+$00000FD6: 4eb900001928  jsr $1928.l
         jsr (H061+$1928).l
@@ -3038,13 +3038,13 @@ L064_00001002:
 FN_ECL_33_LOAD_FILES__55_LOAD_PIECES:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_LOAD_FILES_or_PIECES [verificato]
-; Scopo: Carica risorse di mappa o parti delle pareti secondo l’opcode corrente.
-;   - Legge tre operandi numerici.
-;   - Per LOAD FILES può caricare una GEO tramite H011+$1876.
-;   - Per LOAD PIECES aggiorna gli insiemi WALLDEF tramite H011+$14EA.
-;   - I valori speciali $7F e $FF selezionano percorsi dedicati.
-; Chiamanti diretti: H012+$2EBE
+; ROUTINE: ECL_LOAD_FILES_or_PIECES [verified]
+; Purpose: Loads map resources or wall parts according to the current opcode.
+;   - Reads three numeric operands.
+;   - For LOAD FILES it can load a GEO through H011+$1876.
+;   - For LOAD PIECES it updates the WALLDEF sets through H011+$14EA.
+;   - The special values $7F and $FF select dedicated paths.
+; Direct callers: H012+$2EBE
 ; --------------------------------------------------------------------------
 L064_00001004:
 ; H064+$00001004: 2f0c  move.l a4, -(a7)
@@ -3058,7 +3058,7 @@ L064_0000100A:
 L064_0000100E:
 ; H064+$0000100E: 3f3c0003  move.w #$3, -(a7)
         move.w #$3, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L064_00001012:
 ; H064+$00001012: 4eb900001670  jsr $1670.l
         jsr (FN_ECL_read_operands).l
@@ -3092,7 +3092,7 @@ L064_0000103A:
 L064_0000103E:
 ; H064+$0000103E: 3f2dfff8  move.w -$8(a5), -(a7)
         move.w -$8(a5), -(a7)
-; FLUSSO: Chiama ECL_EvaluateOperand (H061+$184E).
+; FLOW: Calls ECL_EvaluateOperand (H061+$184E).
 L064_00001042:
 ; H064+$00001042: 4eb90000184e  jsr $184e.l
         jsr (H061+$184E).l
@@ -3111,7 +3111,7 @@ L064_00001054:
 L064_00001056:
 ; H064+$00001056: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$2493 = opcode ECL corrente
+; STATE: H005+$2493 = current ECL opcode
 L064_00001058:
 ; H064+$00001058: 143900002493  move.b $2493.l, d2
         move.b (H005+$2493).l, d2
@@ -3136,7 +3136,7 @@ L064_00001076:
 L064_0000107C:
 ; H064+$0000107C: 67000030  beq.w $10ae
         beq.w H064+$10AE
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L064_00001080:
 ; H064+$00001080: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -3146,7 +3146,7 @@ L064_00001086:
 L064_0000108A:
 ; H064+$0000108A: 67000022  beq.w $10ae
         beq.w H064+$10AE
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L064_0000108E:
 ; H064+$0000108E: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -3156,11 +3156,11 @@ L064_00001094:
 L064_0000109A:
 ; H064+$0000109A: 3f2dfffa  move.w -$6(a5), -(a7)
         move.w -$6(a5), -(a7)
-; FLUSSO: Chiama Load3DMap_GEO (H011+$1876).
+; FLOW: Calls Load3DMap_GEO (H011+$1876).
 L064_0000109E:
 ; H064+$0000109E: 4eb900001876  jsr $1876.l
         jsr (H011+$1876).l
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L064_000010A4:
 ; H064+$000010A4: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -3185,14 +3185,14 @@ L064_000010C2:
 L064_000010C4:
 ; H064+$000010C4: 3f3c0001  move.w #$1, -(a7)
         move.w #$1, -(a7)
-; FLUSSO: Chiama Load_WallDefinitions (H011+$14EA).
+; FLOW: Calls Load_WallDefinitions (H011+$14EA).
 L064_000010C8:
 ; H064+$000010C8: 4eb9000014ea  jsr $14ea.l
         jsr (H011+$14EA).l
 L064_000010CE:
 ; H064+$000010CE: 600000f6  bra.w $11c6
         bra.w H064+$11C6
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L064_000010D2:
 ; H064+$000010D2: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -3202,7 +3202,7 @@ L064_000010D8:
 L064_000010DC:
 ; H064+$000010DC: 67000076  beq.w $1154
         beq.w H064+$1154
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L064_000010E0:
 ; H064+$000010E0: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -3224,14 +3224,14 @@ L064_000010F8:
 L064_000010FC:
 ; H064+$000010FC: 3f3c0001  move.w #$1, -(a7)
         move.w #$1, -(a7)
-; FLUSSO: Chiama Load_WallDefinitions (H011+$14EA).
+; FLOW: Calls Load_WallDefinitions (H011+$14EA).
 L064_00001100:
 ; H064+$00001100: 4eb9000014ea  jsr $14ea.l
         jsr (H011+$14EA).l
 L064_00001106:
 ; H064+$00001106: 60000012  bra.w $111a
         bra.w H064+$111A
-; STATO: H005+$2810 = tre elementi di stato degli insiemi pareti
+; STATE: H005+$2810 = three state elements of the wall sets
 L064_0000110A:
 ; H064+$0000110A: 33fcffff00002810  move.w #$ffff, $2810.l
         move.w #$ffff, (H005+$2810).l
@@ -3256,7 +3256,7 @@ L064_0000112E:
 L064_00001132:
 ; H064+$00001132: 3f3c0003  move.w #$3, -(a7)
         move.w #$3, -(a7)
-; FLUSSO: Chiama Load_WallDefinitions (H011+$14EA).
+; FLOW: Calls Load_WallDefinitions (H011+$14EA).
 L064_00001136:
 ; H064+$00001136: 4eb9000014ea  jsr $14ea.l
         jsr (H011+$14EA).l
@@ -3317,7 +3317,7 @@ L064_00001186:
 L064_0000118A:
 ; H064+$0000118A: 3f2dfff8  move.w -$8(a5), -(a7)
         move.w -$8(a5), -(a7)
-; FLUSSO: Chiama Load_WallDefinitions (H011+$14EA).
+; FLOW: Calls Load_WallDefinitions (H011+$14EA).
 L064_0000118E:
 ; H064+$0000118E: 4eb9000014ea  jsr $14ea.l
         jsr (H011+$14EA).l
@@ -3333,7 +3333,7 @@ L064_0000119C:
 L064_0000119E:
 ; H064+$0000119E: e542  asl.w #$2, d2
         asl.w #$2, d2
-; STATO: H005+$2810 = tre elementi di stato degli insiemi pareti
+; STATE: H005+$2810 = three state elements of the wall sets
 L064_000011A0:
 ; H064+$000011A0: 47f900002810  lea.l $2810.l, a3
         lea.l (H005+$2810).l, a3
@@ -3349,7 +3349,7 @@ L064_000011B0:
 L064_000011B2:
 ; H064+$000011B2: e542  asl.w #$2, d2
         asl.w #$2, d2
-; STATO: H005+$2810 = tre elementi di stato degli insiemi pareti
+; STATE: H005+$2810 = three state elements of the wall sets
 L064_000011B4:
 ; H064+$000011B4: 47f900002810  lea.l $2810.l, a3
         lea.l (H005+$2810).l, a3
@@ -3380,7 +3380,7 @@ L064_000011D6:
 L064_000011DE:
 ; H064+$000011DE: 66000036  bne.w $1216
         bne.w H064+$1216
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L064_000011E2:
 ; H064+$000011E2: 0c39000300003de3  cmpi.b #$3, $3de3.l
         cmpi.b #$3, (H005+$3DE3).l
@@ -3397,7 +3397,7 @@ L064_000011F4:
 L064_000011F8:
 ; H064+$000011F8: 4eb900000330  jsr $330.l
         jsr (H044+$330).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L064_000011FE:
 ; H064+$000011FE: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -3425,11 +3425,11 @@ L064_0000121A:
 FN_ECL_47_AND__48_OR:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_Handler_47 [nome verificato; semantica parziale]
-; Scopo: Gestore ECL collegato dalla tabella di esecuzione: 47=AND, 48=OR.
-;   - Il collegamento opcode/nome/indirizzo è verificato incrociando H056 e H012.
-;   - I singoli effetti sui campi e tutti i parametri di questo gestore non sono ancora commentati integralmente.
-; Chiamanti diretti: H012+$2F12
+; ROUTINE: ECL_Handler_47 [name verified; semantics partial]
+; Purpose: ECL handler linked from the execution table: 47=AND, 48=OR.
+;   - The opcode/name/address link is verified by cross-checking H056 and H012.
+;   - The single effects on the fields and all the parameters of this handler are not yet fully commented.
+; Direct callers: H012+$2F12
 ; --------------------------------------------------------------------------
 L064_0000121C:
 ; H064+$0000121C: 2f0c  move.l a4, -(a7)
@@ -3443,14 +3443,14 @@ L064_00001222:
 L064_00001226:
 ; H064+$00001226: 3f3c0003  move.w #$3, -(a7)
         move.w #$3, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L064_0000122A:
 ; H064+$0000122A: 4eb900001670  jsr $1670.l
         jsr (FN_ECL_read_operands).l
 L064_00001230:
 ; H064+$00001230: 3f3c0001  move.w #$1, -(a7)
         move.w #$1, -(a7)
-; FLUSSO: Chiama ECL_EvaluateOperand (H061+$184E).
+; FLOW: Calls ECL_EvaluateOperand (H061+$184E).
 L064_00001234:
 ; H064+$00001234: 4eb90000184e  jsr $184e.l
         jsr (H061+$184E).l
@@ -3460,7 +3460,7 @@ L064_0000123A:
 L064_0000123E:
 ; H064+$0000123E: 3f3c0002  move.w #$2, -(a7)
         move.w #$2, -(a7)
-; FLUSSO: Chiama ECL_EvaluateOperand (H061+$184E).
+; FLOW: Calls ECL_EvaluateOperand (H061+$184E).
 L064_00001242:
 ; H064+$00001242: 4eb90000184e  jsr $184e.l
         jsr (H061+$184E).l
@@ -3473,7 +3473,7 @@ L064_0000124C:
 L064_00001252:
 ; H064+$00001252: 1f3900001494  move.b $1494.l, -(a7)
         move.b (H061+$1494).l, -(a7)
-; FLUSSO: Chiama ECL_DecodeAddress (H061+$1F3C).
+; FLOW: Calls ECL_DecodeAddress (H061+$1F3C).
 L064_00001258:
 ; H064+$00001258: 4eb900001f3c  jsr $1f3c.l
         jsr (H061+$1F3C).l
@@ -3483,7 +3483,7 @@ L064_0000125E:
 L064_00001262:
 ; H064+$00001262: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$2493 = opcode ECL corrente
+; STATE: H005+$2493 = current ECL opcode
 L064_00001264:
 ; H064+$00001264: 143900002493  move.b $2493.l, d2
         move.b (H005+$2493).l, d2
@@ -3573,11 +3573,11 @@ L064_000012C8:
 FN_ECL_42_GETTABLE:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_Handler_42 [nome verificato; semantica parziale]
-; Scopo: Gestore ECL collegato dalla tabella di esecuzione: 42=GETTABLE.
-;   - Il collegamento opcode/nome/indirizzo è verificato incrociando H056 e H012.
-;   - I singoli effetti sui campi e tutti i parametri di questo gestore non sono ancora commentati integralmente.
-; Chiamanti diretti: H012+$2EF0
+; ROUTINE: ECL_Handler_42 [name verified; semantics partial]
+; Purpose: ECL handler linked from the execution table: 42=GETTABLE.
+;   - The opcode/name/address link is verified by cross-checking H056 and H012.
+;   - The single effects on the fields and all the parameters of this handler are not yet fully commented.
+; Direct callers: H012+$2EF0
 ; --------------------------------------------------------------------------
 L064_000012CA:
 ; H064+$000012CA: 2f0c  move.l a4, -(a7)
@@ -3591,7 +3591,7 @@ L064_000012D0:
 L064_000012D4:
 ; H064+$000012D4: 3f3c0003  move.w #$3, -(a7)
         move.w #$3, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L064_000012D8:
 ; H064+$000012D8: 4eb900001670  jsr $1670.l
         jsr (FN_ECL_read_operands).l
@@ -3601,7 +3601,7 @@ L064_000012DE:
 L064_000012E4:
 ; H064+$000012E4: 1f3900001492  move.b $1492.l, -(a7)
         move.b (H061+$1492).l, -(a7)
-; FLUSSO: Chiama ECL_DecodeAddress (H061+$1F3C).
+; FLOW: Calls ECL_DecodeAddress (H061+$1F3C).
 L064_000012EA:
 ; H064+$000012EA: 4eb900001f3c  jsr $1f3c.l
         jsr (H061+$1F3C).l
@@ -3611,7 +3611,7 @@ L064_000012F0:
 L064_000012F4:
 ; H064+$000012F4: 3f3c0002  move.w #$2, -(a7)
         move.w #$2, -(a7)
-; FLUSSO: Chiama ECL_EvaluateOperand (H061+$184E).
+; FLOW: Calls ECL_EvaluateOperand (H061+$184E).
 L064_000012F8:
 ; H064+$000012F8: 4eb90000184e  jsr $184e.l
         jsr (H061+$184E).l
@@ -3624,7 +3624,7 @@ L064_00001302:
 L064_00001308:
 ; H064+$00001308: 1f3900001494  move.b $1494.l, -(a7)
         move.b (H061+$1494).l, -(a7)
-; FLUSSO: Chiama ECL_DecodeAddress (H061+$1F3C).
+; FLOW: Calls ECL_DecodeAddress (H061+$1F3C).
 L064_0000130E:
 ; H064+$0000130E: 4eb900001f3c  jsr $1f3c.l
         jsr (H061+$1F3C).l
@@ -3673,11 +3673,11 @@ L064_00001344:
 FN_ECL_53_SAVE_TABLE:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_Handler_53 [nome verificato; semantica parziale]
-; Scopo: Gestore ECL collegato dalla tabella di esecuzione: 53=SAVE TABLE.
-;   - Il collegamento opcode/nome/indirizzo è verificato incrociando H056 e H012.
-;   - I singoli effetti sui campi e tutti i parametri di questo gestore non sono ancora commentati integralmente.
-; Chiamanti diretti: H012+$2F32
+; ROUTINE: ECL_Handler_53 [name verified; semantics partial]
+; Purpose: ECL handler linked from the execution table: 53=SAVE TABLE.
+;   - The opcode/name/address link is verified by cross-checking H056 and H012.
+;   - The single effects on the fields and all the parameters of this handler are not yet fully commented.
+; Direct callers: H012+$2F32
 ; --------------------------------------------------------------------------
 L064_00001346:
 ; H064+$00001346: 2f0c  move.l a4, -(a7)
@@ -3691,14 +3691,14 @@ L064_0000134C:
 L064_00001350:
 ; H064+$00001350: 3f3c0003  move.w #$3, -(a7)
         move.w #$3, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L064_00001354:
 ; H064+$00001354: 4eb900001670  jsr $1670.l
         jsr (FN_ECL_read_operands).l
 L064_0000135A:
 ; H064+$0000135A: 3f3c0001  move.w #$1, -(a7)
         move.w #$1, -(a7)
-; FLUSSO: Chiama ECL_EvaluateOperand (H061+$184E).
+; FLOW: Calls ECL_EvaluateOperand (H061+$184E).
 L064_0000135E:
 ; H064+$0000135E: 4eb90000184e  jsr $184e.l
         jsr (H061+$184E).l
@@ -3711,7 +3711,7 @@ L064_00001368:
 L064_0000136E:
 ; H064+$0000136E: 1f3900001493  move.b $1493.l, -(a7)
         move.b (H061+$1493).l, -(a7)
-; FLUSSO: Chiama ECL_DecodeAddress (H061+$1F3C).
+; FLOW: Calls ECL_DecodeAddress (H061+$1F3C).
 L064_00001374:
 ; H064+$00001374: 4eb900001f3c  jsr $1f3c.l
         jsr (H061+$1F3C).l
@@ -3721,7 +3721,7 @@ L064_0000137A:
 L064_0000137E:
 ; H064+$0000137E: 3f3c0003  move.w #$3, -(a7)
         move.w #$3, -(a7)
-; FLUSSO: Chiama ECL_EvaluateOperand (H061+$184E).
+; FLOW: Calls ECL_EvaluateOperand (H061+$184E).
 L064_00001382:
 ; H064+$00001382: 4eb90000184e  jsr $184e.l
         jsr (H061+$184E).l
@@ -3760,11 +3760,11 @@ L064_000013AA:
 FN_ECL_21_VERTICAL_MENU:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_Handler_21 [nome verificato; semantica parziale]
-; Scopo: Gestore ECL collegato dalla tabella di esecuzione: 21=VERTICAL MENU.
-;   - Il collegamento opcode/nome/indirizzo è verificato incrociando H056 e H012.
-;   - I singoli effetti sui campi e tutti i parametri di questo gestore non sono ancora commentati integralmente.
-; Chiamanti diretti: H012+$2E90
+; ROUTINE: ECL_Handler_21 [name verified; semantics partial]
+; Purpose: ECL handler linked from the execution table: 21=VERTICAL MENU.
+;   - The opcode/name/address link is verified by cross-checking H056 and H012.
+;   - The single effects on the fields and all the parameters of this handler are not yet fully commented.
+; Direct callers: H012+$2E90
 ; --------------------------------------------------------------------------
 L064_000013AC:
 ; H064+$000013AC: 2f0c  move.l a4, -(a7)
@@ -3802,7 +3802,7 @@ L064_000013D6:
 L064_000013DC:
 ; H064+$000013DC: 3f3c0003  move.w #$3, -(a7)
         move.w #$3, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L064_000013E0:
 ; H064+$000013E0: 4eb900001670  jsr $1670.l
         jsr (FN_ECL_read_operands).l
@@ -3812,7 +3812,7 @@ L064_000013E6:
 L064_000013EC:
 ; H064+$000013EC: 1f3900001492  move.b $1492.l, -(a7)
         move.b (H061+$1492).l, -(a7)
-; FLUSSO: Chiama ECL_DecodeAddress (H061+$1F3C).
+; FLOW: Calls ECL_DecodeAddress (H061+$1F3C).
 L064_000013F2:
 ; H064+$000013F2: 4eb900001f3c  jsr $1f3c.l
         jsr (H061+$1F3C).l
@@ -3837,21 +3837,21 @@ L064_0000140A:
 L064_0000140E:
 ; H064+$0000140E: 3f3c0003  move.w #$3, -(a7)
         move.w #$3, -(a7)
-; FLUSSO: Chiama ECL_EvaluateOperand (H061+$184E).
+; FLOW: Calls ECL_EvaluateOperand (H061+$184E).
 L064_00001412:
 ; H064+$00001412: 4eb90000184e  jsr $184e.l
         jsr (H061+$184E).l
 L064_00001418:
 ; H064+$00001418: 3b40fffe  move.w d0, -$2(a5)
         move.w d0, -$2(a5)
-; STATO: H005+$3DEA = PC logico ECL
+; STATE: H005+$3DEA = logical ECL PC
 L064_0000141C:
 ; H064+$0000141C: 537900003dea  subq.w #$1, $3dea.l
         subq.w #$1, (H005+$3DEA).l
 L064_00001422:
 ; H064+$00001422: 3f2dfffe  move.w -$2(a5), -(a7)
         move.w -$2(a5), -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L064_00001426:
 ; H064+$00001426: 4eb900001670  jsr $1670.l
         jsr (FN_ECL_read_operands).l
@@ -4067,11 +4067,11 @@ L064_00001542:
 FN_ECL_43_HORIZONTAL_MENU:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_Handler_43 [nome verificato; semantica parziale]
-; Scopo: Gestore ECL collegato dalla tabella di esecuzione: 43=HORIZONTAL MENU.
-;   - Il collegamento opcode/nome/indirizzo è verificato incrociando H056 e H012.
-;   - I singoli effetti sui campi e tutti i parametri di questo gestore non sono ancora commentati integralmente.
-; Chiamanti diretti: H012+$2EF8
+; ROUTINE: ECL_Handler_43 [name verified; semantics partial]
+; Purpose: ECL handler linked from the execution table: 43=HORIZONTAL MENU.
+;   - The opcode/name/address link is verified by cross-checking H056 and H012.
+;   - The single effects on the fields and all the parameters of this handler are not yet fully commented.
+; Direct callers: H012+$2EF8
 ; --------------------------------------------------------------------------
 L064_00001544:
 ; H064+$00001544: 2f0c  move.l a4, -(a7)
@@ -4115,7 +4115,7 @@ L064_0000156E:
 L064_00001572:
 ; H064+$00001572: 3f3c0002  move.w #$2, -(a7)
         move.w #$2, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L064_00001576:
 ; H064+$00001576: 4eb900001670  jsr $1670.l
         jsr (FN_ECL_read_operands).l
@@ -4125,7 +4125,7 @@ L064_0000157C:
 L064_00001582:
 ; H064+$00001582: 1f3900001492  move.b $1492.l, -(a7)
         move.b (H061+$1492).l, -(a7)
-; FLUSSO: Chiama ECL_DecodeAddress (H061+$1F3C).
+; FLOW: Calls ECL_DecodeAddress (H061+$1F3C).
 L064_00001588:
 ; H064+$00001588: 4eb900001f3c  jsr $1f3c.l
         jsr (H061+$1F3C).l
@@ -4135,21 +4135,21 @@ L064_0000158E:
 L064_00001592:
 ; H064+$00001592: 3f3c0002  move.w #$2, -(a7)
         move.w #$2, -(a7)
-; FLUSSO: Chiama ECL_EvaluateOperand (H061+$184E).
+; FLOW: Calls ECL_EvaluateOperand (H061+$184E).
 L064_00001596:
 ; H064+$00001596: 4eb90000184e  jsr $184e.l
         jsr (H061+$184E).l
 L064_0000159C:
 ; H064+$0000159C: 3b40fffe  move.w d0, -$2(a5)
         move.w d0, -$2(a5)
-; STATO: H005+$3DEA = PC logico ECL
+; STATE: H005+$3DEA = logical ECL PC
 L064_000015A0:
 ; H064+$000015A0: 537900003dea  subq.w #$1, $3dea.l
         subq.w #$1, (H005+$3DEA).l
 L064_000015A6:
 ; H064+$000015A6: 3f2dfffe  move.w -$2(a5), -(a7)
         move.w -$2(a5), -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L064_000015AA:
 ; H064+$000015AA: 4eb900001670  jsr $1670.l
         jsr (FN_ECL_read_operands).l
@@ -4467,11 +4467,11 @@ L064_00001746:
 FN_ECL_28_CLEARMONSTERS:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_Handler_28 [nome verificato; semantica parziale]
-; Scopo: Gestore ECL collegato dalla tabella di esecuzione: 28=CLEARMONSTERS.
-;   - Il collegamento opcode/nome/indirizzo è verificato incrociando H056 e H012.
-;   - I singoli effetti sui campi e tutti i parametri di questo gestore non sono ancora commentati integralmente.
-; Chiamanti diretti: H012+$2EA0
+; ROUTINE: ECL_Handler_28 [name verified; semantics partial]
+; Purpose: ECL handler linked from the execution table: 28=CLEARMONSTERS.
+;   - The opcode/name/address link is verified by cross-checking H056 and H012.
+;   - The single effects on the fields and all the parameters of this handler are not yet fully commented.
+; Direct callers: H012+$2EA0
 ; --------------------------------------------------------------------------
 L064_00001748:
 ; H064+$00001748: 2f0c  move.l a4, -(a7)
@@ -4482,7 +4482,7 @@ L064_0000174A:
 L064_0000174E:
 ; H064+$0000174E: 4e55fffa  link.w a5, #$fffa
         link.w a5, #$fffa
-; STATO: H005+$3DEA = PC logico ECL
+; STATE: H005+$3DEA = logical ECL PC
 L064_00001752:
 ; H064+$00001752: 527900003dea  addq.w #$1, $3dea.l
         addq.w #$1, (H005+$3DEA).l
@@ -4558,11 +4558,11 @@ L064_000017BA:
 FN_ECL_29_PARTYSTRENGTH:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_Handler_29 [nome verificato; semantica parziale]
-; Scopo: Gestore ECL collegato dalla tabella di esecuzione: 29=PARTYSTRENGTH.
-;   - Il collegamento opcode/nome/indirizzo è verificato incrociando H056 e H012.
-;   - I singoli effetti sui campi e tutti i parametri di questo gestore non sono ancora commentati integralmente.
-; Chiamanti diretti: H012+$2EA8
+; ROUTINE: ECL_Handler_29 [name verified; semantics partial]
+; Purpose: ECL handler linked from the execution table: 29=PARTYSTRENGTH.
+;   - The opcode/name/address link is verified by cross-checking H056 and H012.
+;   - The single effects on the fields and all the parameters of this handler are not yet fully commented.
+; Direct callers: H012+$2EA8
 ; --------------------------------------------------------------------------
 L064_000017BC:
 ; H064+$000017BC: 2f0c  move.l a4, -(a7)
@@ -4576,14 +4576,14 @@ L064_000017C2:
 L064_000017C6:
 ; H064+$000017C6: 3f3c0001  move.w #$1, -(a7)
         move.w #$1, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L064_000017CA:
 ; H064+$000017CA: 4eb900001670  jsr $1670.l
         jsr (FN_ECL_read_operands).l
 L064_000017D0:
 ; H064+$000017D0: 422dfffa  clr.b -$6(a5)
         clr.b -$6(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L064_000017D4:
 ; H064+$000017D4: 2b7900003364fff4  move.l $3364.l, -$c(a5)
         move.l (H005+$3364).l, -$c(a5)
@@ -4848,7 +4848,7 @@ L064_00001908:
 L064_0000190E:
 ; H064+$0000190E: 1f3900001492  move.b $1492.l, -(a7)
         move.b (H061+$1492).l, -(a7)
-; FLUSSO: Chiama ECL_DecodeAddress (H061+$1F3C).
+; FLOW: Calls ECL_DecodeAddress (H061+$1F3C).
 L064_00001914:
 ; H064+$00001914: 4eb900001f3c  jsr $1f3c.l
         jsr (H061+$1F3C).l

@@ -1,4 +1,4 @@
-/* H045: helper aritmetici e di supporto condivisi. */
+/* H045: shared arithmetic and support helpers. */
 #ifndef COK_H045_H
 #define COK_H045_H
 

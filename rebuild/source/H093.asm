@@ -1,12 +1,12 @@
 ; ============================================================================
-; GUIDA DEL MODULO H093
-; inizializzazione della base custom condivisa.
-; I commenti descrivono l'analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H093
+; initialisation of the shared custom base.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Inizializzazione della base custom condivisa; collabora con H100.
+; MODULE NOTE
+; Initialisation of the shared custom base; works together with H100.
 ; --------------------------------------------------------------------------
 ; H093: 56 original bytes; all offsets are section-relative.
         section H093,code
@@ -14,10 +14,10 @@ H093:
 ; Preserved bytes H093+$00000000..$00000004; code/data not fully classified.
         dc.l H093+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H093_0034 [parziale]
-; Scopo: Trampolino verso H093+$0034; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H093+$0034.
-; Chiamanti diretti: H000+$0138
+; ROUTINE: trampoline_H093_0034 [partial]
+; Purpose: Trampoline to H093+$0034; the actual body is there.
+;   - Jumps to the actual body at H093+$0034.
+; Direct callers: H000+$0138
 ; --------------------------------------------------------------------------
 L093_00000004:
 ; H093+$00000004: 4e550000  link.w a5, #$0

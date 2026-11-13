@@ -1,4 +1,4 @@
-/* H011: dati del modulo (tabelle di word e byte). */
+/* H011: module data (tables of words and bytes). */
 #include "init_data.h"
 #include "h011.h"
 #include "h003_exec.h"
@@ -15,7 +15,7 @@
 #include "h049.h"
 #include <string.h>
 
-/* Dati del modulo sotto a4: g_h011_bss[0xAC - off] e' -off(a4). */
+/* Module data below a4: g_h011_bss[0xAC - off] is -off(a4). */
 u8 g_h011_bss[0xAC];
 
 #include "h011_init_data.h"
@@ -27,23 +27,23 @@ void h011_init(void)
 }
 
 /*
- * PORT H011+$010C: copia la palette di H005+$52AE in -$AC(a4), imposta i
- * colori 17..19 a $AAA, $555, $FFF e carica i primi 20 colori.
+ * PORT H011+$010C: copies the palette of H005+$52AE into -$AC(a4), sets the
+ * colours 17..19 to $AAA, $555, $FFF and loads the first 20 colours.
  */
 void load_game_palette(void)
 {
-    /* $52AE: palette corrente dello schermo, RGB4 (16 o 32 colori) */
+    /* $52AE: current screen palette, RGB4 (16 or 32 colours) */
     exec_copy_mem(&g_h005[0x52AE], g_h011_bss, 0x40);
-    /* H011_bss+$22: (word) colore 17 della palette di gioco ($AAA) */
+    /* H011_bss+$22: (word) colour 17 of the game palette ($AAA) */
     COK_PUT16(&g_h011_bss[0xAC - 0x8A], 0x0AAA);
-    /* H011_bss+$24: (word) colore 18 della palette di gioco ($555) */
+    /* H011_bss+$24: (word) colour 18 of the game palette ($555) */
     COK_PUT16(&g_h011_bss[0xAC - 0x88], 0x0555);
-    /* H011_bss+$26: (word) colore 19 della palette di gioco ($FFF) */
+    /* H011_bss+$26: (word) colour 19 of the game palette ($FFF) */
     COK_PUT16(&g_h011_bss[0xAC - 0x86], 0x0FFF);
     graphics_load_rgb4(&g_screen->ViewPort, g_h011_bss, 0x14);
 }
 
-/* PORT H011+$0162: (x, y) e' dentro la mappa 16x16? */
+/* PORT H011+$0162: is (x, y) inside the 16x16 map? */
 static u8 map_inside(s16 x, s16 y)
 {
     if (x > 0x0F || x < 0 || y > 0x0F || y < 0) {
@@ -53,13 +53,13 @@ static u8 map_inside(s16 x, s16 y)
 }
 
 /*
- * Prologo comune di H011+$01AA/$04E2/$09C8: fuori dalla mappa, con
- * $2498 = 0 o $A, 0; altrimenti le coordinate fanno il giro (16 -> 0,
+ * Common prologue of H011+$01AA/$04E2/$09C8: outside the map, with
+ * $2498 = 0 or $A, 0; otherwise the coordinates wrap around (16 -> 0,
  * -1 -> 15).
  */
 static u8 map_wrap(s16 *x, s16 *y)
 {
-    /* $2498: id del programma ECL dell'area corrente ($24 iniziale, $39 demo) */
+    /* $2498: id of the ECL program of the current area ($24 initial, $39 demo) */
     if (!map_inside(*x, *y) && (H005_B(0x2498) == 0 || H005_B(0x2498) == 0x0A)) {
         return 0;
     }
@@ -77,9 +77,9 @@ static u8 map_wrap(s16 *x, s16 *y)
 }
 
 /*
- * PORT H011+$01AA (Map_QueryWall): parete del lato dir (0, 2, 4, 6) della
- * casella (x, y): nibble dei piani GEO 0 e 1.  Con dir dispari
- * l'originale restituisce una word non inizializzata: qui 0.
+ * PORT H011+$01AA (Map_QueryWall): wall on side dir (0, 2, 4, 6) of the
+ * square (x, y): nibbles of GEO planes 0 and 1.  With an odd dir
+ * the original returns an uninitialised word: here 0.
  */
 u16 map_wall(s16 x, s16 y, u16 dir)
 {
@@ -112,7 +112,7 @@ u16 map_wall(s16 x, s16 y, u16 dir)
     return r;
 }
 
-/* PORT H011+$04E2: byte del piano GEO 2 della casella (x, y). */
+/* PORT H011+$04E2: byte of GEO plane 2 of the square (x, y). */
 u8 map_flags(s16 x, s16 y)
 {
     if (!map_wrap(&x, &y)) {
@@ -122,8 +122,8 @@ u8 map_flags(s16 x, s16 y)
 }
 
 /*
- * PORT H011+$09C8: porta del lato dir della casella (x, y): coppia di
- * bit del piano GEO 3 se c'e' una parete, altrimenti 1.
+ * PORT H011+$09C8: door on side dir of the square (x, y): pair of
+ * bits of GEO plane 3 if there is a wall, otherwise 1.
  */
 u16 map_door(s16 x, s16 y, u16 dir)
 {
@@ -156,31 +156,31 @@ u16 map_door(s16 x, s16 y, u16 dir)
 }
 
 /*
- * PORT H011+$04A6: memorizza i quattro byte di partenza della vista
- * ($2829..$2826, primo argomento in $2829).
+ * PORT H011+$04A6: stores the four view start bytes
+ * ($2829..$2826, first argument in $2829).
  */
 void set_view_start(u16 a, u16 b, u16 c, u16 d)
 {
-    H005_B(0x2829) = (u8)a; /* $2829: colore del cielo della vista (1o byte di partenza vista) */
-    H005_B(0x2828) = (u8)b; /* $2828: uso: 2o byte di partenza vista (arg b di H011+$04A6) */
-    H005_B(0x2827) = (u8)c; /* $2827: uso: 3o byte di partenza vista (arg c di H011+$04A6) */
-    H005_B(0x2826) = (u8)d; /* $2826: uso: 4o byte di partenza vista (arg d di H011+$04A6), 8 nel dungeon */
+    H005_B(0x2829) = (u8)a; /* $2829: sky colour of the view (1st view start byte) */
+    H005_B(0x2828) = (u8)b; /* $2828: use: 2nd view start byte (arg b of H011+$04A6) */
+    H005_B(0x2827) = (u8)c; /* $2827: use: 3rd view start byte (arg c of H011+$04A6) */
+    H005_B(0x2826) = (u8)d; /* $2826: use: 4th view start byte (arg d of H011+$04A6), 8 in the dungeon */
 }
 
-/* Tabelle di word del modulo: H011_W(-off) e' -off(a4). */
+/* Word tables of the module: H011_W(-off) is -off(a4). */
 #define H011_W(off) ((s16)COK_GET16(&g_h011_bss[0xAC - (off)]))
-#define VIEW_X(k)   H011_W(0x58 - (k) * 2)  /* colonna del pezzo k */
-#define VIEW_Y(k)   H011_W(0x6C - (k) * 2)  /* riga del pezzo k */
-#define DX(d)       ((s16)H005_W(0x3EE2 + (d) * 2))  /* $3EE2: (word) spostamento x per direzione d (passo 2) */
-#define DY(d)       ((s16)H005_W(0x3ED0 + (d) * 2))  /* $3ED0: (word) spostamento y per direzione d (passo 2) */
+#define VIEW_X(k)   H011_W(0x58 - (k) * 2)  /* column of piece k */
+#define VIEW_Y(k)   H011_W(0x6C - (k) * 2)  /* row of piece k */
+#define DX(d)       ((s16)H005_W(0x3EE2 + (d) * 2))  /* $3EE2: (word) x offset for direction d (step 2) */
+#define DY(d)       ((s16)H005_W(0x3ED0 + (d) * 2))  /* $3ED0: (word) y offset for direction d (step 2) */
 
 /*
- * PORT H011+$14EA (Load_WallDefinitions): carica il blocco id di
- * WALLDEFn.dax nelle posizioni da slot (1..3) del buffer $282E (blocchi
- * di $30C byte: cinque muri da $9C tessere); le tessere da $3EBC in su
- * vengono spostate al set della posizione e si caricano i set 8x8
- * (id*10+k se il blocco ne contiene piu' d'uno).  $2810 ricorda id e
- * posizione.
+ * PORT H011+$14EA (Load_WallDefinitions): loads block id of
+ * WALLDEFn.dax into the positions from slot (1..3) of the buffer $282E (blocks
+ * of $30C bytes: five walls of $9C tiles); the tiles from $3EBC up
+ * are moved to the set of the position and the 8x8 sets are loaded
+ * (id*10+k if the block contains more than one).  $2810 remembers id and
+ * position.
  */
 void load_wall_defs(u16 id, u16 slot)
 {
@@ -201,7 +201,7 @@ void load_wall_defs(u16 id, u16 slot)
     if (slot < 1 || slot > 3) {
         return;
     }
-    /* $246E: disco dei dati / gruppo di risorse corrente (G_RESOURCE_GROUP) */
+    /* $246E: data disk / current resource group (G_RESOURCE_GROUP) */
     format_number(4, num, (s32)H005_B(0x246E), 0, 0x0A, 1, '0');
     strcpy(name, "WALLDEF");
     h026_append(0x50, name, 4, num);
@@ -216,8 +216,8 @@ void load_wall_defs(u16 id, u16 slot)
         wait_for_key();
         quit_game();
     }
-    /* $3EC6: (word) base tessere per posto muri (slot 1..3, passo 2); $3EC8: (word) base tessere
-     * del posto muri 1 (sottratta alle altre) */
+    /* $3EC6: (word) tile base per wall slot (slot 1..3, step 2); $3EC8: (word) tile base of wall
+     * slot 1 (subtracted from the others) */
     base = (s16)(H005_W(0x3EC6 + slot * 2) - H005_W(0x3EC8));
     pos = 0;
     k = 1;
@@ -234,14 +234,14 @@ void load_wall_defs(u16 id, u16 slot)
         if (s == 0 || s >= 4) {
             continue;
         }
-        /* $2810: tab. 3 voci da 4 byte dei set di muri: word id WALLDEF, $FFFF vuoto */
+        /* $2810: tab. of 3 4-byte entries of the wall sets: word WALLDEF id, $FFFF empty */
         H005_SET_W(0x2810 + (s - 1) * 4, 0xFFFF);
-        /* $2812: word +2 delle voci $2810: posizione (slot 1..3), $FFFF vuoto */
+        /* $2812: word +2 of the $2810 entries: position (slot 1..3), $FFFF empty */
         H005_SET_W(0x2812 + (s - 1) * 4, 0xFFFF);
         for (j = 1; j <= 5; ++j) {
             for (t = 0; t <= 0x9B; ++t) {
                 b = &g_h005_282e[(s - 1) * 0x30C + (j - 1) * 0x9C + t];
-                /* $3EBC: (word) prima tessera dei muri da spostare al set del posto */
+                /* $3EBC: (word) first wall tile to move to the set of the slot */
                 if (*b >= H005_W(0x3EBC)) {
                     *b = (u8)(*b + base);
                 }
@@ -253,16 +253,16 @@ void load_wall_defs(u16 id, u16 slot)
             load_8x8_set((u8)id, (u8)s);
         }
     }
-    /* $2810: tab. 3 voci da 4 byte dei set di muri: word id WALLDEF, $FFFF vuoto */
+    /* $2810: tab. of 3 4-byte entries of the wall sets: word WALLDEF id, $FFFF empty */
     H005_SET_W(0x2810 + (slot - 1) * 4, id);
-    /* $2812: word +2 delle voci $2810: posizione (slot 1..3), $FFFF vuoto */
+    /* $2812: word +2 of the $2810 entries: position (slot 1..3), $FFFF empty */
     H005_SET_W(0x2812 + (slot - 1) * 4, slot);
 }
 
 /*
- * PORT H011+$1876 (Load3DMap_GEO): carica la mappa id di GEOn.dax: i
- * quattro piani da $100 byte (dopo 2 byte di intestazione) in $282A, e
- * la registra in $3E04+$18A.
+ * PORT H011+$1876 (Load3DMap_GEO): loads map id of GEOn.dax: the
+ * four planes of $100 bytes (after 2 header bytes) into $282A, and
+ * records it in $3E04+$18A.
  */
 void load_geo_map(u16 id)
 {
@@ -272,7 +272,7 @@ void load_geo_map(u16 id)
     u8 *buf = NULL;                     /* -$58(a5) */
     u16 pos;                            /* -$5A(a5) */
 
-    /* $246E: disco dei dati / gruppo di risorse corrente (G_RESOURCE_GROUP) */
+    /* $246E: data disk / current resource group (G_RESOURCE_GROUP) */
     format_number(1, num, (s32)H005_B(0x246E), 0, 0x0A, 1, '0');
     strcpy(name, "GEO");
     h026_append(0x50, name, 1, num);
@@ -291,13 +291,13 @@ void load_geo_map(u16 id)
     pos = (u16)(pos + 0x100);
     exec_copy_mem(buf + pos, g_geo_planes + 0x300, 0x100);
     exec_free_mem(buf, size);
-    COK_PUT16(g_state_a + 0x18A, id); /* A+$18A: (word) id della mappa GEO caricata (ricaricata al Load) */
+    COK_PUT16(g_state_a + 0x18A, id); /* A+$18A: (word) id of the loaded GEO map (reloaded on Load) */
 }
 
 /*
- * PORT H011+$0330: mappa dall'alto 11x11 attorno al party (la finestra
- * resta nella mappa 16x16): per ogni casella la tessera $104 + le pareti
- * (N 1, E 2, S 4, O 8), poi il party con la tessera $100 + dir/2.
+ * PORT H011+$0330: top-down 11x11 map around the party (the window
+ * stays inside the 16x16 map): for every square tile $104 + the walls
+ * (N 1, E 2, S 4, W 8), then the party with tile $100 + dir/2.
  */
 static void draw_area_map(s16 x, s16 y, u16 dir)
 {
@@ -334,7 +334,7 @@ static void draw_area_map(s16 x, s16 y, u16 dir)
                   0, 0);
 }
 
-/* Disegna una delle immagini "sky" mascherata nella cella (cx, cy). */
+/* Draws one of the "sky" pictures masked in the cell (cx, cy). */
 static void blit_sky(struct GfxRecord *rec, s16 cx, s16 cy)
 {
     graphics_blt_mask_bitmap_rastport(rec->image, 0, 0, &g_screen->RastPort,
@@ -345,10 +345,10 @@ static void blit_sky(struct GfxRecord *rec, s16 cx, s16 cy)
 }
 
 /*
- * PORT H011+$058E: sfondo della vista: cielo del colore $2829; all'aperto
- * di giorno (colore $B, casella senza bit 7) il sole secondo l'ora
- * ($3E04+$192) e la direzione, e verso nord l'immagine $280C; infine il
- * pavimento ($2804).
+ * PORT H011+$058E: background of the view: sky of colour $2829; outdoors
+ * by day (colour $B, square without bit 7) the sun according to the hour
+ * ($3E04+$192) and the direction, and towards north the picture $280C; finally the
+ * floor ($2804).
  */
 static void draw_view_background(void)
 {
@@ -356,17 +356,16 @@ static void draw_view_background(void)
     s16 f = 0;                          /* -$10(a5) */
     s16 h;                              /* -$2(a5) */
 
-    /* $2829: colore del cielo della vista (1o byte di partenza vista) */
+    /* $2829: sky colour of the view (1st view start byte) */
     graphics_set_apen(g_rastport, H005_B(0x2829));
     graphics_rect_fill(g_rastport, 0x17, 0x17, 0x70, 0x50);
-    /* $281C: (word) x del party sulla mappa dell'area 16x16; $281E: (word) y del party sulla mappa
-     * dell'area 16x16 */
+    /* $281C: (word) party x on the 16x16 area map; $281E: (word) party y on the 16x16 area map */
     if (map_flags((s16)H005_W(0x281C), (s16)H005_W(0x281E)) < 0x80 &&
-        H005_B(0x2829) == 0x0B) { /* $2829: colore del cielo della vista (1o byte di partenza vista) */
-        h = (s16)COK_GET16(g_state_a + 0x192); /* A+$192: (word) ore del tempo di gioco */
+        H005_B(0x2829) == 0x0B) { /* $2829: sky colour of the view (1st view start byte) */
+        h = (s16)COK_GET16(g_state_a + 0x192); /* A+$192: (word) hours of the game time */
         switch (h) {
         case 1: case 2: case 3: case 4: case 5:
-            switch (H005_B(0x2820)) { /* $2820: direzione del party (0 nord, 2 est, 4 sud, 6 ovest) */
+            switch (H005_B(0x2820)) { /* $2820: party direction (0 north, 2 east, 4 south, 6 west) */
             case 2:
                 e = (s16)(0x0A - 3);
                 f = (s16)(2 + 5 - h);
@@ -382,7 +381,7 @@ static void draw_view_background(void)
             }
             break;
         case 0x0D: case 0x0E: case 0x0F: case 0x10: case 0x11: case 0x12:
-            switch (H005_B(0x2820)) { /* $2820: direzione del party (0 nord, 2 est, 4 sud, 6 ovest) */
+            switch (H005_B(0x2820)) { /* $2820: party direction (0 north, 2 east, 4 south, 6 west) */
             case 6:
                 e = 0;
                 f = (s16)(2 + h - 0x0D);
@@ -403,7 +402,7 @@ static void draw_view_background(void)
         if (e != 0x3E7) {
             blit_sky(g_gfx_sky_2808, e, f);
         }
-        if (H005_B(0x2820) == 0) { /* $2820: direzione del party (0 nord, 2 est, 4 sud, 6 ovest) */
+        if (H005_B(0x2820) == 0) { /* $2820: party direction (0 north, 2 east, 4 south, 6 west) */
             blit_sky(g_gfx_sky_280c, 0, 2);
         }
     }
@@ -413,11 +412,11 @@ static void draw_view_background(void)
 }
 
 /*
- * PORT H011+$0868: pezzo kind (0..9) del muro wall alla cella (x, y)
- * della vista 11x11: le tessere del muro (blocchi di $9C da $282E, dalla
- * posizione della tabella -$1C) per un rettangolo largo -$30[kind] e alto
- * -$44[kind]; le celle fuori dalla vista si saltano, la tessera 0 e'
- * trasparente.
+ * PORT H011+$0868: piece kind (0..9) of wall wall at the cell (x, y)
+ * of the 11x11 view: the wall tiles (blocks of $9C from $282E, from the
+ * position of the table -$1C) for a rectangle -$30[kind] wide and
+ * -$44[kind] high; the cells outside the view are skipped, tile 0 is
+ * transparent.
  */
 static void draw_wall_piece(s16 x, s16 y, u16 wall, u16 kind)
 {
@@ -430,10 +429,10 @@ static void draw_wall_piece(s16 x, s16 y, u16 wall, u16 kind)
     s16 c;                              /* -$6(a5) */
     u8 b;
 
-    tile = H011_W(0x1C - kind * 2); /* H011_bss+$90: tabella 10 word: tile iniziale del pezzo kind 0..9 */
-    /* H011_bss+$7C: tabella 10 word: larghezza in tile del pezzo kind 0..9 */
+    tile = H011_W(0x1C - kind * 2); /* H011_bss+$90: table of 10 words: first tile of piece kind 0..9 */
+    /* H011_bss+$7C: table of 10 words: width in tiles of piece kind 0..9 */
     x_end = (s16)(H011_W(0x30 - kind * 2) + x - 1);
-    /* H011_bss+$68: tabella 10 word: altezza in tile del pezzo kind 0..9 */
+    /* H011_bss+$68: table of 10 words: height in tiles of piece kind 0..9 */
     y_end = (s16)(H011_W(0x44 - kind * 2) + y - 1);
     set = (s16)(wall / 5 + 1);
     sub = (s16)(wall % 5);
@@ -453,7 +452,7 @@ static void draw_wall_piece(s16 x, s16 y, u16 wall, u16 kind)
     }
 }
 
-/* Celle a distanza 2: muri frontali, giunti (9) e lati (1, 2). */
+/* Cells at distance 2: front walls, joints (9) and sides (1, 2). */
 static void draw_view_far(s16 vx, s16 vy, u16 dir, u16 left, u16 right)
 {
     s16 px;                             /* -$12(a5) */
@@ -471,29 +470,29 @@ static void draw_view_far(s16 vx, s16 vy, u16 dir, u16 left, u16 right)
         }
         if (w) {
             if (prev > 0) {
-                /* H011_bss+$66: (word) VIEW_X(9): colonna del pezzo di muro 9 nella vista;
-                 * H011_bss+$52: (word) VIEW_Y(9): riga del pezzo di muro 9 nella vista */
+                /* H011_bss+$66: (word) VIEW_X(9): column of wall piece 9 in the view; H011_bss+$52:
+                 * (word) VIEW_Y(9): row of wall piece 9 in the view */
                 draw_wall_piece((s16)(VIEW_X(9) + off + 1), VIEW_Y(9), prev, 9);
             }
             prev = w;
-            /* H011_bss+$54: (word) VIEW_X(0): colonna del pezzo di muro 0 nella vista;
-             * H011_bss+$40: (word) VIEW_Y(0): riga del pezzo di muro 0 nella vista */
+            /* H011_bss+$54: (word) VIEW_X(0): column of wall piece 0 in the view; H011_bss+$40:
+             * (word) VIEW_Y(0): row of wall piece 0 in the view */
             draw_wall_piece((s16)(VIEW_X(0) + off), VIEW_Y(0), w, 0);
         } else {
             if (prev > 0 &&
-                /* $3EE2: (word) spostamento x per direzione d (passo 2); $3ED0: (word) spostamento
-                 * y per direzione d (passo 2) */
+                /* $3EE2: (word) x offset for direction d (step 2); $3ED0: (word) y offset for
+                 * direction d (step 2) */
                 map_wall((s16)(px - DX(left)), (s16)(py - DY(left)), left)) {
-                /* H011_bss+$66: (word) VIEW_X(9): colonna del pezzo di muro 9 nella vista;
-                 * H011_bss+$52: (word) VIEW_Y(9): riga del pezzo di muro 9 nella vista */
+                /* H011_bss+$66: (word) VIEW_X(9): column of wall piece 9 in the view; H011_bss+$52:
+                 * (word) VIEW_Y(9): row of wall piece 9 in the view */
                 draw_wall_piece((s16)(VIEW_X(9) + off + 1), VIEW_Y(9), prev, 9);
             }
             prev = 0;
         }
         ++i;
         off = (s16)(off - 2);
-        px = (s16)(px + DX(left)); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
-        py = (s16)(py + DY(left)); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
+        px = (s16)(px + DX(left)); /* $3EE2: (word) x offset for direction d (step 2) */
+        py = (s16)(py + DY(left)); /* $3ED0: (word) y offset for direction d (step 2) */
     }
     px = vx; py = vy; i = 0; off = 0; prev = 0;
     while (i < 4) {
@@ -503,71 +502,71 @@ static void draw_view_far(s16 vx, s16 vy, u16 dir, u16 left, u16 right)
         }
         if (w) {
             if (prev > 0) {
-                /* H011_bss+$66: (word) VIEW_X(9): colonna del pezzo di muro 9 nella vista;
-                 * H011_bss+$52: (word) VIEW_Y(9): riga del pezzo di muro 9 nella vista */
+                /* H011_bss+$66: (word) VIEW_X(9): column of wall piece 9 in the view; H011_bss+$52:
+                 * (word) VIEW_Y(9): row of wall piece 9 in the view */
                 draw_wall_piece((s16)(VIEW_X(9) + off - 1), VIEW_Y(9), prev, 9);
             }
             prev = w;
-            /* H011_bss+$54: (word) VIEW_X(0): colonna del pezzo di muro 0 nella vista;
-             * H011_bss+$40: (word) VIEW_Y(0): riga del pezzo di muro 0 nella vista */
+            /* H011_bss+$54: (word) VIEW_X(0): column of wall piece 0 in the view; H011_bss+$40:
+             * (word) VIEW_Y(0): row of wall piece 0 in the view */
             draw_wall_piece((s16)(VIEW_X(0) + off), VIEW_Y(0), w, 0);
         } else {
             if (prev > 0 &&
-                /* $3EE2: (word) spostamento x per direzione d (passo 2); $3ED0: (word) spostamento
-                 * y per direzione d (passo 2) */
+                /* $3EE2: (word) x offset for direction d (step 2); $3ED0: (word) y offset for
+                 * direction d (step 2) */
                 map_wall((s16)(px - DX(right)), (s16)(py - DY(right)), right)) {
-                /* H011_bss+$66: (word) VIEW_X(9): colonna del pezzo di muro 9 nella vista;
-                 * H011_bss+$52: (word) VIEW_Y(9): riga del pezzo di muro 9 nella vista */
+                /* H011_bss+$66: (word) VIEW_X(9): column of wall piece 9 in the view; H011_bss+$52:
+                 * (word) VIEW_Y(9): row of wall piece 9 in the view */
                 draw_wall_piece((s16)(VIEW_X(9) + off - 1), VIEW_Y(9), prev, 9);
             }
             prev = 0;
         }
         ++i;
         off = (s16)(off + 2);
-        px = (s16)(px + DX(right)); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
-        py = (s16)(py + DY(right)); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
+        px = (s16)(px + DX(right)); /* $3EE2: (word) x offset for direction d (step 2) */
+        py = (s16)(py + DY(right)); /* $3ED0: (word) y offset for direction d (step 2) */
     }
     px = vx; py = vy; i = 0; off = 0;
     while (i < 3) {
         w = map_wall(px, py, left);
         if (w) {
             if (i == 0) {
-                /* H011_bss+$56: (word) VIEW_X(1): colonna del pezzo di muro 1 nella vista;
-                 * H011_bss+$42: (word) VIEW_Y(1): riga del pezzo di muro 1 nella vista */
+                /* H011_bss+$56: (word) VIEW_X(1): column of wall piece 1 in the view; H011_bss+$42:
+                 * (word) VIEW_Y(1): row of wall piece 1 in the view */
                 draw_wall_piece((s16)(VIEW_X(1) + off), VIEW_Y(1), w, 1);
             } else {
-                /* H011_bss+$56: (word) VIEW_X(1): colonna del pezzo di muro 1 nella vista;
-                 * H011_bss+$42: (word) VIEW_Y(1): riga del pezzo di muro 1 nella vista */
+                /* H011_bss+$56: (word) VIEW_X(1): column of wall piece 1 in the view; H011_bss+$42:
+                 * (word) VIEW_Y(1): row of wall piece 1 in the view */
                 draw_wall_piece((s16)(VIEW_X(1) + off - 1), VIEW_Y(1), w, 1);
             }
         }
         ++i;
         off = (s16)(off - 2);
-        px = (s16)(px + DX(left)); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
-        py = (s16)(py + DY(left)); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
+        px = (s16)(px + DX(left)); /* $3EE2: (word) x offset for direction d (step 2) */
+        py = (s16)(py + DY(left)); /* $3ED0: (word) y offset for direction d (step 2) */
     }
     px = vx; py = vy; i = 0; off = 0;
     while (i < 3) {
         w = map_wall(px, py, right);
         if (w) {
             if (i == 0) {
-                /* H011_bss+$58: (word) VIEW_X(2): colonna del pezzo di muro 2 nella vista;
-                 * H011_bss+$44: (word) VIEW_Y(2): riga del pezzo di muro 2 nella vista */
+                /* H011_bss+$58: (word) VIEW_X(2): column of wall piece 2 in the view; H011_bss+$44:
+                 * (word) VIEW_Y(2): row of wall piece 2 in the view */
                 draw_wall_piece((s16)(VIEW_X(2) + off), VIEW_Y(2), w, 2);
             } else {
-                /* H011_bss+$58: (word) VIEW_X(2): colonna del pezzo di muro 2 nella vista;
-                 * H011_bss+$44: (word) VIEW_Y(2): riga del pezzo di muro 2 nella vista */
+                /* H011_bss+$58: (word) VIEW_X(2): column of wall piece 2 in the view; H011_bss+$44:
+                 * (word) VIEW_Y(2): row of wall piece 2 in the view */
                 draw_wall_piece((s16)(VIEW_X(2) + off + 1), VIEW_Y(2), w, 2);
             }
         }
         ++i;
         off = (s16)(off + 2);
-        px = (s16)(px + DX(right)); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
-        py = (s16)(py + DY(right)); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
+        px = (s16)(px + DX(right)); /* $3EE2: (word) x offset for direction d (step 2) */
+        py = (s16)(py + DY(right)); /* $3ED0: (word) y offset for direction d (step 2) */
     }
 }
 
-/* Celle a distanza 1: muri frontali (3) e lati (4, 5). */
+/* Cells at distance 1: front walls (3) and sides (4, 5). */
 static void draw_view_mid(s16 vx, s16 vy, u16 dir, u16 left, u16 right)
 {
     s16 px;
@@ -577,53 +576,53 @@ static void draw_view_mid(s16 vx, s16 vy, u16 dir, u16 left, u16 right)
     u16 w;
     u16 w2;
 
-    px = (s16)(vx + DX(left) + DX(left)); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
-    py = (s16)(vy + DY(left) + DY(left)); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
+    px = (s16)(vx + DX(left) + DX(left)); /* $3EE2: (word) x offset for direction d (step 2) */
+    py = (s16)(vy + DY(left) + DY(left)); /* $3ED0: (word) y offset for direction d (step 2) */
     i = 0;
     off = -6;
     while (i < 3) {
         w = map_wall(px, py, dir);
         if (w) {
-            /* H011_bss+$5A: (word) VIEW_X(3): colonna del pezzo di muro 3 nella vista;
-             * H011_bss+$46: (word) VIEW_Y(3): riga del pezzo di muro 3 nella vista */
+            /* H011_bss+$5A: (word) VIEW_X(3): column of wall piece 3 in the view; H011_bss+$46:
+             * (word) VIEW_Y(3): row of wall piece 3 in the view */
             draw_wall_piece((s16)(VIEW_X(3) + off), VIEW_Y(3), w, 3);
         }
         w2 = map_wall(px, py, left);
         if (w2) {
-            /* H011_bss+$5C: (word) VIEW_X(4): colonna del pezzo di muro 4 nella vista;
-             * H011_bss+$48: (word) VIEW_Y(4): riga del pezzo di muro 4 nella vista */
+            /* H011_bss+$5C: (word) VIEW_X(4): column of wall piece 4 in the view; H011_bss+$48:
+             * (word) VIEW_Y(4): row of wall piece 4 in the view */
             draw_wall_piece((s16)(VIEW_X(4) + off), VIEW_Y(4), w2, 4);
         }
         ++i;
         off = (s16)(off + 3);
-        px = (s16)(px + DX(right)); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
-        py = (s16)(py + DY(right)); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
+        px = (s16)(px + DX(right)); /* $3EE2: (word) x offset for direction d (step 2) */
+        py = (s16)(py + DY(right)); /* $3ED0: (word) y offset for direction d (step 2) */
     }
-    px = (s16)(vx + DX(right) + DX(right)); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
-    py = (s16)(vy + DY(right) + DY(right)); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
+    px = (s16)(vx + DX(right) + DX(right)); /* $3EE2: (word) x offset for direction d (step 2) */
+    py = (s16)(vy + DY(right) + DY(right)); /* $3ED0: (word) y offset for direction d (step 2) */
     i = 0;
     off = 6;
     while (i < 3) {
         w = map_wall(px, py, dir);
         if (w) {
-            /* H011_bss+$5A: (word) VIEW_X(3): colonna del pezzo di muro 3 nella vista;
-             * H011_bss+$46: (word) VIEW_Y(3): riga del pezzo di muro 3 nella vista */
+            /* H011_bss+$5A: (word) VIEW_X(3): column of wall piece 3 in the view; H011_bss+$46:
+             * (word) VIEW_Y(3): row of wall piece 3 in the view */
             draw_wall_piece((s16)(VIEW_X(3) + off), VIEW_Y(3), w, 3);
         }
         w2 = map_wall(px, py, right);
         if (w2) {
-            /* H011_bss+$5E: (word) VIEW_X(5): colonna del pezzo di muro 5 nella vista;
-             * H011_bss+$4A: (word) VIEW_Y(5): riga del pezzo di muro 5 nella vista */
+            /* H011_bss+$5E: (word) VIEW_X(5): column of wall piece 5 in the view; H011_bss+$4A:
+             * (word) VIEW_Y(5): row of wall piece 5 in the view */
             draw_wall_piece((s16)(VIEW_X(5) + off), VIEW_Y(5), w2, 5);
         }
         ++i;
         off = (s16)(off - 3);
-        px = (s16)(px + DX(left)); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
-        py = (s16)(py + DY(left)); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
+        px = (s16)(px + DX(left)); /* $3EE2: (word) x offset for direction d (step 2) */
+        py = (s16)(py + DY(left)); /* $3ED0: (word) y offset for direction d (step 2) */
     }
 }
 
-/* Celle a distanza 0: muri frontali (6) e lati (7, 8). */
+/* Cells at distance 0: front walls (6) and sides (7, 8). */
 static void draw_view_near(s16 vx, s16 vy, u16 dir, u16 left, u16 right)
 {
     s16 px;
@@ -633,57 +632,57 @@ static void draw_view_near(s16 vx, s16 vy, u16 dir, u16 left, u16 right)
     u16 w;
     u16 w2;
 
-    px = (s16)(vx + DX(left)); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
-    py = (s16)(vy + DY(left)); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
+    px = (s16)(vx + DX(left)); /* $3EE2: (word) x offset for direction d (step 2) */
+    py = (s16)(vy + DY(left)); /* $3ED0: (word) y offset for direction d (step 2) */
     i = 0;
     off = -7;
     while (i < 2) {
         w = map_wall(px, py, dir);
         if (w) {
-            /* H011_bss+$60: (word) VIEW_X(6): colonna del pezzo di muro 6 nella vista;
-             * H011_bss+$4C: (word) VIEW_Y(6): riga del pezzo di muro 6 nella vista */
+            /* H011_bss+$60: (word) VIEW_X(6): column of wall piece 6 in the view; H011_bss+$4C:
+             * (word) VIEW_Y(6): row of wall piece 6 in the view */
             draw_wall_piece((s16)(VIEW_X(6) + off), VIEW_Y(6), w, 6);
         }
         w2 = map_wall(px, py, left);
         if (w2) {
-            /* H011_bss+$62: (word) VIEW_X(7): colonna del pezzo di muro 7 nella vista;
-             * H011_bss+$4E: (word) VIEW_Y(7): riga del pezzo di muro 7 nella vista */
+            /* H011_bss+$62: (word) VIEW_X(7): column of wall piece 7 in the view; H011_bss+$4E:
+             * (word) VIEW_Y(7): row of wall piece 7 in the view */
             draw_wall_piece((s16)(VIEW_X(7) + off), VIEW_Y(7), w2, 7);
         }
         ++i;
         off = (s16)(off + 7);
-        px = (s16)(px + DX(right)); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
-        py = (s16)(py + DY(right)); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
+        px = (s16)(px + DX(right)); /* $3EE2: (word) x offset for direction d (step 2) */
+        py = (s16)(py + DY(right)); /* $3ED0: (word) y offset for direction d (step 2) */
     }
-    px = (s16)(vx + DX(right)); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
-    py = (s16)(vy + DY(right)); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
+    px = (s16)(vx + DX(right)); /* $3EE2: (word) x offset for direction d (step 2) */
+    py = (s16)(vy + DY(right)); /* $3ED0: (word) y offset for direction d (step 2) */
     i = 0;
     off = 7;
     while (i < 2) {
         w = map_wall(px, py, dir);
         if (w) {
-            /* H011_bss+$60: (word) VIEW_X(6): colonna del pezzo di muro 6 nella vista;
-             * H011_bss+$4C: (word) VIEW_Y(6): riga del pezzo di muro 6 nella vista */
+            /* H011_bss+$60: (word) VIEW_X(6): column of wall piece 6 in the view; H011_bss+$4C:
+             * (word) VIEW_Y(6): row of wall piece 6 in the view */
             draw_wall_piece((s16)(VIEW_X(6) + off), VIEW_Y(6), w, 6);
         }
         w2 = map_wall(px, py, right);
         if (w2) {
-            /* H011_bss+$64: (word) VIEW_X(8): colonna del pezzo di muro 8 nella vista;
-             * H011_bss+$50: (word) VIEW_Y(8): riga del pezzo di muro 8 nella vista */
+            /* H011_bss+$64: (word) VIEW_X(8): column of wall piece 8 in the view; H011_bss+$50:
+             * (word) VIEW_Y(8): row of wall piece 8 in the view */
             draw_wall_piece((s16)(VIEW_X(8) + off), VIEW_Y(8), w2, 8);
         }
         ++i;
         off = (s16)(off - 7);
-        px = (s16)(px + DX(left)); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
-        py = (s16)(py + DY(left)); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
+        px = (s16)(px + DX(left)); /* $3EE2: (word) x offset for direction d (step 2) */
+        py = (s16)(py + DY(left)); /* $3ED0: (word) y offset for direction d (step 2) */
     }
 }
 
 /*
- * PORT H011+$0B78: vista 3D del dungeon dalla casella (x, y) verso dir:
- * con la mappa attiva ($2825) la mappa dall'alto; altrimenti lo sfondo e
- * i muri dalle celle a distanza 2 fino a quella del party, dal fondo
- * verso l'osservatore.  Poi mostra il buffer e ricarica la palette.
+ * PORT H011+$0B78: 3D view of the dungeon from the square (x, y) towards dir:
+ * with the map active ($2825) the top-down map; otherwise the background and
+ * the walls from the cells at distance 2 up to the party one, from the back
+ * towards the viewer.  Then shows the buffer and reloads the palette.
  */
 void draw_3d_view(s16 x, s16 y, u16 dir)
 {
@@ -696,10 +695,10 @@ void draw_3d_view(s16 x, s16 y, u16 dir)
 
     copy_intuition_colors();
     begin_screen_update();
-    if (H005_B(0x2825)) { /* $2825: flag mappa dall'alto attiva al posto della vista 3D */
+    if (H005_B(0x2825)) { /* $2825: top-down map flag, active instead of the 3D view */
         draw_area_map(x, y, dir);
     } else {
-        H005_B(0x2486) = 0xFF; /* $2486: id della sequenza caricata in $27BC (nome a $27A6), $FF nessuna */
+        H005_B(0x2486) = 0xFF; /* $2486: id of the sequence loaded at $27BC (name at $27A6), $FF none */
         draw_view_background();
         left = (u16)((dir + 6) & 7);
         back = (u16)((dir + 4) & 7);
@@ -707,8 +706,8 @@ void draw_3d_view(s16 x, s16 y, u16 dir)
         vx = x;
         vy = y;
         dist = 2;
-        vx = (s16)(vx + DX(dir) * dist); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
-        vy = (s16)(vy + DY(dir) * dist); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
+        vx = (s16)(vx + DX(dir) * dist); /* $3EE2: (word) x offset for direction d (step 2) */
+        vy = (s16)(vy + DY(dir) * dist); /* $3ED0: (word) y offset for direction d (step 2) */
         do {
             switch (dist) {
             case 2: draw_view_far(vx, vy, dir, left, right); break;
@@ -716,8 +715,8 @@ void draw_3d_view(s16 x, s16 y, u16 dir)
             case 0: draw_view_near(vx, vy, dir, left, right); break;
             default: break;
             }
-            vx = (s16)(vx + DX(back)); /* $3EE2: (word) spostamento x per direzione d (passo 2) */
-            vy = (s16)(vy + DY(back)); /* $3ED0: (word) spostamento y per direzione d (passo 2) */
+            vx = (s16)(vx + DX(back)); /* $3EE2: (word) x offset for direction d (step 2) */
+            vy = (s16)(vy + DY(back)); /* $3ED0: (word) y offset for direction d (step 2) */
             --dist;
         } while (dist > -1);
     }

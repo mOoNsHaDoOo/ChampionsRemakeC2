@@ -1,4 +1,4 @@
-/* H079: Adattatori Exec per interrupt e abilitazione/disabilitazione. */
+/* H079: Exec adapters for interrupts and enabling/disabling. */
 #include "h079.h"
 
 /* PORT H079+$0004: rts. */

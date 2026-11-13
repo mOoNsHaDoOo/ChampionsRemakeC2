@@ -1,4 +1,4 @@
-/* H069: segno del party sulla mappa all'aperto. */
+/* H069: party marker on the outdoor map. */
 #ifndef COK_H069_H
 #define COK_H069_H
 #include "cok.h"

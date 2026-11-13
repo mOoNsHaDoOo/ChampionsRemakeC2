@@ -1,4 +1,4 @@
-/* H002: adattatori dos.library. */
+/* H002: dos.library adapters. */
 #ifndef COK_H002_DOS_H
 #define COK_H002_DOS_H
 
@@ -11,11 +11,11 @@ typedef struct FileInfoBlock cok_fib;
 #else
 typedef s32 cok_bptr;
 typedef struct cok_info_data {
-    s32 id_NumBlocks;          /* $0C nell'InfoData di AmigaDOS */
+    s32 id_NumBlocks;          /* $0C in the AmigaDOS InfoData */
     s32 id_NumBlocksUsed;      /* $10 */
     s32 id_BytesPerBlock;      /* $14 */
 } cok_info_data;
-/* Solo il campo del FileInfoBlock letto dal gioco (offset 8). */
+/* Only the FileInfoBlock field read by the game (offset 8). */
 typedef struct cok_fib {
     s32 fib_DirEntryType;      /* $04: > 0 directory */
     char fib_FileName[108];    /* $08 */

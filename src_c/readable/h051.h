@@ -1,4 +1,4 @@
-/* H051: adattatore exec FindTask. */
+/* H051: exec FindTask adapter. */
 #ifndef COK_H051_H
 #define COK_H051_H
 

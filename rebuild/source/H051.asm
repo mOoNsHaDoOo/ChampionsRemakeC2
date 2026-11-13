@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H051
-; Adattatore Exec/FindTask.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H051
+; Exec/FindTask adapter.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Adattatore Exec/FindTask.
+; MODULE NOTE
+; Exec/FindTask adapter.
 ; --------------------------------------------------------------------------
 ; H051: 256 original bytes; all offsets are section-relative.
         section H051,code
@@ -15,10 +15,10 @@ H051:
 ; Preserved bytes H051+$00000000..$00000004; code/data not fully classified.
         dc.l H051+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H051_00000004 [parziale]
-; Scopo: Routine del modulo adattatore Exec/FindTask; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H000+$00A2
+; ROUTINE: sub_H051_00000004 [partial]
+; Purpose: Routine of the Exec/FindTask adapter module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H000+$00A2
 ; --------------------------------------------------------------------------
 L051_00000004:
 ; H051+$00000004: 4e75  rts 
@@ -30,10 +30,10 @@ L051_00000004:
         dc.w $302F,$0004,$48C0,$2C78,$0004,$2F57,$0002,$548F
         dc.w $4EEE,$FEAA
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_FindTask [parziale]
-; Scopo: Adattatore a exec.library/FindTask; incapsula la chiamata alla libreria.
-;   - Chiama exec.library/FindTask (LVO -294).
-; Chiamanti diretti: H029+$1298, H029+$12CC
+; ROUTINE: wrapper_FindTask [partial]
+; Purpose: Adapter to exec.library/FindTask; wraps the library call.
+;   - Calls exec.library/FindTask (LVO -294).
+; Direct callers: H029+$1298, H029+$12CC
 ; --------------------------------------------------------------------------
 L051_0000004A:
 ; H051+$0000004A: 226f0004  movea.l $4(a7), a1

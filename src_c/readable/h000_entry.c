@@ -1,6 +1,6 @@
 /*
- * H000: punto di ingresso.  Inizializza i moduli nell'ordine
- * dell'originale (99 chiamate), poi prosegue nel corpo principale
+ * H000: entry point.  Initialises the modules in the order of the
+ * original (99 calls), then continues into the main body
  * (jmp H001+$0058).
  */
 #include "h001_main.h"
@@ -212,8 +212,8 @@ static void program_entry(void)
 }
 
 /*
- * Argomenti della riga di comando: il runtime H015 li tiene in H015+$8
- * (argv, tabella di puntatori); il gioco legge argv[2] (H013, tasto J).
+ * Command line arguments: the H015 runtime keeps them in H015+$8
+ * (argv, table of pointers); the game reads argv[2] (H013, key J).
  */
 int g_argc;
 char **g_argv;

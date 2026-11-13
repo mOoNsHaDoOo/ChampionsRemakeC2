@@ -1,4 +1,4 @@
-/* H097: IA dei combattenti guidati dal computer. */
+/* H097: AI of the computer-controlled combatants. */
 #ifndef COK_H097_H
 #define COK_H097_H
 #include "character.h"

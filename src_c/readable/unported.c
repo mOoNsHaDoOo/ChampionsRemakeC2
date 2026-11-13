@@ -1,6 +1,6 @@
 /*
- * Segnaposto delle routine non ancora portate (vedi unported.h).
- * Non sono marcati PORT: fermano il programma indicando l'indirizzo.
+ * Placeholders of the routines not ported yet (see unported.h).
+ * They are not marked PORT: they stop the program reporting the address.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,12 +22,12 @@ void cok_unported_skip(const char *where)
     if (s_count < 32) {
         s_reported[s_count++] = where;
     }
-    fprintf(stderr, "routine non ancora portata (saltata): %s\n", where);
+    fprintf(stderr, "routine not ported yet (skipped): %s\n", where);
 }
 
 void cok_unported(const char *where)
 {
-    printf("routine non ancora portata: %s\n", where);
+    printf("routine not ported yet: %s\n", where);
     fflush(stdout);
     exit(20);
 }
@@ -35,11 +35,11 @@ void cok_unported(const char *where)
 
 /* Chiamate da H006+$01AE. */
 
-/* Gestori delle tabelle H005+$25C0 e H005+$2832 (H027+$4276, H033+$1A50). */
+/* Handlers of the tables H005+$25C0 and H005+$2832 (H027+$4276, H033+$1A50). */
 /*
- * Audio (H043/H094): portato in h043_audio.c e h094.c ma compilato solo
- * con COK_AUDIO (smake AUDIO, make AUDIO=1); senza, i comandi audio si
- * saltano per far proseguire il gioco.
+ * Audio (H043/H094): ported in h043_audio.c and h094.c but compiled only
+ * with COK_AUDIO (smake AUDIO, make AUDIO=1); without it the audio commands
+ * are skipped so that the game can go on.
  */
 #ifndef COK_AUDIO
 static const char s_h043_0584[] = "H043+$0584";
@@ -51,9 +51,9 @@ void h043_0840(void) { cok_unported_skip("H043+$0840"); }
 
 
 
-/* Dipendenze del lancio degli incantesimi (H033+$1426, H065+$2F82). */
+/* Dependencies of spell casting (H033+$1426, H065+$2F82). */
 
-/* Parti solo da combattimento del motore degli effetti. */
+/* Combat-only parts of the effect engine. */
 
 
 

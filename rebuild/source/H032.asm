@@ -1,12 +1,12 @@
 ; ============================================================================
-; GUIDA DEL MODULO H032
-; inizializzazione di tabelle globali e dati di gioco.
-; I commenti descrivono l'analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H032
+; initialisation of global tables and game data.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Inizializzazione di tabelle globali: scrive strutture a H005+$66, H005+$76 e aree collegate. Non chiama API; viene eseguito dalla catena di avvio.
+; MODULE NOTE
+; Initialisation of global tables: writes structures at H005+$66, H005+$76 and related areas. It calls no API; it is run by the start-up chain.
 ; --------------------------------------------------------------------------
 ; H032: 9352 original bytes; all offsets are section-relative.
         section H032,code
@@ -14,10 +14,10 @@ H032:
 ; Preserved bytes H032+$00000000..$00000004; code/data not fully classified.
         dc.l H032+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H032 [parziale]
-; Scopo: Ingresso del modulo inizializzazione di tabelle globali e dati di gioco; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H032+$0022.
-; Chiamanti diretti: H000+$01E0
+; ROUTINE: module_init_H032 [partial]
+; Purpose: Entry of the initialisation of global tables and game data module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H032+$0022.
+; Direct callers: H000+$01E0
 ; --------------------------------------------------------------------------
 L032_00000004:
 ; H032+$00000004: 2f0c  move.l a4, -(a7)

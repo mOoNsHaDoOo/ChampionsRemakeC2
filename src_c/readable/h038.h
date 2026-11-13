@@ -1,4 +1,4 @@
-/* H038: adattatori RectFill e selezione delle penne. */
+/* H038: RectFill and pen selection adapters. */
 #ifndef COK_H038_H
 #define COK_H038_H
 

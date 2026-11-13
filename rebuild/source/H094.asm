@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H094
-; Callback audio: server verticale e interrupt software.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H094
+; Audio callback: vertical server and software interrupt.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Callback audio: server verticale che chiama Cause e soft-interrupt che aggiorna code e richieste del device.
+; MODULE NOTE
+; Audio callbacks: vertical server that calls Cause and soft interrupt that updates queues and requests of the device.
 ; --------------------------------------------------------------------------
 ; H094: 1904 original bytes; all offsets are section-relative.
         section H094,code
@@ -15,10 +15,10 @@ H094:
 ; Preserved bytes H094+$00000000..$00000004; code/data not fully classified.
         dc.l H094+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_Cause [parziale]
-; Scopo: Adattatore a exec.library/Cause; incapsula la chiamata alla libreria.
-;   - Chiama exec.library/Cause (LVO -180).
-; Chiamanti diretti: H000+$013E
+; ROUTINE: wrapper_Cause [partial]
+; Purpose: Adapter to exec.library/Cause; wraps the library call.
+;   - Calls exec.library/Cause (LVO -180).
+; Direct callers: H000+$013E
 ; --------------------------------------------------------------------------
 L094_00000004:
 ; H094+$00000004: 4e75  rts 
@@ -27,15 +27,15 @@ L094_00000004:
 FN_audio_vblank_schedule_Cause:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Audio_VBlankServer [verificato]
-; Scopo: Callback verticale breve che demanda il lavoro a un interrupt software.
-;   - Carica ExecBase e chiama Cause usando il nodo passato in A1.
-;   - Restituisce zero al sistema.
+; ROUTINE: Audio_VBlankServer [verified]
+; Purpose: Short vertical callback that hands the work to a software interrupt.
+;   - Loads ExecBase and calls Cause using the node passed in A1.
+;   - Returns zero to the system.
 ; --------------------------------------------------------------------------
 L094_00000006:
 ; H094+$00000006: 2c780004  movea.l $4.w, a6
         movea.l $4.w, a6
-; PASSO: Cause demanda l’elaborazione audio al software interrupt registrato.
+; STEP: Cause hands the audio processing to the registered software interrupt.
 L094_0000000A:
 ; H094+$0000000A: 4eaeff4c  jsr -$b4(a6) ; exec.library/Cause
         jsr LVO_exec_Cause(a6)
@@ -49,11 +49,11 @@ L094_00000014:
 FN_audio_softinterrupt_worker:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Audio_SoftInterrupt [verificato]
-; Scopo: Aggiorna le strutture sonore e invia le richieste al device.
-;   - Riceve lo stato in A1 e lo conserva in A5.
-;   - Aggiorna il contatore e chiama le routine locali delle code.
-;   - Le richieste usano GetMsg e audio.device/BeginIO.
+; ROUTINE: Audio_SoftInterrupt [verified]
+; Purpose: Updates the sound structures and sends the requests to the device.
+;   - Receives the state in A1 and keeps it in A5.
+;   - Updates the counter and calls the local queue routines.
+;   - The requests use GetMsg and audio.device/BeginIO.
 ; --------------------------------------------------------------------------
 L094_00000016:
 ; H094+$00000016: 48e70004  movem.l a5, -(a7)
@@ -86,11 +86,11 @@ L094_00000038:
 ; H094+$00000038: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H094_0000003A [parziale]
-; Scopo: Servizio del modulo callback audio: server verticale e interrupt software; usa exec.library/GetMsg, audio.device/BeginIO.
-;   - Chiama exec.library/GetMsg (LVO -372).
-;   - Chiama audio.device/BeginIO (LVO -30).
-; Chiamanti diretti: H094+$0028
+; ROUTINE: sub_H094_0000003A [partial]
+; Purpose: Service of the audio callback module: vertical server and software interrupt; uses exec.library/GetMsg, audio.device/BeginIO.
+;   - Calls exec.library/GetMsg (LVO -372).
+;   - Calls audio.device/BeginIO (LVO -30).
+; Direct callers: H094+$0028
 ; --------------------------------------------------------------------------
 L094_0000003A:
 ; H094+$0000003A: 48e70f18  movem.l d4-d7/a3-a4, -(a7)
@@ -276,10 +276,10 @@ L094_00000106:
 ; H094+$00000106: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H094_00000108 [parziale]
-; Scopo: Routine del modulo callback audio: server verticale e interrupt software; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H094+$0024
+; ROUTINE: sub_H094_00000108 [partial]
+; Purpose: Routine of the audio callbacks: vertical server and software interrupt module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H094+$0024
 ; --------------------------------------------------------------------------
 L094_00000108:
 ; H094+$00000108: 48e70108  movem.l d7/a4, -(a7)
@@ -402,10 +402,10 @@ L094_00000186:
 ; H094+$00000186: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H094_00000188 [parziale]
-; Scopo: Routine del modulo callback audio: server verticale e interrupt software; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H094+$011E
+; ROUTINE: sub_H094_00000188 [partial]
+; Purpose: Routine of the audio callbacks: vertical server and software interrupt module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H094+$011E
 ; --------------------------------------------------------------------------
 L094_00000188:
 ; H094+$00000188: 48e70130  movem.l d7/a2-a3, -(a7)
@@ -456,10 +456,10 @@ L094_000001BC:
 ; H094+$000001BC: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H094_000001BE [parziale]
-; Scopo: Routine del modulo callback audio: server verticale e interrupt software; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H094+$01A4
+; ROUTINE: sub_H094_000001BE [partial]
+; Purpose: Routine of the audio callbacks: vertical server and software interrupt module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H094+$01A4
 ; --------------------------------------------------------------------------
 L094_000001BE:
 ; H094+$000001BE: 48e70e00  movem.l d4-d6, -(a7)
@@ -654,10 +654,10 @@ L094_00000286:
 ; H094+$00000286: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H094_00000288 [parziale]
-; Scopo: Routine del modulo callback audio: server verticale e interrupt software; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H094+$0236
+; ROUTINE: sub_H094_00000288 [partial]
+; Purpose: Routine of the audio callbacks: vertical server and software interrupt module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H094+$0236
 ; --------------------------------------------------------------------------
 L094_00000288:
 ; H094+$00000288: 48e73c08  movem.l d2-d5/a4, -(a7)
@@ -909,10 +909,10 @@ L094_0000038E:
 ; H094+$0000038E: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H094_00000390 [parziale]
-; Scopo: Routine del modulo callback audio: server verticale e interrupt software; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H094+$012A, H094+$0138
+; ROUTINE: sub_H094_00000390 [partial]
+; Purpose: Routine of the audio callbacks: vertical server and software interrupt module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H094+$012A, H094+$0138
 ; --------------------------------------------------------------------------
 L094_00000390:
 ; H094+$00000390: 48e73c38  movem.l d2-d5/a2-a4, -(a7)
@@ -1152,13 +1152,13 @@ L094_000004A2:
 ; H094+$000004A2: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H094_000004A4 [parziale]
-; Scopo: Servizio del modulo callback audio: server verticale e interrupt software; usa exec.library/GetMsg, audio.device/BeginIO.
-;   - Chiama exec.library/GetMsg (LVO -372).
-;   - Chiama audio.device/BeginIO (LVO -30).
-;   - Chiama exec.library/GetMsg (LVO -372).
-;   - Chiama audio.device/BeginIO (LVO -30).
-; Chiamanti diretti: H094+$002C
+; ROUTINE: sub_H094_000004A4 [partial]
+; Purpose: Service of the audio callback module: vertical server and software interrupt; uses exec.library/GetMsg, audio.device/BeginIO.
+;   - Calls exec.library/GetMsg (LVO -372).
+;   - Calls audio.device/BeginIO (LVO -30).
+;   - Calls exec.library/GetMsg (LVO -372).
+;   - Calls audio.device/BeginIO (LVO -30).
+; Direct callers: H094+$002C
 ; --------------------------------------------------------------------------
 L094_000004A4:
 ; H094+$000004A4: 48e72308  movem.l d2/d6-d7/a4, -(a7)
@@ -1734,10 +1734,10 @@ L094_00000736:
 ; H094+$00000736: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H094_00000738 [parziale]
-; Scopo: Routine del modulo callback audio: server verticale e interrupt software; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H094+$039A, H094+$021E
+; ROUTINE: sub_H094_00000738 [partial]
+; Purpose: Routine of the audio callbacks: vertical server and software interrupt module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H094+$039A, H094+$021E
 ; --------------------------------------------------------------------------
 L094_00000738:
 ; H094+$00000738: 303c0008  move.w #$8, d0

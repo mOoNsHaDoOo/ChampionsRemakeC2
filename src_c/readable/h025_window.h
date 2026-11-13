@@ -1,4 +1,4 @@
-/* H025: costruzione di NewWindow e OpenWindow. */
+/* H025: building of NewWindow and OpenWindow. */
 #ifndef COK_H025_WINDOW_H
 #define COK_H025_WINDOW_H
 

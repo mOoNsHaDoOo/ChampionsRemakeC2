@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H070
-; Esito combattimento, tesori e distribuzione delle ricompense.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H070
+; Combat outcome, treasures and distribution of the rewards.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Esito del combattimento, tesori e distribuzione delle ricompense.
+; MODULE NOTE
+; Outcome of the combat, treasures and distribution of the rewards.
 ; --------------------------------------------------------------------------
 ; H070: 6940 original bytes; all offsets are section-relative.
         section H070,code
@@ -54,10 +54,10 @@ H070:
         dc.w $7920,$746F,$2063,$6F6E,$7469,$6E75,$6500
         dc.l H070+$00000002
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H070 [parziale]
-; Scopo: Ingresso del modulo esito combattimento, tesori e distribuzione delle ricompense; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H070+$1B16.
-; Chiamanti diretti: H000+$0240
+; ROUTINE: module_init_H070 [partial]
+; Purpose: Entry of the combat outcome, treasures and distribution of the rewards module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H070+$1B16.
+; Direct callers: H000+$0240
 ; --------------------------------------------------------------------------
 L070_00000272:
 ; H070+$00000272: 2f0c  move.l a4, -(a7)
@@ -72,14 +72,14 @@ L070_0000027C:
 ; H070+$0000027C: 60001898  bra.w $1b16
         bra.w H070+$1B16
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H070_00000280 [parziale]
-; Scopo: Routine del modulo esito combattimento, tesori e distribuzione delle ricompense; richiama H015+$004A, H003+$0068, H063+$09B2, H015+$00BC.
-;   - Richiama H015+$004A.
-;   - Richiama H003+$0068.
-;   - Richiama H063+$09B2.
-;   - Richiama H015+$00BC.
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party); H005+$3E00 (puntatore stato persistente B, 2048 byte).
-; Chiamanti diretti: H070+$09B6
+; ROUTINE: sub_H070_00000280 [partial]
+; Purpose: Routine of the combat outcome, treasures and distribution of the rewards module; calls H015+$004A, H003+$0068, H063+$09B2, H015+$00BC.
+;   - Calls H015+$004A.
+;   - Calls H003+$0068.
+;   - Calls H063+$09B2.
+;   - Calls H015+$00BC.
+;   - Uses the global state: H005+$3364 (head of the party list); H005+$3E00 (pointer to persistent state B, 2048 bytes).
+; Direct callers: H070+$09B6
 ; --------------------------------------------------------------------------
 L070_00000280:
 ; H070+$00000280: 2f0c  move.l a4, -(a7)
@@ -96,7 +96,7 @@ L070_0000028A:
 L070_0000028C:
 ; H070+$0000028C: 2b42fff6  move.l d2, -$a(a5)
         move.l d2, -$a(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L070_00000290:
 ; H070+$00000290: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -257,7 +257,7 @@ L070_00000358:
 L070_0000035A:
 ; H070+$0000035A: 2b42fff6  move.l d2, -$a(a5)
         move.l d2, -$a(a5)
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L070_0000035E:
 ; H070+$0000035E: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -597,7 +597,7 @@ L070_00000522:
 L070_00000524:
 ; H070+$00000524: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L070_00000526:
 ; H070+$00000526: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -648,10 +648,10 @@ L070_00000556:
 ; H070+$00000556: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H070_076E [parziale]
-; Scopo: Trampolino verso H070+$076E; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H070+$076E.
-; Chiamanti diretti: H070+$09C0
+; ROUTINE: trampoline_H070_076E [partial]
+; Purpose: Trampoline to H070+$076E; the actual body is there.
+;   - Jumps to the actual body at H070+$076E.
+; Direct callers: H070+$09C0
 ; --------------------------------------------------------------------------
 L070_00000558:
 ; H070+$00000558: 2f0c  move.l a4, -(a7)
@@ -662,7 +662,7 @@ L070_0000055A:
 L070_0000055E:
 ; H070+$0000055E: 4e55fff8  link.w a5, #$fff8
         link.w a5, #$fff8
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L070_00000562:
 ; H070+$00000562: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -675,7 +675,7 @@ L070_0000056C:
 L070_00000570:
 ; H070+$00000570: 600001fc  bra.w $76e
         bra.w H070+$76E
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L070_00000574:
 ; H070+$00000574: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -1066,7 +1066,7 @@ L070_0000074A:
 L070_0000074C:
 ; H070+$0000074C: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H070+$071C; indici 0..16, default -1.
+; DISPATCH: words relative to H070+$071C; indices 0..16, default -1.
 L070_00000750:
 ; H070+$00000750: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -1104,13 +1104,13 @@ L070_00000776:
 ; H070+$00000776: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H070_00000778 [parziale]
-; Scopo: Routine del modulo esito combattimento, tesori e distribuzione delle ricompense; richiama H029+$03E2, H062+$0452, H053+$00CA.
-;   - Richiama H029+$03E2.
-;   - Richiama H062+$0452.
-;   - Richiama H053+$00CA.
-;   - Usa lo stato globale: H005+$24D0 (richiesta di uscita dal ciclo scenario); H005+$3364 (testa della lista del party); H005+$3E00 (puntatore stato persistente B, 2048 byte).
-; Chiamanti diretti: H070+$197E
+; ROUTINE: sub_H070_00000778 [partial]
+; Purpose: Routine of the combat outcome, treasures and distribution of the rewards module; calls H029+$03E2, H062+$0452, H053+$00CA.
+;   - Calls H029+$03E2.
+;   - Calls H062+$0452.
+;   - Calls H053+$00CA.
+;   - Uses the global state: H005+$24D0 (request to exit the scenario loop); H005+$3364 (head of the party list); H005+$3E00 (pointer to persistent state B, 2048 bytes).
+; Direct callers: H070+$197E
 ; --------------------------------------------------------------------------
 L070_00000778:
 ; H070+$00000778: 2f0c  move.l a4, -(a7)
@@ -1157,14 +1157,14 @@ L070_000007BE:
 L070_000007C4:
 ; H070+$000007C4: 423900002499  clr.b $2499.l
         clr.b (H005+$2499).l
-; STATO: H005+$24D0 = richiesta di uscita dal ciclo scenario
+; STATE: H005+$24D0 = request to exit the scenario loop
 L070_000007CA:
 ; H070+$000007CA: 13fc0001000024d0  move.b #$1, $24d0.l
         move.b #$1, (H005+$24D0).l
 L070_000007D2:
 ; H070+$000007D2: 422cfffe  clr.b -$2(a4)
         clr.b -$2(a4)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L070_000007D6:
 ; H070+$000007D6: 2b7900003364ffe6  move.l $3364.l, -$1a(a5)
         move.l (H005+$3364).l, -$1a(a5)
@@ -1207,7 +1207,7 @@ L070_00000810:
 L070_00000816:
 ; H070+$00000816: 60c6  bra.b $7de
         bra.b H070+$7DE
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L070_00000818:
 ; H070+$00000818: 2b7900003364ffe6  move.l $3364.l, -$1a(a5)
         move.l (H005+$3364).l, -$1a(a5)
@@ -1274,7 +1274,7 @@ L070_00000874:
 L070_0000087A:
 ; H070+$0000087A: 60a8  bra.b $824
         bra.b H070+$824
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L070_0000087C:
 ; H070+$0000087C: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -1290,18 +1290,18 @@ L070_0000088A:
 L070_0000088E:
 ; H070+$0000088E: 67000008  beq.w $898
         beq.w H070+$898
-; STATO: H005+$24D0 = richiesta di uscita dal ciclo scenario
+; STATE: H005+$24D0 = request to exit the scenario loop
 L070_00000892:
 ; H070+$00000892: 4239000024d0  clr.b $24d0.l
         clr.b (H005+$24D0).l
 L070_00000898:
 ; H070+$00000898: 4239000024c0  clr.b $24c0.l
         clr.b (H005+$24C0).l
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L070_0000089E:
 ; H070+$0000089E: 2b7900003364ffe6  move.l $3364.l, -$1a(a5)
         move.l (H005+$3364).l, -$1a(a5)
-; STATO: H005+$24D7 = flag del ramo demo
+; STATE: H005+$24D7 = flag of the demo branch
 L070_000008A6:
 ; H070+$000008A6: 4a39000024d7  tst.b $24d7.l
         tst.b (H005+$24D7).l
@@ -1377,7 +1377,7 @@ L070_00000908:
 L070_0000090C:
 ; H070+$0000090C: 64000008  bcc.w $916
         bcc.w H070+$916
-; STATO: H005+$24D0 = richiesta di uscita dal ciclo scenario
+; STATE: H005+$24D0 = request to exit the scenario loop
 L070_00000910:
 ; H070+$00000910: 4239000024d0  clr.b $24d0.l
         clr.b (H005+$24D0).l
@@ -1500,11 +1500,11 @@ L070_000009BA:
 L070_000009C0:
 ; H070+$000009C0: 6100fb96  bsr.w $558
         bsr.w H070+$558
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L070_000009C4:
 ; H070+$000009C4: 2b7900003364ffe6  move.l $3364.l, -$1a(a5)
         move.l (H005+$3364).l, -$1a(a5)
-; STATO: H005+$24D0 = richiesta di uscita dal ciclo scenario
+; STATE: H005+$24D0 = request to exit the scenario loop
 L070_000009CC:
 ; H070+$000009CC: 4a39000024d0  tst.b $24d0.l
         tst.b (H005+$24D0).l
@@ -1562,7 +1562,7 @@ L070_00000A12:
 L070_00000A18:
 ; H070+$00000A18: 4e75  rts 
         rts 
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L070_00000A1A:
 ; H070+$00000A1A: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -1632,7 +1632,7 @@ L070_00000A70:
 L070_00000A76:
 ; H070+$00000A76: 6000002c  bra.w $aa4
         bra.w H070+$AA4
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L070_00000A7A:
 ; H070+$00000A7A: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -1689,7 +1689,7 @@ L070_00000ABE:
 L070_00000AC0:
 ; H070+$00000AC0: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H070+$0AAA; indici 0..2, default -1.
+; DISPATCH: words relative to H070+$0AAA; indices 0..2, default -1.
 L070_00000AC4:
 ; H070+$00000AC4: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -1702,7 +1702,7 @@ L070_00000ACC:
 L070_00000AD2:
 ; H070+$00000AD2: 6000005a  bra.w $b2e
         bra.w H070+$B2E
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L070_00000AD6:
 ; H070+$00000AD6: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -1739,7 +1739,7 @@ L070_00000B06:
 L070_00000B0C:
 ; H070+$00000B0C: 60000020  bra.w $b2e
         bra.w H070+$B2E
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L070_00000B10:
 ; H070+$00000B10: 23edffe600003368  move.l -$1a(a5), $3368.l
         move.l -$1a(a5), (H005+$3368).l
@@ -1765,7 +1765,7 @@ L070_00000B2E:
 L070_00000B32:
 ; H070+$00000B32: 60000064  bra.w $b98
         bra.w H070+$B98
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L070_00000B36:
 ; H070+$00000B36: 2b7900003364ffe6  move.l $3364.l, -$1a(a5)
         move.l (H005+$3364).l, -$1a(a5)
@@ -1796,7 +1796,7 @@ L070_00000B5A:
 L070_00000B60:
 ; H070+$00000B60: 6700001a  beq.w $b7c
         beq.w H070+$B7C
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L070_00000B64:
 ; H070+$00000B64: 23edffe600003368  move.l -$1a(a5), $3368.l
         move.l -$1a(a5), (H005+$3368).l
@@ -1825,7 +1825,7 @@ L070_00000B86:
 L070_00000B8C:
 ; H070+$00000B8C: 60b4  bra.b $b42
         bra.b H070+$B42
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L070_00000B8E:
 ; H070+$00000B8E: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -1842,17 +1842,17 @@ L070_00000B9C:
 ; H070+$00000B9C: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H070_00000B9E [parziale]
-; Scopo: Routine del modulo esito combattimento, tesori e distribuzione delle ricompense; richiama H044+$01C2, H030+$0256, H003+$00F6, H029+$0312.
-;   - Richiama H044+$01C2.
-;   - Richiama H030+$0256.
-;   - Richiama H003+$00F6.
-;   - Richiama H029+$0312.
-;   - Richiama H045+$01D6.
-;   - Richiama H063+$0112.
-;   - Richiama H026+$01E0.
-;   - Usa lo stato globale: H005+$3E00 (puntatore stato persistente B, 2048 byte); H005+$3E04 (puntatore stato persistente A, 2048 byte).
-; Chiamanti diretti: H070+$1A28
+; ROUTINE: sub_H070_00000B9E [partial]
+; Purpose: Routine of the combat outcome, treasures and distribution of the rewards module; calls H044+$01C2, H030+$0256, H003+$00F6, H029+$0312.
+;   - Calls H044+$01C2.
+;   - Calls H030+$0256.
+;   - Calls H003+$00F6.
+;   - Calls H029+$0312.
+;   - Calls H045+$01D6.
+;   - Calls H063+$0112.
+;   - Calls H026+$01E0.
+;   - Uses the global state: H005+$3E00 (pointer to persistent state B, 2048 bytes); H005+$3E04 (pointer to persistent state A, 2048 bytes).
+; Direct callers: H070+$1A28
 ; --------------------------------------------------------------------------
 L070_00000B9E:
 ; H070+$00000B9E: 2f0c  move.l a4, -(a7)
@@ -1915,7 +1915,7 @@ L070_00000BDE:
 L070_00000BE2:
 ; H070+$00000BE2: 486c0025  pea.l $25(a4)
         pea.l $25(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L070_00000BE6:
 ; H070+$00000BE6: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1984,7 +1984,7 @@ L070_00000C3C:
 L070_00000C42:
 ; H070+$00000C42: 66000042  bne.w $c86
         bne.w H070+$C86
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L070_00000C46:
 ; H070+$00000C46: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -1994,7 +1994,7 @@ L070_00000C4C:
 L070_00000C50:
 ; H070+$00000C50: 67000034  beq.w $c86
         beq.w H070+$C86
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L070_00000C54:
 ; H070+$00000C54: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -2019,7 +2019,7 @@ L070_00000C6E:
 L070_00000C72:
 ; H070+$00000C72: 486c0039  pea.l $39(a4)
         pea.l $39(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L070_00000C76:
 ; H070+$00000C76: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -2050,14 +2050,14 @@ L070_00000C94:
 L070_00000C98:
 ; H070+$00000C98: 486c0052  pea.l $52(a4)
         pea.l $52(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L070_00000C9C:
 ; H070+$00000C9C: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
 L070_00000CA2:
 ; H070+$00000CA2: 60000068  bra.w $d0c
         bra.w H070+$D0C
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L070_00000CA6:
 ; H070+$00000CA6: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -2085,7 +2085,7 @@ L070_00000CC2:
 L070_00000CC6:
 ; H070+$00000CC6: 486c0065  pea.l $65(a4)
         pea.l $65(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L070_00000CCA:
 ; H070+$00000CCA: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -2107,7 +2107,7 @@ L070_00000CDE:
 L070_00000CE2:
 ; H070+$00000CE2: 486c008b  pea.l $8b(a4)
         pea.l $8b(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L070_00000CE6:
 ; H070+$00000CE6: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -2132,7 +2132,7 @@ L070_00000CFE:
 L070_00000D02:
 ; H070+$00000D02: 486c00ae  pea.l $ae(a4)
         pea.l $ae(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L070_00000D06:
 ; H070+$00000D06: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -2202,7 +2202,7 @@ L070_00000D56:
 L070_00000D5A:
 ; H070+$00000D5A: 4eb9000001e0  jsr $1e0.l
         jsr (H026+$1E0).l
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L070_00000D60:
 ; H070+$00000D60: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -2230,7 +2230,7 @@ L070_00000D7C:
 L070_00000D80:
 ; H070+$00000D80: 486dffa2  pea.l -$5e(a5)
         pea.l -$5e(a5)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L070_00000D84:
 ; H070+$00000D84: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -2252,7 +2252,7 @@ L070_00000D98:
 L070_00000D9C:
 ; H070+$00000D9C: 486c00e5  pea.l $e5(a4)
         pea.l $e5(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L070_00000DA0:
 ; H070+$00000DA0: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -2286,7 +2286,7 @@ L070_00000DC6:
 L070_00000DC8:
 ; H070+$00000DC8: 486dff9b  pea.l -$65(a5)
         pea.l -$65(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L070_00000DCC:
 ; H070+$00000DCC: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -2309,12 +2309,12 @@ L070_00000DDE:
 ; H070+$00000DDE: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H070_00000DE0 [parziale]
-; Scopo: Routine del modulo esito combattimento, tesori e distribuzione delle ricompense; richiama H044+$01C2, H063+$09B2, H008+$13C0.
-;   - Richiama H044+$01C2.
-;   - Richiama H063+$09B2.
-;   - Richiama H008+$13C0.
-; Chiamanti diretti: H070+$0EBE
+; ROUTINE: sub_H070_00000DE0 [partial]
+; Purpose: Routine of the combat outcome, treasures and distribution of the rewards module; calls H044+$01C2, H063+$09B2, H008+$13C0.
+;   - Calls H044+$01C2.
+;   - Calls H063+$09B2.
+;   - Calls H008+$13C0.
+; Direct callers: H070+$0EBE
 ; --------------------------------------------------------------------------
 L070_00000DE0:
 ; H070+$00000DE0: 2f0c  move.l a4, -(a7)
@@ -2461,12 +2461,12 @@ L070_00000E92:
 ; H070+$00000E92: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H070_00000E94 [parziale]
-; Scopo: Routine del modulo esito combattimento, tesori e distribuzione delle ricompense; richiama H071+$047C, H003+$00F6, H063+$321A.
-;   - Richiama H071+$047C.
-;   - Richiama H003+$00F6.
-;   - Richiama H063+$321A.
-; Chiamanti diretti: H070+$1128, H070+$0FF6
+; ROUTINE: sub_H070_00000E94 [partial]
+; Purpose: Routine of the combat outcome, treasures and distribution of the rewards module; calls H071+$047C, H003+$00F6, H063+$321A.
+;   - Calls H071+$047C.
+;   - Calls H003+$00F6.
+;   - Calls H063+$321A.
+; Direct callers: H070+$1128, H070+$0FF6
 ; --------------------------------------------------------------------------
 L070_00000E94:
 ; H070+$00000E94: 2f0c  move.l a4, -(a7)
@@ -2643,16 +2643,16 @@ L070_00000F88:
 ; H070+$00000F88: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H070_00000F8A [parziale]
-; Scopo: Routine del modulo esito combattimento, tesori e distribuzione delle ricompense; richiama H008+$01FC, H067+$0F72, H063+$321A, H065+$3390.
-;   - Richiama H008+$01FC.
-;   - Richiama H067+$0F72.
-;   - Richiama H063+$321A.
-;   - Richiama H065+$3390.
-;   - Richiama H063+$0D80.
-;   - Richiama H067+$11F4.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H070+$1328
+; ROUTINE: sub_H070_00000F8A [partial]
+; Purpose: Routine of the combat outcome, treasures and distribution of the rewards module; calls H008+$01FC, H067+$0F72, H063+$321A, H065+$3390.
+;   - Calls H008+$01FC.
+;   - Calls H067+$0F72.
+;   - Calls H063+$321A.
+;   - Calls H065+$3390.
+;   - Calls H063+$0D80.
+;   - Calls H067+$11F4.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H070+$1328
 ; --------------------------------------------------------------------------
 L070_00000F8A:
 ; H070+$00000F8A: 2f0c  move.l a4, -(a7)
@@ -2714,7 +2714,7 @@ L070_00000FCC:
 L070_00000FD0:
 ; H070+$00000FD0: 486dfffd  pea.l -$3(a5)
         pea.l -$3(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L070_00000FD4:
 ; H070+$00000FD4: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -2806,11 +2806,11 @@ L070_000010CE:
 L070_000010D0:
 ; H070+$000010D0: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H070+$1020; indici 0..80, default -1.
+; DISPATCH: words relative to H070+$1020; indices 0..80, default -1.
 L070_000010D4:
 ; H070+$000010D4: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L070_000010D8:
 ; H070+$000010D8: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -2888,17 +2888,17 @@ L070_00001134:
 ; H070+$00001134: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H070_00001136 [parziale]
-; Scopo: Routine del modulo esito combattimento, tesori e distribuzione delle ricompense; richiama H063+$321A, H067+$11F4, H026+$01E0, H008+$01FC.
-;   - Richiama H063+$321A.
-;   - Richiama H067+$11F4.
-;   - Richiama H026+$01E0.
-;   - Richiama H008+$01FC.
-;   - Richiama H065+$196E.
-;   - Richiama H067+$0794.
-;   - Richiama H067+$08CC.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H070+$1A2C
+; ROUTINE: sub_H070_00001136 [partial]
+; Purpose: Routine of the combat outcome, treasures and distribution of the rewards module; calls H063+$321A, H067+$11F4, H026+$01E0, H008+$01FC.
+;   - Calls H063+$321A.
+;   - Calls H067+$11F4.
+;   - Calls H026+$01E0.
+;   - Calls H008+$01FC.
+;   - Calls H065+$196E.
+;   - Calls H067+$0794.
+;   - Calls H067+$08CC.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H070+$1A2C
 ; --------------------------------------------------------------------------
 L070_00001136:
 ; H070+$00001136: 2f0c  move.l a4, -(a7)
@@ -3001,7 +3001,7 @@ L070_000011A8:
 L070_000011AC:
 ; H070+$000011AC: 342dff9e  move.w -$62(a5), d2
         move.w -$62(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L070_000011B0:
 ; H070+$000011B0: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3023,7 +3023,7 @@ L070_000011C4:
 L070_000011C8:
 ; H070+$000011C8: 342dff9e  move.w -$62(a5), d2
         move.w -$62(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L070_000011CC:
 ; H070+$000011CC: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3045,7 +3045,7 @@ L070_000011E0:
 L070_000011E4:
 ; H070+$000011E4: 342dff9e  move.w -$62(a5), d2
         move.w -$62(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L070_000011E8:
 ; H070+$000011E8: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3067,7 +3067,7 @@ L070_000011FC:
 L070_00001200:
 ; H070+$00001200: 342dff9e  move.w -$62(a5), d2
         move.w -$62(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L070_00001204:
 ; H070+$00001204: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3086,7 +3086,7 @@ L070_00001214:
 L070_00001218:
 ; H070+$00001218: 6600002e  bne.w $1248
         bne.w H070+$1248
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L070_0000121C:
 ; H070+$0000121C: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3102,7 +3102,7 @@ L070_0000122A:
 L070_00001230:
 ; H070+$00001230: 342dff9e  move.w -$62(a5), d2
         move.w -$62(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L070_00001234:
 ; H070+$00001234: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3252,7 +3252,7 @@ L070_000012E8:
 L070_000012EC:
 ; H070+$000012EC: 486dffa7  pea.l -$59(a5)
         pea.l -$59(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L070_000012F0:
 ; H070+$000012F0: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -3541,7 +3541,7 @@ L070_000014F4:
 L070_000014F6:
 ; H070+$000014F6: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H070+$143A; indici 0..86, default -1.
+; DISPATCH: words relative to H070+$143A; indices 0..86, default -1.
 L070_000014FA:
 ; H070+$000014FA: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -3558,7 +3558,7 @@ L070_0000150A:
 L070_0000150E:
 ; H070+$0000150E: 4eb900003390  jsr $3390.l
         jsr (H065+$3390).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L070_00001514:
 ; H070+$00001514: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -3582,12 +3582,12 @@ L070_0000152C:
 ; H070+$0000152C: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H070_0000152E [parziale]
-; Scopo: Routine del modulo esito combattimento, tesori e distribuzione delle ricompense; richiama H053+$00CA, H003+$00F6.
-;   - Richiama H053+$00CA.
-;   - Richiama H003+$00F6.
-;   - Usa lo stato globale: H005+$3E00 (puntatore stato persistente B, 2048 byte); H005+$3364 (testa della lista del party); H005+$3E04 (puntatore stato persistente A, 2048 byte).
-; Chiamanti diretti: H070+$198A
+; ROUTINE: sub_H070_0000152E [partial]
+; Purpose: Routine of the combat outcome, treasures and distribution of the rewards module; calls H053+$00CA, H003+$00F6.
+;   - Calls H053+$00CA.
+;   - Calls H003+$00F6.
+;   - Uses the global state: H005+$3E00 (pointer to persistent state B, 2048 bytes); H005+$3364 (head of the party list); H005+$3E04 (pointer to persistent state A, 2048 bytes).
+; Direct callers: H070+$198A
 ; --------------------------------------------------------------------------
 L070_0000152E:
 ; H070+$0000152E: 2f0c  move.l a4, -(a7)
@@ -3601,14 +3601,14 @@ L070_00001534:
 L070_00001538:
 ; H070+$00001538: 1b7c0001fff7  move.b #$1, -$9(a5)
         move.b #$1, -$9(a5)
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L070_0000153E:
 ; H070+$0000153E: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
 L070_00001544:
 ; H070+$00001544: 426b0590  clr.w $590(a3)
         clr.w $590(a3)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L070_00001548:
 ; H070+$00001548: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -3651,7 +3651,7 @@ L070_00001582:
 L070_00001588:
 ; H070+$00001588: 67000020  beq.w $15aa
         beq.w H070+$15AA
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L070_0000158C:
 ; H070+$0000158C: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -3664,7 +3664,7 @@ L070_00001596:
 L070_0000159A:
 ; H070+$0000159A: 6700000e  beq.w $15aa
         beq.w H070+$15AA
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L070_0000159E:
 ; H070+$0000159E: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -3680,7 +3680,7 @@ L070_000015AE:
 L070_000015B4:
 ; H070+$000015B4: 6600001c  bne.w $15d2
         bne.w H070+$15D2
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L070_000015B8:
 ; H070+$000015B8: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -3690,7 +3690,7 @@ L070_000015BE:
 L070_000015C2:
 ; H070+$000015C2: 6600000e  bne.w $15d2
         bne.w H070+$15D2
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L070_000015C6:
 ; H070+$000015C6: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -3706,7 +3706,7 @@ L070_000015D6:
 L070_000015DA:
 ; H070+$000015DA: 2b6b018efff8  move.l $18e(a3), -$8(a5)
         move.l $18e(a3), -$8(a5)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L070_000015E0:
 ; H070+$000015E0: 23edfffc00003368  move.l -$4(a5), $3368.l
         move.l -$4(a5), (H005+$3368).l
@@ -3787,7 +3787,7 @@ L070_00001642:
 L070_00001648:
 ; H070+$00001648: 6000ff06  bra.w $1550
         bra.w H070+$1550
-; STATO: H005+$3364 = testa della lista del party; H005+$3368 = personaggio corrente
+; STATE: H005+$3364 = head of the party list; H005+$3368 = current character
 L070_0000164C:
 ; H070+$0000164C: 23f90000336400003368  move.l $3364.l, $3368.l
         move.l (H005+$3364).l, (H005+$3368).l
@@ -3801,17 +3801,17 @@ L070_0000165A:
 ; H070+$0000165A: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H070_0000165C [parziale]
-; Scopo: Routine del modulo esito combattimento, tesori e distribuzione delle ricompense; richiama H029+$0354, H015+$00BC, H044+$01C2, H026+$0188.
-;   - Richiama H029+$0354.
-;   - Richiama H015+$00BC.
-;   - Richiama H044+$01C2.
-;   - Richiama H026+$0188.
-;   - Richiama H026+$01E0.
-;   - Richiama H030+$0302.
-;   - Richiama H008+$01FC.
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H070+$1A1E
+; ROUTINE: sub_H070_0000165C [partial]
+; Purpose: Routine of the combat outcome, treasures and distribution of the rewards module; calls H029+$0354, H015+$00BC, H044+$01C2, H026+$0188.
+;   - Calls H029+$0354.
+;   - Calls H015+$00BC.
+;   - Calls H044+$01C2.
+;   - Calls H026+$0188.
+;   - Calls H026+$01E0.
+;   - Calls H030+$0302.
+;   - Calls H008+$01FC.
+;   - Uses the global state: H005+$3364 (head of the party list).
+; Direct callers: H070+$1A1E
 ; --------------------------------------------------------------------------
 L070_0000165C:
 ; H070+$0000165C: 2f0c  move.l a4, -(a7)
@@ -3825,7 +3825,7 @@ L070_00001662:
 L070_00001666:
 ; H070+$00001666: 422dffe7  clr.b -$19(a5)
         clr.b -$19(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L070_0000166A:
 ; H070+$0000166A: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -4034,7 +4034,7 @@ L070_0000176C:
 L070_00001770:
 ; H070+$00001770: 4eb9000001c2  jsr $1c2.l
         jsr (H044+$1C2).l
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L070_00001776:
 ; H070+$00001776: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -4278,7 +4278,7 @@ L070_000018A8:
 L070_000018AA:
 ; H070+$000018AA: 486dffe6  pea.l -$1a(a5)
         pea.l -$1a(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L070_000018AE:
 ; H070+$000018AE: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -4295,13 +4295,13 @@ L070_000018BC:
 ; H070+$000018BC: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H070_000018BE [parziale]
-; Scopo: Routine del modulo esito combattimento, tesori e distribuzione delle ricompense; richiama H003+$0068, H071+$047C, H003+$00F6.
-;   - Richiama H003+$0068.
-;   - Richiama H071+$047C.
-;   - Richiama H003+$00F6.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H070+$1962
+; ROUTINE: sub_H070_000018BE [partial]
+; Purpose: Routine of the combat outcome, treasures and distribution of the rewards module; calls H003+$0068, H071+$047C, H003+$00F6.
+;   - Calls H003+$0068.
+;   - Calls H071+$047C.
+;   - Calls H003+$00F6.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H070+$1962
 ; --------------------------------------------------------------------------
 L070_000018BE:
 ; H070+$000018BE: 2f0c  move.l a4, -(a7)
@@ -4340,7 +4340,7 @@ L070_000018E8:
 L070_000018EC:
 ; H070+$000018EC: 266dfff4  movea.l -$c(a5), a3
         movea.l -$c(a5), a3
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L070_000018F0:
 ; H070+$000018F0: 23eb004800003368  move.l $48(a3), $3368.l
         move.l $48(a3), (H005+$3368).l
@@ -4426,15 +4426,15 @@ L070_00001956:
 ; H070+$00001956: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H070_00001958 [parziale]
-; Scopo: Routine del modulo esito combattimento, tesori e distribuzione delle ricompense; richiama H063+$13BE, H003+$00F6, H044+$01C2, H030+$0302.
-;   - Richiama H063+$13BE.
-;   - Richiama H003+$00F6.
-;   - Richiama H044+$01C2.
-;   - Richiama H030+$0302.
-;   - Richiama H030+$028A.
-;   - Usa lo stato globale: H005+$3E00 (puntatore stato persistente B, 2048 byte); H005+$24D7 (flag del ramo demo); H005+$3DE3 (contesto nativo, 5 nel combattimento).
-; Chiamanti diretti: H012+$09F2, H012+$090A
+; ROUTINE: sub_H070_00001958 [partial]
+; Purpose: Routine of the combat outcome, treasures and distribution of the rewards module; calls H063+$13BE, H003+$00F6, H044+$01C2, H030+$0302.
+;   - Calls H063+$13BE.
+;   - Calls H003+$00F6.
+;   - Calls H044+$01C2.
+;   - Calls H030+$0302.
+;   - Calls H030+$028A.
+;   - Uses the global state: H005+$3E00 (pointer to persistent state B, 2048 bytes); H005+$24D7 (flag of the demo branch); H005+$3DE3 (native context, 5 in combat).
+; Direct callers: H012+$09F2, H012+$090A
 ; --------------------------------------------------------------------------
 L070_00001958:
 ; H070+$00001958: 2f0c  move.l a4, -(a7)
@@ -4448,7 +4448,7 @@ L070_0000195E:
 L070_00001962:
 ; H070+$00001962: 6100ff5a  bsr.w $18be
         bsr.w H070+$18BE
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L070_00001966:
 ; H070+$00001966: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -4458,7 +4458,7 @@ L070_0000196C:
 L070_00001970:
 ; H070+$00001970: 422cffff  clr.b -$1(a4)
         clr.b -$1(a4)
-; STATO: H005+$24D7 = flag del ramo demo
+; STATE: H005+$24D7 = flag of the demo branch
 L070_00001974:
 ; H070+$00001974: 4a39000024d7  tst.b $24d7.l
         tst.b (H005+$24D7).l
@@ -4468,14 +4468,14 @@ L070_0000197A:
 L070_0000197E:
 ; H070+$0000197E: 6100edf8  bsr.w $778
         bsr.w H070+$778
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L070_00001982:
 ; H070+$00001982: 13fc000600003de3  move.b #$6, $3de3.l
         move.b #$6, (H005+$3DE3).l
 L070_0000198A:
 ; H070+$0000198A: 6100fba2  bsr.w $152e
         bsr.w H070+$152E
-; STATO: H005+$24D7 = flag del ramo demo
+; STATE: H005+$24D7 = flag of the demo branch
 L070_0000198E:
 ; H070+$0000198E: 4a39000024d7  tst.b $24d7.l
         tst.b (H005+$24D7).l
@@ -4485,7 +4485,7 @@ L070_00001994:
 L070_00001998:
 ; H070+$00001998: 60000176  bra.w $1b10
         bra.w H070+$1B10
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L070_0000199C:
 ; H070+$0000199C: 2b7900003364fff4  move.l $3364.l, -$c(a5)
         move.l (H005+$3364).l, -$c(a5)
@@ -4511,7 +4511,7 @@ L070_000019BA:
 L070_000019C0:
 ; H070+$000019C0: 60e2  bra.b $19a4
         bra.b H070+$19A4
-; STATO: H005+$24D0 = richiesta di uscita dal ciclo scenario
+; STATE: H005+$24D0 = request to exit the scenario loop
 L070_000019C2:
 ; H070+$000019C2: 4a39000024d0  tst.b $24d0.l
         tst.b (H005+$24D0).l
@@ -4567,7 +4567,7 @@ L070_00001A0C:
 L070_00001A0E:
 ; H070+$00001A0E: 42b900002a3a  clr.l $2a3a.l
         clr.l (H005+$2A3A).l
-; STATO: H005+$24D7 = flag del ramo demo
+; STATE: H005+$24D7 = flag of the demo branch
 L070_00001A14:
 ; H070+$00001A14: 4a39000024d7  tst.b $24d7.l
         tst.b (H005+$24D7).l
@@ -4626,7 +4626,7 @@ L070_00001A60:
 L070_00001A66:
 ; H070+$00001A66: 60000064  bra.w $1acc
         bra.w H070+$1ACC
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L070_00001A6A:
 ; H070+$00001A6A: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -4696,42 +4696,42 @@ L070_00001AC6:
 L070_00001ACC:
 ; H070+$00001ACC: 13fc0001000024ce  move.b #$1, $24ce.l
         move.b #$1, (H005+$24CE).l
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L070_00001AD4:
 ; H070+$00001AD4: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
 L070_00001ADA:
 ; H070+$00001ADA: 426b06e0  clr.w $6e0(a3)
         clr.w $6e0(a3)
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L070_00001ADE:
 ; H070+$00001ADE: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
 L070_00001AE4:
 ; H070+$00001AE4: 426b06e2  clr.w $6e2(a3)
         clr.w $6e2(a3)
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L070_00001AE8:
 ; H070+$00001AE8: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
 L070_00001AEE:
 ; H070+$00001AEE: 426b06e4  clr.w $6e4(a3)
         clr.w $6e4(a3)
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L070_00001AF2:
 ; H070+$00001AF2: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
 L070_00001AF8:
 ; H070+$00001AF8: 426b05c6  clr.w $5c6(a3)
         clr.w $5c6(a3)
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L070_00001AFC:
 ; H070+$00001AFC: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
 L070_00001B02:
 ; H070+$00001B02: 426b05cc  clr.w $5cc(a3)
         clr.w $5cc(a3)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L070_00001B06:
 ; H070+$00001B06: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3

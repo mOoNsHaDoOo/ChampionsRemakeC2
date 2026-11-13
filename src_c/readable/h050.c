@@ -1,4 +1,4 @@
-/* H050: Adattatori Exec per i messaggi. */
+/* H050: Exec adapters for messages. */
 #include "h050.h"
 
 /* PORT H050+$0004: rts. */
