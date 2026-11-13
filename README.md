@@ -1,7 +1,7 @@
 # Champions of Krynn: C port of the Amiga assembly
 
 This folder is a **from-scratch** C port of the Amiga version of Champions of
-Krynn. It was written by hand, routine by routine, from the annotated 68000
+Krynn. It was written by converting, with various AIs, routine by routine, from the annotated 68000
 assembly in `rebuild/source`. It does not derive from the old readable layer
 or from the Ghidra decompilation (`src_c/H*.c`).
 
