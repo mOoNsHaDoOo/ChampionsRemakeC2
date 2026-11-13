@@ -108,7 +108,12 @@ smake          # game without audio
 smake AUDIO    # game with audio (DEFINE=COK_AUDIO)
 ```
 
-Every new source file must be added to `OBJS` in the `smakefile`. FFP math
+Every new source file must be added to one of the `OBJS1`..`OBJSn` lines of
+the `smakefile`. The compiler options (`NOSTACKCHECK DATA=FAR CODE=FAR`) are
+in `scoptions`, which `sc` reads from the current directory (it can be edited
+with the `scopts` utility). The link goes through a `slink` WITH file
+(`cok.lnk`) written by `smake`, because the AmigaDOS command line is too
+short for all the objects. FFP math
 uses `mathffp.library` through `#pragma libcall` (no float types), so no
 math library needs to be linked.
 

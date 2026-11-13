@@ -6,26 +6,30 @@
 #   smake clean    removes objects and executable
 #
 # Requires the NDK headers (INCLUDE:) and LIB:c.o, LIB:sc.lib, LIB:amiga.lib.
-# Add every new .c file of the port here.
+# Add every new .c file of the port here (in one of the OBJSn lines).
+# The link goes through a WITH file (cok.lnk) written line by line: the
+# AmigaDOS command line is too short for slink with all the objects.
 
 CC      = sc
-CFLAGS  = NOSTACKCHECK DATA=FAR CODE=FAR
+# Compiler options are in scoptions (read by sc from this directory;
+# it can be edited with the scopts utility).
+CFLAGS  =
 TARGET  = cok
 
-OBJS = globals.o h000_entry.o h001_main.o h002_dos.o h003_exec.o \
-       h004_init.o h005_data.o h006.o h007.o h008.o h009.o h010_input.o \
-       h011.o h012.o h013.o h014.o h015_runtime.o h016_gfx.o h017.o \
-       h018_libs.o h019.o h020_io.o h021_intuition.o h022_view.o \
-       h023_shared.o h024_screen.o h025_window.o h026_string.o h027.o \
-       h028_files.o h029_gfx.o h030.o h031.o h032.o h033.o h034.o h035.o \
-       h036.o h037.o h038.o h039.o h040.o h041.o h042_seq.o \
-       h044_tiles.o h045.o h046.o h047.o h048.o h049.o h050.o h051.o \
-       h052.o h053.o h054.o h055.o h056.o h057.o h058.o h059.o h060.o \
-       h061.o h062.o h063.o h064.o h065.o h066.o h067.o h068.o h069.o \
-       h070.o h071.o h072.o h073.o h074_path.o h075_file.o h076.o h077.o \
-       h078.o h080.o h081.o h082.o h083.o h084.o h085.o h086.o \
-       h087.o h088.o h089.o h091.o h093.o h095.o \
-       h096.o h097.o h098.o h099.o h100_custom.o init_data.o
+OBJS1 = globals.o h000_entry.o h001_main.o h002_dos.o h003_exec.o h004_init.o
+OBJS2 = h005_data.o h006.o h007.o h008.o h009.o h010_input.o h011.o h012.o
+OBJS3 = h013.o h014.o h015_runtime.o h016_gfx.o h017.o h018_libs.o h019.o
+OBJS4 = h020_io.o h021_intuition.o h022_view.o h023_shared.o h024_screen.o
+OBJS5 = h025_window.o h026_string.o h027.o h028_files.o h029_gfx.o h030.o
+OBJS6 = h031.o h032.o h033.o h034.o h035.o h036.o h037.o h038.o h039.o h040.o
+OBJS7 = h041.o h042_seq.o h044_tiles.o h045.o h046.o h047.o h048.o h049.o
+OBJS8 = h050.o h051.o h052.o h053.o h054.o h055.o h056.o h057.o h058.o h059.o
+OBJS9 = h060.o h061.o h062.o h063.o h064.o h065.o h066.o h067.o h068.o h069.o
+OBJS10 = h070.o h071.o h072.o h073.o h074_path.o h075_file.o h076.o h077.o
+OBJS11 = h078.o h080.o h081.o h082.o h083.o h084.o h085.o h086.o h087.o h088.o
+OBJS12 = h089.o h091.o h093.o h095.o h096.o h097.o h098.o h099.o h100_custom.o
+OBJS13 = init_data.o
+OBJS = $(OBJS1) $(OBJS2) $(OBJS3) $(OBJS4) $(OBJS5) $(OBJS6) $(OBJS7) $(OBJS8) $(OBJS9) $(OBJS10) $(OBJS11) $(OBJS12) $(OBJS13)
 
 # Modules that change with COK_AUDIO: without audio and with audio.
 NOAUDIO_OBJS = h043_audio.o h079.o h090.o h092.o h094.o unported.o
@@ -33,10 +37,42 @@ AUDIO_OBJS   = h043_audio_a.o h079_a.o h090_a.o h092_a.o h094_a.o \
                unported_a.o
 
 $(TARGET): $(OBJS) $(NOAUDIO_OBJS)
-	slink LIB:c.o $(OBJS) $(NOAUDIO_OBJS) TO $(TARGET) LIB LIB:sc.lib LIB:amiga.lib NOICONS
+	echo >cok.lnk "FROM LIB:c.o"
+	echo >>cok.lnk "$(OBJS1)"
+	echo >>cok.lnk "$(OBJS2)"
+	echo >>cok.lnk "$(OBJS3)"
+	echo >>cok.lnk "$(OBJS4)"
+	echo >>cok.lnk "$(OBJS5)"
+	echo >>cok.lnk "$(OBJS6)"
+	echo >>cok.lnk "$(OBJS7)"
+	echo >>cok.lnk "$(OBJS8)"
+	echo >>cok.lnk "$(OBJS9)"
+	echo >>cok.lnk "$(OBJS10)"
+	echo >>cok.lnk "$(OBJS11)"
+	echo >>cok.lnk "$(OBJS12)"
+	echo >>cok.lnk "$(OBJS13)"
+	echo >>cok.lnk "$(NOAUDIO_OBJS)"
+	echo >>cok.lnk "TO $(TARGET) LIB LIB:sc.lib LIB:amiga.lib NOICONS"
+	slink WITH cok.lnk
 
 AUDIO: $(OBJS) $(AUDIO_OBJS)
-	slink LIB:c.o $(OBJS) $(AUDIO_OBJS) TO $(TARGET) LIB LIB:sc.lib LIB:amiga.lib NOICONS
+	echo >cok.lnk "FROM LIB:c.o"
+	echo >>cok.lnk "$(OBJS1)"
+	echo >>cok.lnk "$(OBJS2)"
+	echo >>cok.lnk "$(OBJS3)"
+	echo >>cok.lnk "$(OBJS4)"
+	echo >>cok.lnk "$(OBJS5)"
+	echo >>cok.lnk "$(OBJS6)"
+	echo >>cok.lnk "$(OBJS7)"
+	echo >>cok.lnk "$(OBJS8)"
+	echo >>cok.lnk "$(OBJS9)"
+	echo >>cok.lnk "$(OBJS10)"
+	echo >>cok.lnk "$(OBJS11)"
+	echo >>cok.lnk "$(OBJS12)"
+	echo >>cok.lnk "$(OBJS13)"
+	echo >>cok.lnk "$(AUDIO_OBJS)"
+	echo >>cok.lnk "TO $(TARGET) LIB LIB:sc.lib LIB:amiga.lib NOICONS"
+	slink WITH cok.lnk
 
 h043_audio_a.o: h043_audio.c
 	$(CC) $(CFLAGS) DEFINE=COK_AUDIO OBJNAME=h043_audio_a.o h043_audio.c
@@ -60,4 +96,4 @@ unported_a.o: unported.c
 	$(CC) $(CFLAGS) $<
 
 clean:
-	-delete \#?.o $(TARGET) QUIET
+	-delete \#?.o $(TARGET) cok.lnk QUIET

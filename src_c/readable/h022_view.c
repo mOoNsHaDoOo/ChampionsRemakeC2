@@ -65,14 +65,95 @@ void graphics_mrg_cop(struct View *view)
     MrgCop(view);
 }
 
+#if COK_AMIGA
+/*
+ * Not in the original.  The game screen is opened with a 1.3 NewScreen
+ * (ModeID 0 = default monitor): with Mode Promotion in IControl and DblPAL
+ * in DEVS:Monitors Intuition shows it with DblPAL, with the display window
+ * and View offsets of that monitor.  The off-screen View must use the same
+ * values, otherwise every LoadView that alternates the two Views changes
+ * DIWSTRT/DIWSTOP/DDFSTRT and the picture jumps (stretched in FS-UAE with
+ * auto zoom).  So the monitor is taken from the ViewExtra of the Intuition
+ * View (GfxBase->ActiView), DisplayClip, display handle and sprite
+ * resolutions from the ColorMap of the screen, DxOffset/DyOffset from the
+ * Intuition View.  Returns 0 if something is missing (the caller then uses
+ * the mode of the screen as before).
+ */
+static int attach_like_intuition(struct View *view, struct ViewPort *vp,
+                                 struct ViewPort *mode_vp)
+{
+    struct View *iv = GfxBase->ActiView;
+    struct ViewExtra *ive = NULL;
+    struct ViewPortExtra *svpe = NULL;
+    ULONG handle = 0;
+    ULONG sprres = SPRITERESN_DEFAULT;
+    ULONG defsprres = SPRITERESN_DEFAULT;
+    struct TagItem get[5];
+    struct TagItem set[6];
+
+    if (iv != NULL && (iv->Modes & EXTEND_VSTRUCT)) {
+        ive = (struct ViewExtra *)GfxLookUp(iv);
+    }
+    if (ive == NULL || ive->Monitor == NULL || mode_vp->ColorMap == NULL) {
+        return 0;
+    }
+    get[0].ti_Tag = VTAG_VIEWPORTEXTRA_GET;  get[0].ti_Data = 0;
+    get[1].ti_Tag = VTAG_NORMAL_DISP_GET;    get[1].ti_Data = 0;
+    get[2].ti_Tag = VTAG_SPRITERESN_GET;     get[2].ti_Data = 0;
+    get[3].ti_Tag = VTAG_DEFSPRITERESN_GET;  get[3].ti_Data = 0;
+    get[4].ti_Tag = VTAG_END_CM;             get[4].ti_Data = 0;
+    if (VideoControl(mode_vp->ColorMap, get) != 0) {
+        return 0;
+    }
+    svpe = (struct ViewPortExtra *)get[0].ti_Data;
+    handle = get[1].ti_Data;
+    sprres = get[2].ti_Data;
+    defsprres = get[3].ti_Data;
+    if (svpe == NULL || handle == 0) {
+        return 0;
+    }
+
+    s_vextra = (struct ViewExtra *)GfxNew(VIEW_EXTRA_TYPE);
+    s_vpextra = (struct ViewPortExtra *)GfxNew(VIEWPORT_EXTRA_TYPE);
+    s_monspec = OpenMonitor((STRPTR)ive->Monitor->ms_Node.xln_Name, 0);
+    if (s_vextra == NULL || s_vpextra == NULL || s_monspec == NULL) {
+        graphics_detach_view_mode(view);
+        return 0;
+    }
+    s_vextra->Monitor = s_monspec;
+    GfxAssociate(view, (struct ExtendedNode *)s_vextra);
+    view->Modes |= EXTEND_VSTRUCT;
+    view->DxOffset = iv->DxOffset;
+    view->DyOffset = iv->DyOffset;
+
+    s_vpextra->DisplayClip = svpe->DisplayClip;
+    set[0].ti_Tag = VTAG_ATTACH_CM_SET;      set[0].ti_Data = (ULONG)vp;
+    set[1].ti_Tag = VTAG_VIEWPORTEXTRA_SET;  set[1].ti_Data = (ULONG)s_vpextra;
+    set[2].ti_Tag = VTAG_NORMAL_DISP_SET;    set[2].ti_Data = handle;
+    set[3].ti_Tag = VTAG_SPRITERESN_SET;     set[3].ti_Data = sprres;
+    set[4].ti_Tag = VTAG_DEFSPRITERESN_SET;  set[4].ti_Data = defsprres;
+    set[5].ti_Tag = VTAG_END_CM;             set[5].ti_Data = 0;
+    if (VideoControl(vp->ColorMap, set) != 0) {
+        graphics_detach_view_mode(view);
+        return 0;
+    }
+    vp->Modes = mode_vp->Modes;
+    vp->DxOffset = mode_vp->DxOffset;
+    vp->DyOffset = mode_vp->DyOffset;
+    return 1;
+}
+#endif
+
 /*
  * Not in the original.  On graphics.library V36+ a View without a ViewExtra
  * is shown with the default monitor: if it differs from the one of the
  * screen (for example DblPAL in DEVS:Monitors), every LoadView that alternates
  * this View and the Intuition one changes BEAMCON0 and the display flashes.
- * Here view and vp get the monitor and the mode of mode_vp (the game
- * screen).  To be called after GetColorMap and before MakeVPort/MrgCop.
- * If something fails, the View stays as it is (1.3 behaviour).
+ * Here view and vp first get monitor, display window and offsets of the
+ * Intuition View (attach_like_intuition); if that is not possible, the
+ * monitor and the mode of mode_vp (the game screen).  To be called after
+ * GetColorMap and before MakeVPort/MrgCop.  If something fails, the View
+ * stays as it is (1.3 behaviour).
  */
 void graphics_attach_view_mode(struct View *view, struct ViewPort *vp,
                                struct ViewPort *mode_vp)
@@ -84,6 +165,9 @@ void graphics_attach_view_mode(struct View *view, struct ViewPort *vp,
     struct TagItem tags[4];
 
     if (((struct Library *)GfxBase)->lib_Version < 36) {
+        return;
+    }
+    if (attach_like_intuition(view, vp, mode_vp)) {
         return;
     }
     mode = GetVPModeID(mode_vp);

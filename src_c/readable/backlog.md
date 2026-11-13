@@ -3085,3 +3085,26 @@ Second step of "Begin adventuring": the handlers of the ECL commands of H064. Ro
 - On leaving the game there must be no memory leaks (order of the GfxFree calls with respect to FreeColorMap).
 
 ---
+
+## v68: off-screen View aligned with the Intuition View (DblPAL with Mode Promotion); smakefile with scoptions and WITH file
+
+**Reported by the user:** on FS-UAE (A1200, 68040, Kickstart/OS 3.2.3, Workbench on UAEGFX, all monitors in DEVS:Monitors, Mode Promotion on) the picture still flashes after v67: in the camp at the Inn only a stretched slice of the screen is shown, continuously; it stops while ECL writes text with Delay.
+
+**Analysis** (lab with the same setup, FS-UAE log and Copper lists dumped after MrgCop)
+- The game screen is opened with a 1.3 NewScreen: GetVPModeID returns 0 (default monitor). With Mode Promotion and DblPAL installed Intuition shows it with DblPAL: as soon as the game is in front BEAMCON0 goes to $1B88 ("dblscan", 29 kHz) and stays there.
+- v67 gives the off-screen View the monitor of mode 0 (DblPAL.monitor), but DxOffset/DyOffset come from Preferences (129/44, PAL 15 kHz coordinates) and the DisplayClip is the nominal one of mode 0.
+- Copper lists: off-screen DIWSTRT=2C81 DIWSTOP=BC0A DDFSTRT=0038, Intuition DIWSTRT=334B DIWSTOP=C3EB DDFSTRT=0018 (BPLCON0 D201, FMODE C003 in both). Every LoadView in begin_screen_update/end_screen_update and swap_display_view changes display window and fetch start: the picture jumps, and FS-UAE with auto zoom enlarges the narrow window. No swap happens while text is written with Delay.
+
+**Fix:** H022 attach_like_intuition, called first by graphics_attach_view_mode (Amiga only).
+- Monitor from the ViewExtra of the Intuition View (GfxBase->ActiView), opened by name.
+- DisplayClip, display handle and sprite resolutions (VTAG_SPRITERESN, VTAG_DEFSPRITERESN) from the ColorMap of the game screen with VideoControl.
+- View DxOffset/DyOffset from the Intuition View.
+- If something is missing the v67 code is used; on graphics.library < 36 nothing changes.
+
+**Checked on the Amiga** (lab, SAS/C 6.58):
+- 3.2.3 + P96 + Mode Promotion: the two Copper lists are equal (334B/C3EB/0018/0068/D201/0100/C003, BPLCON3 0C81); the game stays in DblPAL; Inn and camp are stable (290 frames at 5 fps).
+- 3.1 with all monitors and Mode Promotion: equal (DblPAL). 3.1 without monitors: equal (2C81/F4C1/0038/00D8/5200, offsets 129/44 as before).
+
+**smakefile:** smake failed at the link with "slink: Command too long". The objects are split into OBJS1..OBJS13, the cok and AUDIO rules write cok.lnk with short echo lines and run slink WITH cok.lnk; clean removes cok.lnk. The compiler options moved to scoptions (CFLAGS empty). Checked: smake clean + smake (0 warnings) and smake clean + smake AUDIO.
+
+---
