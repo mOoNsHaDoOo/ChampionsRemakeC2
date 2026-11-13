@@ -5,7 +5,7 @@ Krynn. It was written by hand, routine by routine, from the annotated 68000
 assembly in `rebuild/source`. It does not derive from the old readable layer
 or from the Ghidra decompilation (`src_c/H*.c`).
 
-It has always been my desire to fix the game to run it in KS 3.x with faster CPUs, AGA, KS3.x and all, so this build includes:
+While WHDLoad is an amazing piece of software we have a lovely multitasking OS so why not run games with Workbench ? It has always been my desire to fix the game to run it in KS 3.x with faster CPUs, AGA, KS3.x and all, so this build includes:
 
 * blitter race condition fix (could cause LBM and other image painting bugs on faster CPUs)
 * Screenmode promotion fix (with IPrefs set to promote screens running in DBLPAL/DBLNTSC would generate wrong display)
