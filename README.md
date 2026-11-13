@@ -1,4 +1,4 @@
-# Champions of Krynn: C port of the Amiga assembly
+# Champions of Krynn: C port of the Amiga assembly with bugfixes and portability to current systems
 
 This folder is a **from-scratch** C port of the Amiga version of Champions of
 Krynn. It was written by converting, with various AIs, routine by routine, from the annotated 68000
