@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H071
-; Negozio e acquisto di oggetti.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H071
+; Shop and buying of items.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Negozio: catalogo, acquisto, vendita e aggiornamento dell'inventario.
+; MODULE NOTE
+; Shop: catalogue, buying, selling and update of the inventory.
 ; --------------------------------------------------------------------------
 ; H071: 3132 original bytes; all offsets are section-relative.
         section H071,code
@@ -33,10 +33,10 @@ H071:
         dc.w $4D6F,$6E65,$793F,$0000
         dc.l H071+$00000002
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H071 [parziale]
-; Scopo: Ingresso del modulo negozio e acquisto di oggetti; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H071+$0C36.
-; Chiamanti diretti: H000+$023A
+; ROUTINE: module_init_H071 [partial]
+; Purpose: Entry of the shop and buying of items module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H071+$0C36.
+; Direct callers: H000+$023A
 ; --------------------------------------------------------------------------
 L071_0000011C:
 ; H071+$0000011C: 2f0c  move.l a4, -(a7)
@@ -51,15 +51,15 @@ L071_00000126:
 ; H071+$00000126: 60000b0e  bra.w $c36
         bra.w H071+$C36
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H071_0000012A [parziale]
-; Scopo: Routine del modulo negozio e acquisto di oggetti; richiama H045+$01D6, H026+$000C, H026+$0188, H008+$13C0.
-;   - Richiama H045+$01D6.
-;   - Richiama H026+$000C.
-;   - Richiama H026+$0188.
-;   - Richiama H008+$13C0.
-;   - Richiama H063+$09B2.
-;   - Usa lo stato globale: H005+$3E00 (puntatore stato persistente B, 2048 byte).
-; Chiamanti diretti: H071+$05AC
+; ROUTINE: sub_H071_0000012A [partial]
+; Purpose: Routine of the shop and buying of items module; calls H045+$01D6, H026+$000C, H026+$0188, H008+$13C0.
+;   - Calls H045+$01D6.
+;   - Calls H026+$000C.
+;   - Calls H026+$0188.
+;   - Calls H008+$13C0.
+;   - Calls H063+$09B2.
+;   - Uses the global state: H005+$3E00 (pointer to persistent state B, 2048 bytes).
+; Direct callers: H071+$05AC
 ; --------------------------------------------------------------------------
 L071_0000012A:
 ; H071+$0000012A: 2f0c  move.l a4, -(a7)
@@ -97,7 +97,7 @@ L071_00000154:
 L071_0000015A:
 ; H071+$0000015A: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L071_0000015C:
 ; H071+$0000015C: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -516,7 +516,7 @@ L071_00000368:
 L071_0000036A:
 ; H071+$0000036A: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H071+$034E; indici 0..6, default -1.
+; DISPATCH: words relative to H071+$034E; indices 0..6, default -1.
 L071_0000036E:
 ; H071+$0000036E: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -732,14 +732,14 @@ L071_0000047A:
 ; H071+$0000047A: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H071_0000047C [parziale]
-; Scopo: Routine del modulo negozio e acquisto di oggetti; richiama H065+$32F6, H063+$1D44, H003+$0068, H063+$13BE.
-;   - Richiama H065+$32F6.
-;   - Richiama H063+$1D44.
-;   - Richiama H003+$0068.
-;   - Richiama H063+$13BE.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H070+$1918, H071+$06FA, H071+$081C, H070+$0EEC
+; ROUTINE: sub_H071_0000047C [partial]
+; Purpose: Routine of the shop and buying of items module; calls H065+$32F6, H063+$1D44, H003+$0068, H063+$13BE.
+;   - Calls H065+$32F6.
+;   - Calls H063+$1D44.
+;   - Calls H003+$0068.
+;   - Calls H063+$13BE.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H070+$1918, H071+$06FA, H071+$081C, H070+$0EEC
 ; --------------------------------------------------------------------------
 L071_0000047C:
 ; H071+$0000047C: 2f0c  move.l a4, -(a7)
@@ -750,7 +750,7 @@ L071_0000047E:
 L071_00000482:
 ; H071+$00000482: 4e55fff8  link.w a5, #$fff8
         link.w a5, #$fff8
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L071_00000486:
 ; H071+$00000486: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -795,7 +795,7 @@ L071_000004B8:
 L071_000004BC:
 ; H071+$000004BC: 4213  clr.b (a3)
         clr.b (a3)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L071_000004BE:
 ; H071+$000004BE: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -845,7 +845,7 @@ L071_000004F6:
 L071_000004FA:
 ; H071+$000004FA: 42ab002c  clr.l $2c(a3)
         clr.l $2c(a3)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L071_000004FE:
 ; H071+$000004FE: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -916,7 +916,7 @@ L071_00000552:
 L071_00000556:
 ; H071+$00000556: 276dfff8002c  move.l -$8(a5), $2c(a3)
         move.l -$8(a5), $2c(a3)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L071_0000055C:
 ; H071+$0000055C: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -940,17 +940,17 @@ L071_00000570:
 ; H071+$00000570: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H071_00000572 [parziale]
-; Scopo: Routine del modulo negozio e acquisto di oggetti; richiama H044+$01C2, H029+$0354, H065+$347E, H067+$032A.
-;   - Richiama H044+$01C2.
-;   - Richiama H029+$0354.
-;   - Richiama H065+$347E.
-;   - Richiama H067+$032A.
-;   - Richiama H026+$0188.
-;   - Richiama H026+$01E0.
-;   - Richiama H063+$1D44.
-;   - Usa lo stato globale: H005+$3E00 (puntatore stato persistente B, 2048 byte); H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H071+$0A3A
+; ROUTINE: sub_H071_00000572 [partial]
+; Purpose: Routine of the shop and buying of items module; calls H044+$01C2, H029+$0354, H065+$347E, H067+$032A.
+;   - Calls H044+$01C2.
+;   - Calls H029+$0354.
+;   - Calls H065+$347E.
+;   - Calls H067+$032A.
+;   - Calls H026+$0188.
+;   - Calls H026+$01E0.
+;   - Calls H063+$1D44.
+;   - Uses the global state: H005+$3E00 (pointer to persistent state B, 2048 bytes); H005+$3368 (current character).
+; Direct callers: H071+$0A3A
 ; --------------------------------------------------------------------------
 L071_00000572:
 ; H071+$00000572: 2f0c  move.l a4, -(a7)
@@ -1025,7 +1025,7 @@ L071_000005D6:
 L071_000005DC:
 ; H071+$000005DC: 62000042  bhi.w $620
         bhi.w H071+$620
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L071_000005E0:
 ; H071+$000005E0: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -1243,11 +1243,11 @@ L071_000006CC:
 L071_000006CE:
 ; H071+$000006CE: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H071+$06B0; indici 0..7, default -1.
+; DISPATCH: words relative to H071+$06B0; indices 0..7, default -1.
 L071_000006D2:
 ; H071+$000006D2: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L071_000006D6:
 ; H071+$000006D6: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -1322,7 +1322,7 @@ L071_00000730:
 L071_00000736:
 ; H071+$00000736: 3f3c000f  move.w #$f, -(a7)
         move.w #$f, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L071_0000073A:
 ; H071+$0000073A: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -1384,7 +1384,7 @@ L071_0000078E:
 L071_00000794:
 ; H071+$00000794: 3f3c000f  move.w #$f, -(a7)
         move.w #$f, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L071_00000798:
 ; H071+$00000798: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -1538,7 +1538,7 @@ L071_00000858:
 L071_0000085E:
 ; H071+$0000085E: 3f3c000f  move.w #$f, -(a7)
         move.w #$f, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L071_00000862:
 ; H071+$00000862: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -1600,7 +1600,7 @@ L071_000008B6:
 L071_000008BC:
 ; H071+$000008BC: 3f3c000f  move.w #$f, -(a7)
         move.w #$f, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L071_000008C0:
 ; H071+$000008C0: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -1679,17 +1679,17 @@ L071_0000092A:
 ; H071+$0000092A: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H071_0000092C [parziale]
-; Scopo: Routine del modulo negozio e acquisto di oggetti; richiama H063+$321A, H063+$0D80, H029+$0312, H063+$09B2.
-;   - Richiama H063+$321A.
-;   - Richiama H063+$0D80.
-;   - Richiama H029+$0312.
-;   - Richiama H063+$09B2.
-;   - Richiama H067+$11F4.
-;   - Richiama H026+$0188.
-;   - Richiama H008+$01FC.
-;   - Usa lo stato globale: H005+$3DE3 (contesto nativo, 5 nel combattimento); H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H012+$07D8
+; ROUTINE: sub_H071_0000092C [partial]
+; Purpose: Routine of the shop and buying of items module; calls H063+$321A, H063+$0D80, H029+$0312, H063+$09B2.
+;   - Calls H063+$321A.
+;   - Calls H063+$0D80.
+;   - Calls H029+$0312.
+;   - Calls H063+$09B2.
+;   - Calls H067+$11F4.
+;   - Calls H026+$0188.
+;   - Calls H008+$01FC.
+;   - Uses the global state: H005+$3DE3 (native context, 5 in combat); H005+$3368 (current character).
+; Direct callers: H012+$07D8
 ; --------------------------------------------------------------------------
 L071_0000092C:
 ; H071+$0000092C: 2f0c  move.l a4, -(a7)
@@ -1700,7 +1700,7 @@ L071_0000092E:
 L071_00000932:
 ; H071+$00000932: 4e55ffc8  link.w a5, #$ffc8
         link.w a5, #$ffc8
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L071_00000936:
 ; H071+$00000936: 13fc000100003de3  move.b #$1, $3de3.l
         move.b #$1, (H005+$3DE3).l
@@ -1714,7 +1714,7 @@ L071_00000944:
 L071_0000094A:
 ; H071+$0000094A: 13fc0001000024c2  move.b #$1, $24c2.l
         move.b #$1, (H005+$24C2).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L071_00000952:
 ; H071+$00000952: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -1877,7 +1877,7 @@ L071_00000A20:
 L071_00000A22:
 ; H071+$00000A22: 486dffd3  pea.l -$2d(a5)
         pea.l -$2d(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L071_00000A26:
 ; H071+$00000A26: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -2164,7 +2164,7 @@ L071_00000BAA:
 L071_00000BAC:
 ; H071+$00000BAC: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H071+$0B6E; indici 0..21, default -1.
+; DISPATCH: words relative to H071+$0B6E; indices 0..21, default -1.
 L071_00000BB0:
 ; H071+$00000BB0: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -2225,11 +2225,11 @@ L071_00000C12:
 L071_00000C14:
 ; H071+$00000C14: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H071+$0BDA; indici 0..19, default -1.
+; DISPATCH: words relative to H071+$0BDA; indices 0..19, default -1.
 L071_00000C18:
 ; H071+$00000C18: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L071_00000C1C:
 ; H071+$00000C1C: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)

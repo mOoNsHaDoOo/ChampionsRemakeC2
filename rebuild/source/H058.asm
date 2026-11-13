@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H058
-; Riposo e memorizzazione/recupero; dettaglio parziale.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H058
+; Resting and memorisation/recovery; partial detail.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Riposo e memorizzazione/recupero: gestisce il riposo del party, il passaggio del tempo e il salvataggio/caricamento locale.
+; MODULE NOTE
+; Resting and memorisation/recovery: handles the rest of the party, the passing of time and local saving/loading.
 ; --------------------------------------------------------------------------
 ; H058: 4720 original bytes; all offsets are section-relative.
         section H058,code
@@ -28,10 +28,10 @@ H058:
         dc.w $6572,$7275,$7074,$6564,$2100
         dc.l H058+$00000028
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H058 [parziale]
-; Scopo: Ingresso del modulo riposo e memorizzazione/recupero; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H058+$1268.
-; Chiamanti diretti: H000+$01F8
+; ROUTINE: module_init_H058 [partial]
+; Purpose: Entry of the resting and memorisation/recovery module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H058+$1268.
+; Direct callers: H000+$01F8
 ; --------------------------------------------------------------------------
 L058_000000CE:
 ; H058+$000000CE: 2f0c  move.l a4, -(a7)
@@ -70,10 +70,10 @@ L058_000000D8:
         dc.l H005+$00003E04
         dc.w $3742,$019A,$4E5D,$285F,$205F,$4FEF,$000E,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H058_02C4 [parziale]
-; Scopo: Trampolino verso H058+$02C4; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H058+$02C4.
-; Chiamanti diretti: H058+$05B6
+; ROUTINE: trampoline_H058_02C4 [partial]
+; Purpose: Trampoline to H058+$02C4; the actual body is there.
+;   - Jumps to the actual body at H058+$02C4.
+; Direct callers: H058+$05B6
 ; --------------------------------------------------------------------------
 L058_0000017C:
 ; H058+$0000017C: 2f0c  move.l a4, -(a7)
@@ -88,11 +88,11 @@ L058_00000186:
 ; H058+$00000186: 6000013c  bra.w $2c4
         bra.w H058+$2C4
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H058_0000018A [parziale]
-; Scopo: Routine del modulo riposo e memorizzazione/recupero; richiama H034+$0178.
-;   - Richiama H034+$0178.
-;   - Usa lo stato globale: H005+$3E04 (puntatore stato persistente A, 2048 byte).
-; Chiamanti diretti: H058+$02CE, H058+$02DC, H058+$02EA
+; ROUTINE: sub_H058_0000018A [partial]
+; Purpose: Routine of the resting and memorisation/recovery module; calls H034+$0178.
+;   - Calls H034+$0178.
+;   - Uses the global state: H005+$3E04 (pointer to persistent state A, 2048 bytes).
+; Direct callers: H058+$02CE, H058+$02DC, H058+$02EA
 ; --------------------------------------------------------------------------
 L058_0000018A:
 ; H058+$0000018A: 4e550000  link.w a5, #$0
@@ -103,7 +103,7 @@ L058_0000018E:
 L058_00000192:
 ; H058+$00000192: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L058_00000194:
 ; H058+$00000194: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -125,7 +125,7 @@ L058_000001AA:
 L058_000001AC:
 ; H058+$000001AC: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L058_000001AE:
 ; H058+$000001AE: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -144,7 +144,7 @@ L058_000001C2:
 L058_000001C4:
 ; H058+$000001C4: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L058_000001C6:
 ; H058+$000001C6: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -163,7 +163,7 @@ L058_000001D8:
 L058_000001DA:
 ; H058+$000001DA: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L058_000001DC:
 ; H058+$000001DC: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -176,7 +176,7 @@ L058_000001E6:
 L058_000001EA:
 ; H058+$000001EA: 60000070  bra.w $25c
         bra.w H058+$25C
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L058_000001EE:
 ; H058+$000001EE: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -201,7 +201,7 @@ L058_00000208:
 L058_0000020E:
 ; H058+$0000020E: 4e75  rts 
         rts 
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L058_00000210:
 ; H058+$00000210: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -226,7 +226,7 @@ L058_00000228:
 L058_0000022E:
 ; H058+$0000022E: 4e75  rts 
         rts 
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L058_00000230:
 ; H058+$00000230: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -277,7 +277,7 @@ L058_0000026C:
 L058_0000026E:
 ; H058+$0000026E: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H058+$0256; indici 0..2, default -1.
+; DISPATCH: words relative to H058+$0256; indices 0..2, default -1.
 L058_00000272:
 ; H058+$00000272: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -318,7 +318,7 @@ L058_00000298:
 L058_0000029C:
 ; H058+$0000029C: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L058_0000029E:
 ; H058+$0000029E: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -334,7 +334,7 @@ L058_000002AC:
 L058_000002B0:
 ; H058+$000002B0: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L058_000002B2:
 ; H058+$000002B2: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -399,12 +399,12 @@ L058_000002F2:
 ; H058+$000002F2: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H058_000002F4 [parziale]
-; Scopo: Routine del modulo riposo e memorizzazione/recupero; richiama H029+$0312, H062+$0452.
-;   - Richiama H029+$0312.
-;   - Richiama H062+$0452.
-;   - Usa lo stato globale: H005+$3DE3 (contesto nativo, 5 nel combattimento); H005+$3E00 (puntatore stato persistente B, 2048 byte); H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H058+$0700
+; ROUTINE: sub_H058_000002F4 [partial]
+; Purpose: Routine of the resting and memorisation/recovery module; calls H029+$0312, H062+$0452.
+;   - Calls H029+$0312.
+;   - Calls H062+$0452.
+;   - Uses the global state: H005+$3DE3 (native context, 5 in combat); H005+$3E00 (pointer to persistent state B, 2048 bytes); H005+$3364 (head of the party list).
+; Direct callers: H058+$0700
 ; --------------------------------------------------------------------------
 L058_000002F4:
 ; H058+$000002F4: 2f0c  move.l a4, -(a7)
@@ -415,7 +415,7 @@ L058_000002F6:
 L058_000002FA:
 ; H058+$000002FA: 4e55ffe6  link.w a5, #$ffe6
         link.w a5, #$ffe6
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L058_000002FE:
 ; H058+$000002FE: 0c39000200003de3  cmpi.b #$2, $3de3.l
         cmpi.b #$2, (H005+$3DE3).l
@@ -477,7 +477,7 @@ L058_0000034E:
 L058_00000352:
 ; H058+$00000352: 342dfffc  move.w -$4(a5), d2
         move.w -$4(a5), d2
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L058_00000356:
 ; H058+$00000356: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -565,7 +565,7 @@ L058_000003C6:
 L058_000003CC:
 ; H058+$000003CC: 3b7c0001fffc  move.w #$1, -$4(a5)
         move.w #$1, -$4(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L058_000003D2:
 ; H058+$000003D2: 2b7900003364fff4  move.l $3364.l, -$c(a5)
         move.l (H005+$3364).l, -$c(a5)
@@ -826,10 +826,10 @@ L058_0000052A:
 ; H058+$0000052A: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H058_0000052C [parziale]
-; Scopo: Routine del modulo riposo e memorizzazione/recupero; opera su H005+$3364 (testa della lista del party).
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H058+$06B4, H058+$0604
+; ROUTINE: sub_H058_0000052C [partial]
+; Purpose: Routine of the resting and memorisation/recovery module; works on H005+$3364 (head of the party list).
+;   - Uses the global state: H005+$3364 (head of the party list).
+; Direct callers: H058+$06B4, H058+$0604
 ; --------------------------------------------------------------------------
 L058_0000052C:
 ; H058+$0000052C: 2f0c  move.l a4, -(a7)
@@ -951,7 +951,7 @@ L058_000005B6:
 L058_000005BA:
 ; H058+$000005BA: 60000026  bra.w $5e2
         bra.w H058+$5E2
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L058_000005BE:
 ; H058+$000005BE: 2b7900003364fffa  move.l $3364.l, -$6(a5)
         move.l (H005+$3364).l, -$6(a5)
@@ -998,10 +998,10 @@ L058_000005F2:
 ; H058+$000005F2: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H058_000005F4 [parziale]
-; Scopo: Routine del modulo riposo e memorizzazione/recupero; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H058+$083E, H058+$0AE4, H058+$0B10
+; ROUTINE: sub_H058_000005F4 [partial]
+; Purpose: Routine of the resting and memorisation/recovery module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H058+$083E, H058+$0AE4, H058+$0B10
 ; --------------------------------------------------------------------------
 L058_000005F4:
 ; H058+$000005F4: 2f0c  move.l a4, -(a7)
@@ -1058,10 +1058,10 @@ L058_00000648:
 ; H058+$00000648: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H058_0000064A [parziale]
-; Scopo: Routine del modulo riposo e memorizzazione/recupero; opera su H005+$3E04 (puntatore stato persistente A, 2048 byte).
-;   - Usa lo stato globale: H005+$3E04 (puntatore stato persistente A, 2048 byte).
-; Chiamanti diretti: H012+$23CA, H068+$0DB4, H068+$0C02, H068+$0B0E, H068+$0B20, H059+$1600 e altri 1
+; ROUTINE: sub_H058_0000064A [partial]
+; Purpose: Routine of the resting and memorisation/recovery module; works on H005+$3E04 (pointer to persistent state A, 2048 bytes).
+;   - Uses the global state: H005+$3E04 (pointer to persistent state A, 2048 bytes).
+; Direct callers: H012+$23CA, H068+$0DB4, H068+$0C02, H068+$0B0E, H068+$0B20, H059+$1600 and 1 more
 ; --------------------------------------------------------------------------
 L058_0000064A:
 ; H058+$0000064A: 2f0c  move.l a4, -(a7)
@@ -1105,7 +1105,7 @@ L058_00000674:
 L058_00000678:
 ; H058+$00000678: e344  asl.w #$1, d4
         asl.w #$1, d4
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L058_0000067A:
 ; H058+$0000067A: 247900003e04  movea.l $3e04.l, a2
         movea.l (H005+$3E04).l, a2
@@ -1184,7 +1184,7 @@ L058_000006D4:
 L058_000006D8:
 ; H058+$000006D8: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L058_000006DA:
 ; H058+$000006DA: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -1234,10 +1234,10 @@ L058_0000070C:
 ; H058+$0000070C: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H058_0000070E [parziale]
-; Scopo: Routine del modulo riposo e memorizzazione/recupero; richiama H029+$0312.
-;   - Richiama H029+$0312.
-; Chiamanti diretti: H058+$1162, H058+$0AFC, H058+$0B0C
+; ROUTINE: sub_H058_0000070E [partial]
+; Purpose: Routine of the resting and memorisation/recovery module; calls H029+$0312.
+;   - Calls H029+$0312.
+; Direct callers: H058+$1162, H058+$0AFC, H058+$0B0C
 ; --------------------------------------------------------------------------
 L058_0000070E:
 ; H058+$0000070E: 2f0c  move.l a4, -(a7)
@@ -1505,11 +1505,11 @@ L058_0000084A:
 ; H058+$0000084A: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H058_0000084C [parziale]
-; Scopo: Routine del modulo riposo e memorizzazione/recupero; richiama H030+$0256, H045+$01D6.
-;   - Richiama H030+$0256.
-;   - Richiama H045+$01D6.
-; Chiamanti diretti: H058+$109A, H058+$111A, H058+$09C2, H058+$117E, H058+$11FA, H058+$0BE8 e altri 2
+; ROUTINE: sub_H058_0000084C [partial]
+; Purpose: Routine of the resting and memorisation/recovery module; calls H030+$0256, H045+$01D6.
+;   - Calls H030+$0256.
+;   - Calls H045+$01D6.
+; Direct callers: H058+$109A, H058+$111A, H058+$09C2, H058+$117E, H058+$11FA, H058+$0BE8 and 2 more
 ; --------------------------------------------------------------------------
 L058_0000084C:
 ; H058+$0000084C: 2f0c  move.l a4, -(a7)
@@ -1583,7 +1583,7 @@ L058_0000089C:
 L058_000008A0:
 ; H058+$000008A0: 486c0000  pea.l $0(a4)
         pea.l $0(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L058_000008A4:
 ; H058+$000008A4: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1678,7 +1678,7 @@ L058_00000910:
 L058_00000914:
 ; H058+$00000914: 486dffd6  pea.l -$2a(a5)
         pea.l -$2a(a5)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L058_00000918:
 ; H058+$00000918: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1709,7 +1709,7 @@ L058_00000932:
 L058_00000936:
 ; H058+$00000936: 486c000d  pea.l $d(a4)
         pea.l $d(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L058_0000093A:
 ; H058+$0000093A: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1783,7 +1783,7 @@ L058_00000992:
 L058_00000996:
 ; H058+$00000996: 486dffd6  pea.l -$2a(a5)
         pea.l -$2a(a5)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L058_0000099A:
 ; H058+$0000099A: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1803,10 +1803,10 @@ L058_000009A8:
 ; H058+$000009A8: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H058_000009AA [parziale]
-; Scopo: Routine del modulo riposo e memorizzazione/recupero; richiama H008+$01FC.
-;   - Richiama H008+$01FC.
-; Chiamanti diretti: H058+$10B8
+; ROUTINE: sub_H058_000009AA [partial]
+; Purpose: Routine of the resting and memorisation/recovery module; calls H008+$01FC.
+;   - Calls H008+$01FC.
+; Direct callers: H058+$10B8
 ; --------------------------------------------------------------------------
 L058_000009AA:
 ; H058+$000009AA: 2f0c  move.l a4, -(a7)
@@ -1859,7 +1859,7 @@ L058_000009E4:
 L058_000009E6:
 ; H058+$000009E6: 486dfffe  pea.l -$2(a5)
         pea.l -$2(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L058_000009EA:
 ; H058+$000009EA: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -1959,7 +1959,7 @@ L058_00000A7A:
 L058_00000A7C:
 ; H058+$00000A7C: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H058+$0A58; indici 0..8, default -1.
+; DISPATCH: words relative to H058+$0A58; indices 0..8, default -1.
 L058_00000A80:
 ; H058+$00000A80: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -2099,7 +2099,7 @@ L058_00000B50:
 L058_00000B52:
 ; H058+$00000B52: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H058+$0B1A; indici 0..18, default -1.
+; DISPATCH: words relative to H058+$0B1A; indices 0..18, default -1.
 L058_00000B56:
 ; H058+$00000B56: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -2137,15 +2137,15 @@ L058_00000B82:
 ; H058+$00000B82: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H058_00000B84 [parziale]
-; Scopo: Routine del modulo riposo e memorizzazione/recupero; richiama H062+$253C, H030+$0256, H063+$0D80, H030+$0B4A.
-;   - Richiama H062+$253C.
-;   - Richiama H030+$0256.
-;   - Richiama H063+$0D80.
-;   - Richiama H030+$0B4A.
-;   - Richiama H063+$1EE8.
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party); H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H058+$1196
+; ROUTINE: sub_H058_00000B84 [partial]
+; Purpose: Routine of the resting and memorisation/recovery module; calls H062+$253C, H030+$0256, H063+$0D80, H030+$0B4A.
+;   - Calls H062+$253C.
+;   - Calls H030+$0256.
+;   - Calls H063+$0D80.
+;   - Calls H030+$0B4A.
+;   - Calls H063+$1EE8.
+;   - Uses the global state: H005+$3364 (head of the party list); H005+$3368 (current character).
+; Direct callers: H058+$1196
 ; --------------------------------------------------------------------------
 L058_00000B84:
 ; H058+$00000B84: 2f0c  move.l a4, -(a7)
@@ -2168,7 +2168,7 @@ L058_00000B9C:
 L058_00000BA0:
 ; H058+$00000BA0: 422dffff  clr.b -$1(a5)
         clr.b -$1(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L058_00000BA4:
 ; H058+$00000BA4: 2b7900003364fffa  move.l $3364.l, -$6(a5)
         move.l (H005+$3364).l, -$6(a5)
@@ -2242,7 +2242,7 @@ L058_00000BFA:
 L058_00000BFE:
 ; H058+$00000BFE: 486c003a  pea.l $3a(a4)
         pea.l $3a(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L058_00000C02:
 ; H058+$00000C02: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -2252,7 +2252,7 @@ L058_00000C08:
 L058_00000C0C:
 ; H058+$00000C0C: 6700000e  beq.w $c1c
         beq.w H058+$C1C
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L058_00000C10:
 ; H058+$00000C10: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -2287,11 +2287,11 @@ L058_00000C36:
 ; H058+$00000C36: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H058_00000C38 [parziale]
-; Scopo: Routine del modulo riposo e memorizzazione/recupero; richiama H029+$0354, H033+$18EE.
-;   - Richiama H029+$0354.
-;   - Richiama H033+$18EE.
-; Chiamanti diretti: H058+$0F24, H058+$0FDA
+; ROUTINE: sub_H058_00000C38 [partial]
+; Purpose: Routine of the resting and memorisation/recovery module; calls H029+$0354, H033+$18EE.
+;   - Calls H029+$0354.
+;   - Calls H033+$18EE.
+; Direct callers: H058+$0F24, H058+$0FDA
 ; --------------------------------------------------------------------------
 L058_00000C38:
 ; H058+$00000C38: 2f0c  move.l a4, -(a7)
@@ -2497,13 +2497,13 @@ L058_00000D2A:
 ; H058+$00000D2A: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H058_00000D2C [parziale]
-; Scopo: Routine del modulo riposo e memorizzazione/recupero; richiama H033+$17E6, H029+$0354, H033+$1836, H033+$18EE.
-;   - Richiama H033+$17E6.
-;   - Richiama H029+$0354.
-;   - Richiama H033+$1836.
-;   - Richiama H033+$18EE.
-; Chiamanti diretti: H058+$0F0C, H058+$0FC2
+; ROUTINE: sub_H058_00000D2C [partial]
+; Purpose: Routine of the resting and memorisation/recovery module; calls H033+$17E6, H029+$0354, H033+$1836, H033+$18EE.
+;   - Calls H033+$17E6.
+;   - Calls H029+$0354.
+;   - Calls H033+$1836.
+;   - Calls H033+$18EE.
+; Direct callers: H058+$0F0C, H058+$0FC2
 ; --------------------------------------------------------------------------
 L058_00000D2C:
 ; H058+$00000D2C: 2f0c  move.l a4, -(a7)
@@ -2778,10 +2778,10 @@ L058_00000E7E:
 ; H058+$00000E7E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H058_00000E80 [parziale]
-; Scopo: Routine del modulo riposo e memorizzazione/recupero; opera su H005+$3364 (testa della lista del party).
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H058+$119A
+; ROUTINE: sub_H058_00000E80 [partial]
+; Purpose: Routine of the resting and memorisation/recovery module; works on H005+$3364 (head of the party list).
+;   - Uses the global state: H005+$3364 (head of the party list).
+; Direct callers: H058+$119A
 ; --------------------------------------------------------------------------
 L058_00000E80:
 ; H058+$00000E80: 2f0c  move.l a4, -(a7)
@@ -2795,7 +2795,7 @@ L058_00000E86:
 L058_00000E8A:
 ; H058+$00000E8A: 3b7c0001fffe  move.w #$1, -$2(a5)
         move.w #$1, -$2(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L058_00000E90:
 ; H058+$00000E90: 2b7900003364fff8  move.l $3364.l, -$8(a5)
         move.l (H005+$3364).l, -$8(a5)
@@ -2959,10 +2959,10 @@ L058_00000F5A:
 ; H058+$00000F5A: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H058_00000F5C [parziale]
-; Scopo: Routine del modulo riposo e memorizzazione/recupero; opera su H005+$3364 (testa della lista del party).
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H058+$11A2
+; ROUTINE: sub_H058_00000F5C [partial]
+; Purpose: Routine of the resting and memorisation/recovery module; works on H005+$3364 (head of the party list).
+;   - Uses the global state: H005+$3364 (head of the party list).
+; Direct callers: H058+$11A2
 ; --------------------------------------------------------------------------
 L058_00000F5C:
 ; H058+$00000F5C: 2f0c  move.l a4, -(a7)
@@ -2997,7 +2997,7 @@ L058_00000F7C:
 L058_00000F7E:
 ; H058+$00000F7E: 3b7c0001fffe  move.w #$1, -$2(a5)
         move.w #$1, -$2(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L058_00000F84:
 ; H058+$00000F84: 2b7900003364fff8  move.l $3364.l, -$8(a5)
         move.l (H005+$3364).l, -$8(a5)
@@ -3110,17 +3110,17 @@ L058_00001012:
 ; H058+$00001012: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H058_00001014 [parziale]
-; Scopo: Routine del modulo riposo e memorizzazione/recupero; richiama H029+$0312, H030+$0B6C, H029+$01B6, H010+$042E.
-;   - Richiama H029+$0312.
-;   - Richiama H030+$0B6C.
-;   - Richiama H029+$01B6.
-;   - Richiama H010+$042E.
-;   - Richiama H008+$203C.
-;   - Richiama H008+$139E.
-;   - Richiama H062+$156C.
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party); H005+$5305 (byte del tasto/azione pendente); H005+$3E00 (puntatore stato persistente B, 2048 byte).
-; Chiamanti diretti: H057+$123A, H057+$2EEA
+; ROUTINE: sub_H058_00001014 [partial]
+; Purpose: Routine of the resting and memorisation/recovery module; calls H029+$0312, H030+$0B6C, H029+$01B6, H010+$042E.
+;   - Calls H029+$0312.
+;   - Calls H030+$0B6C.
+;   - Calls H029+$01B6.
+;   - Calls H010+$042E.
+;   - Calls H008+$203C.
+;   - Calls H008+$139E.
+;   - Calls H062+$156C.
+;   - Uses the global state: H005+$3364 (head of the party list); H005+$5305 (byte of the pending key/action); H005+$3E00 (pointer to persistent state B, 2048 bytes).
+; Direct callers: H057+$123A, H057+$2EEA
 ; --------------------------------------------------------------------------
 L058_00001014:
 ; H058+$00001014: 2f0c  move.l a4, -(a7)
@@ -3140,7 +3140,7 @@ L058_00001022:
 L058_00001026:
 ; H058+$00001026: 3b7c0001fff4  move.w #$1, -$c(a5)
         move.w #$1, -$c(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L058_0000102C:
 ; H058+$0000102C: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -3304,7 +3304,7 @@ L058_00001106:
 L058_0000110A:
 ; H058+$0000110A: 67000046  beq.w $1152
         beq.w H058+$1152
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L058_0000110E:
 ; H058+$0000110E: 4a3900005305  tst.b $5305.l
         tst.b (H005+$5305).l
@@ -3418,7 +3418,7 @@ L058_0000119E:
 L058_000011A2:
 ; H058+$000011A2: 6100fdb8  bsr.w $f5c
         bsr.w H058+$F5C
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L058_000011A6:
 ; H058+$000011A6: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -3434,7 +3434,7 @@ L058_000011B4:
 L058_000011BA:
 ; H058+$000011BA: 343900003dde  move.w $3dde.l, d2
         move.w (H005+$3DDE).l, d2
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L058_000011C0:
 ; H058+$000011C0: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -3460,7 +3460,7 @@ L058_000011DC:
 L058_000011E2:
 ; H058+$000011E2: 3400  move.w d0, d2
         move.w d0, d2
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L058_000011E4:
 ; H058+$000011E4: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -3498,7 +3498,7 @@ L058_0000120C:
 L058_00001210:
 ; H058+$00001210: 486c007d  pea.l $7d(a4)
         pea.l $7d(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L058_00001214:
 ; H058+$00001214: 4eb900000256  jsr $256.l
         jsr (H030+$256).l

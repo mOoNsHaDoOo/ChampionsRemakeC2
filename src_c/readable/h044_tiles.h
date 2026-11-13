@@ -1,4 +1,4 @@
-/* H044: disegno di elementi 8x8 (glifi o tile) e servizi grafici/UI. */
+/* H044: drawing of 8x8 elements (glyphs or tiles) and graphics/UI services. */
 #ifndef COK_H044_TILES_H
 #define COK_H044_TILES_H
 

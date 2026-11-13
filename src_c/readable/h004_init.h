@@ -1,4 +1,4 @@
-/* H004: inizializzazione dei dati del gioco. */
+/* H004: initialisation of the game data. */
 #ifndef COK_H004_INIT_H
 #define COK_H004_INIT_H
 

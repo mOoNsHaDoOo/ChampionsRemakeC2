@@ -1,4 +1,4 @@
-/* H031: conversioni dell'ordine dei byte e valori del formato su disco. */
+/* H031: byte order conversions and on-disk format values. */
 #ifndef COK_H031_H
 #define COK_H031_H
 

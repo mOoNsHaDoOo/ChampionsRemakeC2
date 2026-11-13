@@ -1,4 +1,4 @@
-/* H072: il tempio (cure a pagamento). */
+/* H072: the temple (paid healing). */
 #ifndef COK_H072_H
 #define COK_H072_H
 #include "cok.h"

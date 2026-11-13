@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H054
-; Calcolo dello spazio raster per riga.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H054
+; Computation of the raster space per row.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Calcolo dello spazio raster per riga: converte larghezza e profondita' in byte per riga.
+; MODULE NOTE
+; Computation of the raster space per row: converts width and depth into bytes per row.
 ; --------------------------------------------------------------------------
 ; H054: 52 original bytes; all offsets are section-relative.
         section H054,code
@@ -15,10 +15,10 @@ H054:
 ; Preserved bytes H054+$00000000..$00000004; code/data not fully classified.
         dc.l H054+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H054_0030 [parziale]
-; Scopo: Trampolino verso H054+$0030; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H054+$0030.
-; Chiamanti diretti: H000+$00BA
+; ROUTINE: trampoline_H054_0030 [partial]
+; Purpose: Trampoline to H054+$0030; the actual body is there.
+;   - Jumps to the actual body at H054+$0030.
+; Direct callers: H000+$00BA
 ; --------------------------------------------------------------------------
 L054_00000004:
 ; H054+$00000004: 4e550000  link.w a5, #$0
@@ -27,10 +27,10 @@ L054_00000008:
 ; H054+$00000008: 60000026  bra.w $30
         bra.w H054+$30
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H054_0028 [parziale]
-; Scopo: Trampolino verso H054+$0028; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H054+$0028.
-; Chiamanti diretti: H040+$0380, H087+$017E
+; ROUTINE: trampoline_H054_0028 [partial]
+; Purpose: Trampoline to H054+$0028; the actual body is there.
+;   - Jumps to the actual body at H054+$0028.
+; Direct callers: H040+$0380, H087+$017E
 ; --------------------------------------------------------------------------
 L054_0000000C:
 ; H054+$0000000C: 4e550000  link.w a5, #$0

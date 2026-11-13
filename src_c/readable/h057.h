@@ -1,4 +1,4 @@
-/* H057: accampamento, lancio degli incantesimi, memorizzazione. */
+/* H057: camp, spell casting, memorisation. */
 #ifndef COK_H057_H
 #define COK_H057_H
 #include "cok.h"

@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H079
-; Adattatori Exec per interrupt e abilitazione/disabilitazione.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H079
+; Exec adapters for interrupts and enabling/disabling.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Adattatori Exec per interrupt e abilitazione/disabilitazione: AddIntServer, RemIntServer, Disable, Enable, Forbid.
+; MODULE NOTE
+; Exec adapters for interrupts and enabling/disabling: AddIntServer, RemIntServer, Disable, Enable, Forbid.
 ; --------------------------------------------------------------------------
 ; H079: 148 original bytes; all offsets are section-relative.
         section H079,code
@@ -15,19 +15,19 @@ H079:
 ; Preserved bytes H079+$00000000..$00000004; code/data not fully classified.
         dc.l H079+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H079_00000004 [parziale]
-; Scopo: Routine del modulo adattatori Exec per interrupt e abilitazione/disabilitazione; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H000+$00AE
+; ROUTINE: sub_H079_00000004 [partial]
+; Purpose: Routine of the Exec adapters for interrupts and enabling/disabling module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H000+$00AE
 ; --------------------------------------------------------------------------
 L079_00000004:
 ; H079+$00000004: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_AddIntServer [parziale]
-; Scopo: Adattatore a exec.library/AddIntServer; incapsula la chiamata alla libreria.
-;   - Chiama exec.library/AddIntServer (LVO -168).
-; Chiamanti diretti: H043+$07E4, H043+$1976
+; ROUTINE: wrapper_AddIntServer [partial]
+; Purpose: Adapter to exec.library/AddIntServer; wraps the library call.
+;   - Calls exec.library/AddIntServer (LVO -168).
+; Direct callers: H043+$07E4, H043+$1976
 ; --------------------------------------------------------------------------
 L079_00000006:
 ; H079+$00000006: 302f0008  move.w $8(a7), d0
@@ -51,10 +51,10 @@ L079_00000018:
         dc.w $226F,$0004,$2C78,$0004,$2F57,$0004,$588F,$4EEE
         dc.w $FF4C
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_Disable [parziale]
-; Scopo: Adattatore a exec.library/Disable; incapsula la chiamata alla libreria.
-;   - Chiama exec.library/Disable (LVO -120).
-; Chiamanti diretti: H043+$15D0, H043+$0F62, H043+$1082
+; ROUTINE: wrapper_Disable [partial]
+; Purpose: Adapter to exec.library/Disable; wraps the library call.
+;   - Calls exec.library/Disable (LVO -120).
+; Direct callers: H043+$15D0, H043+$0F62, H043+$1082
 ; --------------------------------------------------------------------------
 L079_0000002E:
 ; H079+$0000002E: 2c780004  movea.l $4.w, a6
@@ -63,10 +63,10 @@ L079_00000032:
 ; H079+$00000032: 4eeeff88  jmp -$78(a6) ; exec.library/Disable
         jmp LVO_exec_Disable(a6)
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_Enable [parziale]
-; Scopo: Adattatore a exec.library/Enable; incapsula la chiamata alla libreria.
-;   - Chiama exec.library/Enable (LVO -126).
-; Chiamanti diretti: H043+$164E, H043+$1040, H043+$112E
+; ROUTINE: wrapper_Enable [partial]
+; Purpose: Adapter to exec.library/Enable; wraps the library call.
+;   - Calls exec.library/Enable (LVO -126).
+; Direct callers: H043+$164E, H043+$1040, H043+$112E
 ; --------------------------------------------------------------------------
 L079_00000036:
 ; H079+$00000036: 2c780004  movea.l $4.w, a6
@@ -77,10 +77,10 @@ L079_0000003A:
 ; Preserved bytes H079+$0000003E..$0000004E; code/data not fully classified.
         dc.w $2C78,$0004,$4EEE,$FF7C,$2C78,$0004,$4EEE,$FF76
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_RemIntServer [parziale]
-; Scopo: Adattatore a exec.library/RemIntServer; incapsula la chiamata alla libreria.
-;   - Chiama exec.library/RemIntServer (LVO -174).
-; Chiamanti diretti: H043+$085A, H043+$1964
+; ROUTINE: wrapper_RemIntServer [partial]
+; Purpose: Adapter to exec.library/RemIntServer; wraps the library call.
+;   - Calls exec.library/RemIntServer (LVO -174).
+; Direct callers: H043+$085A, H043+$1964
 ; --------------------------------------------------------------------------
 L079_0000004E:
 ; H079+$0000004E: 302f0008  move.w $8(a7), d0

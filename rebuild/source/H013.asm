@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H013
-; Creazione/gestione personaggi e menu principale del party.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H013
+; Character creation/management and party main menu.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Menu del party e creazione personaggi: scelta del gruppo, caricamento/salvataggio, composizione del party e passaggio allo scenario.
+; MODULE NOTE
+; Party menu and character creation: choice of the group, loading/saving, composition of the party and move to the scenario.
 ; --------------------------------------------------------------------------
 ; H013: 25244 original bytes; all offsets are section-relative.
         section H013,code
@@ -96,10 +96,10 @@ H013:
         dc.w $2E00
         dc.l H013+$00000052
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H013 [parziale]
-; Scopo: Ingresso del modulo creazione/gestione personaggi e menu principale del party; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H013+$6296.
-; Chiamanti diretti: H000+$0222
+; ROUTINE: module_init_H013 [partial]
+; Purpose: Entry of the character creation/management and party main menu module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H013+$6296.
+; Direct callers: H000+$0222
 ; --------------------------------------------------------------------------
 L013_00000506:
 ; H013+$00000506: 2f0c  move.l a4, -(a7)
@@ -116,60 +116,60 @@ L013_00000510:
 ; Preserved bytes H013+$00000514..$00000518; code/data not fully classified.
         dc.w $6000,$46E6
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H013_52E0 [parziale]
-; Scopo: Trampolino verso H013+$52E0; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H013+$52E0.
-;   - Richiama H066+$03D0.
-;   - Richiama H008+$13C0.
-;   - Richiama H008+$139E.
-;   - Richiama H003+$0068.
-;   - Richiama H008+$0102.
-;   - Richiama H066+$1B0E.
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party); H005+$3E00 (puntatore stato persistente B, 2048 byte); H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H013+$4FDC
+; ROUTINE: trampoline_H013_52E0 [partial]
+; Purpose: Trampoline to H013+$52E0; the actual body is there.
+;   - Jumps to the actual body at H013+$52E0.
+;   - Calls H066+$03D0.
+;   - Calls H008+$13C0.
+;   - Calls H008+$139E.
+;   - Calls H003+$0068.
+;   - Calls H008+$0102.
+;   - Calls H066+$1B0E.
+;   - Uses the global state: H005+$3364 (head of the party list); H005+$3E00 (pointer to persistent state B, 2048 bytes); H005+$3368 (current character).
+; Direct callers: H013+$4FDC
 ; --------------------------------------------------------------------------
 L013_00000518:
 ; H013+$00000518: 60004dc6  bra.w $52e0
         bra.w H013+$52E0
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H013_58DC [parziale]
-; Scopo: Trampolino verso H013+$58DC; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H013+$58DC.
-;   - Richiama H065+$3702.
-;   - Richiama H030+$0AD2.
-;   - Richiama H063+$3F72.
-;   - Richiama H029+$0354.
-;   - Richiama H029+$039A.
-;   - Richiama H030+$0B6C.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente); H005+$3E00 (puntatore stato persistente B, 2048 byte).
-; Chiamanti diretti: H013+$4F9E, H013+$28DA
+; ROUTINE: trampoline_H013_58DC [partial]
+; Purpose: Trampoline to H013+$58DC; the actual body is there.
+;   - Jumps to the actual body at H013+$58DC.
+;   - Calls H065+$3702.
+;   - Calls H030+$0AD2.
+;   - Calls H063+$3F72.
+;   - Calls H029+$0354.
+;   - Calls H029+$039A.
+;   - Calls H030+$0B6C.
+;   - Uses the global state: H005+$3368 (current character); H005+$3E00 (pointer to persistent state B, 2048 bytes).
+; Direct callers: H013+$4F9E, H013+$28DA
 ; --------------------------------------------------------------------------
 L013_0000051C:
 ; H013+$0000051C: 600053be  bra.w $58dc
         bra.w H013+$58DC
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H013_56CE [parziale]
-; Scopo: Trampolino verso H013+$56CE; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H013+$56CE.
-;   - Richiama H065+$3702.
-;   - Richiama H030+$0AD2.
-;   - Richiama H063+$3F72.
-;   - Richiama H029+$0354.
-;   - Richiama H029+$039A.
-;   - Richiama H030+$0B6C.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente); H005+$3E00 (puntatore stato persistente B, 2048 byte).
-; Chiamanti diretti: H013+$06C8, H013+$3172
+; ROUTINE: trampoline_H013_56CE [partial]
+; Purpose: Trampoline to H013+$56CE; the actual body is there.
+;   - Jumps to the actual body at H013+$56CE.
+;   - Calls H065+$3702.
+;   - Calls H030+$0AD2.
+;   - Calls H063+$3F72.
+;   - Calls H029+$0354.
+;   - Calls H029+$039A.
+;   - Calls H030+$0B6C.
+;   - Uses the global state: H005+$3368 (current character); H005+$3E00 (pointer to persistent state B, 2048 bytes).
+; Direct callers: H013+$06C8, H013+$3172
 ; --------------------------------------------------------------------------
 L013_00000520:
 ; H013+$00000520: 600051ac  bra.w $56ce
         bra.w H013+$56CE
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H013_00000524 [parziale]
-; Scopo: Routine del modulo creazione/gestione personaggi e menu principale del party; richiama H029+$0354, H062+$156C, H029+$03E2.
-;   - Richiama H029+$0354.
-;   - Richiama H062+$156C.
-;   - Richiama H029+$03E2.
-; Chiamanti diretti: H013+$61E0, H013+$28AE
+; ROUTINE: sub_H013_00000524 [partial]
+; Purpose: Routine of the character creation/management and party main menu module; calls H029+$0354, H062+$156C, H029+$03E2.
+;   - Calls H029+$0354.
+;   - Calls H062+$156C.
+;   - Calls H029+$03E2.
+; Direct callers: H013+$61E0, H013+$28AE
 ; --------------------------------------------------------------------------
 L013_00000524:
 ; H013+$00000524: 2f0c  move.l a4, -(a7)
@@ -546,7 +546,7 @@ L013_0000071C:
 L013_0000071E:
 ; H013+$0000071E: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H013+$0700; indici 0..7, default -1.
+; DISPATCH: words relative to H013+$0700; indices 0..7, default -1.
 L013_00000722:
 ; H013+$00000722: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -676,10 +676,10 @@ L013_000007B0:
 ; H013+$000007B0: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H013_000007B2 [parziale]
-; Scopo: Routine del modulo creazione/gestione personaggi e menu principale del party; richiama H003+$0068.
-;   - Richiama H003+$0068.
-; Chiamanti diretti: H013+$2B6E
+; ROUTINE: sub_H013_000007B2 [partial]
+; Purpose: Routine of the character creation/management and party main menu module; calls H003+$0068.
+;   - Calls H003+$0068.
+; Direct callers: H013+$2B6E
 ; --------------------------------------------------------------------------
 L013_000007B2:
 ; H013+$000007B2: 2f0c  move.l a4, -(a7)
@@ -810,7 +810,7 @@ L013_00000862:
 L013_00000864:
 ; H013+$00000864: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H013+$084E; indici 0..2, default -1.
+; DISPATCH: words relative to H013+$084E; indices 0..2, default -1.
 L013_00000868:
 ; H013+$00000868: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -881,10 +881,10 @@ L013_000008C0:
 ; H013+$000008C0: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H013_097C [parziale]
-; Scopo: Trampolino verso H013+$097C; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H013+$097C.
-; Chiamanti diretti: H013+$2A92
+; ROUTINE: trampoline_H013_097C [partial]
+; Purpose: Trampoline to H013+$097C; the actual body is there.
+;   - Jumps to the actual body at H013+$097C.
+; Direct callers: H013+$2A92
 ; --------------------------------------------------------------------------
 L013_000008C2:
 ; H013+$000008C2: 2f0c  move.l a4, -(a7)
@@ -895,7 +895,7 @@ L013_000008C4:
 L013_000008C8:
 ; H013+$000008C8: 4e550000  link.w a5, #$0
         link.w a5, #$0
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_000008CC:
 ; H013+$000008CC: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -1024,12 +1024,12 @@ L013_00000980:
         rts 
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Create_Character [parziale]
-; Scopo: Percorso interattivo di creazione del personaggio.
-;   - Mostra scelte di razza, genere, classe, divinità e allineamento.
-;   - Gestisce le schermate di statistiche/nome e inserimento del record.
-;   - I vincoli D&D di tutti i rami non sono ancora completamente ricostruiti.
-; Chiamanti diretti: H013+$4F74
+; ROUTINE: Create_Character [partial]
+; Purpose: Interactive character creation path.
+;   - Shows the choices of race, sex, class, deity and alignment.
+;   - Handles the statistics/name screens and the insertion of the record.
+;   - The D&D constraints of all the branches are not yet fully rebuilt.
+; Direct callers: H013+$4F74
 ; --------------------------------------------------------------------------
 L013_00000982:
 ; H013+$00000982: 2f0c  move.l a4, -(a7)
@@ -1044,17 +1044,17 @@ L013_0000098C:
 ; H013+$0000098C: 60000080  bra.w $a0e
         bra.w H013+$A0E
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H013_00000990 [parziale]
-; Scopo: Routine del modulo creazione/gestione personaggi e menu principale del party; richiama H003+$0068, H023+$0010, H008+$20C2, H008+$0102.
-;   - Richiama H003+$0068.
-;   - Richiama H023+$0010.
-;   - Richiama H008+$20C2.
-;   - Richiama H008+$0102.
-;   - Richiama H026+$01E0.
-;   - Richiama H008+$13C0.
-;   - Richiama H008+$2178.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente); H005+$3E00 (puntatore stato persistente B, 2048 byte).
-; Chiamanti diretti: H013+$1840, H013+$1856, H013+$18F8, H013+$186C, H013+$1882, H013+$189A e altri 3
+; ROUTINE: sub_H013_00000990 [partial]
+; Purpose: Routine of the character creation/management and party main menu module; calls H003+$0068, H023+$0010, H008+$20C2, H008+$0102.
+;   - Calls H003+$0068.
+;   - Calls H023+$0010.
+;   - Calls H008+$20C2.
+;   - Calls H008+$0102.
+;   - Calls H026+$01E0.
+;   - Calls H008+$13C0.
+;   - Calls H008+$2178.
+;   - Uses the global state: H005+$3368 (current character); H005+$3E00 (pointer to persistent state B, 2048 bytes).
+; Direct callers: H013+$1840, H013+$1856, H013+$18F8, H013+$186C, H013+$1882, H013+$189A and 3 more
 ; --------------------------------------------------------------------------
 L013_00000990:
 ; H013+$00000990: 4e55fffe  link.w a5, #$fffe
@@ -1766,7 +1766,7 @@ L013_00000D02:
 L013_00000D04:
 ; H013+$00000D04: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H013+$0CEA; indici 0..5, default -1.
+; DISPATCH: words relative to H013+$0CEA; indices 0..5, default -1.
 L013_00000D08:
 ; H013+$00000D08: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -2579,7 +2579,7 @@ L013_00001164:
 L013_00001166:
 ; H013+$00001166: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H013+$1136; indici 0..16, default -1.
+; DISPATCH: words relative to H013+$1136; indices 0..16, default -1.
 L013_0000116A:
 ; H013+$0000116A: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -3281,7 +3281,7 @@ L013_00001518:
 L013_0000151A:
 ; H013+$0000151A: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H013+$14FC; indici 0..6, default -1.
+; DISPATCH: words relative to H013+$14FC; indices 0..6, default -1.
 L013_0000151E:
 ; H013+$0000151E: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -3792,7 +3792,7 @@ L013_000017BA:
 L013_000017BC:
 ; H013+$000017BC: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H013+$179E; indici 0..7, default -1.
+; DISPATCH: words relative to H013+$179E; indices 0..7, default -1.
 L013_000017C0:
 ; H013+$000017C0: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -4131,15 +4131,15 @@ L013_00001928:
 L013_0000192A:
 ; H013+$0000192A: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H013+$1908; indici 0..8, default -1.
+; DISPATCH: words relative to H013+$1908; indices 0..8, default -1.
 L013_0000192E:
 ; H013+$0000192E: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00001932:
 ; H013+$00001932: 2b7900003368fff2  move.l $3368.l, -$e(a5)
         move.l (H005+$3368).l, -$e(a5)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_0000193A:
 ; H013+$0000193A: 23edfff600003368  move.l -$a(a5), $3368.l
         move.l -$a(a5), (H005+$3368).l
@@ -4162,7 +4162,7 @@ L013_00001956:
 L013_00001958:
 ; H013+$00001958: 142dffde  move.b -$22(a5), d2
         move.b -$22(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_0000195C:
 ; H013+$0000195C: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -4181,7 +4181,7 @@ L013_0000196E:
 L013_00001970:
 ; H013+$00001970: 142dffde  move.b -$22(a5), d2
         move.b -$22(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00001974:
 ; H013+$00001974: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -4314,7 +4314,7 @@ L013_00001A10:
 L013_00001A12:
 ; H013+$00001A12: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H013+$19FE; indici 0..1, default -1.
+; DISPATCH: words relative to H013+$19FE; indices 0..1, default -1.
 L013_00001A16:
 ; H013+$00001A16: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -4368,7 +4368,7 @@ L013_00001A48:
 L013_00001A4A:
 ; H013+$00001A4A: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H013+$1A36; indici 0..1, default -1.
+; DISPATCH: words relative to H013+$1A36; indices 0..1, default -1.
 L013_00001A4E:
 ; H013+$00001A4E: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -4416,7 +4416,7 @@ L013_00001A76:
 L013_00001A78:
 ; H013+$00001A78: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H013+$1A68; indici 0..0, default -1.
+; DISPATCH: words relative to H013+$1A68; indices 0..0, default -1.
 L013_00001A7C:
 ; H013+$00001A7C: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -4467,7 +4467,7 @@ L013_00001AB0:
 L013_00001AB2:
 ; H013+$00001AB2: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H013+$1A9C; indici 0..3, default -1.
+; DISPATCH: words relative to H013+$1A9C; indices 0..3, default -1.
 L013_00001AB6:
 ; H013+$00001AB6: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -4497,7 +4497,7 @@ L013_00001AD8:
 L013_00001ADA:
 ; H013+$00001ADA: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H013+$1AC0; indici 0..5, default -1.
+; DISPATCH: words relative to H013+$1AC0; indices 0..5, default -1.
 L013_00001ADE:
 ; H013+$00001ADE: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -7009,7 +7009,7 @@ L013_0000260C:
 L013_0000260E:
 ; H013+$0000260E: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H013+$25F4; indici 0..5, default -1.
+; DISPATCH: words relative to H013+$25F4; indices 0..5, default -1.
 L013_00002612:
 ; H013+$00002612: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -7215,7 +7215,7 @@ L013_00002720:
 L013_00002722:
 ; H013+$00002722: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H013+$2708; indici 0..5, default -1.
+; DISPATCH: words relative to H013+$2708; indices 0..5, default -1.
 L013_00002726:
 ; H013+$00002726: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -7459,7 +7459,7 @@ L013_00002850:
 L013_00002852:
 ; H013+$00002852: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H013+$2834; indici 0..7, default -1.
+; DISPATCH: words relative to H013+$2834; indices 0..7, default -1.
 L013_00002856:
 ; H013+$00002856: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -7532,14 +7532,14 @@ L013_000028AE:
 L013_000028B2:
 ; H013+$000028B2: 265f  movea.l (a7)+, a3
         movea.l (a7)+, a3
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L013_000028B4:
 ; H013+$000028B4: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
 L013_000028BA:
 ; H013+$000028BA: 3b6b0550ffa2  move.w $550(a3), -$5e(a5)
         move.w $550(a3), -$5e(a5)
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L013_000028C0:
 ; H013+$000028C0: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -7561,7 +7561,7 @@ L013_000028DE:
 L013_000028E4:
 ; H013+$000028E4: 67f4  beq.b $28da
         beq.b H013+$28DA
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L013_000028E6:
 ; H013+$000028E6: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -7604,7 +7604,7 @@ L013_0000291A:
 L013_0000291C:
 ; H013+$0000291C: 142dffde  move.b -$22(a5), d2
         move.b -$22(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00002920:
 ; H013+$00002920: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -7623,7 +7623,7 @@ L013_00002932:
 L013_00002934:
 ; H013+$00002934: 142dffde  move.b -$22(a5), d2
         move.b -$22(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00002938:
 ; H013+$00002938: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -7633,7 +7633,7 @@ L013_0000293E:
 L013_00002942:
 ; H013+$00002942: 48e72010  movem.l d2/a3, -(a7)
         movem.l d2/a3, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00002946:
 ; H013+$00002946: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -7662,7 +7662,7 @@ L013_00002962:
 L013_00002964:
 ; H013+$00002964: 142dffde  move.b -$22(a5), d2
         move.b -$22(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00002968:
 ; H013+$00002968: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -7709,7 +7709,7 @@ L013_000029A0:
 L013_000029A2:
 ; H013+$000029A2: 142dffde  move.b -$22(a5), d2
         move.b -$22(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_000029A6:
 ; H013+$000029A6: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -7728,7 +7728,7 @@ L013_000029B6:
 L013_000029B8:
 ; H013+$000029B8: 142dffde  move.b -$22(a5), d2
         move.b -$22(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_000029BC:
 ; H013+$000029BC: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -7809,7 +7809,7 @@ L013_00002A1C:
 L013_00002A20:
 ; H013+$00002A20: 486dffa4  pea.l -$5c(a5)
         pea.l -$5c(a5)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L013_00002A24:
 ; H013+$00002A24: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -8037,7 +8037,7 @@ L013_00002B48:
 L013_00002B4C:
 ; H013+$00002B4C: 4eb900000012  jsr $12.l
         jsr (H053+$12).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00002B52:
 ; H013+$00002B52: 23edfff200003368  move.l -$e(a5), $3368.l
         move.l -$e(a5), (H005+$3368).l
@@ -8068,7 +8068,7 @@ L013_00002B76:
 L013_00002B78:
 ; H013+$00002B78: 486c00ae  pea.l $ae(a4)
         pea.l $ae(a4)
-; FLUSSO: Chiama Save_CharacterRecord (H066+$1640).
+; FLOW: Calls Save_CharacterRecord (H066+$1640).
 L013_00002B7C:
 ; H013+$00002B7C: 4eb900001640  jsr $1640.l
         jsr (H066+$1640).l
@@ -8079,7 +8079,7 @@ L013_00002B82:
 L013_00002B86:
 ; H013+$00002B86: 4eb900000012  jsr $12.l
         jsr (H053+$12).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00002B8C:
 ; H013+$00002B8C: 23edfff200003368  move.l -$e(a5), $3368.l
         move.l -$e(a5), (H005+$3368).l
@@ -8093,10 +8093,10 @@ L013_00002B98:
 ; H013+$00002B98: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H013_2D70 [parziale]
-; Scopo: Trampolino verso H013+$2D70; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H013+$2D70.
-; Chiamanti diretti: H013+$4F82, H013+$5038
+; ROUTINE: trampoline_H013_2D70 [partial]
+; Purpose: Trampoline to H013+$2D70; the actual body is there.
+;   - Jumps to the actual body at H013+$2D70.
+; Direct callers: H013+$4F82, H013+$5038
 ; --------------------------------------------------------------------------
 L013_00002B9A:
 ; H013+$00002B9A: 2f0c  move.l a4, -(a7)
@@ -8123,14 +8123,14 @@ L013_00002BAE:
 L013_00002BB2:
 ; H013+$00002BB2: 600001bc  bra.w $2d70
         bra.w H013+$2D70
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00002BB6:
 ; H013+$00002BB6: 4ab900003368  tst.l $3368.l
         tst.l (H005+$3368).l
 L013_00002BBC:
 ; H013+$00002BBC: 670001a6  beq.w $2d64
         beq.w H013+$2D64
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00002BC0:
 ; H013+$00002BC0: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -8408,11 +8408,11 @@ L013_00002CFA:
 L013_00002CFC:
 ; H013+$00002CFC: 2f0b  move.l a3, -(a7)
         move.l a3, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00002CFE:
 ; H013+$00002CFE: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
-; FLUSSO: Chiama Delete_CharacterSidecarFiles (H066+$1312).
+; FLOW: Calls Delete_CharacterSidecarFiles (H066+$1312).
 L013_00002D04:
 ; H013+$00002D04: 4eb900001312  jsr $1312.l
         jsr (H066+$1312).l
@@ -8498,7 +8498,7 @@ L013_00002D5C:
 L013_00002D62:
 ; H013+$00002D62: 265f  movea.l (a7)+, a3
         movea.l (a7)+, a3
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00002D64:
 ; H013+$00002D64: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -8516,10 +8516,10 @@ L013_00002D74:
 ; H013+$00002D74: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H013_2E1A [parziale]
-; Scopo: Trampolino verso H013+$2E1A; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H013+$2E1A.
-; Chiamanti diretti: H013+$42EC, H013+$4354, H013+$4316, H013+$4496, H013+$2E80
+; ROUTINE: trampoline_H013_2E1A [partial]
+; Purpose: Trampoline to H013+$2E1A; the actual body is there.
+;   - Jumps to the actual body at H013+$2E1A.
+; Direct callers: H013+$42EC, H013+$4354, H013+$4316, H013+$4496, H013+$2E80
 ; --------------------------------------------------------------------------
 L013_00002D76:
 ; H013+$00002D76: 2f0c  move.l a4, -(a7)
@@ -8533,7 +8533,7 @@ L013_00002D7C:
 L013_00002D80:
 ; H013+$00002D80: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00002D82:
 ; H013+$00002D82: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -8594,7 +8594,7 @@ L013_00002DD0:
 L013_00002DD4:
 ; H013+$00002DD4: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00002DD6:
 ; H013+$00002DD6: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -8644,7 +8644,7 @@ L013_00002E28:
 L013_00002E2A:
 ; H013+$00002E2A: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H013+$2DF8; indici 0..16, default -1.
+; DISPATCH: words relative to H013+$2DF8; indices 0..16, default -1.
 L013_00002E2E:
 ; H013+$00002E2E: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -8670,10 +8670,10 @@ L013_00002E42:
 ; H013+$00002E42: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H013_00002E44 [parziale]
-; Scopo: Routine del modulo creazione/gestione personaggi e menu principale del party; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H013+$3F16, H013+$3F2E, H013+$3A4C, H013+$3A64
+; ROUTINE: sub_H013_00002E44 [partial]
+; Purpose: Routine of the character creation/management and party main menu module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H013+$3F16, H013+$3F2E, H013+$3A4C, H013+$3A64
 ; --------------------------------------------------------------------------
 L013_00002E44:
 ; H013+$00002E44: 2f0c  move.l a4, -(a7)
@@ -9065,7 +9065,7 @@ L013_00002FEA:
 L013_00002FEC:
 ; H013+$00002FEC: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H013+$2FCE; indici 0..7, default -1.
+; DISPATCH: words relative to H013+$2FCE; indices 0..7, default -1.
 L013_00002FF0:
 ; H013+$00002FF0: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -9225,7 +9225,7 @@ L013_000030A8:
 L013_000030AA:
 ; H013+$000030AA: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H013+$308C; indici 0..7, default -1.
+; DISPATCH: words relative to H013+$308C; indices 0..7, default -1.
 L013_000030AE:
 ; H013+$000030AE: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -9269,10 +9269,10 @@ L013_000030D8:
 ; H013+$000030D8: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H013_000030DA [parziale]
-; Scopo: Routine del modulo creazione/gestione personaggi e menu principale del party; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H013+$3B7E, H013+$3B96, H013+$3E32, H013+$3E4A
+; ROUTINE: sub_H013_000030DA [partial]
+; Purpose: Routine of the character creation/management and party main menu module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H013+$3B7E, H013+$3B96, H013+$3E32, H013+$3E4A
 ; --------------------------------------------------------------------------
 L013_000030DA:
 ; H013+$000030DA: 2f0c  move.l a4, -(a7)
@@ -9384,7 +9384,7 @@ L013_00003158:
 L013_0000315A:
 ; H013+$0000315A: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H013+$3142; indici 0..3, default -1.
+; DISPATCH: words relative to H013+$3142; indices 0..3, default -1.
 L013_0000315E:
 ; H013+$0000315E: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -9503,10 +9503,10 @@ L013_000031DE:
 ; H013+$000031DE: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H013_43E2 [parziale]
-; Scopo: Trampolino verso H013+$43E2; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H013+$43E2.
-; Chiamanti diretti: H013+$4F90
+; ROUTINE: trampoline_H013_43E2 [partial]
+; Purpose: Trampoline to H013+$43E2; the actual body is there.
+;   - Jumps to the actual body at H013+$43E2.
+; Direct callers: H013+$4F90
 ; --------------------------------------------------------------------------
 L013_000031E0:
 ; H013+$000031E0: 2f0c  move.l a4, -(a7)
@@ -9521,17 +9521,17 @@ L013_000031EA:
 ; H013+$000031EA: 6000016e  bra.w $335a
         bra.w H013+$335A
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H013_333C [parziale]
-; Scopo: Trampolino verso H013+$333C; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H013+$333C.
-;   - Richiama H065+$3702.
-;   - Richiama H026+$0188.
-;   - Richiama H026+$01E0.
-;   - Richiama H030+$0AD2.
-;   - Richiama H065+$04B8.
-;   - Richiama H010+$0974.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente); H005+$5305 (byte del tasto/azione pendente).
-; Chiamanti diretti: H013+$34D6, H013+$34E4, H013+$35AA, H013+$4256, H013+$3E66, H013+$3A80
+; ROUTINE: trampoline_H013_333C [partial]
+; Purpose: Trampoline to H013+$333C; the actual body is there.
+;   - Jumps to the actual body at H013+$333C.
+;   - Calls H065+$3702.
+;   - Calls H026+$0188.
+;   - Calls H026+$01E0.
+;   - Calls H030+$0AD2.
+;   - Calls H065+$04B8.
+;   - Calls H010+$0974.
+;   - Uses the global state: H005+$3368 (current character); H005+$5305 (byte of the pending key/action).
+; Direct callers: H013+$34D6, H013+$34E4, H013+$35AA, H013+$4256, H013+$3E66, H013+$3A80
 ; --------------------------------------------------------------------------
 L013_000031EE:
 ; H013+$000031EE: 4e550000  link.w a5, #$0
@@ -9564,7 +9564,7 @@ L013_0000320C:
 L013_00003212:
 ; H013+$00003212: 4e75  rts 
         rts 
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00003214:
 ; H013+$00003214: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -9596,7 +9596,7 @@ L013_00003234:
 L013_00003238:
 ; H013+$00003238: 3f3c000f  move.w #$f, -(a7)
         move.w #$f, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_0000323C:
 ; H013+$0000323C: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -9641,11 +9641,11 @@ L013_0000326A:
 L013_0000326C:
 ; H013+$0000326C: 3f3c000f  move.w #$f, -(a7)
         move.w #$f, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00003270:
 ; H013+$00003270: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L013_00003276:
 ; H013+$00003276: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -9655,7 +9655,7 @@ L013_0000327C:
 L013_00003280:
 ; H013+$00003280: 342bffb4  move.w -$4c(a3), d2
         move.w -$4c(a3), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00003284:
 ; H013+$00003284: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -9692,7 +9692,7 @@ L013_000032AA:
 L013_000032AE:
 ; H013+$000032AE: 486c0114  pea.l $114(a4)
         pea.l $114(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L013_000032B2:
 ; H013+$000032B2: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -9711,7 +9711,7 @@ L013_000032C4:
 L013_000032C8:
 ; H013+$000032C8: 342bffb4  move.w -$4c(a3), d2
         move.w -$4c(a3), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_000032CC:
 ; H013+$000032CC: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -9751,7 +9751,7 @@ L013_000032F6:
 L013_000032FA:
 ; H013+$000032FA: 486bffb6  pea.l -$4a(a3)
         pea.l -$4a(a3)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L013_000032FE:
 ; H013+$000032FE: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -9773,11 +9773,11 @@ L013_00003314:
 L013_00003316:
 ; H013+$00003316: 3f3c000f  move.w #$f, -(a7)
         move.w #$f, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_0000331A:
 ; H013+$0000331A: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L013_00003320:
 ; H013+$00003320: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -9808,7 +9808,7 @@ L013_00003348:
 L013_0000334A:
 ; H013+$0000334A: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H013+$332C; indici 0..7, default -1.
+; DISPATCH: words relative to H013+$332C; indices 0..7, default -1.
 L013_0000334E:
 ; H013+$0000334E: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -9840,7 +9840,7 @@ L013_00003364:
 L013_00003368:
 ; H013+$00003368: 60001078  bra.w $43e2
         bra.w H013+$43E2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_0000336C:
 ; H013+$0000336C: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -9850,7 +9850,7 @@ L013_00003372:
 L013_0000337A:
 ; H013+$0000337A: 6700006e  beq.w $33ea
         beq.w H013+$33EA
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_0000337E:
 ; H013+$0000337E: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -9860,7 +9860,7 @@ L013_00003384:
 L013_0000338C:
 ; H013+$0000338C: 6700005c  beq.w $33ea
         beq.w H013+$33EA
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00003390:
 ; H013+$00003390: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -9870,7 +9870,7 @@ L013_00003396:
 L013_0000339E:
 ; H013+$0000339E: 6700004a  beq.w $33ea
         beq.w H013+$33EA
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_000033A2:
 ; H013+$000033A2: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -9880,7 +9880,7 @@ L013_000033A8:
 L013_000033B0:
 ; H013+$000033B0: 67000038  beq.w $33ea
         beq.w H013+$33EA
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_000033B4:
 ; H013+$000033B4: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -9890,7 +9890,7 @@ L013_000033BA:
 L013_000033C2:
 ; H013+$000033C2: 67000026  beq.w $33ea
         beq.w H013+$33EA
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_000033C6:
 ; H013+$000033C6: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -9900,7 +9900,7 @@ L013_000033CC:
 L013_000033D4:
 ; H013+$000033D4: 67000014  beq.w $33ea
         beq.w H013+$33EA
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_000033D8:
 ; H013+$000033D8: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -9910,7 +9910,7 @@ L013_000033DE:
 L013_000033E6:
 ; H013+$000033E6: 66000010  bne.w $33f8
         bne.w H013+$33F8
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_000033EA:
 ; H013+$000033EA: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -9929,7 +9929,7 @@ L013_000033FC:
 L013_00003400:
 ; H013+$00003400: 3f3c000f  move.w #$f, -(a7)
         move.w #$f, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00003404:
 ; H013+$00003404: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -10012,7 +10012,7 @@ L013_00003470:
 L013_00003474:
 ; H013+$00003474: e344  asl.w #$1, d4
         asl.w #$1, d4
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00003476:
 ; H013+$00003476: 247900003368  movea.l $3368.l, a2
         movea.l (H005+$3368).l, a2
@@ -10037,7 +10037,7 @@ L013_0000348E:
 L013_00003490:
 ; H013+$00003490: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00003492:
 ; H013+$00003492: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -10050,7 +10050,7 @@ L013_0000349C:
 L013_000034A0:
 ; H013+$000034A0: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_000034A2:
 ; H013+$000034A2: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -10069,7 +10069,7 @@ L013_000034B4:
 L013_000034B8:
 ; H013+$000034B8: 3f3c000f  move.w #$f, -(a7)
         move.w #$f, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_000034BC:
 ; H013+$000034BC: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -10104,7 +10104,7 @@ L013_000034E2:
 L013_000034E4:
 ; H013+$000034E4: 6100fd08  bsr.w $31ee
         bsr.w H013+$31EE
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_000034E8:
 ; H013+$000034E8: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -10127,7 +10127,7 @@ L013_000034FE:
 L013_00003504:
 ; H013+$00003504: 265f  movea.l (a7)+, a3
         movea.l (a7)+, a3
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L013_00003506:
 ; H013+$00003506: 1b7900005305ffc3  move.b $5305.l, -$3d(a5)
         move.b (H005+$5305).l, -$3d(a5)
@@ -10177,7 +10177,7 @@ L013_00003548:
 L013_0000354E:
 ; H013+$0000354E: 265f  movea.l (a7)+, a3
         movea.l (a7)+, a3
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L013_00003550:
 ; H013+$00003550: 1b7900005305ffc3  move.b $5305.l, -$3d(a5)
         move.b (H005+$5305).l, -$3d(a5)
@@ -10229,7 +10229,7 @@ L013_00003592:
 L013_00003594:
 ; H013+$00003594: 486dffc2  pea.l -$3e(a5)
         pea.l -$3e(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L013_00003598:
 ; H013+$00003598: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -10281,7 +10281,7 @@ L013_000035CC:
 L013_000035CE:
 ; H013+$000035CE: 3f3c000f  move.w #$f, -(a7)
         move.w #$f, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_000035D2:
 ; H013+$000035D2: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -10307,7 +10307,7 @@ L013_000035E8:
 L013_000035EA:
 ; H013+$000035EA: 3f3c000f  move.w #$f, -(a7)
         move.w #$f, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_000035EE:
 ; H013+$000035EE: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -10405,7 +10405,7 @@ L013_00003680:
 L013_00003682:
 ; H013+$00003682: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H013+$3656; indici 0..12, default -1.
+; DISPATCH: words relative to H013+$3656; indices 0..12, default -1.
 L013_00003686:
 ; H013+$00003686: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -11249,7 +11249,7 @@ L013_00003A3E:
 L013_00003A42:
 ; H013+$00003A42: 48e72010  movem.l d2/a3, -(a7)
         movem.l d2/a3, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00003A46:
 ; H013+$00003A46: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -11271,7 +11271,7 @@ L013_00003A58:
 L013_00003A5C:
 ; H013+$00003A5C: 2f0b  move.l a3, -(a7)
         move.l a3, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00003A5E:
 ; H013+$00003A5E: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -11469,7 +11469,7 @@ L013_00003B44:
 L013_00003B46:
 ; H013+$00003B46: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H013+$3B2C; indici 0..5, default -1.
+; DISPATCH: words relative to H013+$3B2C; indices 0..5, default -1.
 L013_00003B4A:
 ; H013+$00003B4A: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -11507,7 +11507,7 @@ L013_00003B70:
 L013_00003B74:
 ; H013+$00003B74: 48e72010  movem.l d2/a3, -(a7)
         movem.l d2/a3, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00003B78:
 ; H013+$00003B78: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -11529,7 +11529,7 @@ L013_00003B8A:
 L013_00003B8E:
 ; H013+$00003B8E: 2f0b  move.l a3, -(a7)
         move.l a3, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00003B90:
 ; H013+$00003B90: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -11560,7 +11560,7 @@ L013_00003BB2:
 L013_00003BB4:
 ; H013+$00003BB4: 3f3c000f  move.w #$f, -(a7)
         move.w #$f, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00003BB8:
 ; H013+$00003BB8: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -12122,7 +12122,7 @@ L013_00003E24:
 L013_00003E28:
 ; H013+$00003E28: 48e72010  movem.l d2/a3, -(a7)
         movem.l d2/a3, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00003E2C:
 ; H013+$00003E2C: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -12144,7 +12144,7 @@ L013_00003E3E:
 L013_00003E42:
 ; H013+$00003E42: 2f0b  move.l a3, -(a7)
         move.l a3, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00003E44:
 ; H013+$00003E44: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -12276,7 +12276,7 @@ L013_00003EDC:
 L013_00003EDE:
 ; H013+$00003EDE: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H013+$3EC4; indici 0..5, default -1.
+; DISPATCH: words relative to H013+$3EC4; indices 0..5, default -1.
 L013_00003EE2:
 ; H013+$00003EE2: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -12314,7 +12314,7 @@ L013_00003F08:
 L013_00003F0C:
 ; H013+$00003F0C: 48e72010  movem.l d2/a3, -(a7)
         movem.l d2/a3, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00003F10:
 ; H013+$00003F10: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -12336,7 +12336,7 @@ L013_00003F22:
 L013_00003F26:
 ; H013+$00003F26: 2f0b  move.l a3, -(a7)
         move.l a3, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00003F28:
 ; H013+$00003F28: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -12361,7 +12361,7 @@ L013_00003F42:
 L013_00003F44:
 ; H013+$00003F44: 3f3c000f  move.w #$f, -(a7)
         move.w #$f, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00003F48:
 ; H013+$00003F48: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -12432,7 +12432,7 @@ L013_00003F98:
 L013_00003F9A:
 ; H013+$00003F9A: 3f3c000f  move.w #$f, -(a7)
         move.w #$f, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00003F9E:
 ; H013+$00003F9E: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -12464,7 +12464,7 @@ L013_00003FBC:
 L013_00003FBE:
 ; H013+$00003FBE: 3f3c000f  move.w #$f, -(a7)
         move.w #$f, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00003FC2:
 ; H013+$00003FC2: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -12493,7 +12493,7 @@ L013_00003FDC:
 L013_00003FDE:
 ; H013+$00003FDE: 3f3c000f  move.w #$f, -(a7)
         move.w #$f, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00003FE2:
 ; H013+$00003FE2: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -12528,7 +12528,7 @@ L013_00004006:
 L013_0000400A:
 ; H013+$0000400A: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_0000400C:
 ; H013+$0000400C: 247900003368  movea.l $3368.l, a2
         movea.l (H005+$3368).l, a2
@@ -12562,7 +12562,7 @@ L013_0000402E:
 L013_00004030:
 ; H013+$00004030: 342dfff2  move.w -$e(a5), d2
         move.w -$e(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00004034:
 ; H013+$00004034: 247900003368  movea.l $3368.l, a2
         movea.l (H005+$3368).l, a2
@@ -12572,7 +12572,7 @@ L013_0000403A:
 L013_0000403E:
 ; H013+$0000403E: 342dfff0  move.w -$10(a5), d2
         move.w -$10(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00004042:
 ; H013+$00004042: 247900003368  movea.l $3368.l, a2
         movea.l (H005+$3368).l, a2
@@ -12585,7 +12585,7 @@ L013_0000404C:
 L013_0000404E:
 ; H013+$0000404E: 3f3c000f  move.w #$f, -(a7)
         move.w #$f, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00004052:
 ; H013+$00004052: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -12602,7 +12602,7 @@ L013_00004060:
 L013_00004066:
 ; H013+$00004066: 265f  movea.l (a7)+, a3
         movea.l (a7)+, a3
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00004068:
 ; H013+$00004068: 247900003368  movea.l $3368.l, a2
         movea.l (H005+$3368).l, a2
@@ -12612,7 +12612,7 @@ L013_0000406E:
 L013_00004074:
 ; H013+$00004074: 2f0b  move.l a3, -(a7)
         move.l a3, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00004076:
 ; H013+$00004076: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -12658,7 +12658,7 @@ L013_000040B4:
 L013_000040B8:
 ; H013+$000040B8: 342dffb4  move.w -$4c(a5), d2
         move.w -$4c(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_000040BC:
 ; H013+$000040BC: 247900003368  movea.l $3368.l, a2
         movea.l (H005+$3368).l, a2
@@ -12695,7 +12695,7 @@ L013_000040EA:
 L013_000040EE:
 ; H013+$000040EE: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_000040F0:
 ; H013+$000040F0: 247900003368  movea.l $3368.l, a2
         movea.l (H005+$3368).l, a2
@@ -12729,7 +12729,7 @@ L013_00004112:
 L013_00004114:
 ; H013+$00004114: 342dfff2  move.w -$e(a5), d2
         move.w -$e(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00004118:
 ; H013+$00004118: 247900003368  movea.l $3368.l, a2
         movea.l (H005+$3368).l, a2
@@ -12739,14 +12739,14 @@ L013_0000411E:
 L013_00004122:
 ; H013+$00004122: 342dfff0  move.w -$10(a5), d2
         move.w -$10(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00004126:
 ; H013+$00004126: 247900003368  movea.l $3368.l, a2
         movea.l (H005+$3368).l, a2
 L013_0000412C:
 ; H013+$0000412C: 15420064  move.b d2, $64(a2)
         move.b d2, $64(a2)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00004130:
 ; H013+$00004130: 247900003368  movea.l $3368.l, a2
         movea.l (H005+$3368).l, a2
@@ -12759,7 +12759,7 @@ L013_0000413C:
 L013_0000413E:
 ; H013+$0000413E: 3f3c000f  move.w #$f, -(a7)
         move.w #$f, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00004142:
 ; H013+$00004142: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -12779,7 +12779,7 @@ L013_00004156:
 L013_00004158:
 ; H013+$00004158: 2f0b  move.l a3, -(a7)
         move.l a3, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_0000415A:
 ; H013+$0000415A: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -12829,14 +12829,14 @@ L013_0000422A:
 L013_0000422C:
 ; H013+$0000422C: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H013+$4176; indici 0..83, default -1.
+; DISPATCH: words relative to H013+$4176; indices 0..83, default -1.
 L013_00004230:
 ; H013+$00004230: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
 L013_00004234:
 ; H013+$00004234: 2f0b  move.l a3, -(a7)
         move.l a3, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00004236:
 ; H013+$00004236: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -12884,7 +12884,7 @@ L013_00004264:
 L013_0000426A:
 ; H013+$0000426A: 6600f282  bne.w $34ee
         bne.w H013+$34EE
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_0000426E:
 ; H013+$0000426E: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -12892,14 +12892,14 @@ L013_0000426E:
 L013_00004274:
 ; H013+$00004274: 4eb9000009ba  jsr $9ba.l
         jsr (H073+$9BA).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_0000427A:
 ; H013+$0000427A: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
 L013_00004280:
 ; H013+$00004280: 177c000100ed  move.b #$1, $ed(a3)
         move.b #$1, $ed(a3)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00004286:
 ; H013+$00004286: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -13146,7 +13146,7 @@ L013_0000439C:
 L013_000043A0:
 ; H013+$000043A0: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_000043A2:
 ; H013+$000043A2: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -13162,7 +13162,7 @@ L013_000043AE:
 L013_000043B2:
 ; H013+$000043B2: e344  asl.w #$1, d4
         asl.w #$1, d4
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_000043B4:
 ; H013+$000043B4: 247900003368  movea.l $3368.l, a2
         movea.l (H005+$3368).l, a2
@@ -13178,11 +13178,11 @@ L013_000043C4:
 L013_000043C8:
 ; H013+$000043C8: 64c6  bcc.b $4390
         bcc.b H013+$4390
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_000043CA:
 ; H013+$000043CA: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_000043D0:
 ; H013+$000043D0: 247900003368  movea.l $3368.l, a2
         movea.l (H005+$3368).l, a2
@@ -13202,11 +13202,11 @@ L013_000043E6:
 ; H013+$000043E6: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H013_000043E8 [parziale]
-; Scopo: Routine del modulo creazione/gestione personaggi e menu principale del party; richiama H029+$03E2, H073+$05AE.
-;   - Richiama H029+$03E2.
-;   - Richiama H073+$05AE.
-; Chiamanti diretti: H013+$4B32
+; ROUTINE: sub_H013_000043E8 [partial]
+; Purpose: Routine of the character creation/management and party main menu module; calls H029+$03E2, H073+$05AE.
+;   - Calls H029+$03E2.
+;   - Calls H073+$05AE.
+; Direct callers: H013+$4B32
 ; --------------------------------------------------------------------------
 L013_000043E8:
 ; H013+$000043E8: 2f0c  move.l a4, -(a7)
@@ -13448,17 +13448,17 @@ L013_00004506:
 ; H013+$00004506: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H013_00004508 [parziale]
-; Scopo: Routine del modulo creazione/gestione personaggi e menu principale del party; richiama H065+$3702, H044+$01C2, H026+$000C, H030+$0256.
-;   - Richiama H065+$3702.
-;   - Richiama H044+$01C2.
-;   - Richiama H026+$000C.
-;   - Richiama H030+$0256.
-;   - Richiama H026+$01E0.
-;   - Richiama H026+$0188.
-;   - Richiama H008+$01FC.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H013+$4FAC
+; ROUTINE: sub_H013_00004508 [partial]
+; Purpose: Routine of the character creation/management and party main menu module; calls H065+$3702, H044+$01C2, H026+$000C, H030+$0256.
+;   - Calls H065+$3702.
+;   - Calls H044+$01C2.
+;   - Calls H026+$000C.
+;   - Calls H030+$0256.
+;   - Calls H026+$01E0.
+;   - Calls H026+$0188.
+;   - Calls H008+$01FC.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H013+$4FAC
 ; --------------------------------------------------------------------------
 L013_00004508:
 ; H013+$00004508: 2f0c  move.l a4, -(a7)
@@ -13521,7 +13521,7 @@ L013_00004564:
 L013_00004568:
 ; H013+$00004568: 6000068c  bra.w $4bf6
         bra.w H013+$4BF6
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_0000456C:
 ; H013+$0000456C: 2b7900003368ffe2  move.l $3368.l, -$1e(a5)
         move.l (H005+$3368).l, -$1e(a5)
@@ -13644,7 +13644,7 @@ L013_000045F6:
 L013_000045FA:
 ; H013+$000045FA: 4853  pea.l (a3)
         pea.l (a3)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L013_000045FC:
 ; H013+$000045FC: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -13672,7 +13672,7 @@ L013_00004614:
 L013_00004618:
 ; H013+$00004618: 486c014f  pea.l $14f(a4)
         pea.l $14f(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L013_0000461C:
 ; H013+$0000461C: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -13750,7 +13750,7 @@ L013_00004668:
 L013_0000466A:
 ; H013+$0000466A: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H013+$4656; indici 0..1, default -1.
+; DISPATCH: words relative to H013+$4656; indices 0..1, default -1.
 L013_0000466E:
 ; H013+$0000466E: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -13812,7 +13812,7 @@ L013_000046AC:
 L013_000046B0:
 ; H013+$000046B0: 486cffae  pea.l -$52(a4)
         pea.l -$52(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L013_000046B4:
 ; H013+$000046B4: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -13945,7 +13945,7 @@ L013_00004746:
 L013_0000474A:
 ; H013+$0000474A: 486cffae  pea.l -$52(a4)
         pea.l -$52(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L013_0000474E:
 ; H013+$0000474E: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -14120,7 +14120,7 @@ L013_0000480E:
 L013_00004812:
 ; H013+$00004812: 486cffae  pea.l -$52(a4)
         pea.l -$52(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L013_00004816:
 ; H013+$00004816: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -14232,7 +14232,7 @@ L013_0000488A:
 L013_0000488E:
 ; H013+$0000488E: 486cffae  pea.l -$52(a4)
         pea.l -$52(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L013_00004892:
 ; H013+$00004892: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -14260,7 +14260,7 @@ L013_000048AA:
 L013_000048AE:
 ; H013+$000048AE: 486c01bc  pea.l $1bc(a4)
         pea.l $1bc(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L013_000048B2:
 ; H013+$000048B2: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -14402,7 +14402,7 @@ L013_0000494C:
 L013_00004950:
 ; H013+$00004950: 486cffae  pea.l -$52(a4)
         pea.l -$52(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L013_00004954:
 ; H013+$00004954: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -14577,7 +14577,7 @@ L013_00004A14:
 L013_00004A18:
 ; H013+$00004A18: 486cffae  pea.l -$52(a4)
         pea.l -$52(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L013_00004A1C:
 ; H013+$00004A1C: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -14689,7 +14689,7 @@ L013_00004A90:
 L013_00004A94:
 ; H013+$00004A94: 486cffae  pea.l -$52(a4)
         pea.l -$52(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L013_00004A98:
 ; H013+$00004A98: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -14717,7 +14717,7 @@ L013_00004AB0:
 L013_00004AB4:
 ; H013+$00004AB4: 486c0213  pea.l $213(a4)
         pea.l $213(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L013_00004AB8:
 ; H013+$00004AB8: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -14768,7 +14768,7 @@ L013_00004AE8:
 L013_00004AEA:
 ; H013+$00004AEA: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H013+$4AD6; indici 0..1, default -1.
+; DISPATCH: words relative to H013+$4AD6; indices 0..1, default -1.
 L013_00004AEE:
 ; H013+$00004AEE: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -14805,7 +14805,7 @@ L013_00004B10:
 L013_00004B12:
 ; H013+$00004B12: 486dffe9  pea.l -$17(a5)
         pea.l -$17(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L013_00004B16:
 ; H013+$00004B16: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -14879,7 +14879,7 @@ L013_00004BE4:
 L013_00004BE6:
 ; H013+$00004BE6: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H013+$4B4C; indici 0..69, default -1.
+; DISPATCH: words relative to H013+$4B4C; indices 0..69, default -1.
 L013_00004BEA:
 ; H013+$00004BEA: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -14900,13 +14900,13 @@ L013_00004BFA:
         rts 
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Party_MainMenu [verificato]
-; Scopo: Menu centrale per costruzione del party, caricamento, salvataggio e ingresso nel gioco.
-;   - Costruisce voci abilitate in base al party e al personaggio corrente.
-;   - Create/Drop/Modify/Train richiamano routine native di questo hunk.
-;   - Load e Save richiamano H066+$291E e H066+$3000.
-;   - Begin ripristina il contesto e lascia il menu; Exit gestisce anche la richiesta di salvare.
-; Chiamanti diretti: H001+$01CE, H012+$2A06
+; ROUTINE: Party_MainMenu [verified]
+; Purpose: Central menu for building the party, loading, saving and entering the game.
+;   - Builds the enabled entries according to the party and the current character.
+;   - Create/Drop/Modify/Train call native routines of this hunk.
+;   - Load and Save call H066+$291E and H066+$3000.
+;   - Begin restores the context and leaves the menu; Exit also handles the request to save.
+; Direct callers: H001+$01CE, H012+$2A06
 ; --------------------------------------------------------------------------
 L013_00004BFC:
 ; H013+$00004BFC: 2f0c  move.l a4, -(a7)
@@ -14921,17 +14921,17 @@ L013_00004C06:
 ; H013+$00004C06: 6000017a  bra.w $4d82
         bra.w H013+$4D82
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H013_00004C0A [parziale]
-; Scopo: Routine del modulo creazione/gestione personaggi e menu principale del party; richiama H044+$01C2, H063+$0D80, H008+$20C2, H008+$13C0.
-;   - Richiama H044+$01C2.
-;   - Richiama H063+$0D80.
-;   - Richiama H008+$20C2.
-;   - Richiama H008+$13C0.
-;   - Richiama H008+$2178.
-;   - Richiama H065+$3702.
-;   - Richiama H065+$196E.
-;   - Usa lo stato globale: H005+$3DE3 (contesto nativo, 5 nel combattimento); H005+$3368 (personaggio corrente); H005+$3E00 (puntatore stato persistente B, 2048 byte).
-; Chiamanti diretti: H013+$4D84
+; ROUTINE: sub_H013_00004C0A [partial]
+; Purpose: Routine of the character creation/management and party main menu module; calls H044+$01C2, H063+$0D80, H008+$20C2, H008+$13C0.
+;   - Calls H044+$01C2.
+;   - Calls H063+$0D80.
+;   - Calls H008+$20C2.
+;   - Calls H008+$13C0.
+;   - Calls H008+$2178.
+;   - Calls H065+$3702.
+;   - Calls H065+$196E.
+;   - Uses the global state: H005+$3DE3 (native context, 5 in combat); H005+$3368 (current character); H005+$3E00 (pointer to persistent state B, 2048 bytes).
+; Direct callers: H013+$4D84
 ; --------------------------------------------------------------------------
 L013_00004C0A:
 ; H013+$00004C0A: 4e550000  link.w a5, #$0
@@ -15263,11 +15263,11 @@ L013_00004D84:
 L013_00004D88:
 ; H013+$00004D88: 4239000024a2  clr.b $24a2.l
         clr.b (H005+$24A2).l
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L013_00004D8E:
 ; H013+$00004D8E: 1b7900003de3fdb6  move.b $3de3.l, -$24a(a5)
         move.b (H005+$3DE3).l, -$24a(a5)
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L013_00004D96:
 ; H013+$00004D96: 423900003de3  clr.b $3de3.l
         clr.b (H005+$3DE3).l
@@ -15293,14 +15293,14 @@ L013_00004DB4:
 L013_00004DB8:
 ; H013+$00004DB8: 4eb9000001c2  jsr $1c2.l
         jsr (H044+$1C2).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00004DBE:
 ; H013+$00004DBE: 4ab900003368  tst.l $3368.l
         tst.l (H005+$3368).l
 L013_00004DC4:
 ; H013+$00004DC4: 67000062  beq.w $4e28
         beq.w H013+$4E28
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00004DC8:
 ; H013+$00004DC8: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -15314,7 +15314,7 @@ L013_00004DD4:
 L013_00004DDA:
 ; H013+$00004DDA: 1b7c0001fe48  move.b #$1, -$1b8(a5)
         move.b #$1, -$1b8(a5)
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L013_00004DE0:
 ; H013+$00004DE0: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -15606,7 +15606,7 @@ L013_00004F6C:
 L013_00004F70:
 ; H013+$00004F70: 67000006  beq.w $4f78
         beq.w H013+$4F78
-; FLUSSO: Chiama Create_Character (H013+$0982).
+; FLOW: Calls Create_Character (H013+$0982).
 L013_00004F74:
 ; H013+$00004F74: 6100ba0c  bsr.w $982
         bsr.w H013+$982
@@ -15708,7 +15708,7 @@ L013_00004FE2:
 L013_00004FE6:
 ; H013+$00004FE6: 67000074  beq.w $505c
         beq.w H013+$505C
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00004FEA:
 ; H013+$00004FEA: 4ab900003368  tst.l $3368.l
         tst.l (H005+$3368).l
@@ -15731,7 +15731,7 @@ L013_00004FFE:
 L013_00005002:
 ; H013+$00005002: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00005004:
 ; H013+$00005004: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -15744,7 +15744,7 @@ L013_0000500E:
 L013_00005012:
 ; H013+$00005012: 64000024  bcc.w $5038
         bcc.w H013+$5038
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00005016:
 ; H013+$00005016: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -15754,7 +15754,7 @@ L013_0000501C:
 L013_0000501E:
 ; H013+$0000501E: 486c034c  pea.l $34c(a4)
         pea.l $34c(a4)
-; FLUSSO: Chiama Save_CharacterRecord (H066+$1640).
+; FLOW: Calls Save_CharacterRecord (H066+$1640).
 L013_00005022:
 ; H013+$00005022: 4eb900001640  jsr $1640.l
         jsr (H066+$1640).l
@@ -15774,7 +15774,7 @@ L013_00005034:
 L013_00005038:
 ; H013+$00005038: 6100db60  bsr.w $2b9a
         bsr.w H013+$2B9A
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_0000503C:
 ; H013+$0000503C: 4ab900003368  tst.l $3368.l
         tst.l (H005+$3368).l
@@ -15787,7 +15787,7 @@ L013_00005046:
 L013_0000504C:
 ; H013+$0000504C: 6600000e  bne.w $505c
         bne.w H013+$505C
-; STATO: H005+$24D0 = richiesta di uscita dal ciclo scenario
+; STATE: H005+$24D0 = request to exit the scenario loop
 L013_00005050:
 ; H013+$00005050: 13fc0001000024d0  move.b #$1, $24d0.l
         move.b #$1, (H005+$24D0).l
@@ -15803,8 +15803,8 @@ L013_0000505E:
 L013_00005062:
 ; H013+$00005062: 67000008  beq.w $506c
         beq.w H013+$506C
-; PASSO: Voce Load: carica il contenitore di stato e i record personaggio dello slot scelto.
-; FLUSSO: Chiama Load_GameSlot (H066+$291E).
+; STEP: Load entry: loads the state container and the character records of the chosen slot.
+; FLOW: Calls Load_GameSlot (H066+$291E).
 L013_00005066:
 ; H013+$00005066: 4eb90000291e  jsr $291e.l
         jsr (H066+$291E).l
@@ -15817,15 +15817,15 @@ L013_0000506E:
 L013_00005072:
 ; H013+$00005072: 67000012  beq.w $5086
         beq.w H013+$5086
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L013_00005076:
 ; H013+$00005076: 4ab900003364  tst.l $3364.l
         tst.l (H005+$3364).l
 L013_0000507C:
 ; H013+$0000507C: 67000008  beq.w $5086
         beq.w H013+$5086
-; PASSO: Voce Save: salva stato principale e file separati del party.
-; FLUSSO: Chiama Save_GameSlot (H066+$3000).
+; STEP: Save entry: saves the main state and the separate files of the party.
+; FLOW: Calls Save_GameSlot (H066+$3000).
 L013_00005080:
 ; H013+$00005080: 4eb900003000  jsr $3000.l
         jsr (H066+$3000).l
@@ -15841,21 +15841,21 @@ L013_0000508C:
 L013_00005090:
 ; H013+$00005090: 13fc0001000024a2  move.b #$1, $24a2.l
         move.b #$1, (H005+$24A2).l
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L013_00005098:
 ; H013+$00005098: 4ab900003364  tst.l $3364.l
         tst.l (H005+$3364).l
 L013_0000509E:
 ; H013+$0000509E: 6600000c  bne.w $50ac
         bne.w H013+$50AC
-; STATO: H005+$24D7 = flag del ramo demo
+; STATE: H005+$24D7 = flag of the demo branch
 L013_000050A2:
 ; H013+$000050A2: 4a39000024d7  tst.b $24d7.l
         tst.b (H005+$24D7).l
 L013_000050A8:
 ; H013+$000050A8: 670000a6  beq.w $5150
         beq.w H013+$5150
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L013_000050AC:
 ; H013+$000050AC: 13edfdb600003de3  move.b -$24a(a5), $3de3.l
         move.b -$24a(a5), (H005+$3DE3).l
@@ -15877,14 +15877,14 @@ L013_000050C6:
 L013_000050CA:
 ; H013+$000050CA: 6700003c  beq.w $5108
         beq.w H013+$5108
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L013_000050CE:
 ; H013+$000050CE: 0c39000300003de3  cmpi.b #$3, $3de3.l
         cmpi.b #$3, (H005+$3DE3).l
 L013_000050D6:
 ; H013+$000050D6: 6600001a  bne.w $50f2
         bne.w H013+$50F2
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L013_000050DA:
 ; H013+$000050DA: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -15905,7 +15905,7 @@ L013_000050EE:
 L013_000050F2:
 ; H013+$000050F2: 4eb900000330  jsr $330.l
         jsr (H044+$330).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_000050F8:
 ; H013+$000050F8: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -15916,7 +15916,7 @@ L013_000050FE:
 L013_00005104:
 ; H013+$00005104: 60000030  bra.w $5136
         bra.w H013+$5136
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L013_00005108:
 ; H013+$00005108: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -15926,7 +15926,7 @@ L013_0000510E:
 L013_00005112:
 ; H013+$00005112: 67000010  beq.w $5124
         beq.w H013+$5124
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L013_00005116:
 ; H013+$00005116: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -15940,7 +15940,7 @@ L013_00005120:
 L013_00005124:
 ; H013+$00005124: 4eb900000330  jsr $330.l
         jsr (H044+$330).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_0000512A:
 ; H013+$0000512A: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -15952,7 +15952,7 @@ L013_00005130:
 L013_00005136:
 ; H013+$00005136: 4eb90000139e  jsr $139e.l
         jsr (H008+$139E).l
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L013_0000513C:
 ; H013+$0000513C: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -16003,7 +16003,7 @@ L013_00005178:
 L013_0000517E:
 ; H013+$0000517E: 66000064  bne.w $51e4
         bne.w H013+$51E4
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L013_00005182:
 ; H013+$00005182: 4ab900003364  tst.l $3364.l
         tst.l (H005+$3364).l
@@ -16044,8 +16044,8 @@ L013_000051B4:
 L013_000051BA:
 ; H013+$000051BA: 66000008  bne.w $51c4
         bne.w H013+$51C4
-; PASSO: Percorso di uscita: salvataggio richiesto prima di abbandonare, se selezionato.
-; FLUSSO: Chiama Save_GameSlot (H066+$3000).
+; STEP: Exit path: save requested before leaving, if selected.
+; FLOW: Calls Save_GameSlot (H066+$3000).
 L013_000051BE:
 ; H013+$000051BE: 4eb900003000  jsr $3000.l
         jsr (H066+$3000).l
@@ -16062,7 +16062,7 @@ L013_000051CE:
 L013_000051D2:
 ; H013+$000051D2: 4eb900002178  jsr $2178.l
         jsr (H008+$2178).l
-; FLUSSO: Chiama Audio_Shutdown (H043+$0840).
+; FLOW: Calls Audio_Shutdown (H043+$0840).
 L013_000051D8:
 ; H013+$000051D8: 4eb900000840  jsr $840.l
         jsr (H043+$840).l
@@ -16223,7 +16223,7 @@ L013_000052C8:
 L013_000052CA:
 ; H013+$000052CA: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H013+$528C; indici 0..21, default -1.
+; DISPATCH: words relative to H013+$528C; indices 0..21, default -1.
 L013_000052CE:
 ; H013+$000052CE: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -16247,11 +16247,11 @@ L013_000052DE:
         rts 
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Add_CharacterToParty [parziale]
-; Scopo: Seleziona e aggiunge un personaggio al party.
-;   - Usa i dati del personaggio e i menu di selezione.
-;   - Controlla condizioni documentate anche dai messaggi su paladini, allineamento e ranger.
-;   - Il dettaglio dei limiti e di ogni controllo resta da completare.
+; ROUTINE: Add_CharacterToParty [partial]
+; Purpose: Selects a character and adds it to the party.
+;   - Uses the character data and the selection menus.
+;   - Checks conditions also documented by the messages about paladins, alignment and rangers.
+;   - The detail of the limits and of every check is still to be completed.
 ; --------------------------------------------------------------------------
 L013_000052E0:
 ; H013+$000052E0: 2f0c  move.l a4, -(a7)
@@ -16423,7 +16423,7 @@ L013_000053C8:
 L013_000053CA:
 ; H013+$000053CA: 1f3c0001  move.b #$1, -(a7)
         move.b #$1, -(a7)
-; FLUSSO: Chiama Load_CharacterRecord (H066+$1B0E).
+; FLOW: Calls Load_CharacterRecord (H066+$1B0E).
 L013_000053CE:
 ; H013+$000053CE: 4eb900001b0e  jsr $1b0e.l
         jsr (H066+$1B0E).l
@@ -16449,14 +16449,14 @@ L013_000053E6:
 L013_000053EC:
 ; H013+$000053EC: 426dffde  clr.w -$22(a5)
         clr.w -$22(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L013_000053F0:
 ; H013+$000053F0: 4ab900003364  tst.l $3364.l
         tst.l (H005+$3364).l
 L013_000053F6:
 ; H013+$000053F6: 66000024  bne.w $541c
         bne.w H013+$541C
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L013_000053FA:
 ; H013+$000053FA: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -16480,7 +16480,7 @@ L013_00005412:
 L013_00005418:
 ; H013+$00005418: 6000026e  bra.w $5688
         bra.w H013+$5688
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L013_0000541C:
 ; H013+$0000541C: 2b7900003364ffe8  move.l $3364.l, -$18(a5)
         move.l (H005+$3364).l, -$18(a5)
@@ -16681,7 +16681,7 @@ L013_00005518:
 L013_0000551C:
 ; H013+$0000551C: 63000090  bls.w $55ae
         bls.w H013+$55AE
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L013_00005520:
 ; H013+$00005520: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -16971,7 +16971,7 @@ L013_0000569A:
 L013_000056A0:
 ; H013+$000056A0: 62000012  bhi.w $56b4
         bhi.w H013+$56B4
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L013_000056A4:
 ; H013+$000056A4: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -17127,7 +17127,7 @@ L013_00005768:
 L013_0000576A:
 ; H013+$0000576A: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H013+$5746; indici 0..8, default -1.
+; DISPATCH: words relative to H013+$5746; indices 0..8, default -1.
 L013_0000576E:
 ; H013+$0000576E: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -17215,7 +17215,7 @@ L013_000058FA:
 L013_000058FE:
 ; H013+$000058FE: 60000990  bra.w $6290
         bra.w H013+$6290
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00005902:
 ; H013+$00005902: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -17262,14 +17262,14 @@ L013_0000593A:
 L013_0000593C:
 ; H013+$0000593C: 2b42fffa  move.l d2, -$6(a5)
         move.l d2, -$6(a5)
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L013_00005940:
 ; H013+$00005940: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
 L013_00005946:
 ; H013+$00005946: 3b6b0550ffd6  move.w $550(a3), -$2a(a5)
         move.w $550(a3), -$2a(a5)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_0000594C:
 ; H013+$0000594C: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -17402,7 +17402,7 @@ L013_000059FA:
 L013_00005A00:
 ; H013+$00005A00: 2f0b  move.l a3, -(a7)
         move.l a3, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00005A02:
 ; H013+$00005A02: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -18212,7 +18212,7 @@ L013_00005DCC:
 L013_00005DD2:
 ; H013+$00005DD2: 2f0b  move.l a3, -(a7)
         move.l a3, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00005DD4:
 ; H013+$00005DD4: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -18275,7 +18275,7 @@ L013_00005E0E:
 L013_00005E12:
 ; H013+$00005E12: 486c045a  pea.l $45a(a4)
         pea.l $45a(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L013_00005E16:
 ; H013+$00005E16: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -18506,7 +18506,7 @@ L013_00005F20:
 L013_00005F24:
 ; H013+$00005F24: 486cffae  pea.l -$52(a4)
         pea.l -$52(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L013_00005F28:
 ; H013+$00005F28: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -18670,7 +18670,7 @@ L013_00005FDE:
 L013_00005FE2:
 ; H013+$00005FE2: 486cffae  pea.l -$52(a4)
         pea.l -$52(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L013_00005FE6:
 ; H013+$00005FE6: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -18898,7 +18898,7 @@ L013_000060E8:
 L013_000060EC:
 ; H013+$000060EC: 2f0b  move.l a3, -(a7)
         move.l a3, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_000060EE:
 ; H013+$000060EE: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -19056,7 +19056,7 @@ L013_000061BA:
 L013_000061BC:
 ; H013+$000061BC: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H013+$61A4; indici 0..3, default -1.
+; DISPATCH: words relative to H013+$61A4; indices 0..3, default -1.
 L013_000061C0:
 ; H013+$000061C0: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -19072,7 +19072,7 @@ L013_000061CC:
 L013_000061D0:
 ; H013+$000061D0: 2f0b  move.l a3, -(a7)
         move.l a3, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_000061D2:
 ; H013+$000061D2: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -19088,7 +19088,7 @@ L013_000061E0:
 L013_000061E4:
 ; H013+$000061E4: 265f  movea.l (a7)+, a3
         movea.l (a7)+, a3
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_000061E6:
 ; H013+$000061E6: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -19119,7 +19119,7 @@ L013_0000620A:
 L013_0000620E:
 ; H013+$0000620E: 2f0b  move.l a3, -(a7)
         move.l a3, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L013_00006210:
 ; H013+$00006210: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)

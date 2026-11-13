@@ -1,4 +1,4 @@
-/* H026: funzioni su stringhe e buffer con limiti passati dai chiamanti. */
+/* H026: string and buffer functions with limits passed by the callers. */
 #ifndef COK_H026_STRING_H
 #define COK_H026_STRING_H
 

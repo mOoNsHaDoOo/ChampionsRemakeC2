@@ -1,4 +1,4 @@
-/* H009: verifica del manuale (protezione dalla copia). */
+/* H009: manual check (copy protection). */
 #ifndef COK_H009_H
 #define COK_H009_H
 

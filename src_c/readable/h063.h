@@ -1,4 +1,4 @@
-/* H063: personaggi, inventario e aggiornamento della UI. */
+/* H063: characters, inventory and UI update. */
 #ifndef COK_H063_H
 #define COK_H063_H
 

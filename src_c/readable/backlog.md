@@ -1,33 +1,33 @@
-# Backlog del port di Champions of Krynn
+# Champions of Krynn port backlog
 
-Resoconti consegnati durante il port (dal più vecchio al più recente).
-Ogni voce riporta data/ora (UTC) del messaggio originale.
+Reports delivered during the port (from oldest to newest).
+Each entry gives the date/time (UTC) of the original message.
 
 ## 2026-11-10 11:20
 
-In breve: **non puoi usare l'abbonamento Pro con le API.** Sono due prodotti separati, con fatturazione separata.
+In short: **you cannot use the Pro subscription with the API.** They are two separate products, with separate billing.
 
-**Abbonamento Pro (claude.ai)**
-- Copre l'uso di Claude su web, desktop e app mobile.
-- Copre anche **Claude Code**: accedi con il tuo account claude.ai (`/login` nel terminale) e l'uso rientra nei limiti del piano Pro, senza bisogno di una chiave API.
-- **Non** include crediti né chiavi per l'API.
+**Pro subscription (claude.ai)**
+- Covers the use of Claude on the web, desktop and mobile apps.
+- Also covers **Claude Code**: sign in with your claude.ai account (`/login` in the terminal) and usage counts against the limits of the Pro plan, with no need for an API key.
+- Does **not** include credits or keys for the API.
 
-**API di Claude (Claude Console)**
-- Ha un account e una fatturazione a parte: paghi a consumo, per token, caricando credito prepagato.
-- Per iniziare:
-  1. Vai su **platform.claude.com** (la Console, prima console.anthropic.com) e accedi. Puoi usare la stessa email, ma il credito è separato.
-  2. Aggiungi un metodo di pagamento e acquista credito in **Billing**.
-  3. Crea una chiave in **API Keys**.
-  4. Usala nel tuo codice o nei tuoi strumenti:
+**Claude API (Claude Console)**
+- Has its own account and billing: you pay as you go, per token, by loading prepaid credit.
+- To get started:
+  1. Go to **platform.claude.com** (the Console, formerly console.anthropic.com) and sign in. You can use the same email, but the credit is separate.
+  2. Add a payment method and buy credit under **Billing**.
+  3. Create a key under **API Keys**.
+  4. Use it in your code or your tools:
      ```bash
      export ANTHROPIC_API_KEY="sk-ant-..."
      ```
 
-**Quindi:**
-- Se vuoi usare Claude per programmare, Claude Code con il login Pro è la strada giusta e non paghi nulla in più.
-- Se invece vuoi integrare Claude in un'app o in uno script tuo, oppure usare uno strumento di terze parti che chiede una chiave API, devi usare l'API, con un costo a parte.
+**So:**
+- If you want to use Claude for programming, Claude Code with the Pro login is the right way and you pay nothing extra.
+- If instead you want to integrate Claude into an app or a script of your own, or use a third-party tool that asks for an API key, you have to use the API, at a separate cost.
 
-Cosa vuoi fare di preciso? Così ti indico il percorso più adatto.
+What exactly do you want to do? Then I can point you to the most suitable path.
 
 ---
 
@@ -490,681 +490,681 @@ The zip is in /tmp/claude-0/-home-user/74ed0d1a-ba31-56dc-8643-7b071be4f004/scra
 
 ## 2026-11-10 14:19
 
-Ho cancellato `src_c/readable` e ricominciato il port da zero, a mano dall'asm. Per ora sono portate 15 routine su 902: il programma parte, apre le librerie e si ferma alla prima routine mancante, `H005+$530A`, stampando il suo indirizzo.
+I deleted `src_c/readable` and started the port again from scratch, by hand from the asm. So far 15 routines out of 902 are ported: the program starts, opens the libraries and stops at the first missing routine, `H005+$530A`, printing its address.
 
-**Cosa c'è nel nuovo port:**
-- **Avvio (`H000+$0000`):** le 99 inizializzazioni dei moduli nell'ordine originale, poi il main.
+**What is in the new port:**
+- **Start-up (`H000+$0000`):** the 99 module initialisations in the original order, then main.
 - **Main (`H001`):**
-  - la scelta del prefisso dati: `"df0:"` sotto 1800 blocchi, altrimenti `""`;
-  - il prompt `"Champions of Krynn v1.0 "` con `"Play Demo"` (attesa 30 s, tasto predefinito `D`);
-  - il ciclo gioco/demo con la verifica di distribuzione.
-- **`H002`/`H003`:** gli adattatori DOS (Lock, Info, UnLock) e di memoria, con la conversione di DOSTRUE in 1 come nell'originale.
-- **`H015`:** l'apertura e la chiusura delle librerie, e la moltiplicazione e divisione a 32 bit. La divisione con segno lascia il resto positivo, come l'originale.
-- **Organizzazione:**
-  - un file per hunk, e ogni funzione portata ha il marcatore `PORT Hnnn+$XXXX`;
-  - le routine non portate stanno in `unported.c`;
-  - i dati globali hanno un nome e, nel commento, il loro offset originale.
+  - the choice of the data prefix: `"df0:"` below 1800 blocks, otherwise `""`;
+  - the prompt `"Champions of Krynn v1.0 "` with `"Play Demo"` (30 s wait, default key `D`);
+  - the game/demo loop with the distribution check.
+- **`H002`/`H003`:** the DOS (Lock, Info, UnLock) and memory adapters, with the conversion of DOSTRUE into 1 as in the original.
+- **`H015`:** opening and closing of the libraries, and 32-bit multiplication and division. The signed division leaves the remainder positive, like the original.
+- **Organisation:**
+  - one file per hunk, and every ported function has the marker `PORT Hnnn+$XXXX`;
+  - the routines not yet ported are in `unported.c`;
+  - the global data have a name and, in the comment, their original offset.
 
-**Strumenti:** `scripts/port_status.py` legge tutte le routine dall'asm e i marcatori nei sorgenti, e genera `PORT_STATUS.md` con l'avanzamento per hunk. Nel repository c'è anche `scripts/hunkbytes.py` per leggere byte e stringhe dall'asm.
+**Tools:** `scripts/port_status.py` reads all the routines from the asm and the markers in the sources, and generates `PORT_STATUS.md` with the progress per hunk. The repository also has `scripts/hunkbytes.py` to read bytes and strings from the asm.
 
-**Verifiche:**
-- Compila senza avvisi con gcc e clang (`-pedantic`).
-- Il test di `H015` passa contro i valori calcolati emulando le routine asm.
-- Il patch si applica al commit base `9561aac`.
-- **Non ho potuto compilare con SAS/C** perché qui non c'è un compilatore Amiga; il codice Amiga usa gli header NDK standard.
+**Checks:**
+- Compiles without warnings with gcc and clang (`-pedantic`).
+- The `H015` test passes against the values computed by emulating the asm routines.
+- The patch applies to the base commit `9561aac`.
+- **I could not compile with SAS/C** because there is no Amiga compiler here; the Amiga code uses the standard NDK headers.
 
-**Cose cambiate fuori da `readable/`:**
-- `registers.c`, `hunk_runtime.c` e `dos_exec.c` servivano alla build di riferimento Ghidra, non al livello leggibile. Li ho spostati in `src_c/reference_runtime/`, e `build_reference.sh` funziona ancora.
-- Ho riapplicato le correzioni di `.gitignore` e del test di runtime.
-- I vecchi `CMakeLists.txt`/`CMakePresets.json` erano dentro `readable/` e sono stati cancellati con il resto. Per ora ci sono solo `Makefile` (host) e `smakefile` (SAS/C).
-- Il README principale del repository descrive ancora il vecchio livello leggibile: lo aggiorno quando il port sarà più avanti.
-- I miei patch precedenti (01–09) riguardavano il vecchio `readable/` e non valgono più.
+**Things changed outside `readable/`:**
+- `registers.c`, `hunk_runtime.c` and `dos_exec.c` were used by the Ghidra reference build, not by the readable layer. I moved them to `src_c/reference_runtime/`, and `build_reference.sh` still works.
+- I re-applied the fixes to `.gitignore` and to the runtime test.
+- The old `CMakeLists.txt`/`CMakePresets.json` were inside `readable/` and were deleted with the rest. For now there are only `Makefile` (host) and `smakefile` (SAS/C).
+- The main README of the repository still describes the old readable layer: I will update it when the port is further along.
+- My previous patches (01–09) concerned the old `readable/` and no longer apply.
 
-**Prossimo passo:** continuo nell'ordine di avvio. Viene `H005+$530A`, poi `H004+$0C1A` (inizializzazione di 24 KB di dati), poi `H016`, `H017`, `H018` e così via, finché il programma arriva al main.
+**Next step:** I continue in start-up order. Next comes `H005+$530A`, then `H004+$0C1A` (initialisation of 24 KB of data), then `H016`, `H017`, `H018` and so on, until the program reaches main.
 
-Lo zip è in /tmp/claude-0/-home-user/74ed0d1a-ba31-56dc-8643-7b071be4f004/scratchpad:
+The zip is in /tmp/claude-0/-home-user/74ed0d1a-ba31-56dc-8643-7b071be4f004/scratchpad:
 - cok-port.zip
 
 ---
 
 ## 2026-11-10 14:47
 
-Il port è arrivato a 125 routine su 910. Il programma ora esegue tutta l'inizializzazione e la prima routine del main, poi si ferma su **H029+$1206**, la routine che apre schermo e finestra.
+The port has reached 125 routines out of 910. The program now runs the whole initialisation and the first routine of main, then stops at **H029+$1206**, the routine that opens screen and window.
 
-**Cosa ho fatto (2 commit nuovi su `asm-port`):**
+**What I did (2 new commits on `asm-port`):**
 
-1. **Tutti i 99 init dei moduli sono in C.**
-   - Le tabelle di costanti sono generate dall'asm e applicate da un unico `init_data.c`; i cicli sono scritti a mano.
-   - Ho confrontato byte per byte con l'emulatore dell'asm H004, H032, H011, H044, H057, H072, H085, H095 e H097: 0 differenze in tutti. Gli altri init, che sono semplici assegnazioni, li ho controllati leggendoli.
-   - H004 resta sul suo generatore già verificato, così i suoi cicli non vengono spezzati.
+1. **All 99 module inits are in C.**
+   - The constant tables are generated from the asm and applied by a single `init_data.c`; the loops are written by hand.
+   - I compared H004, H032, H011, H044, H057, H072, H085, H095 and H097 byte by byte with the asm emulator: 0 differences in all of them. The other inits, which are simple assignments, I checked by reading them.
+   - H004 stays on its already verified generator, so its loops are not split up.
 
-2. **H006+$01AE (Initialize_GameEnvironment)**, insieme ai servizi foglia che usa:
-   - adattatori DOS Open/Close/Read/Seek/Execute e CurrentTime di intuition;
-   - confronto di stringhe senza maiuscole di H026 (`$003A`, `$0088`, `$0106`);
-   - riempimento di byte H029+$0312, scambio dei byte di una word H031+$0012, verifica di esistenza file H028+$02D0;
-   - i puntatori che l'originale tiene in H005 (blocchi di stato, buffer ECL, record grafici) sono diventati variabili C.
+2. **H006+$01AE (Initialize_GameEnvironment)**, together with the leaf services it uses:
+   - DOS Open/Close/Read/Seek/Execute adapters and intuition's CurrentTime;
+   - case-insensitive string comparison of H026 (`$003A`, `$0088`, `$0106`);
+   - byte fill H029+$0312, byte swap of a word H031+$0012, file existence check H028+$02D0;
+   - the pointers that the original keeps in H005 (state blocks, ECL buffer, graphic records) have become C variables.
 
-**Scostamenti dall'asm, tutti documentati nei commenti:**
-- Le copie sullo stack prima di un confronto o di un Lock si fermano al NUL, per non leggere oltre gli oggetti C. Il risultato non cambia.
-- Sull'host, Execute degli `Assign "Disk …:"` non fa niente e restituisce successo. Lock controlla davvero se il file esiste e i file handle sono una tabella di `FILE *`.
+**Deviations from the asm, all documented in the comments:**
+- The copies on the stack before a comparison or a Lock stop at the NUL, so as not to read past the C objects. The result does not change.
+- On the host, Execute of the `Assign "Disk …:"` does nothing and returns success. Lock really checks whether the file exists and the file handles are a table of `FILE *`.
 
-**Non verificato:** non ho compilato nulla con SAS/C perché qui non c'è il compilatore. La build host con gcc (`-Wall -Wextra -pedantic`) non dà warning.
+**Not verified:** I compiled nothing with SAS/C because the compiler is not here. The host build with gcc (`-Wall -Wextra -pedantic`) gives no warnings.
 
-Lo zip contiene le 3 patch a partire da 9561aac, `src_c/readable` e gli script.
+The zip contains the 3 patches starting from 9561aac, `src_c/readable` and the scripts.
 
-**Decisione per te:** da H029+$1206 in poi il codice chiama graphics e intuition (schermo, bitmap, blit, input). Su Amiga è un collegamento diretto alle librerie, ma l'host ha bisogno di un sostituto. Ti consiglio di emulare a livello degli adattatori (H016, H021, H024, H025): bitmap in memoria, salvataggio dello schermo su file, input da script, nessuna dipendenza esterna. L'alternativa è SDL2, con finestra e tastiera reali ma una dipendenza in più. Dimmi quale preferisci; se non indichi niente procedo con la prima.
+**Decision for you:** from H029+$1206 on, the code calls graphics and intuition (screen, bitmap, blit, input). On the Amiga this is a direct link to the libraries, but the host needs a replacement. I suggest emulating at the level of the adapters (H016, H021, H024, H025): bitmaps in memory, saving the screen to a file, input from a script, no external dependency. The alternative is SDL2, with a real window and keyboard but one more dependency. Tell me which you prefer; if you say nothing I go ahead with the first.
 
 ---
 
 ## 2026-11-10 15:01
 
-Ecco **cok-port-2.zip**. Lo zip precedente lo conto come versione 1, quindi d'ora in poi il numero cresce di uno a ogni consegna (`cok-port-3.zip`, …).
+Here is **cok-port-2.zip**. I count the previous zip as version 1, so from now on the number grows by one with every delivery (`cok-port-3.zip`, …).
 
-Ho aggiunto SDL2 per la build host. Il gioco ora apre lo schermo vero e proprio. Sono 159 routine su 910 e il programma si ferma su **H030+$0C10**, che carica `gothic.lbm`.
+I added SDL2 for the host build. The game now opens the real screen. There are 159 routines out of 910 and the program stops at **H030+$0C10**, which loads `gothic.lbm`.
 
-**Come funziona l'host:**
-- In `src_c/readable/host/` c'è una copia ridotta delle strutture di AmigaOS: `ndk.h` usa gli stessi nomi dell'originale (Screen, Window, BitMap, RastPort, View, ViewPort, ColorMap, RasInfo, Preferences, GfxBase). Accanto ci sono le funzioni di libreria con lo stesso nome (OpenScreen, OpenWindow, LoadRGB4, InitBitMap, AllocRaster, BltClear, InitView, GetColorMap, LoadView, OpenLibrary, FindTask, …).
-- Per questo gli adattatori del gioco sono lo stesso codice su Amiga e su host: cambia solo la libreria sotto.
-- `host/display.c` converte la bitmap planare in pixel con la palette RGB4 e la mostra in una finestra SDL2. Mostra lo schermo Intuition oppure, dopo `LoadView`, la View personalizzata del gioco.
-- Puoi impostare tre variabili d'ambiente:
-  - `COK_SCALE=n`: ingrandimento della finestra (3 se non impostata);
-  - `COK_SCREENSHOT=f.bmp`: all'uscita salva l'ultimo fotogramma;
-  - `SDL_VIDEODRIVER=dummy`: gira senza finestra.
-- La build richiede SDL2: `libsdl2-dev` su Debian/Ubuntu, `brew install sdl2` su macOS, MSYS2 su Windows.
+**How the host works:**
+- In `src_c/readable/host/` there is a reduced copy of the AmigaOS structures: `ndk.h` uses the same names as the original (Screen, Window, BitMap, RastPort, View, ViewPort, ColorMap, RasInfo, Preferences, GfxBase). Next to it are the library functions with the same names (OpenScreen, OpenWindow, LoadRGB4, InitBitMap, AllocRaster, BltClear, InitView, GetColorMap, LoadView, OpenLibrary, FindTask, …).
+- For this reason the game adapters are the same code on Amiga and on the host: only the library underneath changes.
+- `host/display.c` converts the planar bitmap into pixels with the RGB4 palette and shows it in an SDL2 window. It shows the Intuition screen or, after `LoadView`, the custom View of the game.
+- You can set three environment variables:
+  - `COK_SCALE=n`: magnification of the window (3 if not set);
+  - `COK_SCREENSHOT=f.bmp`: on exit, saves the last frame;
+  - `SDL_VIDEODRIVER=dummy`: runs without a window.
+- The build needs SDL2: `libsdl2-dev` on Debian/Ubuntu, `brew install sdl2` on macOS, MSYS2 on Windows.
 
-**Routine nuove (dall'asm):**
-- H029: apertura di schermo e finestra (`$1206`), palette iniziale (`$115C`), caricamento di `pointers.daa` (`$0234`, `$0180`), chiusura (`$12BC`).
-- H029: allocazione dei record grafici (`$0408`) e preparazione della View fuori schermo (`$1346`).
-- H024 Open_GameScreen e H025 Open_GameWindow.
-- Gli adattatori H016, H018, H021, H022, H037, H051, H055 e H084.
+**New routines (from the asm):**
+- H029: opening of screen and window (`$1206`), initial palette (`$115C`), loading of `pointers.daa` (`$0234`, `$0180`), closing (`$12BC`).
+- H029: allocation of the graphic records (`$0408`) and preparation of the off-screen View (`$1346`).
+- H024 Open_GameScreen and H025 Open_GameWindow.
+- The adapters H016, H018, H021, H022, H037, H051, H055 and H084.
 
-**Scostamenti, documentati nei commenti:**
-- I puntatori del mouse in `pointers.daa` finiscono in una tabella C a parte. L'originale invece li riscrive come indirizzi a 32 bit dentro il buffer, e sull'host non ci stanno.
-- Il record grafico è una struct C con gli stessi campi.
-- Sull'host le Preferences danno spostamenti del display pari a 0.
+**Deviations, documented in the comments:**
+- The mouse pointers in `pointers.daa` end up in a separate C table. The original instead rewrites them as 32-bit addresses inside the buffer, and on the host they do not fit.
+- The graphic record is a C struct with the same fields.
+- On the host the Preferences give display offsets of 0.
 
-**Limiti attuali:**
-- I file dati del gioco non sono in questo ambiente. Quando servono vanno messi nella directory corrente, quindi da qui posso verificare solo fino a dove non vengono letti.
-- Non ho compilato nulla con SAS/C. La build host è senza warning e gira senza finestra; ho controllato il file dello screenshot ma non ho guardato l'immagine.
+**Current limits:**
+- The game data files are not in this environment. When needed they go in the current directory, so from here I can only check up to the point where they are not read.
+- I compiled nothing with SAS/C. The host build has no warnings and runs without a window; I checked the screenshot file but did not look at the picture.
 
-Il prossimo blocco è il caricamento delle immagini ILBM: Open_ResourceFile (H028+$05FA), Read_ILBM (H040+$05E4) e il parser IFF generico di H086. Se mi dici "procedi" riparto da lì.
+The next block is the loading of the ILBM pictures: Open_ResourceFile (H028+$05FA), Read_ILBM (H040+$05E4) and the generic IFF parser of H086. If you tell me "proceed" I start again from there.
 
 ---
 
 ## 2026-11-10 15:07
 
-Ho corretto i tre problemi del log SAS/C. Non posso compilare con SAS/C qui, quindi confermi tu: rilancia `smake` su **cok-port-3.zip** e mandami il nuovo `.err` se esce altro.
+I fixed the three problems of the SAS/C log. I cannot compile with SAS/C here, so you confirm: rerun `smake` on **cok-port-3.zip** and send me the new `.err` if anything else comes up.
 
-**Correzioni per SAS/C:**
-- **Warning 63 (`GfxRecord` dichiarato due volte):** la struttura ora sta in un header suo, `gfx_record.h`, incluso da `globals.h`, `unported.h` e `h029_gfx.h`. Non ci sono più dichiarazioni anticipate.
-- **Warning 85 (`signed_byte` restituisce `int`):** il valore ora si calcola in una variabile `s16`. Ho corretto anche un caso uguale in `h026_compare`, che sarebbe uscito più avanti.
-- **Error 61 (`GfxBase` non definito):** `cok.h` include ora sul target Amiga `graphics/gfxbase.h`, `graphics/view.h` e `intuition/preferences.h`.
+**Fixes for SAS/C:**
+- **Warning 63 (`GfxRecord` declared twice):** the structure is now in its own header, `gfx_record.h`, included by `globals.h`, `unported.h` and `h029_gfx.h`. There are no more forward declarations.
+- **Warning 85 (`signed_byte` returns `int`):** the value is now computed in an `s16` variable. I also fixed an identical case in `h026_compare`, which would have come up later.
+- **Error 61 (`GfxBase` undefined):** on the Amiga target `cok.h` now includes `graphics/gfxbase.h`, `graphics/view.h` and `intuition/preferences.h`.
 
-Lo smake si ferma al primo errore, quindi possono esserci altri problemi nei file dopo `h029_gfx.c`. Come controllo approssimativo ho ricompilato tutto con gcc in C89 rigoroso, senza warning.
+smake stops at the first error, so there may be other problems in the files after `h029_gfx.c`. As a rough check I recompiled everything with gcc in strict C89, without warnings.
 
-**File del gioco:**
-- Li ho estratti nell'area di lavoro.
-- AmigaDOS non distingue maiuscole e minuscole, mentre sul disco ci sono nomi come `items` e `BODY1.DAA` e il gioco chiede `ITEMS`. Sull'host la ricerca dei file ora ignora le maiuscole e scarta il volume ("df0:", "Disk Two:").
-- Per indicare la cartella dei dati c'è la nuova variabile `COK_DATA=dir`; se manca vale la directory corrente.
-- Con i dati veri il gioco arriva fino a H030+$0C10 e si ferma lì come previsto. Il caricamento di `pointers.daa` e di `ITEMS` non l'ho verificato a parte.
+**Game files:**
+- I extracted them into the work area.
+- AmigaDOS does not tell upper and lower case apart, while the disk has names like `items` and `BODY1.DAA` and the game asks for `ITEMS`. On the host the file lookup now ignores case and drops the volume ("df0:", "Disk Two:").
+- To point to the data folder there is the new variable `COK_DATA=dir`; if it is missing the current directory is used.
+- With the real data the game gets as far as H030+$0C10 and stops there as expected. I did not check the loading of `pointers.daa` and `ITEMS` separately.
 
-**Port nuovo in questa versione:** Open_ResourceFile (H028+$05FA) con le routine stringa di H026 che usa e il requester Retry/CANCEL.
-- Sull'host il requester stampa il testo su stderr e aspetta Invio/R (Retry) o Esc/C (Cancel) nella finestra.
-- Senza finestra il programma termina invece di riproporre la richiesta all'infinito.
-- La routine c'è ma non viene ancora eseguita: la chiama H030+$0C10, che non è ancora portata.
+**Newly ported in this version:** Open_ResourceFile (H028+$05FA) with the H026 string routines it uses and the Retry/CANCEL requester.
+- On the host the requester prints the text on stderr and waits for Enter/R (Retry) or Esc/C (Cancel) in the window.
+- Without a window the program exits instead of repeating the request forever.
+- The routine is there but is not run yet: it is called by H030+$0C10, which is not ported yet.
 
-Sono 170 routine su 910. Il prossimo passo è Read_ILBM (H040) con il parser IFF di H086, per caricare `gothic.lbm`. Ora posso anche confrontare la decodifica con i file veri.
+There are 170 routines out of 910. The next step is Read_ILBM (H040) with the IFF parser of H086, to load `gothic.lbm`. Now I can also compare the decoding with the real files.
 
 ---
 
 ## 2026-11-10 15:14
 
-Ecco **cok-port-4.zip**, con CMake per tutte le piattaforme e lo script che scarica SDL2 da NuGet per Visual Studio. Visual Studio qui non c'è, quindi il build MSVC non l'ho provato: le prove sono con gcc e MinGW, descritte sotto.
+Here is **cok-port-4.zip**, with CMake for all platforms and the script that downloads SDL2 from NuGet for Visual Studio. Visual Studio is not here, so I have not tried the MSVC build: the tests are with gcc and MinGW, described below.
 
-**Visual Studio 2022 (x86 e x64)**, dalla cartella `src_c/readable`:
+**Visual Studio 2022 (x86 and x64)**, from the `src_c/readable` folder:
 ```bat
 windows\get-sdl2-nuget.cmd
 cmake --preset vs2022-x64
 cmake --build --preset vs2022-x64-release
 ```
-Per x86 i preset sono `vs2022-x86` e `vs2022-x86-release`. Puoi anche aprire la cartella in VS (File > Apri > Cartella) e scegliere il preset dall'elenco, oppure aprire il `.sln` generato in `build-vs2022-x64` o `build-vs2022-x86`.
+For x86 the presets are `vs2022-x86` and `vs2022-x86-release`. You can also open the folder in VS (File > Open > Folder) and choose the preset from the list, or open the generated `.sln` in `build-vs2022-x64` or `build-vs2022-x86`.
 
-- **Script NuGet** (`windows/get-sdl2-nuget.ps1`, più il `.cmd` per il doppio clic):
-  - Scarica da nuget.org `sdl2.nuget` e `sdl2.nuget.redist`, versione 2.30.10; un'altra si sceglie con `-Version`.
-  - Non serve `nuget.exe`.
-  - Mette header, `SDL2.lib` e `SDL2.dll` per Win32 e x64 in `third_party/sdl2-nuget`, che è escluso da git.
-  - Questi due pacchetti sono della comunità (kosmotema): ridistribuiscono le librerie ufficiali di libsdl.org ma non le pubblica il progetto SDL.
+- **NuGet script** (`windows/get-sdl2-nuget.ps1`, plus the `.cmd` for double-clicking):
+  - Downloads `sdl2.nuget` and `sdl2.nuget.redist`, version 2.30.10, from nuget.org; another one is chosen with `-Version`.
+  - `nuget.exe` is not needed.
+  - Puts headers, `SDL2.lib` and `SDL2.dll` for Win32 and x64 in `third_party/sdl2-nuget`, which is excluded from git.
+  - These two packages are community packages (kosmotema): they redistribute the official libraries from libsdl.org but are not published by the SDL project.
 - **`CMakeLists.txt`**:
-  - Su Windows usa per prima la SDL2 scaricata, scegliendo l'architettura giusta, e copia `SDL2.dll` accanto a `cok.exe`.
-  - Altrimenti cerca il pacchetto CMake di SDL2 (vcpkg, Homebrew, distribuzioni), poi pkg-config.
-  - Compila anche il test `h015_test`, che `ctest` esegue.
-- **Linux e macOS**: `cmake -S . -B build-cmake && cmake --build build-cmake`. Il `Makefile` resta disponibile.
-- **SDL2main**: il display non lo usa più, quindi su Windows il `main` del gioco resta il punto d'ingresso.
+  - On Windows it first uses the downloaded SDL2, choosing the right architecture, and copies `SDL2.dll` next to `cok.exe`.
+  - Otherwise it looks for the SDL2 CMake package (vcpkg, Homebrew, distributions), then pkg-config.
+  - It also builds the `h015_test` test, which `ctest` runs.
+- **Linux and macOS**: `cmake -S . -B build-cmake && cmake --build build-cmake`. The `Makefile` is still available.
+- **SDL2main**: the display no longer uses it, so on Windows the game's `main` stays the entry point.
 
-**Cosa ho verificato qui:**
-- Build CMake su Linux senza warning; `ctest` passa e con i tuoi dati il gioco arriva fino a H030+$0C10.
-- Cross-compilazione con MinGW per Windows x64 e x86 (`-Wall -Wextra -pedantic`), con la SDL2 presa proprio dai pacchetti NuGet e lo stesso layout dello script: entrambe generano `cok.exe` e copiano `SDL2.dll`, senza warning.
-- Lo script PowerShell non l'ho potuto eseguire. Il layout dei pacchetti che usa l'ho controllato scaricandoli.
+**What I checked here:**
+- CMake build on Linux without warnings; `ctest` passes and with your data the game gets as far as H030+$0C10.
+- Cross-compilation with MinGW for Windows x64 and x86 (`-Wall -Wextra -pedantic`), with SDL2 taken from the NuGet packages themselves and the same layout as the script: both produce `cok.exe` and copy `SDL2.dll`, without warnings.
+- I could not run the PowerShell script. I checked the layout of the packages it uses by downloading them.
 
-**Port:** il punto è lo stesso di prima (170 routine). Ho già analizzato la catena di lettura delle immagini: è il lettore IFF85 di Electronic Arts compilato nel gioco. Da portare ci sono:
-- H086: parser dei gruppi e dei chunk;
-- H098: I/O con buffer;
-- H087: BMHD, CMAP e BODY;
-- H040: le callback FORM, PROP e LIST.
+**Port:** the point is the same as before (170 routines). I have already analysed the picture reading chain: it is Electronic Arts' IFF85 reader compiled into the game. To be ported:
+- H086: parser of groups and chunks;
+- H098: buffered I/O;
+- H087: BMHD, CMAP and BODY;
+- H040: the FORM, PROP and LIST callbacks.
 
-Nel port i dati letti dal file (ID, dimensioni, header BMHD) vanno convertiti da big-endian, così funzionano anche su x86 e x64. Al prossimo "procedi" riparto da qui; se il build con VS2022 dà errori, mandami il log.
+In the port the data read from the file (IDs, sizes, BMHD header) must be converted from big-endian, so that they also work on x86 and x64. At the next "proceed" I start again from here; if the VS2022 build gives errors, send me the log.
 
 ---
 
 ## 2026-11-10 15:38
 
-Mi fermo qui: l'inizializzazione dell'ambiente (H006+$01AE) è completa e il programma arriva all'intro, H007+$09D8. Le routine portate passano da 170 a 230 su 912, e ogni passo è un commit. L'intro richiede input da tastiera e mouse, attese e audio, quindi è un blocco a sé.
+I stop here: the environment initialisation (H006+$01AE) is complete and the program reaches the intro, H007+$09D8. The ported routines go from 170 to 230 out of 912, and each step is a commit. The intro needs keyboard and mouse input, waits and audio, so it is a block of its own.
 
-**Cosa ho portato, sempre dall'asm:**
-- **Lettore IFF/ILBM** di Electronic Arts compilato nel gioco: I/O con buffer (H098), parser dei gruppi e dei chunk (H086, H039), BMHD/CMAP/BODY con ByteRun1 (H087, H088, H054, H099) e Read_ILBM con i suoi callback (H040). Il font `gothic.lbm` si carica.
-- **Testo a schermo**: UI_DrawText e il disegno del testo col blitter (H049). L'originale scrive direttamente nei registri `$DFF000`, e il C fa lo stesso: sull'Amiga va all'hardware, sull'host a un piccolo emulatore del blitter (`host/blitter.c`). Il messaggio "LOADING...PLEASE WAIT" compare col font gotico; l'ho controllato su uno screenshot.
-- **Risorse grafiche**:
-  - lettura dei contenitori DAX con RLE e inversione dei byte per i `.dax` (H028);
-  - record grafici: caricamento, liberazione, piani, maschere, ricolorazione (H029);
-  - set 8x8 (H034), coppie di sprite 24x24 (H035), bordo (H006+$00FA);
-  - BltBitMap, FreeRaster, RectFill e penne, con l'emulazione per l'host.
-- **Tabelle dei gestori** in H005 ($25C0 e $2832): ora sono array C di puntatori a funzione. Le 175 routine a cui puntano per ora sono stub che si fermano col loro indirizzo se vengono chiamati.
+**What I ported, always from the asm:**
+- **IFF/ILBM reader** by Electronic Arts compiled into the game: buffered I/O (H098), parser of groups and chunks (H086, H039), BMHD/CMAP/BODY with ByteRun1 (H087, H088, H054, H099) and Read_ILBM with its callbacks (H040). The `gothic.lbm` font loads.
+- **On-screen text**: UI_DrawText and the drawing of text with the blitter (H049). The original writes directly into the `$DFF000` registers, and the C does the same: on the Amiga it goes to the hardware, on the host to a small blitter emulator (`host/blitter.c`). The message "LOADING...PLEASE WAIT" appears in the gothic font; I checked it on a screenshot.
+- **Graphic resources**:
+  - reading of the DAX containers with RLE and byte reversal for the `.dax` (H028);
+  - graphic records: loading, freeing, planes, masks, recolouring (H029);
+  - 8x8 sets (H034), pairs of 24x24 sprites (H035), border (H006+$00FA);
+  - BltBitMap, FreeRaster, RectFill and pens, with the emulation for the host.
+- **Handler tables** in H005 ($25C0 and $2832): they are now C arrays of function pointers. For now the 175 routines they point to are stubs that stop with their address if they are called.
 
-**Verifiche con i file del gioco:**
-- Immagini ILBM: tutte e 7 le `.lbm` sono identiche, byte per byte, a un decoder Python indipendente (`scripts/check_ilbm.py`).
-- Contenitori DAX: tutti i 526 blocchi sono identici al lettore di riferimento (`scripts/check_dax.py`). Il riferimento all'inizio era troppo semplice e l'ho riscritto seguendo le regole dell'asm, per esempio il controllo $FF "ripeti il tipo precedente". Non è quindi del tutto indipendente dal port.
-- Con `-DCOK_TEST_DATA=<cartella dei dati>`, `ctest` esegue anche i test ILBM: passano 8 test su 8.
-- Build Linux e cross-build Windows x64/x86 con MinGW senza warning. SAS/C e Visual Studio non li ho qui: se escono errori, mandami i log.
+**Checks with the game files:**
+- ILBM pictures: all 7 `.lbm` are identical, byte for byte, to an independent Python decoder (`scripts/check_ilbm.py`).
+- DAX containers: all 526 blocks are identical to the reference reader (`scripts/check_dax.py`). At first the reference was too simple and I rewrote it following the rules of the asm, for example the $FF control "repeat the previous type". So it is not fully independent of the port.
+- With `-DCOK_TEST_DATA=<data folder>`, `ctest` also runs the ILBM tests: 8 tests out of 8 pass.
+- Linux build and Windows x64/x86 cross-build with MinGW without warnings. I do not have SAS/C and Visual Studio here: if errors come up, send me the logs.
 
-**Problemi trovati e corretti:**
-- Sull'host i percorsi assoluti venivano trattati come relativi alla cartella dei dati; ora sono riconosciuti, comprese le lettere di unità di Windows.
-- L'originale legge e scrive un byte oltre i buffer di AllocMem; sull'Amiga finisce nel margine di arrotondamento, in C sarebbe un accesso fuori memoria. Nel port questi accessi restano dentro i buffer, e il commento nel codice lo dice.
+**Problems found and fixed:**
+- On the host, absolute paths were treated as relative to the data folder; now they are recognised, including Windows drive letters.
+- The original reads and writes one byte past the AllocMem buffers; on the Amiga it falls into the rounding margin, in C it would be an out-of-bounds access. In the port these accesses stay inside the buffers, and the comment in the code says so.
 
-**Da sapere:**
-- In 33 blocchi (`SPRIT*.DAA`, `pic*.daa`, `pointers.daa`) la decompressione supererebbe il buffer, cioè l'originale darebbe l'errore "uncompress overuns buffer". `pointers.daa` non è un contenitore DAX: lo carica H029+$0234 come file grezzo. Per gli altri suppongo che passino da un altro caricatore, ma non l'ho ancora verificato.
-- In H029+$0A0E l'originale scrive due word diverse nello stesso campo `+$04` del record; il port fa lo stesso.
-- I set 8x8 hanno 4 piani, gli altri record 5 piani più una palette di 32 colori.
+**Good to know:**
+- In 33 blocks (`SPRIT*.DAA`, `pic*.daa`, `pointers.daa`) the decompression would overrun the buffer, that is the original would give the error "uncompress overuns buffer". `pointers.daa` is not a DAX container: H029+$0234 loads it as a raw file. For the others I assume they go through another loader, but I have not checked it yet.
+- In H029+$0A0E the original writes two different words into the same field `+$04` of the record; the port does the same.
+- The 8x8 sets have 4 planes, the other records 5 planes plus a 32-colour palette.
 
-**Prossimo blocco: l'intro (H007+$09D8).**
-- Serve l'input: gli eventi IDCMP, cioè tasti e mouse. Sull'host li farei arrivare da SDL2.
-- Servono le attese: Delay (H036) e il controllo dei tasti (H010+$042E).
-- Serve l'audio di H043, che sull'host andrebbe su SDL2 audio.
-- Poi il caricamento delle immagini dell'intro (H007+$04F2) e il puntatore del mouse (SetPointer).
+**Next block: the intro (H007+$09D8).**
+- Input is needed: the IDCMP events, that is keys and mouse. On the host I would deliver them from SDL2.
+- Waits are needed: Delay (H036) and the key check (H010+$042E).
+- The audio of H043 is needed, which on the host would go to SDL2 audio.
+- Then the loading of the intro pictures (H007+$04F2) and the mouse pointer (SetPointer).
 
-Mi baserei su `host/` come per la grafica: stesse funzioni dell'NDK, implementate con SDL2.
+I would build on `host/` as for the graphics: the same NDK functions, implemented with SDL2.
 
-Lo zip numerato lo preparo appena me lo chiedi (sarà `cok-port-5.zip`). Altrimenti, con "procedi", parto con l'intro.
+I will prepare the numbered zip as soon as you ask me (it will be `cok-port-5.zip`). Otherwise, with "proceed", I start on the intro.
 
 ---
 
 ## 2026-11-10 15:53
 
-L'intro ora gira dall'inizio alla fine nella build host, tranne l'audio. Il programma poi arriva al prompt "Play / Demo" (H008+$01FC), dove si ferma perché quella routine non è ancora portata. Ti ho mandato **cok-port-5.zip** (lo stato di prima), **cok-port-6.zip** (con l'intro) e `intro-host.png` con sei fotogrammi catturati dalla build host. Sono 258 routine portate su 913.
+The intro now runs from start to finish in the host build, except for the audio. The program then reaches the "Play / Demo" prompt (H008+$01FC), where it stops because that routine is not ported yet. I sent you **cok-port-5.zip** (the previous state), **cok-port-6.zip** (with the intro) and `intro-host.png` with six frames captured from the host build. 258 routines out of 913 are ported.
 
-**Cosa si vede:** logo SSI, l'immagine della luna con la rosa, il titolo "Champions of Krynn", "Dragonlance" e la pagina dei crediti con la cornice di tile 8x8, poi il ciclo ricomincia. Le immagini compaiono con le dissolvenze e un tasto o un clic interrompe l'intro.
+**What you see:** the SSI logo, the picture of the moon with the rose, the title "Champions of Krynn", "Dragonlance" and the credits page with the frame of 8x8 tiles, then the loop starts again. The pictures appear with the fades and a key or a click interrupts the intro.
 
-**Cosa ho portato, dall'asm:**
+**What I ported, from the asm:**
 - **Intro (H007):**
-  - caricamento delle immagini con dissolvenza in entrata e in uscita (16 passi, uno per quadro);
-  - attesa di N secondi interrompibile da un tasto;
-  - pulizia dello schermo e pagina dei crediti (26 testi estratti dall'asm);
-  - il puntatore del mouse viene nascosto e poi ripristinato.
+  - loading of the pictures with fade-in and fade-out (16 steps, one per frame);
+  - wait of N seconds that a key can interrupt;
+  - clearing of the screen and credits page (26 texts extracted from the asm);
+  - the mouse pointer is hidden and then restored.
 - **Input (H010):**
-  - lettura degli eventi della finestra: tasti e pulsanti del mouse;
-  - conversione dei codici tastiera Amiga in caratteri, con la tabella decodificata dai byte non classificati. Frecce e tastierino diventano le cifre di direzione;
-  - tasti speciali Shift, Ctrl e Alt (Alt+a/m/q/x danno 1..4);
-  - pulsante sinistro = Invio, destro = Esc;
-  - attesa di un tasto (H010+$0974).
-- **Grafica:**
-  - tile 8x8 (H034+$0178, H049+$012A);
-  - cornice dello schermo e dei crediti (H044);
-  - cancellazione di aree di testo (H030+$0B6C);
-  - palette del gioco (H011+$010C);
-  - rilascio delle immagini (H042+$0300).
-- **Adattatori:** GetMsg, ReplyMsg, WaitPort, Delay, WaitTOF, SetPointer, AvailMem.
+  - reading of the window events: keys and mouse buttons;
+  - conversion of the Amiga keyboard codes into characters, with the table decoded from the unclassified bytes. Arrows and keypad become the direction digits;
+  - special keys Shift, Ctrl and Alt (Alt+a/m/q/x give 1..4);
+  - left button = Enter, right = Esc;
+  - wait for a key (H010+$0974).
+- **Graphics:**
+  - 8x8 tiles (H034+$0178, H049+$012A);
+  - frame of the screen and of the credits (H044);
+  - clearing of text areas (H030+$0B6C);
+  - game palette (H011+$010C);
+  - release of the pictures (H042+$0300).
+- **Adapters:** GetMsg, ReplyMsg, WaitPort, Delay, WaitTOF, SetPointer, AvailMem.
 
-**Sull'host (SDL2):**
-- Tastiera e mouse diventano messaggi come quelli che Intuition darebbe al gioco, con i codici della tastiera Amiga.
-- Delay e WaitTOF regolano la velocità a 50 e 60 Hz.
-- Il cursore di sistema si nasconde quando il gioco imposta un puntatore vuoto.
-- `COK_SCREENSHOT_AT=t1,t2,...` (insieme a `COK_SCREENSHOT=base`) salva fotogrammi ai millisecondi indicati; è così che ho preso quelli che ti ho mandato.
+**On the host (SDL2):**
+- Keyboard and mouse become messages like the ones Intuition would give the game, with the Amiga keyboard codes.
+- Delay and WaitTOF set the speed at 50 and 60 Hz.
+- The system cursor is hidden when the game sets an empty pointer.
+- `COK_SCREENSHOT_AT=t1,t2,...` (together with `COK_SCREENSHOT=base`) saves frames at the given milliseconds; that is how I took the ones I sent you.
 
-**Da sapere:**
-- **Audio non portato.** H043 è un modulo di circa 1.800 righe e i due comandi musicali dell'intro (H043+$0584, H043+$190E) vengono saltati con un avviso su stderr invece di fermare il programma. È l'unico caso in cui una routine mancante non blocca il gioco; è scritto anche nel README.
-- **Alt+C** (mostra la memoria libera, H010+$03AA) non è ancora portato e ferma il programma se lo premi.
-- **Interruzione col tasto:** non l'ho potuta provare qui perché la build gira senza finestra. Ho verificato la logica sull'asm.
-- **Build:** Linux senza warning; cross-build Windows x64 e x86 con MinGW senza warning; `ctest` 8 su 8. SAS/C e Visual Studio non li ho qui, quindi mandami i log se escono errori.
+**Good to know:**
+- **Audio not ported.** H043 is a module of about 1,800 lines and the two music commands of the intro (H043+$0584, H043+$190E) are skipped with a warning on stderr instead of stopping the program. It is the only case where a missing routine does not block the game; it is also written in the README.
+- **Alt+C** (shows the free memory, H010+$03AA) is not ported yet and stops the program if you press it.
+- **Interruption with a key:** I could not try it here because the build runs without a window. I checked the logic on the asm.
+- **Build:** Linux without warnings; Windows x64 and x86 cross-build with MinGW without warnings; `ctest` 8 out of 8. I do not have SAS/C and Visual Studio here, so send me the logs if errors come up.
 
-Al prossimo "procedi" vado avanti col prompt "Play / Demo" (H008+$01FC) e poi col menu principale. L'audio lo porto a parte (H043 più un emulatore del chip audio su SDL2); dimmi tu se preferisci farlo prima.
+At the next "proceed" I go on with the "Play / Demo" prompt (H008+$01FC) and then with the main menu. I will port the audio separately (H043 plus an emulator of the audio chip on SDL2); tell me if you prefer to do it first.
 
 ---
 
 ## 2026-11-10 16:01
 
-Il prompt Play/Demo funziona: dopo l'intro compare "CHAMPIONS OF KRYNN V1.0" con "PLAY" e "DEMO" in fondo allo schermo e risponde a tastiera, mouse e tempo massimo. Ti ho mandato **cok-port-7.zip** e la schermata del prompt presa dalla build host. Le routine portate sono 267 su 913.
+The Play/Demo prompt works: after the intro "CHAMPIONS OF KRYNN V1.0" appears with "PLAY" and "DEMO" at the bottom of the screen and responds to keyboard, mouse and timeout. I sent you **cok-port-7.zip** and the screenshot of the prompt taken from the host build. 267 routines out of 913 are ported.
 
-**Comportamento verificato sulla build host:**
+**Behaviour verified on the host build:**
 
-| Ingresso | Risultato |
+| Input | Result |
 |---|---|
-| nessun tasto per 30 secondi | sceglie Demo, come l'originale, e il gioco arriva a H011+$04A6 |
-| P | sceglie Play e il gioco arriva a H009+$010C, la verifica della copia |
-| Esc durante l'intro, poi freccia destra e Invio | l'intro si interrompe, "DEMO" passa in negativo e viene scelto |
+| no key for 30 seconds | chooses Demo, like the original, and the game reaches H011+$04A6 |
+| P | chooses Play and the game reaches H009+$010C, the copy check |
+| Esc during the intro, then right arrow and Enter | the intro is interrupted, "DEMO" turns inverse and is chosen |
 
-Ho controllato le schermate: titolo in magenta, voce selezionata in negativo, iniziale in bianco, resto in verde.
+I checked the screenshots: title in magenta, selected item in inverse, initial in white, rest in green.
 
-**UI_RequestChoice (H008+$01FC):** il prompt usa il motore generale delle scelte del gioco, che servirà anche per tutti i menu, quindi l'ho portato intero:
-- divisione delle opzioni in voci, una per ogni iniziale maiuscola o cifra;
-- disegno della riga 24;
-- tasti: lettere, Invio, Esc, '4'/'6' per scorrere, le cifre, Alt+a/m/q/x;
-- clic sulla riga delle opzioni e sulle aree del gioco;
-- forma del puntatore, animazione delle immagini, tempo massimo.
+**UI_RequestChoice (H008+$01FC):** the prompt uses the general choice engine of the game, which will also be needed for all the menus, so I ported it whole:
+- split of the options into items, one for each capital initial or digit;
+- drawing of row 24;
+- keys: letters, Enter, Esc, '4'/'6' to scroll, the digits, Alt+a/m/q/x;
+- click on the options row and on the game areas;
+- pointer shape, animation of the pictures, timeout.
 
-Le sotto-procedure dell'originale leggono le variabili della procedura che le chiama attraverso il suo frame; nel C queste variabili sono una struttura passata per puntatore.
+The sub-procedures of the original read the variables of the calling procedure through its frame; in the C these variables are a structure passed by pointer.
 
-**Errore corretto:** nel C scritto all'inizio, H001 chiamava il prompt con gli argomenti in ordine inverso. Ora l'ordine è quello dell'asm.
+**Bug fixed:** in the C written at the start, H001 called the prompt with the arguments in reverse order. Now the order is the one of the asm.
 
-**Altro portato:** il cambio della forma del puntatore (H029+$01B6), il disegno di una serie di caratteri (H030+$00B6), l'ora in centesimi di secondo (H030+$0A40), H029+$03E2 e ModifyIDCMP.
+**Also ported:** the change of the pointer shape (H029+$01B6), the drawing of a series of characters (H030+$00B6), the time in hundredths of a second (H030+$0A40), H029+$03E2 and ModifyIDCMP.
 
-**Sull'host:**
-- La finestra tiene la posizione del mouse, come MouseX/MouseY dell'Amiga.
-- Il gioco controlla l'input in un ciclo continuo; nell'host c'è una pausa di 1 ms quando non arrivano eventi, così non occupa tutta la CPU.
-- Nuovo `COK_KEYS="ms=Tasto,..."` per simulare tasti a tempo nei test senza finestra, per esempio `COK_KEYS=1500=Escape,5000=P`.
-- Il puntatore del mouse resta il cursore di sistema: lo sprite del gioco non è disegnato.
+**On the host:**
+- The window keeps the mouse position, like MouseX/MouseY on the Amiga.
+- The game checks the input in a continuous loop; the host has a 1 ms pause when no events arrive, so it does not take all the CPU.
+- New `COK_KEYS="ms=Key,..."` to simulate timed keys in the tests without a window, for example `COK_KEYS=1500=Escape,5000=P`.
+- The mouse pointer stays the system cursor: the game sprite is not drawn.
 
-**Limiti noti:**
-- I rami che servono solo in combattimento, nella mappa o con il party sono portati, ma chiamano routine ancora mancanti (H046+$0012, H048+$0AA8, H042+$0B80/$0254, la struttura dei personaggi). Se vengono raggiunti, il programma si ferma indicando quale manca. Dal prompt non vengono raggiunti.
-- Due punti in cui l'originale ha un comportamento non definito, ora resi definiti e annotati nei commenti:
-  - clic sul titolo: l'originale restituisce un valore dallo stack mai scritto, il C restituisce 0;
-  - una lettera che non è l'inizio di nessuna voce: l'originale la cerca senza limite, il C si ferma a 20 voci.
-- Build: Linux, cross-build Windows x64 e x86 e controllo C89 senza warning; `ctest` 8 su 8. SAS/C e Visual Studio non li ho qui: se escono errori mandami i log.
+**Known limits:**
+- The branches needed only in combat, on the map or with the party are ported, but call routines that are still missing (H046+$0012, H048+$0AA8, H042+$0B80/$0254, the character structure). If they are reached, the program stops saying which one is missing. From the prompt they are not reached.
+- Two points where the original has undefined behaviour, now made defined and noted in the comments:
+  - click on the title: the original returns a value from the stack that was never written, the C returns 0;
+  - a letter that is not the start of any item: the original searches for it without limit, the C stops at 20 items.
+- Build: Linux, Windows x64 and x86 cross-build and C89 check without warnings; `ctest` 8 out of 8. I do not have SAS/C and Visual Studio here: if errors come up send me the logs.
 
-**Prossimo passo, a tua scelta:**
-1. **Play**: la verifica della copia (H009+$010C) e poi il menu principale (H013+$4BFC: creazione del party, caricamento delle partite salvate).
-2. **Demo**: H011+$04A6 e il ciclo della demo (H012+$3150).
+**Next step, your choice:**
+1. **Play**: the copy check (H009+$010C) and then the main menu (H013+$4BFC: party creation, loading of saved games).
+2. **Demo**: H011+$04A6 and the demo loop (H012+$3150).
 
-Al prossimo "procedi" vado con Play, salvo indicazioni diverse.
+At the next "proceed" I go with Play, unless told otherwise.
 
 ---
 
 ## 2026-11-10 16:08
 
-Con "Play" il gioco ora passa la verifica del manuale e arriva alla soglia del menu principale (H013+$4BFC), dove si ferma perché il menu non è ancora portato. Ti ho mandato **cok-port-8.zip** e la schermata della verifica; le routine portate sono 273 su 913.
+With "Play" the game now passes the manual check and reaches the threshold of the main menu (H013+$4BFC), where it stops because the menu is not ported yet. I sent you **cok-port-8.zip** and the screenshot of the check; 273 routines out of 913 are ported.
 
-**La verifica del manuale (H009+$010C):**
-- È la protezione dalla copia: chiede una parola di una pagina del manuale ("the best quartex" o "tavern tale", scelta a caso).
-- La legge con l'input di testo, che accetta caratteri da spazio a 'z', backspace e Invio/Esc ed è mostrato in giallo dopo "Enter".
-- L'eseguibile nei tuoi dati è una **versione già craccata**: il testo dice "broken by the best quartex" e i salti dopo il confronto della risposta sono stati sostituiti da `nop`. Qualunque parola viene quindi accettata, e il port fa lo stesso.
-- La routine calcola comunque la somma di controllo $3F8F che il main verifica.
-- Prova con tasti simulati: la domanda compare dentro la cornice delle tre lune ("of tavern tale # 41, type any word, page 47"); dopo "WORD" e Invio il gioco prosegue.
+**The manual check (H009+$010C):**
+- It is the copy protection: it asks for a word from a page of the manual ("the best quartex" or "tavern tale", chosen at random).
+- It reads it with the text input, which accepts characters from space to 'z', backspace and Enter/Esc and is shown in yellow after "Enter".
+- The executable in your data is an **already cracked version**: the text says "broken by the best quartex" and the jumps after the comparison of the answer have been replaced by `nop`. So any word is accepted, and the port does the same.
+- The routine still computes the $3F8F checksum that main verifies.
+- Test with simulated keys: the question appears inside the frame of the three moons ("of tavern tale # 41, type any word, page 47"); after "WORD" and Enter the game goes on.
 
-**Portato in questo passo:**
-- tabella delle 50 domande con le risposte codificate (H049+$079E) e decodifica della risposta (H009+$007E);
-- generatore casuale del gioco (H023+$0010);
-- inserimento di stringa (H026+$0254);
-- input di una riga di testo (H030+$0718);
-- la cornice dello schermo (H044+$01C2), ora usabile anche da altri moduli.
+**Ported in this step:**
+- table of the 50 questions with the encoded answers (H049+$079E) and decoding of the answer (H009+$007E);
+- random generator of the game (H023+$0010);
+- string insertion (H026+$0254);
+- input of a line of text (H030+$0718);
+- the screen frame (H044+$01C2), now usable by other modules too.
 
-Build Linux, Windows x64/x86 (MinGW) e controllo C89 senza warning.
+Linux, Windows x64/x86 (MinGW) build and C89 check without warnings.
 
-**Prossimo blocco: il menu principale.** Le voci sono "Create New Character", "Add Character to Party", "Load Saved Game", "BEGIN Adventuring", "Exit to Workbench" e le altre; ognuna si abilita o disabilita in base al party. Per mostrarlo serve il motore dei menu a elenco di H008 (da $13C0 a $2178), che il gioco usa per tutte le liste:
-- disegno delle voci, abilitate in un colore e disabilitate in un altro;
-- scorrimento a pagine con "Next" e "Prev";
-- selezione con le frecce e con il mouse;
-- domanda Sì/No ($203C);
-- creazione e liberazione delle liste ($20C2/$2178).
+**Next block: the main menu.** The items are "Create New Character", "Add Character to Party", "Load Saved Game", "BEGIN Adventuring", "Exit to Workbench" and the others; each one is enabled or disabled according to the party. To show it the list menu engine of H008 (from $13C0 to $2178) is needed, which the game uses for all the lists:
+- drawing of the items, enabled in one colour and disabled in another;
+- scrolling by pages with "Next" and "Prev";
+- selection with the arrows and with the mouse;
+- Yes/No question ($203C);
+- creation and freeing of the lists ($20C2/$2178).
 
-Con il party vuoto all'avvio sono abilitate solo "Create New Character", "Load Saved Game" ed "Exit to Workbench". La prima schermata del menu richiede quindi solo il motore e la cornice, non il riquadro del party (H063). Le singole funzioni restano stub finché non le porto: prima la creazione del personaggio (H013+$0982), poi il caricamento delle partite salvate.
+With the empty party at start-up only "Create New Character", "Load Saved Game" and "Exit to Workbench" are enabled. So the first screen of the menu needs only the engine and the frame, not the party box (H063). The single functions stay stubs until I port them: first the character creation (H013+$0982), then the loading of the saved games.
 
-Al prossimo "procedi" parto dal motore dei menu.
+At the next "proceed" I start from the menu engine.
 
 ---
 
 ## 2026-11-10 16:21
 
-Il menu principale funziona, e "Exit to Workbench" ora chiude il gioco in modo pulito. Ti ho mandato **cok-port-9.zip** e la schermata del menu presa dalla build host. Sono 298 routine portate su 913.
+The main menu works, and "Exit to Workbench" now closes the game cleanly. I sent you **cok-port-9.zip** and the screenshot of the menu taken from the host build. 298 routines out of 913 are ported.
 
-**Cosa si vede:** dopo Play e la verifica del manuale compare "CHOOSE A FUNCTION Select". Con il party vuoto ci sono solo "Create New Character", "Add Character to Party", "Load Saved Game" ed "Exit to Workbench", come nell'originale.
+**What you see:** after Play and the manual check "CHOOSE A FUNCTION Select" appears. With the empty party there are only "Create New Character", "Add Character to Party", "Load Saved Game" and "Exit to Workbench", like in the original.
 
-**Provato con i tasti simulati:**
-- le frecce spostano la selezione, e dalla prima voce la freccia su salta all'ultima;
-- su "Exit to Workbench", Invio chiede "QUIT TO WORKBENCH Yes No" con "No" preselezionato;
-- Y libera tutte le risorse e il programma termina con codice 0;
-- Invio su "Create New Character" porta alla creazione del personaggio (H013+$0982), che non è ancora portata e quindi ferma il programma.
+**Tried with simulated keys:**
+- the arrows move the selection, and from the first item the up arrow jumps to the last;
+- on "Exit to Workbench", Enter asks "QUIT TO WORKBENCH Yes No" with "No" preselected;
+- Y frees all the resources and the program ends with code 0;
+- Enter on "Create New Character" leads to the character creation (H013+$0982), which is not ported yet and so stops the program.
 
-**Portato dall'asm:**
-- **Menu principale (H013+$4BFC):**
-  - 12 voci, abilitate in base al party e al personaggio corrente;
-  - funzione scelta in base alla lettera iniziale della voce;
-  - il trucco nascosto 'J': attiva o disattiva "Free training" se il terzo argomento della riga di comando è la parola di H005+$2358. Per questo il `main` ora conserva argc/argv.
-- **Motore dei menu a elenco di H008**, usato da tutte le liste del gioco: righe di intestazione non selezionabili, pagine con "Next"/"Prev", frecce e tastierino, clic per selezionare e doppio clic per scegliere, opzione "Exit". Più la domanda Sì/No e la creazione e liberazione delle liste.
-- **Uscita (H010+$0332 e $00C4):** libera le risorse e la View fuori schermo, chiude schermo e finestra, rimuove gli Assign se il gioco è installato su disco fisso, poi chiude il runtime.
+**Ported from the asm:**
+- **Main menu (H013+$4BFC):**
+  - 12 items, enabled according to the party and the current character;
+  - function chosen according to the initial letter of the item;
+  - the hidden 'J' cheat: turns "Free training" on or off if the third command-line argument is the word at H005+$2358. For this `main` now keeps argc/argv.
+- **List menu engine of H008**, used by all the lists of the game: non-selectable header rows, pages with "Next"/"Prev", arrows and keypad, click to select and double click to choose, "Exit" option. Plus the Yes/No question and the creation and freeing of the lists.
+- **Exit (H010+$0332 and $00C4):** frees the resources and the off-screen View, closes screen and window, removes the Assigns if the game is installed on a hard disk, then closes the runtime.
 
-**Errori trovati con AddressSanitizer e corretti:**
-- Decompressione DAX: in alcuni blocchi l'ultima sequenza da copiare dichiara più byte di quelli presenti, e l'originale li legge oltre il buffer. Ora si copiano solo i byte presenti e il resto resta a zero.
-- `SetPointer` dell'host leggeva la parte finale dello sprite del puntatore, oltre gli 8 byte allocati dall'intro.
-- Freccia su dalla prima voce: l'originale legge da un puntatore nullo (il byte all'indirizzo $2A, nella tabella dei vettori della CPU, normalmente diverso da zero) e così salta all'ultima voce. Nel C un nodo nullo conta come riga di intestazione, con lo stesso effetto.
+**Bugs found with AddressSanitizer and fixed:**
+- DAX decompression: in some blocks the last sequence to copy declares more bytes than are present, and the original reads them past the buffer. Now only the bytes present are copied and the rest stays zero.
+- The host `SetPointer` read the final part of the pointer sprite, past the 8 bytes allocated by the intro.
+- Up arrow from the first item: the original reads from a null pointer (the byte at address $2A, in the CPU vector table, normally non-zero) and so jumps to the last item. In the C a null node counts as a header row, with the same effect.
 
-Dopo queste correzioni l'intro completa e la sessione fino all'uscita girano senza errori sotto ASan/UBSan.
+After these fixes the complete intro and the session up to the exit run without errors under ASan/UBSan.
 
-**Non verificato e limiti:**
-- L'audio è ancora saltato con un avviso.
-- Le funzioni del menu non ancora portate fermano il programma indicando quale manca: creazione, aggiunta e rimozione di personaggi, caricamento e salvataggio, BEGIN.
-- Build Linux e Windows x64/x86 (MinGW) e controllo C89 senza warning; `ctest` 8 su 8. SAS/C e Visual Studio non li ho qui.
+**Not verified and limits:**
+- The audio is still skipped with a warning.
+- The menu functions not yet ported stop the program saying which one is missing: creation, adding and removing characters, loading and saving, BEGIN.
+- Linux and Windows x64/x86 (MinGW) build and C89 check without warnings; `ctest` 8 out of 8. I do not have SAS/C and Visual Studio here.
 
-**Prossimo passo, a tua scelta:**
-1. **Create New Character (H013+$0982):** razza, sesso, classe, allineamento, tiro dei punteggi, nome, ritratto. È il percorso naturale da una partita nuova e richiede la struttura dei personaggi (+$18E per il successivo, ecc.).
-2. **Load Saved Game (H066+$291E):** se hai dei salvataggi da usare, porta più in fretta all'avventura.
+**Next step, your choice:**
+1. **Create New Character (H013+$0982):** race, sex, class, alignment, roll of the scores, name, portrait. It is the natural path from a new game and needs the character structure (+$18E for the next one, etc.).
+2. **Load Saved Game (H066+$291E):** if you have saves to use, it leads to the adventure faster.
 
-Con il prossimo "procedi" parto da Create New Character.
+With the next "proceed" I start from Create New Character.
 
 ---
 
 ## 2026-11-10 16:43
 
-Ho portato Create New Character e ti mando **cok-port-10.zip**. Sull'host funziona dal menu principale fino all'allineamento, poi si ferma: dopo l'allineamento il gioco calcola l'età e chiama la schermata del personaggio (H065+$04B8), che non è ancora portata.
+I ported Create New Character and I am sending you **cok-port-10.zip**. On the host it works from the main menu up to the alignment, then it stops: after the alignment the game computes the age and calls the character screen (H065+$04B8), which is not ported yet.
 
-**Cosa funziona già:**
-- I cinque menu, come nell'originale:
-  - **Razza:** imposta gli effetti di razza.
-  - **Sesso.**
-  - **Classe:** mostra solo le classi ammesse dalla razza e imposta livelli ed esperienza iniziali.
-  - **Divinità:** appare solo se il personaggio ha livelli da chierico.
-  - **Allineamento:** mostra solo quelli ammessi da classe e divinità. Ad esempio, con Paladine compaiono Lawful, Neutral e Chaotic Good.
-- Esc in un menu libera il personaggio e torna al menu principale.
-- È scritto anche tutto il calcolo che viene dopo, ma finché mancano la schermata e le altre routine sotto non posso provarlo:
-  - età;
-  - caratteristiche: il migliore di 6 tiri di 3d6+1, con i limiti di età, razza, sesso e classe;
-  - punti ferita, denaro, nome e richiesta di salvataggio;
-  - tiri salvezza, abilità da ladro e incantesimi da chierico.
+**What already works:**
+- The five menus, like in the original:
+  - **Race:** sets the race effects.
+  - **Sex.**
+  - **Class:** shows only the classes allowed by the race and sets the initial levels and experience.
+  - **Deity:** appears only if the character has cleric levels.
+  - **Alignment:** shows only those allowed by class and deity. For example, with Paladine Lawful, Neutral and Chaotic Good appear.
+- Esc in a menu frees the character and goes back to the main menu.
+- All the computation that comes after is also written, but while the screen and the other routines below are missing I cannot try it:
+  - age;
+  - ability scores: the best of 6 rolls of 3d6+1, with the limits of age, race, sex and class;
+  - hit points, money, name and request to save;
+  - saving throws, thief skills and cleric spells.
 
-**Struttura del personaggio:** il nuovo `character.h` tiene i $1AA byte del record con gli offset originali. I puntatori sono campi separati, perché sull'host occupano 8 byte invece di 4:
-- `+$E8` effetti;
-- `+$150` oggetti;
-- `+$154..+$184` oggetti pronti all'uso;
-- `+$18E` personaggio successivo;
-- `+$192` blocco di $18 byte.
+**Character structure:** the new `character.h` holds the $1AA bytes of the record with the original offsets. The pointers are separate fields, because on the host they take 8 bytes instead of 4:
+- `+$E8` effects;
+- `+$150` items;
+- `+$154..+$184` items ready for use;
+- `+$18E` next character;
+- `+$192` block of $18 bytes.
 
-**Dove ho seguito l'asm anche se sembra un errore (è scritto nei commenti):**
-- **Correzioni di razza sulle caratteristiche:** non si applicano mai. Il codice usa il contatore del menu delle razze, che a quel punto vale sempre 7.
-- **Bonus di costituzione al primo tiro salvezza (H073+$0BA8):** viene sommato una volta per ognuna delle 8 classi.
-- **Due valori che l'originale non inizializza:** il bonus delle abilità da ladro e la maschera della divinità per un valore non previsto. L'originale usa quello che resta nello stack; qui partono da 0. Sono gli unici due punti in cui il C si discosta dall'asm.
+**Where I followed the asm even though it looks like a bug (it is written in the comments):**
+- **Race adjustments to the ability scores:** they are never applied. The code uses the counter of the race menu, which at that point is always 7.
+- **Constitution bonus to the first saving throw (H073+$0BA8):** it is added once for each of the 8 classes.
+- **Two values the original does not initialise:** the bonus of the thief skills and the deity mask for an unexpected value. The original uses whatever is left on the stack; here they start from 0. These are the only two points where the C deviates from the asm.
 
-**Verifiche:**
-- La build Linux, le build MinGW x64/x86 e il controllo C89 non danno warning.
-- ctest passa 8 test su 8.
-- Ho fatto tre percorsi diversi nei menu più l'annullamento con Esc sotto ASan/UBSan, senza errori.
-- Lo zip si ricompila da solo.
-- Non ho compilato con SAS/C. Se dà errori mandami lo `smake.err`.
+**Checks:**
+- The Linux build, the MinGW x64/x86 builds and the C89 check give no warnings.
+- ctest passes 8 tests out of 8.
+- I did three different paths through the menus plus the cancel with Esc under ASan/UBSan, without errors.
+- The zip rebuilds on its own.
+- I did not compile with SAS/C. If it gives errors send me the `smake.err`.
 
-**Cosa manca per finire la creazione, in ordine:**
-1. **H065+$04B8:** la schermata del personaggio, con $0ADE, $0BF4, $10DE e le dipendenze in H063 e H044. Serve anche a View Character.
-2. **H013+$58DC:** l'addestramento, che durante la creazione gira con il flag $24CF.
-3. **H028+$0D36 e H047+$00E6:** le routine chiamate dopo il nome. H047+$00E6 dovrebbe essere la scelta della figura.
-4. **H066+$1640:** il salvataggio del personaggio su disco.
+**What is missing to finish the creation, in order:**
+1. **H065+$04B8:** the character screen, with $0ADE, $0BF4, $10DE and the dependencies in H063 and H044. It is also needed by View Character.
+2. **H013+$58DC:** the training, which during the creation runs with the $24CF flag.
+3. **H028+$0D36 and H047+$00E6:** the routines called after the name. H047+$00E6 should be the choice of the figure.
+4. **H066+$1640:** the saving of the character to disk.
 
-Se vuoi procedo con la schermata del personaggio.
+If you want I proceed with the character screen.
 
 ---
 
 ## 2026-11-10 16:51
 
-Ho portato la schermata del personaggio e ti mando **cok-port-11.zip**. In Create New Character, dopo l'allineamento, ora compaiono la scheda e i valori delle caratteristiche tirate. Poi il programma si ferma su **H013+$58DC**, la schermata di addestramento, che non è ancora portata. Siamo a 335 routine portate su 914.
+I ported the character screen and I am sending you **cok-port-11.zip**. In Create New Character, after the alignment, the sheet and the values of the rolled ability scores now appear. Then the program stops at **H013+$58DC**, the training screen, which is not ported yet. We are at 335 routines ported out of 914.
 
-**Cosa mostra la scheda (H065+$04B8):**
-- **Intestazione:** nome, stato, sesso, età, allineamento, razza.
-- **Classe:** con la divinità per i chierici, l'ordine dei cavalieri e il titolo "of the Crown/Sword/Rose".
-- **Valori principali:** livelli per classe ed esperienza.
-- **Caratteristiche:** STR/INT/WIS/DEX/CON/CHA, con la percentuale della forza 18 e un `*` quando il valore attuale è diverso dal massimo.
-- **Denaro.**
-- **Combattimento:** punti ferita, classe d'armatura, ingombro, THAC0, movimento e danno nel formato "NdM+K".
-- **Oggetti pronti negli slot 0 e 2.**
+**What the sheet shows (H065+$04B8):**
+- **Header:** name, status, sex, age, alignment, race.
+- **Class:** with the deity for clerics, the knightly order and the title "of the Crown/Sword/Rose".
+- **Main values:** levels per class and experience.
+- **Ability scores:** STR/INT/WIS/DEX/CON/CHA, with the percentage of strength 18 and a `*` when the current value differs from the maximum.
+- **Money.**
+- **Combat:** hit points, armour class, encumbrance, THAC0, movement and damage in the "NdM+K" format.
+- **Ready items in slots 0 and 2.**
 
-Nello screenshot (Qualinesti Elf, chierico di Paladine) punti ferita, movimento e danno valgono ancora 0. È corretto anche nell'originale: la scheda viene disegnata prima dei tiri, e quei valori si calcolano dopo.
+In the screenshot (Qualinesti Elf, cleric of Paladine) hit points, movement and damage are still 0. This is correct in the original too: the sheet is drawn before the rolls, and those values are computed afterwards.
 
-**Routine nuove dall'asm:**
-- **H065:** $04B8, $0ADE, $0BE6 con la procedura annidata $0BF4, e $10DE.
-- **H044+$068E:** la cornice della scheda.
-- **H063+$13BE:** il ricalcolo dei valori derivati, che serve a tutto il gioco. Usa le routine di slot degli oggetti pronti, bonus di forza e destrezza, arma, armatura, classe d'armatura, ingombro e movimento ($016A, $0228, $0354, $0432, $06AE, $0758, $08A2, $18F8, $19B6, $1A8A).
-- **H063, altre:** spazi iniziali ($0112), ricerca di un effetto ($0946), nome degli oggetti con plurali e quantità ($09B2), CA ($0FA0), punti ferita ($103A), nome del personaggio ($1F34).
-- **`character.h`:** gli oggetti pronti all'uso sono ora un array di 13 puntatori da `+$154` a `+$184`.
+**New routines from the asm:**
+- **H065:** $04B8, $0ADE, $0BE6 with the nested procedure $0BF4, and $10DE.
+- **H044+$068E:** the frame of the sheet.
+- **H063+$13BE:** the recomputation of the derived values, which the whole game needs. It uses the routines for the ready item slots, strength and dexterity bonuses, weapon, armour, armour class, encumbrance and movement ($016A, $0228, $0354, $0432, $06AE, $0758, $08A2, $18F8, $19B6, $1A8A).
+- **H063, others:** leading spaces ($0112), search for an effect ($0946), item names with plurals and quantities ($09B2), AC ($0FA0), hit points ($103A), character name ($1F34).
+- **`character.h`:** the items ready for use are now an array of 13 pointers from `+$154` to `+$184`.
 
-**Dove ho seguito l'asm anche se sembra un errore (è nei commenti):**
-- In H063+$13BE c'è un flag sempre a 0, quindi il ramo "-5000 di ingombro" non viene mai eseguito.
-- In H063+$0228, con forza oltre 25 l'originale restituisce un valore non inizializzato; qui 0.
+**Where I followed the asm even though it looks like a bug (it is in the comments):**
+- In H063+$13BE there is a flag that is always 0, so the "-5000 encumbrance" branch is never run.
+- In H063+$0228, with strength above 25 the original returns an uninitialised value; here 0.
 
-**Verifiche:** la build Linux e quelle MinGW x64/x86 non danno warning, il controllo C89 è pulito e ctest passa 8 test su 8. Ho fatto tre percorsi di creazione sotto ASan/UBSan senza errori. Non ho compilato con SAS/C: se dà errori mandami lo `smake.err`.
+**Checks:** the Linux build and the MinGW x64/x86 ones give no warnings, the C89 check is clean and ctest passes 8 tests out of 8. I did three creation paths under ASan/UBSan without errors. I did not compile with SAS/C: if it gives errors send me the `smake.err`.
 
-**Prossimo passo:** H013+$58DC, l'addestramento (circa 670 istruzioni). È la stessa routine della voce "Train Character" del menu principale; nella creazione gira con il flag $24CF. Dopo restano H028+$0D36, H047+$00E6 e il salvataggio H066+$1640. Se vuoi procedo con l'addestramento.
+**Next step:** H013+$58DC, the training (about 670 instructions). It is the same routine as the "Train Character" item of the main menu; in the creation it runs with the $24CF flag. After that H028+$0D36, H047+$00E6 and the save H066+$1640 remain. If you want I proceed with the training.
 
 ---
 
 ## 2026-11-10 17:01
 
-Ho corretto l'errore di SAS/C: ti mando **cok-port-12.zip**, ma non ho potuto compilarlo con SAS/C.
+I fixed the SAS/C error: I am sending you **cok-port-12.zip**, but I could not compile it with SAS/C.
 
-**Causa:** su Amiga `intuition/intuition.h` dichiara già `struct MenuItem`, cioè le voci dei menu di Intuition. Il tipo del port in `h008.h` aveva lo stesso nome, quindi SAS/C dava "Error 63: already declared".
+**Cause:** on the Amiga `intuition/intuition.h` already declares `struct MenuItem`, that is the items of the Intuition menus. The port type in `h008.h` had the same name, so SAS/C gave "Error 63: already declared".
 
-**Correzione:** ho rinominato il tipo in `CokMenuItem` in `h008.h`, `h008.c` e `h013.c`, gli unici tre file che lo usavano. Il comportamento non cambia.
+**Fix:** I renamed the type to `CokMenuItem` in `h008.h`, `h008.c` and `h013.c`, the only three files that used it. The behaviour does not change.
 
-Ho controllato i nomi delle altre struct del port contro le strutture dell'NDK presenti nel repository, e solo `BitMapHeader` coincide. Lo dichiara datatypes (`pictureclass.h`), che il port non include, quindi oggi non dà errori.
+I checked the names of the other structs of the port against the NDK structures present in the repository, and only `BitMapHeader` matches. It is declared by datatypes (`pictureclass.h`), which the port does not include, so today it gives no errors.
 
-Le build host e il controllo C89 non danno warning e ctest passa 8 test su 8. Se SAS/C si ferma su un altro file, mandami il nuovo `smake.err`.
+The host builds and the C89 check give no warnings and ctest passes 8 tests out of 8. If SAS/C stops on another file, send me the new `smake.err`.
 
-Se la build Amiga passa, il passo successivo è sempre l'addestramento (H013+$58DC).
+If the Amiga build passes, the next step is still the training (H013+$58DC).
 
 ---
 
 ## 2026-11-10 18:28
 
-Ho portato l'addestramento: ti mando **cok-port-13.zip**. Ora Create New Character arriva fino alla domanda "Reroll stats?" e alla richiesta del nome. Dopo il nome il programma si ferma su **H028+$0D36**, non ancora portata. Siamo a 342 routine portate su 915.
+I ported the training: I am sending you **cok-port-13.zip**. Create New Character now gets as far as the question "Reroll stats?" and the request for the name. After the name the program stops at **H028+$0D36**, not yet ported. We are at 342 routines ported out of 915.
 
-**Addestramento (H013+$58DC):**
-- **Dal menu principale (voce T):** controlla che il personaggio sia cosciente e che abbia esperienza sufficiente secondo la tabella H005+$1946. Controlla anche che la classe si possa addestrare lì (maschera +$550 dello stato B). Poi mostra "X will become: a level N …", chiede "Do you wish to train?" e alza i livelli.
-- **Dentro la creazione:** gira senza messaggi né domande e viene ripetuto finché nessuna classe può più salire. Poi assegna gli incantesimi iniziali del mago e tira i punti ferita.
-- **Esempi:**
-  - Un guerriero con 2001 XP iniziali parte dal livello 2, con 23 PF (screenshot).
-  - Un chierico di Paladine con 2000 XP resta al livello 1, perché per lui il livello 2 richiede 4000 XP.
+**Training (H013+$58DC):**
+- **From the main menu (item T):** checks that the character is conscious and has enough experience according to the table H005+$1946. It also checks that the class can be trained there (mask +$550 of state B). Then it shows "X will become: a level N …", asks "Do you wish to train?" and raises the levels.
+- **Inside the creation:** it runs without messages or questions and is repeated until no class can go up any more. Then it assigns the initial mage spells and rolls the hit points.
+- **Examples:**
+  - A fighter with 2001 initial XP starts at level 2, with 23 HP (screenshot).
+  - A cleric of Paladine with 2000 XP stays at level 1, because for him level 2 requires 4000 XP.
 
-**Altre routine nuove:**
-- **H073+$05AE:** ricalcola i valori legati al livello (THAC0 base, livello massimo, tiri salvezza, abilità da ladro, oggetti che non si possono più tenere pronti).
-- **H073+$0012:** slot e incantesimi conosciuti per tutte le classi.
-- **Funzioni di supporto:** H063+$3F72 (riga della tabella dell'esperienza), H029+$039A e H030+$0AD2/$0B4A (messaggio a tempo sulla riga 24).
+**Other new routines:**
+- **H073+$05AE:** recomputes the values tied to the level (base THAC0, maximum level, saving throws, thief skills, items that can no longer be kept ready).
+- **H073+$0012:** slots and known spells for all classes.
+- **Support functions:** H063+$3F72 (row of the experience table), H029+$039A and H030+$0AD2/$0B4A (timed message on row 24).
 
-**Cosa resta stub:** H065+$34FC, la scelta interattiva di un nuovo incantesimo del mago quando sale di livello. Si usa solo dalla voce "Train" del menu, non nella creazione.
+**What stays a stub:** H065+$34FC, the interactive choice of a new mage spell when going up a level. It is used only from the "Train" item of the menu, not in the creation.
 
-**Dove ho seguito l'asm anche se sembra un errore (è nei commenti):**
-- Nel secondo ciclo dell'addestramento la riga della tabella e il livello sono quelli rimasti dall'ultima classe del ciclo precedente.
-- H063+$3F72 restituisce un valore non inizializzato per le classi 1 e 3; qui 0.
+**Where I followed the asm even though it looks like a bug (it is in the comments):**
+- In the second loop of the training the table row and the level are the ones left over from the last class of the previous loop.
+- H063+$3F72 returns an uninitialised value for classes 1 and 3; here 0.
 
-**Verifiche:**
-- La build Linux, le build MinGW x64/x86 e il controllo C89 non danno warning; ctest passa 8 test su 8.
-- Ho fatto tre creazioni sotto ASan/UBSan senza errori: guerriero, chierico e mago con un nuovo tiro.
-- Non ho compilato con SAS/C. Se dà errori mandami lo `smake.err`.
+**Checks:**
+- The Linux build, the MinGW x64/x86 builds and the C89 check give no warnings; ctest passes 8 tests out of 8.
+- I did three creations under ASan/UBSan without errors: fighter, cleric and mage with a reroll.
+- I did not compile with SAS/C. If it gives errors send me the `smake.err`.
 
-Per completare la creazione mancano:
-1. **H028+$0D36:** chiamata subito dopo il nome. È lunga solo 17 istruzioni, ma ne chiama di più grandi.
-2. **H047+$00E6:** la scelta della figura del personaggio.
-3. **H066+$1640:** il salvataggio su disco.
+To complete the creation these are missing:
+1. **H028+$0D36:** called right after the name. It is only 17 instructions long, but it calls bigger ones.
+2. **H047+$00E6:** the choice of the character's figure.
+3. **H066+$1640:** the saving to disk.
 
-Se vuoi procedo con queste tre, in quest'ordine.
+If you want I proceed with these three, in this order.
 
 ---
 
 ## 2026-11-10 18:37
 
-Ho portato H028+$0D36 e ti mando **cok-port-14.zip**. Ora Create New Character va oltre il nome e si ferma su **H047+$00E6**, non ancora portata. Siamo a 347 routine portate su 916.
+I ported H028+$0D36 and I am sending you **cok-port-14.zip**. Create New Character now goes past the name and stops at **H047+$00E6**, not yet ported. We are at 347 routines ported out of 916.
 
-**Cosa fa H028+$0D36:** carica una sola volta, controllando il flag -$F9, le due immagini delle schermate dei personaggi, `charS.LBM` e `charT.LBM`.
+**What H028+$0D36 does:** it loads, only once, checking the flag -$F9, the two pictures of the character screens, `charS.LBM` and `charT.LBM`.
 
-**Routine nuove dall'asm:**
-- **H028+$0C68:** per ogni file crea una nuova BitMap e legge l'immagine con Read_ILBM.
-  - Copia i 32 colori in H005+$522E.
-  - Mette il colore 0 in H005+$523E e poi azzera il colore 0.
-  - Sull'host i colori del lettore sono word native, quindi li scrivo in H005 in big-endian. È lo stesso risultato del CopyMem di 64 byte sull'Amiga.
-- **H041+$000C, $004A, $00BE:** l'allocatore che salva la dimensione nella long prima del blocco, e la relativa liberazione.
-  - Toglie lo stub che usava la liberazione delle due schermate (H028+$0D74).
+**New routines from the asm:**
+- **H028+$0C68:** for each file it creates a new BitMap and reads the picture with Read_ILBM.
+  - Copies the 32 colours into H005+$522E.
+  - Puts colour 0 into H005+$523E and then clears colour 0.
+  - On the host the reader's colours are native words, so I write them into H005 in big-endian. It is the same result as the 64-byte CopyMem on the Amiga.
+- **H041+$000C, $004A, $00BE:** the allocator that saves the size in the long before the block, and the matching free.
+  - Removes the stub that the freeing of the two screens used (H028+$0D74).
 
-**Verifica del caricamento (con gdb, al punto in cui il programma si ferma):**
-- Entrambe le bitmap risultano 320×200 a 5 piani, come nel BMHD del file.
-- In H005+$522E c'è la palette di charT con il colore 0 a nero.
-- In H005+$523E c'è `0x555`, cioè il colore 0 originale di charT.
+**Check of the loading (with gdb, at the point where the program stops):**
+- Both bitmaps are 320×200 with 5 planes, as in the BMHD of the file.
+- H005+$522E holds the charT palette with colour 0 set to black.
+- H005+$523E holds `0x555`, that is the original colour 0 of charT.
 
-**Altre verifiche:**
-- La build Linux, le build MinGW x64/x86 e il controllo C89 non danno warning.
-- Ho dovuto cambiare `dax_test`, perché `h028_files.c` ora usa il lettore ILBM: compila anche `h041.c` e ha uno stub del lettore. Con questa modifica ctest passa 8 test su 8.
-- Ho fatto una creazione completa fino al nome sotto ASan/UBSan, senza errori.
-- Non ho compilato con SAS/C. Se dà errori mandami lo `smake.err`.
+**Other checks:**
+- The Linux build, the MinGW x64/x86 builds and the C89 check give no warnings.
+- I had to change `dax_test`, because `h028_files.c` now uses the ILBM reader: it also compiles `h041.c` and has a stub of the reader. With this change ctest passes 8 tests out of 8.
+- I did a complete creation up to the name under ASan/UBSan, without errors.
+- I did not compile with SAS/C. If it gives errors send me the `smake.err`.
 
-Il prossimo passo è **H047+$00E6**, la scelta della figura del personaggio. È un trampolino verso $08D6, circa 440 istruzioni, che usa gli sprite di H035 e le schermate appena caricate. Se vuoi procedo con quella.
+The next step is **H047+$00E6**, the choice of the character's figure. It is a trampoline to $08D6, about 440 instructions, which uses the H035 sprites and the screens just loaded. If you want I proceed with that.
 
 ---
 
 ## 2026-11-10 18:44
 
-Il tuo log mostra che la build SAS/C linka (`SLINK Complete`). Ho corretto i warning che segnalava e ti mando **cok-port-15.zip**. Non l'ho ricompilato con SAS/C.
+Your log shows that the SAS/C build links (`SLINK Complete`). I fixed the warnings it reported and I am sending you **cok-port-15.zip**. I did not recompile it with SAS/C.
 
-- **Warning 217** ("macro invocation may call function multiple times", in h007, h013 e h063): `COK_PUT16` e `COK_PUT32` valutavano due volte il valore. Quando il valore era una chiamata, per esempio `max_age(...)` o `str_damage_bonus(c)`, la funzione veniva chiamata due volte. Ora le macro mettono argomenti e puntatore in variabili temporanee, quindi valutano tutto una sola volta.
-- **Warning 84** (`SELECTED`): `intuition/iobsolete.h` definisce già `SELECTED` come flag dei gadget. In `h008.c` la macro del port ora si chiama `CHOICE_SELECTED`.
-- **Warning 63** (`struct Character` già dichiarata): `globals.h` ora include `character.h` invece di ridichiarare la struct.
+- **Warning 217** ("macro invocation may call function multiple times", in h007, h013 and h063): `COK_PUT16` and `COK_PUT32` evaluated the value twice. When the value was a call, for example `max_age(...)` or `str_damage_bonus(c)`, the function was called twice. Now the macros put arguments and pointer into temporary variables, so they evaluate everything only once.
+- **Warning 84** (`SELECTED`): `intuition/iobsolete.h` already defines `SELECTED` as a gadget flag. In `h008.c` the port macro is now called `CHOICE_SELECTED`.
+- **Warning 63** (`struct Character` already declared): `globals.h` now includes `character.h` instead of declaring the struct again.
 
-Nessuna modifica cambia il comportamento. La build Linux, le build MinGW x64/x86 e il controllo C89 non danno warning e ctest passa 8 test su 8. Una creazione rifatta con la build normale arriva come prima fino a H047+$00E6.
+No change alters the behaviour. The Linux build, the MinGW x64/x86 builds and the C89 check give no warnings and ctest passes 8 tests out of 8. A creation redone with the normal build gets as far as H047+$00E6 as before.
 
-Se SAS/C dà ancora warning mandami il nuovo `smake.err`. Il prossimo passo è la scelta della figura del personaggio, **H047+$00E6**.
+If SAS/C still gives warnings send me the new `smake.err`. The next step is the choice of the character's figure, **H047+$00E6**.
 
 ---
 
 ## 2026-11-10 19:01
 
-Ho portato l'editor dell'icona (H047+$00E6) e ti mando **cok-port-16.zip**. Ora Create New Character arriva fino in fondo: nome, icona, "Is this icon ok?" e "Save TAS?". Rispondendo No il gioco torna al menu principale. Rispondendo Sì si ferma, perché il salvataggio (**H066+$1640**) è ancora uno stub. Siamo a 363 routine portate su 916.
+I ported the icon editor (H047+$00E6) and I am sending you **cok-port-16.zip**. Create New Character now gets all the way to the end: name, icon, "Is this icon ok?" and "Save TAS?". Answering No the game goes back to the main menu. Answering Yes it stops, because the saving (**H066+$1640**) is still a stub. We are at 363 routines ported out of 916.
 
-**Editor dell'icona (H047+$00E6, corpo a $08D6):** è una macchina a sei stati, ognuno con il suo menu.
-1. Parts / 1st-color / 2nd-color / Size / Exit (oppure Body / Size / Exit per le icone intere).
+**Icon editor (H047+$00E6, body at $08D6):** it is a six-state machine, each with its own menu.
+1. Parts / 1st-color / 2nd-color / Size / Exit (or Body / Size / Exit for whole icons).
 2. Head / Weapon.
-3. Scelta della parte da colorare: in quel menu la voce "xxxx" diventa Hair o Face.
-4. Dimensione.
-5. Next / Prev / Keep per il colore.
-6. Griglia 7×N delle teste o dei corpi, scelti con frecce, tastierino o mouse.
+3. Choice of the part to colour: in that menu the item "xxxx" becomes Hair or Face.
+4. Size.
+5. Next / Prev / Keep for the colour.
+6. 7×N grid of the heads or bodies, chosen with arrows, keypad or mouse.
 
-Mostra la coppia di pose "old" e "new" (ready/action). Exit dal primo menu conferma le modifiche, poi viene chiesto "Is this icon ok?".
+It shows the pair of "old" and "new" poses (ready/action). Exit from the first menu confirms the changes, then "Is this icon ok?" is asked.
 
-**Altre routine nuove:**
-- **H066+$0C34:** compone l'icona 24×24 ritagliando testa e corpo da charS/charT e la ricolora con le coppie di colori del personaggio (+$146). Usa le procedure $0BAC, $0C42, $0D2A e $0DEA.
-- **H035+$01DC / $0460:** liberano e disegnano un set 24×24 attraverso la maschera.
-- **H029+$10B8:** riempie un rettangolo di celle 8×8.
-- **H016+$00A0:** wrapper di BltMaskBitMapRastPort, con l'emulazione sull'host. Sull'host copia la sorgente dove la maschera è a 1, cioè l'effetto del minterm $E0 usato dal gioco.
+**Other new routines:**
+- **H066+$0C34:** composes the 24×24 icon by cutting head and body out of charS/charT and recolours it with the character's colour pairs (+$146). It uses the procedures $0BAC, $0C42, $0D2A and $0DEA.
+- **H035+$01DC / $0460:** free and draw a 24×24 set through the mask.
+- **H029+$10B8:** fills a rectangle of 8×8 cells.
+- **H016+$00A0:** wrapper of BltMaskBitMapRastPort, with the emulation on the host. On the host it copies the source where the mask is 1, that is the effect of the $E0 minterm used by the game.
 
-**Restano stub:** H049+$04AE e $09D6, usate solo per il disegno in combattimento e con scala > 3.
+**Still stubs:** H049+$04AE and $09D6, used only for drawing in combat and with scale > 3.
 
-**Scostamento dall'originale (è nei commenti):** nell'editor una variabile di stato (-$24) non è inizializzata prima del primo menu; qui parte da 0.
+**Deviation from the original (it is in the comments):** in the editor a state variable (-$24) is not initialised before the first menu; here it starts from 0.
 
-**Verifiche sull'host:**
-- **Funzioni dell'editor:** la griglia mostra le 13 teste con la selezione evidenziata. Freccia destra + Invio cambia la testa. Next cambia il colore dei capelli (rosso → magenta → marrone). Size e il ritorno ai menu con Esc funzionano.
-- **ASan/UBSan:** un percorso completo dalla creazione all'editor e ritorno al menu principale, senza errori.
-- **Build:** Linux, MinGW x64/x86 e il controllo C89 non danno warning; ctest passa 8 test su 8.
-- **SAS/C:** non l'ho compilato. Se dà errori mandami lo `smake.err`.
+**Checks on the host:**
+- **Editor functions:** the grid shows the 13 heads with the selection highlighted. Right arrow + Enter changes the head. Next changes the hair colour (red → magenta → brown). Size and the return to the menus with Esc work.
+- **ASan/UBSan:** a complete path from the creation to the editor and back to the main menu, without errors.
+- **Build:** Linux, MinGW x64/x86 and the C89 check give no warnings; ctest passes 8 tests out of 8.
+- **SAS/C:** I did not compile it. If it gives errors send me the `smake.err`.
 
-L'ultimo pezzo della creazione è **H066+$1640, Save_CharacterRecord**: circa 480 istruzioni, con la scrittura del record su disco e i file collegati. Se vuoi procedo con quello.
+The last piece of the creation is **H066+$1640, Save_CharacterRecord**: about 480 instructions, with the writing of the record to disk and the related files. If you want I proceed with that.
 
 ---
 
 ## 2026-11-10 19:15
 
-Ho portato il salvataggio del personaggio (H066+$1640) e ti mando **cok-port-17.zip**: Create New Character ora arriva fino in fondo e scrive il personaggio su disco. Siamo a 377 routine portate su 916. Non l'ho compilato con SAS/C: se dà errori mandami lo `smake.err`.
+I ported the saving of the character (H066+$1640) and I am sending you **cok-port-17.zip**: Create New Character now gets all the way to the end and writes the character to disk. We are at 377 routines ported out of 916. I did not compile it with SAS/C: if it gives errors send me the `smake.err`.
 
-**Cosa scrive (nella directory dei salvataggi H005+$3CD4):**
-- `nome.who` con il record di $1AA byte (oppure `nome.sav` se si passa un nome di file);
-- `nome.swg` con gli oggetti, $48 byte ciascuno, solo se il personaggio ne ha;
-- `nome.fx` con gli effetti, $0A byte ciascuno.
+**What it writes (in the save directory H005+$3CD4):**
+- `name.who` with the $1AA-byte record (or `name.sav` if a file name is passed);
+- `name.swg` with the items, $48 bytes each, only if the character has any;
+- `name.fx` with the effects, $0A bytes each.
 
-Il nome del file viene dal nome del personaggio: si tolgono i caratteri ` .*,?/#:;|` e si tengono al massimo 8 caratteri.
+The file name comes from the character's name: the characters ` .*,?/#:;|` are removed and at most 8 characters are kept.
 
-**Controlli prima di scrivere:**
-- **Directory di salvataggio:** se mancano il disco o la directory, il gioco chiede di inserire il disco o crea la directory.
-- **Spazio libero:** se non basta, mostra "Can't save. No room on this disk." e chiede "Lose character? / Ok, try another disk".
-- **Prova di scrittura:** crea e cancella un file di prova (`testfilename`).
-- **File già esistente:** chiede "Overwrite NOME?". Rispondendo No chiede un nome nuovo, che diventa anche il nome del personaggio, come nell'originale.
+**Checks before writing:**
+- **Save directory:** if the disk or the directory is missing, the game asks to insert the disk or creates the directory.
+- **Free space:** if it is not enough, it shows "Can't save. No room on this disk." and asks "Lose character? / Ok, try another disk".
+- **Write test:** creates and deletes a test file (`testfilename`).
+- **File already existing:** asks "Overwrite NAME?". Answering No it asks for a new name, which also becomes the character's name, as in the original.
 
-**Verifiche:**
-- **Elfo guerriero:** produce `TAS.who` di 426 byte con la stessa struttura di `L.who` dei dati originali. Il suo `.fx` è identico byte per byte a `L.fx`.
-- **Cavaliere:** produce `KNT.swg` di 216 byte. Contiene gli stessi tre oggetti iniziali (Plate Mail, Shield, Long Sword), nello stesso ordine e con gli stessi pesi, di `CHRDATA1.swg` originale.
-- **Overwrite:** con Sì riscrive i file; con No e il nome "BOB" crea `BOB.who`, con il personaggio rinominato BOB.
-- **Build e test:** la build Linux, le build MinGW x64/x86 e il controllo C89 non danno warning e ctest passa 8 test su 8. Il percorso con il nome nuovo è stato rifatto sotto ASan/UBSan senza errori.
+**Checks:**
+- **Elf fighter:** produces a 426-byte `TAS.who` with the same structure as `L.who` of the original data. Its `.fx` is identical byte for byte to `L.fx`.
+- **Knight:** produces a 216-byte `KNT.swg`. It contains the same three initial items (Plate Mail, Shield, Long Sword), in the same order and with the same weights, as the original `CHRDATA1.swg`.
+- **Overwrite:** with Yes it rewrites the files; with No and the name "BOB" it creates `BOB.who`, with the character renamed BOB.
+- **Build and tests:** the Linux build, the MinGW x64/x86 builds and the C89 check give no warnings and ctest passes 8 tests out of 8. The path with the new name was redone under ASan/UBSan without errors.
 
-**Differenze rispetto all'originale (sono nei commenti):**
-- I campi puntatore del record e dei nodi (+$E8, +$150…, i link "successivo") vengono scritti a 0. L'originale ci scriveva gli indirizzi in memoria, che il caricamento non usa.
-- Dopo il nome nuovo, l'originale ricontrolla l'esistenza su un buffer che ormai contiene la domanda "Overwrite …": l'ho mantenuto così.
-- In H028+$033E l'originale legge il nome del volume dopo aver liberato il blocco che lo contiene; qui lo copio prima di liberarlo.
+**Differences from the original (they are in the comments):**
+- The pointer fields of the record and of the nodes (+$E8, +$150…, the "next" links) are written as 0. The original wrote the memory addresses there, which the loading does not use.
+- After the new name, the original checks the existence again on a buffer that by then contains the question "Overwrite …": I kept it that way.
+- In H028+$033E the original reads the volume name after freeing the block that contains it; here I copy it before freeing it.
 
-**Altre routine nuove:**
-- H028+$033E, $07E0, $08F0: nome del volume, rimozione di caratteri, nome del file.
-- H030+$028A: messaggio che resta finché non si preme un tasto.
-- Wrapper DOS CreateDir, DeleteFile ed Examine, con le versioni host.
+**Other new routines:**
+- H028+$033E, $07E0, $08F0: volume name, removal of characters, file name.
+- H030+$028A: message that stays until a key is pressed.
+- DOS wrappers CreateDir, DeleteFile and Examine, with the host versions.
 
-**Modifiche all'host:**
-- Lock ora trova anche le directory, anche su Windows.
-- Info riporta i blocchi liberi.
+**Changes to the host:**
+- Lock now also finds directories, on Windows too.
+- Info reports the free blocks.
 
-Il passo naturale è **Add Character to Party** (H013+$0518 → $52E0), che carica un personaggio salvato con Load_CharacterRecord (H066+$1B0E): permette di rileggere i file appena scritti.
+The natural step is **Add Character to Party** (H013+$0518 → $52E0), which loads a saved character with Load_CharacterRecord (H066+$1B0E): it lets you read back the files just written.
 
 ---
 
 ## 2026-11-10 19:23
 
-Ho portato Add Character to Party e ti mando **cok-port-18.zip**. Il menu principale ora carica i personaggi salvati e li mostra nel party, con nome, CA e PF. Siamo a 386 routine portate su 916.
+I ported Add Character to Party and I am sending you **cok-port-18.zip**. The main menu now loads the saved characters and shows them in the party, with name, AC and HP. We are at 386 routines ported out of 916.
 
-**Cosa fa:**
-- Mostra l'elenco dei personaggi salvati ("Add a character:"): i file `.WHO` di $1AA byte nella directory dei salvataggi, esclusi quelli già nel party.
-- Il personaggio scelto viene caricato e segnato con `* `.
-- Viene aggiunto solo se rispetta le regole del gioco. Se non le rispetta, il segno viene tolto e compare il messaggio:
-  - non deve essere già nel party;
-  - al massimo 6 personaggi giocanti e 8 membri in tutto;
-  - niente paladino in un party con membri malvagi ("paladins do not join with evil scum");
-  - al massimo 3 ranger ("too many rangers in party");
-  - niente personaggio malvagio con un paladino ("<nome> will tolerate no evil!").
-- Si continua finché non si esce con Esc/Exit o il party è pieno.
+**What it does:**
+- Shows the list of saved characters ("Add a character:"): the $1AA-byte `.WHO` files in the save directory, except those already in the party.
+- The chosen character is loaded and marked with `* `.
+- It is added only if it respects the rules of the game. If it does not, the mark is removed and the message appears:
+  - it must not already be in the party;
+  - at most 6 player characters and 8 members in all;
+  - no paladin in a party with evil members ("paladins do not join with evil scum");
+  - at most 3 rangers ("too many rangers in party");
+  - no evil character with a paladin ("<name> will tolerate no evil!").
+- It goes on until you leave with Esc/Exit or the party is full.
 
-**Routine nuove dall'asm:**
+**New routines from the asm:**
 - **H013+$52E0:** Add_CharacterToParty.
-- **H066+$1B0E (Load_CharacterRecord):** legge il record, poi gli oggetti da `.swg` e gli effetti da `.fx`, e ricalcola i valori derivati.
-- **H066+$03D0/$03DE:** elenco dei personaggi salvati.
-- **H066+$0852:** apertura del file senza la sostituzione del disco.
-- **H066+$27EE:** aggiunta in coda al party, con il primo posto icona libero.
-- **H063+$0D80:** elenco del party nel menu principale, insieme all'area cliccabile.
-- **H063+$1D44:** messaggio a tempo sulla riga 24; prende il posto dello stub usato dall'addestramento.
+- **H066+$1B0E (Load_CharacterRecord):** reads the record, then the items from `.swg` and the effects from `.fx`, and recomputes the derived values.
+- **H066+$03D0/$03DE:** list of the saved characters.
+- **H066+$0852:** opening of the file without the disk swap.
+- **H066+$27EE:** append to the party, with the first free icon slot.
+- **H063+$0D80:** list of the party in the main menu, together with the clickable area.
+- **H063+$1D44:** timed message on row 24; it replaces the stub used by the training.
 
-**Host:** i lock ora ricordano il percorso, ed Examine/ExNext scandiscono davvero le directory (dirent; `_findfirst` su Windows, compilato con MinGW ma non provato su Windows).
+**Host:** the locks now remember the path, and Examine/ExNext really scan the directories (dirent; `_findfirst` on Windows, compiled with MinGW but not tried on Windows).
 
-**Dove ho seguito l'asm anche se sembra un errore (è nei commenti):**
-- Per un personaggio rifiutato viene liberato solo il record: oggetti ed effetti già caricati restano allocati.
-- Due variabili non sono inizializzate prima della prima scelta nell'originale: il flag "with_exit" del menu e il contatore dei membri. Qui partono da 0.
-- La stringa "from saved game …" viene composta ma non è mai usata.
+**Where I followed the asm even though it looks like a bug (it is in the comments):**
+- For a rejected character only the record is freed: items and effects already loaded stay allocated.
+- Two variables are not initialised before the first choice in the original: the "with_exit" flag of the menu and the member counter. Here they start from 0.
+- The string "from saved game …" is composed but never used.
 
-**Verifiche:**
-- L'elenco mostra L (personaggio dei dati originali), BOB, TAS e KNT. Aggiungendoli, il menu principale mostra il party con CA e PF e abilita Drop/Modify/View/Remove/Save/Begin.
-- Il giro con tutti e quattro è stato fatto anche sotto ASan/UBSan, senza errori.
-- I divieti del party (paladini, ranger, allineamenti malvagi) non li ho provati: tutti e quattro i personaggi sono stati accettati, quindi nessun messaggio di rifiuto è comparso.
-- La build Linux, le build MinGW x64/x86 e il controllo C89 non danno warning e ctest passa 8 test su 8.
-- Non ho compilato con SAS/C: se dà errori mandami lo `smake.err`.
+**Checks:**
+- The list shows L (character of the original data), BOB, TAS and KNT. Adding them, the main menu shows the party with AC and HP and enables Drop/Modify/View/Remove/Save/Begin.
+- The run with all four was also done under ASan/UBSan, without errors.
+- I did not try the party restrictions (paladins, rangers, evil alignments): all four characters were accepted, so no rejection message appeared.
+- The Linux build, the MinGW x64/x86 builds and the C89 check give no warnings and ctest passes 8 tests out of 8.
+- I did not compile with SAS/C: if it gives errors send me the `smake.err`.
 
-Con un party, nel menu restano da portare View Character (H065+$3702/$196E), Drop, Modify, Remove, Save Current Game e BEGIN Adventuring. Dimmi da quale proseguire.
+With a party, the menu items still to be ported are View Character (H065+$3702/$196E), Drop, Modify, Remove, Save Current Game and BEGIN Adventuring. Tell me which one to continue with.
 
 ---
 
 ## 2026-11-10 19:24
 
-Questo `smake.err` è identico byte per byte a quello che mi avevi mandato prima della versione 15, quindi viene da una build dei sorgenti vecchi. Non riguarda cok-port-18.
+This `smake.err` is identical byte for byte to the one you sent me before version 15, so it comes from a build of the old sources. It does not concern cok-port-18.
 
-Lo si vede dal contenuto:
+You can see it from the content:
 
-- **Warning 84** cita `#define SELECTED` alla riga 138 di `h008.c`. Dalla versione 15 quella riga è `#define CHOICE_SELECTED`.
-- **Warning 63** cita `struct Character;` alla riga 73 di `globals.h`. Dalla 15 lì c'è `#include "character.h"`.
-- **Warning 217** viene dalla vecchia `COK_PUT16`, che valutava due volte l'argomento. Ora usa le variabili temporanee `cok_w_`/`cok_p_`.
-- **Dimensione del programma:** il link riporta 164076 byte di codice, come allora. Con le routine aggiunte nella 16, 17 e 18 (editor dell'icona, salvataggio, caricamento, party) dovrebbe essere più grande.
+- **Warning 84** cites `#define SELECTED` at line 138 of `h008.c`. Since version 15 that line is `#define CHOICE_SELECTED`.
+- **Warning 63** cites `struct Character;` at line 73 of `globals.h`. Since 15 there is `#include "character.h"` there.
+- **Warning 217** comes from the old `COK_PUT16`, which evaluated the argument twice. Now it uses the temporary variables `cok_w_`/`cok_p_`.
+- **Program size:** the link reports 164076 bytes of code, as back then. With the routines added in 16, 17 and 18 (icon editor, saving, loading, party) it should be bigger.
 
-Probabilmente hai compilato in una directory con una versione precedente, oppure `smake` non ha ricompilato perché i `.o` risultavano più recenti dei sorgenti.
+You probably compiled in a directory with a previous version, or `smake` did not recompile because the `.o` files were newer than the sources.
 
-Per una build pulita della 18, estrai **cok-port-18.zip** in una directory nuova, oppure cancella i vecchi `.o`:
+For a clean build of 18, extract **cok-port-18.zip** into a new directory, or delete the old `.o` files:
 
 ```bash
 cd cok-port/src_c/readable
@@ -1178,1910 +1178,1910 @@ delete #?.o cok
 smake
 ```
 
-Poi mandami il nuovo `smake.err`. Se compila, dimmi da quale voce del menu proseguire: View Character, Drop, Modify, Remove, Save Current Game o BEGIN Adventuring.
+Then send me the new `smake.err`. If it compiles, tell me which menu item to continue with: View Character, Drop, Modify, Remove, Save Current Game or BEGIN Adventuring.
 
 ---
 
 ## 2026-11-10 19:27
 
-Ho corretto l'unico warning che restava nel log e ti mando **cok-port-19.zip**.
+I fixed the only warning left in the log and I am sending you **cok-port-19.zip**.
 
-Questo log viene dalla versione nuova. I warning corretti nella 15 (SELECTED, macro PUT, `struct Character`) non ci sono più, e il programma è cresciuto da 164076 a 178684 byte di codice.
+This log comes from the new version. The warnings fixed in 15 (SELECTED, PUT macros, `struct Character`) are no longer there, and the program has grown from 164076 to 178684 bytes of code.
 
-Il warning era il **63** in `unported.h`: alla riga 219 c'era `struct GfxRecord;`, ma la struct è già definita in `gfx_record.h`. Ho tolto la dichiarazione e `unported.h` ora include direttamente `gfx_record.h`. Il comportamento non cambia.
+The warning was **63** in `unported.h`: at line 219 there was `struct GfxRecord;`, but the struct is already defined in `gfx_record.h`. I removed the declaration and `unported.h` now includes `gfx_record.h` directly. The behaviour does not change.
 
-La build Linux, le build MinGW x64/x86 e il controllo C89 non danno warning e ctest passa 8 test su 8. Non ho ricompilato con SAS/C: se il nuovo `smake.err` mostra altro, mandamelo.
+The Linux build, the MinGW x64/x86 builds and the C89 check give no warnings and ctest passes 8 tests out of 8. I did not recompile with SAS/C: if the new `smake.err` shows anything else, send it to me.
 
-Dimmi da quale voce del menu del party proseguire: View Character, Drop, Modify, Remove, Save Current Game o BEGIN Adventuring.
+Tell me which item of the party menu to continue with: View Character, Drop, Modify, Remove, Save Current Game or BEGIN Adventuring.
 
 ---
 
 ## 2026-11-10 19:33
 
-Ho portato View Character e ti mando **cok-port-20.zip**: dal menu del party si sceglie un personaggio, se ne vede la scheda e si torna al menu. Le funzioni del sottomenu (Items, Trade, Drop) non sono ancora portate: sceglierle ferma il programma. Siamo a 392 routine portate su 916.
+I ported View Character and I am sending you **cok-port-20.zip**: from the party menu you choose a character, see their sheet and go back to the menu. The functions of the submenu (Items, Trade, Drop) are not ported yet: choosing them stops the program. We are at 392 routines ported out of 916.
 
-**Come funziona:**
-1. Dal menu principale si sceglie View Character.
-2. Compare "Pick Character" (H065+$3702), dove si sceglie il personaggio. I tasti speciali passano al precedente o al successivo del party, con il giro dal primo all'ultimo; un clic su un nome sceglie direttamente quel personaggio.
-3. Si apre la scheda del personaggio con un menu (H065+$196E) che contiene solo le voci disponibili per lui:
-   - Items, se ha oggetti;
-   - Spells, se ha incantesimi memorizzati;
-   - Trade e Drop, se ha denaro;
-   - Heal e Cure, che però nell'originale non compaiono mai, perché le due funzioni di controllo ($36A6/$36C0) restituiscono sempre 0;
+**How it works:**
+1. From the main menu you choose View Character.
+2. "Pick Character" (H065+$3702) appears, where you choose the character. The special keys move to the previous or next member of the party, wrapping from the first to the last; a click on a name directly chooses that character.
+3. The character sheet opens with a menu (H065+$196E) that contains only the items available for that character:
+   - Items, if they have items;
+   - Spells, if they have memorised spells;
+   - Trade and Drop, if they have money;
+   - Heal and Cure, which however never appear in the original, because the two check functions ($36A6/$36C0) always return 0;
    - Exit.
-4. All'uscita la schermata viene ridisegnata secondo il modo di gioco (H063+$321A). Nel menu del party è la cornice; gli altri modi (vista, combattimento, accampamento) usano routine ancora non portate.
+4. On exit the screen is redrawn according to the game mode (H063+$321A). In the party menu it is the frame; the other modes (view, combat, camp) use routines not yet ported.
 
-**Correzione a codice esistente:** lo stub di H042+$0254 aveva la firma sbagliata. Nell'asm prende quattro argomenti (word, word, byte, puntatore) e viene chiamato con il risultato di H042+$0B80. Ho corretto entrambi gli stub e la chiamata in H008.
+**Fix to existing code:** the stub of H042+$0254 had the wrong signature. In the asm it takes four arguments (word, word, byte, pointer) and is called with the result of H042+$0B80. I fixed both stubs and the call in H008.
 
-**Cosa resta stub nel sottomenu di View:**
-- **Items (H065+$255A):** circa 355 istruzioni; usa altre routine di H065 e H033.
-- **Spells (H065+$34FC):** circa 117 istruzioni.
-- **Trade (H065+$12D6) e Drop (H065+$1636):** circa 200 istruzioni ciascuno; usano H067.
+**What stays a stub in the View submenu:**
+- **Items (H065+$255A):** about 355 instructions; uses other routines of H065 and H033.
+- **Spells (H065+$34FC):** about 117 instructions.
+- **Trade (H065+$12D6) and Drop (H065+$1636):** about 200 instructions each; they use H067.
 
-**Verifiche:**
-- Con L aggiunto al party, View mostra la sua scheda (Paladine Cleric, 40 Steel) con il menu "Trade Drop Exit", ed Exit torna al menu principale.
-- Il giro è stato fatto anche sotto ASan/UBSan, senza errori.
-- La build Linux, le build MinGW x64/x86 e il controllo C89 non danno warning e ctest passa 8 test su 8.
-- Non ho compilato con SAS/C: se dà errori mandami lo `smake.err`.
+**Checks:**
+- With L added to the party, View shows their sheet (Paladine Cleric, 40 Steel) with the menu "Trade Drop Exit", and Exit goes back to the main menu.
+- The run was also done under ASan/UBSan, without errors.
+- The Linux build, the MinGW x64/x86 builds and the C89 check give no warnings and ctest passes 8 tests out of 8.
+- I did not compile with SAS/C: if it gives errors send me the `smake.err`.
 
-Se vuoi completare View, il passo più utile è **Items**: il cavaliere KNT ha i suoi tre oggetti iniziali per provarlo. In alternativa posso passare alle altre voci del menu (Drop, Modify, Remove, Save Current Game, BEGIN Adventuring).
+If you want to complete View, the most useful step is **Items**: the knight KNT has his three initial items to try it. Alternatively I can move to the other menu items (Drop, Modify, Remove, Save Current Game, BEGIN Adventuring).
 
 ---
 
 ## 2026-11-10 19:42
 
-Ti mando **cok-port-21.zip** con la schermata Items di View Character. Funzionano Ready, Drop, Halve e Join; Use, Trade, Sell e Id sono ancora stub, e sceglierli ferma il programma. Siamo a 407 routine portate su 916.
+I am sending you **cok-port-21.zip** with the Items screen of View Character. Ready, Drop, Halve and Join work; Use, Trade, Sell and Id are still stubs, and choosing them stops the program. We are at 407 routines ported out of 916.
 
-**La schermata (H065+$255A):**
-- In alto "<Nome>'s Items" e "Ready Item".
-- Sotto, l'elenco degli oggetti con Yes/No (pronto o no) e il nome composto.
-- Il menu mostra solo i comandi validi in quel momento:
-  - Ready (View Ready in modalità debug);
-  - Use: solo in combattimento o accampamento;
-  - Trade: non in combattimento;
+**The screen (H065+$255A):**
+- At the top "<Name>'s Items" and "Ready Item".
+- Below, the list of items with Yes/No (ready or not) and the composed name.
+- The menu shows only the commands valid at that moment:
+  - Ready (View Ready in debug mode);
+  - Use: only in combat or in camp;
+  - Trade: not in combat;
   - Drop;
-  - Halve: con meno di 16 oggetti;
+  - Halve: with fewer than 16 items;
   - Join;
-  - Sell e Id: solo in città;
+  - Sell and Id: only in town;
   - Exit.
 
-**Comandi portati:**
-- **Ready (H065+$2C04):** prepara o toglie l'oggetto. Un oggetto maledetto non si toglie ("It's Cursed"). Gli altri impedimenti hanno il loro messaggio:
+**Ported commands:**
+- **Ready (H065+$2C04):** readies or unreadies the item. A cursed item cannot be removed ("It's Cursed"). The other obstacles have their own message:
   - "Wrong Class";
-  - "already using <oggetto>" (slot occupato);
+  - "already using <item>" (slot occupied);
   - "Your hands are full!";
-  - "Wrong Magical Order" (pergamene);
+  - "Wrong Magical Order" (scrolls);
   - "Usable Only By Kender".
-- **Drop:** un oggetto pronto non si può lasciare ("Must be unreadied"). Per le pergamene magiche c'è una conferma. Poi "Your <oggetto> will be gone forever / Drop It?".
-- **Halve:** divide la quantità in un nuovo oggetto, oppure "Can't halve that".
-- **Join:** riunisce gli oggetti uguali, al massimo 255 per oggetto.
+- **Drop:** a ready item cannot be dropped ("Must be unreadied"). For magic scrolls there is a confirmation. Then "Your <item> will be gone forever / Drop It?".
+- **Halve:** splits the quantity into a new item, or "Can't halve that".
+- **Join:** joins identical items, at most 255 per item.
 
-**Routine di supporto nuove:**
-- **H063+$1BE8:** cancella un oggetto dalla lista.
-- **H056+$0886:** traccia di debug, attiva solo con $24D2.
-- **H033+$17E6:** riconosce le pergamene.
-- **H030+$0302:** testo a capo automatico, con "Press any key to continue" a pagina piena.
-- **H044+$07DE:** cornice della schermata.
+**New support routines:**
+- **H063+$1BE8:** deletes an item from the list.
+- **H056+$0886:** debug trace, active only with $24D2.
+- **H033+$17E6:** recognises the scrolls.
+- **H030+$0302:** text with automatic wrapping, with "Press any key to continue" when the page is full.
+- **H044+$07DE:** frame of the screen.
 
-**Differenze rispetto all'originale (sono nei commenti):**
-- **Lista degli oggetti nel menu:** l'originale passa la lista degli oggetti direttamente al motore dei menu, perché i primi $30 byte di un oggetto hanno la forma di una voce. In C le struct sono diverse. Per questo costruisco una lista di voci speculare, e la voce scelta corrisponde all'oggetto nella stessa posizione. L'indice del cursore resta lo stesso dell'originale.
-- **Comando Use in combattimento:** con il modo $3DE3 = 5, l'originale legge il blocco +$192 del personaggio anche quando è nullo. Qui un blocco nullo conta come 0.
+**Differences from the original (they are in the comments):**
+- **List of items in the menu:** the original passes the list of items directly to the menu engine, because the first $30 bytes of an item have the shape of a menu entry. In C the structs are different. For this reason I build a mirror list of entries, and the chosen entry corresponds to the item in the same position. The cursor index stays the same as in the original.
+- **Use command in combat:** with mode $3DE3 = 5, the original reads the +$192 block of the character even when it is null. Here a null block counts as 0.
 
-**Altri stub:**
-- Gli effetti degli oggetti magici quando diventano pronti (H062+$03F2, $1A32, $0452): si raggiungono solo con oggetti magici.
+**Other stubs:**
+- The effects of the magic items when they become ready (H062+$03F2, $1A32, $0452): they are reached only with magic items.
 
-**Verifiche:**
-- **Ready e scheda:** con KNT gli oggetti sono Plate Mail, Shield e Long Sword. Dopo Ready su armatura e scudo, la CA scende a 1, l'ingombro sale a 565 e il movimento passa a 6. La Plate Mail compare nella riga dello slot 2: l'ho verificato sul file `items` dei dati originali, dove ha davvero slot 2.
-- **ASan/UBSan:** un giro con Ready, Join e Drop (lo scudo: ingombro 515, CA 2) senza errori.
-- **Build e test:** la build Linux, le build MinGW x64/x86 e il controllo C89 non danno warning e ctest passa 8 test su 8.
-- **SAS/C:** non l'ho compilato. Se dà errori mandami lo `smake.err`.
+**Checks:**
+- **Ready and sheet:** with KNT the items are Plate Mail, Shield and Long Sword. After Ready on armour and shield, the AC drops to 1, the encumbrance rises to 565 and the movement goes to 6. The Plate Mail appears in the row of slot 2: I checked it in the `items` file of the original data, where it really has slot 2.
+- **ASan/UBSan:** a run with Ready, Join and Drop (the shield: encumbrance 515, AC 2) without errors.
+- **Build and tests:** the Linux build, the MinGW x64/x86 builds and the C89 check give no warnings and ctest passes 8 tests out of 8.
+- **SAS/C:** I did not compile it. If it gives errors send me the `smake.err`.
 
-Per completare Items mancano Use (H065+$2F82, con gli incantesimi di H033), Trade (H065+$1D94), Sell e Id, che però servono in città. Dimmi se proseguire con queste o passare ad altre voci del menu del party.
+To complete Items, Use (H065+$2F82, with the H033 spells), Trade (H065+$1D94), Sell and Id are missing; the last two, however, are needed in town. Tell me whether to continue with these or move to other items of the party menu.
 
 ---
 
 ## 2026-11-10 20:04
 
-Ti ho mandato **cok-port-22.zip**, con il comando Use della schermata oggetti (H065+$2F82) portato fedelmente dall'asm. Dato che Use chiama il lancio degli incantesimi, ho portato anche la parte di H033 che lo gestisce. Il conteggio passa a 428 routine portate su 917 (commit `4a46ad2`). Su SAS/C e Visual Studio non posso compilare da qui: mandami il log.
+I sent you **cok-port-22.zip**, with the Use command of the items screen (H065+$2F82) ported faithfully from the asm. Since Use calls the spell casting, I also ported the part of H033 that handles it. The count goes to 428 routines ported out of 917 (commit `4a46ad2`). I cannot compile with SAS/C and Visual Studio from here: send me the log.
 
-**Cosa ho portato**
+**What I ported**
 - **H065:**
   - Use (`use_item`).
-  - La scelta dell'incantesimo `choose_spell_of_kind` ($34FC), che sostituisce lo stub chiamato anche da H013 e dal menu Spells.
+  - The spell choice `choose_spell_of_kind` ($34FC), which replaces the stub also called by H013 and by the Spells menu.
 - **H033:**
-  - costruzione degli elenchi degli incantesimi: in memoria, grimorio, pergamene, da scegliere, da memorizzare ($0366–$0D7C);
-  - menu Cast/Memorize/Scribe/Learn ($00EE) e scelta dei bersagli ($12D4);
-  - lancio vero e proprio ($1426), rimozione dell'incantesimo dalla pergamena ($1836) e messaggio "casts" ($18EE).
-- **H063:** messaggi nella zona di testo ($1DC2, $1EE8), $2F12 e la scelta di un membro del party "Cast Spell on whom" ($3A26).
-- **H062 e H073:** H062+$1780 (toglie gli effetti $19) e le due routine H073+$1294/$12AE, che restituiscono sempre $11.
-- **Dati:** le tabelle che H033 legge in H085 ora sono variabili C dichiarate in `h085.h`. Anche i puntatori di H005 $2508, $251C, $2520 e $2770 sono variabili globali C.
+  - building of the spell lists: memorised, spellbook, scrolls, to choose, to memorise ($0366–$0D7C);
+  - Cast/Memorize/Scribe/Learn menu ($00EE) and choice of the targets ($12D4);
+  - the actual casting ($1426), removal of the spell from the scroll ($1836) and "casts" message ($18EE).
+- **H063:** messages in the text area ($1DC2, $1EE8), $2F12 and the choice of a party member "Cast Spell on whom" ($3A26).
+- **H062 and H073:** H062+$1780 (removes the $19 effects) and the two routines H073+$1294/$12AE, which always return $11.
+- **Data:** the tables that H033 reads in H085 are now C variables declared in `h085.h`. The H005 pointers $2508, $251C, $2520 and $2770 are also global C variables.
 
-**Cosa resta come stub**
-Le routine usate solo in combattimento (H048, H077+$508, H063+$1B90/$2178/$21D2/$3658, H044+$492) sono stub. Lo stesso vale per i gestori dei singoli incantesimi H085+$xxxx: il programma si ferma lì.
+**What stays a stub**
+The routines used only in combat (H048, H077+$508, H063+$1B90/$2178/$21D2/$3658, H044+$492) are stubs. The same goes for the handlers of the single spells H085+$xxxx: the program stops there.
 
-**Una differenza dall'originale:** nell'asm il contatore delle pergamene H085+$4 non ha limite e, dopo $31 voci, scrive sopra le tabelle successive di H085. In C mi fermo alla fine della tabella, per non corrompere la memoria sull'host.
+**One difference from the original:** in the asm the scroll counter H085+$4 has no limit and, after $31 entries, writes over the following H085 tables. In C I stop at the end of the table, so as not to corrupt memory on the host.
 
-**Test**
-- **Come ho provato:** Use compare solo durante l'avventura ($3DE3 = 2..4), quindi dal menu principale non si raggiunge ancora. L'ho provato con una modifica temporanea, che non è nel commit, e con dati di prova in cui ho dato ai personaggi una pergamena (Bless e Cure Light Wounds) o un oggetto magico.
-- **Pergamena:** compare il menu "Spells on Scroll" con l'intestazione "1st Level". Col cavaliere esce "KNT oops!". Col chierico L il lancio va avanti fino al gestore di Bless (H085+$1C60), che non è portato.
-- **Oggetto magico:** compaiono "KNT uses an item" e il nome dell'oggetto, poi "Cast Spell on whom Select Exit". Select arriva al gestore di Cure Light Wounds (H085+$1CB8), anche questo non portato.
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8 e ASan pulito sia sul flusso normale sia sui due percorsi di Use.
+**Tests**
+- **How I tested:** Use appears only during the adventure ($3DE3 = 2..4), so it cannot be reached from the main menu yet. I tried it with a temporary change, which is not in the commit, and with test data in which I gave the characters a scroll (Bless and Cure Light Wounds) or a magic item.
+- **Scroll:** the menu "Spells on Scroll" appears with the header "1st Level". With the knight "KNT oops!" comes out. With the cleric L the casting goes on up to the Bless handler (H085+$1C60), which is not ported.
+- **Magic item:** "KNT uses an item" and the name of the item appear, then "Cast Spell on whom Select Exit". Select reaches the Cure Light Wounds handler (H085+$1CB8), also not ported.
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8 and ASan clean both on the normal flow and on the two Use paths.
 
-Il prossimo passo naturale sono gli effetti degli incantesimi in H085, per far funzionare davvero Bless e Cure Light Wounds. In alternativa ci sono i comandi Trade, Sell e Id degli oggetti, o le voci rimaste del menu principale.
+The natural next step is the spell effects in H085, to make Bless and Cure Light Wounds really work. Alternatively there are the Trade, Sell and Id commands of the items, or the remaining items of the main menu.
 
 ---
 
 ## 2026-11-10 20:37
 
-Ti ho mandato **cok-port-23.zip**: il menu principale ora è completo tranne Begin Adventuring, insieme ai comandi rimasti di View e Items. Degli effetti degli incantesimi ho portato solo una prima parte: il motore comune che serve a quasi tutti gli altri incantesimi resta da fare. Siamo a 483 routine portate su 923, con le patch fino alla 0030. Su SAS/C e Visual Studio non posso compilare da qui: mandami il log.
+I sent you **cok-port-23.zip**: the main menu is now complete except for Begin Adventuring, together with the remaining commands of View and Items. Of the spell effects I ported only a first part: the common engine that almost all the other spells need is still to be done. We are at 483 routines ported out of 923, with the patches up to 0030. I cannot compile with SAS/C and Visual Studio from here: send me the log.
 
-**Menu principale**
-- **Drop Character:** chiede conferma due volte, cancella i file .who/.swg/.fx e toglie il personaggio dal party. Provato: Garin è stato rimosso.
-- **Modify Character:** Add, Subtract, Keep ed Exit su caratteristiche, punti ferita e nome, con i limiti di razza e classe. Provato: Subtract su STR abbassa la forza eccezionale da 18(51) a 18(48), Esc ripristina tutto.
-- **Knight Change Classes:** portato ma non provato. Dal menu compare solo quando Train è attivo, e nei dati di prova non lo è.
-- **Save Current Game:** scrive `savgamX.dat` e i file `CHRDATXn`, poi cancella i .who dei personaggi. Il file prodotto ha la stessa dimensione e lo stesso formato dell'originale (5481 byte).
-- **Load Saved Game:** carica sia il salvataggio fatto da noi sia quello originale A, con i suoi 6 personaggi.
-  - Il caricamento della mappa 3D e dell'immagine grande (H011+$1876, H011+$14EA, H042+$1006) serve solo all'avventura. Sono stub che segnalano e proseguono, non bloccano.
+**Main menu**
+- **Drop Character:** asks for confirmation twice, deletes the .who/.swg/.fx files and removes the character from the party. Tried: Garin was removed.
+- **Modify Character:** Add, Subtract, Keep and Exit on ability scores, hit points and name, with the race and class limits. Tried: Subtract on STR lowers the exceptional strength from 18(51) to 18(48), Esc restores everything.
+- **Knight Change Classes:** ported but not tried. In the menu it appears only when Train is active, and in the test data it is not.
+- **Save Current Game:** writes `savgamX.dat` and the `CHRDATXn` files, then deletes the .who of the characters. The file produced has the same size and the same format as the original (5481 bytes).
+- **Load Saved Game:** loads both the save made by us and the original A, with its 6 characters.
+  - The loading of the 3D map and of the big picture (H011+$1876, H011+$14EA, H042+$1006) is needed only by the adventure. They are stubs that report and go on, they do not block.
 
-**View e Items**
-- **Trade e Drop del denaro (View):** portati insieme alle routine delle monete di H067, al parser di numeri H045+$000C e al messaggio d'errore H014+$0018. Il personaggio del salvataggio non aveva denaro, quindi non li ho provati.
-- **Trade di un oggetto (Items):** provato, la Plate Mail passa a Istan.
-- **Sell e Id (Items):** portati ma non provati, perché compaiono solo nei negozi.
+**View and Items**
+- **Trade and Drop of money (View):** ported together with the H067 coin routines, the number parser H045+$000C and the error message H014+$0018. The character of the save had no money, so I did not try them.
+- **Trade of an item (Items):** tried, the Plate Mail goes to Istan.
+- **Sell and Id (Items):** ported but not tried, because they appear only in the shops.
 
-**Effetti degli incantesimi**
-- **Funzionano e li ho provati:**
-  - Cure Light Wounds: KNT passa da 10 a 13 PF.
-  - Enlarge: la forza va a 18(00) con "is stronger".
-- **Portati ma non provati:**
+**Spell effects**
+- **They work and I tried them:**
+  - Cure Light Wounds: KNT goes from 10 to 13 HP.
+  - Enlarge: the strength goes to 18(00) with "is stronger".
+- **Ported but not tried:**
   - Cure Serious Wounds.
-  - Cure Disease e Neutralize Poison: si appoggiano alla rimozione degli effetti e al ricalcolo delle caratteristiche (H062+$0452 e H062+$1A32), che ora sostituiscono anche gli stub usati da Ready.
-  - Strength: provato solo su un cavaliere, dove non ha effetto (vedi sotto).
-- **Cosa manca:** Bless, Detect Magic, Protection, Resist, Invisibility, Prayer, Haste e quasi tutti gli altri passano da H085+$07B6. Restano circa 2300 istruzioni, in parte grafica del combattimento in H049 e H029. È il passo successivo; finché non c'è, quegli incantesimi si fermano sullo stub "routine non ancora portata".
+  - Cure Disease and Neutralize Poison: they rely on the removal of the effects and on the recomputation of the ability scores (H062+$0452 and H062+$1A32), which now also replace the stubs used by Ready.
+  - Strength: tried only on a knight, where it has no effect (see below).
+- **What is missing:** Bless, Detect Magic, Protection, Resist, Invisibility, Prayer, Haste and almost all the others go through H085+$07B6. About 2300 instructions remain, partly combat graphics in H049 and H029. It is the next step; until it is there, those spells stop on the "routine not yet ported" stub.
 
-**Valori non inizializzati nell'asm, qui messi a 0**
-- Il bonus di Strength per un personaggio senza classi adatte: per questo su un cavaliere non succede nulla.
-- La costituzione fuori dall'intervallo 3–19.
-- L'ordine di cavalleria diverso da Corona e Spada.
-- Il tipo di moneta sconosciuto.
-- Il livello d'incantatore per una classe oltre 4.
+**Values not initialised in the asm, set to 0 here**
+- The Strength bonus for a character without suitable classes: that is why nothing happens on a knight.
+- The constitution outside the range 3–19.
+- The knightly order other than Crown and Sword.
+- The unknown coin type.
+- The caster level for a class above 4.
 
-**Prove**
-- Compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8 (ho corretto lo stub di `dax_test`).
-- ASan pulito su Load, View, Save, Modify e Drop, e sui percorsi di Use.
-- Use l'ho provato come nella versione 22: dal menu non è raggiungibile, quindi ho usato una modifica temporanea, non committata.
+**Tests**
+- Compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8 (I fixed the `dax_test` stub).
+- ASan clean on Load, View, Save, Modify and Drop, and on the Use paths.
+- I tried Use as in version 22: it cannot be reached from the menu, so I used a temporary change, not committed.
 
 ---
 
 ## 2026-11-10 20:56
 
-Ti ho mandato **cok-port-24.zip**: H085+$07B6 è portato insieme alla sua catena non grafica, e con lui una cinquantina di gestori degli incantesimi. Gli effetti che i personaggi hanno già addosso invece sono quasi tutti ancora stub: un incantesimo si ferma lì se il bersaglio ha uno di quegli effetti. Siamo a 552 routine portate su 975 (commit `87123b7`, patch fino alla 0031). Su SAS/C e Visual Studio non posso compilare da qui: mandami il log.
+I sent you **cok-port-24.zip**: H085+$07B6 is ported together with its non-graphic chain, and with it about fifty spell handlers. The effects that the characters already have on them, on the other hand, are almost all still stubs: a spell stops there if the target has one of those effects. We are at 552 routines ported out of 975 (commit `87123b7`, patches up to 0031). I cannot compile with SAS/C and Visual Studio from here: send me the log.
 
-**Il motore (H085+$07B6)**
-Per ogni bersaglio fa il tiro salvezza (H062+$142C), il tiro per colpire quando serve (H062+$12F6), il danno e poi l'effetto con la sua durata. Il danno passa da H062+$2188 (con i messaggi "takes … points of damage from …", "Goes Down", "is killed") e da H063+$2984. L'effetto lo applica H062+$0114. Sotto ci sono:
-- gli eventi degli effetti (H062+$083E), con la tabella dei 25 eventi;
-- l'attivazione di un singolo effetto (H062+$057C);
-- la resistenza alla magia (H062+$0772);
-- la rimozione degli effetti quando un personaggio cade (H062+$17C0);
-- il messaggio dell'effetto (H063+$2760);
-- H063+$1B90 (toglie l'incantesimo lanciato), che sostituisce il suo stub.
+**The engine (H085+$07B6)**
+For each target it does the saving throw (H062+$142C), the to-hit roll when needed (H062+$12F6), the damage and then the effect with its duration. The damage goes through H062+$2188 (with the messages "takes … points of damage from …", "Goes Down", "is killed") and H063+$2984. The effect is applied by H062+$0114. Below there are:
+- the events of the effects (H062+$083E), with the table of the 25 events;
+- the activation of a single effect (H062+$057C);
+- the magic resistance (H062+$0772);
+- the removal of the effects when a character falls (H062+$17C0);
+- the message of the effect (H063+$2760);
+- H063+$1B90 (removes the cast spell), which replaces its stub.
 
-**Incantesimi portati**
-- **Chierico:** Bless, Curse, Cause Light/Serious Wounds, Resist Cold e Resist Fire, Silence, Slow Poison, Snake Charm, Spiritual Hammer, Cure/Cause Blindness, Cause Disease, Prayer, Remove Curse, Bestow Curse, Sticks to Snakes.
-- **Mago:** Burning Hands, Charm Person, Reduce, Friends, Magic Missile, Shield, Shocking Grasp, Sleep, Knock, Mirror Image, Ray of Enfeeblement, Blink, Haste, Slow, Confusion, Fire Shield, Fumble, Ice Storm, Minor Globe.
-- **Comuni:** Detect Magic, Protection, Invisibility.
-- **Senza nome (classe 4):** i gestori degli incantesimi dei mostri.
+**Ported spells**
+- **Cleric:** Bless, Curse, Cause Light/Serious Wounds, Resist Cold and Resist Fire, Silence, Slow Poison, Snake Charm, Spiritual Hammer, Cure/Cause Blindness, Cause Disease, Prayer, Remove Curse, Bestow Curse, Sticks to Snakes.
+- **Mage:** Burning Hands, Charm Person, Reduce, Friends, Magic Missile, Shield, Shocking Grasp, Sleep, Knock, Mirror Image, Ray of Enfeeblement, Blink, Haste, Slow, Confusion, Fire Shield, Fumble, Ice Storm, Minor Globe.
+- **Common:** Detect Magic, Protection, Invisibility.
+- **Without a name (class 4):** the handlers of the monster spells.
 
-**Cosa resta come stub**
-- **Gestori degli incantesimi:** Hold Person, Stinking Cloud, Lightning Bolt, Fireball, Charm Monsters, Dimension Door, Fear e Poison sono solo da combattimento e restano stub. Anche Dispel Magic (H085+$3ED4) resta stub, ma lì è una mia scelta di priorità: è grosso, non è solo da combattimento, e conviene farlo subito.
-- **Grafica e posizioni del combattimento:** H029, H048, H049, H077, H063+$2178/$2BDE. Fuori dal combattimento non vengono mai chiamate.
-- **Gestori degli effetti (H027, tabella H005+$2832):** è il prossimo livello, 108 gestori. Ho portato solo quelli che i personaggi di prova attivano subito: gli effetti $12 e $5F (H027+$0A00 e $3A46, con il loro helper $0286) e $5C (H027+$41F6, che non fa nulla). Senza questi, Bless si fermava su H027+$3A46.
+**What stays a stub**
+- **Spell handlers:** Hold Person, Stinking Cloud, Lightning Bolt, Fireball, Charm Monsters, Dimension Door, Fear and Poison are combat-only and stay stubs. Dispel Magic (H085+$3ED4) also stays a stub, but there it is my choice of priority: it is big, it is not combat-only, and it is worth doing right away.
+- **Combat graphics and positions:** H029, H048, H049, H077, H063+$2178/$2BDE. Outside combat they are never called.
+- **Effect handlers (H027, table H005+$2832):** it is the next level, 108 handlers. I ported only those that the test characters trigger right away: effects $12 and $5F (H027+$0A00 and $3A46, with their helper $0286) and $5C (H027+$41F6, which does nothing). Without these, Bless stopped at H027+$3A46.
 
-**Valori non inizializzati nell'asm, qui messi a 0**
-- Il valore della forza nell'incantesimo dei mostri H085+$331E quando la forza non sale.
-- Il caso di H063+$2FAA con una classe oltre 4.
+**Values not initialised in the asm, set to 0 here**
+- The strength value in the monster spell H085+$331E when the strength does not go up.
+- The case of H063+$2FAA with a class above 4.
 
-**Prove**
-- **Bless dalla pergamena di L:** compare "L is Blessed" e la pergamena passa da 3 a 2 incantesimi.
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
-- **ASan:** pulito sia su Bless sia sull'oggetto magico. Come nelle versioni precedenti ho usato la modifica temporanea per far comparire Use, non committata.
+**Tests**
+- **Bless from L's scroll:** "L is Blessed" appears and the scroll goes from 3 to 2 spells.
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8.
+- **ASan:** clean both on Bless and on the magic item. As in the previous versions I used the temporary change to make Use appear, not committed.
 
-Il passo naturale successivo sono i gestori degli effetti di H027: la maggior parte è sotto le 60 istruzioni, ma sono tanti. In alternativa posso fare prima Dispel Magic.
+The natural next step are the effect handlers of H027: most of them are under 60 instructions, but there are many. Alternatively I can do Dispel Magic first.
 
 ---
 
 ## 2026-11-10 21:03
 
-Ti ho mandato **cok-port-25.zip**. H085+$07B6 era già stato portato in cok-port-24 (commit `87123b7`), quindi non l'ho rifatto. Sono andato avanti con quello che il motore chiama e che mancava ancora: i gestori degli effetti di H027, nella tabella H005+$2832. Il contatore segna ora 596 routine portate su 1017; il totale è salito perché lo script conta anche le routine scoperte con i nuovi tag (commit `07d9a80`, patch fino alla 0032). Su SAS/C e Visual Studio non posso compilare da qui: mandami il log.
+I sent you **cok-port-25.zip**. H085+$07B6 had already been ported in cok-port-24 (commit `87123b7`), so I did not redo it. I went on with what the engine calls and was still missing: the effect handlers of H027, in the table H005+$2832. The counter now shows 596 routines ported out of 1017; the total went up because the script also counts the routines discovered with the new tags (commit `07d9a80`, patches up to 0032). I cannot compile with SAS/C and Visual Studio from here: send me the log.
 
-**Gestori portati (una cinquantina)**
-Il motore li chiama quando un effetto si applica, si toglie, o quando scatta un evento come danno, tiro salvezza o tiro per colpire.
-- **Modificatori di danno e tiri:** i bonus al tiro salvezza e al tiro per colpire (effetti 1, 2, 8, 9, $21, $24, $39, $76, $77), il danno dimezzato o raddoppiato da fuoco e freddo ($A, $14, $1D, $32, $36), la cecità ($21) e il veleno lento ($F).
-- **Effetti con messaggio:** Mirror Image che perde un'immagine ($1C, "lost an image"), il silenzio ($15) e l'invecchiamento ($27).
-- **Annullamento di effetti e incantesimi in arrivo:** $3B, $3F, $49 e $59–$63.
-- **Fine del turno:** i gestori che chiudono il turno di combattimento ($1B, $1F, $33–$35, $6A).
-- **Oggetti magici:** il vettore $2A0E, che aggiunge o toglie l'effetto quando un oggetto viene preparato o tolto (effetto +$45).
-- **Effetti vuoti:** quelli che nell'originale non fanno nulla.
+**Ported handlers (about fifty)**
+The engine calls them when an effect is applied, removed, or when an event such as damage, saving throw or to-hit roll fires.
+- **Damage and roll modifiers:** the bonuses to the saving throw and to the to-hit roll (effects 1, 2, 8, 9, $21, $24, $39, $76, $77), the damage halved or doubled by fire and cold ($A, $14, $1D, $32, $36), blindness ($21) and slow poison ($F).
+- **Effects with a message:** Mirror Image losing an image ($1C, "lost an image"), silence ($15) and ageing ($27).
+- **Cancelling of incoming effects and spells:** $3B, $3F, $49 and $59–$63.
+- **End of turn:** the handlers that close the combat turn ($1B, $1F, $33–$35, $6A).
+- **Magic items:** the vector $2A0E, which adds or removes the effect when an item is readied or unreadied (effect +$45).
+- **Empty effects:** those that do nothing in the original.
 
-Ho anche spostato H062+$15C6 (tiro dei dadi del danno) in `h062.c`, perché lo usano sia H027 sia H085.
+I also moved H062+$15C6 (roll of the damage dice) into `h062.c`, because both H027 and H085 use it.
 
-**Cosa resta**
-- **47 gestori di H027 restano stub.** Sono soprattutto da combattimento: aree della mappa, bersaglio del turno, la lista di personaggi in H005+$16, oppure dipendono da routine non portate di altri moduli (H062+$2650, H063+$2B7C).
-- **Un problema per il combattimento:** diversi di questi gestori salvano un puntatore a personaggio dentro il blocco +$192 (all'offset +$C). Sull'host, con puntatori a 64 bit, quei 4 byte non bastano. Prima di portarli va deciso come rappresentarlo.
-- **Gestori degli incantesimi ancora stub:** Dispel Magic (H085+$3ED4, 329 istruzioni) e quelli solo da combattimento (Hold Person, Fireball, Lightning Bolt, Stinking Cloud, Fear, Charm Monsters, Dimension Door, Poison).
+**What remains**
+- **47 handlers of H027 stay stubs.** They are mostly combat ones: map areas, target of the turn, the list of characters in H005+$16, or they depend on unported routines of other modules (H062+$2650, H063+$2B7C).
+- **A problem for combat:** several of these handlers save a pointer to a character inside the +$192 block (at offset +$C). On the host, with 64-bit pointers, those 4 bytes are not enough. Before porting them we have to decide how to represent it.
+- **Spell handlers still stubs:** Dispel Magic (H085+$3ED4, 329 instructions) and the combat-only ones (Hold Person, Fireball, Lightning Bolt, Stinking Cloud, Fear, Charm Monsters, Dimension Door, Poison).
 
-**Prove**
-- **ASan:** pulito sia su Bless dalla pergamena di L sia sull'oggetto magico di KNT, e nessuno dei due arriva più a uno stub.
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
-- **Use:** come prima, l'ho fatto comparire con la modifica temporanea, non committata.
+**Tests**
+- **ASan:** clean both on Bless from L's scroll and on KNT's magic item, and neither of the two reaches a stub any more.
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8.
+- **Use:** as before, I made it appear with the temporary change, not committed.
 
-Come passo successivo propongo Dispel Magic, che non è solo da combattimento. Poi conviene decidere come rappresentare i puntatori nel blocco +$192, prima di portare i gestori di combattimento.
+As the next step I propose Dispel Magic, which is not combat-only. Then it is worth deciding how to represent the pointers in the +$192 block, before porting the combat handlers.
 
 ---
 
 ## 2026-11-10 21:13
 
-Ti ho mandato **cok-port-26.zip** con Dispel Magic (H085+$3ED4) portato. Ho provato solo la prima parte (gli effetti sul bersaglio): la parte sulle nubi è portata ma non provata, perché per ora non esistono mai nubi. Siamo a 598 routine portate su 1018 (commit `4f08813`, patch fino alla 0033). Su SAS/C e Visual Studio non posso compilare da qui: mandami il log.
+I sent you **cok-port-26.zip** with Dispel Magic (H085+$3ED4) ported. I tried only the first part (the effects on the target): the part about the clouds is ported but not tried, because for now clouds never exist. We are at 598 routines ported out of 1018 (commit `4f08813`, patches up to 0033). I cannot compile with SAS/C and Visual Studio from here: send me the log.
 
-**Cosa fa la routine (due parti)**
-- **Effetti sul bersaglio:** per ogni bersaglio prova a togliere gli effetti con durata (+$4 < $FF) del primo bersaglio, come nell'asm. La probabilità dipende dal livello d'incantatore contro il livello dell'effetto (+$4 & $0F): +5% per livello sopra, −2% per livello sotto, 50% alla pari. Se ne toglie almeno uno mostra "is affected".
-- **Nubi:** nelle 9 caselle attorno a $2518/$251A legge la mappa di combattimento e, sulle caselle con nube ($1E), dissolve gli effetti nube ($28) del loro lanciatore. Poi ridisegna con H048+$0DF2, che è uno stub di combattimento.
+**What the routine does (two parts)**
+- **Effects on the target:** for each target it tries to remove the effects with a duration (+$4 < $FF) of the first target, as in the asm. The probability depends on the caster level against the level of the effect (+$4 & $0F): +5% per level above, −2% per level below, 50% when equal. If it removes at least one it shows "is affected".
+- **Clouds:** in the 9 squares around $2518/$251A it reads the combat map and, on the squares with a cloud ($1E), dispels the cloud effects ($28) of their caster. Then it redraws with H048+$0DF2, which is a combat stub.
 
-**Cosa ho cambiato per farla girare**
-- **H048+$0154 portata:** è la lettura di una casella della mappa. Va portata perché nell'originale la seconda parte gira anche fuori dal combattimento.
-- **Mappa di combattimento (H005+$2ADE):** ora è una variabile C (`g_combat_area`) al posto dello stub `g_h005_2ade_area()`, che fermava il programma. La alloca H095, il modulo che prepara il combattimento, non ancora portato.
-- **Lista delle nubi (H005+$2514):** è una variabile C (`g_clouds`) con il record di $22 byte. Owner e next sono puntatori C, il resto sta nei byte come nell'originale. Per ora resta vuota, perché Stinking Cloud (che crea le nubi) non è portato.
+**What I changed to make it run**
+- **H048+$0154 ported:** it is the reading of a map square. It has to be ported because in the original the second part also runs outside combat.
+- **Combat map (H005+$2ADE):** it is now a C variable (`g_combat_area`) instead of the stub `g_h005_2ade_area()`, which stopped the program. It is allocated by H095, the module that prepares combat, not yet ported.
+- **List of the clouds (H005+$2514):** it is a C variable (`g_clouds`) with the $22-byte record. Owner and next are C pointers, the rest is kept in the bytes as in the original. For now it stays empty, because Stinking Cloud (which creates the clouds) is not ported.
 
-**Una differenza dall'originale:** senza mappa di combattimento l'asm legge da $2ADE = 0, cioè dalla memoria bassa dell'Amiga. Sull'host questo farebbe crashare, quindi in quel caso la casella vale 0: fuori dal combattimento non ci sono nubi da dissolvere.
+**One difference from the original:** without a combat map the asm reads from $2ADE = 0, that is from the low memory of the Amiga. On the host this would crash, so in that case the square is 0: outside combat there are no clouds to dispel.
 
-**Prove**
-- **Dispel Magic da un oggetto magico su KNT:** ho dato durata 3 al suo effetto $12. L'effetto viene dissolto e compare "KNT is affected".
-- **ASan:** pulito sulla stessa prova.
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
-- **Use:** come prima, l'ho fatto comparire con la modifica temporanea, non committata.
+**Tests**
+- **Dispel Magic from a magic item on KNT:** I gave his effect $12 a duration of 3. The effect is dispelled and "KNT is affected" appears.
+- **ASan:** clean on the same test.
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8.
+- **Use:** as before, I made it appear with the temporary change, not committed.
 
-Restano gli incantesimi e i gestori di effetti solo da combattimento. Prima di quelli conviene decidere come rappresentare i puntatori a personaggio salvati nel blocco +$192 (offset +$C), che sull'host a 64 bit non entrano nei 4 byte.
+The combat-only spells and effect handlers remain. Before those it is worth deciding how to represent the character pointers saved in the +$192 block (offset +$C), which on the 64-bit host do not fit in the 4 bytes.
 
 ---
 
 ## 2026-11-10 21:15
 
-Dispel Magic (H085+$3ED4) è già portato: è in **cok-port-26.zip**, che ti ho mandato nel messaggio precedente (commit `4f08813`). Non c'è altro da fare su quella routine, quindi non l'ho toccata di nuovo.
+Dispel Magic (H085+$3ED4) is already ported: it is in **cok-port-26.zip**, which I sent you in the previous message (commit `4f08813`). There is nothing else to do on that routine, so I did not touch it again.
 
-L'ho provato da un oggetto magico su KNT: il suo effetto $12 (con durata 3) viene dissolto e compare "KNT is affected", con ASan pulito. La parte sulle nubi invece è portata ma non provata, perché per ora la lista delle nubi è sempre vuota.
+I tried it from a magic item on KNT: his effect $12 (with duration 3) is dispelled and "KNT is affected" appears, with ASan clean. The part about the clouds, on the other hand, is ported but not tried, because for now the list of the clouds is always empty.
 
-Se il messaggio di prima era un invio ripetuto, dimmi come proseguire tra queste strade:
+If the previous message was a repeated send, tell me how to continue among these paths:
 
-1. **Puntatori nel blocco +$192 (offset +$C):** prima di toccare il codice di combattimento va deciso come rappresentare i puntatori a personaggio salvati lì, perché sull'host a 64 bit non entrano nei 4 byte. Da questo dipendono quasi tutti i 47 gestori di H027 ancora stub e diversi incantesimi.
-2. **Incantesimi solo da combattimento:** Hold Person, Stinking Cloud, Fireball, Lightning Bolt, Fear, Charm Monsters, Dimension Door e Poison. Richiedono anche H048 e H077 (figure e aree del combattimento).
-3. **Altro fuori dal combattimento:** per esempio l'audio (H043) o altre schermate.
+1. **Pointers in the +$192 block (offset +$C):** before touching the combat code we have to decide how to represent the character pointers saved there, because on the 64-bit host they do not fit in the 4 bytes. Almost all the 47 H027 handlers that are still stubs and several spells depend on this.
+2. **Combat-only spells:** Hold Person, Stinking Cloud, Fireball, Lightning Bolt, Fear, Charm Monsters, Dimension Door and Poison. They also need H048 and H077 (combat figures and areas).
+3. **Other things outside combat:** for example the audio (H043) or other screens.
 
-Per il log di SAS/C della versione 26 resto in attesa.
+I am still waiting for the SAS/C log of version 26.
 
 ---
 
 ## 2026-11-10 21:22
 
-Ti ho mandato **cok-port-27.zip**. Ho fatto il passo che sblocca il codice di combattimento: il blocco del turno +$192 ora è una struct, e ho portato altri gestori di effetti di H027. Il contatore segna ora 626 routine portate su 1040; il totale è salito perché lo script conta anche le routine scoperte con i nuovi tag (commit `2a3f9de`, patch fino alla 0034). Su SAS/C e Visual Studio non posso compilare da qui: mandami il log.
+I sent you **cok-port-27.zip**. I took the step that unblocks the combat code: the turn block +$192 is now a struct, and I ported more effect handlers of H027. The counter now shows 626 routines ported out of 1040; the total went up because the script also counts the routines discovered with the new tags (commit `2a3f9de`, patches up to 0034). I cannot compile with SAS/C and Visual Studio from here: send me the log.
 
-**Il blocco del turno (+$192)**
-- **Cosa ho verificato:** in tutto l'asm l'unico campo longword del blocco è +$C, un puntatore al personaggio bersaglio. Tutti gli altri accessi sono a byte o word.
-- **Come l'ho reso:** il blocco ora è `CokTurn` in `character.h`, con i $18 byte originali in `b[]` e il puntatore in un campo separato, `target`. I 4 byte in +$C..+$F restano inutilizzati, e il resto del codice accede ai byte con `block_192->b[...]` come prima.
-- **Altre variabili che contengono puntatori**, ora variabili C:
-  - H005+$2A14 (`g_h005_2a14`), il bersaglio del turno in esame;
-  - H005+$2B32 (`g_combatants[40]`), i combattenti per numero;
-  - H005+$16 (`g_h005_0016[20]`), i personaggi a terra.
+**The turn block (+$192)**
+- **What I checked:** in the whole asm the only longword field of the block is +$C, a pointer to the target character. All the other accesses are byte or word.
+- **How I represented it:** the block is now `CokTurn` in `character.h`, with the original $18 bytes in `b[]` and the pointer in a separate field, `target`. The 4 bytes at +$C..+$F stay unused, and the rest of the code accesses the bytes with `block_192->b[...]` as before.
+- **Other variables that contain pointers**, now C variables:
+  - H005+$2A14 (`g_h005_2a14`), the target of the turn under examination;
+  - H005+$2B32 (`g_combatants[40]`), the combatants by number;
+  - H005+$16 (`g_h005_0016[20]`), the downed characters.
 
-**Nuove routine**
-- **Routine di appoggio:**
-  - H062+$02FA, che manda a terra un personaggio;
-  - H062+$2650, che lo rimette in piedi;
-  - H063+$2B7C, che conta i combattenti attivi per lato;
-  - H027+$0214, che paralizza il bersaglio del turno;
-  - H027+$2182, che avvelena il bersaglio del turno;
-  - H027+$0338, il bonus +1.
-- **Gestori di effetti**, 24 in più:
-  - $16 (morte per veleno);
-  - $17 (Spiritual Hammer, che dà e toglie il martello);
-  - $2B e $2C (debolezza e malattia);
-  - $3D e $3E (fuoco ridotto e rigenerazione);
-  - $40, $41, $56 e $57 (veleni);
+**New routines**
+- **Support routines:**
+  - H062+$02FA, which knocks a character down;
+  - H062+$2650, which puts them back on their feet;
+  - H063+$2B7C, which counts the active combatants per side;
+  - H027+$0214, which paralyses the target of the turn;
+  - H027+$2182, which poisons the target of the turn;
+  - H027+$0338, the +1 bonus.
+- **Effect handlers**, 24 more:
+  - $16 (death by poison);
+  - $17 (Spiritual Hammer, which gives and takes away the hammer);
+  - $2B and $2C (weakness and disease);
+  - $3D and $3E (reduced fire and regeneration);
+  - $40, $41, $56 and $57 (poisons);
   - $42 ("gets zapped!");
-  - $45, $51 e $58 (paralisi);
-  - $1A, $30, $31, $3A, $44, $72, $73 e $75.
-- **H048+$16D4 (posizionamento sulla mappa):** resta stub, ma restituisce 1 fuori dal combattimento come nell'asm. Così il ritorno in piedi funziona anche fuori dal combattimento.
+  - $45, $51 and $58 (paralysis);
+  - $1A, $30, $31, $3A, $44, $72, $73 and $75.
+- **H048+$16D4 (placement on the map):** stays a stub, but returns 1 outside combat as in the asm. This way getting back on one's feet also works outside combat.
 
-**Una stranezza dell'originale che ho mantenuto:** nel gestore $17, dopo aver dato il martello, la ricerca lascia selezionato l'oggetto che lo segue, non il martello. È quello che fa l'asm.
+**An oddity of the original that I kept:** in handler $17, after giving the hammer, the search leaves selected the item that follows it, not the hammer. That is what the asm does.
 
-**Prove**
-- **ASan:** pulito su Bless e Dispel Magic da oggetto, e nessuno dei due si ferma più su uno stub.
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
-- **Use:** l'ho fatto comparire con la modifica temporanea, non committata.
-- **Nuovi gestori:** non provati, perché scattano solo in combattimento o con effetti che i personaggi di prova non hanno.
+**Tests**
+- **ASan:** clean on Bless and Dispel Magic from an item, and neither of the two stops on a stub any more.
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8.
+- **Use:** I made it appear with the temporary change, not committed.
+- **New handlers:** not tried, because they fire only in combat or with effects that the test characters do not have.
 
-**Cosa resta in H027**
-Restano 25 gestori stub: $0492, $06D4, $080A, $0EFC, $0FCE, $1162, $13F4, $1836, $1E3C, $2400, $266A, $29E2, $2B3E, $2D46, $2FE2, $3160, $3292, $3636, $3916, $3982, $3B34, $3C2A, $3C88, $3D28 e $3F72. Sono quasi tutti legati al combattimento. Usano la lista $250C, la tabella $2AE2 e le nubi, e routine di H063 non portate ($2DC6, $1160, $135A, $37B2, $21D2). Il prossimo passo naturale è continuare con questi, partendo dalle routine di H063 che servono a più gestori.
+**What remains in H027**
+25 handlers stay stubs: $0492, $06D4, $080A, $0EFC, $0FCE, $1162, $13F4, $1836, $1E3C, $2400, $266A, $29E2, $2B3E, $2D46, $2FE2, $3160, $3292, $3636, $3916, $3982, $3B34, $3C2A, $3C88, $3D28 and $3F72. Almost all are tied to combat. They use the list $250C, the table $2AE2 and the clouds, and unported routines of H063 ($2DC6, $1160, $135A, $37B2, $21D2). The natural next step is to continue with these, starting from the H063 routines that several handlers need.
 
 ---
 
 ## 2026-11-10 (cok-port-28)
 
-Ti ho mandato **cok-port-28.zip** con le routine di H063 che servivano ai gestori degli effetti, gli 11 gestori di H027 che le usano e il nuovo `backlog.md`. Il contatore segna 642 routine portate su 1051; il totale è salito perché lo script conta anche le routine scoperte con i nuovi tag. Su SAS/C e Visual Studio non posso compilare da qui: mandami il log.
+I sent you **cok-port-28.zip** with the H063 routines that the effect handlers needed, the 11 H027 handlers that use them and the new `backlog.md`. The counter shows 642 routines ported out of 1051; the total went up because the script also counts the routines discovered with the new tags. I cannot compile with SAS/C and Visual Studio from here: send me the log.
 
 **backlog.md**
-- È in `src_c/readable/backlog.md` e contiene tutti i miei 42 resoconti di questa sessione, ricavati dalla cronologia, in ordine di data, ognuno con data e ora del messaggio originale.
-- Ci sono anche i primi messaggi non legati al port (per esempio quello su abbonamento Pro e API), perché mi avevi chiesto di metterci tutto.
-- D'ora in poi aggiungo lì ogni nuovo resoconto, a partire da questo.
+- It is in `src_c/readable/backlog.md` and contains all my 42 reports of this session, taken from the history, in date order, each with the date and time of the original message.
+- It also has the first messages not related to the port (for example the one about the Pro subscription and the API), because you had asked me to put everything in it.
+- From now on I add every new report there, starting with this one.
 
-**Routine di H063 portate**
-- **$135A:** il personaggio è indifeso? Controlla gli effetti elencati in H005+$4066..$4069.
-- **$1160:** pannello del combattente a destra (nome, "Hitpoints", "AC", arma pronta, stato, "(Helpless)", "(Casting)").
-- **$2DC6:** distanza fra due combattenti sulla mappa del combattimento. Salva e ripristina la tabella H005+$2A3E come nell'asm.
-- **$37B2:** arma con cui si combatte, dalla mano (+$154) o dalle munizioni (+$180/+$184).
-- **Esportate:** $016A, $0354 e $19B6 (correzioni di destrezza e forza, già portate ma statiche) ora sono visibili agli altri moduli.
+**Ported H063 routines**
+- **$135A:** is the character helpless? Checks the effects listed in H005+$4066..$4069.
+- **$1160:** panel of the combatant on the right (name, "Hitpoints", "AC", ready weapon, status, "(Helpless)", "(Casting)").
+- **$2DC6:** distance between two combatants on the combat map. Saves and restores the table H005+$2A3E as in the asm.
+- **$37B2:** weapon used for fighting, from the hand (+$154) or from the ammunition (+$180/+$184).
+- **Exported:** $016A, $0354 and $19B6 (dexterity and strength adjustments, already ported but static) are now visible to the other modules.
 
-**Gestori di H027 portati (11)**
-- **Combattimento:**
-  - effetto 7 (attacco naturale: da vicino 1d6+2 più la forza, a distanza 1d4+1 più la destrezza);
-  - effetto $1E (nube: "is coughing");
-  - effetti $5D, $64 e $66 (danno dimezzato o annullato secondo l'arma);
-  - effetto $69 (danno extra a distanza 1);
-  - effetto $70 (chi colpisce da vicino "gets zapped").
-- **Stati della mente:**
-  - $B (charme, cambio di lato);
+**Ported H027 handlers (11)**
+- **Combat:**
+  - effect 7 (natural attack: in melee 1d6+2 plus strength, at range 1d4+1 plus dexterity);
+  - effect $1E (cloud: "is coughing");
+  - effects $5D, $64 and $66 (damage halved or cancelled depending on the weapon);
+  - effect $69 (extra damage at distance 1);
+  - effect $70 (whoever hits in melee "gets zapped").
+- **States of mind:**
+  - $B (charm, change of side);
   - $D ("goes mad!");
   - $20 ("Arises in a new form");
-  - $23 (confusione: fugge, resta confuso, va in berserk o si infuria, poi un tiro salvezza).
+  - $23 (confusion: flees, stays confused, goes berserk or becomes enraged, then a saving throw).
 
-**Valori non inizializzati nell'asm, qui messi a 0**
-- Nell'effetto 7 l'originale somma la parola non inizializzata del frame quando il personaggio non ha un'arma in mano.
+**Values not initialised in the asm, set to 0 here**
+- In effect 7 the original adds the uninitialised word of the frame when the character has no weapon in hand.
 
-**Prove**
-- **ASan:** pulito su Bless e Dispel Magic da oggetto (la modifica temporanea per Use non è committata).
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
-- **Nuovi gestori:** non provati, perché scattano solo in combattimento, che non è ancora raggiungibile.
+**Tests**
+- **ASan:** clean on Bless and Dispel Magic from an item (the temporary change for Use is not committed).
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8.
+- **New handlers:** not tried, because they fire only in combat, which cannot be reached yet.
 
-**Cosa resta**
-- **Gestori H027 (14):** $13F4, $1836, $1E3C, $2400, $266A, $29E2, $2B3E, $2D46, $2FE2, $3160, $3292, $3636, $3982 e $3D28. Usano le nubi, la lista H005+$250C, la tabella H005+$2AE2, H062+$2734 e la grafica del combattimento.
-- **Routine di H063 di grafica del combattimento:** $1FDC, $2178, $21D2 e $3CA0. Restano stub.
+**What remains**
+- **H027 handlers (14):** $13F4, $1836, $1E3C, $2400, $266A, $29E2, $2B3E, $2D46, $2FE2, $3160, $3292, $3636, $3982 and $3D28. They use the clouds, the list H005+$250C, the table H005+$2AE2, H062+$2734 and the combat graphics.
+- **H063 combat graphics routines:** $1FDC, $2178, $21D2 and $3CA0. They stay stubs.
 
 ---
 
 ## 2026-11-10 (cok-port-29)
 
-Ho portato gli ultimi 14 gestori di effetti di H027: la tabella H005+$2832 non punta più a nessuno stub di H027. Routine portate: 659 su 1065.
+I ported the last 14 effect handlers of H027: the table H005+$2832 no longer points to any H027 stub. Routines ported: 659 out of 1065.
 
-**Gestori portati**
-- **Nubi e acido:**
-  - $13F4 (effetto $28): "The air clears a little...", la nube si dissolve e le caselle tornano come prima;
-  - $266A (effetto $46): "dissolves into acid!", crea una pozza d'acido;
-  - $3292 (effetto $50): "The acid drains away..", la pozza si asciuga.
-- **Difese:**
-  - $1836 (effetto $29) e $174E: "Avoids it", schiva le armi senza bonus magico;
-  - $29E2 (effetto $47): "reflects the spell", rimanda l'incantesimo al lanciatore;
-  - $2400 (effetto $43): "loses his weapon", l'arma finisce nella lista H005+$3360.
-- **Paura e fetore:**
-  - $2B3E (effetto $48) e $3636 (effetto $52): "is terrified" / "is afraid", il bersaglio fugge;
-  - $3160 (effetto $4F): "emits an evil stench".
-- **Berserk:** $2FE2 (effetto $4D, "goes berserk") e $3D28 (effetto $6B, stessa cosa senza messaggio).
-- **Esplosioni e richiami:**
-  - $1E3C (effetto $3C): "explodes!", 3d6 e stordimento a chi è attorno;
-  - $2D46 (effetto $4C): "gates in", fa entrare in campo i rinforzi.
-- **Costituzione:** $3982 (effetto $5E), bonus da +1 a +5 secondo la costituzione.
+**Ported handlers**
+- **Clouds and acid:**
+  - $13F4 (effect $28): "The air clears a little...", the cloud dissolves and the squares go back to how they were;
+  - $266A (effect $46): "dissolves into acid!", creates a pool of acid;
+  - $3292 (effect $50): "The acid drains away..", the pool dries up.
+- **Defences:**
+  - $1836 (effect $29) and $174E: "Avoids it", dodges weapons without a magic bonus;
+  - $29E2 (effect $47): "reflects the spell", sends the spell back to the caster;
+  - $2400 (effect $43): "loses his weapon", the weapon ends up in the list H005+$3360.
+- **Fear and stench:**
+  - $2B3E (effect $48) and $3636 (effect $52): "is terrified" / "is afraid", the target flees;
+  - $3160 (effect $4F): "emits an evil stench".
+- **Berserk:** $2FE2 (effect $4D, "goes berserk") and $3D28 (effect $6B, same thing without a message).
+- **Explosions and summoning:**
+  - $1E3C (effect $3C): "explodes!", 3d6 and stunning to those around;
+  - $2D46 (effect $4C): "gates in", brings the reinforcements onto the field.
+- **Constitution:** $3982 (effect $5E), bonus from +1 to +5 according to the constitution.
 
-**Altre routine nuove**
-- **H062+$2734:** fa esplodere i personaggi a terra della lista H005+$16 ("explodes.", 1d6 a chi è attorno).
-- **H029+$0376:** XOR di un byte (`xor_byte`).
+**Other new routines**
+- **H062+$2734:** makes the downed characters of the list H005+$16 explode ("explodes.", 1d6 to those around).
+- **H029+$0376:** XOR of a byte (`xor_byte`).
 
-**Nuovi dati globali**
-- `g_acid_pools` ($250C): pozze d'acido, con lo stesso record delle nubi.
-- `g_dropped_items` ($3360): armi perse, con un nuovo struct `CokDropped`.
-- H006 ora azzera `g_dropped_items` al posto della long in H005.
+**New global data**
+- `g_acid_pools` ($250C): acid pools, with the same record as the clouds.
+- `g_dropped_items` ($3360): lost weapons, with a new struct `CokDropped`.
+- H006 now clears `g_dropped_items` instead of the long in H005.
 
-**Dove mi discosto dall'asm (tutto documentato nel codice)**
-- **Dimensione dei record:** nubi, pozze e armi perse sono allocate e liberate con la dimensione del record C. L'asm usa $22 e $50 byte; in C i puntatori sono più grandi.
-- **H062+$2734:** l'asm scrive anche su una voce vuota (NULL) della lista; qui la salto.
-- **$2D46 a fine lista:** l'asm legge un personaggio NULL quando la lista finisce; qui la tratto come il ritorno al lanciatore.
-- **Valori non inizializzati, qui messi a 0:**
-  - in $266A, la direzione usata quando la casella vale $1F;
-  - in $3982, il bonus per una costituzione fuori tabella.
+**Where I deviate from the asm (all documented in the code)**
+- **Record size:** clouds, pools and lost weapons are allocated and freed with the size of the C record. The asm uses $22 and $50 bytes; in C the pointers are bigger.
+- **H062+$2734:** the asm also writes to an empty (NULL) entry of the list; here I skip it.
+- **$2D46 at the end of the list:** the asm reads a NULL character when the list ends; here I treat it as the return to the caster.
+- **Uninitialised values, set to 0 here:**
+  - in $266A, the direction used when the square is $1F;
+  - in $3982, the bonus for a constitution outside the table.
 
-**Comportamenti dell'asm mantenuti così come sono**
-- **$2D46:** con una casella fuori mappa non passa alla direzione successiva. Se il personaggio di riferimento è sul bordo, il ciclo non finisce mai.
-- **$29E2:** l'animazione e il cambio di bersaglio si ripetono per ogni bersaglio, anche per quelli non sostituiti.
-- **$266A:** contando le pozze già esistenti, salta l'ultimo record della lista.
-- **$3160:** l'effetto $76 va a chi emette il fetore, non alla vittima.
+**Behaviours of the asm kept as they are**
+- **$2D46:** with a square outside the map it does not move on to the next direction. If the reference character is on the edge, the loop never ends.
+- **$29E2:** the animation and the change of target are repeated for every target, also for those not replaced.
+- **$266A:** when counting the pools that already exist, it skips the last record of the list.
+- **$3160:** effect $76 goes to whoever emits the stench, not to the victim.
 
-**Prove**
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
-- **ASan:** pulito in una sessione di prova sul menu principale.
-- **Nuovi gestori:** non provati, perché scattano solo in combattimento, che non è ancora raggiungibile.
+**Tests**
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8.
+- **ASan:** clean in a test session on the main menu.
+- **New handlers:** not tried, because they fire only in combat, which cannot be reached yet.
 
-**Cosa resta**
-- **Stub del combattimento:** grafica di H048 (posizioni, aree), H077, H063 $2178/$21D2 e H043+$190E.
-- **Allocazione delle nubi:** non è ancora portata. Chi la porterà deve usare `sizeof(CokCloud)`.
+**What remains**
+- **Combat stubs:** H048 graphics (positions, areas), H077, H063 $2178/$21D2 and H043+$190E.
+- **Cloud allocation:** not ported yet. Whoever ports it must use `sizeof(CokCloud)`.
 
 ---
 
 ## 2026-11-10 (cok-port-30)
 
-Ho portato la grafica del combattimento: mappa, vista 7x7, figure, cursore, cadute, aree e linea di vista, proiettili e doppio buffer. Routine portate: 705 su 1065 (prima 659).
+I ported the combat graphics: map, 7x7 view, figures, cursor, falls, areas and line of sight, projectiles and double buffer. Routines ported: 705 out of 1065 (before 659).
 
-**H048: mappa e figure del combattimento (19 routine, tutte quelle del modulo)**
-- **Forme e vista:**
-  - $0044 (casella i di una forma, tabella H005+$5048);
-  - $00C2 (coordinate nella vista);
-  - $01E8 (dentro la vista 7x7);
-  - $0230 (combattente visibile, tutto o in parte).
-- **Disegno:**
-  - $0334 (casella con cursore e figura);
-  - $0588 (terreno sotto un combattente);
-  - $0884 (casella e chi la occupa);
-  - $0B1A (sposta e ridisegna la vista);
-  - $0DF2 (centra la vista su una casella, era lo stub `h048_0df2`).
-- **Combattenti:**
-  - $0956 (tabella di occupazione H005+$2BD2);
-  - $0AA8 (numero del combattente);
-  - $0F88 e $0FBA (posizione);
-  - $0FEC (cambia fotogramma);
-  - $110C (forma);
-  - $113E (esamina le caselle in una direzione);
-  - $12F4 (caduta: suono, animazione, corpo sulla mappa);
-  - $16D4 (piazza un combattente);
-  - $195E (cursore sul combattente).
+**H048: combat map and figures (19 routines, all of the module)**
+- **Shapes and view:**
+  - $0044 (square i of a shape, table H005+$5048);
+  - $00C2 (coordinates in the view);
+  - $01E8 (inside the 7x7 view);
+  - $0230 (combatant visible, wholly or in part).
+- **Drawing:**
+  - $0334 (square with cursor and figure);
+  - $0588 (terrain under a combatant);
+  - $0884 (square and whoever occupies it);
+  - $0B1A (moves and redraws the view);
+  - $0DF2 (centres the view on a square, it was the stub `h048_0df2`).
+- **Combatants:**
+  - $0956 (occupancy table H005+$2BD2);
+  - $0AA8 (number of the combatant);
+  - $0F88 and $0FBA (position);
+  - $0FEC (changes frame);
+  - $110C (shape);
+  - $113E (examines the squares in one direction);
+  - $12F4 (fall: sound, animation, body on the map);
+  - $16D4 (places a combatant);
+  - $195E (cursor on the combatant).
 
-**H077: aree e linea di vista (tutte le routine)**
-- **Linea:** $0012, $01CC e $0242 (linea di Bresenham con costo 2 per passo, +1 in diagonale).
-- **Visibilità:**
-  - $0378 (linea di vista con le altezze di H005+$3EF4);
-  - $0508 (settore di una direzione).
-- **Lista dei combattenti:**
-  - $0056 (ordina la lista H005+$2A3E);
-  - $08AC (riempie la lista con chi è nell'area).
-- **Correzione:** nel C la chiamata `h077_08ac(h048_110c(...), area)` era sbagliata. H048+$110C prende solo il personaggio; le altre quattro word restano sullo stack come argomenti di H077+$08AC, che ne ha sei: x, y, raggio, direzione, forma e mappa. Ora è `find_in_area(x, y, raggio, dir, combatant_size(c), area)` in tutti i chiamanti (H027, H062, H063).
+**H077: areas and line of sight (all the routines)**
+- **Line:** $0012, $01CC and $0242 (Bresenham line with cost 2 per step, +1 on the diagonal).
+- **Visibility:**
+  - $0378 (line of sight with the heights of H005+$3EF4);
+  - $0508 (sector of a direction).
+- **List of the combatants:**
+  - $0056 (sorts the list H005+$2A3E);
+  - $08AC (fills the list with those inside the area).
+- **Fix:** in the C the call `h077_08ac(h048_110c(...), area)` was wrong. H048+$110C takes only the character; the other four words stay on the stack as arguments of H077+$08AC, which has six: x, y, radius, direction, shape and map. Now it is `find_in_area(x, y, radius, dir, combatant_size(c), area)` in all the callers (H027, H062, H063).
 
 **H063**
-- **Proiettili:**
-  - $1FDC e $2178 (fotogrammi del proiettile in $243A, anche specchiati);
-  - $21D2 con la procedura annidata $21E0 (animazione del proiettile con le due View alternate).
-- **Combattimento:**
-  - $2B4C (lato opposto, spostata qui da H085);
-  - $2BDE (nemici vicini, con il bersaglio preferito $2432 in testa);
-  - $3658 (ridisegna il combattimento);
-  - $3CA0 (direzione da un combattente all'altro).
-- **Mappa:** $33A0 (riga di stato: coordinate, direzione, ora, " camping"/" search").
+- **Projectiles:**
+  - $1FDC and $2178 (frames of the projectile in $243A, also mirrored);
+  - $21D2 with the nested procedure $21E0 (animation of the projectile with the two alternating Views).
+- **Combat:**
+  - $2B4C (opposite side, moved here from H085);
+  - $2BDE (nearby enemies, with the preferred target $2432 first);
+  - $3658 (redraws the combat);
+  - $3CA0 (direction from one combatant to the other).
+- **Map:** $33A0 (status line: coordinates, direction, time, " camping"/" search").
 
 **H029, H035, H044, H049**
-- **H029, doppio buffer:**
-  - $14F6 (aspetta lo schermo in primo piano);
-  - $1520 (copia lo schermo fuori schermo);
-  - $1576 (scambia le View);
-  - $16A2 e $16DE (inizio e fine di un aggiornamento annidato).
-- **H029, tile 24x24:** $0B94, e $0D58 (stessa cosa con salvataggio dello sfondo).
-- **H035+$019A:** tile della mappa.
-- **H044+$0586:** cornice del combattimento.
-- **H049+$04AE:** blit hardware piano per piano, con o senza maschera.
-- **H049+$09D6 e $0A7A:** specchio orizzontale di un record grafico.
+- **H029, double buffer:**
+  - $14F6 (waits for the screen in front);
+  - $1520 (copies the off-screen screen);
+  - $1576 (swaps the Views);
+  - $16A2 and $16DE (start and end of a nested update).
+- **H029, 24x24 tiles:** $0B94, and $0D58 (same thing with saving of the background).
+- **H035+$019A:** map tile.
+- **H044+$0586:** combat frame.
+- **H049+$04AE:** hardware blit plane by plane, with or without mask.
+- **H049+$09D6 and $0A7A:** horizontal mirror of a graphic record.
 
-**Dati nuovi**
-- **Strutture:**
-  - `g_bodies[8]` (corpi sulla mappa, H005+$2AE2), struct `CokBody`; gli effetti di H027 ora usano questa al posto di H005_L;
-  - `g_h005_2432` (bersaglio preferito);
-  - `g_gfx_3304[2]` (fotogrammi della caduta);
-  - `g_h029_m8` (View mostrata).
-- **Host:** ho aggiunto `IntuitionBase->FirstScreen`. Lo imposta OpenScreen e lo azzera CloseScreen. Sull'Amiga c'è il nuovo include `<intuition/intuitionbase.h>`.
-- **Firme corrette:**
-  - H049+$09D6 ora è `mirror_gfx_record(src, dst)` nell'ordine di push: prima la sorgente;
-  - H029+$0D58 ora è `draw_tile24_saving` (prima era uno stub).
+**New data**
+- **Structures:**
+  - `g_bodies[8]` (bodies on the map, H005+$2AE2), struct `CokBody`; the H027 effects now use this instead of H005_L;
+  - `g_h005_2432` (preferred target);
+  - `g_gfx_3304[2]` (frames of the fall);
+  - `g_h029_m8` (View shown).
+- **Host:** I added `IntuitionBase->FirstScreen`. OpenScreen sets it and CloseScreen clears it. On the Amiga there is the new include `<intuition/intuitionbase.h>`.
+- **Fixed signatures:**
+  - H049+$09D6 is now `mirror_gfx_record(src, dst)` in push order: first the source;
+  - H029+$0D58 is now `draw_tile24_saving` (before it was a stub).
 
-**Dove mi discosto dall'asm (tutto documentato nel codice)**
-- **H049+$04AE:** l'originale accoda un bltnode con QBSBlit e programma il blitter al passaggio del raggio. Qui scrivo gli stessi registri subito, piano per piano, con OwnBlitter/WaitBlit, come nella routine di testo già portata.
-- **H048+$12F4, controllo iniziale:** legge una voce non inizializzata (-$6), fuori tabella se vale 0, e non trova mai il personaggio; qui è omesso.
-- **H048+$12F4, nono corpo:** l'originale lo scriverebbe sopra i combattenti; qui non viene registrato.
-- **H048+$0AA8:** con $247B = 0 l'originale scorre oltre la tabella; qui la ricerca si ferma a 40.
-- **H077+$0508:** per una direzione oltre 8 restituisce un byte non inizializzato; qui 0.
+**Where I deviate from the asm (all documented in the code)**
+- **H049+$04AE:** the original queues a bltnode with QBSBlit and programs the blitter when the beam passes. Here I write the same registers right away, plane by plane, with OwnBlitter/WaitBlit, as in the text routine already ported.
+- **H048+$12F4, initial check:** reads an uninitialised entry (-$6), outside the table if it is 0, and never finds the character; here it is omitted.
+- **H048+$12F4, ninth body:** the original would write it over the combatants; here it is not recorded.
+- **H048+$0AA8:** with $247B = 0 the original runs past the table; here the search stops at 40.
+- **H077+$0508:** for a direction above 8 it returns an uninitialised byte; here 0.
 
-**Comportamenti dell'asm mantenuti così come sono**
-- **H049+$04AE, pixel in più:** con una destinazione non allineata a 8 pixel azzera ALWM e disegna 8 pixel del fotogramma vicino. Nel gioco le destinazioni sono sempre multiple di 8.
-- **H048+$16D4:** scrive la casella a ogni giro del ciclo finché non trova un corpo.
-- **H063+$3CA0:** cicla per sempre se nessun settore contiene la direzione.
+**Behaviours of the asm kept as they are**
+- **H049+$04AE, extra pixels:** with a destination not aligned to 8 pixels it clears ALWM and draws 8 pixels of the nearby frame. In the game the destinations are always multiples of 8.
+- **H048+$16D4:** writes the square at every iteration of the loop until it finds a body.
+- **H063+$3CA0:** loops forever if no sector contains the direction.
 
-**Prove**
-- **Blit hardware:** test sull'host. H049+$04AE con il blitter emulato coincide con BltMaskBitMapRastPort e BltBitMap in 999 casi: larghezze 8/16/24, sorgente e destinazione multiple di 8, con e senza maschera.
-- **Specchio:** H049+$09D6 testato su un record 24x24 (immagine e maschera), 0 differenze.
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
-- **ASan:** pulito sul menu principale.
-- **Nuove routine nel gioco:** non provate, perché il combattimento non è ancora raggiungibile.
+**Tests**
+- **Hardware blit:** test on the host. H049+$04AE with the emulated blitter matches BltMaskBitMapRastPort and BltBitMap in 999 cases: widths 8/16/24, source and destination multiples of 8, with and without mask.
+- **Mirror:** H049+$09D6 tested on a 24x24 record (picture and mask), 0 differences.
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8.
+- **ASan:** clean on the main menu.
+- **New routines in the game:** not tried, because combat cannot be reached yet.
 
-**Cosa resta**
-- **Stub:** H043+$190E (audio) resta uno stub che salta.
-- **Da portare:** chi carica $3304, $243A e $332C e chi prepara la mappa del combattimento, cioè l'avvio del combattimento in H095/H096/H097.
+**What remains**
+- **Stubs:** H043+$190E (audio) stays a stub that is skipped.
+- **To be ported:** whoever loads $3304, $243A and $332C and whoever prepares the combat map, that is the combat start-up in H095/H096/H097.
 
 ---
 
 ## 2026-11-10 (cok-port-31)
 
-Ho portato l'avvio del combattimento, H095+$2496, che lo script (H059) chiama a ogni battaglia. Routine portate: 732 su 1066 (prima 705).
+I ported the combat start-up, H095+$2496, which the script (H059) calls at every battle. Routines ported: 732 out of 1066 (before 705).
 
-**H095: avvio del combattimento (tutte le 14 routine del modulo)**
-- **$2496 `start_combat`, l'avvio:**
-  - libera le immagini della mappa ($27B2, $27B8, $2798) e scrive "A battle begins...";
-  - azzera lo stato del combattimento: nubi, pozze, corpi, armi perse, $2432, $2510, $335C;
-  - costruisce la mappa, prepara i turni e schiera i combattenti;
-  - alloca le icone $243A, centra la vista sul primo e ridisegna;
-  - copia i colori nella View fuori schermo, lancia gli eventi 8 e $16 per tutti e calcola la forza dei nemici;
-  - passa al contesto 5.
-- **$1630 (mappa):** carica i set di tile (DungCom o WildCom, più RandCom) e alloca la mappa di $9CE byte.
-- **Mappa del dungeon:**
-  - $083A con le procedure annidate $0848, $0912, $09A4 e $0CD4: un blocco 7x5 per ogni casella attorno al party (colonne -6..6, righe -2..2), con pavimento, pareti e porte del dungeon;
-  - $06F2/$0700: pareti fra due caselle;
-  - $0392: casella del blocco;
-  - $0422: alberi e cespugli nei blocchi all'aperto.
-- **Mappa all'aperto:**
-  - $1576: mappa libera;
-  - $1076: alberi alti e oggetti;
-  - $121A/$1228: erba e terreno.
-- **Turni:** $1790, con il blocco del turno di ogni personaggio, la direzione iniziale e l'IA di chi è fuori combattimento.
-- **Schieramento:**
-  - $1FC2: punti di partenza dei due lati e griglie di schieramento;
-  - $1A7A: ricerca a spirale con cambio di griglia;
-  - $1914: prova una casella;
-  - $18CC: fuori dalla griglia.
+**H095: combat start-up (all 14 routines of the module)**
+- **$2496 `start_combat`, the start-up:**
+  - frees the map pictures ($27B2, $27B8, $2798) and writes "A battle begins...";
+  - clears the combat state: clouds, pools, bodies, lost weapons, $2432, $2510, $335C;
+  - builds the map, prepares the turns and deploys the combatants;
+  - allocates the icons $243A, centres the view on the first one and redraws;
+  - copies the colours into the off-screen View, fires events 8 and $16 for everybody and computes the strength of the enemies;
+  - switches to context 5.
+- **$1630 (map):** loads the tile sets (DungCom or WildCom, plus RandCom) and allocates the $9CE-byte map.
+- **Dungeon map:**
+  - $083A with the nested procedures $0848, $0912, $09A4 and $0CD4: a 7x5 block for each square around the party (columns -6..6, rows -2..2), with dungeon floor, walls and doors;
+  - $06F2/$0700: walls between two squares;
+  - $0392: square of the block;
+  - $0422: trees and bushes in the outdoor blocks.
+- **Outdoor map:**
+  - $1576: free map;
+  - $1076: tall trees and objects;
+  - $121A/$1228: grass and terrain.
+- **Turns:** $1790, with the turn block of each character, the initial direction and the AI of those out of combat.
+- **Deployment:**
+  - $1FC2: starting points of the two sides and deployment grids;
+  - $1A7A: spiral search with change of grid;
+  - $1914: tries a square;
+  - $18CC: outside the grid.
 
-**Altre routine**
+**Other routines**
 - **H011:**
-  - $0162 (dentro la mappa 16x16);
-  - $01AA (parete di un lato);
-  - $04E2 (byte del piano GEO 2);
-  - $09C8 (porta di un lato).
-- **H029+$1718:** copia i 32 colori dello schermo nella View fuori schermo, leggendoli dalla lista Copper della View di Intuition.
-- **H035+$0040:** carica un set di tile 24x24 nel set $332C.
-- **H096+$37C2:** forza dei nemici in H005+$2481.
+  - $0162 (inside the 16x16 map);
+  - $01AA (wall of a side);
+  - $04E2 (byte of GEO plane 2);
+  - $09C8 (door of a side).
+- **H029+$1718:** copies the 32 colours of the screen into the off-screen View, reading them from the Copper list of the Intuition View.
+- **H035+$0040:** loads a 24x24 tile set into the set $332C.
+- **H096+$37C2:** strength of the enemies in H005+$2481.
 
 **Host**
-- **View di Intuition:** `GfxBase->ActiView` all'avvio è una View senza ViewPort, quindi il display mostra lo schermo.
-- **Lista Copper:** quella View ha una lista Copper con le MOVE COLOR00..31 dello schermo in primo piano. La aggiornano OpenScreen e LoadRGB4. Così H029+$1718 è portata com'è.
-- **`struct cprlist`:** ora è definita nell'ndk dell'host.
+- **Intuition View:** at start-up `GfxBase->ActiView` is a View without a ViewPort, so the display shows the screen.
+- **Copper list:** that View has a Copper list with the MOVE COLOR00..31 of the front screen. OpenScreen and LoadRGB4 update it. This way H029+$1718 is ported as it is.
+- **`struct cprlist`:** it is now defined in the host ndk.
 
-**Errore trovato col test reale e corretto**
-- **Problema:** dopo lo schieramento `$247B` vale numero di combattenti + 1 (come nell'originale), quindi H048+$0DF2 legge una voce vuota di $2B32.
-- **Originale:** legge +$198 dalla memoria bassa e scarta la voce perché la sua forma è 0.
-- **Qui:** la voce NULL si salta (deviazione documentata nel codice).
+**Bug found with the real test and fixed**
+- **Problem:** after the deployment `$247B` holds the number of combatants + 1 (as in the original), so H048+$0DF2 reads an empty entry of $2B32.
+- **Original:** reads +$198 from low memory and discards the entry because its shape is 0.
+- **Here:** the NULL entry is skipped (deviation documented in the code).
 
-**Dove mi discosto dall'asm (tutto documentato nel codice)**
-- **H010+$0360:** resta uno stub. È il messaggio "Start range error in Load24x24Set" sulla console, cioè il writeln del runtime Pascal (H020/H074/H075). Si raggiunge solo con un indice oltre $27, che le chiamate di H095 non usano.
-- **Valori non inizializzati, qui messi a 0:**
-  - le tile dei casi senza valore in $09A4 e $0CD4;
-  - in $1A7A, l'esito quando si esce dalla griglia senza cambiarla;
-  - in H011+$01AA, la parete di una direzione dispari.
-- **Schieramento:** oltre 8 corpi non si registrano.
+**Where I deviate from the asm (all documented in the code)**
+- **H010+$0360:** stays a stub. It is the message "Start range error in Load24x24Set" on the console, that is the writeln of the Pascal runtime (H020/H074/H075). It is reached only with an index above $27, which the H095 calls do not use.
+- **Uninitialised values, set to 0 here:**
+  - the tiles of the cases without a value in $09A4 and $0CD4;
+  - in $1A7A, the outcome when leaving the grid without changing it;
+  - in H011+$01AA, the wall of an odd direction.
+- **Deployment:** beyond 8 bodies they are not recorded.
 
-**Prove**
-- **Test temporaneo (non committato):** con `COK_TEST_COMBAT`, "Begin adventuring" carica il personaggio L e chiama `start_combat()`, con `$3DE3 = 1` come nell'esplorazione.
-  - All'aperto: mappa con alberi, cespugli e oggetti, il personaggio schierato, cornice del combattimento e "A battle begins...".
-  - Nel dungeon: solo pavimento, perché nel menu i piani GEO non sono caricati.
-  - ASan pulito in entrambi i casi.
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
+**Tests**
+- **Temporary test (not committed):** with `COK_TEST_COMBAT`, "Begin adventuring" loads the character L and calls `start_combat()`, with `$3DE3 = 1` as in exploration.
+  - Outdoors: map with trees, bushes and objects, the character deployed, combat frame and "A battle begins...".
+  - In the dungeon: only floor, because in the menu the GEO planes are not loaded.
+  - ASan clean in both cases.
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8.
 
-**Cosa resta**
-- **Script che chiama l'avvio:** H059.
-- **Ciclo del combattimento:** H096/H097 (turni, attacchi, IA, menu del combattimento).
-- **Fine del combattimento.**
+**What remains**
+- **Script that calls the start-up:** H059.
+- **Combat loop:** H096/H097 (turns, attacks, AI, combat menu).
+- **End of combat.**
 - **Audio:** H043+$190E.
 
 ---
 
 ## 2026-11-10 (cok-port-32)
 
-La richiesta ripeteva "procedi con l'avvio del combattimento", che era già consegnato in cok-port-31. Ho quindi portato il passo successivo: il ciclo del combattimento (H059+$1782, Combat_MainLoop), che il comando COMBAT dello script (H012+$0766) chiama e che a sua volta chiama l'avvio. Routine portate: 760 su 1066 (prima 732).
+The request repeated "proceed with the combat start-up", which had already been delivered in cok-port-31. So I ported the next step: the combat loop (H059+$1782, Combat_MainLoop), which the COMBAT command of the script (H012+$0766) calls and which in turn calls the start-up. Routines ported: 760 out of 1066 (before 732).
 
-**H059: ciclo del combattimento (tutte le 13 routine)**
-- **$1782 `combat_main_loop`, il ciclo principale:**
-  - prima del ciclo: contesto 5, gestore $276C (bersaglio in combattimento), avvio (H095) ed evento $18 per tutti;
-  - a ogni round, finché restano entrambi i lati: inizio del round, ordine dei turni, turno di ognuno con le esplosioni dei caduti, fine del round;
-  - alla fine: pulizia.
-- **$0130:** ordine dei turni per iniziativa (+$4 del turno; a parità, a caso) nella tabella H005+$2392, ora `g_turn_order[72]`.
-- **$1498:** turno di un attore (eventi 7, $F e $15, cursore, stato; automatico o col menu).
-- **$1110:** turno del giocatore.
-  - Comandi: Move, View, Aim, Use, Cast, Turn, Yell, Done.
-  - Tasti speciali: tutti in automatico, magia on/off, $4DE8.
-- **$03BE:** menu del turno.
-- **$0726 con $0734:** movimento/attacco con le frecce del tastierino: costo delle caselle, "Flee:", "can't go there"; Esc annulla.
-- **$0670:** attacco da vicino ("Not with that weapon").
-- **$0EA0:** sottomenu Done: Guard, Delay, Quit, Bandage, Auto, Speed, Exit.
-- **$0CCA:** velocità del gioco.
-- **$0E4A:** controllo automatico.
-- **$15EE:** fine del round:
-  - un minuto di gioco, contatore dei round ed evento $13;
-  - acido delle pozze; chi sta morendo muore dopo 10 round; "Your Teammate is Dying";
-  - fine se un lato sparisce o dopo $2477 round, con "Continue Battle:".
-- **$02AA:** pulizia: nubi, pozze, incantati, effetti legati, mappa, icone.
+**H059: combat loop (all 13 routines)**
+- **$1782 `combat_main_loop`, the main loop:**
+  - before the loop: context 5, handler $276C (target in combat), start-up (H095) and event $18 for everybody;
+  - at every round, as long as both sides remain: start of the round, order of the turns, turn of each one with the explosions of the fallen, end of the round;
+  - at the end: clean-up.
+- **$0130:** order of the turns by initiative (+$4 of the turn; on a tie, at random) in the table H005+$2392, now `g_turn_order[72]`.
+- **$1498:** turn of an actor (events 7, $F and $15, cursor, status; automatic or with the menu).
+- **$1110:** turn of the player.
+  - Commands: Move, View, Aim, Use, Cast, Turn, Yell, Done.
+  - Special keys: everybody on automatic, magic on/off, $4DE8.
+- **$03BE:** turn menu.
+- **$0726 with $0734:** movement/attack with the keypad arrows: cost of the squares, "Flee:", "can't go there"; Esc cancels.
+- **$0670:** melee attack ("Not with that weapon").
+- **$0EA0:** Done submenu: Guard, Delay, Quit, Bandage, Auto, Speed, Exit.
+- **$0CCA:** game speed.
+- **$0E4A:** automatic control.
+- **$15EE:** end of the round:
+  - one minute of game time, round counter and event $13;
+  - acid of the pools; whoever is dying dies after 10 rounds; "Your Teammate is Dying";
+  - end if a side disappears or after $2477 rounds, with "Continue Battle:".
+- **$02AA:** clean-up: clouds, pools, charmed creatures, linked effects, map, icons.
 
-**Aiutanti portati**
-- **H058, orologio di gioco:**
-  - $064A (avanza il tempo);
-  - $052C (riporti, invecchiamento);
-  - $017C e $018A (icone della cornice a ogni ora);
-  - $02F4 (durata degli effetti a passi di 10).
+**Ported helpers**
+- **H058, game clock:**
+  - $064A (advances the time);
+  - $052C (carries, ageing);
+  - $017C and $018A (icons of the frame at every hour);
+  - $02F4 (duration of the effects in steps of 10).
 - **H062:**
   - $021E (Yell, "wants to kill");
-  - $1038 (nubi: "starts to cough", "chokes and gags from nausea"; acido);
-  - $0F24 (proprietario della nube);
-  - $1694 (caduta con messaggio);
-  - $1898 (vuota);
-  - $17C0 ora è esportata.
+  - $1038 (clouds: "starts to cough", "chokes and gags from nausea"; acid);
+  - $0F24 (owner of the cloud);
+  - $1694 (fall with message);
+  - $1898 (empty);
+  - $17C0 is now exported.
 - **H063:**
-  - $3698 e $3734 (arma a distanza, uso da vicino);
-  - $36EE (arma di tipo $43);
-  - $3980 (bende, "is bandaged");
+  - $3698 and $3734 (ranged weapon, use in melee);
+  - $36EE (weapon of type $43);
+  - $3980 (bandages, "is bandaged");
   - $2F5A (Guard, "Guarding").
 
-**Dove mi discosto dall'asm (tutto documentato nel codice)**
-- **Tabella dei turni:** l'originale azzera 40 voci di $2392 ma scorre fino a $48; oltre la 40 coincide con $2432... Qui la tabella ha 72 voci; la lista chiusa da NULL non le supera.
-- **Delay ($0EA0):** non legge la voce $48 fuori tabella.
-- **H062+$0F24:** legge dirs[count] oltre la copia per valore (stack); qui il byte seguente di H005+$5022.
-- **H063+$3734:** senza arma l'originale legge +$30 da NULL; qui no.
-- **H058+$018A:** con un indice non previsto tile e colonna non inizializzate; qui 0.
+**Where I deviate from the asm (all documented in the code)**
+- **Turn table:** the original clears 40 entries of $2392 but runs up to $48; beyond entry 40 it overlaps $2432... Here the table has 72 entries; the NULL-terminated list does not go past them.
+- **Delay ($0EA0):** does not read entry $48 outside the table.
+- **H062+$0F24:** reads dirs[count] past the copy passed by value (stack); here the following byte of H005+$5022.
+- **H063+$3734:** without a weapon the original reads +$30 from NULL; here it does not.
+- **H058+$018A:** with an unexpected index, tile and column are uninitialised; here 0.
 
-**Stub nuovi (H096/H097, il prossimo passo)**
+**New stubs (H096/H097, the next step)**
 - **H096:**
-  - inizio round $02CE;
-  - attacco $38DC, $1340, $20E6, $2182;
-  - fuga $10FA;
-  - passo $0C3C e $099C;
+  - round start $02CE;
+  - attack $38DC, $1340, $20E6, $2182;
+  - flight $10FA;
+  - step $0C3C and $099C;
   - $11D4, Aim $4448, Cast $3100, Turn $160A, $4DE8;
-  - bersaglio $2A6C.
-- **H097:** turno automatico $1D68.
+  - target $2A6C.
+- **H097:** automatic turn $1D68.
 
-**Prove**
-- **Test temporaneo (non committato):** `combat_main_loop()` dal menu esegue avvio, controllo dei lati e pulizia con ASan pulito. Con il solo party non ci sono nemici, quindi i round non partono (per quelli servono H096/H097).
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
+**Tests**
+- **Temporary test (not committed):** `combat_main_loop()` from the menu runs start-up, check of the sides and clean-up with ASan clean. With only the party there are no enemies, so the rounds do not start (for those H096/H097 are needed).
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8.
 
-**Cosa resta**
-- **H096:** azioni e attacchi.
-- **H097:** IA.
-- **H012+$0766:** il comando COMBAT dello script.
+**What remains**
+- **H096:** actions and attacks.
+- **H097:** AI.
+- **H012+$0766:** the COMBAT command of the script.
 - **Audio.**
 
 ---
 
 ## 2026-11-10 (cok-port-33)
 
-Primo passo di "Begin adventuring e la mappa del gioco": il cuore dell'interprete degli script ECL. Routine portate: 790 su 1066 (prima 760).
+First step of "Begin adventuring and the game map": the heart of the ECL script interpreter. Routines ported: 790 out of 1066 (before 760).
 
-**Il piano, perché è un pezzo grande**
-- **Mole:** dopo il menu principale il gioco entra in H012+$3150, il ciclo dell'esplorazione. Con l'interprete ECL e i suoi ~60 comandi (H064, H012), il menu e il movimento (H068), le aree (H061) e la vista 3D (H057, H011, H049, H042) fanno circa 22.700 istruzioni in 225 routine.
-- **Consegne:**
-  1. interprete (questa);
-  2. comandi ECL di H064;
-  3. comandi ECL di H012 e il ciclo $3150;
-  4. menu, movimento e vista 3D.
+**The plan, because it is a big piece**
+- **Size:** after the main menu the game enters H012+$3150, the exploration loop. With the ECL interpreter and its ~60 commands (H064, H012), the menu and the movement (H068), the areas (H061) and the 3D view (H057, H011, H049, H042) they come to about 22,700 instructions in 225 routines.
+- **Deliveries:**
+  1. interpreter (this one);
+  2. ECL commands of H064;
+  3. ECL commands of H012 and the $3150 loop;
+  4. menu, movement and 3D view.
 
-**Correzione**
-- **Begin adventuring:** il menu principale chiamava ancora lo stub `h028_0d74`, che fermava il programma, anche se H028+$0D74 era già portata come `free_char_screens`. Ora chiama quella.
+**Fix**
+- **Begin adventuring:** the main menu still called the stub `h028_0d74`, which stopped the program, even though H028+$0D74 had already been ported as `free_char_screens`. Now it calls that.
 
-**H061: servizi della VM ECL (33 routine su 34)**
-- **Operandi:**
-  - $1670 (lettura con descrittori; stringhe immediate e da variabile);
-  - $184E (valore: byte, word, variabile, indirizzo);
-  - $1F12 e $1F3C (indirizzi, base $4B00);
-  - $1F6A (caratteri).
-- **Stringhe:**
-  - $3244 (testo compresso a 6 bit, quattro caratteri ogni tre byte);
-  - $33F0 (stringa dalle variabili);
-  - $162E (accoda un carattere).
-- **Variabili:**
-  - $1FA4 (zona: stato A $000.., stato B $3100.., stato C $2F00.., programma $3500.., registri speciali $754B..);
-  - $2E04 e $2BAA (lettura e scrittura);
-  - $208E e $27E2 (variabili dello stato B che leggono e scrivono il personaggio corrente: incantesimi, IA, valori, denaro, stato, lato, punti ferita, muri del dungeon);
-  - $202C (posizione nel party).
+**H061: ECL VM services (33 routines out of 34)**
+- **Operands:**
+  - $1670 (reading with descriptors; immediate strings and strings from variables);
+  - $184E (value: byte, word, variable, address);
+  - $1F12 and $1F3C (addresses, base $4B00);
+  - $1F6A (characters).
+- **Strings:**
+  - $3244 (6-bit compressed text, four characters every three bytes);
+  - $33F0 (string from the variables);
+  - $162E (appends a character).
+- **Variables:**
+  - $1FA4 (zone: state A $000.., state B $3100.., state C $2F00.., program $3500.., special registers $754B..);
+  - $2E04 and $2BAA (reading and writing);
+  - $208E and $27E2 (state B variables that read and write the current character: spells, AI, values, money, status, side, hit points, dungeon walls);
+  - $202C (position in the party).
 - **Area:**
-  - $1928 (inizio del programma: flag, PC $3500, pila vuota, i cinque ingressi $3DF4..$3DEC, azzeramento delle variabili dell'area);
-  - $1ACC (carica il blocco ECLn.dax, "Loading...Please Wait").
-- **Comandi di supporto:**
-  - $3AAC (GOSUB, con la pila $2388);
-  - $3E80 (salta un comando);
-  - $3904 e $3A0A (confronti, risultati in $237E..$2383);
-  - $3B4E (passo avanti nella mappa 16x16);
-  - $1C42 (caselle libere davanti);
-  - $36E6 e $35E2 (menu ECL con le scorciatoie '~').
-- **Altro:**
-  - $1BD6 (carica un mostro);
-  - $1D20 e $1D6E (immagini dell'evento: sprite, PIC, testa+corpo);
-  - $3DBE (oggetti distrutti);
-  - $3FA8 (velocità minima e massima del party);
-  - $4092 (messaggio del danno, "is hit for", "dies.").
-- **Non ancora portata:** $3C4C, che scala il denaro con l'aritmetica reale del runtime H015.
+  - $1928 (start of the program: flags, PC $3500, empty stack, the five entries $3DF4..$3DEC, clearing of the area variables);
+  - $1ACC (loads the ECLn.dax block, "Loading...Please Wait").
+- **Support commands:**
+  - $3AAC (GOSUB, with the stack $2388);
+  - $3E80 (skips a command);
+  - $3904 and $3A0A (comparisons, results in $237E..$2383);
+  - $3B4E (step forward on the 16x16 map);
+  - $1C42 (free squares ahead);
+  - $36E6 and $35E2 (ECL menu with the '~' shortcuts).
+- **Other:**
+  - $1BD6 (loads a monster);
+  - $1D20 and $1D6E (pictures of the event: sprite, PIC, head+body);
+  - $3DBE (destroyed items);
+  - $3FA8 (minimum and maximum speed of the party);
+  - $4092 (damage message, "is hit for", "dies.").
+- **Not yet ported:** $3C4C, which scales the money with the real arithmetic of the H015 runtime.
 
 **H012**
-- **$018A `run_ecl`:** esegue il programma da un indirizzo finché un comando non lo ferma o non si lascia l'area.
-- **$2DF2:** dispatcher dei 66 codici. I gestori di H064 (27) e di H012 (26) sono stub con nome, per le prossime consegne.
+- **$018A `run_ecl`:** runs the program from an address until a command stops it or the area is left.
+- **$2DF2:** dispatcher of the 66 codes. The handlers of H064 (27) and of H012 (26) are named stubs, for the next deliveries.
 
-**H064:** i dati del modulo (personaggio salvato, flag della VM, testo) sono globali C.
+**H064:** the data of the module (saved character, VM flags, text) are C globals.
 
-**Dove mi discosto dall'asm (tutto documentato nel codice)**
-- **Valori non inizializzati, qui messi a 0:**
-  - i casi senza valore delle variabili speciali e dei registri;
-  - i primi byte del testo a 6 bit.
-- **$3FA8:** con il party vuoto l'originale legge un NULL; qui esce senza cambiare nulla.
-- **Codice morto mantenuto:** i casi dei registri speciali con indirizzo basso non sono mai raggiungibili (quegli indirizzi cadono nello stato A).
+**Where I deviate from the asm (all documented in the code)**
+- **Uninitialised values, set to 0 here:**
+  - the cases without a value of the special variables and of the registers;
+  - the first bytes of the 6-bit text.
+- **$3FA8:** with the empty party the original reads a NULL; here it exits without changing anything.
+- **Dead code kept:** the cases of the special registers with a low address can never be reached (those addresses fall into state A).
 
-**Prove**
-- **Test temporaneo (non committato) con i dati veri:**
-  - carica il programma dell'area iniziale ($24) da ECL1.DAX ed esegue $1928: i cinque ingressi ($365A, $365B, $3658, $3659, $3514) cadono nel programma;
-  - da $3514 dodici comandi saltati con $3E80 si susseguono con lunghezze coerenti (LOAD_FILES $21 di 7 byte, poi le PRINT $11/$12 con testo a 6 bit);
-  - ASan pulito.
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
+**Tests**
+- **Temporary test (not committed) with the real data:**
+  - loads the program of the initial area ($24) from ECL1.DAX and runs $1928: the five entries ($365A, $365B, $3658, $3659, $3514) fall inside the program;
+  - from $3514 twelve commands skipped with $3E80 follow one another with consistent lengths (LOAD_FILES $21 of 7 bytes, then the PRINT $11/$12 with 6-bit text);
+  - ASan clean.
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8.
 
-**Prossimo passo:** i gestori dei comandi ECL di H064.
+**Next step:** the handlers of the ECL commands of H064.
 
 ---
 
 ## 2026-11-10 (cok-port-34)
 
-Secondo passo di "Begin adventuring": i gestori dei comandi ECL di H064. Routine portate: 825 (prima 790; il totale ora conta 1087 voci).
+Second step of "Begin adventuring": the handlers of the ECL commands of H064. Routines ported: 825 (before 790; the total now counts 1087 entries).
 
-**H064: tutti i 27 gestori**
-- **Controllo del flusso:**
-  - $00 EXIT, $01 GOTO, $02 GOSUB, $13 RETURN (senza pila diventa EXIT);
-  - $16..$1B IF (=, <>, <, >, <=, >=: se falso salta il comando seguente).
-- **Confronti e calcoli:**
-  - $03 COMPARE (stringhe se un operando lo è, altrimenti valori);
+**H064: all 27 handlers**
+- **Flow control:**
+  - $00 EXIT, $01 GOTO, $02 GOSUB, $13 RETURN (without a stack it becomes EXIT);
+  - $16..$1B IF (=, <>, <, >, <=, >=: if false it skips the following command).
+- **Comparisons and calculations:**
+  - $03 COMPARE (strings if an operand is one, otherwise values);
   - $14 COMPARE AND;
-  - $04..$07 ADD, SUB, DIV, MUL (resto della divisione in $3E00+$67E);
+  - $04..$07 ADD, SUB, DIV, MUL (remainder of the division in $3E00+$67E);
   - $08 RANDOM;
-  - $2F/$30 AND/OR bit a bit.
-- **Variabili:**
-  - $09 SAVE (valore o stringa);
+  - $2F/$30 bitwise AND/OR.
+- **Variables:**
+  - $09 SAVE (value or string);
   - $2A GETTABLE, $35 SETTABLE;
   - $0F INPUT NUMBER, $10 INPUT STRING.
-- **Testo e menu:**
-  - $11 PRINT e $12 PRINTCLEAR (finestra di testo con impaginazione);
-  - $15 menu verticale (lista "Select");
-  - $2B menu orizzontale con le scorciatoie '~' ("PRESS BUTTON OR RETURN TO CONTINUE." diventa la versione con Invio).
-- **Personaggi e mostri:**
-  - $0A LOAD CHARACTER (con il bit 7 il personaggio lascia il party);
-  - $0B LOAD MONSTER (n copie con oggetti ed effetti, figure CPIC, punti ferita scalati con la difficoltà, al massimo $3F mostri);
-  - $1C CLEAR MONSTERS (svuota anche il tesoro $2A3A);
+- **Text and menus:**
+  - $11 PRINT and $12 PRINTCLEAR (text window with pagination);
+  - $15 vertical menu ("Select" list);
+  - $2B horizontal menu with the '~' shortcuts ("PRESS BUTTON OR RETURN TO CONTINUE." becomes the version with Enter).
+- **Characters and monsters:**
+  - $0A LOAD CHARACTER (with bit 7 the character leaves the party);
+  - $0B LOAD MONSTER (n copies with items and effects, CPIC figures, hit points scaled with the difficulty, at most $3F monsters);
+  - $1C CLEAR MONSTERS (also empties the treasure $2A3A);
   - $1D PARTY STRENGTH.
-- **Incontro e immagini:**
-  - $0C APPROACH e $0D (sprite e ritratto alla distanza dell'incontro);
-  - $0E PICTURE (immagine grande, PIC o testa+corpo; $FF chiude).
-- **Aree e mappa:**
-  - $20 NEWECL (carica il programma di un'altra area);
-  - $21 LOAD FILES e $37 LOAD PIECES (mappa GEO del dungeon e definizioni dei muri).
+- **Encounter and pictures:**
+  - $0C APPROACH and $0D (sprite and portrait at the distance of the encounter);
+  - $0E PICTURE (big picture, PIC or head+body; $FF closes).
+- **Areas and map:**
+  - $20 NEWECL (loads the program of another area);
+  - $21 LOAD FILES and $37 LOAD PIECES (GEO map of the dungeon and definitions of the walls).
 
-**Aiutanti portati**
-- **H061:** $3012 (stringa nelle variabili) e $3860 (lista ECL con titolo "Select").
-- **H030+$09A6:** chiede un numero.
-- **H044:** $0330 (cornice dell'esplorazione) e $0452 (cornice all'aperto). Prima erano gli stub `h044_0330`/`h044_0452` chiamati dal menu principale e da H063.
-- **H028+$1098:** disco dei dati, raggiunto dalle variabili dello stato B.
-- **Nuovo globale:** `g_treasure_items` ($2A3A).
+**Ported helpers**
+- **H061:** $3012 (string in the variables) and $3860 (ECL list with the "Select" title).
+- **H030+$09A6:** asks for a number.
+- **H044:** $0330 (exploration frame) and $0452 (outdoor frame). Before they were the stubs `h044_0330`/`h044_0452` called by the main menu and by H063.
+- **H028+$1098:** data disk, reached by the state B variables.
+- **New global:** `g_treasure_items` ($2A3A).
 
-**Dove mi discosto dall'asm (tutto documentato nel codice)**
-- **DIV con divisore 0:** sul 68000 genera un'eccezione; qui risultato 0 e resto invariato.
-- **LOAD MONSTER:** le copie del mostro si fanno copiando il record C del personaggio (i $1AA byte dell'originale), poi si azzerano successivo, oggetti ed effetti come nell'originale.
+**Where I deviate from the asm (all documented in the code)**
+- **DIV with divisor 0:** on the 68000 it raises an exception; here result 0 and remainder unchanged.
+- **LOAD MONSTER:** the copies of the monster are made by copying the C record of the character (the $1AA bytes of the original), then next, items and effects are cleared as in the original.
 
-**Restano stub, per il passo della vista**
-- **Immagini (H042):** $0406, $0254, $1006, $10DC, $0F50.
-- **Mappa e vista:** H011+$1876 (mappa GEO), H011+$14EA (muri), H060+$0018 (ridisegno della vista), H069+$0012.
+**Still stubs, for the view step**
+- **Pictures (H042):** $0406, $0254, $1006, $10DC, $0F50.
+- **Map and view:** H011+$1876 (GEO map), H011+$14EA (walls), H060+$0018 (redraw of the view), H069+$0012.
 
-**Prove con i dati veri** (test temporaneo, non committato)
-- **Come:** il programma ECL dell'area iniziale ($24, ECL1.DAX) viene eseguito da `run_ecl`. Solo nel binario di test gli stub delle immagini erano non fatali.
-- **Comandi eseguiti:** LOAD FILES, PICTURE, PRINTCLEAR/PRINT, GOSUB, menu orizzontale, RETURN, di nuovo testo, GOSUB e RETURN, due SAVE.
-- **Testo:** a video compare "AT THE INN OF THE LAST HOME IN SOLACE, A BRAVE BAND GATHERS IN PREPARATION FOR A GRIM JOURNEY...", impaginato. È scritto sopra il menu perché la cornice dell'esplorazione non è ancora disegnata dal ciclo.
-- **Arresto:** si ferma sul comando $3D, un gestore di H012 (prossimo passo).
-- **ASan:** pulito.
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
+**Tests with the real data** (temporary test, not committed)
+- **How:** the ECL program of the initial area ($24, ECL1.DAX) is run by `run_ecl`. Only in the test binary the picture stubs were non-fatal.
+- **Commands run:** LOAD FILES, PICTURE, PRINTCLEAR/PRINT, GOSUB, horizontal menu, RETURN, text again, GOSUB and RETURN, two SAVE.
+- **Text:** on screen "AT THE INN OF THE LAST HOME IN SOLACE, A BRAVE BAND GATHERS IN PREPARATION FOR A GRIM JOURNEY..." appears, paginated. It is written over the menu because the exploration frame is not yet drawn by the loop.
+- **Stop:** it stops at command $3D, an H012 handler (next step).
+- **ASan:** clean.
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8.
 
-**Prossimo passo:** i gestori ECL di H012 (26) e il ciclo dell'esplorazione H012+$3150.
+**Next step:** the ECL handlers of H012 (26) and the exploration loop H012+$3150.
 
 ---
 
 ## 2026-11-10 (cok-port-35)
 
-**Richiesta:** "ok compila su sasc, procedi con i comandi ECL di H064". I comandi di H064 erano già in cok-port-34, quindi questo passo porta i comandi ECL di H012.
+**Request:** "ok it compiles on sasc, proceed with the ECL commands of H064". The H064 commands were already in cok-port-34, so this step ports the ECL commands of H012.
 
-**Comandi ECL di H012 portati** (25 su 26, in `h012.c`, collegati al dispatcher `ecl_execute`)
-- **Party e personaggi:**
-  - $1E PARTY SURVEY ($01FA): minimo, massimo e media sul party (livello, valori +$E0.., velocità) o presenza di un effetto;
-  - $22 ($05D6): c'è un ranger/guaritore (classe 4 o $A);
-  - $32 ($1E90): qualcuno porta un oggetto del tipo dato;
-  - $3B ($2596): cerca un incantesimo memorizzato (posizione e personaggio);
-  - $3F ($2AF6): il personaggio corrente ha l'effetto dato;
-  - $40 ($2B64): toglie a tutti gli oggetti del tipo dato;
-  - $39 ($2486): sceglie il personaggio corrente;
-  - $36 ($2502): aggiunge un PNG con la sua IA;
-  - $3E ($2ABE): il personaggio corrente lascia il party;
-  - $41 EXPERIENCE ($2C28): punti esperienza divisi per le classi.
-- **Incontri e combattimento:**
+**Ported ECL commands of H012** (25 out of 26, in `h012.c`, connected to the `ecl_execute` dispatcher)
+- **Party and characters:**
+  - $1E PARTY SURVEY ($01FA): minimum, maximum and average over the party (level, values +$E0.., speed) or presence of an effect;
+  - $22 ($05D6): is there a ranger/healer (class 4 or $A);
+  - $32 ($1E90): somebody carries an item of the given type;
+  - $3B ($2596): looks for a memorised spell (position and character);
+  - $3F ($2AF6): the current character has the given effect;
+  - $40 ($2B64): takes the items of the given type away from everybody;
+  - $39 ($2486): chooses the current character;
+  - $36 ($2502): adds an NPC with its AI;
+  - $3E ($2ABE): the current character leaves the party;
+  - $41 EXPERIENCE ($2C28): experience points divided among the classes.
+- **Encounters and combat:**
   - $23 SURPRISE ($0688);
-  - $24 COMBAT ($0766): combattimento (H059) o scena speciale, poi contesto 3/4 e ridisegno;
-  - $29 ENCOUNTER ($15AE): COMBAT/WAIT/FLEE/PARLAY o ADVANCE, avvicinamento, "Both sides wait.", "The monsters flee.";
+  - $24 COMBAT ($0766): combat (H059) or special scene, then context 3/4 and redraw;
+  - $29 ENCOUNTER ($15AE): COMBAT/WAIT/FLEE/PARLAY or ADVANCE, approach, "Both sides wait.", "The monsters flee.";
   - $2C PARLAY ($1DDE): HAUGHTY/SLY/NICE/MEEK/ABUSIVE;
-  - $2E DAMAGE ($1F68): danno con tiro salvezza o tiro per colpire, "The entire party is killed!".
-- **Tesoro:** $27 TREASURE ($0BEA): monete e oggetti dal blocco di ITEMn.DAX (record di $3F byte) o casuali (tabelle di H012).
-- **Flusso e schermo:**
-  - $25 ON GOTO e $26 ON GOSUB ($0B18);
-  - $2D ($26D6): azioni speciali (vista, animazione, suono, muro, passo avanti);
-  - $31 ($2358) chiude le immagini, $33 ($23D6) a capo, $34 ($2392) avanza il tempo, $3A ($1F4C) pausa, $3C ($2AAE) nulla;
-  - $3D ($241C): ridisegna la schermata dell'esplorazione;
-  - $38 ($29A6): menu del party (H013+$4BFC) o accampamento ($2922, portato anche questo).
+  - $2E DAMAGE ($1F68): damage with saving throw or to-hit roll, "The entire party is killed!".
+- **Treasure:** $27 TREASURE ($0BEA): coins and items from the block of ITEMn.DAX ($3F-byte records) or random (H012 tables).
+- **Flow and screen:**
+  - $25 ON GOTO and $26 ON GOSUB ($0B18);
+  - $2D ($26D6): special actions (view, animation, sound, wall, step forward);
+  - $31 ($2358) closes the pictures, $33 ($23D6) newline, $34 ($2392) advances the time, $3A ($1F4C) pause, $3C ($2AAE) nothing;
+  - $3D ($241C): redraws the exploration screen;
+  - $38 ($29A6): party menu (H013+$4BFC) or camp ($2922, ported as well).
 
-**Aiutanti portati**
-- **H031+$008A:** byte con segno.
-- **H062+$126C:** tiro per colpire dei comandi ECL.
+**Ported helpers**
+- **H031+$008A:** signed byte.
+- **H062+$126C:** to-hit roll of the ECL commands.
 
-**Dove mi discosto dall'asm (tutto documentato nel codice)**
-- **PARLAY senza scelta valida:** l'originale legge oltre i cinque valori; qui 0.
-- **EXPERIENCE con nessuna classe:** l'originale divide per 0 (eccezione del 68000); qui nessun punto.
-- **$3C:** l'originale non avanza il PC (ripeterebbe il comando all'infinito); lasciato identico.
+**Where I deviate from the asm (all documented in the code)**
+- **PARLAY without a valid choice:** the original reads past the five values; here 0.
+- **EXPERIENCE with no class:** the original divides by 0 (68000 exception); here no points.
+- **$3C:** the original does not advance the PC (it would repeat the command forever); left identical.
 
-**Restano stub**
-- **$28 ($14C8):** usa i reali di H015 e H061+$3C4C (soldi), non ancora portati.
-- **Nuovi stub:** H042+$0300, H070+$1958, H071+$092C, H072+$120C, H066+$276E, H067+$1292, H057+$2F3A.
-- **Ciclo dell'esplorazione:** H012+$3150, e H011+$04A6 (il ciclo del gioco), al quale arriva NEWECL.
+**Still stubs**
+- **$28 ($14C8):** uses the H015 reals and H061+$3C4C (money), not yet ported.
+- **New stubs:** H042+$0300, H070+$1958, H071+$092C, H072+$120C, H066+$276E, H067+$1292, H057+$2F3A.
+- **Exploration loop:** H012+$3150, and H011+$04A6 (the game loop), which NEWECL reaches.
 
-**Prove con i dati veri** (test temporaneo, non committato)
-- **Come:** i programmi ECL di 10 aree di ECL1.DAX ($10, $11, $12, $20, $21, $22, $24, $30, $31, $32) eseguiti da `run_ecl` col binario ASan; solo nel test gli stub delle immagini e del suono erano non fatali.
-- **Comandi di H012 eseguiti:** $25 ON GOTO, $2D azioni speciali, $38 menu del party, $3D ridisegno, oltre a quelli di H064.
-- **Arresto:** le aree arrivano a NEWECL e al ciclo del gioco H011+$04A6 (non portato); $11 e $12 restano nel menu del party in attesa di tasti.
-- **ASan:** pulito.
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
+**Tests with the real data** (temporary test, not committed)
+- **How:** the ECL programs of 10 areas of ECL1.DAX ($10, $11, $12, $20, $21, $22, $24, $30, $31, $32) run by `run_ecl` with the ASan binary; only in the test the picture and sound stubs were non-fatal.
+- **H012 commands run:** $25 ON GOTO, $2D special actions, $38 party menu, $3D redraw, besides those of H064.
+- **Stop:** the areas reach NEWECL and the game loop H011+$04A6 (not ported); $11 and $12 stay in the party menu waiting for keys.
+- **ASan:** clean.
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8.
 
-**Prossimo passo:** il ciclo dell'esplorazione H012+$3150 e il ciclo del gioco H011+$04A6.
+**Next step:** the exploration loop H012+$3150 and the game loop H011+$04A6.
 
 ---
 
 ## 2026-11-11 (cok-port-36)
 
-**Richiesta:** "ok compila su sasc, procedi con il ciclo dell'esplorazione". Insieme è arrivato il log di SAS/C (smake.err) di cok-port-35: compilazione e link riusciti, con 7 warning, corretti qui.
+**Request:** "ok it compiles on sasc, proceed with the exploration loop". Together with it came the SAS/C log (smake.err) of cok-port-35: compilation and link succeeded, with 7 warnings, fixed here.
 
-**Ciclo dell'esplorazione (H012)**
+**Exploration loop (H012)**
 - **$3150 `explore_loop`:**
-  - Carica il programma ECL dell'area ($3E04+$1E4; $24 all'inizio, $39 nella dimostrazione) ed esegue l'ingresso $3DEC.
-  - Poi ripete finché il party non è perduto ($24D0):
-    - menu dei comandi;
+  - Loads the ECL program of the area ($3E04+$1E4; $24 at the start, $39 in the demo) and runs the entry $3DEC.
+  - Then it repeats until the party is lost ($24D0):
+    - command menu;
     - Encamp ($2922);
-    - ricerca e sguardo (un giro di $3DF2 con $594 = 1);
-    - il passo, seguito dagli ingressi $3DF2/$3DF4;
-    - i cambi di area.
-  - Alla fine toglie tutti dal party.
-- **$3020 (statica `enter_area`):** ingresso in una nuova area dopo NEWECL. Libera le immagini ed esegue $3DEC, $3DF4 e $3DF2 finché un comando chiede un'altra area.
-- **H011+$04A6 `set_view_start`:** memorizza i quattro byte di partenza della vista. Prima era lo stub `h011_04a6`.
-- **`h001_main.c`:** ora chiama `set_view_start` ed `explore_loop` al posto degli stub.
+    - search and look (a pass of $3DF2 with $594 = 1);
+    - the step, followed by the entries $3DF2/$3DF4;
+    - the changes of area.
+  - At the end it removes everybody from the party.
+- **$3020 (static `enter_area`):** entry into a new area after NEWECL. Frees the pictures and runs $3DEC, $3DF4 and $3DF2 until a command asks for another area.
+- **H011+$04A6 `set_view_start`:** stores the four starting bytes of the view. Before it was the stub `h011_04a6`.
+- **`h001_main.c`:** now calls `set_view_start` and `explore_loop` instead of the stubs.
 
-**H068 portato per intero** (esplorazione, menu, passi e porte)
+**H068 ported entirely** (exploration, menu, steps and doors)
 - **$0C0E `explore_command_menu`:**
-  - nel dungeon: "Move Area Cast View Encamp Search Look"; in Move le frecce danno passo, rotazioni e dietro-front;
-  - all'aperto: "Move Encamp"; in Move le 8 direzioni del tastierino;
-  - "Area" mostra la mappa (fuori dall'area serve la parola di $2358 in argv[2]); altrimenti "Not Here".
-- **$122E `explore_move_or_door`:** passo libero oppure porta chiusa ("Locked. " con Bash/Pick/Knock/Exit); all'aperto il passo sulla mappa grande.
-- **Aiutanti:**
-  - $00CA apre la porta (piano GEO 3);
-  - $00B2 vuoto nell'originale;
-  - $02B8 classe nel party;
-  - $0340 Bash (tabelle di forza);
+  - in the dungeon: "Move Area Cast View Encamp Search Look"; in Move the arrows give step, turns and about-face;
+  - outdoors: "Move Encamp"; in Move the 8 directions of the keypad;
+  - "Area" shows the map (outside the area the word at $2358 in argv[2] is needed); otherwise "Not Here".
+- **$122E `explore_move_or_door`:** free step or closed door ("Locked. " with Bash/Pick/Knock/Exit); outdoors the step on the big map.
+- **Helpers:**
+  - $00CA opens the door (GEO plane 3);
+  - $00B2 empty in the original;
+  - $02B8 class in the party;
+  - $0340 Bash (strength tables);
   - $0748 Pick (+$E1);
-  - $082A/$0890/$08E2 Knock (incantesimo $1F);
-  - $0932 uscita dal bordo della mappa;
-  - $0A1A passo nel dungeon;
-  - $0B2C passo all'aperto.
+  - $082A/$0890/$08E2 Knock (spell $1F);
+  - $0932 exit from the edge of the map;
+  - $0A1A step in the dungeon;
+  - $0B2C step outdoors.
 
-**Altri portati**
-- **H069+$0012 e $00A8:** segno del party sulla mappa all'aperto (disegna e ripristina lo sfondo). Prima lo stub `h069_0012`.
-- **H029+$0E26 e $0E92:** salvano e ripristinano una cella dello schermo nel record.
+**Others ported**
+- **H069+$0012 and $00A8:** party marker on the outdoor map (draws and restores the background). Before it was the stub `h069_0012`.
+- **H029+$0E26 and $0E92:** save and restore a cell of the screen in the record.
 
-**Dove mi discosto dall'asm (tutto documentato nel codice)**
-- **Menu all'aperto con $3E04+$3EE nullo:** l'originale restituisce un byte non inizializzato; qui 0.
-- **Comando Area:** l'originale legge argv[2] in ogni caso; qui solo se esiste (come in H013).
+**Where I deviate from the asm (all documented in the code)**
+- **Outdoor menu with $3E04+$3EE null:** the original returns an uninitialised byte; here 0.
+- **Area command:** the original reads argv[2] in any case; here only if it exists (as in H013).
 
-**Correzioni**
-- **Stub superfluo in cok-port-35:** lo stub `h042_0300` era inutile, perché H042+$0300 era già portato come `release_picture_set`. COMBAT ora usa quello.
-- **Warning di SAS/C di cok-port-35:**
-  - 85, valore restituito di tipo int: h048 `shape_cell`/`combatant_index`, h095 `place_in_spiral`. Aggiunti i cast.
-  - 217, macro che chiama una funzione più volte: h048 `combatant_x`/`combatant_y`, h063 righe 1130-1131. L'indice si legge una volta in una variabile.
+**Fixes**
+- **Superfluous stub in cok-port-35:** the stub `h042_0300` was useless, because H042+$0300 had already been ported as `release_picture_set`. COMBAT now uses that.
+- **SAS/C warnings of cok-port-35:**
+  - 85, return value of type int: h048 `shape_cell`/`combatant_index`, h095 `place_in_spiral`. Casts added.
+  - 217, macro that calls a function several times: h048 `combatant_x`/`combatant_y`, h063 lines 1130-1131. The index is read once into a variable.
 
-**Restano stub**
-- **H011+$0B78:** vista 3D del dungeon.
-- **H057+$0C04:** lancio di incantesimi.
-- **H042:** immagini.
-- **H060+$0018:** ridisegno della vista.
-- **H066+$1FDA:** usato da un evento del dungeon.
+**Still stubs**
+- **H011+$0B78:** 3D view of the dungeon.
+- **H057+$0C04:** spell casting.
+- **H042:** pictures.
+- **H060+$0018:** redraw of the view.
+- **H066+$1FDA:** used by a dungeon event.
 
-**Prove con i dati veri** (binario ASan di test, non committato)
-- **Come:**
-  - stub di immagini, suono e vista non fatali;
-  - tasti inviati quando un menu attende;
-  - log dei menu.
-- **Città:** "Begin adventuring" porta nel ciclo. Solace mostra il menu ECL "Inn Hall Commandant Armoury Next Leave".
-- **All'aperto:**
-  - Leave fa NEWECL nell'area $10 (contesto 3) e compare il menu dei comandi "Move Encamp";
-  - Move e le frecce spostano il segno del party;
-  - la nuova casella avvia l'evento vero ("As you top a rise, you spot a caravan under attack...").
-- **Dungeon** (partenza forzata nell'area $30, contesto 4):
-  - compare "Move Area Cast View Encamp Search Look";
-  - da 7,13: su → 7,12; destra + su → 8,13 verso est; due volte sinistra + su → 7,13 verso ovest; dietro-front + su → 8,13;
-  - Search e Area rispondono;
-  - un evento più avanti si ferma su H066+$1FDA (non portato).
-- **ASan:** pulito in tutte le prove.
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
+**Tests with the real data** (ASan test binary, not committed)
+- **How:**
+  - non-fatal picture, sound and view stubs;
+  - keys sent when a menu is waiting;
+  - log of the menus.
+- **Town:** "Begin adventuring" leads into the loop. Solace shows the ECL menu "Inn Hall Commandant Armoury Next Leave".
+- **Outdoors:**
+  - Leave does NEWECL into area $10 (context 3) and the command menu "Move Encamp" appears;
+  - Move and the arrows move the party marker;
+  - the new square starts the real event ("As you top a rise, you spot a caravan under attack...").
+- **Dungeon** (start forced in area $30, context 4):
+  - "Move Area Cast View Encamp Search Look" appears;
+  - from 7,13: up → 7,12; right + up → 8,13 facing east; left twice + up → 7,13 facing west; about-face + up → 8,13;
+  - Search and Area respond;
+  - an event further on stops at H066+$1FDA (not ported).
+- **ASan:** clean in all the tests.
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8.
 
-**Prossimo passo:** la vista 3D del dungeon (H011+$0B78 e aiutanti), il ridisegno H060+$0018 e le immagini di H042.
+**Next step:** the 3D view of the dungeon (H011+$0B78 and helpers), the redraw H060+$0018 and the pictures of H042.
 
 ---
 
 ## 2026-11-11 (cok-port-37)
 
-**Richiesta:** "ok compila su sasc, procedi con la vista 3D del dungeon". Durante il lavoro è arrivata la domanda "ora dovrei essere in grado di fare begin adventuring su mappa non disegnata?".
-- **Risposta:** con cok-port-36 no. Gli stub delle immagini (H042) erano fatali, quindi il gioco si fermava su H042+$10DC subito dopo l'avvio, e la mappa GEO non veniva caricata. Questa consegna risolve entrambe le cose.
+**Request:** "ok it compiles on sasc, proceed with the 3D view of the dungeon". During the work the question "should I now be able to do begin adventuring on a map that is not drawn?" arrived.
+- **Answer:** with cok-port-36, no. The picture stubs (H042) were fatal, so the game stopped at H042+$10DC right after the start, and the GEO map was not loaded. This delivery solves both things.
 
-**Vista 3D e mappe (H011)**
-- **$1876 `load_geo_map`:** carica la mappa GEOn.dax: quattro piani da $100 byte in $282A, registrata in $3E04+$18A. Se manca: "Unable to load geo in Load3DMap.".
+**3D view and maps (H011)**
+- **$1876 `load_geo_map`:** loads the GEOn.dax map: four planes of $100 bytes in $282A, registered in $3E04+$18A. If it is missing: "Unable to load geo in Load3DMap.".
 - **$14EA `load_wall_defs`:**
-  - carica le definizioni WALLDEFn.dax nelle posizioni 1..3 del buffer $282E (blocchi di $30C byte, cinque muri da $9C tessere);
-  - sposta le tessere da $3EBC in su al set della posizione;
-  - carica i set 8x8 (id*10+k se il blocco ne ha più d'uno) e ricorda id e posizione in $2810;
-  - se manca: "Unable to load nnnn from WALLDEFn".
+  - loads the WALLDEFn.dax definitions into positions 1..3 of the buffer $282E (blocks of $30C bytes, five walls of $9C tiles);
+  - moves the tiles from $3EBC upwards to the set of the position;
+  - loads the 8x8 sets (id*10+k if the block has more than one) and remembers id and position in $2810;
+  - if it is missing: "Unable to load nnnn from WALLDEFn".
 - **$0B78 `draw_3d_view`:**
-  - con la mappa attiva ($2825) disegna la mappa dall'alto;
-  - altrimenti disegna lo sfondo e i muri delle caselle a distanza 2, 1 e 0, dal fondo verso il party, con i pezzi 0..9 (frontali, laterali e giunti);
-  - alla fine mostra il buffer e ricarica la palette.
-- **Aiutanti:**
-  - $0868: pezzo di muro, rettangolo di tessere 8x8 dalle tabelle del modulo; la tessera 0 è trasparente;
-  - $058E: cielo del colore $2829, sole secondo ora e direzione, immagine verso nord, pavimento;
-  - $0330: mappa dall'alto 11x11.
-- **H049+$0014 `draw_8x8_tile_masked`:** tessera 8x8 con la maschera del set.
-- **H060+$0018 `refresh_view`:** sceglie il colore del cielo dalla tabella locale ($3E04+$1FA/$1FC secondo il bit 7 della casella), toglie la mappa se l'area la vieta ($1F6) e ridisegna la vista; all'aperto ridisegna l'immagine (H042+$10DC).
-- **H010+$0360 `console_writeln`:** il writeln del runtime (H020) sulla console, qui con stdio. Prima era uno stub fatale, usato anche da H035.
+  - with the map active ($2825) it draws the map from above;
+  - otherwise it draws the background and the walls of the squares at distance 2, 1 and 0, from the back towards the party, with the pieces 0..9 (front, side and joints);
+  - at the end it shows the buffer and reloads the palette.
+- **Helpers:**
+  - $0868: piece of wall, rectangle of 8x8 tiles from the tables of the module; tile 0 is transparent;
+  - $058E: sky of colour $2829, sun according to time and direction, picture towards north, floor;
+  - $0330: 11x11 map from above.
+- **H049+$0014 `draw_8x8_tile_masked`:** 8x8 tile with the mask of the set.
+- **H060+$0018 `refresh_view`:** chooses the sky colour from the local table ($3E04+$1FA/$1FC according to bit 7 of the square), removes the map if the area forbids it ($1F6) and redraws the view; outdoors it redraws the picture (H042+$10DC).
+- **H010+$0360 `console_writeln`:** the writeln of the runtime (H020) on the console, here with stdio. Before it was a fatal stub, also used by H035.
 
-**Dove mi discosto dall'asm (tutto documentato nel codice)**
-- **Colore del cielo:** un indice oltre la tabella leggerebbe lo stack; qui 0.
+**Where I deviate from the asm (all documented in the code)**
+- **Sky colour:** an index past the table would read the stack; here 0.
 
-**Immagini (H042) non fatali**
-- **Quali:** $0254, $0406, $0B80, $0D70, $0ED2, $0F50, $1006 e $10DC ora sono saltati con un messaggio sulla console, come già l'audio H043.
-- **Effetto:** si può esplorare senza le immagini degli eventi.
-- **Restano fatali:** le routine non grafiche, per esempio Cast (H057+$0C04), Encamp (H057+$2F3A) e H066+$1FDA.
+**Pictures (H042) non-fatal**
+- **Which:** $0254, $0406, $0B80, $0D70, $0ED2, $0F50, $1006 and $10DC are now skipped with a message on the console, like the H043 audio already.
+- **Effect:** you can explore without the event pictures.
+- **Still fatal:** the non-graphic routines, for example Cast (H057+$0C04), Encamp (H057+$2F3A) and H066+$1FDA.
 
-**Prove con i dati veri** (binario ASan di test, non committato)
-- **Come:** l'ingresso dell'area $30 esce subito senza LOAD FILES (dipende dallo stato del gioco), quindi per la prova si caricano GEO 48, WALLDEF 1 (posizioni 1-2, set 8x8 11 e 12) e WALLDEF 23 (posizione 3).
-- **Vista 3D:**
-  - mostra cielo con nuvole verso nord, pavimento di ciottoli, muri di pietra e porte di legno su tre distanze;
-  - girando e camminando (7,13 → 7,12 → 8,12 → 7,12 → 6,12) cambia coerentemente;
-  - davanti agli edifici scattano gli eventi ECL: "YOU SEE A SIGN. GARGATH INN", "THE TRENCHER TAVERN".
-- **Area:** mostra la mappa dall'alto della città con la freccia del party.
-- **ASan:** pulito.
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
+**Tests with the real data** (ASan test binary, not committed)
+- **How:** the entry of area $30 exits right away without LOAD FILES (it depends on the game state), so for the test GEO 48, WALLDEF 1 (positions 1-2, 8x8 sets 11 and 12) and WALLDEF 23 (position 3) are loaded.
+- **3D view:**
+  - shows sky with clouds towards north, cobblestone floor, stone walls and wooden doors at three distances;
+  - turning and walking (7,13 → 7,12 → 8,12 → 7,12 → 6,12) it changes consistently;
+  - in front of the buildings the ECL events fire: "YOU SEE A SIGN. GARGATH INN", "THE TRENCHER TAVERN".
+- **Area:** shows the map of the town from above with the party arrow.
+- **ASan:** clean.
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8.
 
-**Prossimo passo:** le immagini di H042 (eventi, ritratti, immagine grande e mappa all'aperto), poi Cast (H057+$0C04) ed Encamp (H057+$2F3A).
+**Next step:** the pictures of H042 (events, portraits, big picture and outdoor map), then Cast (H057+$0C04) and Encamp (H057+$2F3A).
 
 ---
 
 ## 2026-11-11 (cok-port-38)
 
-**Richiesta:** "ok compila su sasc, procedi con le immagini di H042".
+**Request:** "ok it compiles on sasc, proceed with the pictures of H042".
 
-**H042 portato per intero** (le routine rimaste)
+**H042 ported entirely** (the remaining routines)
 - **$0406 `load_sequence` (Load_Sequence):**
-  - carica una sequenza (PIC, FINAL, SPRIT e altre) da name+disco.daa nell'insieme $27BC;
-  - directory: word della dimensione, poi voci da 6 byte (id, un byte, offset long);
-  - intestazione compressa ByteRun1: righe, unità, w4, w6, fotogrammi, palette di 32 colori per $52AE, dimensioni compresse;
-  - il primo fotogramma va in `g_pic_rec_27c2`; con due fotogrammi il secondo è subito in `g_pic_rec_27c6`, salvato come XOR del primo; con più fotogrammi restano compressi in `g_pic_buffers`;
-  - PIC e FINAL non hanno trasparenza e, senza $24D4, un solo fotogramma;
-  - mostra "Loading...Please Wait" se $24D4.
-- **$0B80 `sequence_frame`:** restituisce il record del fotogramma. Il primo e l'ultimo decodificato vengono restituiti dopo una pausa di 11 tick; gli altri si decomprimono e si combinano in XOR col primo.
-- **Ritratti e sprite:**
-  - $0D70 `load_head_body`: HEAD/BODYn.daa, solo se cambiano;
-  - $0ED2 `draw_head_body`: testa, e il corpo 5 celle sotto ($02B2/$02D6);
-  - $0F50 `show_3d_sprite`: fotogramma 1..3 mascherato nella vista; fuori intervallo "Illegal range in Show3DSprite." e uscita.
-- **Immagine grande e mappa all'aperto:**
-  - $1006 `load_big_picture`: BIGPICn.daa in $2798, con la palette in $526E;
-  - $10DC `show_big_picture`: l'immagine nella cornice dell'aperto;
-  - $0254 `show_picture`: record nella cella (x, y) con la palette $52AE.
-- **Aiutanti statici:** $01AE copia specchiata del record; $03BC XOR fra bitmap.
+  - loads a sequence (PIC, FINAL, SPRIT and others) from name+disk.daa into the set $27BC;
+  - directory: word of the size, then 6-byte entries (id, one byte, long offset);
+  - ByteRun1-compressed header: rows, units, w4, w6, frames, 32-colour palette for $52AE, compressed sizes;
+  - the first frame goes into `g_pic_rec_27c2`; with two frames the second goes straight into `g_pic_rec_27c6`, stored as an XOR with the first; with more frames they stay compressed in `g_pic_buffers`;
+  - PIC and FINAL have no transparency and, without $24D4, a single frame;
+  - shows "Loading...Please Wait" if $24D4.
+- **$0B80 `sequence_frame`:** returns the record of the frame. The first and the last decoded are returned after a pause of 11 ticks; the others are decompressed and combined by XOR with the first.
+- **Portraits and sprites:**
+  - $0D70 `load_head_body`: HEAD/BODYn.daa, only if they change;
+  - $0ED2 `draw_head_body`: head, and the body 5 cells below ($02B2/$02D6);
+  - $0F50 `show_3d_sprite`: frame 1..3 masked into the view; out of range "Illegal range in Show3DSprite." and exit.
+- **Big picture and outdoor map:**
+  - $1006 `load_big_picture`: BIGPICn.daa into $2798, with the palette in $526E;
+  - $10DC `show_big_picture`: the picture in the outdoor frame;
+  - $0254 `show_picture`: record in the cell (x, y) with the palette $52AE.
+- **Static helpers:** $01AE mirrored copy of the record; $03BC XOR between bitmaps.
 
-**Altri portati ed esportati**
-- **H020+$085A `console_write` e $082E `console_newline`:** write/writeln del runtime, qui con stdio. `console_writeln` (H010+$0360) ora li usa.
-- **Già portate, ora pubbliche:** `dax_open` (H028+$0B80) e `transfer_gfx_planes` (H029+$091E).
+**Others ported and exported**
+- **H020+$085A `console_write` and $082E `console_newline`:** write/writeln of the runtime, here with stdio. `console_writeln` (H010+$0360) now uses them.
+- **Already ported, now public:** `dax_open` (H028+$0B80) and `transfer_gfx_planes` (H029+$091E).
 
-**Dove mi discosto dall'asm (tutto documentato nel codice)**
-- **Più di 6 fotogrammi:** leggerebbero oltre l'intestazione di $56 byte; qui al massimo 6.
-- **Immagini specchiate a caso:** fedele all'originale. Il flag $-2 di H042 viene da H023+$0010 (numero casuale 0/1) e, se vale 1, i record vengono specchiati in orizzontale.
+**Where I deviate from the asm (all documented in the code)**
+- **More than 6 frames:** they would read past the $56-byte header; here at most 6.
+- **Randomly mirrored pictures:** faithful to the original. The flag $-2 of H042 comes from H023+$0010 (random number 0/1) and, if it is 1, the records are mirrored horizontally.
 
-**Prove con i dati veri** (binario ASan di test, non committato)
-- **Sequencer di prova:** ora invia un tasto per ogni nuovo menu.
-- **Immagini viste:**
-  - all'avvio, l'immagine grande della locanda di Solace col testo;
-  - la mappa di Krynn con le località (BIGPIC) e il segno del party;
-  - il ritratto di Sir Karl (PIC);
-  - la via di Solace sopra il menu della città;
-  - all'aperto, l'immagine della carovana attaccata dai draconici.
-- **Arresto:** subito dopo il gioco si ferma su H066+$1FDA (non grafica).
-- **ASan:** pulito.
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
+**Tests with the real data** (ASan test binary, not committed)
+- **Test sequencer:** it now sends a key for every new menu.
+- **Pictures seen:**
+  - at start-up, the big picture of the Solace inn with the text;
+  - the map of Krynn with the places (BIGPIC) and the party marker;
+  - the portrait of Sir Karl (PIC);
+  - the street of Solace above the town menu;
+  - outdoors, the picture of the caravan attacked by the draconians.
+- **Stop:** right after, the game stops at H066+$1FDA (not graphic).
+- **ASan:** clean.
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8.
 
-**Prossimo passo:** H066+$1FDA (incontro all'aperto), poi Encamp (H057+$2F3A) e Cast (H057+$0C04).
+**Next step:** H066+$1FDA (outdoor encounter), then Encamp (H057+$2F3A) and Cast (H057+$0C04).
 
 ---
 
 ## 2026-11-11 (cok-port-39)
 
-**Richiesta:** "ok compila su sasc, procedi con H066+$1FDA".
+**Request:** "ok it compiles on sasc, proceed with H066+$1FDA".
 
-**Portato: H066+$1FDA (Load_MonsterRecord)** — `load_monster_record(id, c)`, corpo a $206A, chiamato da LOAD MONSTER tramite `load_monster` di H061.
-- **Record del mostro (MONnCHA.dax), in formato PC:**
-  - nome (15 caratteri);
-  - 15 blocchi copiati in posizioni spostate;
-  - sei byte con segno allargati a word (+$58, +$116, +$118, +$18A, +$1A4, +$1A6);
-  - word e long girati (+$62, +$11E, +$13C, +$F0..+$FC, +$18C).
-- **Puntatori:** quelli del record (effetti, oggetti, successivo, blocco del turno) vengono azzerati.
-- **Errore:** se il record manca, "Unable to load monster" e uscita.
-- **Effetti (MONnSPC.dax):** voci da 9 byte.
-- **Oggetti (MONnITM.dax):** record da $3F byte, convertiti come nel comando TREASURE.
-- **$24A4:** vale 1 durante il caricamento di effetti e oggetti.
-- **Aiutante:** $1FE8, nome del file "MON" + disco + parte.
+**Ported: H066+$1FDA (Load_MonsterRecord)** — `load_monster_record(id, c)`, body at $206A, called by LOAD MONSTER through `load_monster` of H061.
+- **Monster record (MONnCHA.dax), in PC format:**
+  - name (15 characters);
+  - 15 blocks copied to shifted positions;
+  - six signed bytes widened to words (+$58, +$116, +$118, +$18A, +$1A4, +$1A6);
+  - words and longs byte-swapped (+$62, +$11E, +$13C, +$F0..+$FC, +$18C).
+- **Pointers:** those of the record (effects, items, next, turn block) are cleared.
+- **Error:** if the record is missing, "Unable to load monster" and exit.
+- **Effects (MONnSPC.dax):** 9-byte entries.
+- **Items (MONnITM.dax):** $3F-byte records, converted as in the TREASURE command.
+- **$24A4:** is 1 during the loading of effects and items.
+- **Helper:** $1FE8, file name "MON" + disk + part.
 
-**Dove mi discosto dall'asm (documentato nel codice)**
-- **Oggetti pronti (+$154..):** nell'originale restano i byte del file; qui sono vuoti.
+**Where I deviate from the asm (documented in the code)**
+- **Ready items (+$154..):** in the original the bytes of the file stay there; here they are empty.
 
-**Prove con i dati veri** (binario ASan di test, non committato)
-- **Mostro caricato:** dopo l'immagine della carovana, LOAD MONSTER carica il mostro 1, "BAAZ" (il draconico), con un effetto.
-- **Arresto:** il gioco arriva al combattimento e si ferma su H096+$02CE (IA del combattimento, non portata).
-- **ASan:** pulito.
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
+**Tests with the real data** (ASan test binary, not committed)
+- **Monster loaded:** after the caravan picture, LOAD MONSTER loads monster 1, "BAAZ" (the draconian), with one effect.
+- **Stop:** the game reaches combat and stops at H096+$02CE (combat AI, not ported).
+- **ASan:** clean.
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8.
 
-**Prossimo passo:** le routine di H096 usate dal combattimento (IA dei mostri), poi Encamp (H057+$2F3A) e Cast (H057+$0C04).
+**Next step:** the H096 routines used by combat (monster AI), then Encamp (H057+$2F3A) and Cast (H057+$0C04).
 
 ---
 
 ## 2026-11-11 (cok-port-40)
 
-**Richiesta:** "ok compila su sasc, procedi con le routine di H096".
+**Request:** "ok it compiles on sasc, proceed with the routines of H096".
 
-**H096 portato per intero** (34 routine: azioni, attacchi, mira e incantesimi del combattimento)
-- **Inizio turno:**
-  - $02CE `combat_prepare_turn`: blocco del turno, iniziativa (d6 + destrezza, -6 se sorpresi), punti movimento;
-  - $11D4 `combat_attacks`: attacchi del round, con la cadenza delle armi a distanza;
-  - $0200 arrotondamento;
-  - $023E movimento.
-- **Movimento:**
-  - $099C `combat_step`: passo col costo del terreno;
-  - $0C3C `combat_leave_attacks`: attacchi di chi si allontana da un nemico;
-  - $08B2 attacchi di opportunità;
-  - $10FA `combat_flee`: "Got Away" o "Escape is blocked".
-- **Attacco:**
-  - $2182 `combat_attack`: orientamenti e figure, proiettile, risoluzione, munizioni; le armi da lancio esaurite finiscono nel tesoro dopo l'ultima lanciata, nuovo globale `g_thrown_tail` ($335C);
-  - $1BE0: tiri, danno e messaggi, "slays helpless";
-  - $0434 danno, con la pugnalata alle spalle ($3358);
-  - $0530 messaggi ("Hitting for n points of damage", "and Misses", "goes down", "is killed", "lost a spell");
-  - $251C penalità di distanza;
-  - $1340 `combat_sweep` (spazzata);
+**H096 ported entirely** (34 routines: combat actions, attacks, aiming and spells)
+- **Start of turn:**
+  - $02CE `combat_prepare_turn`: turn block, initiative (d6 + dexterity, -6 if surprised), movement points;
+  - $11D4 `combat_attacks`: attacks of the round, with the rate of the ranged weapons;
+  - $0200 rounding;
+  - $023E movement.
+- **Movement:**
+  - $099C `combat_step`: step with the cost of the terrain;
+  - $0C3C `combat_leave_attacks`: attacks on whoever moves away from an enemy;
+  - $08B2 attacks of opportunity;
+  - $10FA `combat_flee`: "Got Away" or "Escape is blocked".
+- **Attack:**
+  - $2182 `combat_attack`: facings and figures, projectile, resolution, ammunition; thrown weapons that run out end up in the treasure after the last one thrown, new global `g_thrown_tail` ($335C);
+  - $1BE0: rolls, damage and messages, "slays helpless";
+  - $0434 damage, with the backstab ($3358);
+  - $0530 messages ("Hitting for n points of damage", "and Misses", "goes down", "is killed", "lost a spell");
+  - $251C range penalty;
+  - $1340 `combat_sweep` (sweep);
   - $20E6 `record_attack`;
-  - $1562 può attaccare;
-  - $3492 animazione dei proiettili per tipo d'arma.
-- **Turn Undead ($160A):** tabella locale 7x13 generata dalle istruzioni asm, con le stesse anomalie dell'originale; $1B04 trova il non morto.
-- **Mira:**
-  - $4448 `aim_target`, con le annidate $4456 e $4530: Next/Prev/Manual/Target/Center/Exit;
-  - $39D0 riga "Range =" e menu;
-  - $3DBA cursore manuale;
-  - $3C48 conferma e attacco;
+  - $1562 can attack;
+  - $3492 animation of the projectiles by weapon type.
+- **Turn Undead ($160A):** local 7x13 table generated from the asm instructions, with the same anomalies as the original; $1B04 finds the undead.
+- **Aiming:**
+  - $4448 `aim_target`, with the nested $4456 and $4530: Next/Prev/Manual/Target/Center/Exit;
+  - $39D0 "Range =" line and menu;
+  - $3DBA manual cursor;
+  - $3C48 confirmation and attack;
   - $38DC `confirm_attack` ("Attack Ally:").
-- **Incantesimi in combattimento:**
-  - $3100 `combat_cast` ("Begins Casting" e riordino dei turni);
-  - $2A6C `combat_spell_targets` (vettore $276C): bersagli singoli, multipli, a dadi vita, ad area;
-  - $284C bersaglio;
-  - $25DA bersaglio di cura;
-  - $4B86 bersaglio dell'IA.
-- **Altri:** $3852 movimento dei nemici; $4DE8 sempre 0.
-- **Struttura nuova:** `CokAim` (mira: personaggio, x, y) al posto del buffer di byte in H059.
+- **Spells in combat:**
+  - $3100 `combat_cast` ("Begins Casting" and reordering of the turns);
+  - $2A6C `combat_spell_targets` (vector $276C): single, multiple, hit-dice and area targets;
+  - $284C target;
+  - $25DA healing target;
+  - $4B86 AI target.
+- **Others:** $3852 movement of the enemies; $4DE8 always 0.
+- **New structure:** `CokAim` (aiming: character, x, y) instead of the byte buffer in H059.
 
-**Altri portati**
-- **H033+$11FC `spell_range`:** gittata dell'incantesimo.
-- **H046+$0012 `cursor_direction`:** tasto di direzione verso il cursore. Serviva al Move in combattimento.
-- **H063+$1FDC:** `copy_sprite_frame` ora è esportata.
+**Others ported**
+- **H033+$11FC `spell_range`:** range of the spell.
+- **H046+$0012 `cursor_direction`:** direction key towards the cursor. Move in combat needed it.
+- **H063+$1FDC:** `copy_sprite_frame` is now exported.
 
-**Dove mi discosto dall'asm (tutto documentato nel codice)**
-- **Arma pronta mancante:** l'originale legge +$30 dall'indirizzo 0; qui il controllo si salta.
-- **Turn Undead fuori tabella:** un indice oltre la tabella legge lo stack; qui vale $6363 (mai riuscito).
-- **Bersagli degli incantesimi, nessuno scelto:** l'originale legge la voce prima di $2520; qui la posizione resta quella di prima.
-- **Mira:** con l'elenco vuoto si resta su chi mira; con Manual su una casella vuota non si legge da NULL.
+**Where I deviate from the asm (all documented in the code)**
+- **Missing ready weapon:** the original reads +$30 from address 0; here the check is skipped.
+- **Turn Undead outside the table:** an index past the table reads the stack; here it is $6363 (never succeeds).
+- **Spell targets, none chosen:** the original reads the entry before $2520; here the position stays as before.
+- **Aiming:** with the empty list it stays on the one aiming; with Manual on an empty square it does not read from NULL.
 
-**Prove con i dati veri** (binario ASan di test, non committato)
-- **Arresto senza IA:** il combattimento della carovana parte e si ferma su H097+$1D68 (IA dei mostri, non portata).
-- **Prova con l'IA saltata:**
-  - compare il menu del turno "Move View Aim Use Done";
-  - Move sposta il personaggio sulla mappa (Move Left 12 → 8);
-  - Aim mostra "Range = n" e "Next Prev Manual Center Exit" e scorre i bersagli;
-  - Target non compare perché i draconici sono fuori gittata.
-- **ASan:** pulito.
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
+**Tests with the real data** (ASan test binary, not committed)
+- **Stop without AI:** the caravan combat starts and stops at H097+$1D68 (monster AI, not ported).
+- **Test with the AI skipped:**
+  - the turn menu "Move View Aim Use Done" appears;
+  - Move moves the character on the map (Move Left 12 → 8);
+  - Aim shows "Range = n" and "Next Prev Manual Center Exit" and cycles through the targets;
+  - Target does not appear because the draconians are out of range.
+- **ASan:** clean.
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8.
 
-**Prossimo passo:** H097, l'IA dei mostri (13 routine, circa 2000 righe di asm).
+**Next step:** H097, the monster AI (13 routines, about 2000 lines of asm).
 
 ---
 
 ## 2026-11-11 (cok-port-41)
 
-**Richiesta:** "ok compila su sasc, procedi con H097".
+**Request:** "ok it compiles on sasc, proceed with H097".
 
-**H097 portato per intero** (IA dei combattenti guidati dal computer)
-- **$1D68 `monster_turn`:** il turno del mostro, nell'ordine:
-  - tasti;
-  - sequenza di movimento (+$17);
+**H097 ported entirely** (AI of the computer-controlled combatants)
+- **$1D68 `monster_turn`:** the turn of the monster, in this order:
+  - keys;
+  - movement sequence (+$17);
   - morale ("flees in panic");
-  - oggetto magico;
-  - incantesimo in corso;
+  - magic item;
+  - spell in progress;
   - Turn Undead;
-  - incantesimo;
-  - scelta delle armi;
-  - attacco o fine turno.
-- **$00B0 tasti durante il turno dei mostri ($5305):**
+  - spell;
+  - choice of the weapons;
+  - attack or end of turn.
+- **$00B0 keys during the monsters' turn ($5305):**
   - '2' "Magic On/Off";
-  - spazio toglie il controllo automatico al party;
-  - 4 chiama H096+$4DE8.
-- **Morale e fine turno:**
-  - $043A: "is forced to flee", tiri contro ferite e forza del gruppo, fuga (togliendo gli effetti $4A/$4B) o "Surrenders";
-  - $0244: fine turno o guardia.
-- **Oggetti e incantesimi:**
-  - $0620 con l'annidata $062E: l'incantesimo è utile? (nemici nella gittata, nessun alleato colpito dall'area);
-  - $0890 oggetto magico;
+  - space takes the automatic control away from the party;
+  - 4 calls H096+$4DE8.
+- **Morale and end of turn:**
+  - $043A: "is forced to flee", rolls against wounds and group strength, flight (removing the effects $4A/$4B) or "Surrenders";
+  - $0244: end of turn or guard.
+- **Items and spells:**
+  - $0620 with the nested $062E: is the spell useful? (enemies in range, no ally hit by the area);
+  - $0890 magic item;
   - $0A04 Turn Undead;
-  - $0A88 incantesimo memorizzato.
-- **Armi:** $0C14 scelta (da lancio o a distanza con munizioni, mischia, scudo, mani +$188); $02B2 valore dell'arma.
-- **Movimento:**
-  - $142C passo verso il bersaglio o in fuga, con le sequenze della tabella del modulo; "Move/Attack, Move Left = n";
-  - $11EE il passo è possibile? (costo, nuvole, acido).
-- **$18D2 attacco:** bersaglio nella gittata in vista o un nemico vicino, spazzata o attacco normale.
-- **Esportate per H097:**
-  - da H096: `movement_points`, `can_attack`, `find_undead`, `find_heal_target`, `enemy_distance_points`, `ai_pick_target`;
-  - da H065: `use_item`.
+  - $0A88 memorised spell.
+- **Weapons:** $0C14 choice (thrown or ranged with ammunition, melee, shield, hands +$188); $02B2 value of the weapon.
+- **Movement:**
+  - $142C step towards the target or in flight, with the sequences of the module's table; "Move/Attack, Move Left = n";
+  - $11EE is the step possible? (cost, clouds, acid).
+- **$18D2 attack:** target in range in sight or a nearby enemy, sweep or normal attack.
+- **Exported for H097:**
+  - from H096: `movement_points`, `can_attack`, `find_undead`, `find_heal_target`, `enemy_distance_points`, `ai_pick_target`;
+  - from H065: `use_item`.
 
-**Correzioni trovate giocando**
-- **H048 `combatant_falls` (bug di porting):** il globale `g_gfx_3304` non veniva mai caricato.
-  - Causa: $3304 è il posto $18 della tabella dei set di sprite $3244, cioè `g_sprite_sets[0x18]`, non un globale separato.
-  - Effetto: ASan segnalava un accesso a NULL quando un combattente cadeva.
-  - Correzione: il globale è stato rimosso e il codice usa la tabella.
-- **Host (`host/graphics.c`):** AllocRaster alloca 4 byte in più.
-  - Causa: il blitter emulato, con una sorgente non allineata alla word, legge una word oltre la fine dell'ultima riga.
-  - Sull'Amiga quella lettura è innocua; qui ASan la segnalava ridisegnando la casella del corpo caduto.
+**Fixes found while playing**
+- **H048 `combatant_falls` (porting bug):** the global `g_gfx_3304` was never loaded.
+  - Cause: $3304 is slot $18 of the sprite set table $3244, that is `g_sprite_sets[0x18]`, not a separate global.
+  - Effect: ASan reported a NULL access when a combatant fell.
+  - Fix: the global was removed and the code uses the table.
+- **Host (`host/graphics.c`):** AllocRaster allocates 4 bytes more.
+  - Cause: the emulated blitter, with a source not aligned to a word, reads one word past the end of the last row.
+  - On the Amiga that read is harmless; here ASan reported it when redrawing the square of the fallen body.
 
-**Dove mi discosto dall'asm (tutto documentato nel codice)**
-- **H097+$0620:** dove l'originale restituisce un registro non impostato, qui 0.
-- **H097+$0A04:** il tipo massimo passato a H096+$1B04 nell'originale non è inizializzato; qui $FF.
-- **H097+$043A:** con il massimo dei punti ferita a 0 l'originale divide per 0; qui il mostro conta come illeso.
-- **H097+$18D2:** il bersaglio NULL non viene letto.
+**Where I deviate from the asm (all documented in the code)**
+- **H097+$0620:** where the original returns a register that was not set, here 0.
+- **H097+$0A04:** the maximum type passed to H096+$1B04 is not initialised in the original; here $FF.
+- **H097+$043A:** with maximum hit points at 0 the original divides by 0; here the monster counts as unhurt.
+- **H097+$18D2:** the NULL target is not read.
 
-**Prove con i dati veri** (binario ASan di test, non committato)
-- **Battaglia della carovana,** con "Done → Guard" a ogni turno del giocatore:
-  - i Baaz si avvicinano (Move Left 12 → 4);
-  - attaccano ("Baaz attacks L, hitting for 4 points of damage", "and misses", "(from behind) hitting for 5 points");
-  - i punti ferita di L scendono da 12 a 5.
-- **Arresto:** a fine combattimento il gioco si ferma su H070+$1958 (scena dopo il combattimento, non portata).
-- **ASan:** pulito.
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
+**Tests with the real data** (ASan test binary, not committed)
+- **Caravan battle,** with "Done → Guard" at every turn of the player:
+  - the Baaz come closer (Move Left 12 → 4);
+  - they attack ("Baaz attacks L, hitting for 4 points of damage", "and misses", "(from behind) hitting for 5 points");
+  - L's hit points go down from 12 to 5.
+- **Stop:** at the end of combat the game stops at H070+$1958 (scene after combat, not ported).
+- **ASan:** clean.
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8.
 
-**Prossimo passo:** H070+$1958 (fine del combattimento), poi Encamp (H057+$2F3A) e Cast (H057+$0C04).
+**Next step:** H070+$1958 (end of combat), then Encamp (H057+$2F3A) and Cast (H057+$0C04).
 
 ---
 
 ## 2026-11-11 (cok-port-42)
 
-**Richiesta:** "ok compila su sasc, procedi con H070+$1958".
+**Request:** "ok it compiles on sasc, proceed with H070+$1958".
 
-**H070 portato per intero** (fine del combattimento)
+**H070 ported entirely** (end of combat)
 - **$1958 `combat_end`:**
-  - gli oggetti caduti tornano a chi li aveva ($18BE);
-  - esito ($0778): sconfitta $24D0, vittoria $24C0, fuga; gli effetti del combattimento vengono tolti; chi era fuggito o svenuto si rialza; chi non c'è più esce dal party;
-  - i nemici vengono tolti dal party ($152E);
-  - se il party c'è ancora:
-    - quote dei PNG, "takes and hides his/her share" ($165C);
-    - schermata dell'esito ($0B9E: "The party has fled.", "You have lost the fight.", "The party has won.", "Each character receives n experience points.");
-    - schermata del tesoro ($1136);
-  - se il party è distrutto: "The monsters rejoice for the party has been destroyed.".
-- **Esperienza:**
-  - $0280: valore dei nemici sconfitti; le loro monete nella cassa e i loro oggetti nel tesoro; valore della cassa e degli oggetti magici; diviso per i personaggi;
-  - $0558: assegnazione col 10% per la caratteristica principale della classe, metà o un terzo alle classi multiple.
-- **Tesoro:**
-  - $1136 menu View/Take/Pool/Share/Detect/Exit, con conferma se resta tesoro;
+  - the dropped items go back to whoever had them ($18BE);
+  - outcome ($0778): defeat $24D0, victory $24C0, flight; the combat effects are removed; whoever had fled or fainted gets up again; whoever is gone leaves the party;
+  - the enemies are removed from the party ($152E);
+  - if the party is still there:
+    - shares of the NPCs, "takes and hides his/her share" ($165C);
+    - outcome screen ($0B9E: "The party has fled.", "You have lost the fight.", "The party has won.", "Each character receives n experience points.");
+    - treasure screen ($1136);
+  - if the party is destroyed: "The monsters rejoice for the party has been destroyed.".
+- **Experience:**
+  - $0280: value of the defeated enemies; their coins into the pool and their items into the treasure; value of the pool and of the magic items; divided among the characters;
+  - $0558: assignment with 10% for the prime requisite of the class, half or a third to multi-class characters.
+- **Treasure:**
+  - $1136 View/Take/Pool/Share/Detect/Exit menu, with confirmation if treasure is left;
   - $0F8A Take (Money/Items);
-  - $0E94/$0DE0 elenco "Items:" e Take.
+  - $0E94/$0DE0 "Items:" list and Take.
 - **H067:**
   - $0794 Pool;
   - $086E;
-  - $08CC Share (nei limiti del carico);
+  - $08CC Share (within the load limits);
   - $0D0A;
   - $0F72 Take Money ("Select type of coin", "How much ... will you take?");
-  - $11F4 c'è tesoro?
-- **H071+$047C `take_item`:** il personaggio corrente prende l'oggetto, salvo "OverLoaded".
-- **H006+$0914 `reset_game_state`:** azzera lo stato per una nuova partita, chiamato da `h001_main` dopo l'esplorazione.
-- **Esportate:** `item_overloads` (H065+$32F6). Per l'elenco del tesoro si costruisce una lista di voci di menu, come in H065.
+  - $11F4 is there treasure?
+- **H071+$047C `take_item`:** the current character takes the item, unless "OverLoaded".
+- **H006+$0914 `reset_game_state`:** clears the state for a new game, called by `h001_main` after the exploration.
+- **Exported:** `item_overloads` (H065+$32F6). For the treasure list a list of menu entries is built, as in H065.
 
-**Dove mi discosto dall'asm (tutto documentato nel codice)**
-- **Esperienza con divisore 0:** l'originale va in eccezione; qui il totale.
-- **Share senza personaggi del giocatore:** l'originale divide per 0; qui nessuna divisione.
-- **Rimozione dal party (sconfitta):** dove l'originale legge il successivo di un personaggio già tolto, qui lo legge prima.
-- **Take Money:** l'elenco si libera anche uscendo senza scelta.
+**Where I deviate from the asm (all documented in the code)**
+- **Experience with divisor 0:** the original raises an exception; here the total.
+- **Share without player characters:** the original divides by 0; here no division.
+- **Removal from the party (defeat):** where the original reads the next pointer of a character already removed, here it reads it before.
+- **Take Money:** the list is also freed when leaving without a choice.
 
-**Prove con i dati veri** (binario ASan di test, non committato)
-- **Sconfitta:** la battaglia della carovana (L da solo contro i Baaz) finisce con il party distrutto.
-  - Compaiono "The monsters rejoice for the party has been destroyed." e "Press any key to continue".
-  - Lo stato si azzera e il gioco riparte dalla verifica del manuale.
-- **Non provato:** il ramo della vittoria (esperienza, tesoro, Take, Pool, Share), perché un personaggio solo non vince questa battaglia.
-- **ASan:** pulito.
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
+**Tests with the real data** (ASan test binary, not committed)
+- **Defeat:** the caravan battle (L alone against the Baaz) ends with the party destroyed.
+  - "The monsters rejoice for the party has been destroyed." and "Press any key to continue" appear.
+  - The state is cleared and the game starts again from the manual check.
+- **Not tried:** the victory branch (experience, treasure, Take, Pool, Share), because a single character does not win this battle.
+- **ASan:** clean.
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8.
 
-**Prossimo passo:** Encamp (H057+$2F3A) e Cast (H057+$0C04).
+**Next step:** Encamp (H057+$2F3A) and Cast (H057+$0C04).
 
 ---
 
-## v43: Encamp (H057+$2F3A) e Cast (H057+$0C04)
+## v43: Encamp (H057+$2F3A) and Cast (H057+$0C04)
 
-**Portato**
-- **h057.c** (tutto il modulo tranne l'inizializzazione, gia' presente):
-  - $2F3A `encamp`: menu "Save View Magic Rest Alter Fix Exit" nel contesto 2; all'uscita ricarica l'immagine PIC della zona e annulla lo studio in attesa;
-  - $0C04 `cast_spells` (Cast), con $0AE0 (si puo' usare la magia?);
-  - menu Magic ($1DD8): Cast, Memorize ($1342), Scribe ($1590), Display ($18D6, elenco degli effetti con la procedura annidata $18E4), Rest ($11AC);
-  - $05B4 tempo di studio, $078E/$07E8/$0878 annullano lo studio in attesa, $08B4 posti liberi, $0CD4 tabella dei posti e incantesimi bonus, $126C ordinamento;
-  - menu Alter ($27B2): Order ($220E con $1EE0, $1FD6, $20A0), Drop ($2368), Speed ($25AE), Icon, Pics, Level ($24AE);
-  - Fix ($29DA con le annidate $29E8, $2A06, $2AFE, $2BBA, $2C08, $2DC8).
-- **h058.c:** il riposo:
-  - $1014 `rest_party` (a passi di 5 minuti, interrompibile, con incontri casuali);
-  - $05F4, $070E, $084C (riga "Rest Time"), $09AA (menu "Rest Days Hours Mins Add Subtract Exit");
-  - $0B84 (cura ogni $120 passi), $0C38 e $0D2C (memorizza e trascrive), $0E80, $0F5C.
-- **H044+$0492 `draw_memorize_frame`:** cornice della scelta degli incantesimi da memorizzare, che serviva a Memorize.
-- **Chiamanti collegati:** `ecl_camp_entry` (H012) chiama `encamp`; il menu del dungeon (H068, 'C') chiama `cast_spells`. Tolti gli stub h057_2f3a, h057_0c04 e h044_0492.
+**Ported**
+- **h057.c** (the whole module except the initialisation, already present):
+  - $2F3A `encamp`: menu "Save View Magic Rest Alter Fix Exit" in context 2; on exit it reloads the PIC picture of the zone and cancels the pending study;
+  - $0C04 `cast_spells` (Cast), with $0AE0 (can magic be used?);
+  - Magic menu ($1DD8): Cast, Memorize ($1342), Scribe ($1590), Display ($18D6, list of the effects with the nested procedure $18E4), Rest ($11AC);
+  - $05B4 study time, $078E/$07E8/$0878 cancel the pending study, $08B4 free slots, $0CD4 table of the slots and bonus spells, $126C sorting;
+  - Alter menu ($27B2): Order ($220E with $1EE0, $1FD6, $20A0), Drop ($2368), Speed ($25AE), Icon, Pics, Level ($24AE);
+  - Fix ($29DA with the nested $29E8, $2A06, $2AFE, $2BBA, $2C08, $2DC8).
+- **h058.c:** resting:
+  - $1014 `rest_party` (in steps of 5 minutes, can be interrupted, with random encounters);
+  - $05F4, $070E, $084C ("Rest Time" line), $09AA (menu "Rest Days Hours Mins Add Subtract Exit");
+  - $0B84 (heals every $120 steps), $0C38 and $0D2C (memorises and scribes), $0E80, $0F5C.
+- **H044+$0492 `draw_memorize_frame`:** frame of the choice of the spells to memorise, which Memorize needed.
+- **Callers connected:** `ecl_camp_entry` (H012) calls `encamp`; the dungeon menu (H068, 'C') calls `cast_spells`. The stubs h057_2f3a, h057_0c04 and h044_0492 removed.
 
-**Dove mi discosto dall'asm (documentato nel codice)**
-- **Fix, H057+$2C08:** il contatore locale -$2(a5) non e' inizializzato nell'originale; qui parte da 0.
+**Where I deviate from the asm (documented in the code)**
+- **Fix, H057+$2C08:** the local counter -$2(a5) is not initialised in the original; here it starts from 0.
 
-**Prove con i dati veri** (binario ASan di test, non committato)
-- **Percorso:** Leave, poi Encamp dal menu "Move Encamp".
+**Tests with the real data** (ASan test binary, not committed)
+- **Path:** Leave, then Encamp from the "Move Encamp" menu.
 - **Magic:**
-  - Memorize: grimorio con la tabella "Cleric Spells 3 / Special Spells 1", scelta di Resist Cold, conferma;
+  - Memorize: spellbook with the table "Cleric Spells 3 / Special Spells 1", choice of Resist Cold, confirmation;
   - Display: "<No Spell Effects>";
-  - Cast: nessun incantesimo pronto;
+  - Cast: no spell ready;
   - Scribe: "has no copyable scrolls".
-- **Rest:** "Rest Time 00 04 15", piu' 2 ore con Hours/Add; dopo il riposo il tempo e' 06:15 e compare "L has memorized Resist Cold".
-- **Altro:** Alter, Save (scelta della partita), uscita dal campo e rientro.
-- **ASan:** pulito.
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
-- **Non provato:** Fix con il party ferito, Drop e Order con piu' personaggi.
+- **Rest:** "Rest Time 00 04 15", plus 2 hours with Hours/Add; after the rest the time is 06:15 and "L has memorized Resist Cold" appears.
+- **Other:** Alter, Save (choice of the game), leaving the camp and coming back.
+- **ASan:** clean.
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8.
+- **Not tried:** Fix with the party wounded, Drop and Order with several characters.
 
 ---
 
-## v44: H066+$276E (aggiunge un PNG al party)
+## v44: H066+$276E (adds an NPC to the party)
 
-**Portato**
-- **H066+$276E `add_npc`:** se il party non ha piu' di 7 membri (stato B +$67C), alloca il personaggio, carica il record dei mostri npc (H066+$1FDA), scrive il numero in +$11C, lo aggiunge al party (H066+$27EE) e carica le icone "CPIC" npc nel suo posto (+$143, H035+$0246).
-- **Chiamante:** il comando ECL $36 (`ecl_add_npc`, H012+$2502) chiama `add_npc`; tolto lo stub h066_276e.
+**Ported**
+- **H066+$276E `add_npc`:** if the party has no more than 7 members (state B +$67C), it allocates the character, loads the npc monster record (H066+$1FDA), writes the number into +$11C, adds it to the party (H066+$27EE) and loads the npc "CPIC" icons into its slot (+$143, H035+$0246).
+- **Caller:** the ECL command $36 (`ecl_add_npc`, H012+$2502) calls `add_npc`; the stub h066_276e removed.
 
-**Prove con i dati veri** (binario ASan di test con un aggancio temporaneo, non committato, che chiama `add_npc(1)` entrando al campo)
-- Il Baaz (record 1) entra nel party come secondo membro e diventa corrente; View mostra la sua scheda (Fighter livello 2, 9/9 punti ferita, Steel 5).
-- **ASan:** pulito.
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
-
----
-
-## v45: H067+$1292 (oggetto casuale)
-
-**Portato**
-- **H067+$1292 `random_item`:** crea un oggetto casuale del tipo dato per il tesoro casuale dei comandi ECL.
-  - **Armi, armature e simili** (tipi $01..$25, $32, $3B, $46, $47; parte $144E): bonus +1 (90%) o +2 da $125A, nome, peso (+$3E) e valore (+$42) per tipo.
-  - **Pergamene $27 (MU, rosse o bianche) e $28 (da chierico)** (parte $17FA): 1..3 incantesimi dalle tabelle di word di H005 ($1476..$1552).
-  - **Oggetti speciali** dal modello locale di 7 record (-$7C(a5)): pozioni ($30, $35), bacchetta ($34), e il giavellotto speciale (tipo 7, 1 su 5).
-- **Chiamante:** il tesoro casuale dei comandi ECL (H012) chiama `random_item`; tolto lo stub h067_1292.
-
-**Prove con i dati veri** (binario ASan di test con un aggancio temporaneo, non committato, che genera ogni tipo da 1 a $47 tre volte e ne costruisce il nome)
-- Armi e armature con peso e valore per tipo (Plate Mail 450/2500, Arrows 4/75, Bracers bonus 4 e 6000).
-- "Red MU Scroll" e "White MU Scroll" con 2-3 incantesimi; "Cler Scroll 1/2/3 Spells"; Potion; Wand; Ring; il giavellotto speciale (valore 1500).
-- I tipi senza ramo restano vuoti, come nell'originale.
-- **ASan:** pulito.
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
+**Tests with the real data** (ASan test binary with a temporary hook, not committed, which calls `add_npc(1)` when entering the camp)
+- The Baaz (record 1) joins the party as the second member and becomes current; View shows its sheet (Fighter level 2, 9/9 hit points, Steel 5).
+- **ASan:** clean.
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8.
 
 ---
 
-## v46: H071+$092C (il negozio)
+## v45: H067+$1292 (random item)
 
-**Portato**
-- **H071+$092C `shop`:** il negozio (contesto 1), menu "Buy View Take Pool Share Appraise Exit" ("Buy View Pool Appraise Exit" se la cassa e' vuota). Uscendo con denaro nella cassa il negoziante chiede di tornare a prenderlo (H030+$0302, H061+$36E6).
-- **H071+$0572 Buy:** prezzo = valore scalato dal bit piu' alto del byte basso di g_state_b +$6DA; paga il personaggio (tutto in acciaio, H067+$032A) o la cassa (H067+$02AE/$0374); "<nome> buys (a) <oggetto>", "Not enough Money.".
-- **H071+$012A:** elenco "Items:" con i prezzi allineati a destra su 30 colonne; i nomi si ricompongono dopo. Come in H070, per il menu a elenco si usa una lista di voci con gli stessi nomi.
-- **H067+$1D7C `appraise_gems` (Appraise):** valuta una a una gemme e gioielli; Sell o Keep.
-- **H067+$03BC:** il personaggio riceve l'acciaio; se sovraccarico il resto va nella cassa.
-- **Esportata:** `wealth_in_steel` (H065+$347E).
-- **Chiamante:** il comando ECL del negozio (H012) chiama `shop`; tolto lo stub h071_092c.
+**Ported**
+- **H067+$1292 `random_item`:** creates a random item of the given type for the random treasure of the ECL commands.
+  - **Weapons, armour and similar** (types $01..$25, $32, $3B, $46, $47; part $144E): bonus +1 (90%) or +2 from $125A, name, weight (+$3E) and value (+$42) by type.
+  - **Scrolls $27 (MU, red or white) and $28 (cleric)** (part $17FA): 1..3 spells from the word tables of H005 ($1476..$1552).
+  - **Special items** from the local template of 7 records (-$7C(a5)): potions ($30, $35), wand ($34), and the special javelin (type 7, 1 in 5).
+- **Caller:** the random treasure of the ECL commands (H012) calls `random_item`; the stub h067_1292 removed.
 
-**Dove mi discosto dall'asm (documentato nel codice)**
-- **Buy:** se g_state_b +$6DA non ha bit accesi l'originale usa un indice non inizializzato; qui 0.
-- **Elenco:** un nome vuoto farebbe copiare 64K byte all'originale; qui nulla.
-- **Uguale all'originale, da notare:** con Keep, se il personaggio non ha oggetti la gemma creata non viene agganciata (resta solo nella variabile locale).
-
-**Prove con i dati veri** (binario ASan di test, non committato)
-- **Armoury** dal menu iniziale: elenco degli oggetti con i prezzi (Ring Mail 8, Short Bow 10, 1 Diamond 500).
-- **Buy** della Ring Mail: "L buys a Ring Mail".
-- **Appraise:** "No Gems or Jewelry". View ed Exit.
-- **ASan:** pulito.
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
-- **Non provato:** Appraise con gemme vere, uscita con denaro nella cassa.
-
-**Correzione per SAS/C (warning 94 in h070.c, riga 754):** in `combat_end` la variabile `special` non era mai assegnata e serviva solo al `(void)`; tolte la dichiarazione e il `(void)`.
+**Tests with the real data** (ASan test binary with a temporary hook, not committed, which generates every type from 1 to $47 three times and builds its name)
+- Weapons and armour with weight and value by type (Plate Mail 450/2500, Arrows 4/75, Bracers bonus 4 and 6000).
+- "Red MU Scroll" and "White MU Scroll" with 2-3 spells; "Cler Scroll 1/2/3 Spells"; Potion; Wand; Ring; the special javelin (value 1500).
+- The types without a branch stay empty, as in the original.
+- **ASan:** clean.
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8.
 
 ---
 
-## v47: H072+$120C (il tempio)
+## v46: H071+$092C (the shop)
 
-**Portato** (h072.c, tutto il modulo)
-- **$120C `temple`:** menu "Heal View (Take) Pool (Share) Appraise Exit" nel contesto 1; uscendo con denaro nella cassa un sacerdote chiede se tornare a prenderlo.
-- **$0EBE Heal:** elenco delle cure ("<nome>, how can we help you?", "Heal Exit").
-- **$0312:** "cast cure anyway: " quando il personaggio non ne ha bisogno.
-- **$036C:** "<cura> will only cost N steel pieces." e "pay for cure"; paga il personaggio o la cassa, altrimenti "not enough money.".
-- **Le cure:**
+**Ported**
+- **H071+$092C `shop`:** the shop (context 1), menu "Buy View Take Pool Share Appraise Exit" ("Buy View Pool Appraise Exit" if the pool is empty). When leaving with money in the pool the shopkeeper asks you to come back for it (H030+$0302, H061+$36E6).
+- **H071+$0572 Buy:** price = value scaled by the highest bit of the low byte of g_state_b +$6DA; the character pays (all in steel, H067+$032A) or the pool does (H067+$02AE/$0374); "<name> buys (a) <item>", "Not enough Money.".
+- **H071+$012A:** "Items:" list with the prices right-aligned on 30 columns; the names are rebuilt afterwards. As in H070, a list of entries with the same names is used for the list menu.
+- **H067+$1D7C `appraise_gems` (Appraise):** appraises gems and jewellery one by one; Sell or Keep.
+- **H067+$03BC:** the character receives the steel; if overloaded the rest goes into the pool.
+- **Exported:** `wealth_in_steel` (H065+$347E).
+- **Caller:** the ECL command of the shop (H012) calls `shop`; the stub h071_092c removed.
+
+**Where I deviate from the asm (documented in the code)**
+- **Buy:** if g_state_b +$6DA has no bit set the original uses an uninitialised index; here 0.
+- **List:** an empty name would make the original copy 64K bytes; here nothing.
+- **Same as the original, worth noting:** with Keep, if the character has no items the gem created is not linked (it stays only in the local variable).
+
+**Tests with the real data** (ASan test binary, not committed)
+- **Armoury** from the initial menu: list of the items with the prices (Ring Mail 8, Short Bow 10, 1 Diamond 500).
+- **Buy** of the Ring Mail: "L buys a Ring Mail".
+- **Appraise:** "No Gems or Jewelry". View and Exit.
+- **ASan:** clean.
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8.
+- **Not tried:** Appraise with real gems, leaving with money in the pool.
+
+**Fix for SAS/C (warning 94 in h070.c, line 754):** in `combat_end` the variable `special` was never assigned and only served the `(void)`; the declaration and the `(void)` removed.
+
+---
+
+## v47: H072+$120C (the temple)
+
+**Ported** (h072.c, the whole module)
+- **$120C `temple`:** menu "Heal View (Take) Pool (Share) Appraise Exit" in context 1; when leaving with money in the pool a priest asks whether you will come back for it.
+- **$0EBE Heal:** list of the cures ("<name>, how can we help you?", "Heal Exit").
+- **$0312:** "cast cure anyway: " when the character does not need it.
+- **$036C:** "<cure> will only cost N steel pieces." and "pay for cure"; the character or the pool pays, otherwise "not enough money.".
+- **The cures:**
   - $050A Cure Blindness (500);
-  - $05AA Cure Disease (500, i 6 effetti di -$C(a4));
-  - $06BC le ferite: leggere 50, gravi 175, critiche 300, Heal 2500;
+  - $05AA Cure Disease (500, the 6 effects of -$C(a4));
+  - $06BC the wounds: light 50, serious 175, critical 300, Heal 2500;
   - $0910 Raise Dead (2750);
   - $0C04 Neutralize Poison (500);
-  - $0D24 Remove Curse (1750, con l'azione dell'incantesimo in $2668);
+  - $0D24 Remove Curse (1750, with the action of the spell in $2668);
   - $0E0A Stone to Flesh (1000).
-- **Chiamante:** il comando ECL del tempio (H012) chiama `temple`; tolto lo stub h072_120c.
+- **Caller:** the ECL command of the temple (H012) calls `temple`; the stub h072_120c removed.
 
-**Dove mi discosto dall'asm (documentato nel codice)**
-- **Heal ($06BC, caso 4):** l'originale tira 1d4 solo se si paga, ma la cura (punti ferita massimi meno il tiro, piu' la rimozione degli effetti) avviene comunque, con la variabile -$2(a5) non inizializzata. Qui la variabile vale 0: senza pagare il personaggio viene curato del tutto, come accadrebbe nell'originale con quel valore.
-- **Uguale all'originale, da notare:** in Raise Dead la divisione e la sottrazione dei punti ferita massimi si ripetono per ogni classe del personaggio; l'elenco ha 10 voci, quindi "exit" non compare.
+**Where I deviate from the asm (documented in the code)**
+- **Heal ($06BC, case 4):** the original rolls 1d4 only if you pay, but the healing (maximum hit points minus the roll, plus the removal of the effects) happens anyway, with the variable -$2(a5) uninitialised. Here the variable is 0: without paying the character is healed completely, as would happen in the original with that value.
+- **Same as the original, worth noting:** in Raise Dead the division and subtraction of the maximum hit points are repeated for each class of the character; the list has 10 entries, so "exit" does not appear.
 
-**Prove con i dati veri** (binario ASan di test, non committato)
-- **Percorso:** Next, poi Temple dal menu della citta'.
-- **Heal:** l'elenco mostra le 10 cure; scelta di Cure Light Wounds: "Cure Light Wounds will only cost 50 steel pieces.", "pay for cure" (No).
-- **Uscita:** dal tempio senza denaro nella cassa.
-- **ASan:** pulito.
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
-- **Non provato:** le cure pagate su un personaggio che ne ha bisogno.
-
----
-
-## v48: H012+$14C8 (comando ECL $28, ROB)
-
-**Portato**
-- **H012+$14C8 `ecl_rob`:** tre operandi.
-  - Il personaggio corrente (primo operando 0) o tutto il party perde il secondo operando per cento di monete, gemme e gioielli.
-  - Ogni oggetto ha il terzo operando per cento di andare distrutto (H061+$3DBE, gia' portata).
-- **H061+$3C4C `scale_money`:** moltiplica +$F0..+$FC per la quota che resta, (100 - p) / 100, troncando.
-- **H015+$010C/$0122/$0172/$0184:** i salti del runtime a mathffp.library (SPMul, SPDiv, SPFlt, SPFix), con i numeri FFP tenuti come u32 (`CokReal`).
-  - Su Amiga chiamano la libreria, gia' aperta da H015 (MathBase): niente aritmetica float in C, quindi lo smakefile non ha bisogno di librerie matematiche.
-  - Sull'host convertono da e verso FFP e calcolano in singola precisione IEEE (stessi 24 bit di mantissa).
-  - Ordine dei registri di SPDiv (D1 divisore, D0 dividendo) dalla documentazione di kb.marrani.lol.
-- **Dispatcher:** il comando $28 del dispatcher di H012 chiama `ecl_rob`; tolto lo stub h012_14c8.
-
-**Dove mi discosto dall'asm**
-- **Arrotondamento sull'host:** la documentazione non dice come arrotonda mathffp, quindi una differenza dalla libreria Amiga e' possibile solo nell'ultimo bit dei risultati.
-
-**Prove**
-- **FFP sull'host** (programma di prova): 1,0 = $80000041, 100 = $C8000047, 70/100 = $B3333340; il 70% di 0, 5, 10, 15, 20 da' 0, 3, 7, 10, 14; il 25% di 1234 da' 308.
-- **Non provato in gioco:** serve uno script ECL che usi ROB.
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
+**Tests with the real data** (ASan test binary, not committed)
+- **Path:** Next, then Temple from the town menu.
+- **Heal:** the list shows the 10 cures; choice of Cure Light Wounds: "Cure Light Wounds will only cost 50 steel pieces.", "pay for cure" (No).
+- **Exit:** from the temple without money in the pool.
+- **ASan:** clean.
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8.
+- **Not tried:** the paid cures on a character who needs them.
 
 ---
 
-## v49: H033+$1A40 e gestori di H085 ($15FE, $172A con $0BB2, $363E, $38AA)
+## v48: H012+$14C8 (ECL command $28, ROB)
 
-**Correzione per SAS/C (warning 625, "proper math library has not been included")**
-- **Causa:** in v48 i salti a mathffp di h015_runtime.c usavano una union con FLOAT.
-- **Correzione:** ora usano prototipi propri con LONG e `#pragma libcall MathBase`, agli stessi offset e registri del NDK (SPFix $1E 001, SPFlt $24 001, SPMul $4E 0102, SPDiv $54 0102). Nel C per Amiga non resta nessun tipo float.
+**Ported**
+- **H012+$14C8 `ecl_rob`:** three operands.
+  - The current character (first operand 0) or the whole party loses the second operand per cent of coins, gems and jewellery.
+  - Each item has the third operand per cent of being destroyed (H061+$3DBE, already ported).
+- **H061+$3C4C `scale_money`:** multiplies +$F0..+$FC by the share that remains, (100 - p) / 100, truncating.
+- **H015+$010C/$0122/$0172/$0184:** the runtime jumps to mathffp.library (SPMul, SPDiv, SPFlt, SPFix), with the FFP numbers kept as u32 (`CokReal`).
+  - On the Amiga they call the library, already opened by H015 (MathBase): no float arithmetic in C, so the smakefile does not need math libraries.
+  - On the host they convert from and to FFP and compute in IEEE single precision (the same 24 bits of mantissa).
+  - Register order of SPDiv (D1 divisor, D0 dividend) from the documentation at kb.marrani.lol.
+- **Dispatcher:** command $28 of the H012 dispatcher calls `ecl_rob`; the stub h012_14c8 removed.
 
-**Portato**
-- **H033+$1A40 `spell_no_effect`:** azione vuota di 18 incantesimi della tabella $25C0.
-- **H085+$15FE `spell_fireball`:** dadi da 6 pari al livello del lanciatore (per $40: 1d3*2+1) su chi e' entro 2 caselle dal punto scelto.
-- **H085+$172A `effect_breath`** (effetti $06/$53 freddo, $68 fuoco): soffio del drago.
-  - Cariche in +$4; scelta del bersaglio.
-  - Solo se tutti i colpiti sono avversari: messaggio "breathes cold/Fire", animazione, danno pari ai punti ferita massimi del drago (tiro salvezza 3).
-- **H085+$0BB2 (con le annidate $0BC0, $0C04, $0C62):** area del soffio.
-  - La linea verso il bersaglio si prolunga fino alla lunghezza (8/7/9) e si ferma alla linea di vista.
-  - Raccoglie i combattenti lungo la linea; con larghezza 3 anche lungo le due linee verso i lati della punta, con $FF quelli entro 3 caselle.
-- **H085+$363E `spell_event_9`:** effetto sul bersaglio del turno ed evento 9, poi il gestore dell'effetto $40 se l'effetto non e' stato annullato.
-- **H085+$38AA `spell_teleport`:** "teleports" sul punto scelto.
-- **Esportati da H077:** `CokLine`, `line_init` ($01CC) e `line_step` ($0242).
+**Where I deviate from the asm**
+- **Rounding on the host:** the documentation does not say how mathffp rounds, so a difference from the Amiga library is possible only in the last bit of the results.
 
-**Dove mi discosto dall'asm (documentato nel codice)**
-- **$0BB2, distanza -$114(a5):** non e' inizializzata nell'originale ma viene passata alla linea di vista; qui $FFFF, cioe' nessun limite, perche' la lunghezza e' gia' limitata dal prolungamento.
-- **$0BB2, direzione -$112(a5):** non inizializzata se la linea non incontra nessuno; qui 0.
-- **$0C62:** con l'elenco dei colpiti pieno l'originale scriverebbe oltre le 30 voci; qui si ferma.
-- **$363E:** l'oggetto passato al gestore dell'effetto $40 e' -$4(a5), non inizializzato; qui NULL.
-
-**Prove**
-- **Battaglia della carovana** (ASan): nessun errore; le tabelle dei gestori sono a posto.
-- **Non provato:** il soffio, la palla di fuoco e il teletrasporto, che non compaiono nella prima battaglia.
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
+**Tests**
+- **FFP on the host** (test program): 1.0 = $80000041, 100 = $C8000047, 70/100 = $B3333340; 70% of 0, 5, 10, 15, 20 gives 0, 3, 7, 10, 14; 25% of 1234 gives 308.
+- **Not tried in the game:** it needs an ECL script that uses ROB.
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8.
 
 ---
 
-## v50: incantesimi di H085 ($2338, $26C0, $31B4, $33A8, $3758, $3936)
+## v49: H033+$1A40 and handlers of H085 ($15FE, $172A with $0BB2, $363E, $38AA)
 
-**Portato**
-- **$1A6C:** l'effetto dell'incantesimo corrente su ogni bersaglio, dall'ultimo al primo.
-  - Dal secondo in poi con il suono 2 e il proiettile dal lanciatore.
-  - Tiro salvezza con bonus, salvo per $4F/$51 sull'ultimo bersaglio; la razza 7 resiste sempre a $17 e $31.
-- **$2338 `spell_hold_person`:** "is held", con un malus al tiro salvezza che dipende dal numero di bersagli.
+**Fix for SAS/C (warning 625, "proper math library has not been included")**
+- **Cause:** in v48 the jumps to mathffp in h015_runtime.c used a union with FLOAT.
+- **Fix:** they now use their own prototypes with LONG and `#pragma libcall MathBase`, at the same offsets and registers as the NDK (SPFix $1E 001, SPFlt $24 001, SPMul $4E 0102, SPDiv $54 0102). No float type is left in the C for the Amiga.
+
+**Ported**
+- **H033+$1A40 `spell_no_effect`:** empty action of 18 spells of the table $25C0.
+- **H085+$15FE `spell_fireball`:** d6 dice equal to the caster level (for $40: 1d3*2+1) on whoever is within 2 squares of the chosen point.
+- **H085+$172A `effect_breath`** (effects $06/$53 cold, $68 fire): dragon breath.
+  - Charges in +$4; choice of the target.
+  - Only if all those hit are opponents: message "breathes cold/Fire", animation, damage equal to the maximum hit points of the dragon (saving throw 3).
+- **H085+$0BB2 (with the nested $0BC0, $0C04, $0C62):** area of the breath.
+  - The line towards the target is extended up to the length (8/7/9) and stops at the line of sight.
+  - It collects the combatants along the line; with width 3 also along the two lines towards the sides of the tip, with $FF those within 3 squares.
+- **H085+$363E `spell_event_9`:** effect on the target of the turn and event 9, then the handler of effect $40 if the effect was not cancelled.
+- **H085+$38AA `spell_teleport`:** "teleports" to the chosen point.
+- **Exported from H077:** `CokLine`, `line_init` ($01CC) and `line_step` ($0242).
+
+**Where I deviate from the asm (documented in the code)**
+- **$0BB2, distance -$114(a5):** it is not initialised in the original but it is passed to the line of sight; here $FFFF, that is no limit, because the length is already limited by the extension.
+- **$0BB2, direction -$112(a5):** not initialised if the line meets nobody; here 0.
+- **$0C62:** with the list of those hit full the original would write past the 30 entries; here it stops.
+- **$363E:** the item passed to the handler of effect $40 is -$4(a5), not initialised; here NULL.
+
+**Tests**
+- **Caravan battle** (ASan): no errors; the handler tables are in order.
+- **Not tried:** the breath, the fireball and the teleport, which do not appear in the first battle.
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8.
+
+---
+
+## v50: spells of H085 ($2338, $26C0, $31B4, $33A8, $3758, $3936)
+
+**Ported**
+- **$1A6C:** the effect of the current spell on each target, from the last to the first.
+  - From the second on with sound 2 and the projectile from the caster.
+  - Saving throw with bonus, except for $4F/$51 on the last target; race 7 always resists $17 and $31.
+- **$2338 `spell_hold_person`:** "is held", with a penalty to the saving throw that depends on the number of targets.
 - **$26C0 `spell_stinking_cloud`:** "Creates a noxious cloud".
-  - Un record in g_clouds ($2514) e l'effetto $28 per toglierlo.
-  - Le 4 caselle diventano $1E se il terreno lo consente, salvando il contenuto precedente.
-  - I combattenti nelle caselle entrano nella nube (H062+$1038).
-- **$3758 `spell_charm_monster`:** "is charmed", poi il gestore dell'effetto $B.
-- **$3936 `spell_fear`:** paura a cono (area del soffio, larghezza 3, lunghezza 6).
-  - Chi fallisce il tiro salvezza 4 "runs in terror" (effetto $6F), fugge e passa al computer (+$EC = $B3).
-  - Gli altri "is unaffected".
-- **$31B4 `spell_lightning_bolt`:** fulmine, livello del lanciatore dadi da 6 (tipo $C).
-  - $1234 colpisce la casella e segnala i muri.
-  - $1306 traccia il fulmine per 7 caselle oltre il punto e rimbalza sui muri invertendo la direzione.
-- **$33A8 `spell_bolt_20`:** scarica, 1d6+20 sul punto e poi 20 lungo 3 caselle senza rimbalzo.
+  - A record in g_clouds ($2514) and effect $28 to remove it.
+  - The 4 squares become $1E if the terrain allows it, saving the previous content.
+  - The combatants in the squares enter the cloud (H062+$1038).
+- **$3758 `spell_charm_monster`:** "is charmed", then the handler of effect $B.
+- **$3936 `spell_fear`:** cone of fear (breath area, width 3, length 6).
+  - Whoever fails saving throw 4 "runs in terror" (effect $6F), flees and goes to the computer (+$EC = $B3).
+  - The others "is unaffected".
+- **$31B4 `spell_lightning_bolt`:** lightning bolt, caster level d6 dice (type $C).
+  - $1234 hits the square and reports the walls.
+  - $1306 traces the bolt for 7 squares past the point and bounces off the walls reversing the direction.
+- **$33A8 `spell_bolt_20`:** discharge, 1d6+20 on the point and then 20 along 3 squares without bouncing.
 
-**Dove mi discosto dall'asm (documentato nel codice)**
-- **$2338:** con piu' di 4 bersagli il malus resta non inizializzato; qui 0.
-- **$33A8:** il flag del primo colpo non e' inizializzato e non serve dopo; qui 0.
-- **$1306:** il combattente -$42(a5) non e' inizializzato se la linea parte gia' sulla casella finale; qui 0.
+**Where I deviate from the asm (documented in the code)**
+- **$2338:** with more than 4 targets the penalty stays uninitialised; here 0.
+- **$33A8:** the first-hit flag is not initialised and is not needed afterwards; here 0.
+- **$1306:** the combatant -$42(a5) is not initialised if the line already starts on the final square; here 0.
 
-**Prove**
-- **Battaglia della carovana** (ASan): nessun errore.
-- **Non provato:** questi incantesimi, che non compaiono nella prima battaglia.
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
-
----
-
-## v51: gestori di effetto di H085 ($431A, $442E, $4628, $4798, $4A02)
-
-**Portato** (tratto $431A..$4D1A, non classificato nel sorgente: disassemblato dai byte grezzi con objdump m68k)
-- **$431A `effect_fireball` (effetto $4E):** "throws a fireball", palla di fuoco $2F da 15d6 sul bersaglio scelto; poi l'effetto si toglie.
-- **$442E `effect_poison_breath` (effetto $54):** "breathes poison", nell'area di raggio 3 attorno al punto (tipo $20).
-- **$4628 `effect_lightning_breath` (effetto $55):** "Breathes!", fulmine di 10 caselle senza rimbalzo (tipo $24).
-- **$4798 `effect_acid_breath` (effetto $5A):** "breathes acid", cono stretto (larghezza 1, lunghezza 6; tipo $30), solo se colpisce soltanto avversari.
-- **$4A02 `effect_eye_attack` (effetto $04):** agisce nel 75% dei turni.
-  - Con le cariche e il 25%: soffio accecante su un avversario adiacente ("Breathes!", 10 o 20 di danno e "is blinded").
-  - Altrimenti fino a due "Fires An Energy Bolt!" (1d8+2).
-- **Comune ai soffi:** danno pari ai punti ferita massimi del mostro, tiro salvezza 3, cariche in +$4 (3 senza $247C).
-- **Stato:** in H085 non restano stub.
-
-**Dove mi discosto dall'asm**
-- **$4628:** il flag del primo colpo -$1(a5) non e' inizializzato nell'originale; qui 0.
-
-**Prove**
-- **Battaglia della carovana** (ASan): nessun errore.
-- **Non provato:** questi mostri, che non compaiono nella prima battaglia.
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
+**Tests**
+- **Caravan battle** (ASan): no errors.
+- **Not tried:** these spells, which do not appear in the first battle.
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8.
 
 ---
 
-## v52: H010+$03AA (tasto 'c', memoria libera)
+## v51: effect handlers of H085 ($431A, $442E, $4628, $4798, $4A02)
 
-**Portato**
-- **H010+$03AA `show_free_memory`:** il tasto di debug 'c' mostra "max free block is NNNNNNNN bytes." in alto a sinistra (riga 1, colore 15), con AvailMem(MEMF_LARGEST) (H003+$007E).
-  - Il testo sta nel buffer di modulo -$52(a4).
-  - Tolto lo stub h010_03aa.
-- **Stub rimasti:** solo l'audio di H043 ($0584, $0840, $190E), che si salta senza fermare il programma.
+**Ported** (range $431A..$4D1A, not classified in the source: disassembled from the raw bytes with objdump m68k)
+- **$431A `effect_fireball` (effect $4E):** "throws a fireball", fireball $2F of 15d6 on the chosen target; then the effect is removed.
+- **$442E `effect_poison_breath` (effect $54):** "breathes poison", in the area of radius 3 around the point (type $20).
+- **$4628 `effect_lightning_breath` (effect $55):** "Breathes!", lightning bolt of 10 squares without bouncing (type $24).
+- **$4798 `effect_acid_breath` (effect $5A):** "breathes acid", narrow cone (width 1, length 6; type $30), only if it hits opponents only.
+- **$4A02 `effect_eye_attack` (effect $04):** acts in 75% of the turns.
+  - With the charges and 25%: blinding breath on an adjacent opponent ("Breathes!", 10 or 20 damage and "is blinded").
+  - Otherwise up to two "Fires An Energy Bolt!" (1d8+2).
+- **Common to the breaths:** damage equal to the maximum hit points of the monster, saving throw 3, charges in +$4 (3 without $247C).
+- **Status:** no stubs are left in H085.
 
-**Prove**
-- **Controlli:** compilazione senza warning, controllo C89, build MinGW x86 e x64, ctest 8/8.
+**Where I deviate from the asm**
+- **$4628:** the first-hit flag -$1(a5) is not initialised in the original; here 0.
+
+**Tests**
+- **Caravan battle** (ASan): no errors.
+- **Not tried:** these monsters, which do not appear in the first battle.
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8.
 
 ---
 
-## v53: audio SoundX (H043 e H094), compilato solo con COK_AUDIO
+## v52: H010+$03AA ('c' key, free memory)
 
-**Come si compila**
-- **`smake`:** compila come prima, senza audio. I comandi audio sono gli stub di unported.c, che non fanno nulla.
-- **`smake AUDIO`:** compila anche l'audio. I sei moduli coinvolti (h043_audio, h079, h090, h092, h094, unported) si compilano con `DEFINE=COK_AUDIO` in oggetti separati `*_a.o` (OBJNAME), cosi' le due build non si mescolano; poi collega `cok`.
-- **Host:** `make AUDIO=1` compila con `-DCOK_AUDIO` in build-audio/.
+**Ported**
+- **H010+$03AA `show_free_memory`:** the debug key 'c' shows "max free block is NNNNNNNN bytes." at the top left (row 1, colour 15), with AvailMem(MEMF_LARGEST) (H003+$007E).
+  - The text is in the module buffer -$52(a4).
+  - The stub h010_03aa removed.
+- **Stubs left:** only the H043 audio ($0584, $0840, $190E), which is skipped without stopping the program.
 
-**Portato** (tutto dentro `#ifdef COK_AUDIO`)
-- **H043, caricamento e gestione** (lettore SMUS/8SVX "SoundX"):
-  - $0584 avvio: SOUND/periodTable con $80 periodi e $40 durate; due porte; audio.device con la maschera dei canali $F; 16 richieste CMD_WRITE rese libere con ReplyMsg; server del VBlank che fa partire l'interrupt software;
-  - $0840 chiusura;
-  - $190E comandi: $FF ferma, 0/1 disabilita/abilita, $FE libera e ricarica, $FD precarica i suoni 1..$16, altrimenti suona il suono numero n;
-  - $113E carica un oggetto per nome da SOUND/nome o da SOUND/soundData (FORM SMUS, 8SVX, INST, ENVL, con NAME facoltativo);
-  - $0986/$0BB2/$0D84/$0D3A i parser IFF, $04B6 e seguenti la liberazione, $0F50/$1058 le liste attivi/caricati, $15C6 stop, $165A l'errore "SoundX is quiting".
-- **H094, il lettore** (assembly scritto a mano nell'originale):
-  - $0006 server del VBlank (Cause); $0016 interrupt software (orologio del tempo);
-  - $0108/$0188/$01BE lettura delle tracce SMUS: note, pause, legature, accordi, cambio di strumento $81, volume $84, fine $FF;
-  - $0288 avvio di una nota: ottava dal periodo, o samplesPerSec;
-  - $0390 suoni singoli 8SVX/INST;
-  - $003A assegnazione delle 4 voci (la piu' vicina alla fine con ADCMD_FINISH);
-  - $04A4 inviluppi PTCH/VLUM e richieste CMD_WRITE (parte iniziale 1 ciclo, parte ripetuta senza fine) e ADCMD_PERVOL;
-  - $0738 note libere.
-- **Adattatori Exec:** H079 (AddIntServer, Disable, Enable, RemIntServer), H090 (OpenDevice, CloseDevice), H092 (NewList).
-- **H020+$08C2 `console_write_int`:** intero allineato a destra, per il messaggio d'errore; compilato sempre.
+**Tests**
+- **Checks:** compilation without warnings, C89 check, MinGW x86 and x64 builds, ctest 8/8.
 
-**Host (solo con COK_AUDIO, per ora muto)**
-- host/ndk.h ha i tipi Exec che servono (Node, List, porte con coda, IORequest, IOAudio, Interrupt).
+---
+
+## v53: SoundX audio (H043 and H094), compiled only with COK_AUDIO
+
+**How to build**
+- **`smake`:** builds as before, without audio. The audio commands are the stubs of unported.c, which do nothing.
+- **`smake AUDIO`:** also builds the audio. The six modules involved (h043_audio, h079, h090, h092, h094, unported) are compiled with `DEFINE=COK_AUDIO` into separate `*_a.o` objects (OBJNAME), so the two builds do not mix; then it links `cok`.
+- **Host:** `make AUDIO=1` compiles with `-DCOK_AUDIO` in build-audio/.
+
+**Ported** (all inside `#ifdef COK_AUDIO`)
+- **H043, loading and management** (SMUS/8SVX "SoundX" player):
+  - $0584 start-up: SOUND/periodTable with $80 periods and $40 durations; two ports; audio.device with the channel mask $F; 16 CMD_WRITE requests made free with ReplyMsg; VBlank server that starts the software interrupt;
+  - $0840 shutdown;
+  - $190E commands: $FF stops, 0/1 disables/enables, $FE frees and reloads, $FD preloads sounds 1..$16, otherwise plays sound number n;
+  - $113E loads an object by name from SOUND/name or from SOUND/soundData (FORM SMUS, 8SVX, INST, ENVL, with optional NAME);
+  - $0986/$0BB2/$0D84/$0D3A the IFF parsers, $04B6 and following the freeing, $0F50/$1058 the active/loaded lists, $15C6 stop, $165A the error "SoundX is quiting".
+- **H094, the player** (hand-written assembly in the original):
+  - $0006 VBlank server (Cause); $0016 software interrupt (tempo clock);
+  - $0108/$0188/$01BE reading of the SMUS tracks: notes, rests, ties, chords, instrument change $81, volume $84, end $FF;
+  - $0288 start of a note: octave from the period, or samplesPerSec;
+  - $0390 single 8SVX/INST sounds;
+  - $003A assignment of the 4 voices (the one closest to the end with ADCMD_FINISH);
+  - $04A4 PTCH/VLUM envelopes and CMD_WRITE requests (initial part 1 cycle, repeated part endless) and ADCMD_PERVOL;
+  - $0738 free notes.
+- **Exec adapters:** H079 (AddIntServer, Disable, Enable, RemIntServer), H090 (OpenDevice, CloseDevice), H092 (NewList).
+- **H020+$08C2 `console_write_int`:** right-aligned integer, for the error message; always compiled.
+
+**Host (only with COK_AUDIO, silent for now)**
+- host/ndk.h has the Exec types that are needed (Node, List, ports with a queue, IORequest, IOAudio, Interrupt).
 - host/audio.c:
-  - OpenDevice riesce; BeginIO completa subito la richiesta (torna alla porta delle risposte);
-  - il server del VBlank gira a 50 Hz dal refresh del display, mai fra Disable ed Enable;
-  - Cause esegue subito l'interrupt software.
-- GetMsg/ReplyMsg gestiscono anche le porte diverse da IDCMP.
+  - OpenDevice succeeds; BeginIO completes the request immediately (it goes back to the reply port);
+  - the VBlank server runs at 50 Hz from the display refresh, never between Disable and Enable;
+  - Cause runs the software interrupt immediately.
+- GetMsg/ReplyMsg also handle ports other than IDCMP.
 
-**Dove mi discosto dall'asm (documentato nel codice)**
-- **Porta di risposta dell'apertura in $0584:** variabile locale non inizializzata nell'originale; qui azzerata.
-- **Nome di INS1 lungo $28 byte:** nell'originale non e' terminato; qui il buffer parte azzerato.
-- **VHDR piu' lungo di $14 byte:** qui si legge $14 e si salta il resto, invece di scrivere oltre il record.
-- **Note senza strumento (H094 $0288):** qui restano mute; l'originale leggerebbe da indirizzi nulli.
-- **samplesPerSec 0 in $0390:** l'originale dividerebbe per zero; qui il quoziente resta il dividendo.
-- **Cambio di strumento $81 con indice pari al numero degli strumenti:** l'originale legge oltre la tabella; qui l'indice e' limitato a 0..7.
+**Where I deviate from the asm (documented in the code)**
+- **Reply port of the opening in $0584:** local variable not initialised in the original; cleared here.
+- **INS1 name $28 bytes long:** in the original it is not terminated; here the buffer starts cleared.
+- **VHDR longer than $14 bytes:** here $14 bytes are read and the rest is skipped, instead of writing past the record.
+- **Notes without an instrument (H094 $0288):** here they stay silent; the original would read from null addresses.
+- **samplesPerSec 0 in $0390:** the original would divide by zero; here the quotient stays the dividend.
+- **Instrument change $81 with an index equal to the number of instruments:** the original reads past the table; here the index is limited to 0..7.
 
-**Prove con i dati veri** (ASan, `make AUDIO=1`, audio muto)
-- **Caricamento:** periodTable e i 55 oggetti di soundData (forme d'onda, inviluppi, strumenti IN1..IN7, campioni, il brano KRYNN); $FE libera e $FD ricarica.
-- **Riproduzione:** durante intro e battaglia il lettore manda 358 richieste (83 CMD_WRITE, 192 ADCMD_PERVOL, 83 ADCMD_FINISH), con periodi e lunghezze coerenti fra le ottave.
-- **Errore trovato e corretto:** gli identificatori IFF a 4 byte non erano terminati; nell'originale il byte seguente e' una variabile azzerata apposta.
-- **ASan:** pulito.
-- **Controlli:** le build host con e senza COK_AUDIO, il controllo C89 con e senza COK_AUDIO, MinGW x86 e x64 e ctest 8/8 sono puliti.
-- **Non provato:** l'Amiga reale (`smake AUDIO`) e il suono vero sull'host (emulazione SDL di Paula: prossimo passo).
+**Tests with the real data** (ASan, `make AUDIO=1`, silent audio)
+- **Loading:** periodTable and the 55 objects of soundData (waveforms, envelopes, instruments IN1..IN7, samples, the KRYNN song); $FE frees and $FD reloads.
+- **Playback:** during intro and battle the player sends 358 requests (83 CMD_WRITE, 192 ADCMD_PERVOL, 83 ADCMD_FINISH), with periods and lengths consistent across the octaves.
+- **Bug found and fixed:** the 4-byte IFF identifiers were not terminated; in the original the following byte is a variable cleared on purpose.
+- **ASan:** clean.
+- **Checks:** the host builds with and without COK_AUDIO, the C89 check with and without COK_AUDIO, MinGW x86 and x64 and ctest 8/8 are clean.
+- **Not tried:** the real Amiga (`smake AUDIO`) and real sound on the host (SDL emulation of Paula: next step).
 
 ---
 
-## v54: suono sull'host (audio.device emulato con SDL2, solo con COK_AUDIO)
+## v54: sound on the host (audio.device emulated with SDL2, only with COK_AUDIO)
 
-**Stato del port**
-- Gli stub di gioco sono finiti; in unported.c restano solo quelli dell'audio, usati senza COK_AUDIO.
-- Le 25 routine senza marcatore PORT sono procedure annidate gia' incluse nei loro chiamanti (H066+$292C, H085+$3EE2), trampolini (H012, H013, H043, H061, H074) e corpi del runtime che il C ha gia' (H002, H015, H020, H045, H049 blitter, H074, H075).
+**Status of the port**
+- The game stubs are finished; in unported.c only the audio ones remain, used without COK_AUDIO.
+- The 25 routines without a PORT marker are nested procedures already included in their callers (H066+$292C, H085+$3EE2), trampolines (H012, H013, H043, H061, H074) and runtime bodies that the C already has (H002, H015, H020, H045, H049 blitter, H074, H075).
 
-**Portato** (host/audio.c, solo con `make AUDIO=1`; la build Amiga usa il vero audio.device)
-- **audio.device** come i 4 canali di Paula:
-  - una coda di CMD_WRITE per canale (dati a 8 bit con segno, lunghezza, periodo e volume con ADIOF_PERVOL, cicli: 0 = senza fine);
-  - ADCMD_PERVOL cambia periodo e volume del suono in corso;
-  - ADCMD_FINISH interrompe il suono in corso e fa partire il seguente in coda;
-  - CMD_FLUSH svuota il canale.
-- **Mixer** nel callback di SDL a 44100 Hz stereo: clock PAL 3546895 Hz, volume 0..64, canali 0+3 a sinistra e 1+2 a destra.
-- **Richieste finite:** tornano alla loro porta solo nel thread principale (BeginIO e VBlank), sotto il lock dell'audio di SDL.
-- **Senza audio SDL:** le richieste si completano subito, come in v53.
-- **Differenza solo dell'host:** togliendo il server del VBlank (comando $FE, chiusura) i canali si svuotano, perche' H043 libera subito i campioni. Paula continuerebbe a leggerli senza danni; il callback dell'host no.
+**Ported** (host/audio.c, only with `make AUDIO=1`; the Amiga build uses the real audio.device)
+- **audio.device** as the 4 channels of Paula:
+  - a queue of CMD_WRITE per channel (signed 8-bit data, length, period and volume with ADIOF_PERVOL, cycles: 0 = endless);
+  - ADCMD_PERVOL changes period and volume of the sound in progress;
+  - ADCMD_FINISH interrupts the sound in progress and starts the next one in the queue;
+  - CMD_FLUSH empties the channel.
+- **Mixer** in the SDL callback at 44100 Hz stereo: PAL clock 3546895 Hz, volume 0..64, channels 0+3 on the left and 1+2 on the right.
+- **Finished requests:** they go back to their port only in the main thread (BeginIO and VBlank), under the SDL audio lock.
+- **Without SDL audio:** the requests complete immediately, as in v53.
+- **Host-only difference:** removing the VBlank server (command $FE, shutdown) empties the channels, because H043 frees the samples right away. Paula would keep reading them without harm; the host callback would not.
 
-**Prove** (ASan, driver "disk" di SDL che scrive l'uscita audio su file)
-- **Intro senza tasti:** la musica KRYNN suona per 44 secondi di fila (RMS medio circa 6000). Le frequenze dominanti sono note: 328 Hz (Mi4), 390 (Sol4), 490 (Si4), 519 (Do5), con le armoniche dispari delle onde quadre.
-- **Intro saltata e battaglia:** musica all'avvio e poi i suoni della battaglia.
-- **ASan:** pulito.
-- **Controlli:**
-  - build host senza audio e con `make AUDIO=1` senza warning;
-  - controllo C89 con COK_AUDIO;
-  - MinGW x86 e x64 (anche il controllo di sintassi con COK_AUDIO e gli header SDL);
+**Tests** (ASan, SDL "disk" driver that writes the audio output to a file)
+- **Intro without keys:** the KRYNN music plays for 44 seconds straight (average RMS about 6000). The dominant frequencies are notes: 328 Hz (E4), 390 (G4), 490 (B4), 519 (C5), with the odd harmonics of the square waves.
+- **Intro skipped and battle:** music at start-up and then the sounds of the battle.
+- **ASan:** clean.
+- **Checks:**
+  - host build without audio and with `make AUDIO=1` without warnings;
+  - C89 check with COK_AUDIO;
+  - MinGW x86 and x64 (also the syntax check with COK_AUDIO and the SDL headers);
   - ctest 8/8.
 
 ---
 
-## v55: collaudo dei percorsi mai provati (nessuna modifica al codice)
+## v55: testing of the paths never tried (no code changes)
 
-**Vittoria in battaglia** (battaglia della carovana; gancio di prova temporaneo, non committato: ogni colpo abbatte un mostro, il personaggio non subisce danni; L in Auto)
-- **Fine della battaglia:** "Continue Battle:" compare quando i nemici rimasti sono 0 ($2A1D, H059+$15EE); con No la battaglia finisce.
-- **Esperienza:** "The party has won. Each character receives 652 experience points."
-- **Tesoro:** schermata con l'immagine e "Steel 20". Take porta a "Select type of coin" e "How much steel will you take?"; poi Pool e Share; il menu diventa "View Pool Exit" quando non resta nulla; View e Items funzionano.
-- **ASan:** pulito.
+**Victory in battle** (caravan battle; temporary test hook, not committed: every hit downs a monster, the character takes no damage; L on Auto)
+- **End of the battle:** "Continue Battle:" appears when the enemies left are 0 ($2A1D, H059+$15EE); with No the battle ends.
+- **Experience:** "The party has won. Each character receives 652 experience points."
+- **Treasure:** screen with the picture and "Steel 20". Take leads to "Select type of coin" and "How much steel will you take?"; then Pool and Share; the menu becomes "View Pool Exit" when nothing is left; View and Items work.
+- **ASan:** clean.
 
-**Incantesimi in combattimento**
-- **Percorso:** al campo Memorize (3 incantesimi), Rest, poi la battaglia: il menu diventa "Move View Aim Use Cast Done".
-- **Lancio:** Cast, scelta di Resist Cold, mira (Target); "(Casting)", "L casts a spell", "Spell : Resist Cold", "L is cold-resistant".
-- **ASan:** pulito.
+**Spells in combat**
+- **Path:** at the camp Memorize (3 spells), Rest, then the battle: the menu becomes "Move View Aim Use Cast Done".
+- **Casting:** Cast, choice of Resist Cold, aiming (Target); "(Casting)", "L casts a spell", "Spell : Resist Cold", "L is cold-resistant".
+- **ASan:** clean.
 
-**Da chiarire: l'oggetto "Plate Mail 3 Spells"**
-- **I file:** L.swg, BOB.swg e TAS.swg (dati di prova copiati il 10/11, non dai dischi originali) hanno ciascuno un solo oggetto, una Plate Mail (nome $2F/$24, peso 450, pronta) con sopra campi di pergamena: tipo $27, +$32 = $66 ("3 Spells"), incantesimi 01 03.
-- **KNT.swg** (salvato dal port il 10/11 alle 20:33) ha un solo oggetto, la Plate Mail di tipo $24 con incantesimi 02 23.
-- **Confronto:** i personaggi pronti CHRDATA1..6 hanno oggetti coerenti, e la creazione (H013+$07B2) da' tre oggetti (Plate Mail, spada, scudo) a chi ha livelli in +$105.
-- **Verifiche:** H013+$07B2, il salvataggio (H066+$1640) e il caricamento (H066+$1B0E) portati corrispondono all'asm. Nell'asm nessuna routine scrive tipo $27 o +$32 in un oggetto esistente: il tipo si scrive solo nella creazione degli oggetti iniziali, nella generazione casuale (H067+$1292, oggetto nuovo) e nella lettura del tesoro da file (H012).
-- **Ipotesi:** quei personaggi sono stati prodotti in sessioni di prova precedenti da una versione del port con un errore poi corretto, oppure da un gancio di prova.
-- **Da fare:** creare un personaggio nuovo con la build attuale (cavaliere, che riceve la Plate Mail), salvarlo e controllare il .swg; confronto con salvataggi creati dal gioco originale.
-
----
-
-## v56: verifica del cavaliere e causa di "Plate Mail 3 Spells" (nessuna modifica al codice)
-
-**Cavaliere creato con la build attuale** (ASan)
-- **Creazione:** Create New Character, Human, maschio, Knight, allineamento, "Reroll stats?" No, nome KTST, editor dell'icona, "Save KTST?" Yes.
-- **KTST.swg:** tre oggetti coerenti, byte per byte come CHRDATA1.swg: Plate Mail (tipo $24, nome 00 2F 24, peso 450), scudo ($25, peso 60), spada ($12, peso 50).
-- **ASan:** pulito.
-
-**Causa dell'oggetto "Plate Mail 3 Spells": dati di prova fabbricati in una sessione precedente, non un bug del port**
-- **Origine:** il 10/11 alle 19:54 UTC, per collaudare l'uso delle pergamene, uno script di prova ha preso il record della Plate Mail di KNT e ci ha scritto sopra tipo $27, +$32 = $66, +$44 = 1, +$45 = 3 (+$3A = 1). Poi lo ha salvato come unico oggetto di TAS, BOB, L e KNT.
-- **Verifica:** e' esattamente l'ibrido trovato; data e contenuto coincidono.
-- **Dati di prova corretti** (fuori dal repository): in L, BOB e TAS l'oggetto ora e' una pergamena da chierico coerente (tipo $28, nome $66/$27/$26, peso 25, incantesimi 1 e 3, pronta). Nella scheda di L appare "Cler Scroll 3 Spells", con Use disponibile.
+**To be clarified: the item "Plate Mail 3 Spells"**
+- **The files:** L.swg, BOB.swg and TAS.swg (test data copied on 10/11, not from the original disks) each have a single item, a Plate Mail (name $2F/$24, weight 450, ready) with scroll fields on top: type $27, +$32 = $66 ("3 Spells"), spells 01 03.
+- **KNT.swg** (saved by the port on 10/11 at 20:33) has a single item, the Plate Mail of type $24 with spells 02 23.
+- **Comparison:** the ready-made characters CHRDATA1..6 have consistent items, and the creation (H013+$07B2) gives three items (Plate Mail, sword, shield) to whoever has levels in +$105.
+- **Checks:** the ported H013+$07B2, saving (H066+$1640) and loading (H066+$1B0E) match the asm. In the asm no routine writes type $27 or +$32 into an existing item: the type is written only in the creation of the initial items, in the random generation (H067+$1292, new item) and in the reading of the treasure from file (H012).
+- **Hypothesis:** those characters were produced in previous test sessions by a version of the port with a bug that was later fixed, or by a test hook.
+- **To do:** create a new character with the current build (a knight, who receives the Plate Mail), save it and check the .swg; comparison with saves created by the original game.
 
 ---
 
-## v57: collaudo di Fix con un chierico nuovo (nessuna modifica al codice)
+## v56: check of the knight and cause of "Plate Mail 3 Spells" (no code changes)
 
-**Personaggio nuovo:** su consiglio dell'utente non si usa piu' L. CLR e' un chierico umano creato con la build attuale (AC 10, HP 13). Party: il solo CLR.
+**Knight created with the current build** (ASan)
+- **Creation:** Create New Character, Human, male, Knight, alignment, "Reroll stats?" No, name KTST, icon editor, "Save KTST?" Yes.
+- **KTST.swg:** three consistent items, byte for byte like CHRDATA1.swg: Plate Mail (type $24, name 00 2F 24, weight 450), shield ($25, weight 60), sword ($12, weight 50).
+- **ASan:** clean.
 
-**Percorso** (ASan, gancio di prova che limita i danni a CLR perche' resti ad almeno 1 HP)
-- Leave dalla citta', battaglia della carovana in Auto, "Continue Battle" No, tesoro Exit.
+**Cause of the "Plate Mail 3 Spells" item: test data fabricated in a previous session, not a bug of the port**
+- **Origin:** on 10/11 at 19:54 UTC, to test the use of the scrolls, a test script took the record of KNT's Plate Mail and wrote over it type $27, +$32 = $66, +$44 = 1, +$45 = 3 (+$3A = 1). Then it saved it as the only item of TAS, BOB, L and KNT.
+- **Check:** it is exactly the hybrid that was found; date and content match.
+- **Test data fixed** (outside the repository): in L, BOB and TAS the item is now a consistent cleric scroll (type $28, name $66/$27/$26, weight 25, spells 1 and 3, ready). L's sheet shows "Cler Scroll 3 Spells", with Use available.
+
+---
+
+## v57: testing of Fix with a new cleric (no code changes)
+
+**New character:** on the user's advice L is no longer used. CLR is a human cleric created with the current build (AC 10, HP 13). Party: CLR alone.
+
+**Path** (ASan, test hook that limits the damage to CLR so that they stay at 1 HP at least)
+- Leave from the town, caravan battle on Auto, "Continue Battle" No, treasure Exit.
 - "Do you want to go back and claim your treasure?" No; "Will you help us reach the outpost?" No.
-- Encamp; View, Fix, di nuovo View.
+- Encamp; View, Fix, View again.
 
-**Risultato**
-- **HP:** CLR scende a 1/13 in battaglia; dopo Fix la scheda mostra 11/13.
-- **Calcolo:** nessuna cura memorizzata; 3 posti di livello 1 (+$124), quindi pool 3d8 = 10 e danno residuo 2.
-- **Orologio di gioco:** passa da 12:11 a 16:41, cioe' 4:30 di riposo, come nell'asm (H057+$2C08).
-  - Il tempo vale $F0 + 3*$F = 285 minuti; il danno 12 e' minore di extra $1B, quindi il tempo si divide per 27/12 = 2, con minimo $10E = 270 minuti.
-- **Timer del riposo:** $24F4..$2501 viene salvato e ripristinato, come nell'asm.
-- **ASan:** pulito.
+**Result**
+- **HP:** CLR goes down to 1/13 in battle; after Fix the sheet shows 11/13.
+- **Computation:** no cure memorised; 3 level-1 slots (+$124), so pool 3d8 = 10 and residual damage 2.
+- **Game clock:** goes from 12:11 to 16:41, that is 4:30 of rest, as in the asm (H057+$2C08).
+  - The time is $F0 + 3*$F = 285 minutes; the damage 12 is less than extra $1B, so the time is divided by 27/12 = 2, with a minimum of $10E = 270 minutes.
+- **Rest timer:** $24F4..$2501 is saved and restored, as in the asm.
+- **ASan:** clean.
 
-**Sconfitta del party** (verificata per caso, senza il limite ai danni)
-- CLR, da solo, viene abbattuto.
-- Appare "The monsters rejoice for the party has been destroyed" e il gioco aspetta un tasto qualsiasi, senza menu. E' il comportamento atteso, non un blocco.
+**Defeat of the party** (checked by chance, without the damage limit)
+- CLR, alone, is struck down.
+- "The monsters rejoice for the party has been destroyed" appears and the game waits for any key, without a menu. It is the expected behaviour, not a hang.
 
-**Harness di prova** (fuori dal repository)
-- **Passi condizionali:** `?testo:TASTO` aspetta un menu con quel testo; `*testo:TASTO` preme il tasto finche' i menu nuovi lo contengono.
-- **Shot:** salva uno screenshot del menu corrente.
-- Con questi passi le sequenze non perdono piu' la sincronia sulle pagine di testo di lunghezza variabile.
+**Test harness** (outside the repository)
+- **Conditional steps:** `?text:KEY` waits for a menu with that text; `*text:KEY` presses the key as long as the new menus contain it.
+- **Shot:** saves a screenshot of the current menu.
+- With these steps the sequences no longer lose sync on text pages of variable length.
 
 ---
 
-## v58: collaudo di Order e Drop con due personaggi nuovi (nessuna modifica al codice)
+## v58: testing of Order and Drop with two new characters (no code changes)
 
-**Party:** CLR (chierico, AC 10, HP 13) e KTST (cavaliere, AC 10, HP 15), entrambi creati con la build attuale. Aggiunti con Add Character to Party; l'elenco mostra L, KTST, BOB, TAS, CLR, KNT con "*" accanto agli aggiunti.
+**Party:** CLR (cleric, AC 10, HP 13) and KTST (knight, AC 10, HP 15), both created with the current build. Added with Add Character to Party; the list shows L, KTST, BOB, TAS, CLR, KNT with "*" next to the ones added.
 
-**Percorso** (ASan): Begin, Leave, Encamp, Alter ("Order Drop Speed Icon Pics Level Exit"), Order, Drop.
+**Path** (ASan): Begin, Leave, Encamp, Alter ("Order Drop Speed Icon Pics Level Exit"), Order, Drop.
 
 **Order**
-- Il corrente e' KTST, scritto in bianco: draw_party (H063+$0D80) usa la penna $0F per il corrente e il colore dello stato per gli altri.
-- **Select:** "KTST has been selected", il menu diventa "Place Exit".
-- **Freccia giu':** KTST era l'ultimo e passa in testa (KTST, CLR), come nell'asm (H057+$1FD6: dalla coda in testa).
-- **Place:** si torna a "Select Exit"; Exit riporta al menu Alter.
+- The current one is KTST, written in white: draw_party (H063+$0D80) uses pen $0F for the current one and the status colour for the others.
+- **Select:** "KTST has been selected", the menu becomes "Place Exit".
+- **Down arrow:** KTST was the last and moves to the top (KTST, CLR), as in the asm (H057+$1FD6: from the tail to the head).
+- **Place:** back to "Select Exit"; Exit goes back to the Alter menu.
 
 **Drop**
 - "KTST will be gone", "Drop from party? Yes No", Yes.
-- KTST esce dal party e resta solo CLR; il riquadro del party e il menu del campo si ridisegnano correttamente.
+- KTST leaves the party and only CLR remains; the party box and the camp menu are redrawn correctly.
 
-**ASan:** pulito.
+**ASan:** clean.
 
-**Harness di prova:** il passo Shot non consuma piu' il menu corrente, cosi' un passo condizionale puo' seguirlo subito.
-
----
-
-## v59: collaudo di Turn Undead (nessuna modifica al codice)
-
-**Personaggi pronti dei dischi** (CHRDATA1..6)
-- Hanno solo equipaggiamento normale (armature, scudi, armi, frecce); MOLLY ha l'oggetto di tipo $43.
-- Nessuna pergamena e nessun oggetto magico: non servono al collaudo di pergamene e oggetti magici.
-
-**Mostri non morti nei file del gioco** (MON1CHA.dax, campo +$DF letto con load_monster_record)
-- SKELETON (26) tipo 1, ZOMBIE (31) tipo 2, GHOUL (7) tipo 3, GHAST (6) tipo 6.
-- Gli altri 31 mostri di MON1 hanno +$DF = 0.
-
-**Collaudo** (ASan, solo CLR, chierico di livello 1)
-- Un gancio di prova sostituisce i mostri della battaglia della carovana con SKELETON, mostro reale dei file del gioco. I danni a CLR sono limitati perche' resti ad almeno 1 HP; i mostri muoiono al primo colpo solo dopo il Turn.
-- **Menu:** compare "Move View Aim Turn Done". Turn appare perche' load_monster (H064) conta i non morti in $248F e il turno di CLR ha +$13 < $248F. Nella carovana normale il menu e' "Move View Aim Done", corretto perche' non ci sono non morti.
-- **Esito:** "CLR turns undead...", poi per ogni scheletro "SKELETON is turned" e gli scheletri fuggono. Dopo l'uso Turn sparisce dal menu (+$13 incrementato).
-- **Tre prove:** il tiro 1d20 e' unico per l'azione e il valore di tabella per tipo 1 e livello 1 e' 10.
-  - tiro 18: due scheletri scacciati;
-  - tiro 13: due scacciati;
-  - tiro 7: "Nothing Happens...".
-- **ASan:** pulito in tutte le prove.
-
-**Restano:** uso delle pergamene e oggetti magici in combattimento. Servono oggetti veri del gioco (tesori o negozi), non dati costruiti a mano.
+**Test harness:** the Shot step no longer consumes the current menu, so a conditional step can follow it right away.
 
 ---
 
-## v60: collaudo di pergamene, pozioni e oggetti magici; correzione di Take Items (H070+$0E94)
+## v59: testing of Turn Undead (no code changes)
 
-**Correzione: h070 take_items** (H070+$0E94)
-- Nell'asm indice (-$10), scelta (-$4) e cursore (-$E) si inizializzano una sola volta, prima del ciclo ($0E9E..$0EAA; il ciclo riparte da $0EAE).
-- Il C li azzerava a ogni giro, quindi dopo un Take la selezione tornava alla prima riga invece di restare dov'era. Ora l'inizializzazione e' fuori dal ciclo.
+**Ready-made characters on the disks** (CHRDATA1..6)
+- They only have normal equipment (armour, shields, weapons, arrows); MOLLY has the item of type $43.
+- No scrolls and no magic items: they are of no use for testing scrolls and magic items.
 
-**Oggetti dei tesori del gioco** (ITEM1.DAX, dump letto come ecl_treasure, H012 comando TREASURE)
-- **Blocchi con oggetti magici:** 17, 32..39, 48..51, 53.
-- **Blocco 17:** Scroll Cler 3 Spells (tipo $28, incantesimi $43 $3A $45), due White MU Scroll e due Red MU Scroll 3 Spells, Potion of Healing, Wand of Magic Missiles (5 cariche, incantesimo $41), frecce e dardi.
+**Undead monsters in the game files** (MON1CHA.dax, field +$DF read with load_monster_record)
+- SKELETON (26) type 1, ZOMBIE (31) type 2, GHOUL (7) type 3, GHAST (6) type 6.
+- The other 31 monsters of MON1 have +$DF = 0.
 
-**Collaudo** (ASan, solo CLR; ganci di prova fuori dal repository, oggetti tutti dai file del gioco)
-- **Tesoro e Take**
-  - Un gancio mette il blocco 17 nel tesoro della carovana. Il tesoro elenca gli oggetti; Take Items prende la pozione e la pergamena, e la selezione resta sulla riga dopo il Take.
-  - Nota: 'I' su "Money Items Exit" lascia selezionata la 2a opzione ($2483) e in "Take Exit" la 2a e' Exit. Invio quindi esce, anche nell'asm; si prende con T.
-- **Al campo**
-  - **Use senza Ready:** "Must be Readied" (H065+$28D2).
-  - **Pozione:** Ready, poi Use; HP da 1/13 a 8/13, la pozione sparisce (ingombro da 90 a 80).
-  - **Pergamena:** Ready, poi Use; "Spells on Scroll", 4th Level: Neutralize Poison, Cure Serious Wounds, Protection Evil 10' Radius.
-  - **Cure Serious Wounds** su CLR ("Cast Spell on whom"): HP 13/13, l'oggetto diventa "Scroll Cler 2 Spells" e l'incantesimo sparisce dalla pergamena.
-  - **Immagine del campo:** dopo View il fuoco riappare dopo un attimo. E' l'animazione di ui_request_choice ($069E), che ridisegna dopo l'attesa del fotogramma; anche all'ingresso del campo il riquadro e' vuoto per un attimo.
-- **In combattimento** (bacchetta e pergamena date a CLR all'inizio della battaglia con take_item, H071+$047C)
-  - Il menu diventa "Move View Aim Use Done"; Use mostra "Ready Use Drop Halve Join Exit".
-  - **Bacchetta:** Ready, poi Use; "Item Wand of Magic Missiles", Aim (Next Prev Manual Target Center Exit), Next su un Baaz, Target.
-  - **Cariche:** da 5 a 4. In Auto l'IA usa la bacchetta da sola: da 4 a 3 a 2.
-  - **Mira:** senza nemici in vista Next resta su CLR e Target lo colpisce ("CLR takes 6 points of damage from magic"). Errore della sequenza di prova, non del port.
-  - **Pergamena:** Cure Serious Wounds su CLR, HP da 1 a 5; sulla pergamena restano gli incantesimi 43 00 45.
-- **ASan:** pulito in tutte le prove.
+**Testing** (ASan, CLR alone, level 1 cleric)
+- A test hook replaces the monsters of the caravan battle with SKELETON, a real monster from the game files. The damage to CLR is limited so that they stay at 1 HP at least; the monsters die at the first hit only after the Turn.
+- **Menu:** "Move View Aim Turn Done" appears. Turn appears because load_monster (H064) counts the undead in $248F and CLR's turn has +$13 < $248F. In the normal caravan the menu is "Move View Aim Done", correct because there are no undead.
+- **Outcome:** "CLR turns undead...", then for each skeleton "SKELETON is turned" and the skeletons flee. After use Turn disappears from the menu (+$13 incremented).
+- **Three tests:** the 1d20 roll is a single one for the action and the table value for type 1 and level 1 is 10.
+  - roll 18: two skeletons turned;
+  - roll 13: two turned;
+  - roll 7: "Nothing Happens...".
+- **ASan:** clean in all the tests.
+
+**Remaining:** use of scrolls and magic items in combat. Real game items are needed (treasures or shops), not data built by hand.
 
 ---
 
-## v61: commenti a ogni accesso dei dati anonimi, README in inglese, marcatori PORT completi, correzione H029
+## v60: testing of scrolls, potions and magic items; fix of Take Items (H070+$0E94)
 
-**Commenti ai dati anonimi**
-- **Cosa e' commentato:** ogni lettura e scrittura degli array anonimi ha un commento che spiega l'elemento. Comprende g_h005 (H005_B/W/L, H005_SET_*), g_state_a/b/c, g_ecl_buffer, i campi b[] dei record e gli array dei moduli.
-  - Campi dei record: Character pg+, CokItem ogg+, CokTurn turno+, CokEffect eff+, CokCloud nube+.
-  - Array dei moduli: g_hNNN_bss/data.
-  - Esempio: `/* $3DF6: (word) velocita' del gioco 0..9 (pausa dei messaggi) */`.
-- **Glossario:** 586 voci ricavate solo dal codice e dall'asm. Dove il significato non e' certo la descrizione inizia con "uso:".
-- **Come sono applicati**
-  - Accessi trovati con l'AST di clang (libclang), quindi col tipo del record anche dentro le macro: 7080 accessi, 4513 righe commentate.
-  - In fondo alla riga se c'e' spazio, altrimenti sulla riga sopra.
-  - Commentate anche le #define con offset fissi (CHOICE_SELECTED, SPELL_B, POS_X, ...) e a mano gli accessi a base variabile (tabelle per classe, terreno, eta').
-- **Verifiche**
-  - I file oggetto compilati prima e dopo sono identici byte per byte, tranne h029_gfx.c (correzione sotto).
-  - Build host, AUDIO, C89, CMake x86_64/i686, MinGW: puliti. ctest 8/8.
+**Fix: h070 take_items** (H070+$0E94)
+- In the asm index (-$10), choice (-$4) and cursor (-$E) are initialised only once, before the loop ($0E9E..$0EAA; the loop restarts from $0EAE).
+- The C cleared them at every iteration, so after a Take the selection went back to the first row instead of staying where it was. Now the initialisation is outside the loop.
 
-**Correzione: H029+$1210 scriveva in H005 invece che in H024**
-- `move.w #$10F, (H024+$4).l` scrive in H024+$4, cioe' -$14(a4) di H024 (A4 = H024+$18), il Type della NewScreen di Open_GameScreen.
-- Il C scriveva `H005_SET_W(0x0004, 0x010F)`, cioe' sopra la parola alta del valore della moneta 2 (long a H005+$4, valore 5).
-- Effetti dell'errore:
-  - lo schermo si apriva senza SCREENQUIET ($100);
-  - il valore della moneta 2 diventava $010F0005.
-- Ora scrive `g_h024_m14 = 0x010F`, cioe' Type = CUSTOMSCREEN | SCREENQUIET, ed e' esportata da h024_screen.h.
+**Items of the game's treasures** (ITEM1.DAX, dump read like ecl_treasure, H012 TREASURE command)
+- **Blocks with magic items:** 17, 32..39, 48..51, 53.
+- **Block 17:** Scroll Cler 3 Spells (type $28, spells $43 $3A $45), two White MU Scroll and two Red MU Scroll 3 Spells, Potion of Healing, Wand of Magic Missiles (5 charges, spell $41), arrows and bolts.
 
-**Marcatori PORT: 1132 / 1132**
-- PORT_STATUS.md contava 1107 routine. Le 25 senza marcatore hanno ora un `PORT Hnnn+$XXXX` che spiega dove sono:
-  - **8 trampolini** (bra.w): H012+$0186, H013+$0518/$051C/$0520, H043+$01CA/$01D2/$07F6, H061+$162A. Il marcatore sta sulla routine di arrivo.
-  - **Procedure annidate o inline**:
-    - H010+$0882 (corpo di Poll_IntuitionEvents);
+**Testing** (ASan, CLR alone; test hooks outside the repository, all items from the game files)
+- **Treasure and Take**
+  - A hook puts block 17 into the treasure of the caravan. The treasure lists the items; Take Items takes the potion and the scroll, and the selection stays on the row after the Take.
+  - Note: 'I' on "Money Items Exit" leaves the 2nd option selected ($2483) and in "Take Exit" the 2nd is Exit. So Enter exits, in the asm too; you take with T.
+- **At the camp**
+  - **Use without Ready:** "Must be Readied" (H065+$28D2).
+  - **Potion:** Ready, then Use; HP from 1/13 to 8/13, the potion disappears (encumbrance from 90 to 80).
+  - **Scroll:** Ready, then Use; "Spells on Scroll", 4th Level: Neutralize Poison, Cure Serious Wounds, Protection Evil 10' Radius.
+  - **Cure Serious Wounds** on CLR ("Cast Spell on whom"): HP 13/13, the item becomes "Scroll Cler 2 Spells" and the spell disappears from the scroll.
+  - **Camp picture:** after View the fire reappears after a moment. It is the animation of ui_request_choice ($069E), which redraws after waiting for the frame; on entering the camp the box is also empty for a moment.
+- **In combat** (wand and scroll given to CLR at the start of the battle with take_item, H071+$047C)
+  - The menu becomes "Move View Aim Use Done"; Use shows "Ready Use Drop Halve Join Exit".
+  - **Wand:** Ready, then Use; "Item Wand of Magic Missiles", Aim (Next Prev Manual Target Center Exit), Next on a Baaz, Target.
+  - **Charges:** from 5 to 4. On Auto the AI uses the wand by itself: from 4 to 3 to 2.
+  - **Aiming:** with no enemies in sight Next stays on CLR and Target hits them ("CLR takes 6 points of damage from magic"). A mistake of the test sequence, not of the port.
+  - **Scroll:** Cure Serious Wounds on CLR, HP from 1 to 5; the scroll keeps the spells 43 00 45.
+- **ASan:** clean in all the tests.
+
+---
+
+## v61: comments on every access to the anonymous data, README in English, complete PORT markers, H029 fix
+
+**Comments on the anonymous data**
+- **What is commented:** every read and write of the anonymous arrays has a comment that explains the element. It covers g_h005 (H005_B/W/L, H005_SET_*), g_state_a/b/c, g_ecl_buffer, the b[] fields of the records and the module arrays.
+  - Record fields: Character ch+, CokItem item+, CokTurn turn+, CokEffect eff+, CokCloud cloud+.
+  - Module arrays: g_hNNN_bss/data.
+  - Example: `/* $3DF6: (word) game speed 0..9 (message pause) */`.
+- **Glossary:** 586 entries derived only from the code and the asm. Where the meaning is not certain the description starts with "use:".
+- **How they are applied**
+  - Accesses found with the clang AST (libclang), so with the record type even inside the macros: 7080 accesses, 4513 lines commented.
+  - At the end of the line if there is room, otherwise on the line above.
+  - Also commented: the #defines with fixed offsets (CHOICE_SELECTED, SPELL_B, POS_X, ...) and, by hand, the accesses with a variable base (tables per class, terrain, age).
+- **Checks**
+  - The object files compiled before and after are identical byte for byte, except h029_gfx.c (fix below).
+  - Host, AUDIO, C89, CMake x86_64/i686, MinGW builds: clean. ctest 8/8.
+
+**Fix: H029+$1210 wrote into H005 instead of H024**
+- `move.w #$10F, (H024+$4).l` writes into H024+$4, that is -$14(a4) of H024 (A4 = H024+$18), the Type of the NewScreen of Open_GameScreen.
+- The C wrote `H005_SET_W(0x0004, 0x010F)`, that is over the high word of the value of coin 2 (long at H005+$4, value 5).
+- Effects of the bug:
+  - the screen opened without SCREENQUIET ($100);
+  - the value of coin 2 became $010F0005.
+- Now it writes `g_h024_m14 = 0x010F`, that is Type = CUSTOMSCREEN | SCREENQUIET, and it is exported by h024_screen.h.
+
+**PORT markers: 1132 / 1132**
+- PORT_STATUS.md counted 1107 routines. The 25 without a marker now have a `PORT Hnnn+$XXXX` that explains where they are:
+  - **8 trampolines** (bra.w): H012+$0186, H013+$0518/$051C/$0520, H043+$01CA/$01D2/$07F6, H061+$162A. The marker is on the target routine.
+  - **Nested or inline procedures**:
+    - H010+$0882 (body of Poll_IntuitionEvents);
     - H045+$0014;
-    - H066+$292C, identica a H066+$30A8 game_file_path;
+    - H066+$292C, identical to H066+$30A8 game_file_path;
     - H085+$3EE2, dispel_roll.
-  - **Callback del blitter H049+$06EC/$0782:** dentro queue_bitplane_blit.
-  - **Runtime del compilatore sostituito da stdio:** H002+$00C0 IoErr, H015+$0196/$033E, H020+$00C2/$00F0, H074+$0010/$009A/$0450, H075+$00FE/$0124/$0132.
-- H056+$0268 (nomi degli opcode ECL per il debug) non e' tra le routine dell'analisi; nell'asm nessuno la chiama.
+  - **Blitter callbacks H049+$06EC/$0782:** inside queue_bitplane_blit.
+  - **Compiler runtime replaced by stdio:** H002+$00C0 IoErr, H015+$0196/$033E, H020+$00C2/$00F0, H074+$0010/$009A/$0450, H075+$00FE/$0124/$0132.
+- H056+$0268 (names of the ECL opcodes for debugging) is not among the routines of the analysis; in the asm nobody calls it.
 
-**Stranezze dell'originale trovate scrivendo il glossario** (port fedele, nessuna modifica)
-- L'effetto $36 (H027+$1C7A) testa $24A3 (partita salvata) dove il gemello $32 testa $24A5 (esito del tiro salvezza). Annotato nel commento.
-- In write_state_b_hook (H061) il caso 0, che pone $24C3, sembra irraggiungibile.
+**Oddities of the original found while writing the glossary** (faithful port, no changes)
+- Effect $36 (H027+$1C7A) tests $24A3 (saved game) where its twin $32 tests $24A5 (outcome of the saving throw). Noted in the comment.
+- In write_state_b_hook (H061) case 0, which sets $24C3, looks unreachable.
 
-**README.md** riscritto in inglese e aggiornato: stato completo, audio con COK_AUDIO, convenzione dei commenti, build SAS/C (smake / smake AUDIO).
-
----
-
-## v62: collaudo di Save e Load (nessuna modifica al codice)
-
-**Save** (ASan, CLR dopo la carovana, con pozione e pergamena dal tesoro)
-- **Al campo:** Save, poi "Save Which Game: A B C D E F G H I J", A, poi "exit to workbench" No.
-- **Stato al salvataggio:** CLR 1/13 HP, esperienza 2717, 70 steel, ingombro 90; pozione e pergamena non pronte; 07,13 N, ore 12:11.
-- **File scritti:**
-  - savgamA.dat (5481 byte);
-  - CHRDATA1.sav (426) e CHRDATA1.swg (144 = 2 oggetti da $48);
-  - CLR.who cancellato (H066+$3000).
-- **Nomi dei file:** i personaggi pronti dei dischi si chiamano CHRDATA1..6, proprio come la partita A. Il party pronto e' dunque la partita A, e salvare in A lo sostituisce.
-
-**Load** (secondo avvio dai file salvati)
-- **Menu col party vuoto:** "Create New Character, Add Character to Party, Load Saved Game, Exit to Workbench".
-- **Caricamento:** "Load Which Game: A" offre solo le partite esistenti. Dopo A il party contiene CLR (AC 10, HP 1).
-- **Begin Adventuring:** mappa all'aperto col party; al campo 07,13 N, ore 12:11. CLR come al salvataggio (1/13, 2717, 70 steel, ingombro 90, stessi oggetti non pronti).
-- **Eventi:** il passo che nella partita nuova apriva la battaglia della carovana ora esegue solo gli script del passo (3655, 37BE) e torna al menu di movimento. Lo stato degli eventi e' stato ripristinato.
-
-**Andata e ritorno:** carica A, poi subito Save in B.
-- CHRDATB1.sav e .swg sono identici byte per byte a CHRDATA1.
-- savgamB.dat differisce da savgamA.dat in 3 byte, tutti attesi:
-  - A+$279: contatore dei salvataggi da Encamp, da 1 a 2;
-  - $3DE2: contesto precedente, da 4 a 2, per il percorso della sessione dopo il caricamento;
-  - nome del file del personaggio: "CHRDATA1" / "CHRDATB1".
-- **Disposizione di savgam<x>.dat**, letta da H066+$3000:
-  - $246E (1 byte), stato A ($800), stato B ($800), stato C ($400);
-  - $281C (8 byte), $3DE2, $3DE3, i 3 posti di $2810 (2+2 byte ciascuno);
-  - il numero dei personaggi (word) e i nomi (8 x $2A).
-
-**ASan:** pulito in tutte le prove.
+**README.md** rewritten in English and updated: complete status, audio with COK_AUDIO, comment convention, SAS/C build (smake / smake AUDIO).
 
 ---
 
-## v63: Save e Load con due personaggi e dal menu principale (nessuna modifica al codice)
+## v62: testing of Save and Load (no code changes)
 
-**Save Current Game dal menu principale** (ASan; party CLR + KTST, partita non ancora cominciata)
-- **Comandi:** "Save Which Game" e poi C.
-- **File scritti:** savgamC.dat, CHRDATC1.sav (CLR, senza oggetti, quindi senza .swg), CHRDATC2.sav e CHRDATC2.swg (KTST, 3 oggetti, 216 byte). CLR.who e KTST.who sono cancellati.
-- **Oggetti di KTST:** .swg identico a KTST.swg.
-- **Record dei personaggi:** rispetto ai .who cambiano solo campi che si ricalcolano quando il personaggio entra nel party:
-  - +$DB livello massimo, da 0 a 1;
-  - +$143 posto dell'icona, da $0A creazione a 0/1 nel party;
-  - +$18C ingombro di KTST, da 10 a 570 (450 + 60 + 50 + 10 di monete).
+**Save** (ASan, CLR after the caravan, with potion and scroll from the treasure)
+- **At the camp:** Save, then "Save Which Game: A B C D E F G H I J", A, then "exit to workbench" No.
+- **State at saving:** CLR 1/13 HP, experience 2717, 70 steel, encumbrance 90; potion and scroll not ready; 07,13 N, time 12:11.
+- **Files written:**
+  - savgamA.dat (5481 bytes);
+  - CHRDATA1.sav (426) and CHRDATA1.swg (144 = 2 items of $48);
+  - CLR.who deleted (H066+$3000).
+- **File names:** the ready-made characters on the disks are called CHRDATA1..6, exactly like game A. So the ready-made party is game A, and saving into A replaces it.
+
+**Load** (second start from the saved files)
+- **Menu with the empty party:** "Create New Character, Add Character to Party, Load Saved Game, Exit to Workbench".
+- **Loading:** "Load Which Game: A" offers only the existing games. After A the party contains CLR (AC 10, HP 1).
+- **Begin Adventuring:** outdoor map with the party; at the camp 07,13 N, time 12:11. CLR as at saving (1/13, 2717, 70 steel, encumbrance 90, same items not ready).
+- **Events:** the step that in the new game opened the caravan battle now runs only the step scripts (3655, 37BE) and goes back to the movement menu. The state of the events was restored.
+
+**Round trip:** load A, then Save into B right away.
+- CHRDATB1.sav and .swg are identical byte for byte to CHRDATA1.
+- savgamB.dat differs from savgamA.dat in 3 bytes, all expected:
+  - A+$279: counter of the saves from Encamp, from 1 to 2;
+  - $3DE2: previous context, from 4 to 2, for the session path after loading;
+  - name of the character file: "CHRDATA1" / "CHRDATB1".
+- **Layout of savgam<x>.dat**, read by H066+$3000:
+  - $246E (1 byte), state A ($800), state B ($800), state C ($400);
+  - $281C (8 bytes), $3DE2, $3DE3, the 3 slots of $2810 (2+2 bytes each);
+  - the number of characters (word) and the names (8 x $2A).
+
+**ASan:** clean in all the tests.
+
+---
+
+## v63: Save and Load with two characters and from the main menu (no code changes)
+
+**Save Current Game from the main menu** (ASan; party CLR + KTST, game not yet started)
+- **Commands:** "Save Which Game" and then C.
+- **Files written:** savgamC.dat, CHRDATC1.sav (CLR, without items, so without .swg), CHRDATC2.sav and CHRDATC2.swg (KTST, 3 items, 216 bytes). CLR.who and KTST.who are deleted.
+- **KTST's items:** .swg identical to KTST.swg.
+- **Character records:** compared with the .who only fields that are recomputed when the character joins the party change:
+  - +$DB maximum level, from 0 to 1;
+  - +$143 icon slot, from $0A at creation to 0/1 in the party;
+  - +$18C KTST's encumbrance, from 10 to 570 (450 + 60 + 50 + 10 of coins).
 
 **Load**
-- "Load Which Game: A C" elenca le partite esistenti.
-- **Partita C:** il party torna come CLR (10/13) e KTST (10/15), nello stesso ordine.
-- **Begin Adventuring:** riparte l'introduzione, ed e' giusto perche' la partita era stata salvata prima di cominciare.
+- "Load Which Game: A C" lists the existing games.
+- **Game C:** the party comes back as CLR (10/13) and KTST (10/15), in the same order.
+- **Begin Adventuring:** the introduction starts again, and this is right because the game had been saved before starting.
 
-**Andata e ritorno: carica C, poi Save in D**
-- CHRDATD1.sav, CHRDATD2.sav e .swg sono identici byte per byte a quelli di C.
-- savgamD.dat differisce da savgamC.dat solo nei due nomi dei file ("CHRDATC1/2" e "CHRDATD1/2", offset $141F e $1449).
+**Round trip: load C, then Save into D**
+- CHRDATD1.sav, CHRDATD2.sav and .swg are identical byte for byte to those of C.
+- savgamD.dat differs from savgamC.dat only in the two file names ("CHRDATC1/2" and "CHRDATD1/2", offsets $141F and $1449).
 
-**ASan:** pulito.
+**ASan:** clean.
 
 ---
 
-## v64: collaudo della scorta della carovana, dell'avamposto, del Commandant e della Hall (nessuna modifica al codice)
+## v64: testing of the caravan escort, the outpost, the Commandant and the Hall (no code changes)
 
-**Percorso** (ASan, party CLR + KTST; gancio di prova: i mostri muoiono al primo colpo, il party resta ad almeno 1 HP)
-- Leave, la battaglia della carovana con i due personaggi in Auto, "Continue Battle" No, tesoro Exit, "go back and claim your treasure?" No.
-- **Testi dopo la battaglia**
-  - "All of the draconians are slain save one, who rips a book from a dead man's hands. He turns to...", col ritratto del draconiano;
-  - poi, sulla mappa: "One of the surviving women comes up. 'Brave warriors, will you help us reach the outpost?'". Risposta: **Yes**.
-- **Dopo il Yes:** "Congratulations the party gains experience!". Si carica la nuova area (ECL area 11, RUN 3514) e appare l'avamposto: immagine della citta', "Where do you wish to go", menu "Inn Hall Commandant Armoury Next Leave".
+**Path** (ASan, party CLR + KTST; test hook: the monsters die at the first hit, the party stays at 1 HP at least)
+- Leave, the caravan battle with the two characters on Auto, "Continue Battle" No, treasure Exit, "go back and claim your treasure?" No.
+- **Texts after the battle**
+  - "All of the draconians are slain save one, who rips a book from a dead man's hands. He turns to...", with the portrait of the draconian;
+  - then, on the map: "One of the surviving women comes up. 'Brave warriors, will you help us reach the outpost?'". Answer: **Yes**.
+- **After the Yes:** "Congratulations the party gains experience!". The new area is loaded (ECL area 11, RUN 3514) and the outpost appears: picture of the town, "Where do you wish to go", menu "Inn Hall Commandant Armoury Next Leave".
 
 **Commandant**
-- Col ritratto di Sir Karl, testo che scorre lettera per lettera:
+- With the portrait of Sir Karl, text that scrolls letter by letter:
   - "You enter the office to the sounds of battle. Sir Karl drives his sword through the Commandant who collapses. The body then writhes and becomes a stone. Sir Karl murmurs, 'I was afraid...'";
   - "As you report, his face grows gray. 'This is much worse than...'";
   - "'We have a patrol in Throtl. Caramon leads it. Find him. Tell him he is desperately needed here. The imposter has emptied this outpost of troops. I know you are inexperienced...'".
-- Poi si torna al menu dell'avamposto.
+- Then back to the outpost menu.
 
-**Hall** (addestramento)
-- Mostra il menu dei personaggi con in piu' "Train Character" e "Knight Change Classes".
-- **Train su CLR:** "Pick Character", poi "Not Enough Experience". CLR ha 3358 punti di esperienza ed e' di livello 1.
-  - Per il chierico la riga della tabella e' 0 o 1 secondo la divinita' (+$5E <= 4: riga 0; H063+$3F72), e la soglia del livello 2 della riga 0 e' 4000 (H005+$1946).
-  - L'asm di Train (H013+$5A26..$5A4C) usa riga * $9A e indice (livello+1)-2 come il C.
-  - La tabella e' verificata byte per byte con l'emulazione dell'asm. Il messaggio e' quindi quello dell'originale.
-- **Modify su KTST:** "KTST can't be modified.", corretto per un personaggio gia' in gioco (+$DC).
-- **View di CLR:** 1/13 HP, esperienza 3358, 70 steel.
+**Hall** (training)
+- Shows the character menu with "Train Character" and "Knight Change Classes" in addition.
+- **Train on CLR:** "Pick Character", then "Not Enough Experience". CLR has 3358 experience points and is level 1.
+  - For the cleric the table row is 0 or 1 according to the deity (+$5E <= 4: row 0; H063+$3F72), and the level 2 threshold of row 0 is 4000 (H005+$1946).
+  - The asm of Train (H013+$5A26..$5A4C) uses row * $9A and index (level+1)-2 like the C.
+  - The table is checked byte for byte with the emulation of the asm. So the message is the one of the original.
+- **Modify on KTST:** "KTST can't be modified.", correct for a character already in play (+$DC).
+- **View of CLR:** 1/13 HP, experience 3358, 70 steel.
 
-**ASan:** pulito in tutte le prove.
+**ASan:** clean in all the tests.
 
-**Harness di prova** (fuori dal repository)
-- La build ASan di prova ora si fa su una copia del sorgente (srccopy). I ganci si applicano li', e gli annotamenti vengono tolti solo dalla copia.
-- Il passo `*testo:TASTO|testo2:TASTO2` accetta piu' alternative, e la riga dei passi va fino a 159 caratteri.
-- I messaggi di show_message finiscono nel log ("MSG ...").
+**Test harness** (outside the repository)
+- The ASan test build is now done on a copy of the source (srccopy). The hooks are applied there, and the annotations are removed only from the copy.
+- The step `*text:KEY|text2:KEY2` accepts several alternatives, and the step line goes up to 159 characters.
+- The show_message messages end up in the log ("MSG ...").
 
 ---
 
-## v65: segno del party sulla mappa all'aperto (contorno di RectFill sull'host); collaudo dell'avamposto e del viaggio
+## v65: party marker on the outdoor map (RectFill outline on the host); testing of the outpost and of the journey
 
-**Correzione host: RectFill con AREAOUTLINE** (segnalata dall'utente: sull'Amiga il segno del party sulla mappa e' diverso)
-- **Il segno:** H069+$0012 disegna la cella del party con SetAPen($E), poi H038+$01B4 (SetOPen: AOlPen = 0, Flags |= AREAOUTLINE), poi RectFill.
-- **Sull'Amiga:** con AREAOUTLINE RectFill ridisegna il bordo del rettangolo con AOlPen, e il segno e' un quadrato giallo con il bordo nero.
-- **Sull'host:** RectFill ignorava il flag (il commento supponeva AOlPen sempre uguale a FgPen, vero solo per H030) e disegnava un quadrato tutto giallo.
-- **Correzione:** host/graphics.c RectFill ridisegna ora il bordo con AOlPen quando AREAOUTLINE e' attivo, rispettando il taglio ai bordi della bitmap.
-  - Per H030 (fill_text_cells e clear_text_cells, OPen = APen) il risultato non cambia.
-  - Il codice del gioco e la build Amiga non cambiano.
-- **Da confermare sull'Amiga:** il segno deve essere una cella 8x8 gialla con il bordo nero di un pixel.
+**Host fix: RectFill with AREAOUTLINE** (reported by the user: on the Amiga the party marker on the map is different)
+- **The marker:** H069+$0012 draws the party cell with SetAPen($E), then H038+$01B4 (SetOPen: AOlPen = 0, Flags |= AREAOUTLINE), then RectFill.
+- **On the Amiga:** with AREAOUTLINE RectFill redraws the border of the rectangle with AOlPen, and the marker is a yellow square with a black border.
+- **On the host:** RectFill ignored the flag (the comment assumed AOlPen always equal to FgPen, true only for H030) and drew an all-yellow square.
+- **Fix:** host/graphics.c RectFill now redraws the border with AOlPen when AREAOUTLINE is set, respecting the clipping at the edges of the bitmap.
+  - For H030 (fill_text_cells and clear_text_cells, OPen = APen) the result does not change.
+  - The game code and the Amiga build do not change.
+- **To be confirmed on the Amiga:** the marker must be a yellow 8x8 cell with a one-pixel black border.
 
-**Avamposto** (ASan, party CLR + KTST dopo la scorta)
-- **Inn:** "Welcome, we have plenty of space for you." e il campo.
-  - Rest: "Rest Time" con Days/Hours/Mins/Add/Subtract; 2 giorni.
-  - CLR e KTST passano da 1 a 3 HP (+1 al giorno); l'ora resta 12:08 (48 ore).
+**Outpost** (ASan, party CLR + KTST after the escort)
+- **Inn:** "Welcome, we have plenty of space for you." and the camp.
+  - Rest: "Rest Time" with Days/Hours/Mins/Add/Subtract; 2 days.
+  - CLR and KTST go from 1 to 3 HP (+1 per day); the time stays 12:08 (48 hours).
 - **Armoury:** "Buy View Pool Appraise Exit".
-  - Esc non esce: nell'asm la tabella dei tasti (H071+$0B9A, subi.w #$41 / cmpi.w #$15) copre solo 'A'..'V', e il tasto 0 va nel caso di default. Si esce con E, come nell'originale.
+  - Esc does not exit: in the asm the key table (H071+$0B9A, subi.w #$41 / cmpi.w #$15) covers only 'A'..'V', and key 0 goes to the default case. You exit with E, as in the original.
 - **Next:** "Vault Temple Bar Prev Leave".
-- **Bar:** "Have a drink Relax Leave"; "What will you drink?" Beer Ale Wine Mead Whiskey; "You hear tavern tale 19." (rimando all'Adventurer's Journal).
+- **Bar:** "Have a drink Relax Leave"; "What will you drink?" Beer Ale Wine Mead Whiskey; "You hear tavern tale 19." (reference to the Adventurer's Journal).
 - **Vault:** "Deposit Withdraw View balance Exit"; "You have 000 steel pieces".
-- **Leave:** mappa all'aperto, "You are near an outpost. Do you enter?". Con No si passa al movimento.
+- **Leave:** outdoor map, "You are near an outpost. Do you enter?". With No you go to the movement.
 
-**Viaggio:** con le frecce il segno del party si sposta sulla mappa verso nord, accanto a Throtl, fino al bordo della mappa. Ogni passo esegue gli script ECL del passo (3655, 37BE).
+**Journey:** with the arrows the party marker moves on the map towards north, next to Throtl, up to the edge of the map. Each step runs the ECL scripts of the step (3655, 37BE).
 
-**ASan:** pulito.
-
----
-
-## v66: colori sbagliati delle immagini grandi con CPU veloci (BltClear senza attesa in H029 Allocate_GraphicRecord)
-
-**Segnalazione dell'utente:** su FS-UAE (A1200, 68040, Kickstart 3.2) le immagini grandi e i ritratti appaiono a volte con colori sbagliati; la cornice e il testo sono giusti. Il difetto e' intermittente: a volte solo una parte della mappa, a volte un ritratto giusto la prima volta e sbagliato la seconda.
-
-**Analisi** (debugger su FS-UAE)
-- I registri colore sono giusti: 0..15 la palette dell'interfaccia, 16..31 quella dell'immagine.
-- Nello schermo il 5o piano dell'immagine e' vuoto, quindi ogni pixel perde il bit 4 e prende un colore 0..15.
-- Il blocco caricato in Fast RAM ha tutti e 5 i piani; nel record in Chip RAM i piani 0..3 sono uguali e il 5o e' vuoto.
-- Il record si alloca con H029+$0408: ogni piano viene azzerato con BltClear(flags = 0), che non aspetta l'ultimo blit. Subito dopo transfer_gfx_planes (H029+$091E) copia i piani con CopyMem.
-- Con una CPU veloce la copia arriva al 5o piano prima che il blitter abbia finito di azzerarlo, e il blitter lo riazzera.
-- Il difetto e' dell'originale: su un 68000 il blitter finisce sempre prima. In FS-UAE con cpu_speed=max dipende dalla velocita' dell'emulatore.
-- **Conferma:** con uae_immediate_blits = true il difetto sparisce in tutte le prove.
-
-**Correzione:** H029 allocate_gfx_record chiama BltClear con flags = 1 (attesa della fine del blit), per i piani dell'immagine e per la maschera.
-- Sull'host BltClear e' sincrona: il risultato non cambia.
-- **Da confermare sull'Amiga:** con cpu_speed=max e senza immediate_blits le immagini devono avere sempre i colori giusti.
+**ASan:** clean.
 
 ---
 
-## v67: flashing del display su Kickstart 3.x con DblPAL in DEVS:Monitors (View fuori schermo senza ViewExtra)
+## v66: wrong colours of the big pictures with fast CPUs (BltClear without waiting in H029 Allocate_GraphicRecord)
 
-**Segnalazione dell'utente:** su FS-UAE (A1200, Kickstart 3.2) con DblPAL.monitor in DEVS:Monitors il display lampeggia, si deforma e si ricompone di continuo, tranne durante la scrittura del testo con Delay. Togliendo DblPAL il difetto sparisce.
+**Reported by the user:** on FS-UAE (A1200, 68040, Kickstart 3.2) the big pictures and the portraits sometimes appear with wrong colours; the frame and the text are right. The defect is intermittent: sometimes only part of the map, sometimes a portrait right the first time and wrong the second.
 
-**Analisi** (debugger su FS-UAE)
-- Il log di FS-UAE mostra BEAMCON0 che alterna $0020 (PAL, 15 kHz) e $1B88 (DblPAL, 31 kHz) centinaia di volte.
-- Un watchpoint su GfxBase->current_monitor mostra il task del gioco che chiama LoadView alternando due View: una porta il monitor a DblPAL.monitor, l'altra a pal.monitor.
-- Le due View sono g_offscreen_view, costruita da H029+$1346 con InitView/MakeVPort/MrgCop senza ViewExtra, e g_saved_view, cioe' la View di Intuition.
-- Su graphics.library V36+ LoadView mostra una View senza ViewExtra col monitor di default di GfxBase, che con DblPAL installato e' DblPAL. Lo scambio delle View in begin_screen_update/end_screen_update e swap_display_view cambia quindi BEAMCON0 a ogni chiamata.
-- Il difetto e' dell'originale: sul Kickstart 1.3 il monitor di default non esisteva.
+**Analysis** (debugger on FS-UAE)
+- The colour registers are right: 0..15 the interface palette, 16..31 the picture one.
+- On the screen the 5th plane of the picture is empty, so every pixel loses bit 4 and takes a colour 0..15.
+- The block loaded into Fast RAM has all 5 planes; in the record in Chip RAM planes 0..3 are the same and the 5th is empty.
+- The record is allocated by H029+$0408: every plane is cleared with BltClear(flags = 0), which does not wait for the last blit. Right after, transfer_gfx_planes (H029+$091E) copies the planes with CopyMem.
+- With a fast CPU the copy reaches the 5th plane before the blitter has finished clearing it, and the blitter clears it again.
+- The defect is in the original: on a 68000 the blitter always finishes first. In FS-UAE with cpu_speed=max it depends on the speed of the emulator.
+- **Confirmation:** with uae_immediate_blits = true the defect disappears in all the tests.
 
-**Correzione:** nuovi adattatori H022 graphics_attach_view_mode e graphics_detach_view_mode (solo Amiga, vuoti sull'host).
-- prepare_display_resources associa alla View fuori schermo un ViewExtra col MonitorSpec e un ViewPortExtra (DisplayClip nominale, VideoControl) con il ModeID dello schermo del gioco, letto con GetVPModeID. Cosi' le due View usano sempre lo stesso monitor, PAL o NTSC. Va fatto prima di MakeVPort/MrgCop.
-- Se il ModeID non e' disponibile si usa PAL o NTSC secondo GfxBase->DisplayFlags; su graphics.library < 36 non cambia nulla.
-- release_display_resources libera ViewPortExtra, MonitorSpec e ViewExtra dopo FreeColorMap e FreeVPortCopLists.
+**Fix:** H029 allocate_gfx_record calls BltClear with flags = 1 (wait for the end of the blit), for the planes of the picture and for the mask.
+- On the host BltClear is synchronous: the result does not change.
+- **To be confirmed on the Amiga:** with cpu_speed=max and without immediate_blits the pictures must always have the right colours.
 
-**Da confermare sull'Amiga** (compilato solo per l'host):
-- La build SAS/C deve trovare graphics/videocontrol.h, displayinfo.h, gfxnodes.h, monitor.h e modeid.h.
-- Con DblPAL.monitor in DEVS:Monitors il display non deve piu' lampeggiare e l'immagine fuori schermo deve restare allineata come prima.
-- All'uscita dal gioco non devono esserci perdite di memoria (ordine dei GfxFree rispetto a FreeColorMap).
+---
+
+## v67: display flashing on Kickstart 3.x with DblPAL in DEVS:Monitors (off-screen View without ViewExtra)
+
+**Reported by the user:** on FS-UAE (A1200, Kickstart 3.2) with DblPAL.monitor in DEVS:Monitors the display flashes, gets distorted and recovers continuously, except while the text is being written with Delay. Removing DblPAL the defect disappears.
+
+**Analysis** (debugger on FS-UAE)
+- The FS-UAE log shows BEAMCON0 alternating between $0020 (PAL, 15 kHz) and $1B88 (DblPAL, 31 kHz) hundreds of times.
+- A watchpoint on GfxBase->current_monitor shows the game task calling LoadView alternating two Views: one sets the monitor to DblPAL.monitor, the other to pal.monitor.
+- The two Views are g_offscreen_view, built by H029+$1346 with InitView/MakeVPort/MrgCop without a ViewExtra, and g_saved_view, that is the Intuition View.
+- On graphics.library V36+ LoadView shows a View without a ViewExtra with the default monitor of GfxBase, which with DblPAL installed is DblPAL. So the swap of the Views in begin_screen_update/end_screen_update and swap_display_view changes BEAMCON0 at every call.
+- The defect is in the original: on Kickstart 1.3 the default monitor did not exist.
+
+**Fix:** new H022 adapters graphics_attach_view_mode and graphics_detach_view_mode (Amiga only, empty on the host).
+- prepare_display_resources gives the off-screen View a ViewExtra with the MonitorSpec and a ViewPortExtra (nominal DisplayClip, VideoControl) with the ModeID of the game screen, read with GetVPModeID. This way the two Views always use the same monitor, PAL or NTSC. It must be done before MakeVPort/MrgCop.
+- If the ModeID is not available PAL or NTSC is used according to GfxBase->DisplayFlags; on graphics.library < 36 nothing changes.
+- release_display_resources frees ViewPortExtra, MonitorSpec and ViewExtra after FreeColorMap and FreeVPortCopLists.
+
+**To be confirmed on the Amiga** (built only for the host):
+- The SAS/C build must find graphics/videocontrol.h, displayinfo.h, gfxnodes.h, monitor.h and modeid.h.
+- With DblPAL.monitor in DEVS:Monitors the display must no longer flash and the off-screen picture must stay aligned as before.
+- On leaving the game there must be no memory leaks (order of the GfxFree calls with respect to FreeColorMap).
 
 ---

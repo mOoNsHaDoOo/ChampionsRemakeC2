@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H088
-; UnPackRow ByteRun1 con aggiornamento dei puntatori.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H088
+; UnPackRow ByteRun1 with pointer update.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; UnPackRow ByteRun1: decompressione RLE delle righe ILBM con aggiornamento dei puntatori.
+; MODULE NOTE
+; UnPackRow ByteRun1: RLE decompression of the ILBM rows with pointer update.
 ; --------------------------------------------------------------------------
 ; H088: 328 original bytes; all offsets are section-relative.
         section H088,code
@@ -15,10 +15,10 @@ H088:
 ; Preserved bytes H088+$00000000..$00000004; code/data not fully classified.
         dc.l H088+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H088_0142 [parziale]
-; Scopo: Trampolino verso H088+$0142; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H088+$0142.
-; Chiamanti diretti: H000+$00D2
+; ROUTINE: trampoline_H088_0142 [partial]
+; Purpose: Trampoline to H088+$0142; the actual body is there.
+;   - Jumps to the actual body at H088+$0142.
+; Direct callers: H000+$00D2
 ; --------------------------------------------------------------------------
 L088_00000004:
 ; H088+$00000004: 4e550000  link.w a5, #$0
@@ -28,14 +28,14 @@ L088_00000008:
         bra.w H088+$142
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: UnPackRow_ByteRun1 [verificato]
-; Scopo: Decomprimi una riga con ByteRun1/PackBits, aggiornando i due puntatori.
-;   - Controllo con segno non negativo: copia controllo+1 byte.
-;   - Controllo negativo diverso da -128: ripete il byte successivo 1-controllo volte.
-;   - -128 è un comando senza output.
-;   - Aggiorna sorgente e destinazione attraverso parametri puntatore-a-puntatore.
-;   - È distinto dal RLE DAX: i due formati hanno conteggi delle ripetizioni diversi.
-; Chiamanti diretti: H042+$0728, H042+$0846, H042+$09A4, H042+$0C8A, H087+$0434
+; ROUTINE: UnPackRow_ByteRun1 [verified]
+; Purpose: Decompresses a row with ByteRun1/PackBits, updating the two pointers.
+;   - Non-negative signed control: copies control+1 bytes.
+;   - Negative control other than -128: repeats the next byte 1-control times.
+;   - -128 is a command without output.
+;   - Updates source and destination through pointer-to-pointer parameters.
+;   - It is different from the DAX RLE: the two formats have different repetition counts.
+; Direct callers: H042+$0728, H042+$0846, H042+$09A4, H042+$0C8A, H087+$0434
 ; --------------------------------------------------------------------------
 L088_0000000C:
 ; H088+$0000000C: 4e55fff4  link.w a5, #$fff4
@@ -175,7 +175,7 @@ L088_000000BA:
 L088_000000BC:
 ; H088+$000000BC: 6000005e  bra.w $11c
         bra.w H088+$11C
-; PASSO: Valore -128: nessun output; gli altri controlli negativi generano una ripetizione.
+; STEP: Value -128: no output; the other negative controls produce a repetition.
 L088_000000C0:
 ; H088+$000000C0: 0c6dff80fff6  cmpi.w #$ff80, -$a(a5)
         cmpi.w #$ff80, -$a(a5)

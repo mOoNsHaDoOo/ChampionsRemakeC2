@@ -1,4 +1,4 @@
-/* H055: adattatori AllocRaster, FreeRaster e InitRastPort. */
+/* H055: AllocRaster, FreeRaster and InitRastPort adapters. */
 #ifndef COK_H055_H
 #define COK_H055_H
 

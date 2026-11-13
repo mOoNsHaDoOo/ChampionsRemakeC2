@@ -1,4 +1,4 @@
-/* H092: liste Exec (usate dall'audio). */
+/* H092: Exec lists (used by the audio). */
 #ifndef COK_H092_H
 #define COK_H092_H
 #include "cok.h"

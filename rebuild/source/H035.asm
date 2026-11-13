@@ -1,12 +1,12 @@
 ; ============================================================================
-; GUIDA DEL MODULO H035
-; caricamento set 24x24 e risorse COMSPR.
-; I commenti descrivono l'analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H035
+; loading of the 24x24 set and COMSPR resources.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Caricamento set 24x24 e risorse COMSPR. Le stringhe includono 'Start range error in Load24x24Set'; le routine gestiscono offset e range dei frame.
+; MODULE NOTE
+; Loading of 24x24 sets and COMSPR resources. The strings include 'Start range error in Load24x24Set'; the routines handle offset and range of the frames.
 ; --------------------------------------------------------------------------
 ; H035: 1760 original bytes; all offsets are section-relative.
         section H035,code
@@ -17,10 +17,10 @@ H035:
         dc.w $7400,$434F,$4D53,$5052,$0049,$434F,$4E00
         dc.l H035+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H035 [parziale]
-; Scopo: Ingresso del modulo caricamento set 24x24 e risorse COMSPR; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H035+$06D8.
-; Chiamanti diretti: H000+$015C
+; ROUTINE: module_init_H035 [partial]
+; Purpose: Entry of the loading of 24x24 sets and COMSPR resources module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H035+$06D8.
+; Direct callers: H000+$015C
 ; --------------------------------------------------------------------------
 L035_00000032:
 ; H035+$00000032: 2f0c  move.l a4, -(a7)
@@ -35,14 +35,14 @@ L035_0000003C:
 ; H035+$0000003C: 6000069a  bra.w $6d8
         bra.w H035+$6D8
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H035_00000040 [parziale]
-; Scopo: Routine del modulo caricamento set 24x24 e risorse COMSPR; richiama H010+$0360, H010+$0332, H029+$0A0E, H016+$0014.
-;   - Richiama H010+$0360.
-;   - Richiama H010+$0332.
-;   - Richiama H029+$0A0E.
-;   - Richiama H016+$0014.
-;   - Richiama H029+$067A.
-; Chiamanti diretti: H095+$1664, H095+$167E, H095+$16AA, H095+$16C4
+; ROUTINE: sub_H035_00000040 [partial]
+; Purpose: Routine of the loading of 24x24 sets and COMSPR resources module; calls H010+$0360, H010+$0332, H029+$0A0E, H016+$0014.
+;   - Calls H010+$0360.
+;   - Calls H010+$0332.
+;   - Calls H029+$0A0E.
+;   - Calls H016+$0014.
+;   - Calls H029+$067A.
+; Direct callers: H095+$1664, H095+$167E, H095+$16AA, H095+$16C4
 ; --------------------------------------------------------------------------
 L035_00000040:
 ; H035+$00000040: 2f0c  move.l a4, -(a7)
@@ -166,7 +166,7 @@ L035_000000C6:
 L035_000000C8:
 ; H035+$000000C8: 486dfffc  pea.l -$4(a5)
         pea.l -$4(a5)
-; FLUSSO: Chiama Load_IndexedGraphicRecord (H029+$0A0E).
+; FLOW: Calls Load_IndexedGraphicRecord (H029+$0A0E).
 L035_000000CC:
 ; H035+$000000CC: 4eb900000a0e  jsr $a0e.l
         jsr (H029+$A0E).l
@@ -328,7 +328,7 @@ L035_00000180:
 L035_00000184:
 ; H035+$00000184: 486dfffc  pea.l -$4(a5)
         pea.l -$4(a5)
-; FLUSSO: Chiama Free_GraphicRecord (H029+$067A).
+; FLOW: Calls Free_GraphicRecord (H029+$067A).
 L035_00000188:
 ; H035+$00000188: 4eb90000067a  jsr $67a.l
         jsr (H029+$67A).l
@@ -348,10 +348,10 @@ L035_00000198:
 ; H035+$00000198: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H035_0000019A [parziale]
-; Scopo: Routine del modulo caricamento set 24x24 e risorse COMSPR; richiama H029+$0B94.
-;   - Richiama H029+$0B94.
-; Chiamanti diretti: H048+$06D8, H048+$0788, H048+$07E8, H048+$0874, H048+$040A, H048+$04BA e altri 2
+; ROUTINE: sub_H035_0000019A [partial]
+; Purpose: Routine of the loading of 24x24 sets and COMSPR resources module; calls H029+$0B94.
+;   - Calls H029+$0B94.
+; Direct callers: H048+$06D8, H048+$0788, H048+$07E8, H048+$0874, H048+$040A, H048+$04BA and 2 more
 ; --------------------------------------------------------------------------
 L035_0000019A:
 ; H035+$0000019A: 2f0c  move.l a4, -(a7)
@@ -392,7 +392,7 @@ L035_000001C0:
 L035_000001C6:
 ; H035+$000001C6: 2f3900003d8e  move.l $3d8e.l, -(a7)
         move.l (H005+$3D8E).l, -(a7)
-; FLUSSO: Chiama Draw_GraphicTile24 (H029+$0B94).
+; FLOW: Calls Draw_GraphicTile24 (H029+$0B94).
 L035_000001CC:
 ; H035+$000001CC: 4eb900000b94  jsr $b94.l
         jsr (H029+$B94).l
@@ -412,10 +412,10 @@ L035_000001DA:
 ; H035+$000001DA: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H035_000001DC [parziale]
-; Scopo: Routine del modulo caricamento set 24x24 e risorse COMSPR; richiama H029+$067A.
-;   - Richiama H029+$067A.
-; Chiamanti diretti: H053+$0190, H053+$0140, H066+$1302, H047+$141E
+; ROUTINE: sub_H035_000001DC [partial]
+; Purpose: Routine of the loading of 24x24 sets and COMSPR resources module; calls H029+$067A.
+;   - Calls H029+$067A.
+; Direct callers: H053+$0190, H053+$0140, H066+$1302, H047+$141E
 ; --------------------------------------------------------------------------
 L035_000001DC:
 ; H035+$000001DC: 2f0c  move.l a4, -(a7)
@@ -486,7 +486,7 @@ L035_00000228:
 L035_0000022C:
 ; H035+$0000022C: 48734000  pea.l (a3, d4.w)
         pea.l (a3, d4.w)
-; FLUSSO: Chiama Free_GraphicRecord (H029+$067A).
+; FLOW: Calls Free_GraphicRecord (H029+$067A).
 L035_00000230:
 ; H035+$00000230: 4eb90000067a  jsr $67a.l
         jsr (H029+$67A).l
@@ -512,17 +512,17 @@ L035_00000244:
 ; H035+$00000244: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H035_00000246 [parziale]
-; Scopo: Routine del modulo caricamento set 24x24 e risorse COMSPR; richiama H026+$0188, H026+$0452, H026+$0106, H029+$0A0E.
-;   - Richiama H026+$0188.
-;   - Richiama H026+$0452.
-;   - Richiama H026+$0106.
-;   - Richiama H029+$0A0E.
-;   - Richiama H045+$01D6.
-;   - Richiama H026+$01E0.
-;   - Richiama H029+$0EFE.
-;   - Usa lo stato globale: H005+$246E (selettore del gruppo risorse).
-; Chiamanti diretti: H006+$076E, H006+$079A, H064+$083A, H066+$27DE, H066+$2F28
+; ROUTINE: sub_H035_00000246 [partial]
+; Purpose: Routine of the loading of 24x24 sets and COMSPR resources module; calls H026+$0188, H026+$0452, H026+$0106, H029+$0A0E.
+;   - Calls H026+$0188.
+;   - Calls H026+$0452.
+;   - Calls H026+$0106.
+;   - Calls H029+$0A0E.
+;   - Calls H045+$01D6.
+;   - Calls H026+$01E0.
+;   - Calls H029+$0EFE.
+;   - Uses the global state: H005+$246E (resource group selector).
+; Direct callers: H006+$076E, H006+$079A, H064+$083A, H066+$27DE, H066+$2F28
 ; --------------------------------------------------------------------------
 L035_00000246:
 ; H035+$00000246: 2f0c  move.l a4, -(a7)
@@ -684,7 +684,7 @@ L035_000002FE:
 L035_00000304:
 ; H035+$00000304: 48732000  pea.l (a3, d2.w)
         pea.l (a3, d2.w)
-; FLUSSO: Chiama Load_IndexedGraphicRecord (H029+$0A0E).
+; FLOW: Calls Load_IndexedGraphicRecord (H029+$0A0E).
 L035_00000308:
 ; H035+$00000308: 4eb900000a0e  jsr $a0e.l
         jsr (H029+$A0E).l
@@ -721,7 +721,7 @@ L035_0000032E:
 L035_00000334:
 ; H035+$00000334: 48732004  pea.l $4(a3, d2.w)
         pea.l $4(a3, d2.w)
-; FLUSSO: Chiama Load_IndexedGraphicRecord (H029+$0A0E).
+; FLOW: Calls Load_IndexedGraphicRecord (H029+$0A0E).
 L035_00000338:
 ; H035+$00000338: 4eb900000a0e  jsr $a0e.l
         jsr (H029+$A0E).l
@@ -737,7 +737,7 @@ L035_00000346:
 L035_0000034A:
 ; H035+$0000034A: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$246E = selettore del gruppo risorse
+; STATE: H005+$246E = resource group selector
 L035_0000034C:
 ; H035+$0000034C: 14390000246e  move.b $246e.l, d2
         move.b (H005+$246E).l, d2
@@ -803,7 +803,7 @@ L035_00000396:
 L035_0000039C:
 ; H035+$0000039C: 48732000  pea.l (a3, d2.w)
         pea.l (a3, d2.w)
-; FLUSSO: Chiama Load_IndexedGraphicRecord (H029+$0A0E).
+; FLOW: Calls Load_IndexedGraphicRecord (H029+$0A0E).
 L035_000003A0:
 ; H035+$000003A0: 4eb900000a0e  jsr $a0e.l
         jsr (H029+$A0E).l
@@ -895,7 +895,7 @@ L035_00000404:
 L035_0000040A:
 ; H035+$0000040A: 48732004  pea.l $4(a3, d2.w)
         pea.l $4(a3, d2.w)
-; FLUSSO: Chiama Load_IndexedGraphicRecord (H029+$0A0E).
+; FLOW: Calls Load_IndexedGraphicRecord (H029+$0A0E).
 L035_0000040E:
 ; H035+$0000040E: 4eb900000a0e  jsr $a0e.l
         jsr (H029+$A0E).l
@@ -970,15 +970,15 @@ L035_0000045E:
 ; H035+$0000045E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H035_00000460 [parziale]
-; Scopo: Routine del modulo caricamento set 24x24 e risorse COMSPR; richiama H029+$0408, H049+$09D6, H049+$04AE, H016+$00A0.
-;   - Richiama H029+$0408.
-;   - Richiama H049+$09D6.
-;   - Richiama H049+$04AE.
-;   - Richiama H016+$00A0.
-;   - Richiama H029+$067A.
-;   - Usa lo stato globale: H005+$3DE3 (contesto nativo, 5 nel combattimento); H005+$52F2 (puntatore allo schermo del gioco).
-; Chiamanti diretti: H048+$0EE4, H048+$0940, H048+$04EA, H048+$0572, H048+$10F4, H047+$0108 e altri 5
+; ROUTINE: sub_H035_00000460 [partial]
+; Purpose: Routine of the loading of 24x24 sets and COMSPR resources module; calls H029+$0408, H049+$09D6, H049+$04AE, H016+$00A0.
+;   - Calls H029+$0408.
+;   - Calls H049+$09D6.
+;   - Calls H049+$04AE.
+;   - Calls H016+$00A0.
+;   - Calls H029+$067A.
+;   - Uses the global state: H005+$3DE3 (native context, 5 in combat); H005+$52F2 (pointer to the game screen).
+; Direct callers: H048+$0EE4, H048+$0940, H048+$04EA, H048+$0572, H048+$10F4, H047+$0108 and 5 more
 ; --------------------------------------------------------------------------
 L035_00000460:
 ; H035+$00000460: 2f0c  move.l a4, -(a7)
@@ -1073,7 +1073,7 @@ L035_000004CC:
 L035_000004D0:
 ; H035+$000004D0: 426dfff6  clr.w -$a(a5)
         clr.w -$a(a5)
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L035_000004D4:
 ; H035+$000004D4: 4a3900003de3  tst.b $3de3.l
         tst.b (H005+$3DE3).l
@@ -1203,7 +1203,7 @@ L035_0000057E:
 L035_00000586:
 ; H035+$00000586: 60000018  bra.w $5a0
         bra.w H035+$5A0
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L035_0000058A:
 ; H035+$0000058A: 2479000052f2  movea.l $52f2.l, a2
         movea.l (H005+$52F2).l, a2
@@ -1240,7 +1240,7 @@ L035_000005B6:
 L035_000005BA:
 ; H035+$000005BA: 486dffec  pea.l -$14(a5)
         pea.l -$14(a5)
-; FLUSSO: Chiama Allocate_GraphicRecord (H029+$0408).
+; FLOW: Calls Allocate_GraphicRecord (H029+$0408).
 L035_000005BE:
 ; H035+$000005BE: 4eb900000408  jsr $408.l
         jsr (H029+$408).l
@@ -1365,7 +1365,7 @@ L035_0000065A:
 L035_0000065E:
 ; H035+$0000065E: 2f2dffe0  move.l -$20(a5), -(a7)
         move.l -$20(a5), -(a7)
-; FLUSSO: Chiama Queue_BitplaneBlit (H049+$04AE).
+; FLOW: Calls Queue_BitplaneBlit (H049+$04AE).
 L035_00000662:
 ; H035+$00000662: 4eb9000004ae  jsr $4ae.l
         jsr (H049+$4AE).l
@@ -1445,7 +1445,7 @@ L035_000006BE:
 L035_000006C0:
 ; H035+$000006C0: 486dffec  pea.l -$14(a5)
         pea.l -$14(a5)
-; FLUSSO: Chiama Free_GraphicRecord (H029+$067A).
+; FLOW: Calls Free_GraphicRecord (H029+$067A).
 L035_000006C4:
 ; H035+$000006C4: 4eb90000067a  jsr $67a.l
         jsr (H029+$67A).l

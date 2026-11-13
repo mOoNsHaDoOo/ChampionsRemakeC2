@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H010
-; Input Intuition, conversione eventi e servizi di uscita/errore.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H010
+; Intuition input, event conversion and exit/error services.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Input Intuition: legge IntuiMessage dalla porta della finestra, distingue RAWKEY e MOUSEBUTTONS, converte i codici mouse e restituisce i messaggi con ReplyMsg.
+; MODULE NOTE
+; Intuition input: reads IntuiMessages from the window port, tells RAWKEY and MOUSEBUTTONS apart, converts the mouse codes and returns the messages with ReplyMsg.
 ; --------------------------------------------------------------------------
 ; H010: 2488 original bytes; all offsets are section-relative.
         section H010,code
@@ -27,10 +27,10 @@ H010:
         dc.w $0000
         dc.l H010+$00000056
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H010 [parziale]
-; Scopo: Ingresso del modulo input Intuition, conversione eventi e servizi di uscita/errore; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H010+$09A6.
-; Chiamanti diretti: H000+$0168
+; ROUTINE: module_init_H010 [partial]
+; Purpose: Entry of the Intuition input, event conversion and exit/error services module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H010+$09A6.
+; Direct callers: H000+$0168
 ; --------------------------------------------------------------------------
 L010_000000B6:
 ; H010+$000000B6: 2f0c  move.l a4, -(a7)
@@ -45,17 +45,17 @@ L010_000000C0:
 ; H010+$000000C0: 600008e4  bra.w $9a6
         bra.w H010+$9A6
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H010_000000C4 [parziale]
-; Scopo: Routine del modulo input Intuition, conversione eventi e servizi di uscita/errore; richiama H028+$0D74, H003+$00F6, H029+$067A, H042+$0300.
-;   - Richiama H028+$0D74.
-;   - Richiama H003+$00F6.
-;   - Richiama H029+$067A.
-;   - Richiama H042+$0300.
-;   - Richiama H053+$0012.
-;   - Richiama H030+$0C84.
-;   - Richiama H026+$0106.
-;   - Usa lo stato globale: H005+$3E04 (puntatore stato persistente A, 2048 byte); H005+$3E00 (puntatore stato persistente B, 2048 byte); H005+$3DFC (puntatore stato persistente C, 1024 byte).
-; Chiamanti diretti: H010+$034E
+; ROUTINE: sub_H010_000000C4 [partial]
+; Purpose: Routine of the Intuition input, event conversion and exit/error services module; calls H028+$0D74, H003+$00F6, H029+$067A, H042+$0300.
+;   - Calls H028+$0D74.
+;   - Calls H003+$00F6.
+;   - Calls H029+$067A.
+;   - Calls H042+$0300.
+;   - Calls H053+$0012.
+;   - Calls H030+$0C84.
+;   - Calls H026+$0106.
+;   - Uses the global state: H005+$3E04 (pointer to persistent state A, 2048 bytes); H005+$3E00 (pointer to persistent state B, 2048 bytes); H005+$3DFC (pointer to persistent state C, 1024 bytes).
+; Direct callers: H010+$034E
 ; --------------------------------------------------------------------------
 L010_000000C4:
 ; H010+$000000C4: 2f0c  move.l a4, -(a7)
@@ -70,7 +70,7 @@ L010_000000CA:
 L010_000000CE:
 ; H010+$000000CE: 4eb900000d74  jsr $d74.l
         jsr (H028+$D74).l
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L010_000000D4:
 ; H010+$000000D4: 2f3900003e04  move.l $3e04.l, -(a7)
         move.l (H005+$3E04).l, -(a7)
@@ -84,7 +84,7 @@ L010_000000E0:
 L010_000000E2:
 ; H010+$000000E2: 4eb9000000f6  jsr $f6.l
         jsr (H003+$F6).l
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L010_000000E8:
 ; H010+$000000E8: 2f3900003e00  move.l $3e00.l, -(a7)
         move.l (H005+$3E00).l, -(a7)
@@ -98,7 +98,7 @@ L010_000000F4:
 L010_000000F6:
 ; H010+$000000F6: 4eb9000000f6  jsr $f6.l
         jsr (H003+$F6).l
-; STATO: H005+$3DFC = puntatore stato persistente C, 1024 byte
+; STATE: H005+$3DFC = pointer to persistent state C, 1024 bytes
 L010_000000FC:
 ; H010+$000000FC: 2f3900003dfc  move.l $3dfc.l, -(a7)
         move.l (H005+$3DFC).l, -(a7)
@@ -112,7 +112,7 @@ L010_00000108:
 L010_0000010A:
 ; H010+$0000010A: 4eb9000000f6  jsr $f6.l
         jsr (H003+$F6).l
-; STATO: H005+$3DF8 = puntatore al buffer ECL
+; STATE: H005+$3DF8 = pointer to the ECL buffer
 L010_00000110:
 ; H010+$00000110: 2f3900003df8  move.l $3df8.l, -(a7)
         move.l (H005+$3DF8).l, -(a7)
@@ -139,7 +139,7 @@ L010_00000130:
 L010_00000132:
 ; H010+$00000132: 4eb9000000f6  jsr $f6.l
         jsr (H003+$F6).l
-; STATO: H005+$282A = puntatore ai quattro piani dati GEO
+; STATE: H005+$282A = pointer to the four GEO data planes
 L010_00000138:
 ; H010+$00000138: 2f390000282a  move.l $282a.l, -(a7)
         move.l (H005+$282A).l, -(a7)
@@ -156,42 +156,42 @@ L010_00000146:
 L010_0000014C:
 ; H010+$0000014C: 487900003334  pea.l $3334.l
         pea.l (H005+$3334).l
-; FLUSSO: Chiama Free_GraphicRecord (H029+$067A).
+; FLOW: Calls Free_GraphicRecord (H029+$067A).
 L010_00000152:
 ; H010+$00000152: 4eb90000067a  jsr $67a.l
         jsr (H029+$67A).l
 L010_00000158:
 ; H010+$00000158: 487900003d8a  pea.l $3d8a.l
         pea.l (H005+$3D8A).l
-; FLUSSO: Chiama Free_GraphicRecord (H029+$067A).
+; FLOW: Calls Free_GraphicRecord (H029+$067A).
 L010_0000015E:
 ; H010+$0000015E: 4eb90000067a  jsr $67a.l
         jsr (H029+$67A).l
 L010_00000164:
 ; H010+$00000164: 487900002804  pea.l $2804.l
         pea.l (H005+$2804).l
-; FLUSSO: Chiama Free_GraphicRecord (H029+$067A).
+; FLOW: Calls Free_GraphicRecord (H029+$067A).
 L010_0000016A:
 ; H010+$0000016A: 4eb90000067a  jsr $67a.l
         jsr (H029+$67A).l
 L010_00000170:
 ; H010+$00000170: 487900002808  pea.l $2808.l
         pea.l (H005+$2808).l
-; FLUSSO: Chiama Free_GraphicRecord (H029+$067A).
+; FLOW: Calls Free_GraphicRecord (H029+$067A).
 L010_00000176:
 ; H010+$00000176: 4eb90000067a  jsr $67a.l
         jsr (H029+$67A).l
 L010_0000017C:
 ; H010+$0000017C: 48790000280c  pea.l $280c.l
         pea.l (H005+$280C).l
-; FLUSSO: Chiama Free_GraphicRecord (H029+$067A).
+; FLOW: Calls Free_GraphicRecord (H029+$067A).
 L010_00000182:
 ; H010+$00000182: 4eb90000067a  jsr $67a.l
         jsr (H029+$67A).l
 L010_00000188:
 ; H010+$00000188: 48790000332c  pea.l $332c.l
         pea.l (H005+$332C).l
-; FLUSSO: Chiama Free_GraphicRecord (H029+$067A).
+; FLOW: Calls Free_GraphicRecord (H029+$067A).
 L010_0000018E:
 ; H010+$0000018E: 4eb90000067a  jsr $67a.l
         jsr (H029+$67A).l
@@ -219,7 +219,7 @@ L010_000001AE:
 L010_000001B4:
 ; H010+$000001B4: 48732802  pea.l $2(a3, d2.l)
         pea.l $2(a3, d2.l)
-; FLUSSO: Chiama Free_GraphicRecord (H029+$067A).
+; FLOW: Calls Free_GraphicRecord (H029+$067A).
 L010_000001B8:
 ; H010+$000001B8: 4eb90000067a  jsr $67a.l
         jsr (H029+$67A).l
@@ -250,7 +250,7 @@ L010_000001D8:
 L010_000001DE:
 ; H010+$000001DE: 48732000  pea.l (a3, d2.w)
         pea.l (a3, d2.w)
-; FLUSSO: Chiama Free_GraphicRecord (H029+$067A).
+; FLOW: Calls Free_GraphicRecord (H029+$067A).
 L010_000001E2:
 ; H010+$000001E2: 4eb90000067a  jsr $67a.l
         jsr (H029+$67A).l
@@ -299,7 +299,7 @@ L010_0000021C:
 L010_00000220:
 ; H010+$00000220: 48734000  pea.l (a3, d4.w)
         pea.l (a3, d4.w)
-; FLUSSO: Chiama Free_GraphicRecord (H029+$067A).
+; FLOW: Calls Free_GraphicRecord (H029+$067A).
 L010_00000224:
 ; H010+$00000224: 4eb90000067a  jsr $67a.l
         jsr (H029+$67A).l
@@ -324,33 +324,33 @@ L010_0000023C:
 L010_00000240:
 ; H010+$00000240: 487900002798  pea.l $2798.l
         pea.l (H005+$2798).l
-; FLUSSO: Chiama Free_GraphicRecord (H029+$067A).
+; FLOW: Calls Free_GraphicRecord (H029+$067A).
 L010_00000246:
 ; H010+$00000246: 4eb90000067a  jsr $67a.l
         jsr (H029+$67A).l
 L010_0000024C:
 ; H010+$0000024C: 4879000027bc  pea.l $27bc.l
         pea.l (H005+$27BC).l
-; FLUSSO: Chiama Free_Sequence (H042+$0300).
+; FLOW: Calls Free_Sequence (H042+$0300).
 L010_00000252:
 ; H010+$00000252: 4eb900000300  jsr $300.l
         jsr (H042+$300).l
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L010_00000258:
 ; H010+$00000258: 4ab900003364  tst.l $3364.l
         tst.l (H005+$3364).l
 L010_0000025E:
 ; H010+$0000025E: 67000028  beq.w $288
         beq.w H010+$288
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L010_00000262:
 ; H010+$00000262: 267900003364  movea.l $3364.l, a3
         movea.l (H005+$3364).l, a3
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L010_00000268:
 ; H010+$00000268: 23eb018e00003368  move.l $18e(a3), $3368.l
         move.l $18e(a3), (H005+$3368).l
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L010_00000270:
 ; H010+$00000270: 487900003364  pea.l $3364.l
         pea.l (H005+$3364).l
@@ -358,7 +358,7 @@ L010_00000270:
 L010_00000276:
 ; H010+$00000276: 4eb900000012  jsr $12.l
         jsr (H053+$12).l
-; STATO: H005+$3364 = testa della lista del party; H005+$3368 = personaggio corrente
+; STATE: H005+$3364 = head of the party list; H005+$3368 = current character
 L010_0000027C:
 ; H010+$0000027C: 23f90000336800003364  move.l $3368.l, $3364.l
         move.l (H005+$3368).l, (H005+$3364).l
@@ -410,7 +410,7 @@ L010_000002BC:
 L010_000002C2:
 ; H010+$000002C2: 3f3c0050  move.w #$50, -(a7)
         move.w #$50, -(a7)
-; STATO: H005+$3D26 = prefisso dei file dati
+; STATE: H005+$3D26 = prefix of the data files
 L010_000002C6:
 ; H010+$000002C6: 487900003d26  pea.l $3d26.l
         pea.l (H005+$3D26).l
@@ -518,13 +518,13 @@ L010_00000330:
 ; H010+$00000330: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H010_00000332 [parziale]
-; Scopo: Routine del modulo input Intuition, conversione eventi e servizi di uscita/errore; richiama H043+$0840, H029+$148E, H029+$12BC, H015+$0046.
-;   - Richiama H043+$0840.
-;   - Richiama H029+$148E.
-;   - Richiama H029+$12BC.
-;   - Richiama H015+$0046.
-; Chiamanti diretti: H001+$01AE, H001+$01C0, H034+$0168, H043+$168A, H028+$0F68, H013+$51DE e altri 9
+; ROUTINE: sub_H010_00000332 [partial]
+; Purpose: Routine of the Intuition input, event conversion and exit/error services module; calls H043+$0840, H029+$148E, H029+$12BC, H015+$0046.
+;   - Calls H043+$0840.
+;   - Calls H029+$148E.
+;   - Calls H029+$12BC.
+;   - Calls H015+$0046.
+; Direct callers: H001+$01AE, H001+$01C0, H034+$0168, H043+$168A, H028+$0F68, H013+$51DE and 9 more
 ; --------------------------------------------------------------------------
 L010_00000332:
 ; H010+$00000332: 2f0c  move.l a4, -(a7)
@@ -535,7 +535,7 @@ L010_00000334:
 L010_00000338:
 ; H010+$00000338: 4e55fffa  link.w a5, #$fffa
         link.w a5, #$fffa
-; FLUSSO: Chiama Audio_Shutdown (H043+$0840).
+; FLOW: Calls Audio_Shutdown (H043+$0840).
 L010_0000033C:
 ; H010+$0000033C: 4eb900000840  jsr $840.l
         jsr (H043+$840).l
@@ -567,11 +567,11 @@ L010_0000035E:
 ; H010+$0000035E: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H010_00000360 [parziale]
-; Scopo: Routine del modulo input Intuition, conversione eventi e servizi di uscita/errore; richiama H020+$085A, H020+$082E.
-;   - Richiama H020+$085A.
-;   - Richiama H020+$082E.
-; Chiamanti diretti: H011+$18FE, H042+$0F76, H011+$1616, H035+$0082
+; ROUTINE: sub_H010_00000360 [partial]
+; Purpose: Routine of the Intuition input, event conversion and exit/error services module; calls H020+$085A, H020+$082E.
+;   - Calls H020+$085A.
+;   - Calls H020+$082E.
+; Direct callers: H011+$18FE, H042+$0F76, H011+$1616, H035+$0082
 ; --------------------------------------------------------------------------
 L010_00000360:
 ; H010+$00000360: 2f0c  move.l a4, -(a7)
@@ -648,14 +648,14 @@ L010_000003A8:
 ; H010+$000003A8: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H010_000003AA [parziale]
-; Scopo: Routine del modulo input Intuition, conversione eventi e servizi di uscita/errore; richiama H003+$007E, H045+$01D6, H026+$0254, H026+$01E0.
-;   - Richiama H003+$007E.
-;   - Richiama H045+$01D6.
-;   - Richiama H026+$0254.
-;   - Richiama H026+$01E0.
-;   - Richiama H030+$0256.
-; Chiamanti diretti: H010+$0820
+; ROUTINE: sub_H010_000003AA [partial]
+; Purpose: Routine of the Intuition input, event conversion and exit/error services module; calls H003+$007E, H045+$01D6, H026+$0254, H026+$01E0.
+;   - Calls H003+$007E.
+;   - Calls H045+$01D6.
+;   - Calls H026+$0254.
+;   - Calls H026+$01E0.
+;   - Calls H030+$0256.
+; Direct callers: H010+$0820
 ; --------------------------------------------------------------------------
 L010_000003AA:
 ; H010+$000003AA: 2f0c  move.l a4, -(a7)
@@ -751,7 +751,7 @@ L010_0000041A:
 L010_0000041E:
 ; H010+$0000041E: 486cffae  pea.l -$52(a4)
         pea.l -$52(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L010_00000422:
 ; H010+$00000422: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -765,13 +765,13 @@ L010_0000042C:
 ; H010+$0000042C: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H010_0882 [parziale]
-; Scopo: Trampolino verso H010+$0882; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H010+$0882.
-;   - Richiama H050+$002A.
-;   - Richiama H050+$0064.
-;   - Usa lo stato globale: H005+$5305 (byte del tasto/azione pendente); H005+$52F6 (puntatore alla finestra del gioco); H005+$2356 (coordinata mouse X).
-; Chiamanti diretti: H007+$0678, H010+$0994, H008+$0A4A, H057+$3098, H058+$1100, H097+$00BE
+; ROUTINE: trampoline_H010_0882 [partial]
+; Purpose: Trampoline to H010+$0882; the actual body is there.
+;   - Jumps to the actual body at H010+$0882.
+;   - Calls H050+$002A.
+;   - Calls H050+$0064.
+;   - Uses the global state: H005+$5305 (byte of the pending key/action); H005+$52F6 (pointer to the game window); H005+$2356 (mouse X coordinate).
+; Direct callers: H007+$0678, H010+$0994, H008+$0A4A, H057+$3098, H058+$1100, H097+$00BE
 ; --------------------------------------------------------------------------
 L010_0000042E:
 ; H010+$0000042E: 2f0c  move.l a4, -(a7)
@@ -786,12 +786,12 @@ L010_00000438:
 ; H010+$00000438: 60000448  bra.w $882
         bra.w H010+$882
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H010_0000043C [parziale]
-; Scopo: Routine del modulo input Intuition, conversione eventi e servizi di uscita/errore; richiama H050+$002A, H050+$0064.
-;   - Richiama H050+$002A.
-;   - Richiama H050+$0064.
-;   - Usa lo stato globale: H005+$5305 (byte del tasto/azione pendente); H005+$52F6 (puntatore alla finestra del gioco); H005+$2356 (coordinata mouse X).
-; Chiamanti diretti: H010+$08D8
+; ROUTINE: sub_H010_0000043C [partial]
+; Purpose: Routine of the Intuition input, event conversion and exit/error services module; calls H050+$002A, H050+$0064.
+;   - Calls H050+$002A.
+;   - Calls H050+$0064.
+;   - Uses the global state: H005+$5305 (byte of the pending key/action); H005+$52F6 (pointer to the game window); H005+$2356 (mouse X coordinate).
+; Direct callers: H010+$08D8
 ; --------------------------------------------------------------------------
 L010_0000043C:
 ; H010+$0000043C: 4e550000  link.w a5, #$0
@@ -799,7 +799,7 @@ L010_0000043C:
 L010_00000440:
 ; H010+$00000440: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000442:
 ; H010+$00000442: 143900005305  move.b $5305.l, d2
         move.b (H005+$5305).l, d2
@@ -812,7 +812,7 @@ L010_0000044C:
 L010_00000450:
 ; H010+$00000450: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000452:
 ; H010+$00000452: 143900005305  move.b $5305.l, d2
         move.b (H005+$5305).l, d2
@@ -825,7 +825,7 @@ L010_0000045C:
 L010_00000460:
 ; H010+$00000460: 197c0001ffac  move.b #$1, -$54(a4)
         move.b #$1, -$54(a4)
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000466:
 ; H010+$00000466: 423900005305  clr.b $5305.l
         clr.b (H005+$5305).l
@@ -835,7 +835,7 @@ L010_0000046C:
 L010_00000470:
 ; H010+$00000470: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000472:
 ; H010+$00000472: 143900005305  move.b $5305.l, d2
         move.b (H005+$5305).l, d2
@@ -848,7 +848,7 @@ L010_0000047C:
 L010_00000480:
 ; H010+$00000480: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000482:
 ; H010+$00000482: 143900005305  move.b $5305.l, d2
         move.b (H005+$5305).l, d2
@@ -861,7 +861,7 @@ L010_0000048C:
 L010_00000490:
 ; H010+$00000490: 422cffac  clr.b -$54(a4)
         clr.b -$54(a4)
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000494:
 ; H010+$00000494: 423900005305  clr.b $5305.l
         clr.b (H005+$5305).l
@@ -871,7 +871,7 @@ L010_0000049A:
 L010_0000049E:
 ; H010+$0000049E: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000004A0:
 ; H010+$000004A0: 143900005305  move.b $5305.l, d2
         move.b (H005+$5305).l, d2
@@ -884,7 +884,7 @@ L010_000004AA:
 L010_000004AE:
 ; H010+$000004AE: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000004B0:
 ; H010+$000004B0: 143900005305  move.b $5305.l, d2
         move.b (H005+$5305).l, d2
@@ -897,7 +897,7 @@ L010_000004BA:
 L010_000004BE:
 ; H010+$000004BE: 197c0001ffad  move.b #$1, -$53(a4)
         move.b #$1, -$53(a4)
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000004C4:
 ; H010+$000004C4: 423900005305  clr.b $5305.l
         clr.b (H005+$5305).l
@@ -907,7 +907,7 @@ L010_000004CA:
 L010_000004CE:
 ; H010+$000004CE: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000004D0:
 ; H010+$000004D0: 143900005305  move.b $5305.l, d2
         move.b (H005+$5305).l, d2
@@ -920,7 +920,7 @@ L010_000004DA:
 L010_000004DE:
 ; H010+$000004DE: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000004E0:
 ; H010+$000004E0: 143900005305  move.b $5305.l, d2
         move.b (H005+$5305).l, d2
@@ -933,7 +933,7 @@ L010_000004EA:
 L010_000004EE:
 ; H010+$000004EE: 422cffad  clr.b -$53(a4)
         clr.b -$53(a4)
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000004F2:
 ; H010+$000004F2: 423900005305  clr.b $5305.l
         clr.b (H005+$5305).l
@@ -943,7 +943,7 @@ L010_000004F8:
 L010_000004FC:
 ; H010+$000004FC: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000004FE:
 ; H010+$000004FE: 143900005305  move.b $5305.l, d2
         move.b (H005+$5305).l, d2
@@ -956,7 +956,7 @@ L010_00000508:
 L010_0000050C:
 ; H010+$0000050C: 197c0001ffab  move.b #$1, -$55(a4)
         move.b #$1, -$55(a4)
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000512:
 ; H010+$00000512: 423900005305  clr.b $5305.l
         clr.b (H005+$5305).l
@@ -966,7 +966,7 @@ L010_00000518:
 L010_0000051C:
 ; H010+$0000051C: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_0000051E:
 ; H010+$0000051E: 143900005305  move.b $5305.l, d2
         move.b (H005+$5305).l, d2
@@ -979,7 +979,7 @@ L010_00000528:
 L010_0000052C:
 ; H010+$0000052C: 422cffab  clr.b -$55(a4)
         clr.b -$55(a4)
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000530:
 ; H010+$00000530: 423900005305  clr.b $5305.l
         clr.b (H005+$5305).l
@@ -989,329 +989,329 @@ L010_00000536:
 L010_0000053A:
 ; H010+$0000053A: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_0000053C:
 ; H010+$0000053C: 143900005305  move.b $5305.l, d2
         move.b (H005+$5305).l, d2
 L010_00000542:
 ; H010+$00000542: 6000026c  bra.w $7b0
         bra.w H010+$7B0
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000546:
 ; H010+$00000546: 13fc003100005305  move.b #$31, $5305.l
         move.b #$31, (H005+$5305).l
 L010_0000054E:
 ; H010+$0000054E: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000550:
 ; H010+$00000550: 13fc003200005305  move.b #$32, $5305.l
         move.b #$32, (H005+$5305).l
 L010_00000558:
 ; H010+$00000558: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_0000055A:
 ; H010+$0000055A: 13fc003300005305  move.b #$33, $5305.l
         move.b #$33, (H005+$5305).l
 L010_00000562:
 ; H010+$00000562: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000564:
 ; H010+$00000564: 13fc003400005305  move.b #$34, $5305.l
         move.b #$34, (H005+$5305).l
 L010_0000056C:
 ; H010+$0000056C: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_0000056E:
 ; H010+$0000056E: 13fc003500005305  move.b #$35, $5305.l
         move.b #$35, (H005+$5305).l
 L010_00000576:
 ; H010+$00000576: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000578:
 ; H010+$00000578: 13fc003600005305  move.b #$36, $5305.l
         move.b #$36, (H005+$5305).l
 L010_00000580:
 ; H010+$00000580: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000582:
 ; H010+$00000582: 13fc003700005305  move.b #$37, $5305.l
         move.b #$37, (H005+$5305).l
 L010_0000058A:
 ; H010+$0000058A: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_0000058C:
 ; H010+$0000058C: 13fc003800005305  move.b #$38, $5305.l
         move.b #$38, (H005+$5305).l
 L010_00000594:
 ; H010+$00000594: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000596:
 ; H010+$00000596: 13fc003900005305  move.b #$39, $5305.l
         move.b #$39, (H005+$5305).l
 L010_0000059E:
 ; H010+$0000059E: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000005A0:
 ; H010+$000005A0: 13fc003000005305  move.b #$30, $5305.l
         move.b #$30, (H005+$5305).l
 L010_000005A8:
 ; H010+$000005A8: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000005AA:
 ; H010+$000005AA: 13fc007100005305  move.b #$71, $5305.l
         move.b #$71, (H005+$5305).l
 L010_000005B2:
 ; H010+$000005B2: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000005B4:
 ; H010+$000005B4: 13fc007700005305  move.b #$77, $5305.l
         move.b #$77, (H005+$5305).l
 L010_000005BC:
 ; H010+$000005BC: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000005BE:
 ; H010+$000005BE: 13fc006500005305  move.b #$65, $5305.l
         move.b #$65, (H005+$5305).l
 L010_000005C6:
 ; H010+$000005C6: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000005C8:
 ; H010+$000005C8: 13fc007200005305  move.b #$72, $5305.l
         move.b #$72, (H005+$5305).l
 L010_000005D0:
 ; H010+$000005D0: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000005D2:
 ; H010+$000005D2: 13fc007400005305  move.b #$74, $5305.l
         move.b #$74, (H005+$5305).l
 L010_000005DA:
 ; H010+$000005DA: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000005DC:
 ; H010+$000005DC: 13fc007900005305  move.b #$79, $5305.l
         move.b #$79, (H005+$5305).l
 L010_000005E4:
 ; H010+$000005E4: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000005E6:
 ; H010+$000005E6: 13fc007500005305  move.b #$75, $5305.l
         move.b #$75, (H005+$5305).l
 L010_000005EE:
 ; H010+$000005EE: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000005F0:
 ; H010+$000005F0: 13fc006900005305  move.b #$69, $5305.l
         move.b #$69, (H005+$5305).l
 L010_000005F8:
 ; H010+$000005F8: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000005FA:
 ; H010+$000005FA: 13fc006f00005305  move.b #$6f, $5305.l
         move.b #$6f, (H005+$5305).l
 L010_00000602:
 ; H010+$00000602: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000604:
 ; H010+$00000604: 13fc007000005305  move.b #$70, $5305.l
         move.b #$70, (H005+$5305).l
 L010_0000060C:
 ; H010+$0000060C: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_0000060E:
 ; H010+$0000060E: 13fc006100005305  move.b #$61, $5305.l
         move.b #$61, (H005+$5305).l
 L010_00000616:
 ; H010+$00000616: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000618:
 ; H010+$00000618: 13fc007300005305  move.b #$73, $5305.l
         move.b #$73, (H005+$5305).l
 L010_00000620:
 ; H010+$00000620: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000622:
 ; H010+$00000622: 13fc006400005305  move.b #$64, $5305.l
         move.b #$64, (H005+$5305).l
 L010_0000062A:
 ; H010+$0000062A: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_0000062C:
 ; H010+$0000062C: 13fc006600005305  move.b #$66, $5305.l
         move.b #$66, (H005+$5305).l
 L010_00000634:
 ; H010+$00000634: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000636:
 ; H010+$00000636: 13fc006700005305  move.b #$67, $5305.l
         move.b #$67, (H005+$5305).l
 L010_0000063E:
 ; H010+$0000063E: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000640:
 ; H010+$00000640: 13fc006800005305  move.b #$68, $5305.l
         move.b #$68, (H005+$5305).l
 L010_00000648:
 ; H010+$00000648: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_0000064A:
 ; H010+$0000064A: 13fc006a00005305  move.b #$6a, $5305.l
         move.b #$6a, (H005+$5305).l
 L010_00000652:
 ; H010+$00000652: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000654:
 ; H010+$00000654: 13fc006b00005305  move.b #$6b, $5305.l
         move.b #$6b, (H005+$5305).l
 L010_0000065C:
 ; H010+$0000065C: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_0000065E:
 ; H010+$0000065E: 13fc006c00005305  move.b #$6c, $5305.l
         move.b #$6c, (H005+$5305).l
 L010_00000666:
 ; H010+$00000666: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000668:
 ; H010+$00000668: 13fc003b00005305  move.b #$3b, $5305.l
         move.b #$3b, (H005+$5305).l
 L010_00000670:
 ; H010+$00000670: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000672:
 ; H010+$00000672: 13fc002700005305  move.b #$27, $5305.l
         move.b #$27, (H005+$5305).l
 L010_0000067A:
 ; H010+$0000067A: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_0000067C:
 ; H010+$0000067C: 13fc007a00005305  move.b #$7a, $5305.l
         move.b #$7a, (H005+$5305).l
 L010_00000684:
 ; H010+$00000684: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000686:
 ; H010+$00000686: 13fc007800005305  move.b #$78, $5305.l
         move.b #$78, (H005+$5305).l
 L010_0000068E:
 ; H010+$0000068E: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000690:
 ; H010+$00000690: 13fc006300005305  move.b #$63, $5305.l
         move.b #$63, (H005+$5305).l
 L010_00000698:
 ; H010+$00000698: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_0000069A:
 ; H010+$0000069A: 13fc007600005305  move.b #$76, $5305.l
         move.b #$76, (H005+$5305).l
 L010_000006A2:
 ; H010+$000006A2: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000006A4:
 ; H010+$000006A4: 13fc006200005305  move.b #$62, $5305.l
         move.b #$62, (H005+$5305).l
 L010_000006AC:
 ; H010+$000006AC: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000006AE:
 ; H010+$000006AE: 13fc006e00005305  move.b #$6e, $5305.l
         move.b #$6e, (H005+$5305).l
 L010_000006B6:
 ; H010+$000006B6: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000006B8:
 ; H010+$000006B8: 13fc006d00005305  move.b #$6d, $5305.l
         move.b #$6d, (H005+$5305).l
 L010_000006C0:
 ; H010+$000006C0: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000006C2:
 ; H010+$000006C2: 13fc002c00005305  move.b #$2c, $5305.l
         move.b #$2c, (H005+$5305).l
 L010_000006CA:
 ; H010+$000006CA: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000006CC:
 ; H010+$000006CC: 13fc002e00005305  move.b #$2e, $5305.l
         move.b #$2e, (H005+$5305).l
 L010_000006D4:
 ; H010+$000006D4: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000006D6:
 ; H010+$000006D6: 13fc002000005305  move.b #$20, $5305.l
         move.b #$20, (H005+$5305).l
 L010_000006DE:
 ; H010+$000006DE: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000006E0:
 ; H010+$000006E0: 13fc000800005305  move.b #$8, $5305.l
         move.b #$8, (H005+$5305).l
 L010_000006E8:
 ; H010+$000006E8: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000006EA:
 ; H010+$000006EA: 13fc000d00005305  move.b #$d, $5305.l
         move.b #$d, (H005+$5305).l
 L010_000006F2:
 ; H010+$000006F2: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000006F4:
 ; H010+$000006F4: 13fc001b00005305  move.b #$1b, $5305.l
         move.b #$1b, (H005+$5305).l
 L010_000006FC:
 ; H010+$000006FC: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000006FE:
 ; H010+$000006FE: 13fc001000005305  move.b #$10, $5305.l
         move.b #$10, (H005+$5305).l
 L010_00000706:
 ; H010+$00000706: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000708:
 ; H010+$00000708: 423900005305  clr.b $5305.l
         clr.b (H005+$5305).l
@@ -1350,7 +1350,7 @@ L010_000007BE:
 L010_000007C0:
 ; H010+$000007C0: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H010+$0712; indici 0..78, default -1.
+; DISPATCH: words relative to H010+$0712; indices 0..78, default -1.
 L010_000007C4:
 ; H010+$000007C4: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -1384,35 +1384,35 @@ L010_000007E8:
 L010_000007EC:
 ; H010+$000007EC: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000007EE:
 ; H010+$000007EE: 143900005305  move.b $5305.l, d2
         move.b (H005+$5305).l, d2
 L010_000007F4:
 ; H010+$000007F4: 6000006a  bra.w $860
         bra.w H010+$860
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000007F8:
 ; H010+$000007F8: 13fc000100005305  move.b #$1, $5305.l
         move.b #$1, (H005+$5305).l
 L010_00000800:
 ; H010+$00000800: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000802:
 ; H010+$00000802: 13fc000200005305  move.b #$2, $5305.l
         move.b #$2, (H005+$5305).l
 L010_0000080A:
 ; H010+$0000080A: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_0000080C:
 ; H010+$0000080C: 13fc000300005305  move.b #$3, $5305.l
         move.b #$3, (H005+$5305).l
 L010_00000814:
 ; H010+$00000814: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000816:
 ; H010+$00000816: 13fc000400005305  move.b #$4, $5305.l
         move.b #$4, (H005+$5305).l
@@ -1457,7 +1457,7 @@ L010_00000870:
 L010_00000872:
 ; H010+$00000872: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H010+$0830; indici 0..23, default -1.
+; DISPATCH: words relative to H010+$0830; indices 0..23, default -1.
 L010_00000876:
 ; H010+$00000876: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -1477,21 +1477,21 @@ L010_00000880:
 FN_poll_IntuiMessages:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Poll_IntuitionEvents [verificato]
-; Scopo: Consuma gli IntuiMessage della finestra del gioco.
-;   - GetMsg legge dalla UserPort.
-;   - RAWKEY prende il codice tastiera e lo inoltra al convertitore locale.
-;   - MOUSEBUTTONS copia le coordinate; $68 produce Return e $69 Escape.
-;   - ReplyMsg restituisce il messaggio prima del tentativo successivo.
+; ROUTINE: Poll_IntuitionEvents [verified]
+; Purpose: Consumes the IntuiMessages of the game window.
+;   - GetMsg reads from the UserPort.
+;   - RAWKEY takes the keyboard code and forwards it to the local converter.
+;   - MOUSEBUTTONS copies the coordinates; $68 produces Return and $69 Escape.
+;   - ReplyMsg returns the message before the next attempt.
 ; --------------------------------------------------------------------------
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000882:
 ; H010+$00000882: 423900005305  clr.b $5305.l
         clr.b (H005+$5305).l
 L010_00000888:
 ; H010+$00000888: 42390000249e  clr.b $249e.l
         clr.b (H005+$249E).l
-; STATO: H005+$52F6 = puntatore alla finestra del gioco
+; STATE: H005+$52F6 = pointer to the game window
 L010_0000088E:
 ; H010+$0000088E: 2479000052f6  movea.l $52f6.l, a2
         movea.l (H005+$52F6).l, a2
@@ -1523,7 +1523,7 @@ L010_000008B0:
 L010_000008B8:
 ; H010+$000008B8: 66000028  bne.w $8e2
         bne.w H010+$8E2
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000008BC:
 ; H010+$000008BC: 4a3900005305  tst.b $5305.l
         tst.b (H005+$5305).l
@@ -1536,7 +1536,7 @@ L010_000008C6:
 L010_000008CA:
 ; H010+$000008CA: 342a0018  move.w $18(a2), d2
         move.w $18(a2), d2
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_000008CE:
 ; H010+$000008CE: 13c200005305  move.b d2, $5305.l
         move.b d2, (H005+$5305).l
@@ -1564,14 +1564,14 @@ L010_000008EA:
 L010_000008EE:
 ; H010+$000008EE: 246dfffc  movea.l -$4(a5), a2
         movea.l -$4(a5), a2
-; STATO: H005+$2356 = coordinata mouse X
+; STATE: H005+$2356 = mouse X coordinate
 L010_000008F2:
 ; H010+$000008F2: 33ea002000002356  move.w $20(a2), $2356.l
         move.w $20(a2), (H005+$2356).l
 L010_000008FA:
 ; H010+$000008FA: 246dfffc  movea.l -$4(a5), a2
         movea.l -$4(a5), a2
-; STATO: H005+$2354 = coordinata mouse Y
+; STATE: H005+$2354 = mouse Y coordinate
 L010_000008FE:
 ; H010+$000008FE: 33ea002200002354  move.w $22(a2), $2354.l
         move.w $22(a2), (H005+$2354).l
@@ -1584,7 +1584,7 @@ L010_0000090A:
 L010_0000090E:
 ; H010+$0000090E: 6000002e  bra.w $93e
         bra.w H010+$93E
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000912:
 ; H010+$00000912: 13fc000d00005305  move.b #$d, $5305.l
         move.b #$d, (H005+$5305).l
@@ -1594,7 +1594,7 @@ L010_0000091A:
 L010_00000922:
 ; H010+$00000922: 4e75  rts 
         rts 
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000924:
 ; H010+$00000924: 13fc001b00005305  move.b #$1b, $5305.l
         move.b #$1b, (H005+$5305).l
@@ -1630,7 +1630,7 @@ L010_0000094E:
 L010_00000950:
 ; H010+$00000950: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H010+$093A; indici 0..1, default -1.
+; DISPATCH: words relative to H010+$093A; indices 0..1, default -1.
 L010_00000954:
 ; H010+$00000954: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -1663,11 +1663,11 @@ L010_00000972:
 ; H010+$00000972: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H010_00000974 [parziale]
-; Scopo: Routine del modulo input Intuition, conversione eventi e servizi di uscita/errore; richiama H050+$0076.
-;   - Richiama H050+$0076.
-;   - Usa lo stato globale: H005+$52F6 (puntatore alla finestra del gioco); H005+$5305 (byte del tasto/azione pendente).
-; Chiamanti diretti: H030+$02E0, H029+$1512, H014+$00CA, H034+$0162, H030+$078C, H013+$34FE e altri 4
+; ROUTINE: sub_H010_00000974 [partial]
+; Purpose: Routine of the Intuition input, event conversion and exit/error services module; calls H050+$0076.
+;   - Calls H050+$0076.
+;   - Uses the global state: H005+$52F6 (pointer to the game window); H005+$5305 (byte of the pending key/action).
+; Direct callers: H030+$02E0, H029+$1512, H014+$00CA, H034+$0162, H030+$078C, H013+$34FE and 4 more
 ; --------------------------------------------------------------------------
 L010_00000974:
 ; H010+$00000974: 2f0c  move.l a4, -(a7)
@@ -1678,7 +1678,7 @@ L010_00000976:
 L010_0000097A:
 ; H010+$0000097A: 4e55fffc  link.w a5, #$fffc
         link.w a5, #$fffc
-; STATO: H005+$52F6 = puntatore alla finestra del gioco
+; STATE: H005+$52F6 = pointer to the game window
 L010_0000097E:
 ; H010+$0000097E: 2479000052f6  movea.l $52f6.l, a2
         movea.l (H005+$52F6).l, a2
@@ -1698,7 +1698,7 @@ L010_00000990:
 L010_00000994:
 ; H010+$00000994: 6100fa98  bsr.w $42e
         bsr.w H010+$42E
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L010_00000998:
 ; H010+$00000998: 4a3900005305  tst.b $5305.l
         tst.b (H005+$5305).l

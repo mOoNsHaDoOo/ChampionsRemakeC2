@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H062
-; Helper ed effetti condivisi del gioco; non tutti i significati sono attribuiti.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H062
+; Shared helpers and effects of the game; not all meanings are assigned.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Effetti condivisi del gioco: helper per stato, danni, oggetti e presentazione. La mappa completa resta parziale.
+; MODULE NOTE
+; Shared effects of the game: helpers for state, damage, items and presentation. The complete map is still partial.
 ; --------------------------------------------------------------------------
 ; H062: 10496 original bytes; all offsets are section-relative.
         section H062,code
@@ -32,10 +32,10 @@ H062:
         dc.w $0000
         dc.l H062+$00000002
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H062 [parziale]
-; Scopo: Ingresso del modulo helper ed effetti condivisi del gioco; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H062+$28FA.
-; Chiamanti diretti: H000+$01BC
+; ROUTINE: module_init_H062 [partial]
+; Purpose: Entry of the shared helpers and effects of the game module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H062+$28FA.
+; Direct callers: H000+$01BC
 ; --------------------------------------------------------------------------
 L062_00000106:
 ; H062+$00000106: 2f0c  move.l a4, -(a7)
@@ -50,13 +50,13 @@ L062_00000110:
 ; H062+$00000110: 600027e8  bra.w $28fa
         bra.w H062+$28FA
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H062_00000114 [parziale]
-; Scopo: Routine del modulo helper ed effetti condivisi del gioco; richiama H063+$1DC2, H063+$0946, H063+$2760, H063+$1EE8.
-;   - Richiama H063+$1DC2.
-;   - Richiama H063+$0946.
-;   - Richiama H063+$2760.
-;   - Richiama H063+$1EE8.
-; Chiamanti diretti: H027+$2C30, H085+$3896, H085+$39EA, H085+$3C5A, H085+$3CB2, H027+$1204 e altri 12
+; ROUTINE: sub_H062_00000114 [partial]
+; Purpose: Routine of the shared helpers and effects of the game module; calls H063+$1DC2, H063+$0946, H063+$2760, H063+$1EE8.
+;   - Calls H063+$1DC2.
+;   - Calls H063+$0946.
+;   - Calls H063+$2760.
+;   - Calls H063+$1EE8.
+; Direct callers: H027+$2C30, H085+$3896, H085+$39EA, H085+$3C5A, H085+$3CB2, H027+$1204 and 12 more
 ; --------------------------------------------------------------------------
 L062_00000114:
 ; H062+$00000114: 2f0c  move.l a4, -(a7)
@@ -273,12 +273,12 @@ L062_0000021C:
 ; H062+$0000021C: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H062_0000021E [parziale]
-; Scopo: Routine del modulo helper ed effetti condivisi del gioco; richiama H063+$135A, H026+$01E0.
-;   - Richiama H063+$135A.
-;   - Richiama H026+$01E0.
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H059+$125E
+; ROUTINE: sub_H062_0000021E [partial]
+; Purpose: Routine of the shared helpers and effects of the game module; calls H063+$135A, H026+$01E0.
+;   - Calls H063+$135A.
+;   - Calls H026+$01E0.
+;   - Uses the global state: H005+$3364 (head of the party list).
+; Direct callers: H059+$125E
 ; --------------------------------------------------------------------------
 L062_0000021E:
 ; H062+$0000021E: 2f0c  move.l a4, -(a7)
@@ -292,7 +292,7 @@ L062_00000224:
 L062_00000228:
 ; H062+$00000228: 23ed000c00002432  move.l $c(a5), $2432.l
         move.l $c(a5), (H005+$2432).l
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L062_00000230:
 ; H062+$00000230: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -464,15 +464,15 @@ L062_000002F8:
 ; H062+$000002F8: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H062_000002FA [parziale]
-; Scopo: Routine del modulo helper ed effetti condivisi del gioco; richiama H063+$1DC2, H048+$12F4, H030+$0B4A, H063+$1EE8.
-;   - Richiama H063+$1DC2.
-;   - Richiama H048+$12F4.
-;   - Richiama H030+$0B4A.
-;   - Richiama H063+$1EE8.
-;   - Richiama H063+$0D80.
-;   - Usa lo stato globale: H005+$3DE3 (contesto nativo, 5 nel combattimento); H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H027+$0B36, H027+$1EA4, H027+$4168, H027+$223C
+; ROUTINE: sub_H062_000002FA [partial]
+; Purpose: Routine of the shared helpers and effects of the game module; calls H063+$1DC2, H048+$12F4, H030+$0B4A, H063+$1EE8.
+;   - Calls H063+$1DC2.
+;   - Calls H048+$12F4.
+;   - Calls H030+$0B4A.
+;   - Calls H063+$1EE8.
+;   - Calls H063+$0D80.
+;   - Uses the global state: H005+$3DE3 (native context, 5 in combat); H005+$3368 (current character).
+; Direct callers: H027+$0B36, H027+$1EA4, H027+$4168, H027+$223C
 ; --------------------------------------------------------------------------
 L062_000002FA:
 ; H062+$000002FA: 2f0c  move.l a4, -(a7)
@@ -634,14 +634,14 @@ L062_000003C2:
 L062_000003C8:
 ; H062+$000003C8: 4eb900001ee8  jsr $1ee8.l
         jsr (H063+$1EE8).l
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L062_000003CE:
 ; H062+$000003CE: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
 L062_000003D6:
 ; H062+$000003D6: 6700000e  beq.w $3e6
         beq.w H062+$3E6
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L062_000003DA:
 ; H062+$000003DA: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -665,10 +665,10 @@ L062_000003F0:
 ; H062+$000003F0: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H062_000003F2 [parziale]
-; Scopo: Routine del modulo helper ed effetti condivisi del gioco; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H027+$113A, H027+$1150, H085+$25EE, H085+$36AC, H085+$372C, H085+$37CE e altri 10
+; ROUTINE: sub_H062_000003F2 [partial]
+; Purpose: Routine of the shared helpers and effects of the game module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H027+$113A, H027+$1150, H085+$25EE, H085+$36AC, H085+$372C, H085+$37CE and 10 more
 ; --------------------------------------------------------------------------
 L062_000003F2:
 ; H062+$000003F2: 2f0c  move.l a4, -(a7)
@@ -752,10 +752,10 @@ L062_00000450:
 ; H062+$00000450: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H062_00000452 [parziale]
-; Scopo: Routine del modulo helper ed effetti condivisi del gioco; richiama H003+$00F6.
-;   - Richiama H003+$00F6.
-; Chiamanti diretti: H027+$08CA, H027+$0B48, H027+$0B62, H027+$0EB4, H027+$1072, H027+$1084 e altri 41
+; ROUTINE: sub_H062_00000452 [partial]
+; Purpose: Routine of the shared helpers and effects of the game module; calls H003+$00F6.
+;   - Calls H003+$00F6.
+; Direct callers: H027+$08CA, H027+$0B48, H027+$0B62, H027+$0EB4, H027+$1072, H027+$1084 and 41 more
 ; --------------------------------------------------------------------------
 L062_00000452:
 ; H062+$00000452: 2f0c  move.l a4, -(a7)
@@ -981,16 +981,16 @@ L062_0000057A:
 ; H062+$0000057A: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H062_0000057C [parziale]
-; Scopo: Routine del modulo helper ed effetti condivisi del gioco; richiama H063+$0946, H048+$0F88, H048+$0FBA, H048+$110C.
-;   - Richiama H063+$0946.
-;   - Richiama H048+$0F88.
-;   - Richiama H048+$0FBA.
-;   - Richiama H048+$110C.
-;   - Richiama H077+$08AC.
-;   - Richiama H048+$0AA8.
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party); H005+$3DE3 (contesto nativo, 5 nel combattimento).
-; Chiamanti diretti: H062+$085A, H062+$0866, H062+$0874, H062+$0880, H062+$088C, H062+$0898 e altri 127
+; ROUTINE: sub_H062_0000057C [partial]
+; Purpose: Routine of the shared helpers and effects of the game module; calls H063+$0946, H048+$0F88, H048+$0FBA, H048+$110C.
+;   - Calls H063+$0946.
+;   - Calls H048+$0F88.
+;   - Calls H048+$0FBA.
+;   - Calls H048+$110C.
+;   - Calls H077+$08AC.
+;   - Calls H048+$0AA8.
+;   - Uses the global state: H005+$3364 (head of the party list); H005+$3DE3 (native context, 5 in combat).
+; Direct callers: H062+$085A, H062+$0866, H062+$0874, H062+$0880, H062+$088C, H062+$0898 and 127 more
 ; --------------------------------------------------------------------------
 L062_0000057C:
 ; H062+$0000057C: 2f0c  move.l a4, -(a7)
@@ -1004,7 +1004,7 @@ L062_00000582:
 L062_00000586:
 ; H062+$00000586: 422dff57  clr.b -$a9(a5)
         clr.b -$a9(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L062_0000058A:
 ; H062+$0000058A: 2b7900003364ff5c  move.l $3364.l, -$a4(a5)
         move.l (H005+$3364).l, -$a4(a5)
@@ -1145,7 +1145,7 @@ L062_0000063E:
 L062_00000640:
 ; H062+$00000640: 670000c4  beq.w $706
         beq.w H062+$706
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L062_00000644:
 ; H062+$00000644: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
@@ -1392,11 +1392,11 @@ L062_00000770:
 ; H062+$00000770: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H062_00000772 [parziale]
-; Scopo: Routine del modulo helper ed effetti condivisi del gioco; richiama H029+$0354, H063+$2FAA.
-;   - Richiama H029+$0354.
-;   - Richiama H063+$2FAA.
-; Chiamanti diretti: H062+$09CA, H062+$0ACA
+; ROUTINE: sub_H062_00000772 [partial]
+; Purpose: Routine of the shared helpers and effects of the game module; calls H029+$0354, H063+$2FAA.
+;   - Calls H029+$0354.
+;   - Calls H063+$2FAA.
+; Direct callers: H062+$09CA, H062+$0ACA
 ; --------------------------------------------------------------------------
 L062_00000772:
 ; H062+$00000772: 2f0c  move.l a4, -(a7)
@@ -1566,10 +1566,10 @@ L062_0000083C:
 ; H062+$0000083C: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H062_0F04 [parziale]
-; Scopo: Trampolino verso H062+$0F04; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H062+$0F04.
-; Chiamanti diretti: H085+$3686, H062+$21A4, H062+$0152, H062+$2206, H062+$0398, H085+$3170 e altri 26
+; ROUTINE: trampoline_H062_0F04 [partial]
+; Purpose: Trampoline to H062+$0F04; the actual body is there.
+;   - Jumps to the actual body at H062+$0F04.
+; Direct callers: H085+$3686, H062+$21A4, H062+$0152, H062+$2206, H062+$0398, H085+$3170 and 26 more
 ; --------------------------------------------------------------------------
 L062_0000083E:
 ; H062+$0000083E: 2f0c  move.l a4, -(a7)
@@ -2896,7 +2896,7 @@ L062_00000F10:
 L062_00000F12:
 ; H062+$00000F12: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H062+$0ED2; indici 0..24, default -1.
+; DISPATCH: words relative to H062+$0ED2; indices 0..24, default -1.
 L062_00000F16:
 ; H062+$00000F16: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -2916,10 +2916,10 @@ L062_00000F22:
 ; H062+$00000F22: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H062_00000F24 [parziale]
-; Scopo: Routine del modulo helper ed effetti condivisi del gioco; opera su H005+$3364 (testa della lista del party).
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H062+$111C, H062+$11CA
+; ROUTINE: sub_H062_00000F24 [partial]
+; Purpose: Routine of the shared helpers and effects of the game module; works on H005+$3364 (head of the party list).
+;   - Uses the global state: H005+$3364 (head of the party list).
+; Direct callers: H062+$111C, H062+$11CA
 ; --------------------------------------------------------------------------
 L062_00000F24:
 ; H062+$00000F24: 2f0c  move.l a4, -(a7)
@@ -3127,7 +3127,7 @@ L062_0000101A:
         bra.w H062+$102C
 ; Preserved bytes H062+$0000101E..$00001022; code/data not fully classified.
         dc.w $6000,$000C
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L062_00001022:
 ; H062+$00001022: 203900003364  move.l $3364.l, d0
         move.l (H005+$3364).l, d0
@@ -3150,10 +3150,10 @@ L062_00001036:
 ; H062+$00001036: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H062_1262 [parziale]
-; Scopo: Trampolino verso H062+$1262; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H062+$1262.
-; Chiamanti diretti: H085+$2BC2, H059+$1646, H059+$0C34, H097+$18B2
+; ROUTINE: trampoline_H062_1262 [partial]
+; Purpose: Trampoline to H062+$1262; the actual body is there.
+;   - Jumps to the actual body at H062+$1262.
+; Direct callers: H085+$2BC2, H059+$1646, H059+$0C34, H097+$18B2
 ; --------------------------------------------------------------------------
 L062_00001038:
 ; H062+$00001038: 2f0c  move.l a4, -(a7)
@@ -3297,7 +3297,7 @@ L062_000010E0:
 L062_000010E4:
 ; H062+$000010E4: 670000b0  beq.w $1196
         beq.w H062+$1196
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L062_000010E8:
 ; H062+$000010E8: 2b7900003368ffec  move.l $3368.l, -$14(a5)
         move.l (H005+$3368).l, -$14(a5)
@@ -3336,7 +3336,7 @@ L062_00001116:
 L062_0000111C:
 ; H062+$0000111C: 6100fe06  bsr.w $f24
         bsr.w H062+$F24
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L062_00001120:
 ; H062+$00001120: 23c000003368  move.l d0, $3368.l
         move.l d0, (H005+$3368).l
@@ -3425,14 +3425,14 @@ L062_00001184:
 L062_00001186:
 ; H062+$00001186: 6100f26a  bsr.w $3f2
         bsr.w H062+$3F2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L062_0000118A:
 ; H062+$0000118A: 23edffec00003368  move.l -$14(a5), $3368.l
         move.l -$14(a5), (H005+$3368).l
 L062_00001192:
 ; H062+$00001192: 600000a8  bra.w $123c
         bra.w H062+$123C
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L062_00001196:
 ; H062+$00001196: 2b7900003368ffec  move.l $3368.l, -$14(a5)
         move.l (H005+$3368).l, -$14(a5)
@@ -3471,7 +3471,7 @@ L062_000011C4:
 L062_000011CA:
 ; H062+$000011CA: 6100fd58  bsr.w $f24
         bsr.w H062+$F24
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L062_000011CE:
 ; H062+$000011CE: 23c000003368  move.l d0, $3368.l
         move.l d0, (H005+$3368).l
@@ -3557,7 +3557,7 @@ L062_0000122E:
 L062_00001230:
 ; H062+$00001230: 6100f1c0  bsr.w $3f2
         bsr.w H062+$3F2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L062_00001234:
 ; H062+$00001234: 23edffec00003368  move.l -$14(a5), $3368.l
         move.l -$14(a5), (H005+$3368).l
@@ -3607,10 +3607,10 @@ L062_0000126A:
 ; H062+$0000126A: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H062_0000126C [parziale]
-; Scopo: Routine del modulo helper ed effetti condivisi del gioco; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H012+$2268
+; ROUTINE: sub_H062_0000126C [partial]
+; Purpose: Routine of the shared helpers and effects of the game module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H012+$2268
 ; --------------------------------------------------------------------------
 L062_0000126C:
 ; H062+$0000126C: 2f0c  move.l a4, -(a7)
@@ -3712,11 +3712,11 @@ L062_000012F4:
 ; H062+$000012F4: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H062_000012F6 [parziale]
-; Scopo: Routine del modulo helper ed effetti condivisi del gioco; richiama H056+$0886.
-;   - Richiama H056+$0886.
-;   - Usa lo stato globale: H005+$3E00 (puntatore stato persistente B, 2048 byte).
-; Chiamanti diretti: H085+$0934, H096+$1F3A
+; ROUTINE: sub_H062_000012F6 [partial]
+; Purpose: Routine of the shared helpers and effects of the game module; calls H056+$0886.
+;   - Calls H056+$0886.
+;   - Uses the global state: H005+$3E00 (pointer to persistent state B, 2048 bytes).
+; Direct callers: H085+$0934, H096+$1F3A
 ; --------------------------------------------------------------------------
 L062_000012F6:
 ; H062+$000012F6: 2f0c  move.l a4, -(a7)
@@ -3790,7 +3790,7 @@ L062_0000135E:
 L062_00001362:
 ; H062+$00001362: 66000012  bne.w $1376
         bne.w H062+$1376
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L062_00001366:
 ; H062+$00001366: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -3800,7 +3800,7 @@ L062_0000136C:
 L062_00001372:
 ; H062+$00001372: 6000000e  bra.w $1382
         bra.w H062+$1382
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L062_00001376:
 ; H062+$00001376: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -3863,7 +3863,7 @@ L062_000013C0:
 L062_000013C2:
 ; H062+$000013C2: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H062+$13A8; indici 0..4, default -1.
+; DISPATCH: words relative to H062+$13A8; indices 0..4, default -1.
 L062_000013C6:
 ; H062+$000013C6: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -3947,10 +3947,10 @@ L062_0000142A:
 ; H062+$0000142A: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H062_0000142C [parziale]
-; Scopo: Routine del modulo helper ed effetti condivisi del gioco; opera su H005+$3E04 (puntatore stato persistente A, 2048 byte).
-;   - Usa lo stato globale: H005+$3E04 (puntatore stato persistente A, 2048 byte).
-; Chiamanti diretti: H027+$1F9A, H027+$2C04, H027+$3226, H085+$202C, H085+$3866, H085+$39B0 e altri 15
+; ROUTINE: sub_H062_0000142C [partial]
+; Purpose: Routine of the shared helpers and effects of the game module; works on H005+$3E04 (pointer to persistent state A, 2048 bytes).
+;   - Uses the global state: H005+$3E04 (pointer to persistent state A, 2048 bytes).
+; Direct callers: H027+$1F9A, H027+$2C04, H027+$3226, H085+$202C, H085+$3866, H085+$39B0 and 15 more
 ; --------------------------------------------------------------------------
 L062_0000142C:
 ; H062+$0000142C: 2f0c  move.l a4, -(a7)
@@ -4057,7 +4057,7 @@ L062_000014B6:
 L062_000014BA:
 ; H062+$000014BA: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L062_000014BC:
 ; H062+$000014BC: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -4102,7 +4102,7 @@ L062_000014EC:
 L062_000014EE:
 ; H062+$000014EE: 38334000  move.w (a3, d4.w), d4
         move.w (a3, d4.w), d4
-; DISPATCH: word relative a H062+$14DA; indici 0..2, default -1.
+; DISPATCH: words relative to H062+$14DA; indices 0..2, default -1.
 L062_000014F2:
 ; H062+$000014F2: 4eb34000  jsr (a3, d4.w)
         jsr (a3, d4.w)
@@ -4197,10 +4197,10 @@ L062_0000156A:
 ; H062+$0000156A: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H062_0000156C [parziale]
-; Scopo: Routine del modulo helper ed effetti condivisi del gioco; richiama H023+$0010.
-;   - Richiama H023+$0010.
-; Chiamanti diretti: H027+$0A12, H027+$0E3C, H027+$1174, H027+$2420, H027+$29F4, H027+$2D0C e altri 140
+; ROUTINE: sub_H062_0000156C [partial]
+; Purpose: Routine of the shared helpers and effects of the game module; calls H023+$0010.
+;   - Calls H023+$0010.
+; Direct callers: H027+$0A12, H027+$0E3C, H027+$1174, H027+$2420, H027+$29F4, H027+$2D0C and 140 more
 ; --------------------------------------------------------------------------
 L062_0000156C:
 ; H062+$0000156C: 2f0c  move.l a4, -(a7)
@@ -4288,10 +4288,10 @@ L062_000015C4:
 ; H062+$000015C4: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H062_000015C6 [parziale]
-; Scopo: Routine del modulo helper ed effetti condivisi del gioco; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H027+$0516, H027+$1B62, H027+$1F64, H027+$23D2, H027+$3BF8, H085+$1D5C e altri 10
+; ROUTINE: sub_H062_000015C6 [partial]
+; Purpose: Routine of the shared helpers and effects of the game module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H027+$0516, H027+$1B62, H027+$1F64, H027+$23D2, H027+$3BF8, H085+$1D5C and 10 more
 ; --------------------------------------------------------------------------
 L062_000015C6:
 ; H062+$000015C6: 2f0c  move.l a4, -(a7)
@@ -4336,10 +4336,10 @@ L062_000015F0:
 ; H062+$000015F0: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H062_000015F2 [parziale]
-; Scopo: Routine del modulo helper ed effetti condivisi del gioco; richiama H003+$0068.
-;   - Richiama H003+$0068.
-; Chiamanti diretti: H027+$086A, H027+$0882, H027+$089A, H027+$08B6, H027+$102E, H027+$1048 e altri 30
+; ROUTINE: sub_H062_000015F2 [partial]
+; Purpose: Routine of the shared helpers and effects of the game module; calls H003+$0068.
+;   - Calls H003+$0068.
+; Direct callers: H027+$086A, H027+$0882, H027+$089A, H027+$08B6, H027+$102E, H027+$1048 and 30 more
 ; --------------------------------------------------------------------------
 L062_000015F2:
 ; H062+$000015F2: 2f0c  move.l a4, -(a7)
@@ -4466,15 +4466,15 @@ L062_00001692:
 ; H062+$00001692: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H062_00001694 [parziale]
-; Scopo: Routine del modulo helper ed effetti condivisi del gioco; richiama H048+$0AA8, H048+$195E, H063+$1DC2, H048+$0588.
-;   - Richiama H048+$0AA8.
-;   - Richiama H048+$195E.
-;   - Richiama H063+$1DC2.
-;   - Richiama H048+$0588.
-;   - Richiama H048+$0956.
-;   - Richiama H063+$2F12.
-; Chiamanti diretti: H097+$05FC, H096+$1A42, H096+$11A4
+; ROUTINE: sub_H062_00001694 [partial]
+; Purpose: Routine of the shared helpers and effects of the game module; calls H048+$0AA8, H048+$195E, H063+$1DC2, H048+$0588.
+;   - Calls H048+$0AA8.
+;   - Calls H048+$195E.
+;   - Calls H063+$1DC2.
+;   - Calls H048+$0588.
+;   - Calls H048+$0956.
+;   - Calls H063+$2F12.
+; Direct callers: H097+$05FC, H096+$1A42, H096+$11A4
 ; --------------------------------------------------------------------------
 L062_00001694:
 ; H062+$00001694: 2f0c  move.l a4, -(a7)
@@ -4672,10 +4672,10 @@ L062_0000177E:
 ; H062+$0000177E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H062_00001780 [parziale]
-; Scopo: Routine del modulo helper ed effetti condivisi del gioco; richiama H063+$0946.
-;   - Richiama H063+$0946.
-; Chiamanti diretti: H062+$1308, H096+$1CD0, H033+$16EE
+; ROUTINE: sub_H062_00001780 [partial]
+; Purpose: Routine of the shared helpers and effects of the game module; calls H063+$0946.
+;   - Calls H063+$0946.
+; Direct callers: H062+$1308, H096+$1CD0, H033+$16EE
 ; --------------------------------------------------------------------------
 L062_00001780:
 ; H062+$00001780: 2f0c  move.l a4, -(a7)
@@ -4739,10 +4739,10 @@ L062_000017BE:
 ; H062+$000017BE: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H062_000017C0 [parziale]
-; Scopo: Routine del modulo helper ed effetti condivisi del gioco; richiama H063+$0946.
-;   - Richiama H063+$0946.
-; Chiamanti diretti: H062+$038A, H062+$24EC, H059+$0374, H096+$085E, H062+$176E
+; ROUTINE: sub_H062_000017C0 [partial]
+; Purpose: Routine of the shared helpers and effects of the game module; calls H063+$0946.
+;   - Calls H063+$0946.
+; Direct callers: H062+$038A, H062+$24EC, H059+$0374, H096+$085E, H062+$176E
 ; --------------------------------------------------------------------------
 L062_000017C0:
 ; H062+$000017C0: 2f0c  move.l a4, -(a7)
@@ -4899,10 +4899,10 @@ L062_00001896:
 ; H062+$00001896: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H062_00001898 [parziale]
-; Scopo: Routine del modulo helper ed effetti condivisi del gioco; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H097+$0454
+; ROUTINE: sub_H062_00001898 [partial]
+; Purpose: Routine of the shared helpers and effects of the game module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H097+$0454
 ; --------------------------------------------------------------------------
 L062_00001898:
 ; H062+$00001898: 2f0c  move.l a4, -(a7)
@@ -4929,11 +4929,11 @@ L062_000018AA:
 ; H062+$000018AA: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H062_000018AC [parziale]
-; Scopo: Routine del modulo helper ed effetti condivisi del gioco; richiama H063+$0946, H063+$1DC2.
-;   - Richiama H063+$0946.
-;   - Richiama H063+$1DC2.
-; Chiamanti diretti: H085+$2DCE, H085+$2ED8, H085+$3266, H085+$0A3A, H085+$0A58, H085+$30CC
+; ROUTINE: sub_H062_000018AC [partial]
+; Purpose: Routine of the shared helpers and effects of the game module; calls H063+$0946, H063+$1DC2.
+;   - Calls H063+$0946.
+;   - Calls H063+$1DC2.
+; Direct callers: H085+$2DCE, H085+$2ED8, H085+$3266, H085+$0A3A, H085+$0A58, H085+$30CC
 ; --------------------------------------------------------------------------
 L062_000018AC:
 ; H062+$000018AC: 2f0c  move.l a4, -(a7)
@@ -5025,10 +5025,10 @@ L062_00001914:
 ; H062+$00001914: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H062_00001916 [parziale]
-; Scopo: Routine del modulo helper ed effetti condivisi del gioco; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H062+$1A0C
+; ROUTINE: sub_H062_00001916 [partial]
+; Purpose: Routine of the shared helpers and effects of the game module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H062+$1A0C
 ; --------------------------------------------------------------------------
 L062_00001916:
 ; H062+$00001916: 2f0c  move.l a4, -(a7)
@@ -5085,10 +5085,10 @@ L062_00001950:
 ; H062+$00001950: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H062_00001952 [parziale]
-; Scopo: Routine del modulo helper ed effetti condivisi del gioco; richiama H029+$0354.
-;   - Richiama H029+$0354.
-; Chiamanti diretti: H062+$1DA2, H062+$1E80, H062+$1EB0
+; ROUTINE: sub_H062_00001952 [partial]
+; Purpose: Routine of the shared helpers and effects of the game module; calls H029+$0354.
+;   - Calls H029+$0354.
+; Direct callers: H062+$1DA2, H062+$1E80, H062+$1EB0
 ; --------------------------------------------------------------------------
 L062_00001952:
 ; H062+$00001952: 2f0c  move.l a4, -(a7)
@@ -5194,10 +5194,10 @@ L062_000019C0:
 ; H062+$000019C0: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H062_000019C2 [parziale]
-; Scopo: Routine del modulo helper ed effetti condivisi del gioco; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H085+$3338, H085+$1F7C, H085+$2D68
+; ROUTINE: sub_H062_000019C2 [partial]
+; Purpose: Routine of the shared helpers and effects of the game module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H085+$3338, H085+$1F7C, H085+$2D68
 ; --------------------------------------------------------------------------
 L062_000019C2:
 ; H062+$000019C2: 2f0c  move.l a4, -(a7)
@@ -5296,13 +5296,13 @@ L062_00001A30:
 ; H062+$00001A30: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H062_1C04 [parziale]
-; Scopo: Trampolino verso H062+$1C04; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H062+$1C04.
-;   - Richiama H029+$0354.
-;   - Richiama H063+$0946.
-;   - Richiama H029+$03E2.
-; Chiamanti diretti: H085+$206A, H085+$20D2, H085+$339C, H085+$1FD0, H085+$2DAE, H085+$0A98 e altri 8
+; ROUTINE: trampoline_H062_1C04 [partial]
+; Purpose: Trampoline to H062+$1C04; the actual body is there.
+;   - Jumps to the actual body at H062+$1C04.
+;   - Calls H029+$0354.
+;   - Calls H063+$0946.
+;   - Calls H029+$03E2.
+; Direct callers: H085+$206A, H085+$20D2, H085+$339C, H085+$1FD0, H085+$2DAE, H085+$0A98 and 8 more
 ; --------------------------------------------------------------------------
 L062_00001A32:
 ; H062+$00001A32: 2f0c  move.l a4, -(a7)
@@ -5317,10 +5317,10 @@ L062_00001A3C:
 ; H062+$00001A3C: 600001c6  bra.w $1c04
         bra.w H062+$1C04
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H062_00001A40 [parziale]
-; Scopo: Routine del modulo helper ed effetti condivisi del gioco; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H062+$1D44, H062+$1E86, H062+$1EB6, H062+$1E56
+; ROUTINE: sub_H062_00001A40 [partial]
+; Purpose: Routine of the shared helpers and effects of the game module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H062+$1D44, H062+$1E86, H062+$1EB6, H062+$1E56
 ; --------------------------------------------------------------------------
 L062_00001A40:
 ; H062+$00001A40: 4e550000  link.w a5, #$0
@@ -5395,12 +5395,12 @@ L062_00001A9C:
 ; H062+$00001A9C: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H062_00001A9E [parziale]
-; Scopo: Routine del modulo helper ed effetti condivisi del gioco; richiama H029+$0354, H063+$0946, H029+$03E2.
-;   - Richiama H029+$0354.
-;   - Richiama H063+$0946.
-;   - Richiama H029+$03E2.
-; Chiamanti diretti: H062+$1F4E, H062+$1FD4
+; ROUTINE: sub_H062_00001A9E [partial]
+; Purpose: Routine of the shared helpers and effects of the game module; calls H029+$0354, H063+$0946, H029+$03E2.
+;   - Calls H029+$0354.
+;   - Calls H063+$0946.
+;   - Calls H029+$03E2.
+; Direct callers: H062+$1F4E, H062+$1FD4
 ; --------------------------------------------------------------------------
 L062_00001A9E:
 ; H062+$00001A9E: 4e550000  link.w a5, #$0
@@ -5612,7 +5612,7 @@ L062_00001BB4:
 L062_00001BB6:
 ; H062+$00001BB6: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H062+$1B8E; indici 0..10, default -1.
+; DISPATCH: words relative to H062+$1B8E; indices 0..10, default -1.
 L062_00001BBA:
 ; H062+$00001BBA: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -5883,7 +5883,7 @@ L062_00001D14:
 L062_00001D16:
 ; H062+$00001D16: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H062+$1CFA; indici 0..6, default -1.
+; DISPATCH: words relative to H062+$1CFA; indices 0..6, default -1.
 L062_00001D1A:
 ; H062+$00001D1A: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -5916,7 +5916,7 @@ L062_00001D38:
 L062_00001D3A:
 ; H062+$00001D3A: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H062+$1D24; indici 0..2, default -1.
+; DISPATCH: words relative to H062+$1D24; indices 0..2, default -1.
 L062_00001D3E:
 ; H062+$00001D3E: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -5952,7 +5952,7 @@ L062_00001D5A:
 L062_00001D5C:
 ; H062+$00001D5C: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H062+$1D4E; indici 0..0, default -1.
+; DISPATCH: words relative to H062+$1D4E; indices 0..0, default -1.
 L062_00001D60:
 ; H062+$00001D60: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -6793,7 +6793,7 @@ L062_00002174:
 L062_00002176:
 ; H062+$00002176: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H062+$215C; indici 0..5, default -1.
+; DISPATCH: words relative to H062+$215C; indices 0..5, default -1.
 L062_0000217A:
 ; H062+$0000217A: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -6813,17 +6813,17 @@ L062_00002186:
 ; H062+$00002186: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H062_00002188 [parziale]
-; Scopo: Routine del modulo helper ed effetti condivisi del gioco; richiama H045+$01D6, H063+$0112, H026+$01E0, H029+$0354.
-;   - Richiama H045+$01D6.
-;   - Richiama H063+$0112.
-;   - Richiama H026+$01E0.
-;   - Richiama H029+$0354.
-;   - Richiama H063+$2760.
-;   - Richiama H063+$2984.
-;   - Richiama H063+$1DC2.
-;   - Usa lo stato globale: H005+$3DE3 (contesto nativo, 5 nel combattimento).
-; Chiamanti diretti: H027+$0964, H027+$19A8, H027+$1B6E, H027+$1F70, H027+$23DE, H027+$3FF0 e altri 4
+; ROUTINE: sub_H062_00002188 [partial]
+; Purpose: Routine of the shared helpers and effects of the game module; calls H045+$01D6, H063+$0112, H026+$01E0, H029+$0354.
+;   - Calls H045+$01D6.
+;   - Calls H063+$0112.
+;   - Calls H026+$01E0.
+;   - Calls H029+$0354.
+;   - Calls H063+$2760.
+;   - Calls H063+$2984.
+;   - Calls H063+$1DC2.
+;   - Uses the global state: H005+$3DE3 (native context, 5 in combat).
+; Direct callers: H027+$0964, H027+$19A8, H027+$1B6E, H027+$1F70, H027+$23DE, H027+$3FF0 and 4 more
 ; --------------------------------------------------------------------------
 L062_00002188:
 ; H062+$00002188: 2f0c  move.l a4, -(a7)
@@ -6914,7 +6914,7 @@ L062_000021F0:
 L062_000021F2:
 ; H062+$000021F2: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H062+$21DE; indici 0..1, default -1.
+; DISPATCH: words relative to H062+$21DE; indices 0..1, default -1.
 L062_000021F6:
 ; H062+$000021F6: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -7192,7 +7192,7 @@ L062_00002364:
 L062_00002366:
 ; H062+$00002366: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H062+$2336; indici 0..15, default -1.
+; DISPATCH: words relative to H062+$2336; indices 0..15, default -1.
 L062_0000236A:
 ; H062+$0000236A: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -7272,7 +7272,7 @@ L062_000023C8:
 L062_000023CA:
 ; H062+$000023CA: 4eb900002984  jsr $2984.l
         jsr (H063+$2984).l
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L062_000023D0:
 ; H062+$000023D0: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
@@ -7473,7 +7473,7 @@ L062_000024CA:
 L062_000024CC:
 ; H062+$000024CC: 4eb900001dc2  jsr $1dc2.l
         jsr (H063+$1DC2).l
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L062_000024D2:
 ; H062+$000024D2: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
@@ -7554,10 +7554,10 @@ L062_0000253A:
 ; H062+$0000253A: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H062_0000253C [parziale]
-; Scopo: Routine del modulo helper ed effetti condivisi del gioco; opera su H005+$3DE3 (contesto nativo, 5 nel combattimento).
-;   - Usa lo stato globale: H005+$3DE3 (contesto nativo, 5 nel combattimento).
-; Chiamanti diretti: H027+$2112, H085+$3456, H085+$3E1E, H085+$1D1C, H085+$32FE, H057+$2E4A e altri 5
+; ROUTINE: sub_H062_0000253C [partial]
+; Purpose: Routine of the shared helpers and effects of the game module; works on H005+$3DE3 (native context, 5 in combat).
+;   - Uses the global state: H005+$3DE3 (native context, 5 in combat).
+; Direct callers: H027+$2112, H085+$3456, H085+$3E1E, H085+$1D1C, H085+$32FE, H057+$2E4A and 5 more
 ; --------------------------------------------------------------------------
 L062_0000253C:
 ; H062+$0000253C: 2f0c  move.l a4, -(a7)
@@ -7727,7 +7727,7 @@ L062_00002610:
 L062_00002616:
 ; H062+$00002616: 66000020  bne.w $2638
         bne.w H062+$2638
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L062_0000261A:
 ; H062+$0000261A: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
@@ -7771,16 +7771,16 @@ L062_0000264E:
 ; H062+$0000264E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H062_00002650 [parziale]
-; Scopo: Routine del modulo helper ed effetti condivisi del gioco; richiama H048+$0F88, H048+$0FBA, H048+$16D4, H048+$195E.
-;   - Richiama H048+$0F88.
-;   - Richiama H048+$0FBA.
-;   - Richiama H048+$16D4.
-;   - Richiama H048+$195E.
-;   - Richiama H063+$2760.
-;   - Richiama H063+$2B7C.
-;   - Usa lo stato globale: H005+$3DE3 (contesto nativo, 5 nel combattimento).
-; Chiamanti diretti: H027+$084A, H027+$100E, H027+$2F68
+; ROUTINE: sub_H062_00002650 [partial]
+; Purpose: Routine of the shared helpers and effects of the game module; calls H048+$0F88, H048+$0FBA, H048+$16D4, H048+$195E.
+;   - Calls H048+$0F88.
+;   - Calls H048+$0FBA.
+;   - Calls H048+$16D4.
+;   - Calls H048+$195E.
+;   - Calls H063+$2760.
+;   - Calls H063+$2B7C.
+;   - Uses the global state: H005+$3DE3 (native context, 5 in combat).
+; Direct callers: H027+$084A, H027+$100E, H027+$2F68
 ; --------------------------------------------------------------------------
 L062_00002650:
 ; H062+$00002650: 2f0c  move.l a4, -(a7)
@@ -7887,7 +7887,7 @@ L062_000026C0:
 L062_000026C4:
 ; H062+$000026C4: 174201a8  move.b d2, $1a8(a3)
         move.b d2, $1a8(a3)
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L062_000026C8:
 ; H062+$000026C8: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
@@ -7966,16 +7966,16 @@ L062_00002732:
 ; H062+$00002732: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H062_00002734 [parziale]
-; Scopo: Routine del modulo helper ed effetti condivisi del gioco; richiama H063+$1DC2, H048+$0F88, H048+$0FBA, H048+$110C.
-;   - Richiama H063+$1DC2.
-;   - Richiama H048+$0F88.
-;   - Richiama H048+$0FBA.
-;   - Richiama H048+$110C.
-;   - Richiama H077+$08AC.
-;   - Richiama H048+$12F4.
-;   - Richiama H029+$0312.
-; Chiamanti diretti: H027+$200C, H059+$1858, H096+$2028
+; ROUTINE: sub_H062_00002734 [partial]
+; Purpose: Routine of the shared helpers and effects of the game module; calls H063+$1DC2, H048+$0F88, H048+$0FBA, H048+$110C.
+;   - Calls H063+$1DC2.
+;   - Calls H048+$0F88.
+;   - Calls H048+$0FBA.
+;   - Calls H048+$110C.
+;   - Calls H077+$08AC.
+;   - Calls H048+$12F4.
+;   - Calls H029+$0312.
+; Direct callers: H027+$200C, H059+$1858, H096+$2028
 ; --------------------------------------------------------------------------
 L062_00002734:
 ; H062+$00002734: 2f0c  move.l a4, -(a7)

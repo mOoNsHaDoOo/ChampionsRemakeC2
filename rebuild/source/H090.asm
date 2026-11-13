@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H090
-; Adattatori Exec per OpenDevice/CloseDevice.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H090
+; Exec adapters for OpenDevice/CloseDevice.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Adattatori Exec per OpenDevice/CloseDevice.
+; MODULE NOTE
+; Exec adapters for OpenDevice/CloseDevice.
 ; --------------------------------------------------------------------------
 ; H090: 200 original bytes; all offsets are section-relative.
         section H090,code
@@ -15,10 +15,10 @@ H090:
 ; Preserved bytes H090+$00000000..$00000004; code/data not fully classified.
         dc.l H090+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H090_00000004 [parziale]
-; Scopo: Routine del modulo adattatori Exec per OpenDevice/CloseDevice; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H000+$012C
+; ROUTINE: sub_H090_00000004 [partial]
+; Purpose: Routine of the Exec adapters for OpenDevice/CloseDevice module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H000+$012C
 ; --------------------------------------------------------------------------
 L090_00000004:
 ; H090+$00000004: 4e75  rts 
@@ -27,10 +27,10 @@ L090_00000004:
         dc.w $226F,$0004,$2C78,$0004,$2F57,$0004,$588F,$4EEE
         dc.w $FE50
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_CloseDevice [parziale]
-; Scopo: Adattatore a exec.library/CloseDevice; incapsula la chiamata alla libreria.
-;   - Chiama exec.library/CloseDevice (LVO -450).
-; Chiamanti diretti: H043+$0876
+; ROUTINE: wrapper_CloseDevice [partial]
+; Purpose: Adapter to exec.library/CloseDevice; wraps the library call.
+;   - Calls exec.library/CloseDevice (LVO -450).
+; Direct callers: H043+$0876
 ; --------------------------------------------------------------------------
 L090_00000018:
 ; H090+$00000018: 226f0004  movea.l $4(a7), a1
@@ -48,10 +48,10 @@ L090_00000026:
 ; H090+$00000026: 4eeefe3e  jmp -$1c2(a6) ; exec.library/CloseDevice
         jmp LVO_exec_CloseDevice(a6)
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_OpenDevice [parziale]
-; Scopo: Adattatore a exec.library/OpenDevice; incapsula la chiamata alla libreria.
-;   - Chiama exec.library/OpenDevice (LVO -444).
-; Chiamanti diretti: H043+$06C0
+; ROUTINE: wrapper_OpenDevice [partial]
+; Purpose: Adapter to exec.library/OpenDevice; wraps the library call.
+;   - Calls exec.library/OpenDevice (LVO -444).
+; Direct callers: H043+$06C0
 ; --------------------------------------------------------------------------
 L090_0000002A:
 ; H090+$0000002A: 206f0010  movea.l $10(a7), a0

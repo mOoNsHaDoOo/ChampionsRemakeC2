@@ -1,8 +1,8 @@
 /*
- * H094: Callback audio: server del VBlank e interrupt software che fa
- * suonare il lettore SoundX (H043).  Compilato solo con COK_AUDIO.
- * Nell'originale e' assembly scritto a mano con lo stato del lettore in
- * a5; qui ogni routine riceve il puntatore al lettore.
+ * H094: Audio callbacks: VBlank server and software interrupt that makes
+ * the SoundX player (H043) play.  Compiled only with COK_AUDIO.
+ * In the original it is hand-written assembly with the player state in
+ * a5; here every routine receives the pointer to the player.
  */
 #include "cok.h"
 
@@ -22,11 +22,11 @@ void h094_init(void)
 #define VHDR_L(v, o)    COK_GET32(&(v)->vhdr[(o)])
 #define VHDR_W(v, o)    COK_GET16(&(v)->vhdr[(o)])
 
-/* Periodo della nota n e durata d (tabelle big-endian di periodTable). */
+/* Period of note n and duration d (big-endian tables of periodTable). */
 #define PERIOD(sx, n)   COK_GET32((u8 *)(sx)->periods + (n) * 4)
 #define DURATION(sx, d) COK_GET16((u8 *)(sx)->durations + (d) * 2)
 
-/* Richiesta libera dalla porta delle risposte, o NULL. */
+/* Free request from the reply port, or NULL. */
 static struct IOAudio *free_request(SoundX *sx)
 {
     return (struct IOAudio *)GetMsg(sx->reply);
@@ -45,8 +45,8 @@ static void send(struct IOAudio *io, u32 unit_mask, u16 command, u8 flags)
 }
 
 /*
- * divu.w: dividend / divisor in 16 bit; se il quoziente non sta in una
- * word il dividendo resta com'e' (V acceso).  Restituisce 1 se riuscita.
+ * divu.w: dividend / divisor in 16 bits; if the quotient does not fit in a
+ * word the dividend stays as it is (V set).  Returns 1 on success.
  */
 static int divu_w(u32 *d, u16 divisor)
 {
@@ -63,7 +63,7 @@ static int divu_w(u32 *d, u16 divisor)
     return 1;
 }
 
-/* PORT H094+$0738: una delle 8 note libere (flag 7) in testa alle da assegnare. */
+/* PORT H094+$0738: one of the 8 free notes (flag 7) at the head of the ones to assign. */
 static SxNote *alloc_note(SoundX *sx)
 {
     u16 i;
@@ -82,12 +82,12 @@ static SxNote *alloc_note(SoundX *sx)
 }
 
 /*
- * PORT H094+$0288: avvia la nota note della traccia t sulla nota n:
- * campione dell'ottava giusta (con samplesPerHiCycle il periodo si
- * dimezza e il campione raddoppia finche' il periodo e' sotto $118 o
- * finiscono le ottave; altrimenti periodo da samplesPerSec), inviluppi
- * dello strumento e volume brano * traccia.  Senza strumento l'originale
- * leggerebbe da indirizzi nulli: qui la nota resta muta.
+ * PORT H094+$0288: starts note note of track t on note n:
+ * sample of the right octave (with samplesPerHiCycle the period
+ * halves and the sample doubles while the period is below $118 or
+ * the octaves run out; otherwise period from samplesPerSec), envelopes
+ * of the instrument and volume score * track.  Without an instrument the original
+ * would read from null addresses: here the note stays silent.
  */
 static void start_note(SoundX *sx, SxScore *sc, SxTrack *t, SxNote *n,
                        u16 note)
@@ -166,9 +166,9 @@ done:
 }
 
 /*
- * PORT H094+$01BE: eventi della traccia i fino all'istante corrente:
- * note e pause (durata dalla tabella; legature e accordi), cambio di
- * strumento ($81), volume ($84), fine ($FF o fine dei dati).
+ * PORT H094+$01BE: events of track i up to the current time:
+ * notes and rests (duration from the table; ties and chords), instrument
+ * change ($81), volume ($84), end ($FF or end of the data).
  */
 static void play_track(SoundX *sx, SxScore *sc, SxTrack *t, u16 i)
 {
@@ -219,7 +219,7 @@ static void play_track(SoundX *sx, SxScore *sc, SxTrack *t, u16 i)
     }
 }
 
-/* PORT H094+$0188: le tracce del brano; finito, l'oggetto non suona piu'. */
+/* PORT H094+$0188: the tracks of the score; when finished, the object no longer plays. */
 static void play_score(SoundX *sx, SxObject *o)
 {
     SxScore *sc = (SxScore *)o->data;
@@ -234,11 +234,11 @@ static void play_score(SoundX *sx, SxObject *o)
 }
 
 /*
- * PORT H094+$0390: suono singolo (8SVX o strumento INST): una nota dal
- * momento corrente, all'ottava piu' alta, con periodo da samplesPerSec
- * (0: 2000) e volume dal VHDR; senza parte ripetuta finisce dopo la
- * durata del campione.  samplesPerSec 0 dividerebbe per zero
- * nell'originale: qui il quoziente resta quello del dividendo.
+ * PORT H094+$0390: single sound (8SVX or INST instrument): one note from
+ * the current time, at the highest octave, with period from samplesPerSec
+ * (0: 2000) and volume from the VHDR; without a repeated part it ends after the
+ * duration of the sample.  samplesPerSec 0 would divide by zero
+ * in the original: here the quotient stays the one of the dividend.
  */
 static void play_sample(SoundX *sx, SxObject *o)
 {
@@ -322,8 +322,8 @@ static void play_sample(SoundX *sx, SxObject *o)
 }
 
 /*
- * PORT H094+$0108: gli oggetti attivi suonano; quelli finiti (bit 4
- * spento) passano fra i caricati.
+ * PORT H094+$0108: the active objects play; the finished ones (bit 4
+ * clear) go back among the loaded ones.
  */
 static void play_objects(SoundX *sx)
 {
@@ -357,9 +357,9 @@ static void play_objects(SoundX *sx)
 }
 
 /*
- * PORT H094+$003A: assegna alle voci le note nuove: una voce libera, o
- * quella che finisce prima (fermata con ADCMD_FINISH).  Le note senza il
- * bit 0 tornano libere.
+ * PORT H094+$003A: assigns the new notes to the voices: a free voice, or
+ * the one that ends first (stopped with ADCMD_FINISH).  Notes without
+ * bit 0 become free again.
  */
 static void assign_voices(SoundX *sx)
 {
@@ -412,10 +412,10 @@ static void assign_voices(SoundX *sx)
 }
 
 /*
- * PORT H094+$04A4: per ogni voce: a fine nota ADCMD_FINISH; poi gli
- * inviluppi di periodo (PTCH) e volume (VLUM); una nota nuova parte con
- * CMD_WRITE della parte iniziale (1 ciclo) e di quella ripetuta (senza
- * fine), le altre aggiornano periodo e volume con ADCMD_PERVOL.
+ * PORT H094+$04A4: for every voice: at the end of a note ADCMD_FINISH; then the
+ * period (PTCH) and volume (VLUM) envelopes; a new note starts with
+ * CMD_WRITE of the initial part (1 cycle) and of the repeated one (endless),
+ * the others update period and volume with ADCMD_PERVOL.
  */
 static void update_voices(SoundX *sx)
 {
@@ -564,8 +564,8 @@ finish:
 }
 
 /*
- * PORT H094+$0016: interrupt software: avanza l'orologio del tempo, fa
- * suonare gli oggetti, assegna le voci e le aggiorna.
+ * PORT H094+$0016: software interrupt: advances the time clock, makes
+ * the objects play, assigns the voices and updates them.
  */
 #if COK_AMIGA
 LONG __asm audio_soft_interrupt(register __a1 SoundX *sx)
@@ -580,7 +580,7 @@ LONG audio_soft_interrupt(SoundX *sx)
     return 0;
 }
 
-/* PORT H094+$0006: server del VBlank: Cause dell'interrupt software. */
+/* PORT H094+$0006: VBlank server: Cause of the software interrupt. */
 #if COK_AMIGA
 LONG __asm audio_vblank_server(register __a1 struct Interrupt *soft)
 #else

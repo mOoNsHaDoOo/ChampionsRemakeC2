@@ -1,4 +1,4 @@
-/* H058: Riposo, memorizzazione e scorrere del tempo; dettaglio parziale. */
+/* H058: Resting, memorisation and the passing of time; partial detail. */
 #include "h058.h"
 #include "globals.h"
 #include "h029_gfx.h"
@@ -12,31 +12,31 @@
 #include "h063.h"
 
 /*
- * Dati del modulo sotto a4: -$28..-$1 un flag per personaggio del party
- * (ha ancora effetti a tempo).  g_h058_bss[0x28 - off] e' -off(a4).
+ * Module data below a4: -$28..-$1 one flag per party character
+ * (still has timed effects).  g_h058_bss[0x28 - off] is -off(a4).
  */
 u8 g_h058_bss[0x28];
 #define H058_FLAG(i)    g_h058_bss[(i)]   /* -$28 + i */
 
-/* Contatore del tempo: word di g_state_a + 2*idx (idx $C6..$CC, $1FC..). */
+/* Time counter: word of g_state_a + 2*idx (idx $C6..$CC, $1FC..). */
 #define STATE_W(idx)    COK_GET16(g_state_a + (idx) * 2)
 #define STATE_SETW(idx, v) COK_PUT16(g_state_a + (idx) * 2, (u16)(v))
 
-/* PORT H058+$00CE: link/unlk, nessun effetto. */
+/* PORT H058+$00CE: link/unlk, no effect. */
 void h058_init(void)
 {
 }
 
 /*
- * PORT H058+$018A (annidata in $017C): il contatore idx arriva a limit:
- * il ciclo di idx-3 avanza (0..3), la sua icona (tile 8x8 nella riga 0)
- * cambia e il contatore torna 0; altrimenti avanza.  Per un idx diverso
- * l'originale userebbe tile e colonna non inizializzate (qui 0).
+ * PORT H058+$018A (nested in $017C): counter idx reaches limit:
+ * the cycle of idx-3 advances (0..3), its icon (8x8 tile in row 0)
+ * changes and the counter goes back to 0; otherwise it advances.  For a different idx
+ * the original would use an uninitialised tile and column (here 0).
  */
 static void cycle_icon(u16 idx, u16 limit)
 {
-    u16 tile = 0;                       /* -$6 del chiamante */
-    u16 col = 0;                        /* -$4 del chiamante */
+    u16 tile = 0;                       /* -$6 of the caller */
+    u16 col = 0;                        /* -$4 of the caller */
 
     if (STATE_W(idx) < limit) {
         STATE_SETW(idx, STATE_W(idx) + 1);
@@ -49,17 +49,17 @@ static void cycle_icon(u16 idx, u16 limit)
     }
     switch (idx) {
     case 0x1FC:
-        /* A+$3F2: (word) fase (0..3) del ciclo 1: icona cornice colonna 8 */
+        /* A+$3F2: (word) phase (0..3) of cycle 1: frame icon column 8 */
         tile = (u16)(COK_GET16(g_state_a + 0x3F2) + 0x0A);
         col = 8;
         break;
     case 0x1FD:
-        /* A+$3F4: (word) fase (0..3) del ciclo 2: icona cornice colonna $13 */
+        /* A+$3F4: (word) phase (0..3) of cycle 2: frame icon column $13 */
         tile = (u16)(COK_GET16(g_state_a + 0x3F4) + 6);
         col = 0x13;
         break;
     case 0x1FE:
-        /* A+$3F6: (word) fase (0..3) del ciclo 3: icona cornice colonna $1E */
+        /* A+$3F6: (word) phase (0..3) of cycle 3: frame icon column $1E */
         tile = (u16)(COK_GET16(g_state_a + 0x3F6) + 0x0E);
         col = 0x1E;
         break;
@@ -70,7 +70,7 @@ static void cycle_icon(u16 idx, u16 limit)
     STATE_SETW(idx, 0);
 }
 
-/* PORT H058+$017C: a ogni ora avanzano i tre cicli delle icone della cornice. */
+/* PORT H058+$017C: every hour the three icon cycles of the frame advance. */
 static void hourly_icons(void)
 {
     cycle_icon(0x1FC, 8);
@@ -79,9 +79,9 @@ static void hourly_icons(void)
 }
 
 /*
- * PORT H058+$052C: riporta il tempo t[0..6] nei limiti di H005+$500A
- * (riporto all'unita' successiva; a ogni ora le icone; all'ultima unita'
- * ogni personaggio invecchia di uno, +$62).
+ * PORT H058+$052C: brings the time t[0..6] within the limits of H005+$500A
+ * (carry to the next unit; every hour the icons; at the last unit
+ * every character ages by one, +$62).
  */
 static void normalize_time(u8 *t)
 {
@@ -89,30 +89,30 @@ static void normalize_time(u8 *t)
     Character *p;                       /* -$6(a5) */
 
     for (i = 0; i <= 6; ++i) {
-        /* $500A: (word) limiti delle unita' di tempo t[0..6] (riporto) */
+        /* $500A: (word) limits of the time units t[0..6] (carry) */
         if (COK_GET16(t + i * 2) < H005_W(0x500A + i * 2)) {
             continue;
         }
         if (i != 6) {
             COK_PUT16(t + (i + 1) * 2, COK_GET16(t + (i + 1) * 2) + 1);
-            COK_PUT16(t + i * 2, /* $500A: (word) limiti delle unita' di tempo t[0..6] (riporto) */
+            COK_PUT16(t + i * 2, /* $500A: (word) limits of the time units t[0..6] (carry) */
                       COK_GET16(t + i * 2) - H005_W(0x500A + i * 2));
             if (i == 3) {
                 hourly_icons();
             }
         } else {
             for (p = g_party_head; p != NULL; p = p->next) {
-                COK_PUT16(&p->b[0x62], COK_GET16(&p->b[0x62]) + 1); /* pg+$62: eta' (word) */
+                COK_PUT16(&p->b[0x62], COK_GET16(&p->b[0x62]) + 1); /* ch+$62: age (word) */
             }
         }
     }
 }
 
 /*
- * PORT H058+$02F4: fa scorrere amount unita' unit sugli effetti a tempo
- * dei personaggi (a passi di 10): quelli scaduti si tolgono.  Fuori dal
- * campo (contesto diverso da 2) tutti i personaggi vanno controllati;
- * al campo solo quelli che hanno ancora effetti.
+ * PORT H058+$02F4: lets amount units unit pass on the timed effects
+ * of the characters (in steps of 10): the expired ones are removed.  Outside the
+ * camp (context other than 2) all the characters must be checked;
+ * in the camp only those that still have effects.
  */
 static void age_effects(u16 amount, u8 unit)
 {
@@ -127,7 +127,7 @@ static void age_effects(u16 amount, u8 unit)
     CokEffect *next;                    /* -$1A(a5) */
     u8 u;                               /* -$1(a5) */
 
-    if (H005_B(0x3DE3) != 2) { /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
+    if (H005_B(0x3DE3) != 2) { /* $3DE3: game mode (0 menu, 1 view, 2 camp, 5 combat) */
         h029_fill_bytes(0x27, g_h058_bss, 0x28, 1);
     } else {
         found = 0;
@@ -137,7 +137,7 @@ static void age_effects(u16 amount, u8 unit)
                 found = 1;
             }
             ++i;
-        /* B+$67C: (word) numero dei membri del party (max 8) */
+        /* B+$67C: (word) number of party members (max 8) */
         } while (!found && i <= COK_GET16(g_state_b + 0x67C));
         if (!found) {
             return;
@@ -145,7 +145,7 @@ static void age_effects(u16 amount, u8 unit)
     }
     left = amount;
     for (u = unit; u > 1; --u) {
-        /* $500A: (word) limiti delle unita' di tempo t[0..6] (riporto) */
+        /* $500A: (word) limits of the time units t[0..6] (carry) */
         left = (u16)(left * H005_W(0x500A + (u - 1) * 2));
     }
     while (left > 0) {
@@ -166,26 +166,26 @@ static void age_effects(u16 amount, u8 unit)
                         if (e == last) {
                             done = 1;
                         }
-                        /* eff+$2: (word) durata residua dell'effetto, scalata col tempo; 0 =
-                         * permanente */
+                        /* eff+$2: (word) remaining duration of the effect, decreased with
+                         * time; 0 = permanent */
                         if (COK_GET16(&e->b[2]) != 0) {
-                            /* eff+$2: (word) durata residua dell'effetto, scalata col tempo; 0 =
-                             * permanente */
+                            /* eff+$2: (word) remaining duration of the effect, decreased with
+                             * time; 0 = permanent */
                             if (COK_GET16(&e->b[2]) > step) {
-                                /* eff+$2: (word) durata residua dell'effetto, scalata col tempo; 0
-                                 * = permanente */
+                                /* eff+$2: (word) remaining duration of the effect, decreased with
+                                 * time; 0 = permanent */
                                 COK_PUT16(&e->b[2], COK_GET16(&e->b[2]) - step);
                                 H058_FLAG(i - 1) = 1;
                             } else {
-                                /* eff+$0: tipo dell'effetto (codice del gestore) */
+                                /* eff+$0: type of the effect (code of the handler) */
                                 remove_effect(p, e->b[0], e);
                             }
                         }
                         e = next;
                     }
                     while (e != NULL) {
-                        /* eff+$2: (word) durata residua dell'effetto, scalata col tempo; 0 =
-                         * permanente */
+                        /* eff+$2: (word) remaining duration of the effect, decreased with
+                         * time; 0 = permanent */
                         if (COK_GET16(&e->b[2]) > 0) {
                             H058_FLAG(i - 1) = 1;
                         }
@@ -200,8 +200,8 @@ static void age_effects(u16 amount, u8 unit)
 }
 
 /*
- * PORT H058+$064A: avanza il tempo di gioco (g_state_a +$18C, 7 word) di
- * amount unita' unit, poi gli effetti a tempo.
+ * PORT H058+$064A: advances the game time (g_state_a +$18C, 7 words) by
+ * amount units unit, then the timed effects.
  */
 void advance_time(u16 amount, u8 unit)
 {
@@ -210,7 +210,7 @@ void advance_time(u16 amount, u8 unit)
     u16 k;                              /* -$12(a5) */
 
     for (i = 0; i <= 6; ++i) {
-        /* A+$18C: tempo di gioco: 7 word da qui (secondi, minuti, decine, ore, giorni) */
+        /* A+$18C: game time: 7 words from here (seconds, minutes, tens, hours, days) */
         COK_PUT16(&t[i * 2], STATE_W(0xC6 + i));
     }
     for (k = 1; k <= amount; ++k) {
@@ -218,75 +218,74 @@ void advance_time(u16 amount, u8 unit)
         normalize_time(t);
     }
     for (i = 0; i <= 6; ++i) {
-        /* A+$18C: tempo di gioco: 7 word da qui (secondi, minuti, decine, ore, giorni) */
+        /* A+$18C: game time: 7 words from here (seconds, minutes, tens, hours, days) */
         STATE_SETW(0xC6 + i, COK_GET16(&t[i * 2]));
     }
     age_effects(amount, unit);
 }
 
 /*
- * Tempo di riposo: 7 word a $24F4 (0 secondi, 1 minuti, 2 decine di
- * minuti, 3 ore, 4 giorni, 5..6 oltre), limiti a $500A.
+ * Rest time: 7 words at $24F4 (0 seconds, 1 minutes, 2 tens of
+ * minutes, 3 hours, 4 days, 5..6 beyond), limits at $500A.
  */
-/* $24F4: tempo di riposo: 7 word (sec, min, decine, ore, giorni, oltre) */
+/* $24F4: rest time: 7 words (sec, min, tens, hours, days, beyond) */
 #define REST_T(i)       H005_W(0x24F4 + (i) * 2)
-/* $24F4: tempo di riposo: 7 word (sec, min, decine, ore, giorni, oltre) */
+/* $24F4: rest time: 7 words (sec, min, tens, hours, days, beyond) */
 #define REST_SET_T(i, v) H005_SET_W(0x24F4 + (i) * 2, (u16)(v))
-#define REST_TIMER(i)   H005_B(0x24EC + (i))  /* per personaggio */
+#define REST_TIMER(i)   H005_B(0x24EC + (i))  /* per character */
 
 /*
- * PORT H058+$05F4: normalizza il tempo di riposo; il riporto oltre i
- * giorni torna nei giorni, al massimo 99.
+ * PORT H058+$05F4: normalises the rest time; the carry beyond the
+ * days goes back into the days, at most 99.
  */
 static void rest_normalize(void)
 {
-    /* $24F4: tempo di riposo: 7 word (sec, min, decine, ore, giorni, oltre) */
+    /* $24F4: rest time: 7 words (sec, min, tens, hours, days, beyond) */
     normalize_time(&g_h005[0x24F4]);
-    if (REST_T(5) > 0) { /* $24FE: tempo di riposo: riporto oltre i giorni (word, voce 5) */
-        /* $5012: (word) limite dell'unita' 4 (giorni) per il riporto; $24FE: tempo di riposo:
-         * riporto oltre i giorni (word, voce 5); $24FC: tempo di riposo: giorni, al massimo 99
-         * (word, voce 4) */
+    if (REST_T(5) > 0) { /* $24FE: rest time: carry beyond the days (word, entry 5) */
+        /* $5012: (word) limit of unit 4 (days) for the carry; $24FE: rest time: carry beyond the days
+         * (word, entry 5); $24FC: rest time: days, at most 99 (word, entry 4) */
         REST_SET_T(4, H005_W(0x5012) * REST_T(5) + REST_T(4));
-        REST_SET_T(5, 0); /* $24FE: tempo di riposo: riporto oltre i giorni (word, voce 5) */
-        if (REST_T(4) > 0x63) { /* $24FC: tempo di riposo: giorni, al massimo 99 (word, voce 4) */
-            REST_SET_T(4, 0x63); /* $24FC: tempo di riposo: giorni, al massimo 99 (word, voce 4) */
+        REST_SET_T(5, 0); /* $24FE: rest time: carry beyond the days (word, entry 5) */
+        if (REST_T(4) > 0x63) { /* $24FC: rest time: days, at most 99 (word, entry 4) */
+            REST_SET_T(4, 0x63); /* $24FC: rest time: days, at most 99 (word, entry 4) */
         }
     }
 }
 
 /*
- * PORT H058+$070E: toglie amount unita' unit dal tempo di riposo,
- * prendendo in prestito dalle unita' maggiori; se non bastano il tempo
- * si azzera.
+ * PORT H058+$070E: removes amount units unit from the rest time,
+ * borrowing from the larger units; if they are not enough the time
+ * is cleared.
  */
 static void rest_subtract(u16 amount, u8 unit)
 {
     u8 j;                               /* -$1(a5) */
     u8 k;                               /* -$2(a5) */
 
-    /* $24FC: tempo di riposo: giorni, al massimo 99 (word, voce 4); $24FA: tempo di riposo: ore
-     * (word, voce 3); $24F8: tempo di riposo: decine di minuti (word, voce 2) */
+    /* $24FC: rest time: days, at most 99 (word, entry 4); $24FA: rest time: hours (word, entry
+     * 3); $24F8: rest time: tens of minutes (word, entry 2) */
     if (REST_T(4) == 0 && REST_T(3) == 0 && REST_T(2) == 0 &&
-        REST_T(1) == 0) { /* $24F6: tempo di riposo: minuti (word, voce 1) */
+        REST_T(1) == 0) { /* $24F6: rest time: minutes (word, entry 1) */
         return;
     }
-    /* $24F4: tempo di riposo: 7 word (sec, min, decine, ore, giorni, oltre) */
+    /* $24F4: rest time: 7 words (sec, min, tens, hours, days, beyond) */
     while (amount > REST_T(unit)) {
         j = (u8)(unit + 1);
-        /* $24F4: tempo di riposo: 7 word (sec, min, decine, ore, giorni, oltre) */
+        /* $24F4: rest time: 7 words (sec, min, tens, hours, days, beyond) */
         while (REST_T(j) == 0 && j < 5) {
             j = (u8)(j + 1);
         }
         if (j == 5) {
-            /* $24F4: tempo di riposo: 7 word (sec, min, decine, ore, giorni, oltre) */
+            /* $24F4: rest time: 7 words (sec, min, tens, hours, days, beyond) */
             h029_fill_bytes(0x0D, &g_h005[0x24F4], 0x0E, 0);
             amount = 0;
         } else {
             for (k = j; k >= (u8)(unit + 1); --k) {
-                /* $24F4: tempo di riposo: 7 word (sec, min, decine, ore, giorni, oltre) */
+                /* $24F4: rest time: 7 words (sec, min, tens, hours, days, beyond) */
                 REST_SET_T(k, REST_T(k) - 1);
-                /* $24F4: tempo di riposo: 7 word (sec, min, decine, ore, giorni, oltre); $500A:
-                 * (word) limiti delle unita' di tempo t[0..6] (riporto) */
+                /* $24F4: rest time: 7 words (sec, min, tens, hours, days, beyond); $500A:
+                 * (word) limits of the time units t[0..6] (carry) */
                 REST_SET_T(k - 1, REST_T(k - 1) + H005_W(0x500A + (k - 1) * 2));
                 if (k == 0) {
                     break;
@@ -294,14 +293,14 @@ static void rest_subtract(u16 amount, u8 unit)
             }
         }
     }
-    /* $24F4: tempo di riposo: 7 word (sec, min, decine, ore, giorni, oltre) */
+    /* $24F4: rest time: 7 words (sec, min, tens, hours, days, beyond) */
     REST_SET_T(unit, REST_T(unit) - amount);
     rest_normalize();
 }
 
 /*
- * PORT H058+$084C: riga "Rest Time : gg : hh : mm" (riga $11); il campo
- * sel (4 giorni, 3 ore, 2 minuti) in colore 15.
+ * PORT H058+$084C: row "Rest Time : dd : hh : mm" (row $11); the field
+ * sel (4 days, 3 hours, 2 minutes) in colour 15.
  */
 static void rest_display(u8 sel)
 {
@@ -317,22 +316,22 @@ static void rest_display(u8 sel)
     ui_draw_text(1, 0x11, 0x0A, 0, 0x0C, "Rest Time : ");
     col = 0x0B;
     for (i = 4; i >= 3; --i) {
-        /* $24F4: tempo di riposo: 7 word (sec, min, decine, ore, giorni, oltre) */
+        /* $24F4: rest time: 7 words (sec, min, tens, hours, days, beyond) */
         format_number(0x28, buf, (s32)REST_T(i), 0, 0x0A, 2, '0');
         ui_draw_text((u16)(col + 1), 0x11, color[i], 0, 0x28, buf);
         ui_draw_text((u16)(col + 1 + 2), 0x11, 0x0A, 0, 3, " : ");
         col = (u16)(col + 3);
     }
-    /* $24F8: tempo di riposo: decine di minuti (word, voce 2); $24F6: tempo di riposo: minuti
-     * (word, voce 1) */
+    /* $24F8: rest time: tens of minutes (word, entry 2); $24F6: rest time: minutes (word,
+     * entry 1) */
     format_number(0x28, buf, (s32)(u16)(REST_T(2) * 0x0A + REST_T(1)), 0,
                   0x0A, 2, '0');
     ui_draw_text((u16)(col + 1), 0x11, color[2], 0, 0x28, buf);
 }
 
 /*
- * PORT H058+$09AA: menu del tempo di riposo.  Su/giu' aggiungono e
- * tolgono, sinistra/destra cambiano campo; 1 se si sceglie Rest.
+ * PORT H058+$09AA: rest time menu.  Up/down add and
+ * remove, left/right change field; 1 if Rest is chosen.
  */
 static u8 rest_menu(void)
 {
@@ -391,9 +390,9 @@ static u8 rest_menu(void)
             break;
         case 'A':
             if (sel == 2) {
-                REST_SET_T(1, REST_T(1) + 5); /* $24F6: tempo di riposo: minuti (word, voce 1) */
+                REST_SET_T(1, REST_T(1) + 5); /* $24F6: rest time: minutes (word, entry 1) */
             } else {
-                /* $24F4: tempo di riposo: 7 word (sec, min, decine, ore, giorni, oltre) */
+                /* $24F4: rest time: 7 words (sec, min, tens, hours, days, beyond) */
                 REST_SET_T(sel, REST_T(sel) + 1);
             }
             rest_normalize();
@@ -414,17 +413,17 @@ static u8 rest_menu(void)
 }
 
 /*
- * PORT H058+$0B84: ogni $120 passi tutto il party recupera un punto
- * ferita.
+ * PORT H058+$0B84: every $120 steps the whole party recovers one hit
+ * point.
  */
 static void rest_heal(u8 show)
 {
     u8 healed;                          /* -$1(a5) */
     Character *p;                       /* -$6(a5) */
 
-    /* $24EA: contatore dei passi di riposo per +1 PF ogni $120 (word) */
+    /* $24EA: counter of the rest steps for +1 HP every $120 (word) */
     H005_SET_W(0x24EA, H005_W(0x24EA) + 1);
-    if (H005_W(0x24EA) < 0x120) { /* $24EA: contatore dei passi di riposo per +1 PF ogni $120 (word) */
+    if (H005_W(0x24EA) < 0x120) { /* $24EA: counter of the rest steps for +1 HP every $120 (word) */
         return;
     }
     healed = 0;
@@ -442,13 +441,13 @@ static void rest_heal(u8 show)
     }
     message_delay();
     clear_message_area();
-    H005_SET_W(0x24EA, 0); /* $24EA: contatore dei passi di riposo per +1 PF ogni $120 (word) */
+    H005_SET_W(0x24EA, 0); /* $24EA: counter of the rest steps for +1 HP every $120 (word) */
 }
 
 /*
- * PORT H058+$0C38: con *flag a 0 memorizza il primo incantesimo in
- * attesa (bit 7) e lo annuncia; con *flag a 1 restituisce il livello
- * del primo in attesa.  *flag diventa 1.
+ * PORT H058+$0C38: with *flag at 0 memorises the first spell
+ * waiting (bit 7) and announces it; with *flag at 1 returns the level
+ * of the first one waiting.  *flag becomes 1.
  */
 static u16 memorize_next(Character *c, u8 *flag)
 {
@@ -457,17 +456,17 @@ static u16 memorize_next(Character *c, u8 *flag)
     u16 spell;
 
     for (i = 0; i <= 0x39 && level == 0; ++i) {
-        /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
+        /* ch+$1E: memorised spells, $3A bytes (+$1E..+$57); bit 7 = to be memorised */
         if (c->b[0x1E + i] > 0x7F) {
             if (*flag) {
-                /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
+                /* ch+$1E: memorised spells, $3A bytes (+$1E..+$57); bit 7 = to be memorised */
                 spell = mask_byte(c->b[0x1E + i], 0x7F);
                 level = H005_B(0x66 + (spell - 1) * 16 + 1);
             } else {
-                /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
+                /* ch+$1E: memorised spells, $3A bytes (+$1E..+$57); bit 7 = to be memorised */
                 c->b[0x1E + i] = (u8)(c->b[0x1E + i] - 0x80);
                 rest_display(0);
-                /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
+                /* ch+$1E: memorised spells, $3A bytes (+$1E..+$57); bit 7 = to be memorised */
                 announce_spell(c, 0x0D, "has memorized", c->b[0x1E + i]);
             }
             *flag = 1;
@@ -477,8 +476,8 @@ static u16 memorize_next(Character *c, u8 *flag)
 }
 
 /*
- * PORT H058+$0D2C: come memorize_next per le pergamene da trascrivere:
- * l'incantesimo diventa noto (+$66) e si toglie dalla pergamena.
+ * PORT H058+$0D2C: like memorize_next for the scrolls to be scribed:
+ * the spell becomes known (+$66) and is removed from the scroll.
  */
 static u16 scribe_next(Character *c, u8 *flag)
 {
@@ -494,19 +493,19 @@ static u16 scribe_next(Character *c, u8 *flag)
             continue;
         }
         for (; k <= 3 && level == 0; ++k) {
-            /* ogg+$43: base tabella 3 incantesimi +$44..+$46 (indice 1..3, bit7=da scrivere) */
+            /* item+$43: base of the table of 3 spells +$44..+$46 (index 1..3, bit7=to be scribed) */
             if (it->b[0x44 + k - 1] <= 0x80) {
                 continue;
             }
             found = 1;
             if (*flag) {
-                /* ogg+$43: base tabella 3 incantesimi +$44..+$46 (indice 1..3, bit7=da scrivere) */
+                /* item+$43: base of the table of 3 spells +$44..+$46 (index 1..3, bit7=to be scribed) */
                 spell = mask_byte(it->b[0x44 + k - 1], 0x7F);
                 level = H005_B(0x66 + (spell - 1) * 16 + 1);
             } else {
-                /* ogg+$43: base tabella 3 incantesimi +$44..+$46 (indice 1..3, bit7=da scrivere) */
+                /* item+$43: base of the table of 3 spells +$44..+$46 (index 1..3, bit7=to be scribed) */
                 spell = mask_byte(it->b[0x44 + k - 1], 0x7F);
-                /* pg+$65: base -1 incantesimi noti +$66+s-1 (s = 1..$6B, flag per incantesimo) */
+                /* ch+$65: base -1 of the known spells +$66+s-1 (s = 1..$6B, flag per spell) */
                 c->b[0x66 + spell - 1] = 1;
                 remove_scroll_spell(c, it, spell);
                 rest_display(0);
@@ -520,9 +519,9 @@ static u16 scribe_next(Character *c, u8 *flag)
 }
 
 /*
- * PORT H058+$0E80: scala i contatori dei personaggi; a zero (e senza
- * attesa iniziale +$58) trascrive o memorizza e fissa il prossimo
- * contatore a 3 volte il livello.
+ * PORT H058+$0E80: decrements the counters of the characters; at zero (and without
+ * initial wait +$58) scribes or memorises and sets the next
+ * counter to 3 times the level.
  */
 static void rest_learn(void)
 {
@@ -532,27 +531,27 @@ static void rest_learn(void)
     u8 flag;                            /* -$9(a5) */
 
     for (p = g_party_head; p != NULL; p = p->next, ++i) {
-        if (REST_TIMER(i - 1) > 0) { /* $24EC: contatori di studio per personaggio (8 byte, indice = posto) */
-            /* $24EC: contatori di studio per personaggio (8 byte, indice = posto) */
+        if (REST_TIMER(i - 1) > 0) { /* $24EC: study counters per character (8 bytes, index = slot) */
+            /* $24EC: study counters per character (8 bytes, index = slot) */
             REST_TIMER(i - 1) = (u8)(REST_TIMER(i - 1) - 1);
         }
-        /* $24EC: contatori di studio per personaggio (8 byte, indice = posto); pg+$58: ore di
-         * studio residue (memorizzazione/trascrizione) (word) */
+        /* $24EC: study counters per character (8 bytes, index = slot); ch+$58: remaining
+         * study hours (memorisation/scribing) (word) */
         if (REST_TIMER(i - 1) == 0 && COK_GET16(&p->b[0x58]) == 0) {
             flag = 0;
             level = scribe_next(p, &flag);
             if (level == 0) {
                 level = memorize_next(p, &flag);
             }
-            /* $24EC: contatori di studio per personaggio (8 byte, indice = posto) */
+            /* $24EC: study counters per character (8 bytes, index = slot) */
             REST_TIMER(i - 1) = (u8)(level * 3);
         }
     }
 }
 
 /*
- * PORT H058+$0F5C: ogni 12 passi scala l'attesa iniziale (+$58); quando
- * finisce fissa il contatore al livello del prossimo incantesimo.
+ * PORT H058+$0F5C: every 12 steps decrements the initial wait (+$58); when
+ * it ends sets the counter to the level of the next spell.
  */
 static void rest_wait(u16 *count)
 {
@@ -568,18 +567,18 @@ static void rest_wait(u16 *count)
     *count = 0;
     i = 1;
     for (p = g_party_head; p != NULL; p = p->next, ++i) {
-        /* pg+$58: ore di studio residue (memorizzazione/trascrizione) (word) */
+        /* ch+$58: remaining study hours (memorisation/scribing) (word) */
         if ((s16)COK_GET16(&p->b[0x58]) > 0) {
-            /* pg+$58: ore di studio residue (memorizzazione/trascrizione) (word) */
+            /* ch+$58: remaining study hours (memorisation/scribing) (word) */
             COK_PUT16(&p->b[0x58], COK_GET16(&p->b[0x58]) - 1);
-            /* pg+$58: ore di studio residue (memorizzazione/trascrizione) (word) */
+            /* ch+$58: remaining study hours (memorisation/scribing) (word) */
             if (COK_GET16(&p->b[0x58]) == 0) {
                 flag = 1;
                 level = scribe_next(p, &flag);
                 if (level == 0) {
                     level = memorize_next(p, &flag);
                 }
-                /* $24EC: contatori di studio per personaggio (8 byte, indice = posto) */
+                /* $24EC: study counters per character (8 bytes, index = slot) */
                 REST_TIMER(i - 1) = (u8)(level * 3);
             }
         }
@@ -587,9 +586,9 @@ static void rest_wait(u16 *count)
 }
 
 /*
- * PORT H058+$1014: riposo per il tempo a $24F4 (interactive: prima il
- * menu e si puo' interrompere con un tasto) a passi di 5 minuti; puo'
- * capitare un incontro (g_state_b +$5A4/+$5A6).  1 se interrotto.
+ * PORT H058+$1014: rest for the time at $24F4 (interactive: first the
+ * menu, and it can be interrupted with a key) in steps of 5 minutes; an
+ * encounter may happen (g_state_b +$5A4/+$5A6).  1 if interrupted.
  */
 u8 rest_party(u8 interactive)
 {
@@ -602,7 +601,7 @@ u8 rest_party(u8 interactive)
 
     i = 1;
     for (p = g_party_head; p != NULL; p = p->next) {
-        REST_TIMER(i - 1) = 0; /* $24EC: contatori di studio per personaggio (8 byte, indice = posto) */
+        REST_TIMER(i - 1) = 0; /* $24EC: study counters per character (8 bytes, index = slot) */
         ++i;
     }
     h029_fill_bytes(0x27, g_h058_bss, 0x28, 1);
@@ -613,14 +612,14 @@ u8 rest_party(u8 interactive)
         rest_display(0);
     }
     set_pointer_shape(9);
-    H005_B(0x24E2) = 1; /* $24E2: 1 durante il riposo: puntatore d'attesa, messaggi dalla riga $12 */
+    H005_B(0x24E2) = 1; /* $24E2: 1 while resting: wait pointer, messages from row $12 */
     stop = (u8)(interactive ? !rest_menu() : 0);
-    /* $24FC: tempo di riposo: giorni, al massimo 99 (word, voce 4); $24FA: tempo di riposo: ore
-     * (word, voce 3); $24F8: tempo di riposo: decine di minuti (word, voce 2) */
+    /* $24FC: rest time: days, at most 99 (word, entry 4); $24FA: rest time: hours (word, entry
+     * 3); $24F8: rest time: tens of minutes (word, entry 2) */
     while (!stop && (REST_T(4) > 0 || REST_T(3) > 0 || REST_T(2) > 0 ||
-                     REST_T(1) > 0)) { /* $24F6: tempo di riposo: minuti (word, voce 1) */
+                     REST_T(1) > 0)) { /* $24F6: rest time: minutes (word, entry 1) */
         poll_intuition_events();
-        if (interactive && G_KEY) { /* $5305: tasto/azione pendente dall'input (G_KEY) */
+        if (interactive && G_KEY) { /* $5305: key/action pending from the input (G_KEY) */
             rest_display(0);
             if (ask_yes_no(0x0E, "Stop Resting? ", 0x0D, 0x0A, 0x0F) == 'Y') {
                 stop = 1;
@@ -641,15 +640,15 @@ u8 rest_party(u8 interactive)
         rest_heal(interactive);
         rest_learn();
         rest_wait(&wait_count);
-        /* B+$5A4: (word) passi di riposo (5 min) fra i tiri d'incontro, 0 mai */
+        /* B+$5A4: (word) rest steps (5 min) between encounter rolls, 0 never */
         if (COK_GET16(g_state_b + 0x5A4) > 0) {
-            /* $3DDE: (word) passi di riposo dall'ultimo controllo incontri */
+            /* $3DDE: (word) rest steps since the last encounter check */
             H005_SET_W(0x3DDE, H005_W(0x3DDE) + 1);
-            /* $3DDE: (word) passi di riposo dall'ultimo controllo incontri; B+$5A4: (word) passi di
-             * riposo (5 min) fra i tiri d'incontro, 0 mai */
+            /* $3DDE: (word) rest steps since the last encounter check; B+$5A4: (word) rest steps (5
+             * min) between encounter rolls, 0 never */
             if (H005_W(0x3DDE) >= COK_GET16(g_state_b + 0x5A4)) {
-                H005_SET_W(0x3DDE, 0); /* $3DDE: (word) passi di riposo dall'ultimo controllo incontri */
-                /* B+$5A6: (word) probabilita' % d'incontro durante il riposo */
+                H005_SET_W(0x3DDE, 0); /* $3DDE: (word) rest steps since the last encounter check */
+                /* B+$5A6: (word) % chance of an encounter while resting */
                 if (roll_dice(1, 0x64) <= COK_GET16(g_state_b + 0x5A6)) {
                     clear_message_area();
                     rest_display(0);
@@ -663,7 +662,7 @@ u8 rest_party(u8 interactive)
         }
     }
     clear_text_cells(1, 0x11, 0x26, 0x16);
-    H005_B(0x24E2) = 0; /* $24E2: 1 durante il riposo: puntatore d'attesa, messaggi dalla riga $12 */
+    H005_B(0x24E2) = 0; /* $24E2: 1 while resting: wait pointer, messages from row $12 */
     set_pointer_shape(0x0A);
     return interrupted;
 }

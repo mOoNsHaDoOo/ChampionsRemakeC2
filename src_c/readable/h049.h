@@ -1,13 +1,13 @@
-/* H049: disegno di testo/glifi, blitter diretto e nodi QBSBlit. */
+/* H049: text/glyph drawing, direct blitter and QBSBlit nodes. */
 #ifndef COK_H049_H
 #define COK_H049_H
 
 #include "cok.h"
 #include "gfx_record.h"
 
-/* Voce della verifica del manuale (H049+$07E4, 12 byte). */
+/* Entry of the manual check (H049+$07E4, 12 bytes). */
 typedef struct QuizEntry {
-    const u8 *answer;           /* +$00: risposta codificata */
+    const u8 *answer;           /* +$00: encoded answer */
     u16 page;                   /* +$04 */
     u16 line;                   /* +$06 */
     u16 word;                   /* +$08 */

@@ -1,12 +1,12 @@
 ; ============================================================================
-; GUIDA DEL MODULO H047
-; editor dell'icona del personaggio (corpo, armi, parti).
-; I commenti descrivono l'analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H047
+; character icon editor (body, weapons, parts).
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Editor dell'icona del personaggio: parti del corpo, armi, scudi, colori e conferma. Le stringhe del modulo sono le voci del menu ('Head', 'Weapon', 'Body', 'Shield', 'Arm', 'Leg', 'Exit').
+; MODULE NOTE
+; Character icon editor: body parts, weapons, shields, colours and confirmation. The strings of the module are the menu entries ('Head', 'Weapon', 'Body', 'Shield', 'Arm', 'Leg', 'Exit').
 ; --------------------------------------------------------------------------
 ; H047: 5224 original bytes; all offsets are section-relative.
         section H047,code
@@ -28,10 +28,10 @@ H047:
         dc.w $3F20,$0000
         dc.l H047+$00000002
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H047 [parziale]
-; Scopo: Ingresso del modulo editor dell'icona del personaggio (corpo, armi, parti); imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H047+$145E.
-; Chiamanti diretti: H000+$01AA
+; ROUTINE: module_init_H047 [partial]
+; Purpose: Entry of the character icon editor (body, weapons, parts) module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H047+$145E.
+; Direct callers: H000+$01AA
 ; --------------------------------------------------------------------------
 L047_000000D8:
 ; H047+$000000D8: 2f0c  move.l a4, -(a7)
@@ -46,17 +46,17 @@ L047_000000E2:
 ; H047+$000000E2: 6000137a  bra.w $145e
         bra.w H047+$145E
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H047_08D6 [parziale]
-; Scopo: Trampolino verso H047+$08D6; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H047+$08D6.
-;   - Richiama H044+$01C2.
-;   - Richiama H028+$0D36.
-;   - Richiama H022+$0084.
-;   - Richiama H066+$0C34.
-;   - Richiama H030+$0256.
-;   - Richiama H008+$01FC.
-;   - Usa lo stato globale: H005+$3DE3 (contesto nativo, 5 nel combattimento); H005+$52F2 (puntatore allo schermo del gioco); H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H057+$2850, H013+$2A96
+; ROUTINE: trampoline_H047_08D6 [partial]
+; Purpose: Trampoline to H047+$08D6; the actual body is there.
+;   - Jumps to the actual body at H047+$08D6.
+;   - Calls H044+$01C2.
+;   - Calls H028+$0D36.
+;   - Calls H022+$0084.
+;   - Calls H066+$0C34.
+;   - Calls H030+$0256.
+;   - Calls H008+$01FC.
+;   - Uses the global state: H005+$3DE3 (native context, 5 in combat); H005+$52F2 (pointer to the game screen); H005+$3368 (current character).
+; Direct callers: H057+$2850, H013+$2A96
 ; --------------------------------------------------------------------------
 L047_000000E6:
 ; H047+$000000E6: 2f0c  move.l a4, -(a7)
@@ -71,10 +71,10 @@ L047_000000F0:
 ; H047+$000000F0: 600007e4  bra.w $8d6
         bra.w H047+$8D6
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H047_000000F4 [parziale]
-; Scopo: Routine del modulo editor dell'icona del personaggio (corpo, armi, parti); richiama H035+$0460.
-;   - Richiama H035+$0460.
-; Chiamanti diretti: H047+$09EA, H047+$0A7C
+; ROUTINE: sub_H047_000000F4 [partial]
+; Purpose: Routine of the character icon editor (body, weapons, parts) module; calls H035+$0460.
+;   - Calls H035+$0460.
+; Direct callers: H047+$09EA, H047+$0A7C
 ; --------------------------------------------------------------------------
 L047_000000F4:
 ; H047+$000000F4: 4e55fff8  link.w a5, #$fff8
@@ -180,15 +180,15 @@ L047_00000160:
 ; H047+$00000160: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H047_00000162 [parziale]
-; Scopo: Routine del modulo editor dell'icona del personaggio (corpo, armi, parti); opera su H005+$3368 (personaggio corrente).
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H047+$03FE, H047+$021E
+; ROUTINE: sub_H047_00000162 [partial]
+; Purpose: Routine of the character icon editor (body, weapons, parts) module; works on H005+$3368 (current character).
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H047+$03FE, H047+$021E
 ; --------------------------------------------------------------------------
 L047_00000162:
 ; H047+$00000162: 4e550000  link.w a5, #$0
         link.w a5, #$0
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L047_00000166:
 ; H047+$00000166: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -295,15 +295,15 @@ L047_000001EC:
 ; H047+$000001EC: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H047_000001EE [parziale]
-; Scopo: Routine del modulo editor dell'icona del personaggio (corpo, armi, parti); opera su H005+$2356 (coordinata mouse X); H005+$2354 (coordinata mouse Y).
-;   - Usa lo stato globale: H005+$2356 (coordinata mouse X); H005+$2354 (coordinata mouse Y).
-; Chiamanti diretti: H047+$11C4
+; ROUTINE: sub_H047_000001EE [partial]
+; Purpose: Routine of the character icon editor (body, weapons, parts) module; works on H005+$2356 (mouse X coordinate); H005+$2354 (mouse Y coordinate).
+;   - Uses the global state: H005+$2356 (mouse X coordinate); H005+$2354 (mouse Y coordinate).
+; Direct callers: H047+$11C4
 ; --------------------------------------------------------------------------
 L047_000001EE:
 ; H047+$000001EE: 4e55fffa  link.w a5, #$fffa
         link.w a5, #$fffa
-; STATO: H005+$2356 = coordinata mouse X
+; STATE: H005+$2356 = mouse X coordinate
 L047_000001F2:
 ; H047+$000001F2: 343900002356  move.w $2356.l, d2
         move.w (H005+$2356).l, d2
@@ -322,7 +322,7 @@ L047_00000200:
 L047_00000204:
 ; H047+$00000204: 3682  move.w d2, (a3)
         move.w d2, (a3)
-; STATO: H005+$2354 = coordinata mouse Y
+; STATE: H005+$2354 = mouse Y coordinate
 L047_00000206:
 ; H047+$00000206: 343900002354  move.w $2354.l, d2
         move.w (H005+$2354).l, d2
@@ -549,13 +549,13 @@ L047_000002FC:
 ; H047+$000002FC: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H047_000002FE [parziale]
-; Scopo: Routine del modulo editor dell'icona del personaggio (corpo, armi, parti); richiama H035+$0460, H029+$10B8, H066+$0C34.
-;   - Richiama H035+$0460.
-;   - Richiama H029+$10B8.
-;   - Richiama H066+$0C34.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H047+$061A, H047+$0636, H047+$05DE, H047+$065C, H047+$0678
+; ROUTINE: sub_H047_000002FE [partial]
+; Purpose: Routine of the character icon editor (body, weapons, parts) module; calls H035+$0460, H029+$10B8, H066+$0C34.
+;   - Calls H035+$0460.
+;   - Calls H029+$10B8.
+;   - Calls H066+$0C34.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H047+$061A, H047+$0636, H047+$05DE, H047+$065C, H047+$0678
 ; --------------------------------------------------------------------------
 L047_000002FE:
 ; H047+$000002FE: 4e55fff8  link.w a5, #$fff8
@@ -599,7 +599,7 @@ L047_00000322:
 L047_00000324:
 ; H047+$00000324: 3b42fff8  move.w d2, -$8(a5)
         move.w d2, -$8(a5)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L047_00000328:
 ; H047+$00000328: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -761,16 +761,16 @@ L047_000003EC:
 ; H047+$000003EC: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H047_000003EE [parziale]
-; Scopo: Routine del modulo editor dell'icona del personaggio (corpo, armi, parti); richiama H029+$10B8.
-;   - Richiama H029+$10B8.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H047+$0CD8, H047+$0B4A, H047+$10EE, H047+$1102, H047+$1118, H047+$112C e altri 5
+; ROUTINE: sub_H047_000003EE [partial]
+; Purpose: Routine of the character icon editor (body, weapons, parts) module; calls H029+$10B8.
+;   - Calls H029+$10B8.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H047+$0CD8, H047+$0B4A, H047+$10EE, H047+$1102, H047+$1118, H047+$112C and 5 more
 ; --------------------------------------------------------------------------
 L047_000003EE:
 ; H047+$000003EE: 4e55ffee  link.w a5, #$ffee
         link.w a5, #$ffee
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L047_000003F2:
 ; H047+$000003F2: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -1316,17 +1316,17 @@ L047_00000686:
 ; H047+$00000686: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H047_00000688 [parziale]
-; Scopo: Routine del modulo editor dell'icona del personaggio (corpo, armi, parti); richiama H016+$0014, H029+$0354, H029+$0EFE, H044+$01C2.
-;   - Richiama H016+$0014.
-;   - Richiama H029+$0354.
-;   - Richiama H029+$0EFE.
-;   - Richiama H044+$01C2.
-;   - Richiama H028+$0D36.
-;   - Richiama H022+$0084.
-;   - Richiama H066+$0C34.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente); H005+$3DE3 (contesto nativo, 5 nel combattimento); H005+$52F2 (puntatore allo schermo del gioco).
-; Chiamanti diretti: H047+$09D8, H047+$139A, H047+$13F6, H047+$140E
+; ROUTINE: sub_H047_00000688 [partial]
+; Purpose: Routine of the character icon editor (body, weapons, parts) module; calls H016+$0014, H029+$0354, H029+$0EFE, H044+$01C2.
+;   - Calls H016+$0014.
+;   - Calls H029+$0354.
+;   - Calls H029+$0EFE.
+;   - Calls H044+$01C2.
+;   - Calls H028+$0D36.
+;   - Calls H022+$0084.
+;   - Calls H066+$0C34.
+;   - Uses the global state: H005+$3368 (current character); H005+$3DE3 (native context, 5 in combat); H005+$52F2 (pointer to the game screen).
+; Direct callers: H047+$09D8, H047+$139A, H047+$13F6, H047+$140E
 ; --------------------------------------------------------------------------
 L047_00000688:
 ; H047+$00000688: 4e55ffd8  link.w a5, #$ffd8
@@ -1528,7 +1528,7 @@ L047_0000076A:
 L047_0000076E:
 ; H047+$0000076E: 6700015c  beq.w $8cc
         beq.w H047+$8CC
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L047_00000772:
 ; H047+$00000772: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -1833,11 +1833,11 @@ L047_000008D0:
 L047_000008D4:
 ; H047+$000008D4: 4ed0  jmp (a0)
         jmp (a0)
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L047_000008D6:
 ; H047+$000008D6: 1b7900003de3ffff  move.b $3de3.l, -$1(a5)
         move.b (H005+$3DE3).l, -$1(a5)
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L047_000008DE:
 ; H047+$000008DE: 423900003de3  clr.b $3de3.l
         clr.b (H005+$3DE3).l
@@ -1927,7 +1927,7 @@ L047_00000938:
 L047_0000093E:
 ; H047+$0000093E: 4eb900000d36  jsr $d36.l
         jsr (H028+$D36).l
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L047_00000944:
 ; H047+$00000944: 2679000052f2  movea.l $52f2.l, a3
         movea.l (H005+$52F2).l, a3
@@ -1954,7 +1954,7 @@ L047_00000960:
 L047_00000962:
 ; H047+$00000962: 4eb900000c34  jsr $c34.l
         jsr (H066+$C34).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L047_00000968:
 ; H047+$00000968: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -2100,7 +2100,7 @@ L047_00000A00:
 L047_00000A04:
 ; H047+$00000A04: 486c0064  pea.l $64(a4)
         pea.l $64(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L047_00000A08:
 ; H047+$00000A08: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -2128,7 +2128,7 @@ L047_00000A20:
 L047_00000A24:
 ; H047+$00000A24: 486c0068  pea.l $68(a4)
         pea.l $68(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L047_00000A28:
 ; H047+$00000A28: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -2156,7 +2156,7 @@ L047_00000A40:
 L047_00000A44:
 ; H047+$00000A44: 486c0077  pea.l $77(a4)
         pea.l $77(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L047_00000A48:
 ; H047+$00000A48: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -2184,7 +2184,7 @@ L047_00000A60:
 L047_00000A64:
 ; H047+$00000A64: 486c007b  pea.l $7b(a4)
         pea.l $7b(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L047_00000A68:
 ; H047+$00000A68: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -2323,7 +2323,7 @@ L047_00000AFE:
 L047_00000B00:
 ; H047+$00000B00: 486dfff6  pea.l -$a(a5)
         pea.l -$a(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L047_00000B04:
 ; H047+$00000B04: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -2608,7 +2608,7 @@ L047_00000C98:
 L047_00000C9A:
 ; H047+$00000C9A: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H047+$0C42; indici 0..34, default -1.
+; DISPATCH: words relative to H047+$0C42; indices 0..34, default -1.
 L047_00000C9E:
 ; H047+$00000C9E: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -2751,7 +2751,7 @@ L047_00000D76:
 L047_00000D78:
 ; H047+$00000D78: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H047+$0D38; indici 0..22, default -1.
+; DISPATCH: words relative to H047+$0D38; indices 0..22, default -1.
 L047_00000D7C:
 ; H047+$00000D7C: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -2892,7 +2892,7 @@ L047_00000EBC:
 L047_00000EBE:
 ; H047+$00000EBE: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H047+$0E08; indici 0..83, default -1.
+; DISPATCH: words relative to H047+$0E08; indices 0..83, default -1.
 L047_00000EC2:
 ; H047+$00000EC2: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -3231,7 +3231,7 @@ L047_000010CA:
 L047_000010CC:
 ; H047+$000010CC: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H047+$101C; indici 0..80, default -1.
+; DISPATCH: words relative to H047+$101C; indices 0..80, default -1.
 L047_000010D0:
 ; H047+$000010D0: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -3445,14 +3445,14 @@ L047_00001188:
 L047_0000118E:
 ; H047+$0000118E: 6700005a  beq.w $11ea
         beq.w H047+$11EA
-; STATO: H005+$2356 = coordinata mouse X
+; STATE: H005+$2356 = mouse X coordinate
 L047_00001192:
 ; H047+$00001192: 0c79002800002356  cmpi.w #$28, $2356.l
         cmpi.w #$28, (H005+$2356).l
 L047_0000119A:
 ; H047+$0000119A: 6c000018  bge.w $11b4
         bge.w H047+$11B4
-; STATO: H005+$2354 = coordinata mouse Y
+; STATE: H005+$2354 = mouse Y coordinate
 L047_0000119E:
 ; H047+$0000119E: 0c7900c000002354  cmpi.w #$c0, $2354.l
         cmpi.w #$c0, (H005+$2354).l
@@ -3618,7 +3618,7 @@ L047_000012F8:
 L047_000012FA:
 ; H047+$000012FA: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H047+$1248; indici 0..81, default -1.
+; DISPATCH: words relative to H047+$1248; indices 0..81, default -1.
 L047_000012FE:
 ; H047+$000012FE: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -3722,7 +3722,7 @@ L047_0000137C:
 L047_0000137E:
 ; H047+$0000137E: 34322000  move.w (a2, d2.w), d2
         move.w (a2, d2.w), d2
-; DISPATCH: word relative a H047+$1362; indici 0..5, default -1.
+; DISPATCH: words relative to H047+$1362; indices 0..5, default -1.
 L047_00001382:
 ; H047+$00001382: 4eb22000  jsr (a2, d2.w)
         jsr (a2, d2.w)
@@ -3897,7 +3897,7 @@ L047_00001442:
 L047_00001448:
 ; H047+$00001448: 6600f516  bne.w $960
         bne.w H047+$960
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L047_0000144C:
 ; H047+$0000144C: 13edffff00003de3  move.b -$1(a5), $3de3.l
         move.b -$1(a5), (H005+$3DE3).l

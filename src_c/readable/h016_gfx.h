@@ -1,4 +1,4 @@
-/* H016: adattatori graphics.library per blit, attesa e cancellazione raster. */
+/* H016: graphics.library adapters for blits, waiting and raster clearing. */
 #ifndef COK_H016_GFX_H
 #define COK_H016_GFX_H
 

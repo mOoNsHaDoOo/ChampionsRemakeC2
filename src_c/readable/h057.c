@@ -1,7 +1,7 @@
 /*
- * H057: l'accampamento (Encamp) con i suoi menu (Magic, Alter, Fix),
- * il lancio degli incantesimi fuori dal combattimento (Cast), la
- * memorizzazione e la trascrizione delle pergamene.
+ * H057: the camp (Encamp) with its menus (Magic, Alter, Fix),
+ * spell casting outside combat (Cast), the
+ * memorisation and the scribing of the scrolls.
  */
 #include "h057.h"
 #include "init_data.h"
@@ -25,7 +25,7 @@
 #include "h065.h"
 #include "h066.h"
 
-/* Dati del modulo sotto a4: g_h057_bss[0xA8 - off] e' -off(a4). */
+/* Module data below a4: g_h057_bss[0xA8 - off] is -off(a4). */
 u8 g_h057_bss[0xA8];
 #define CAMP_MENU   ((const char *)&g_h057_bss[0xA8 - 0xA8])  /* -$A8(a4) */
 #define MAGIC_MENU  ((const char *)&g_h057_bss[0xA8 - 0x7E])  /* -$7E(a4) */
@@ -34,19 +34,19 @@ u8 g_h057_bss[0xA8];
 
 #include "h057_init_data.h"
 
-/* Tabella degli incantesimi ($66, 16 byte): +0 classe, +1 livello, +$A effetto. */
-/* $66: tabella incantesimi, 16 byte per incantesimo (da 1); k/o = campo */
+/* Spell table ($66, 16 bytes): +0 class, +1 level, +$A effect. */
+/* $66: spell table, 16 bytes per spell (from 1); k/o = field */
 #define SPELL_B(s, k)   H005_B(0x66 + ((int)(s) - 1) * 16 + (k))
-/* $716: nomi degli incantesimi, 32 byte per incantesimo (1..) */
+/* $716: spell names, 32 bytes per spell (1..) */
 #define SPELL_NAME(s)   ((const char *)&H005_B(0x716 + ((int)(s) - 1) * 32))
-#define TEXT_BUF        ((char *)&g_h005[0x3C82])   /* $3C82, 80 caratteri */
-/* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
+#define TEXT_BUF        ((char *)&g_h005[0x3C82])   /* $3C82, 80 characters */
+/* $2483: index of the selected option in the row menus (persistent) */
 #define CHOICE_SELECTED H005_B(0x2483)
-/* $247D: incantesimi bonus ancora memorizzabili (Memorize, tabella posti) */
+/* $247D: bonus spells that can still be memorised (Memorize, slot table) */
 #define BONUS_SPELLS    H005_B(0x247D)
 #define CUR             g_current_char
 
-/* Copia come move.b (a3)+,(a2)+ / dbeq: al massimo max+1 byte, NUL compreso. */
+/* Copy like move.b (a3)+,(a2)+ / dbeq: at most max+1 bytes, NUL included. */
 static void copy_dbeq(char *dst, const char *src, u16 max)
 {
     u16 n;
@@ -59,14 +59,13 @@ static void copy_dbeq(char *dst, const char *src, u16 max)
     }
 }
 
-/* Tempo di riposo in ore, decine di minuti e minuti ($24FA/$24F8/$24F6). */
+/* Rest time in hours, tens of minutes and minutes ($24FA/$24F8/$24F6). */
 static void set_rest_time(u16 minutes)
 {
-    H005_SET_W(0x24FA, (u16)(minutes / 0x3C)); /* $24FA: tempo di riposo: ore (word, voce 3) */
-    /* $24FA: tempo di riposo: ore (word, voce 3); $24F8: tempo di riposo: decine di minuti (word,
-     * voce 2) */
+    H005_SET_W(0x24FA, (u16)(minutes / 0x3C)); /* $24FA: rest time: hours (word, entry 3) */
+    /* $24FA: rest time: hours (word, entry 3); $24F8: rest time: tens of minutes (word, entry 2) */
     H005_SET_W(0x24F8, (u16)((u16)(minutes - H005_W(0x24FA) * 0x3C) / 0x0A));
-    H005_SET_W(0x24F6, (u16)(minutes % 0x0A)); /* $24F6: tempo di riposo: minuti (word, voce 1) */
+    H005_SET_W(0x24F6, (u16)(minutes % 0x0A)); /* $24F6: rest time: minutes (word, entry 1) */
 }
 
 /* PORT H057+$05A6 */
@@ -76,10 +75,10 @@ void h057_init(void)
 }
 
 /*
- * PORT H057+$05B4: minuti per memorizzare e trascrivere quanto e' in
- * attesa (bit 7): 15 per livello (il livello 0 vale 1 fra gli
- * incantesimi), piu' 4 ore se c'e' qualcosa, 6 se oltre il livello 2.
- * Le ore iniziali vanno anche in +$58.
+ * PORT H057+$05B4: minutes to memorise and scribe what is
+ * waiting (bit 7): 15 per level (level 0 counts as 1 among the
+ * spells), plus 4 hours if there is something, 6 if beyond level 2.
+ * The initial hours also go into +$58.
  */
 static u16 study_time(Character *c)
 {
@@ -94,9 +93,9 @@ static u16 study_time(Character *c)
     u16 s;
 
     for (i = 0; i <= 0x39; ++i) {
-        /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
+        /* ch+$1E: memorised spells, $3A bytes (+$1E..+$57); bit 7 = to be memorised */
         if (c->b[0x1E + i] > 0x7F) {
-            /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
+            /* ch+$1E: memorised spells, $3A bytes (+$1E..+$57); bit 7 = to be memorised */
             s = mask_byte(c->b[0x1E + i], 0x7F);
             level = SPELL_B(s, 1);
             if (level == 0) {
@@ -113,9 +112,9 @@ static u16 study_time(Character *c)
             continue;
         }
         for (i = 1; i <= 3; ++i) {
-            /* ogg+$43: base tabella 3 incantesimi +$44..+$46 (indice 1..3, bit7=da scrivere) */
+            /* item+$43: base of the table of 3 spells +$44..+$46 (index 1..3, bit7=to be scribed) */
             if (it->b[0x44 + i - 1] > 0x7F) {
-                /* ogg+$43: base tabella 3 incantesimi +$44..+$46 (indice 1..3, bit7=da scrivere) */
+                /* item+$43: base of the table of 3 spells +$44..+$46 (index 1..3, bit7=to be scribed) */
                 s = mask_byte(it->b[0x44 + i - 1], 0x7F);
                 level = SPELL_B(s, 1);
                 if (level > max_scr) {
@@ -132,32 +131,32 @@ static u16 study_time(Character *c)
     if (max_mem > 2 || max_scr > 2) {
         hours = 6;
     }
-    COK_PUT16(&c->b[0x58], hours); /* pg+$58: ore di studio residue (memorizzazione/trascrizione) (word) */
+    COK_PUT16(&c->b[0x58], hours); /* ch+$58: remaining study hours (memorisation/scribing) (word) */
     return (u16)(hours * 0x3C + sum_mem * 0x0F + sum_scr * 0x0F);
 }
 
-/* PORT H057+$0778: sempre 1. */
+/* PORT H057+$0778: always 1. */
 static u8 camp_save_ok(void)
 {
     return 1;
 }
 
-/* PORT H057+$078E: annulla gli incantesimi in attesa di memorizzazione. */
+/* PORT H057+$078E: cancels the spells waiting to be memorised. */
 static void cancel_memorize(Character *c)
 {
     u16 i;                              /* -$2(a5) */
 
     for (i = 0; i <= 0x39; ++i) {
-        /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
+        /* ch+$1E: memorised spells, $3A bytes (+$1E..+$57); bit 7 = to be memorised */
         if (c->b[0x1E + i] > 0x7F) {
-            /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
+            /* ch+$1E: memorised spells, $3A bytes (+$1E..+$57); bit 7 = to be memorised */
             c->b[0x1E + i] = 0;
         }
     }
-    COK_PUT16(&c->b[0x58], 0); /* pg+$58: ore di studio residue (memorizzazione/trascrizione) (word) */
+    COK_PUT16(&c->b[0x58], 0); /* ch+$58: remaining study hours (memorisation/scribing) (word) */
 }
 
-/* PORT H057+$07E8: annulla le trascrizioni in attesa sulle pergamene. */
+/* PORT H057+$07E8: cancels the scribing waiting on the scrolls. */
 static void cancel_scribe(Character *c)
 {
     u16 k;                              /* -$2(a5) */
@@ -168,13 +167,13 @@ static void cancel_scribe(Character *c)
             continue;
         }
         for (k = 1; k <= 3; ++k) {
-            /* ogg+$43: base tabella 3 incantesimi +$44..+$46 (indice 1..3, bit7=da scrivere) */
+            /* item+$43: base of the table of 3 spells +$44..+$46 (index 1..3, bit7=to be scribed) */
             it->b[0x44 + k - 1] = mask_byte(it->b[0x44 + k - 1], 0x7F);
         }
     }
 }
 
-/* PORT H057+$0878: annulla tutto quanto e' in attesa nel party. */
+/* PORT H057+$0878: cancels everything waiting in the party. */
 static void cancel_all_study(void)
 {
     Character *p;                       /* -$4(a5) */
@@ -186,10 +185,10 @@ static void cancel_all_study(void)
 }
 
 /*
- * PORT H057+$08B4: posti liberi del personaggio corrente per classe kind
- * e livello level (in *count quelli occupati).  La classe 2 (speciali)
- * non dipende dal livello: 3 per il tipo +$5E 4, 0 per il 6, 1 altrimenti
- * (se +$FE), meno quelli $65..$6B gia' memorizzati; *count non cambia.
+ * PORT H057+$08B4: free slots of the current character for class kind
+ * and level level (the used ones in *count).  Class 2 (specials)
+ * does not depend on the level: 3 for type +$5E 4, 0 for 6, 1 otherwise
+ * (if +$FE), minus those $65..$6B already memorised; *count does not change.
  */
 static u16 free_slots(u8 level, u8 kind, u16 *count)
 {
@@ -200,8 +199,8 @@ static u16 free_slots(u8 level, u8 kind, u16 *count)
     u16 max;
 
     if (kind == 2) {
-        if (CUR->b[0xFE] > 0) { /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
-            switch (CUR->b[0x5E]) { /* pg+$5E: divinita' del chierico (0 nessuna, 1..7; 6 per le razze 3-4) */
+        if (CUR->b[0xFE] > 0) { /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
+            switch (CUR->b[0x5E]) { /* ch+$5E: deity of the cleric (0 none, 1..7; 6 for races 3-4) */
             case 4:
                 n = 3;
                 break;
@@ -214,7 +213,7 @@ static u16 free_slots(u8 level, u8 kind, u16 *count)
             }
         }
         for (i = 0; i <= 0x39; ++i) {
-            /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
+            /* ch+$1E: memorised spells, $3A bytes (+$1E..+$57); bit 7 = to be memorised */
             s = mask_byte(CUR->b[0x1E + i], 0x7F);
             if (s > 0x64 && s < 0x6C) {
                 --n;
@@ -224,9 +223,9 @@ static u16 free_slots(u8 level, u8 kind, u16 *count)
     } else {
         n = 0;
         for (i = 0; i <= 0x39; ++i) {
-            /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
+            /* ch+$1E: memorised spells, $3A bytes (+$1E..+$57); bit 7 = to be memorised */
             if (CUR->b[0x1E + i] > 0) {
-                /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
+                /* ch+$1E: memorised spells, $3A bytes (+$1E..+$57); bit 7 = to be memorised */
                 s = mask_byte(CUR->b[0x1E + i], 0x7F);
                 if (SPELL_B(s, 1) == level && SPELL_B(s, 0) == kind) {
                     ++n;
@@ -234,7 +233,7 @@ static u16 free_slots(u8 level, u8 kind, u16 *count)
             }
         }
         *count = (u16)n;
-        /* pg+$123: PF massimi senza costituzione; base -1 slot incantesimi +$124 */
+        /* ch+$123: maximum HP without constitution; base -1 of the spell slots +$124 */
         max = CUR->b[0x124 + kind * 6 + level - 1];
         if ((u16)n > max) {
             n = (s16)max;
@@ -245,20 +244,20 @@ static u16 free_slots(u8 level, u8 kind, u16 *count)
 }
 
 /*
- * PORT H057+$0AE0: il personaggio corrente puo' usare la magia per
- * what (1 lanciare, 2 memorizzare, 3 trascrivere)?  Altrimenti il
- * messaggio.
+ * PORT H057+$0AE0: can the current character use magic for
+ * what (1 cast, 2 memorise, 3 scribe)?  Otherwise the
+ * message.
  */
 static u8 can_use_magic(u16 what)
 {
     char buf[0x2A];                     /* -$2A(a5) */
 
     copy_dbeq(buf, "", 0x28);
-    /* A+$1CA: (word) se non nullo nell'area non si lanciano incantesimi */
+    /* A+$1CA: (word) if not zero no spells can be cast in the area */
     if (what == 1 && COK_GET16(g_state_a + 0x1CA) > 0) {
         copy_dbeq(buf, "cannot cast spells in this area", 0x28);
-    /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra; pg+$198: attivo/in
-     * piedi (0 a terra o fuori combattimento) */
+    /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down; ch+$198:
+     * active/standing (0 down or out of the combat) */
     } else if (CUR->b[0x197] == 1 || CUR->b[0x198] == 0) {
         copy_dbeq(buf, "is in no condition to ", 0x28);
         switch (what) {
@@ -282,7 +281,7 @@ static u8 can_use_magic(u16 what)
     return 0;
 }
 
-/* PORT H057+$0C04: Cast, lancia gli incantesimi memorizzati. */
+/* PORT H057+$0C04: Cast, casts the memorised spells. */
 void cast_spells(void)
 {
     s16 spell = -1;                     /* -$2(a5) */
@@ -292,7 +291,7 @@ void cast_spells(void)
     u16 n;                              /* -$8(a5) */
 
     g_spell_target = NULL;
-    CHOICE_SELECTED = 1; /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
+    CHOICE_SELECTED = 1; /* $2483: index of the selected option in the row menus (persistent) */
     if (can_use_magic(1)) {
         do {
             n = choose_spell_of_kind(0, 1, &spell, &found);
@@ -314,14 +313,14 @@ void cast_spells(void)
 }
 
 /*
- * PORT H057+$0CD4: tabella dei posti liberi per classe e livello del
- * personaggio corrente (righe $12.., colonne $14..) e gli incantesimi
- * bonus ($247D, da g_state_a +$3F0 + 2 * +$5F).  1 se c'e' qualcosa.
+ * PORT H057+$0CD4: table of the free slots per class and level of the
+ * current character (rows $12.., columns $14..) and the bonus
+ * spells ($247D, from g_state_a +$3F0 + 2 * +$5F).  1 if there is something.
  */
 static u8 show_spell_slots(void)
 {
     char buf[0x2A];                     /* -$2A(a5) */
-    char cell[5][4][4];                 /* -$7A(a5): [livello-1][classe] */
+    char cell[5][4][4];                 /* -$7A(a5): [level-1][class] */
     u8 has[4];                          /* -$7E(a5) */
     u8 kind;                            /* -$7F(a5) */
     u8 level;                           /* -$80(a5) */
@@ -333,13 +332,13 @@ static u8 show_spell_slots(void)
     u16 used;                           /* -$8C(a5) */
     u16 count;                          /* -$8E(a5) */
 
-    BONUS_SPELLS = 0; /* $247D: incantesimi bonus ancora memorizzabili (Memorize, tabella posti) */
+    BONUS_SPELLS = 0; /* $247D: bonus spells that can still be memorised (Memorize, slot table) */
     any = 0;
     for (kind = 0; kind <= 3; ++kind) {
         has[kind] = 0;
         if (kind == 2) {
-            /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico; pg+$5E:
-             * divinita' del chierico (0 nessuna, 1..7; 6 per le razze 3-4) */
+            /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric; ch+$5E: deity
+             * of the cleric (0 none, 1..7; 6 for races 3-4) */
             if (CUR->b[0xFE] > 0 && CUR->b[0x5E] != 6) {
                 has[2] = 1;
                 any = 1;
@@ -358,7 +357,7 @@ static u8 show_spell_slots(void)
                 format_number(2, cell[level - 1][kind],
                               (s32)free_slots(level, kind, &count), 0,
                               0x0A, 2, ' ');
-                /* pg+$123: PF massimi senza costituzione; base -1 slot incantesimi +$124 */
+                /* ch+$123: maximum HP without constitution; base -1 of the spell slots +$124 */
                 if (CUR->b[0x124 + kind * 6 + level - 1] == 0) {
                     memcpy(cell[level - 1][kind], " \0", 3);
                 } else {
@@ -368,39 +367,39 @@ static u8 show_spell_slots(void)
             }
         }
     }
-    /* pg+$103: livello da mago; pg+$5F: ordine del mago (1 allineam. 0/3/6, 2 per 1/4/7, 0 nessuno) */
+    /* ch+$103: mage level; ch+$5F: mage order (1 alignm. 0/3/6, 2 for 1/4/7, 0 none) */
     if (CUR->b[0x103] > 0 && CUR->b[0x5F] > 0) {
-        /* A+$3F0: tab. word fasi cicli (idx CH+$5F, 1..3); voce 0 posta a 1 da H070; pg+$5F: ordine
-         * del mago (1 allineam. 0/3/6, 2 per 1/4/7, 0 nessuno) */
+        /* A+$3F0: tab. of cycle phase words (idx CH+$5F, 1..3); entry 0 set to 1 by H070; ch+$5F:
+         * mage order (1 alignm. 0/3/6, 2 for 1/4/7, 0 none) */
         switch (COK_GET16(g_state_a + (0x1F8 + CUR->b[0x5F]) * 2)) {
         case 1:
-            BONUS_SPELLS = 1; /* $247D: incantesimi bonus ancora memorizzabili (Memorize, tabella posti) */
+            BONUS_SPELLS = 1; /* $247D: bonus spells that can still be memorised (Memorize, slot table) */
             break;
         case 2:
-            BONUS_SPELLS = 2; /* $247D: incantesimi bonus ancora memorizzabili (Memorize, tabella posti) */
+            BONUS_SPELLS = 2; /* $247D: bonus spells that can still be memorised (Memorize, slot table) */
             break;
         default:
-            BONUS_SPELLS = 0; /* $247D: incantesimi bonus ancora memorizzabili (Memorize, tabella posti) */
+            BONUS_SPELLS = 0; /* $247D: bonus spells that can still be memorised (Memorize, slot table) */
             break;
         }
-        if (BONUS_SPELLS > 0) { /* $247D: incantesimi bonus ancora memorizzabili (Memorize, tabella posti) */
+        if (BONUS_SPELLS > 0) { /* $247D: bonus spells that can still be memorised (Memorize, slot table) */
             for (level = 1; level <= 5; ++level) {
-                /* pg+$135: base -1 slot da mago (tipo 3, +$136..+$13B) per livello */
+                /* ch+$135: base -1 of the mage slots (type 3, +$136..+$13B) per level */
                 avail = CUR->b[0x136 + level - 1];
                 count = free_slots(level, 3, &used);
                 if (avail < used) {
-                    /* $247D: incantesimi bonus ancora memorizzabili (Memorize, tabella posti) */
+                    /* $247D: bonus spells that can still be memorised (Memorize, slot table) */
                     if ((u16)(used - avail) > BONUS_SPELLS) {
-                        /* $247D: incantesimi bonus ancora memorizzabili (Memorize, tabella posti) */
+                        /* $247D: bonus spells that can still be memorised (Memorize, slot table) */
                         BONUS_SPELLS = 0;
                     } else {
-                        /* $247D: incantesimi bonus ancora memorizzabili (Memorize, tabella posti) */
+                        /* $247D: bonus spells that can still be memorised (Memorize, slot table) */
                         add_to_byte(&BONUS_SPELLS, (u16)(avail - used));
                     }
                 }
             }
         }
-        if (BONUS_SPELLS > 0) { /* $247D: incantesimi bonus ancora memorizzabili (Memorize, tabella posti) */
+        if (BONUS_SPELLS > 0) { /* $247D: bonus spells that can still be memorised (Memorize, slot table) */
             any = 1;
         }
     }
@@ -436,13 +435,13 @@ static u8 show_spell_slots(void)
             }
             ++row;
         }
-        if (BONUS_SPELLS > 0) { /* $247D: incantesimi bonus ancora memorizzabili (Memorize, tabella posti) */
+        if (BONUS_SPELLS > 0) { /* $247D: bonus spells that can still be memorised (Memorize, slot table) */
             ui_draw_text(1, (u16)(row + 0x11), 0x0A, 0, 0x11,
                          "     Bonus Spells");
-            /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF); $247D: incantesimi bonus
-             * ancora memorizzabili (Memorize, tabella posti) */
+            /* $3C82: generic 80-character text buffer (TEXT_BUF); $247D: bonus spells that can
+             * still be memorised (Memorize, slot table) */
             format_number(0x50, TEXT_BUF, (s32)BONUS_SPELLS, 0, 0x0A, 2, ' ');
-            /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
+            /* $3C82: generic 80-character text buffer (TEXT_BUF) */
             ui_draw_text(0x14, (u16)(row + 0x11), 0x0A, 0, 0x50, TEXT_BUF);
         }
     }
@@ -450,8 +449,8 @@ static u8 show_spell_slots(void)
 }
 
 /*
- * PORT H057+$11AC: Rest dal campo: il tempo e' quello del personaggio
- * piu' lento a studiare; *result = 1 se il riposo e' stato interrotto.
+ * PORT H057+$11AC: Rest from the camp: the time is the one of the character
+ * slowest at studying; *result = 1 if the rest was interrupted.
  */
 static void camp_rest(u8 *result)
 {
@@ -467,12 +466,12 @@ static void camp_rest(u8 *result)
     }
     set_rest_time(longest);
     *result = rest_party(1);
-    /* $24F4: tempo di riposo: 7 word (sec, min, decine, ore, giorni, oltre) */
+    /* $24F4: rest time: 7 words (sec, min, tens, hours, days, beyond) */
     h029_fill_bytes(0x0D, &g_h005[0x24F4], 0x0E, 0);
     draw_status_line();
 }
 
-/* PORT H057+$126C: ordina gli incantesimi del personaggio corrente. */
+/* PORT H057+$126C: sorts the spells of the current character. */
 static void sort_spells(void)
 {
     u16 i;                              /* -$2(a5) */
@@ -481,15 +480,15 @@ static void sort_spells(void)
 
     for (i = 0; i <= 0x38; ++i) {
         for (j = i; j <= 0x39; ++j) {
-            /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
+            /* ch+$1E: memorised spells, $3A bytes (+$1E..+$57); bit 7 = to be memorised */
             if (mask_byte(CUR->b[0x1E + i], 0x7F) >
-                /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
+                /* ch+$1E: memorised spells, $3A bytes (+$1E..+$57); bit 7 = to be memorised */
                 mask_byte(CUR->b[0x1E + j], 0x7F)) {
-                /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
+                /* ch+$1E: memorised spells, $3A bytes (+$1E..+$57); bit 7 = to be memorised */
                 t = CUR->b[0x1E + i];
-                /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
+                /* ch+$1E: memorised spells, $3A bytes (+$1E..+$57); bit 7 = to be memorised */
                 CUR->b[0x1E + i] = CUR->b[0x1E + j];
-                /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
+                /* ch+$1E: memorised spells, $3A bytes (+$1E..+$57); bit 7 = to be memorised */
                 CUR->b[0x1E + j] = t;
             }
         }
@@ -512,11 +511,11 @@ static void memorize_spells(void)
     }
     done = 0;
     spell = -1;
-    CHOICE_SELECTED = 1; /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
+    CHOICE_SELECTED = 1; /* $2483: index of the selected option in the row menus (persistent) */
     n = choose_spell_of_kind(5, 0, &spell, &found);
     redraw = 1;
     if (found) {
-        CHOICE_SELECTED = 1; /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
+        CHOICE_SELECTED = 1; /* $2483: index of the selected option in the row menus (persistent) */
         if (ask_yes_no(0x17, "Memorize These Spells? ", 0x0E, 0x0A, 0x0F)
             == 'N') {
             cancel_memorize(CUR);
@@ -541,16 +540,16 @@ static void memorize_spells(void)
             continue;
         }
         if (free_slots(SPELL_B(n, 1), SPELL_B(n, 0), &count) > 0 ||
-            /* $247D: incantesimi bonus ancora memorizzabili (Memorize, tabella posti) */
+            /* $247D: bonus spells that can still be memorised (Memorize, slot table) */
             (SPELL_B(n, 0) == 3 && BONUS_SPELLS > 0)) {
-            /* $24DD: uso: Memorize lo pone a 1 per il tipo 2; ridisegno del menu */
+            /* $24DD: use: Memorize sets it to 1 for type 2; menu redraw */
             H005_B(0x24DD) = (u8)(SPELL_B(n, 0) == 2 ? 1 : 0);
             i = 0;
-            /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
+            /* ch+$1E: memorised spells, $3A bytes (+$1E..+$57); bit 7 = to be memorised */
             while (CUR->b[0x1E + i] != 0) {
                 ++i;
             }
-            /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
+            /* ch+$1E: memorised spells, $3A bytes (+$1E..+$57); bit 7 = to be memorised */
             CUR->b[0x1E + i] = (u8)(n + 0x80);
             sort_spells();
         }
@@ -569,7 +568,7 @@ static void memorize_spells(void)
     }
 }
 
-/* PORT H057+$1590: Scribe, trascrive le pergamene. */
+/* PORT H057+$1590: Scribe, scribes the scrolls. */
 static void scribe_scrolls(void)
 {
     u8 done;                            /* -$1(a5) */
@@ -612,7 +611,7 @@ static void scribe_scrolls(void)
             continue;
         }
         redraw = 1;
-        /* pg+$65: base -1 incantesimi noti +$66+s-1 (s = 1..$6B, flag per incantesimo) */
+        /* ch+$65: base -1 of the known spells +$66+s-1 (s = 1..$6B, flag per spell) */
         if (CUR->b[0x66 + n - 1]) {
             show_message_line(0x1B, "You already know that spell");
             continue;
@@ -623,10 +622,10 @@ static void scribe_scrolls(void)
                 continue;
             }
             for (k = 1; k <= 3; ++k) {
-                /* ogg+$43: base tabella 3 incantesimi +$44..+$46 (indice 1..3, bit7=da scrivere) */
+                /* item+$43: base of the table of 3 spells +$44..+$46 (index 1..3, bit7=to be scribed) */
                 if (it->b[0x44 + k - 1] > 0x7F &&
-                    /* ogg+$43: base tabella 3 incantesimi +$44..+$46 (indice 1..3, bit7=da
-                     * scrivere) */
+                    /* item+$43: base of the table of 3 spells +$44..+$46 (index 1..3,
+                     * bit7=to be scribed) */
                     mask_byte(it->b[0x44 + k - 1], 0x7F) == n) {
                     show_message_line(0x23,
                                       "You are already scribing that spell");
@@ -636,16 +635,16 @@ static void scribe_scrolls(void)
         }
         if (dup) {
             show_message_line(0x1E, "You can not scribe that spell.");
-        /* pg+$123: PF massimi senza costituzione; base -1 slot incantesimi +$124 */
+        /* ch+$123: maximum HP without constitution; base -1 of the spell slots +$124 */
         } else if (CUR->b[0x124 + SPELL_B(n, 0) * 6 + SPELL_B(n, 1) - 1] > 0) {
             for (it = CUR->items; it != NULL && !dup; it = it->next) {
                 k = 1;
                 do {
-                    /* ogg+$43: base tabella 3 incantesimi +$44..+$46 (indice 1..3, bit7=da
-                     * scrivere) */
+                    /* item+$43: base of the table of 3 spells +$44..+$46 (index 1..3,
+                     * bit7=to be scribed) */
                     if (it->b[0x44 + k - 1] == n) {
-                        /* ogg+$43: base tabella 3 incantesimi +$44..+$46 (indice 1..3, bit7=da
-                         * scrivere) */
+                        /* item+$43: base of the table of 3 spells +$44..+$46 (index 1..3,
+                         * bit7=to be scribed) */
                         it->b[0x44 + k - 1] = or_byte(it->b[0x44 + k - 1],
                                                       0x80);
                         dup = 1;
@@ -669,13 +668,13 @@ static void scribe_scrolls(void)
     }
 }
 
-/* Frame di H057+$18D6 visto dalla procedura annidata $18E4. */
+/* Frame of H057+$18D6 seen by the nested procedure $18E4. */
 typedef struct EffectList {
     CokMenuItem *head;                  /* -$8(a5) */
     CokMenuItem *tail;                  /* -$C(a5) */
 } EffectList;
 
-/* PORT H057+$18E4 (annidata in $18D6): accoda una riga all'elenco. */
+/* PORT H057+$18E4 (nested in $18D6): appends a row to the list. */
 static void effect_line(EffectList *f, u16 len, const char *text, u8 header)
 {
     f->tail->next = (CokMenuItem *)exec_alloc_mem(sizeof(CokMenuItem),
@@ -687,9 +686,9 @@ static void effect_line(EffectList *f, u16 len, const char *text, u8 header)
 }
 
 /*
- * PORT H057+$18D6: Display, elenco degli effetti magici di ogni
- * personaggio (nome dall'incantesimo con quel tipo d'effetto o un nome
- * fisso; i tipi senza nome non compaiono).
+ * PORT H057+$18D6: Display, list of the magic effects of every
+ * character (name from the spell with that effect type or a fixed
+ * name; the types without a name do not appear).
  */
 static void display_effects(void)
 {
@@ -717,7 +716,7 @@ static void display_effects(void)
         effect_line(&f, 0x0F, (const char *)p->b, 1);
         for (e = p->effects; e != NULL; e = e->next) {
             show = 1;
-            type = e->b[0]; /* eff+$0: tipo dell'effetto (codice del gestore) */
+            type = e->b[0]; /* eff+$0: type of the effect (code of the handler) */
             fixed = NULL;
             switch (type) {
             case 0x01: case 0x02: case 0x05: case 0x08: case 0x09:
@@ -731,7 +730,7 @@ static void display_effects(void)
                 found = 0;
                 while (i <= 0x38 && !found) {
                     if (SPELL_B(i, 0x0A) == type) {
-                        /* $716: nomi degli incantesimi, 32 byte per incantesimo (1..) */
+                        /* $716: spell names, 32 bytes per spell (1..) */
                         h026_copy(0x28, name, 0x1F, SPELL_NAME(i));
                         found = 1;
                     } else {
@@ -740,9 +739,9 @@ static void display_effects(void)
                 }
                 if (!found) {
                     copy_dbeq(name, "Funky--", 0x28);
-                    /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
+                    /* $3C82: generic 80-character text buffer (TEXT_BUF) */
                     format_number(0x50, TEXT_BUF, (s32)type, 0, 0x0A, 3, ' ');
-                    /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
+                    /* $3C82: generic 80-character text buffer (TEXT_BUF) */
                     h026_append(0x28, name, 0x50, TEXT_BUF);
                 }
                 break;
@@ -773,11 +772,11 @@ static void display_effects(void)
             }
             if (show) {
                 ++count;
-                /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
+                /* $3C82: generic 80-character text buffer (TEXT_BUF) */
                 copy_dbeq(TEXT_BUF, " ", 0x50);
-                /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
+                /* $3C82: generic 80-character text buffer (TEXT_BUF) */
                 h026_append(0x50, TEXT_BUF, 0x28, name);
-                /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
+                /* $3C82: generic 80-character text buffer (TEXT_BUF) */
                 effect_line(&f, 0x50, TEXT_BUF, 0);
             }
         }
@@ -795,7 +794,7 @@ static void display_effects(void)
     redraw_game_screen();
 }
 
-/* PORT H057+$1DD8: menu Magic del campo. */
+/* PORT H057+$1DD8: Magic menu of the camp. */
 static void magic_menu(u8 *result)
 {
     u8 key = ' ';                       /* -$1(a5) */
@@ -803,7 +802,7 @@ static void magic_menu(u8 *result)
     u8 saved;                           /* -$3(a5) */
 
     while (!*result && key != 'E' && key != 0) {
-        /* H057_bss+$2A: stringa delle voci del menu Magic del campo ($2A byte) */
+        /* H057_bss+$2A: string of the entries of the camp Magic menu ($2A bytes) */
         key = ui_request_choice(0, "", 0x28, MAGIC_MENU, 0x0D, 0x0A, 0x0F,
                                 1, 1, &special);
         if (special) {
@@ -811,7 +810,7 @@ static void magic_menu(u8 *result)
             draw_party(CUR);
             continue;
         }
-        saved = CHOICE_SELECTED; /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
+        saved = CHOICE_SELECTED; /* $2483: index of the selected option in the row menus (persistent) */
         switch (key) {
         case 'C':
             cast_spells();
@@ -831,11 +830,11 @@ static void magic_menu(u8 *result)
         default:
             break;
         }
-        CHOICE_SELECTED = saved; /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
+        CHOICE_SELECTED = saved; /* $2483: index of the selected option in the row menus (persistent) */
     }
 }
 
-/* PORT H057+$1EE0: sposta il personaggio corrente in su (dalla testa in coda). */
+/* PORT H057+$1EE0: moves the current character up (from the head to the tail). */
 static void order_up(void)
 {
     Character *before = NULL;           /* -$4(a5) */
@@ -870,7 +869,7 @@ static void order_up(void)
     }
 }
 
-/* PORT H057+$1FD6: sposta il personaggio corrente in giu' (dalla coda in testa). */
+/* PORT H057+$1FD6: moves the current character down (from the tail to the head). */
 static void order_down(void)
 {
     Character *p = g_party_head;        /* -$4(a5) */
@@ -899,8 +898,8 @@ static void order_down(void)
 }
 
 /*
- * PORT H057+$20A0: col mouse, sposta il personaggio corrente accanto a
- * quello cliccato ($2508): dopo se lo seguiva, altrimenti prima.
+ * PORT H057+$20A0: with the mouse, moves the current character next to
+ * the clicked one ($2508): after it if it followed it, otherwise before.
  */
 static void order_place(void)
 {
@@ -947,7 +946,7 @@ static void order_place(void)
     }
 }
 
-/* PORT H057+$220E: Order, riordina il party. */
+/* PORT H057+$220E: Order, reorders the party. */
 static void party_order(void)
 {
     char menus[2][0x2A];                /* -$54(a5), -$2A(a5) */
@@ -958,7 +957,7 @@ static void party_order(void)
     copy_dbeq(menus[0], "Select Exit", 0x28);
     copy_dbeq(menus[1], "Place Exit", 0x28);
     while (key != 'E' && key != 0) {
-        H005_B(0x24D8) = placing; /* $24D8: modo di scelta membro: il clic va in $2508 e non nel corrente */
+        H005_B(0x24D8) = placing; /* $24D8: member choice mode: the click goes to $2508 and not to the current one */
         key = ui_request_choice(0x0D, "Party Order: ", 0x28, menus[placing],
                                 0x0D, 0x0A, 0x0F, 1, 1, &special);
         if (special) {
@@ -966,7 +965,7 @@ static void party_order(void)
                 select_party_member(key);
                 draw_party(CUR);
             } else {
-                if (G_MOUSE_CLICK) { /* $249E: 1 se il tasto viene dal mouse (clic) */
+                if (G_MOUSE_CLICK) { /* $249E: 1 if the key comes from the mouse (click) */
                     order_place();
                 } else if (key == 'H') {
                     order_up();
@@ -986,7 +985,7 @@ static void party_order(void)
     }
 }
 
-/* PORT H057+$2368: Drop, toglie dal party il personaggio corrente. */
+/* PORT H057+$2368: Drop, removes the current character from the party. */
 static void drop_member(void)
 {
     if (CUR->next == NULL && CUR == g_party_head) {
@@ -998,7 +997,7 @@ static void drop_member(void)
     }
     show_char_message(CUR, 0x0C, "will be gone", 0x0A, 0);
     if (ask_yes_no(0x11, "Drop from party? ", 0x0E, 0x0A, 0x0F) == 'Y') {
-        if (CUR->b[0x198]) { /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
+        if (CUR->b[0x198]) { /* ch+$198: active/standing (0 down or out of the combat) */
             show_char_message(CUR, 0x11, "bids you farewell", 0x0A, 1);
         } else {
             show_char_message(CUR, 0x14, "is dumped in a ditch", 0x0A, 1);
@@ -1011,16 +1010,16 @@ static void drop_member(void)
     }
 }
 
-/* PORT H057+$24AE: Level, livello di difficolta' (g_state_a +$3E8). */
+/* PORT H057+$24AE: Level, difficulty level (g_state_a +$3E8). */
 static void set_difficulty(void)
 {
     u8 key;                             /* -$1(a5) */
     u8 special;                         /* -$2(a5) */
     u16 level;                          /* -$4(a5) */
 
-    level = COK_GET16(g_state_a + 0x3E8); /* A+$3E8: (word) livello di difficolta' (1..5, iniziale 3) */
-    CHOICE_SELECTED = (u8)level; /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
-    /* H057_bss+$7E: stringa delle voci del menu Level (difficolta') ($2A byte) */
+    level = COK_GET16(g_state_a + 0x3E8); /* A+$3E8: (word) difficulty level (1..5, initial 3) */
+    CHOICE_SELECTED = (u8)level; /* $2483: index of the selected option in the row menus (persistent) */
+    /* H057_bss+$7E: string of the entries of the Level (difficulty) menu ($2A bytes) */
     key = ui_request_choice(0, "", 0x28, LEVEL_MENU, 0x0D, 0x0A, 0x0F, 1, 1,
                             &special);
     if (special) {
@@ -1047,10 +1046,10 @@ static void set_difficulty(void)
             break;
         }
     }
-    COK_PUT16(g_state_a + 0x3E8, level); /* A+$3E8: (word) livello di difficolta' (1..5, iniziale 3) */
+    COK_PUT16(g_state_a + 0x3E8, level); /* A+$3E8: (word) difficulty level (1..5, initial 3) */
 }
 
-/* PORT H057+$25AE: Speed, velocita' del gioco ($3DF6, 0..9). */
+/* PORT H057+$25AE: Speed, game speed ($3DF6, 0..9). */
 static void set_speed(void)
 {
     u8 key;                             /* -$1(a5) */
@@ -1059,18 +1058,18 @@ static void set_speed(void)
 
     do {
         copy_dbeq(buf, "Game Speed = ", 0x28);
-        /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF); $3DF6: (word) velocita' del
-         * gioco 0..9 (pausa dei messaggi) */
+        /* $3C82: generic 80-character text buffer (TEXT_BUF); $3DF6: (word) game speed 0..9
+         * (message pause) */
         format_number(0x50, TEXT_BUF, (s32)H005_W(0x3DF6), 0, 0x0A, 1, '0');
-        /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
+        /* $3C82: generic 80-character text buffer (TEXT_BUF) */
         h026_append(0x28, buf, 0x50, TEXT_BUF);
         h026_append(0x28, buf, 0x16, " (0=fastest 9=slowest)");
         ui_draw_text(1, 0x12, 0x0A, 0, 0x28, buf);
         copy_dbeq(buf, "", 0x28);
-        if (H005_W(0x3DF6) > 0) { /* $3DF6: (word) velocita' del gioco 0..9 (pausa dei messaggi) */
+        if (H005_W(0x3DF6) > 0) { /* $3DF6: (word) game speed 0..9 (message pause) */
             h026_append(0x28, buf, 7, " Faster");
         }
-        if (H005_W(0x3DF6) < 9) { /* $3DF6: (word) velocita' del gioco 0..9 (pausa dei messaggi) */
+        if (H005_W(0x3DF6) < 9) { /* $3DF6: (word) game speed 0..9 (message pause) */
             h026_append(0x28, buf, 7, " Slower");
         }
         h026_append(0x28, buf, 5, " Exit");
@@ -1079,14 +1078,14 @@ static void set_speed(void)
         if (special) {
             switch (key) {
             case 'P':
-                if (H005_W(0x3DF6) > 0) { /* $3DF6: (word) velocita' del gioco 0..9 (pausa dei messaggi) */
-                    /* $3DF6: (word) velocita' del gioco 0..9 (pausa dei messaggi) */
+                if (H005_W(0x3DF6) > 0) { /* $3DF6: (word) game speed 0..9 (message pause) */
+                    /* $3DF6: (word) game speed 0..9 (message pause) */
                     H005_SET_W(0x3DF6, H005_W(0x3DF6) - 1);
                 }
                 break;
             case 'H':
-                if (H005_W(0x3DF6) < 9) { /* $3DF6: (word) velocita' del gioco 0..9 (pausa dei messaggi) */
-                    /* $3DF6: (word) velocita' del gioco 0..9 (pausa dei messaggi) */
+                if (H005_W(0x3DF6) < 9) { /* $3DF6: (word) game speed 0..9 (message pause) */
+                    /* $3DF6: (word) game speed 0..9 (message pause) */
                     H005_SET_W(0x3DF6, H005_W(0x3DF6) + 1);
                 }
                 break;
@@ -1096,11 +1095,11 @@ static void set_speed(void)
         } else {
             switch (key) {
             case 'F':
-                /* $3DF6: (word) velocita' del gioco 0..9 (pausa dei messaggi) */
+                /* $3DF6: (word) game speed 0..9 (message pause) */
                 H005_SET_W(0x3DF6, H005_W(0x3DF6) - 1);
                 break;
             case 'S':
-                /* $3DF6: (word) velocita' del gioco 0..9 (pausa dei messaggi) */
+                /* $3DF6: (word) game speed 0..9 (message pause) */
                 H005_SET_W(0x3DF6, H005_W(0x3DF6) + 1);
                 break;
             default:
@@ -1111,7 +1110,7 @@ static void set_speed(void)
     clear_message_area();
 }
 
-/* PORT H057+$27B2: menu Alter del campo. */
+/* PORT H057+$27B2: Alter menu of the camp. */
 static void alter_menu(void)
 {
     u8 key = ' ';                       /* -$1(a5) */
@@ -1121,7 +1120,7 @@ static void alter_menu(void)
     u8 saved;                           /* -$2F(a5) */
 
     while (key != 'E' && key != 0) {
-        /* H057_bss+$54: stringa delle voci del menu Alter del campo ($2A byte) */
+        /* H057_bss+$54: string of the entries of the camp Alter menu ($2A bytes) */
         key = ui_request_choice(0, "", 0x28, ALTER_MENU, 0x0D, 0x0A, 0x0F,
                                 1, 1, &special);
         if (special) {
@@ -1129,7 +1128,7 @@ static void alter_menu(void)
             draw_party(CUR);
             continue;
         }
-        saved = CHOICE_SELECTED; /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
+        saved = CHOICE_SELECTED; /* $2483: index of the selected option in the row menus (persistent) */
         switch (key) {
         case 'L':
             set_difficulty();
@@ -1149,9 +1148,9 @@ static void alter_menu(void)
             break;
         case 'P':
             do {
-                if (H005_B(0x24D5)) { /* $24D5: Pics on/off (Alter); salvato con $24D4 in $3E04+$1FE */
+                if (H005_B(0x24D5)) { /* $24D5: Pics on/off (Alter); saved with $24D4 in $3E04+$1FE */
                     copy_dbeq(buf, "Pics on  ", 0x28);
-                    /* $24D4: Animation on/off (Alter): piu' fotogrammi e "Loading..." */
+                    /* $24D4: Animation on/off (Alter): more frames and "Loading..." */
                     if (H005_B(0x24D4)) {
                         h026_append(0x28, buf, 0x0E, "Animation on  ");
                     } else {
@@ -1165,11 +1164,11 @@ static void alter_menu(void)
                                          0, 1, &special);
                 switch (key2) {
                 case 'P':
-                    /* $24D5: Pics on/off (Alter); salvato con $24D4 in $3E04+$1FE */
+                    /* $24D5: Pics on/off (Alter); saved with $24D4 in $3E04+$1FE */
                     H005_B(0x24D5) = (u8)(H005_B(0x24D5) == 0);
                     break;
                 case 'A':
-                    /* $24D4: Animation on/off (Alter): piu' fotogrammi e "Loading..." */
+                    /* $24D4: Animation on/off (Alter): more frames and "Loading..." */
                     H005_B(0x24D4) = (u8)(H005_B(0x24D4) == 0);
                     break;
                 default:
@@ -1180,28 +1179,28 @@ static void alter_menu(void)
         default:
             break;
         }
-        CHOICE_SELECTED = saved; /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
+        CHOICE_SELECTED = saved; /* $2483: index of the selected option in the row menus (persistent) */
     }
 }
 
-/* Frame di H057+$29DA visto dalle procedure annidate. */
+/* Frame of H057+$29DA seen by the nested procedures. */
 typedef struct FixFrame {
-    u16 pool;                           /* -$2(a5): punti di cura */
-    u16 light;                          /* -$4(a5): cure leggere */
-    u16 serious;                        /* -$6(a5): cure gravi */
-    u16 critical;                       /* -$8(a5): cure critiche */
+    u16 pool;                           /* -$2(a5): healing points */
+    u16 light;                          /* -$4(a5): light cures */
+    u16 serious;                        /* -$6(a5): serious cures */
+    u16 critical;                       /* -$8(a5): critical cures */
 } FixFrame;
 
-/* PORT H057+$29E8 (annidata): il personaggio puo' curare? */
+/* PORT H057+$29E8 (nested): can the character heal? */
 static u8 fix_can_heal(Character *c)
 {
-    /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+    /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
     return (u8)(c->b[0x197] == 0);
 }
 
 /*
- * PORT H057+$2A06 (annidata): le cure gia' memorizzate ($03 1d8,
- * $3A 2d8+1, $47 3d8+3) di chi puo' curare.
+ * PORT H057+$2A06 (nested): the cures already memorised ($03 1d8,
+ * $3A 2d8+1, $47 3d8+3) of whoever can heal.
  */
 static void fix_memorized(FixFrame *f)
 {
@@ -1214,13 +1213,13 @@ static void fix_memorized(FixFrame *f)
             continue;
         }
         for (i = 0; i <= 0x39; ++i) {
-            /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
+            /* ch+$1E: memorised spells, $3A bytes (+$1E..+$57); bit 7 = to be memorised */
             if (p->b[0x1E + i] == 0x03) {
                 sum = (u16)(sum + roll_dice(1, 8));
-            /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
+            /* ch+$1E: memorised spells, $3A bytes (+$1E..+$57); bit 7 = to be memorised */
             } else if (p->b[0x1E + i] == 0x3A) {
                 sum = (u16)(sum + roll_dice(2, 8) + 1);
-            /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
+            /* ch+$1E: memorised spells, $3A bytes (+$1E..+$57); bit 7 = to be memorised */
             } else if (p->b[0x1E + i] == 0x47) {
                 sum = (u16)(sum + roll_dice(3, 8) + 3);
             }
@@ -1229,7 +1228,7 @@ static void fix_memorized(FixFrame *f)
     f->pool = (u16)(f->pool + sum);
 }
 
-/* PORT H057+$2AFE (annidata): le cure dei posti contati da fix_time. */
+/* PORT H057+$2AFE (nested): the cures of the slots counted by fix_time. */
 static void fix_slots(FixFrame *f)
 {
     u16 sum = 0;                        /* -$2(a5) */
@@ -1251,25 +1250,25 @@ static void fix_slots(FixFrame *f)
     f->pool = (u16)(f->pool + sum);
 }
 
-/* PORT H057+$2BBA (annidata): punti ferita mancanti al party. */
+/* PORT H057+$2BBA (nested): hit points missing from the party. */
 static u16 fix_damage(void)
 {
     u16 sum = 0;                        /* -$2(a5) */
     Character *p;                       /* -$6(a5) */
 
     for (p = g_party_head; p != NULL; p = p->next) {
-        /* pg+$64: punti ferita massimi; pg+$1A8: punti ferita correnti */
+        /* ch+$64: maximum hit points; ch+$1A8: current hit points */
         sum = (u16)(sum + (u16)(p->b[0x64] - p->b[0x1A8]));
     }
     return sum;
 }
 
 /*
- * PORT H057+$2C08 (annidata): tempo per memorizzare le cure dei posti
- * di livello 1 (+$124), 4 (+$127) e 5 (+$128) di chi puo' curare.  Il
- * contatore locale -$2(a5) non e' inizializzato nell'originale (qui 0),
- * e i tempi t1..t3 restano quelli del personaggio precedente per chi
- * non puo' curare, come nell'originale.
+ * PORT H057+$2C08 (nested): time to memorise the cures of the slots
+ * of level 1 (+$124), 4 (+$127) and 5 (+$128) of whoever can heal.  The
+ * local counter -$2(a5) is not initialised in the original (here 0),
+ * and the times t1..t3 stay those of the previous character for whoever
+ * cannot heal, as in the original.
  */
 static void fix_time(FixFrame *f)
 {
@@ -1289,17 +1288,17 @@ static void fix_time(FixFrame *f)
     for (; p != NULL; p = p->next) {
         t = 0;
         if (fix_can_heal(p)) {
-            /* pg+$124: slot incantesimi, 24 byte: tipo*6 + livello-1; chierico liv. 1 */
+            /* ch+$124: spell slots, 24 bytes: type*6 + level-1; cleric lvl. 1 */
             f->light = (u16)(f->light + p->b[0x124]);
-            /* pg+$124: slot incantesimi, 24 byte: tipo*6 + livello-1; chierico liv. 1 */
+            /* ch+$124: spell slots, 24 bytes: type*6 + level-1; cleric lvl. 1 */
             t1 = (u16)(p->b[0x124] * 0x0F);
-            /* pg+$127: slot incantesimi da chierico di livello 4 (Cure Serious) */
+            /* ch+$127: level 4 cleric spell slots (Cure Serious) */
             f->serious = (u16)(f->serious + p->b[0x127]);
-            /* pg+$127: slot incantesimi da chierico di livello 4 (Cure Serious) */
+            /* ch+$127: level 4 cleric spell slots (Cure Serious) */
             t2 = (u16)(p->b[0x127] * 0x3C);
-            /* pg+$128: slot incantesimi da chierico di livello 5 (Cure Critical) */
+            /* ch+$128: level 5 cleric spell slots (Cure Critical) */
             f->critical = (u16)(f->critical + p->b[0x128]);
-            /* pg+$128: slot incantesimi da chierico di livello 5 (Cure Critical) */
+            /* ch+$128: level 5 cleric spell slots (Cure Critical) */
             t3 = (u16)(p->b[0x128] * 0x4B);
         }
         if (t1 > 0) {
@@ -1329,17 +1328,17 @@ static void fix_time(FixFrame *f)
     set_rest_time(longest);
 }
 
-/* PORT H057+$2DC8 (annidata): distribuisce i punti di cura. */
+/* PORT H057+$2DC8 (nested): distributes the healing points. */
 static void fix_apply(FixFrame *f)
 {
     Character *p;                       /* -$4(a5) */
     u16 amount;                         /* -$6(a5) */
 
     for (p = g_party_head; p != NULL; p = p->next) {
-        if (p->b[0x64] <= p->b[0x1A8]) { /* pg+$64: punti ferita massimi; pg+$1A8: punti ferita correnti */
+        if (p->b[0x64] <= p->b[0x1A8]) { /* ch+$64: maximum hit points; ch+$1A8: current hit points */
             continue;
         }
-        /* pg+$64: punti ferita massimi; pg+$1A8: punti ferita correnti */
+        /* ch+$64: maximum hit points; ch+$1A8: current hit points */
         amount = (u16)(p->b[0x64] - p->b[0x1A8]);
         if (amount > f->pool) {
             amount = f->pool;
@@ -1354,9 +1353,9 @@ static void fix_apply(FixFrame *f)
 }
 
 /*
- * PORT H057+$29DA: Fix, il party riposa il tempo necessario a
- * memorizzare le cure e se ne usano i punti; *result = 1 se il riposo
- * e' stato interrotto.
+ * PORT H057+$29DA: Fix, the party rests for the time needed to
+ * memorise the cures and their points are used; *result = 1 if the rest
+ * was interrupted.
  */
 static void fix_party(u8 *result)
 {
@@ -1377,7 +1376,7 @@ static void fix_party(u8 *result)
         draw_status_line();
         return;
     }
-    /* $24F4: tempo di riposo: 7 word (sec, min, decine, ore, giorni, oltre) */
+    /* $24F4: rest time: 7 words (sec, min, tens, hours, days, beyond) */
     memcpy(saved, &g_h005[0x24F4], 0x0E);
     fix_time(&f);
     *result = rest_party(0);
@@ -1388,14 +1387,14 @@ static void fix_party(u8 *result)
     fix_apply(&f);
     draw_party(CUR);
     draw_status_line();
-    /* $24F4: tempo di riposo: 7 word (sec, min, decine, ore, giorni, oltre) */
+    /* $24F4: rest time: 7 words (sec, min, tens, hours, days, beyond) */
     memcpy(&g_h005[0x24F4], saved, 0x0E);
 }
 
 /*
- * PORT H057+$2F3A: Encamp.  Contesto 2 finche' si resta al campo; *result
- * = 1 se il riposo e' stato interrotto (incontro).  All'uscita si
- * ricarica l'immagine PIC della zona e si annulla lo studio in attesa.
+ * PORT H057+$2F3A: Encamp.  Context 2 while staying in the camp; *result
+ * = 1 if the rest was interrupted (encounter).  On exit the PIC picture of
+ * the zone is reloaded and the pending study is cancelled.
  */
 void encamp(u8 *result)
 {
@@ -1405,17 +1404,17 @@ void encamp(u8 *result)
     u8 special;                         /* -$4(a5) */
     u8 saved;                           /* -$5(a5) */
 
-    /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
+    /* $3DE3: game mode (0 menu, 1 view, 2 camp, 5 combat) */
     saved_ctx = H005_B(0x3DE3);
-    H005_B(0x3DE3) = 2; /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
-    H005_SET_W(0x24EA, 0); /* $24EA: contatore dei passi di riposo per +1 PF ogni $120 (word) */
-    /* $24F4: tempo di riposo: 7 word (sec, min, decine, ore, giorni, oltre) */
+    H005_B(0x3DE3) = 2; /* $3DE3: game mode (0 menu, 1 view, 2 camp, 5 combat) */
+    H005_SET_W(0x24EA, 0); /* $24EA: counter of the rest steps for +1 HP every $120 (word) */
+    /* $24F4: rest time: 7 words (sec, min, tens, hours, days, beyond) */
     h029_fill_bytes(0x0D, &g_h005[0x24F4], 0x0E, 0);
-    /* $279C: nome (8 car.) della sequenza salvata da Encamp per ricaricarla; $27A6: nome (8 car.)
-     * della sequenza di immagini caricata, vuoto se nessuna */
+    /* $279C: name (8 chars) of the sequence saved by Encamp to reload it; $27A6: name (8 chars)
+     * of the loaded picture sequence, empty if none */
     memcpy(&g_h005[0x279C], &g_h005[0x27A6], 10);
-    /* $2485: id della sequenza salvato entrando al campo, ricaricato all'uscita; $2486: id della
-     * sequenza caricata in $27BC (nome a $27A6), $FF nessuna */
+    /* $2485: id of the sequence saved when entering the camp, reloaded on exit; $2486: id of the
+     * sequence loaded at $27BC (name at $27A6), $FF none */
     H005_B(0x2485) = H005_B(0x2486);
     redraw_game_screen();
     clear_text_cells(1, 0x11, 0x26, 0x16);
@@ -1424,7 +1423,7 @@ void encamp(u8 *result)
     *result = 0;
     key = ' ';
     while (!*result && key != 'E' && key != 0) {
-        /* H057_bss+$0: stringa delle voci del menu Encamp ($2A byte) */
+        /* H057_bss+$0: string of the entries of the Encamp menu ($2A bytes) */
         key = ui_request_choice(0, "", 0x28, CAMP_MENU, 0x0D, 0x0A, 0x0F,
                                 1, 1, &special);
         if (special) {
@@ -1432,18 +1431,18 @@ void encamp(u8 *result)
             draw_party(CUR);
             continue;
         }
-        saved = CHOICE_SELECTED; /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
+        saved = CHOICE_SELECTED; /* $2483: index of the selected option in the row menus (persistent) */
         switch (key) {
         case 'S':
-            /* A+$278: (word) contatore salvataggi da Encamp: a 10 verifica e riparte */
+            /* A+$278: (word) counter of saves from Encamp: at 10 it checks and restarts */
             COK_PUT16(g_state_a + 0x278, COK_GET16(g_state_a + 0x278) + 1);
-            /* A+$278: (word) contatore salvataggi da Encamp: a 10 verifica e riparte */
+            /* A+$278: (word) counter of saves from Encamp: at 10 it checks and restarts */
             if (COK_GET16(g_state_a + 0x278) >= 0x0A) {
                 if (!camp_save_ok()) {
                     quit_game();
                 }
                 redraw_game_screen();
-                /* A+$278: (word) contatore salvataggi da Encamp: a 10 verifica e riparte */
+                /* A+$278: (word) counter of saves from Encamp: at 10 it checks and restarts */
                 COK_PUT16(g_state_a + 0x278, 0);
             }
             save_game();
@@ -1454,41 +1453,41 @@ void encamp(u8 *result)
             }
             break;
         case 'V':
-            CHOICE_SELECTED = 1; /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
+            CHOICE_SELECTED = 1; /* $2483: index of the selected option in the row menus (persistent) */
             view_character(&tmp);
             break;
         case 'M':
-            CHOICE_SELECTED = 1; /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
+            CHOICE_SELECTED = 1; /* $2483: index of the selected option in the row menus (persistent) */
             magic_menu(result);
             break;
         case 'R':
-            CHOICE_SELECTED = 1; /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
+            CHOICE_SELECTED = 1; /* $2483: index of the selected option in the row menus (persistent) */
             camp_rest(result);
             break;
         case 'F':
             fix_party(result);
             break;
         case 'A':
-            CHOICE_SELECTED = 1; /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
+            CHOICE_SELECTED = 1; /* $2483: index of the selected option in the row menus (persistent) */
             alter_menu();
             break;
         default:
             break;
         }
-        CHOICE_SELECTED = saved; /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
+        CHOICE_SELECTED = saved; /* $2483: index of the selected option in the row menus (persistent) */
     }
-    /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF); $279C: nome (8 car.) della
-     * sequenza salvata da Encamp per ricaricarla */
+    /* $3C82: generic 80-character text buffer (TEXT_BUF); $279C: name (8 chars) of the
+     * sequence saved by Encamp to reload it */
     h026_substr(0x50, TEXT_BUF, 8, (const char *)&g_h005[0x279C], 0, 3);
-    /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
+    /* $3C82: generic 80-character text buffer (TEXT_BUF) */
     if (h026_compare_nocase(0x50, TEXT_BUF, 3, "PIC") == 1) {
-        /* $279C: nome (8 car.) della sequenza salvata da Encamp per ricaricarla; $2485: id della
-         * sequenza salvato entrando al campo, ricaricato all'uscita */
+        /* $279C: name (8 chars) of the sequence saved by Encamp to reload it; $2485: id of the
+         * sequence saved when entering the camp, reloaded on exit */
         load_sequence(8, (const char *)&g_h005[0x279C], H005_B(0x2485), 0);
     }
     cancel_all_study();
     g_spell_target = NULL;
-    /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
+    /* $3DE3: game mode (0 menu, 1 view, 2 camp, 5 combat) */
     H005_B(0x3DE3) = saved_ctx;
     draw_status_line();
     clear_message_area();

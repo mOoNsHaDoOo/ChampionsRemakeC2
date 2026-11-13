@@ -1,4 +1,4 @@
-/* H070: esito del combattimento, esperienza e tesoro. */
+/* H070: combat outcome, experience and treasure. */
 #ifndef COK_H070_H
 #define COK_H070_H
 #include "cok.h"

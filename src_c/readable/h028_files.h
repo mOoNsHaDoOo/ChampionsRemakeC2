@@ -1,4 +1,4 @@
-/* H028: file, richieste disco, caricamento per ID e RLE dei DAX. */
+/* H028: files, disk requests, loading by ID and DAX RLE. */
 #ifndef COK_H028_FILES_H
 #define COK_H028_FILES_H
 

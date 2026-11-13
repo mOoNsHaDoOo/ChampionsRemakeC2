@@ -1,8 +1,8 @@
 ; ============================================================================
-; GUIDA DEL MODULO H014
-; Presentazione/gestione degli errori del programma.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H014
+; Presentation/handling of the program errors.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; H014: 224 original bytes; all offsets are section-relative.
@@ -12,10 +12,10 @@ H014:
         dc.w $3E00,$2E20,$0000
         dc.l H014+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H014 [parziale]
-; Scopo: Ingresso del modulo presentazione/gestione degli errori del programma; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H014+$00DA.
-; Chiamanti diretti: H000+$011A
+; ROUTINE: module_init_H014 [partial]
+; Purpose: Entry of the presentation/handling of the program errors module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H014+$00DA.
+; Direct callers: H000+$011A
 ; --------------------------------------------------------------------------
 L014_0000000A:
 ; H014+$0000000A: 2f0c  move.l a4, -(a7)
@@ -30,14 +30,14 @@ L014_00000014:
 ; H014+$00000014: 600000c4  bra.w $da
         bra.w H014+$DA
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H014_00000018 [parziale]
-; Scopo: Routine del modulo presentazione/gestione degli errori del programma; richiama H045+$01D6, H026+$0254, H026+$01E0, H030+$0256.
-;   - Richiama H045+$01D6.
-;   - Richiama H026+$0254.
-;   - Richiama H026+$01E0.
-;   - Richiama H030+$0256.
-;   - Richiama H010+$0974.
-; Chiamanti diretti: H029+$050A, H029+$05CA, H029+$0AD8, H029+$0AEA, H028+$0E54, H029+$093C e altri 7
+; ROUTINE: sub_H014_00000018 [partial]
+; Purpose: Routine of the presentation/handling of the program errors module; calls H045+$01D6, H026+$0254, H026+$01E0, H030+$0256.
+;   - Calls H045+$01D6.
+;   - Calls H026+$0254.
+;   - Calls H026+$01E0.
+;   - Calls H030+$0256.
+;   - Calls H010+$0974.
+; Direct callers: H029+$050A, H029+$05CA, H029+$0AD8, H029+$0AEA, H028+$0E54, H029+$093C and 7 more
 ; --------------------------------------------------------------------------
 L014_00000018:
 ; H014+$00000018: 2f0c  move.l a4, -(a7)
@@ -187,7 +187,7 @@ L014_000000BC:
 L014_000000C0:
 ; H014+$000000C0: 486dffae  pea.l -$52(a5)
         pea.l -$52(a5)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L014_000000C4:
 ; H014+$000000C4: 4eb900000256  jsr $256.l
         jsr (H030+$256).l

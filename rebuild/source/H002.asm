@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H002
-; Adattatori dello stack del compilatore alle API dos.library.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H002
+; Compiler stack adapters to the dos.library API.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Ogni funzione e' un adattatore: legge gli argomenti dallo stack secondo la convenzione del compilatore, li porta nei registri richiesti da dos.library, esegue il salto all'LVO e sistema lo stack. Il primo ingresso copia DOSBase nella base dati del modulo.
+; MODULE NOTE
+; Each function is an adapter: it reads the arguments from the stack according to the compiler convention, moves them into the registers required by dos.library, jumps to the LVO and fixes the stack. The first entry copies DOSBase into the data base of the module.
 ; --------------------------------------------------------------------------
 ; H002: 572 original bytes; all offsets are section-relative.
         section H002,code
@@ -16,10 +16,10 @@ H002:
         dc.w $0000,$0000
         dc.l H002+$00000004
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H002_00000008 [parziale]
-; Scopo: Routine del modulo adattatori dello stack del compilatore alle API dos.library; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H000+$0006
+; ROUTINE: sub_H002_00000008 [partial]
+; Purpose: Routine of the compiler stack adapters to the dos.library API module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H000+$0006
 ; --------------------------------------------------------------------------
 L002_00000008:
 ; H002+$00000008: 41fafffa  lea.l $4(pc), a0
@@ -31,10 +31,10 @@ L002_00000012:
 ; H002+$00000012: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_Close [parziale]
-; Scopo: Adattatore a dos.library/Close; incapsula la chiamata alla libreria.
-;   - Chiama dos.library/Close (LVO -36).
-; Chiamanti diretti: H007+$0A60, H006+$08FC, H043+$0662, H007+$0588, H030+$0C62, H029+$0306 e altri 18
+; ROUTINE: wrapper_Close [partial]
+; Purpose: Adapter to dos.library/Close; wraps the library call.
+;   - Calls dos.library/Close (LVO -36).
+; Direct callers: H007+$0A60, H006+$08FC, H043+$0662, H007+$0588, H030+$0C62, H029+$0306 and 18 more
 ; --------------------------------------------------------------------------
 L002_00000014:
 ; H002+$00000014: 222f0004  move.l $4(a7), d1
@@ -52,10 +52,10 @@ L002_00000022:
 ; H002+$00000022: 4eeeffdc  jmp -$24(a6) ; dos.library/Close
         jmp LVO_dos_Close(a6)
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_CreateDir [parziale]
-; Scopo: Adattatore a dos.library/CreateDir; incapsula la chiamata alla libreria.
-;   - Chiama dos.library/CreateDir (LVO -120).
-; Chiamanti diretti: H066+$0B64
+; ROUTINE: wrapper_CreateDir [partial]
+; Purpose: Adapter to dos.library/CreateDir; wraps the library call.
+;   - Calls dos.library/CreateDir (LVO -120).
+; Direct callers: H066+$0B64
 ; --------------------------------------------------------------------------
 L002_00000026:
 ; H002+$00000026: 222f0004  move.l $4(a7), d1
@@ -76,10 +76,10 @@ L002_00000034:
         dc.w $222F,$0004,$2C7A,$FFC2,$2F57,$0004,$588F,$4EEE
         dc.w $FF82
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_DeleteFile [parziale]
-; Scopo: Adattatore a dos.library/DeleteFile; incapsula la chiamata alla libreria.
-;   - Chiama dos.library/DeleteFile (LVO -72).
-; Chiamanti diretti: H066+$13AA, H066+$13E2, H066+$141A, H066+$1A1A, H066+$162A, H066+$1A98
+; ROUTINE: wrapper_DeleteFile [partial]
+; Purpose: Adapter to dos.library/DeleteFile; wraps the library call.
+;   - Calls dos.library/DeleteFile (LVO -72).
+; Direct callers: H066+$13AA, H066+$13E2, H066+$141A, H066+$1A1A, H066+$162A, H066+$1A98
 ; --------------------------------------------------------------------------
 L002_0000004A:
 ; H002+$0000004A: 222f0004  move.l $4(a7), d1
@@ -106,10 +106,10 @@ L002_0000005C:
         dc.w $222F,$0004,$2C7A,$FF9C,$2F57,$0004,$588F,$4EEE
         dc.w $FFA0
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_Examine [parziale]
-; Scopo: Adattatore a dos.library/Examine; incapsula la chiamata alla libreria.
-;   - Chiama dos.library/Examine (LVO -102).
-; Chiamanti diretti: H066+$0442, H028+$03BC
+; ROUTINE: wrapper_Examine [partial]
+; Purpose: Adapter to dos.library/Examine; wraps the library call.
+;   - Calls dos.library/Examine (LVO -102).
+; Direct callers: H066+$0442, H028+$03BC
 ; --------------------------------------------------------------------------
 L002_00000070:
 ; H002+$00000070: 222f0008  move.l $8(a7), d1
@@ -136,10 +136,10 @@ L002_00000086:
 ; H002+$00000086: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_ExNext [parziale]
-; Scopo: Adattatore a dos.library/ExNext; incapsula la chiamata alla libreria.
-;   - Chiama dos.library/ExNext (LVO -108).
-; Chiamanti diretti: H066+$0458
+; ROUTINE: wrapper_ExNext [partial]
+; Purpose: Adapter to dos.library/ExNext; wraps the library call.
+;   - Calls dos.library/ExNext (LVO -108).
+; Direct callers: H066+$0458
 ; --------------------------------------------------------------------------
 L002_00000088:
 ; H002+$00000088: 222f0008  move.l $8(a7), d1
@@ -166,10 +166,10 @@ L002_0000009E:
 ; H002+$0000009E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_Info [parziale]
-; Scopo: Adattatore a dos.library/Info; incapsula la chiamata alla libreria.
-;   - Chiama dos.library/Info (LVO -114).
-; Chiamanti diretti: H001+$00A2, H066+$148C
+; ROUTINE: wrapper_Info [partial]
+; Purpose: Adapter to dos.library/Info; wraps the library call.
+;   - Calls dos.library/Info (LVO -114).
+; Direct callers: H001+$00A2, H066+$148C
 ; --------------------------------------------------------------------------
 L002_000000A0:
 ; H002+$000000A0: 222f0008  move.l $8(a7), d1
@@ -198,10 +198,10 @@ L002_000000B6:
 ; Preserved bytes H002+$000000B8..$000000C0; code/data not fully classified.
         dc.w $2C7A,$FF46,$4EEE,$FFCA
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_IoErr [parziale]
-; Scopo: Adattatore a dos.library/IoErr; incapsula la chiamata alla libreria.
-;   - Chiama dos.library/IoErr (LVO -132).
-; Chiamanti diretti: H074+$0118, H074+$0086
+; ROUTINE: wrapper_IoErr [partial]
+; Purpose: Adapter to dos.library/IoErr; wraps the library call.
+;   - Calls dos.library/IoErr (LVO -132).
+; Direct callers: H074+$0118, H074+$0086
 ; --------------------------------------------------------------------------
 L002_000000C0:
 ; H002+$000000C0: 2c7aff3e  movea.l $0(pc), a6
@@ -213,10 +213,10 @@ L002_000000C4:
         dc.w $222F,$0004,$2C7A,$FF32,$4EAE,$FF28,$4400,$205F
         dc.w $588F,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_Lock [parziale]
-; Scopo: Adattatore a dos.library/Lock; incapsula la chiamata alla libreria.
-;   - Chiama dos.library/Lock (LVO -84).
-; Chiamanti diretti: H001+$007C, H028+$0308, H066+$147A, H066+$0430, H028+$03AA, H066+$0A62
+; ROUTINE: wrapper_Lock [partial]
+; Purpose: Adapter to dos.library/Lock; wraps the library call.
+;   - Calls dos.library/Lock (LVO -84).
+; Direct callers: H001+$007C, H028+$0308, H066+$147A, H066+$0430, H028+$03AA, H066+$0A62
 ; --------------------------------------------------------------------------
 L002_000000DC:
 ; H002+$000000DC: 222f0008  move.l $8(a7), d1
@@ -237,10 +237,10 @@ L002_000000EE:
 ; H002+$000000EE: 4eeeffac  jmp -$54(a6) ; dos.library/Lock
         jmp LVO_dos_Lock(a6)
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_Open [parziale]
-; Scopo: Adattatore a dos.library/Open; incapsula la chiamata alla libreria.
-;   - Chiama dos.library/Open (LVO -30).
-; Chiamanti diretti: H006+$080E, H029+$024A, H028+$05CC, H043+$11B2, H043+$1204, H066+$050C e altri 5
+; ROUTINE: wrapper_Open [partial]
+; Purpose: Adapter to dos.library/Open; wraps the library call.
+;   - Calls dos.library/Open (LVO -30).
+; Direct callers: H006+$080E, H029+$024A, H028+$05CC, H043+$11B2, H043+$1204, H066+$050C and 5 more
 ; --------------------------------------------------------------------------
 L002_000000F2:
 ; H002+$000000F2: 222f0008  move.l $8(a7), d1
@@ -264,10 +264,10 @@ L002_00000104:
         dc.w $2C7A,$FEF6,$4EEE,$FFC4,$222F,$0004,$2C7A,$FEEA
         dc.w $2F57,$0004,$588F,$4EEE,$FF2E
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_Read [parziale]
-; Scopo: Adattatore a dos.library/Read; incapsula la chiamata alla libreria.
-;   - Chiama dos.library/Read (LVO -42).
-; Chiamanti diretti: H006+$0866, H006+$08A6, H006+$08E6, H043+$02E2, H029+$02B0, H098+$00B4 e altri 32
+; ROUTINE: wrapper_Read [partial]
+; Purpose: Adapter to dos.library/Read; wraps the library call.
+;   - Calls dos.library/Read (LVO -42).
+; Direct callers: H006+$0866, H006+$08A6, H006+$08E6, H043+$02E2, H029+$02B0, H098+$00B4 and 32 more
 ; --------------------------------------------------------------------------
 L002_00000122:
 ; H002+$00000122: 222f000c  move.l $c(a7), d1
@@ -294,10 +294,10 @@ L002_0000013A:
         dc.w $222F,$0008,$242F,$0004,$2C7A,$FEB8,$4EAE,$FFB2
         dc.w $4400,$205F,$508F,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_Seek [parziale]
-; Scopo: Adattatore a dos.library/Seek; incapsula la chiamata alla libreria.
-;   - Chiama dos.library/Seek (LVO -66).
-; Chiamanti diretti: H006+$0830, H029+$0268, H029+$027E, H098+$030E, H028+$0FA2, H043+$1238 e altri 9
+; ROUTINE: wrapper_Seek [partial]
+; Purpose: Adapter to dos.library/Seek; wraps the library call.
+;   - Calls dos.library/Seek (LVO -66).
+; Direct callers: H006+$0830, H029+$0268, H029+$027E, H098+$030E, H028+$0FA2, H043+$1238 and 9 more
 ; --------------------------------------------------------------------------
 L002_00000156:
 ; H002+$00000156: 222f000c  move.l $c(a7), d1
@@ -325,10 +325,10 @@ L002_0000016E:
         dc.w $4400,$205F,$508F,$4ED0,$222F,$0008,$242F,$0004
         dc.w $2C7A,$FE6C,$4EAE,$FF46,$4400,$205F,$508F,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_UnLock [parziale]
-; Scopo: Adattatore a dos.library/UnLock; incapsula la chiamata alla libreria.
-;   - Chiama dos.library/UnLock (LVO -90).
-; Chiamanti diretti: H001+$00E8, H028+$031E, H066+$14C4, H028+$03CA, H066+$0B7A, H066+$075E
+; ROUTINE: wrapper_UnLock [partial]
+; Purpose: Adapter to dos.library/UnLock; wraps the library call.
+;   - Calls dos.library/UnLock (LVO -90).
+; Direct callers: H001+$00E8, H028+$031E, H066+$14C4, H028+$03CA, H066+$0B7A, H066+$075E
 ; --------------------------------------------------------------------------
 L002_000001A2:
 ; H002+$000001A2: 222f0004  move.l $4(a7), d1
@@ -349,10 +349,10 @@ L002_000001B0:
         dc.w $222F,$0008,$242F,$0004,$2C7A,$FE42,$4EAE,$FF34
         dc.w $4400,$205F,$508F,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_Write [parziale]
-; Scopo: Adattatore a dos.library/Write; incapsula la chiamata alla libreria.
-;   - Chiama dos.library/Write (LVO -48).
-; Chiamanti diretti: H098+$0108, H075+$0172, H075+$0112, H074+$0068, H066+$32EA, H066+$3306 e altri 12
+; ROUTINE: wrapper_Write [partial]
+; Purpose: Adapter to dos.library/Write; wraps the library call.
+;   - Calls dos.library/Write (LVO -48).
+; Direct callers: H098+$0108, H075+$0172, H075+$0112, H074+$0068, H066+$32EA, H066+$3306 and 12 more
 ; --------------------------------------------------------------------------
 L002_000001CC:
 ; H002+$000001CC: 222f000c  move.l $c(a7), d1
@@ -376,10 +376,10 @@ L002_000001E4:
 ; H002+$000001E4: 4eeeffd0  jmp -$30(a6) ; dos.library/Write
         jmp LVO_dos_Write(a6)
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_Execute [parziale]
-; Scopo: Adattatore a dos.library/Execute; incapsula la chiamata alla libreria.
-;   - Chiama dos.library/Execute (LVO -222).
-; Chiamanti diretti: H006+$0216, H006+$022E, H006+$0246, H010+$02F2, H010+$030A, H010+$0322
+; ROUTINE: wrapper_Execute [partial]
+; Purpose: Adapter to dos.library/Execute; wraps the library call.
+;   - Calls dos.library/Execute (LVO -222).
+; Direct callers: H006+$0216, H006+$022E, H006+$0246, H010+$02F2, H010+$030A, H010+$0322
 ; --------------------------------------------------------------------------
 L002_000001E8:
 ; H002+$000001E8: 222f000c  move.l $c(a7), d1

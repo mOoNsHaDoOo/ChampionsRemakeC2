@@ -1,7 +1,7 @@
-/* H100: base dei chip custom. */
+/* H100: base of the custom chips. */
 #include "cok.h"
 
-/* H100+$0000: indirizzo dei registri custom; sull'host non esistono. */
+/* H100+$0000: address of the custom registers; they do not exist on the host. */
 volatile u8 *g_custom;
 
 /* PORT H100+$0008 */

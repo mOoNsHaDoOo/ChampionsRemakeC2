@@ -1,4 +1,4 @@
-/* H034: caricamento risorse 8x8 (8X8D) e messaggi di errore. */
+/* H034: loading of 8x8 resources (8X8D) and error messages. */
 #ifndef COK_H034_H
 #define COK_H034_H
 

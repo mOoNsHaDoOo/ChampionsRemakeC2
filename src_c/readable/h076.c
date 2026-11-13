@@ -1,4 +1,4 @@
-/* H076: modulo senza codice oltre all'inizializzazione. */
+/* H076: module with no code besides its initialisation. */
 #include "cok.h"
 
 /* PORT H076+$0004: rts. */

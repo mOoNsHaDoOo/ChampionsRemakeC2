@@ -1,14 +1,14 @@
 /*
- * Build host: sottoinsieme dell'NDK di AmigaOS usato dal port.
+ * Host build: subset of the AmigaOS NDK used by the port.
  *
- * Le strutture hanno gli stessi nomi di campo dell'NDK, cosi' il codice
- * del gioco e' lo stesso sui due target; contengono solo i campi che il
- * port usa (non hanno la disposizione in memoria dell'originale).  Le
- * funzioni di libreria omonime sono emulate nei file .c di host/, sopra SDL2.
+ * The structures have the same field names as the NDK, so the game code
+ * is the same on both targets; they contain only the fields the port
+ * uses (they do not have the memory layout of the original).  The library
+ * functions of the same name are emulated in the .c files of host/, on top of SDL2.
  *
- * Convenzione: la memoria che arriva dai dati del gioco (H005, file) e'
- * nell'ordine dei byte dell'Amiga; le funzioni emulate che leggono word da
- * quella memoria (per esempio LoadRGB4) le leggono big-endian.
+ * Convention: memory that comes from the game data (H005, files) is in
+ * Amiga byte order; the emulated functions that read words from that
+ * memory (for example LoadRGB4) read them big-endian.
  */
 #ifndef COK_HOST_NDK_H
 #define COK_HOST_NDK_H
@@ -39,7 +39,7 @@ struct Task {
 
 struct Process {
     struct Task pr_Task;
-    APTR pr_WindowPtr;          /* finestra delle richieste di sistema */
+    APTR pr_WindowPtr;          /* window for the system requests */
 };
 
 struct Library {
@@ -77,7 +77,7 @@ struct MsgPort {
     struct List mp_MsgList;
 };
 
-/* Device e richieste di I/O (usati dall'audio, COK_AUDIO). */
+/* Devices and I/O requests (used by the audio, COK_AUDIO). */
 struct Device {
     struct Library dd_Library;
 };
@@ -155,7 +155,7 @@ struct ColorMap {
     UBYTE Flags;
     UBYTE Type;
     UWORD Count;
-    UWORD *ColorTable;          /* Count colori RGB4 */
+    UWORD *ColorTable;          /* Count RGB4 colours */
 };
 
 struct RasInfo {
@@ -176,16 +176,16 @@ struct ViewPort {
     struct RasInfo *RasInfo;
 };
 
-/* Lista Copper (graphics/copper.h): sull'host solo quella di Intuition. */
+/* Copper list (graphics/copper.h): on the host only the Intuition one. */
 struct cprlist {
     struct cprlist *Next;
-    UWORD *start;               /* coppie di word: registro, valore */
+    UWORD *start;               /* pairs of words: register, value */
     WORD MaxCount;
 };
 
 struct View {
     struct ViewPort *ViewPort;
-    struct cprlist *LOFCprList; /* liste Copper: sull'host sempre NULL */
+    struct cprlist *LOFCprList; /* Copper lists: always NULL on the host */
     WORD DyOffset;
     WORD DxOffset;
     UWORD Modes;
@@ -193,7 +193,7 @@ struct View {
 
 struct GfxBase {
     struct Library LibNode;
-    struct View *ActiView;      /* View mostrata (NULL: schermo Intuition) */
+    struct View *ActiView;      /* View being shown (NULL: Intuition screen) */
 };
 
 #define RASSIZE(w, h) ((ULONG)(h) * ((((ULONG)(w) + 15) >> 3) & 0xFFFE))
@@ -260,11 +260,11 @@ struct Screen {
     struct ViewPort ViewPort;
     struct RastPort RastPort;
     struct BitMap BitMap;
-    struct RasInfo RasInfo;     /* (host) RasInfo del ViewPort */
+    struct RasInfo RasInfo;     /* (host) RasInfo of the ViewPort */
     BOOL ShowTitle;
 };
 
-/* IntuitionBase: solo lo schermo in primo piano (FirstScreen). */
+/* IntuitionBase: only the screen at the front (FirstScreen). */
 struct IntuitionBase {
     struct Library LibNode;
     struct Screen *FirstScreen;
@@ -291,8 +291,8 @@ struct Window {
     ULONG Flags;
     struct RastPort *RPort;
     struct Screen *WScreen;
-    struct MsgPort *UserPort;   /* porta IDCMP (eventi da SDL) */
-    WORD MouseY, MouseX;        /* posizione del mouse nella finestra */
+    struct MsgPort *UserPort;   /* IDCMP port (events from SDL) */
+    WORD MouseY, MouseX;        /* mouse position in the window */
 };
 
 #define IDCMP_INTUITICKS 0x00400000
@@ -315,7 +315,7 @@ struct IntuiMessage {
     struct Window *IDCMPWindow;
 };
 
-/* Solo i campi di Preferences letti dal gioco. */
+/* Only the Preferences fields read by the game. */
 struct Preferences {
     BYTE ViewXOffset;
     BYTE ViewYOffset;
@@ -350,10 +350,10 @@ void           ClearPointer(struct Window *window);
 void           SetPointer(struct Window *window, UWORD *data, LONG height,
                           LONG width, LONG x_offset, LONG y_offset);
 
-/* dos.library (le altre funzioni DOS sono in h002_dos.c). */
+/* dos.library (the other DOS functions are in h002_dos.c). */
 void Delay(LONG ticks);
 
-/* Input (host/input.c): eventi SDL -> messaggi IDCMP. */
+/* Input (host/input.c): SDL events -> IDCMP messages. */
 union SDL_Event;
 void host_input_open_window(struct Window *window);
 void host_input_close_window(struct Window *window);
@@ -362,16 +362,16 @@ int  host_input_pending(void);
 void host_input_script(unsigned long now);   /* COK_KEYS */
 
 /* Display SDL2 (host/display.c). */
-void host_display_attach(struct Screen *screen);   /* schermo visibile */
+void host_display_attach(struct Screen *screen);   /* screen visible */
 void host_display_detach(struct Screen *screen);
-void host_display_changed(void);   /* bitmap o colori modificati */
+void host_display_changed(void);   /* bitmap or colours changed */
 struct Screen *host_first_screen(void);     /* IntuitionBase->FirstScreen */
-void host_screen_colors_changed(struct ViewPort *vp); /* Copper di Intuition */
+void host_screen_colors_changed(struct ViewPort *vp); /* Intuition Copper list */
 void host_display_view(struct View *view);   /* LoadView */
 void host_display_refresh(int force);
 int  host_display_wait_key(void);
-void host_display_wait_event(int timeout_ms);  /* attende ed elabora eventi */
+void host_display_wait_event(int timeout_ms);  /* waits for and processes events */
 unsigned long host_ticks_ms(void);
-void host_display_show_cursor(int show);  /* tasto premuto (SDL_Keycode), -1 se nessun display */
+void host_display_show_cursor(int show);  /* key pressed (SDL_Keycode), -1 if there is no display */
 
 #endif

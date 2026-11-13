@@ -1,4 +1,4 @@
-/* H065: UI dei personaggi, oggetti, equipaggiamento e incantesimi. */
+/* H065: UI of characters, items, equipment and spells. */
 #include "h065.h"
 #include "h003_exec.h"
 #include "h029_gfx.h"
@@ -17,16 +17,16 @@
 #include "h067.h"
 #include "h015_runtime.h"
 
-/* PORT H065+$04AA: link/unlk, nessun effetto. */
+/* PORT H065+$04AA: link/unlk, no effect. */
 void h065_init(void)
 {
 }
 
-/* Dati del modulo sotto a4. */
-static Character *s_char;               /* -$4(a4): personaggio mostrato */
+/* Module data below a4. */
+static Character *s_char;               /* -$4(a4): character shown */
 static char s_text[0x56];               /* -$5a(a4) */
 
-/* Copia con dbeq: al massimo max + 1 byte, NUL compreso. */
+/* Copy with dbeq: at most max + 1 bytes, NUL included. */
 static void copy_text(char *dst, const char *src, u16 max)
 {
     u16 i;
@@ -40,10 +40,10 @@ static void copy_text(char *dst, const char *src, u16 max)
 }
 
 /*
- * PORT H065+$04B8: schermata del personaggio corrente: cornice, nome,
- * stato, sesso ed eta', allineamento, razza, classe (con divinita',
- * ordine dei cavalieri), livelli, esperienza, caratteristiche, denaro,
- * valori di combattimento e oggetti degli slot 0 e 2.
+ * PORT H065+$04B8: screen of the current character: frame, name,
+ * status, sex and age, alignment, race, class (with deity,
+ * knightly order), levels, experience, abilities, money,
+ * combat values and items of slots 0 and 2.
  */
 void draw_character_sheet(void)
 {
@@ -61,39 +61,39 @@ void draw_character_sheet(void)
     draw_character_name(c, 1, 1, 0);
     ui_draw_text(0x14, 1, 0x0F, 0, 9, "Status : ");
     ui_draw_text(0x1B, 1, 0x0A, 0, 0x0C,
-                 /* $4B00: nomi dello stato del personaggio (+$197), $0E byte; base var ECL;
-                  * pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+                 /* $4B00: names of the character status (+$197), $0E bytes; ECL var base; ch+$197: status: 0
+                  * ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
                  (const char *)&g_h005[0x4B00 + c->b[0x197] * 0x0E]);
-    /* $4BD2: nomi del sesso (+$10E), 8 byte per voce; pg+$10E: sesso (0 maschio, 1 femmina; nomi
-     * H005+$4BD2) */
+    /* $4BD2: names of the sexes (+$10E), 8 bytes per entry; ch+$10E: sex (0 male, 1 female;
+     * names H005+$4BD2) */
     h026_copy(0x50, line, 6, (const char *)&g_h005[0x4BD2 + c->b[0x10E] * 8]);
     ui_draw_text(1, 3, 0x0F, 0, 0x50, line);
-    format_number(0x50, line, CH_W(c, 0x62), 0, 0x0A, 4, ' '); /* pg+$62: eta' (word) */
+    format_number(0x50, line, CH_W(c, 0x62), 0, 0x0A, 4, ' '); /* ch+$62: age (word) */
     h026_append(0x50, line, 6, " years");
     ui_draw_text(8, 3, 0x0F, 0, 0x50, line);
     h026_copy(0x50, line, 0x10,
-              /* $4C62: nomi dell'allineamento (+$10F), $12 byte per voce; pg+$10F: allineamento
-               * (0..8, malvagi 2/5/8; nomi H005+$4C62) */
+              /* $4C62: names of the alignments (+$10F), $12 bytes per entry; ch+$10F: alignment
+               * (0..8, evil 2/5/8; names H005+$4C62) */
               (const char *)&g_h005[0x4C62 + c->b[0x10F] * 0x12]);
     ui_draw_text(1, 4, 0x0F, 0, 0x50, line);
     h026_copy(0x50, line, 0x0F,
-              /* $4D04: nomi delle razze (+$5B), 16 byte per voce; pg+$5B: razza (0..6, nomi
-               * H005+$4D04) */
+              /* $4D04: names of the races (+$5B), 16 bytes per entry; ch+$5B: race (0..6,
+               * names H005+$4D04) */
               (const char *)&g_h005[0x4D04 + c->b[0x5B] * 16]);
     ui_draw_text(0x14, 4, 0x0F, 0, 0x50, line);
     h026_copy(0x50, line, 0x1A,
-              /* $4D84: nomi delle classi (+$5C), $1C byte per voce; pg+$5C: classe o combinazione
-               * di classi (0..16, nomi H005+$4D84) */
+              /* $4D84: names of the classes (+$5C), $1C bytes per entry; ch+$5C: class or class
+               * combination (0..16, names H005+$4D84) */
               (const char *)&g_h005[0x4D84 + c->b[0x5C] * 0x1C]);
-    if (c->b[0xFE] > 0) { /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
+    if (c->b[0xFE] > 0) { /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
         h026_insert(0x50, line, 1, " ", 0);
         h026_insert(0x50, line, 0x0B,
-                    /* $4C02: nomi delle divinita' (+$5E), $0C byte per voce; pg+$5E: divinita' del
-                     * chierico (0 nessuna, 1..7; 6 per le razze 3-4) */
+                    /* $4C02: names of the deities (+$5E), $0C bytes per entry; ch+$5E: deity of
+                     * the cleric (0 none, 1..7; 6 for races 3-4) */
                     (const char *)&g_h005[0x4C02 + c->b[0x5E] * 0x0C], 0);
     }
-    if (c->b[0x103] > 0) { /* pg+$103: livello da mago */
-        /* Prima di "Mage" (o in fondo): l'ordine dei cavalieri. */
+    if (c->b[0x103] > 0) { /* ch+$103: mage level */
+        /* Before "Mage" (or at the end): the knightly order. */
         pos = 0;
         while (!(line[pos] == 'M' && line[pos + 2] == 'g') &&
                pos <= h026_strlen(0x50, line)) {
@@ -101,12 +101,12 @@ void draw_character_sheet(void)
         }
         h026_insert(0x50, line, 1, " ", pos);
         h026_insert(0x50, line, 6,
-                    /* $4BE2: nomi degli ordini dei cavalieri (+$5F), 8 byte per voce; pg+$5F:
-                     * ordine del mago (1 allineam. 0/3/6, 2 per 1/4/7, 0 nessuno) */
+                    /* $4BE2: names of the knightly orders (+$5F), 8 bytes per entry; ch+$5F: mage order
+                     * (1 alignm. 0/3/6, 2 for 1/4/7, 0 none) */
                     (const char *)&g_h005[0x4BE2 + c->b[0x5F] * 8], pos);
     }
-    if (c->b[0x105] > 0) { /* pg+$105: livello da cavaliere */
-        switch (c->b[0x5D]) { /* pg+$5D: ordine di cavalleria (1 Corona, 2 Spada, 3 Rosa) */
+    if (c->b[0x105] > 0) { /* ch+$105: knight level */
+        switch (c->b[0x5D]) { /* ch+$5D: knightly order (1 Crown, 2 Sword, 3 Rose) */
         case 1:
             h026_append(0x50, line, 0x0D, " of the Crown");
             break;
@@ -126,20 +126,20 @@ void draw_character_sheet(void)
     sep = 0;
     copy_text(line, "", 0x50);
     for (k = 0; k <= 7; ++k) {
-        if (c->b[0xFE + k] > 0 || /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
-            /* pg+$106: livelli della classe precedente, 8 voci come +$FE; chierico */
+        if (c->b[0xFE + k] > 0 || /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
+            /* ch+$106: levels of the previous class, 8 entries like +$FE; cleric */
             (c->b[0x106 + k] < h073_12c8(c) && c->b[0x106 + k] > 0)) {
             if (sep) {
                 h026_append(0x50, line, 1, "/");
             }
-            /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
+            /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
             format_number(0x50, num, c->b[0xFE + k], 0, 0x0A, 1, '0');
             h026_append(0x50, line, 0x50, num);
             sep = 1;
         }
     }
     ui_draw_text(7, 7, 0x0F, 0, 0x50, line);
-    format_number(0x50, num, (s32)CH_L(c, 0x11E), 0, 0x0A, 6, ' '); /* pg+$11E: punti esperienza (long) */
+    format_number(0x50, num, (s32)CH_L(c, 0x11E), 0, 0x0A, 6, ' '); /* ch+$11E: experience points (long) */
     h026_insert(0x50, num, 0x0B, "Experience ", 0);
     ui_draw_text(0x14, 7, 0x0F, 0, 0x50, num);
 
@@ -163,8 +163,8 @@ void draw_character_sheet(void)
 }
 
 /*
- * PORT H065+$0ADE: monete del personaggio corrente (+$F2..+$FC) nella
- * colonna destra, una riga per tipo posseduto (nomi H005+$4B7E).
+ * PORT H065+$0ADE: coins of the current character (+$F2..+$FC) in the
+ * right column, one row per type owned (names H005+$4B7E).
  */
 void draw_character_money(void)
 {
@@ -174,13 +174,13 @@ void draw_character_money(void)
 
     clear_text_cells(0x14, 9, 0x26, 0x0F);
     for (i = 1; i <= 6; ++i) {
-        /* pg+$F0: monete, 7 word passo 2 (0..4 monete, 4 acciaio, 5 gemme, 6 gioielli) */
+        /* ch+$F0: coins, 7 words step 2 (0..4 coins, 4 steel, 5 gems, 6 jewellery) */
         u16 amount = CH_W(g_current_char, 0xF0 + i * 2);
 
         if (amount == 0) {
             continue;
         }
-        /* $4B7E: nomi dei tipi di moneta, $0C byte per tipo */
+        /* $4B7E: names of the coin types, $0C bytes per type */
         h026_copy(0x28, text, 0x0A, (const char *)&g_h005[0x4B7E + i * 0x0C]);
         ui_draw_text(0x14, row, 0x0A, 0, 0x28, text);
         format_number(0x28, text, amount, 0, 0x0A, 4, ' ');
@@ -199,9 +199,9 @@ static void pad_left(char *s, u16 width)
 }
 
 /*
- * PORT H065+$0BE6 (corpo a $0C34): ricalcola i valori derivati e mostra
- * punti ferita, classe d'armatura, ingombro, THAC0, movimento (doppio con
- * l'effetto $27, dimezzato con $2A) e danno "NdM+K".
+ * PORT H065+$0BE6 (body at $0C34): recomputes the derived values and shows
+ * hit points, armour class, encumbrance, THAC0, movement (doubled with
+ * effect $27, halved with $2A) and damage "NdM+K".
  */
 void draw_combat_values(void)
 {
@@ -217,7 +217,7 @@ void draw_combat_values(void)
     clear_text_cells(0x1F, 3, 0x25, 3);
     draw_hit_points(c, 0x1F, 3, 0, 1);
     ui_draw_text(1, 0x11, 0x0F, 0, 0x0B, "Armor Class");
-    ac = g_current_char->b[0x19C]; /* pg+$19C: classe d'armatura corrente codificata (60 - CA) */
+    ac = g_current_char->b[0x19C]; /* ch+$19C: encoded current armour class (60 - AC) */
     if (ac >= 1 && ac <= 0x32) {
         col = 0x10;
     } else if (ac >= 0x33 && ac <= 0x3C) {
@@ -230,15 +230,15 @@ void draw_combat_values(void)
     clear_text_cells(0x0F, 0x11, 0x11, 0x11);
     draw_armor_class(c, col, 0x11);
     ui_draw_text(0x14, 0x11, 0x0F, 0, 0x0B, "Encumbrance");
-    /* pg+$18C: ingombro: peso di oggetti e monete (word) */
+    /* ch+$18C: encumbrance: weight of items and coins (word) */
     format_number(0x28, line, CH_W(c, 0x18C), 0, 0x0A, 5, ' ');
     ui_draw_text(0x21, 0x11, 0x0A, 0, 0x28, line);
     ui_draw_text(1, 0x12, 0x0F, 0, 8, "THAC0   ");
-    /* pg+$19B: THAC0 corrente codificato (60 - THAC0) */
+    /* ch+$19B: encoded current THAC0 (60 - THAC0) */
     format_number(0x28, line, (s32)(u16)(0x3C - c->b[0x19B]), 0, 0x0A, 2,
                   ' ');
     ui_draw_text(0x10, 0x12, 0x0A, 0, 0x28, line);
-    move = c->b[0x1A9]; /* pg+$1A9: movimento corrente (armatura e ingombro) */
+    move = c->b[0x1A9]; /* ch+$1A9: current movement (armour and encumbrance) */
     if (find_effect(c, 0x27, &eff)) {
         move = (u16)(move * 2);
     }
@@ -249,22 +249,22 @@ void draw_combat_values(void)
     format_number(0x28, line, move, 0, 0x0A, 3, ' ');
     ui_draw_text(0x23, 0x12, 0x0A, 0, 0x28, line);
 
-    /* pg+$1A0: numero di dadi dell'attacco 1 (2 voci +$1A0..+$1A1) */
+    /* ch+$1A0: number of dice of attack 1 (2 entries +$1A0..+$1A1) */
     format_number(0x28, line, c->b[0x1A0], 0, 0x0A, 2, ' ');
-    /* pg+$1A2: facce del dado dell'attacco 1 (2 voci +$1A2..+$1A3) */
+    /* ch+$1A2: sides of the die of attack 1 (2 entries +$1A2..+$1A3) */
     format_number(0x50, s_text, c->b[0x1A2], 0, 0x0A, 2, ' ');
     trim_leading_spaces(0x50, s_text);
     h026_append(0x28, line, 1, "d");
     h026_append(0x28, line, 0x50, s_text);
-    if ((s16)CH_W(c, 0x1A4) > 0) { /* pg+$1A4: bonus ai danni, 2 word (attacco 1 e 2) */
-        /* pg+$1A4: bonus ai danni, 2 word (attacco 1 e 2) */
+    if ((s16)CH_W(c, 0x1A4) > 0) { /* ch+$1A4: damage bonus, 2 words (attack 1 and 2) */
+        /* ch+$1A4: damage bonus, 2 words (attack 1 and 2) */
         format_number(0x50, s_text, (s16)CH_W(c, 0x1A4), 0, 0x0A, 2, ' ');
         trim_leading_spaces(0x50, s_text);
         h026_append(0x28, line, 1, "+");
         h026_append(0x28, line, 0x50, s_text);
     }
-    if ((s16)CH_W(c, 0x1A4) < 0) { /* pg+$1A4: bonus ai danni, 2 word (attacco 1 e 2) */
-        /* pg+$1A4: bonus ai danni, 2 word (attacco 1 e 2) */
+    if ((s16)CH_W(c, 0x1A4) < 0) { /* ch+$1A4: damage bonus, 2 words (attack 1 and 2) */
+        /* ch+$1A4: damage bonus, 2 words (attack 1 and 2) */
         format_number(0x50, s_text, -(s16)CH_W(c, 0x1A4), 0, 0x0A, 2, ' ');
         trim_leading_spaces(0x50, s_text);
         h026_append(0x28, line, 1, "-");
@@ -276,9 +276,9 @@ void draw_combat_values(void)
 }
 
 /*
- * PORT H065+$10DE: valore della caratteristica stat (+$11 + 2*stat) alla
- * riga stat + 9; per la forza 18 la percentuale tra parentesi ("00" =
- * 100); "*" se il valore attuale e' diverso dal massimo.
+ * PORT H065+$10DE: value of ability stat (+$11 + 2*stat) at
+ * row stat + 9; for strength 18 the percentage in brackets ("00" =
+ * 100); "*" if the current value differs from the maximum.
  */
 void draw_stat_value(u8 stat, u8 highlight)
 {
@@ -288,41 +288,41 @@ void draw_stat_value(u8 stat, u8 highlight)
     Character *c = g_current_char;
 
     clear_text_cells(col, (u16)(stat + 9), 0x0B, (u16)(stat + 9));
-    /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza corrente */
+    /* ch+$11: current abilities, 6 entries step 2 from +$11; current strength */
     format_number(0x50, s_text, c->b[0x11 + stat * 2], 0, 0x0A, 2, ' ');
     ui_draw_text(col, (u16)(stat + 9), pen, 0, 0x50, s_text);
-    /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza corrente; pg+$1C: forza
-     * eccezionale corrente (18/xx, 1..100) */
+    /* ch+$11: current abilities, 6 entries step 2 from +$11; current strength; ch+$1C:
+     * current exceptional strength (18/xx, 1..100) */
     if (stat == 0 && c->b[0x11] == 0x12 && c->b[0x1C] > 0) {
-        /* pg+$1C: forza eccezionale corrente (18/xx, 1..100) */
+        /* ch+$1C: current exceptional strength (18/xx, 1..100) */
         format_number(0x28, text, c->b[0x1C], 0, 0x0A, 2, '0');
-        if (c->b[0x1C] == 0x64) { /* pg+$1C: forza eccezionale corrente (18/xx, 1..100) */
+        if (c->b[0x1C] == 0x64) { /* ch+$1C: current exceptional strength (18/xx, 1..100) */
             copy_text(text, "00", 0x28);
         }
         h026_insert(0x28, text, 1, "(", 0);
         h026_append(0x28, text, 1, ")");
         ui_draw_text(7, 9, pen, 0, 0x28, text);
     }
-    /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza corrente; pg+$10:
+    /* ch+$11: current abilities, 6 entries step 2 from +$11; current strength; pg+$10:
      * caratteristiche base, 6 voci passo 2 (FOR INT SAG DES COS CAR); FOR */
     if (c->b[0x11 + stat * 2] != c->b[0x10 + stat * 2] ||
-        /* pg+$1D: forza eccezionale base; pg+$1C: forza eccezionale corrente (18/xx, 1..100) */
+        /* ch+$1D: base exceptional strength; ch+$1C: current exceptional strength (18/xx, 1..100) */
         (stat == 0 && c->b[0x1D] != c->b[0x1C])) {
         ui_draw_text(0x0C, (u16)(stat + 9), pen, 0, 1, "*");
     }
 }
 
-/* -$8(a4): personaggio della schermata di View Character. */
+/* -$8(a4): character of the View Character screen. */
 static Character *s_view_char;
 
-/* PORT H065+$36A6: il personaggio puo' curare?  Sempre 0. */
+/* PORT H065+$36A6: can the character cure?  Always 0. */
 static u8 can_heal(Character *c)
 {
     (void)c;
     return 0;
 }
 
-/* PORT H065+$36C0: il personaggio puo' guarire?  Sempre 0. */
+/* PORT H065+$36C0: can the character heal?  Always 0. */
 static u8 can_cure(Character *c)
 {
     (void)c;
@@ -330,16 +330,16 @@ static u8 can_cure(Character *c)
 }
 
 /*
- * PORT H065+$3390: tasti speciali della scelta del personaggio: 'H' il
- * precedente nel party (dal primo si va all'ultimo), 'P' il successivo
- * (dall'ultimo al primo); ogni altro tasto sceglie il primo.  Niente con
- * un clic del mouse.
+ * PORT H065+$3390: special keys of the character choice: 'H' the
+ * previous one in the party (from the first one it goes to the last), 'P' the next one
+ * (from the last to the first); any other key chooses the first.  Nothing with
+ * a mouse click.
  */
 void select_party_member(u8 key)
 {
     Character *m;                       /* -$4(a5) */
 
-    if (G_MOUSE_CLICK) { /* $249E: 1 se il tasto viene dal mouse (clic) */
+    if (G_MOUSE_CLICK) { /* $249E: 1 if the key comes from the mouse (click) */
         return;
     }
     m = g_party_head;
@@ -368,18 +368,18 @@ void select_party_member(u8 key)
 }
 
 /*
- * PORT H065+$3702: "Pick Character": sceglie il personaggio corrente con i
- * tasti (o il clic su un nome, H008+$01FC con $24A2 = 1) aggiornando
- * l'elenco del party.  1 se scelto con Select.
+ * PORT H065+$3702: "Pick Character": chooses the current character with the
+ * keys (or a click on a name, H008+$01FC with $24A2 = 1) updating
+ * the party list.  1 if chosen with Select.
  */
 u8 pick_character(void)
 {
-    /* $24A2: 1: il clic su un nome del party sceglie il personaggio */
+    /* $24A2: 1: clicking a party name selects the character */
     u8 saved = H005_B(0x24A2);          /* -$3(a5) */
     u8 key;                             /* -$1(a5) */
     u8 special;                         /* -$2(a5) */
 
-    H005_B(0x24A2) = 1; /* $24A2: 1: il clic su un nome del party sceglie il personaggio */
+    H005_B(0x24A2) = 1; /* $24A2: 1: clicking a party name selects the character */
     do {
         key = ui_request_choice(0x0F, "Pick Character ", 0x0B, "Select Exit",
                                 0x0D, 0x0A, 0x0F, 1, 0, &special);
@@ -389,11 +389,11 @@ u8 pick_character(void)
         }
     } while (special || !(key == 'S' || key == 'E' || key == 0));
     draw_party(g_current_char);
-    H005_B(0x24A2) = saved; /* $24A2: 1: il clic su un nome del party sceglie il personaggio */
+    H005_B(0x24A2) = saved; /* $24A2: 1: clicking a party name selects the character */
     return (u8)(key == 'S');
 }
 
-/* Riga del menu delle monete: nome, spazi fino a pad e quantita'. */
+/* Row of the coin menu: name, spaces up to pad and quantity. */
 static CokMenuItem *coin_line(CokMenuItem *list, u8 k, u8 drop)
 {
     CokMenuItem *node;
@@ -402,7 +402,7 @@ static CokMenuItem *coin_line(CokMenuItem *list, u8 k, u8 drop)
     char spaces[0x10];                  /* -$2e / -$38(a5) */
     s16 pad;
     s16 i;
-    /* $4B7E: nomi dei tipi di moneta, $0C byte per tipo */
+    /* $4B7E: names of the coin types, $0C bytes per type */
     const char *name = (const char *)&H005_B(0x4B7E + k * 0x0C);
 
     if (list == NULL) {
@@ -415,7 +415,7 @@ static CokMenuItem *coin_line(CokMenuItem *list, u8 k, u8 drop)
                                              COK_MEMF_CLEAR);
         node->next = prev;
     }
-    /* pg+$F0: monete, 7 word passo 2 (0..4 monete, 4 acciaio, 5 gemme, 6 gioielli) */
+    /* ch+$F0: coins, 7 words step 2 (0..4 coins, 4 steel, 5 gems, 6 jewellery) */
     format_number(0x0F, number, CH_W(g_current_char, 0xF0 + k * 2), 0, 0x0A,
                   4, ' ');
     if (drop) {
@@ -435,14 +435,14 @@ static CokMenuItem *coin_line(CokMenuItem *list, u8 k, u8 drop)
     return node;
 }
 
-/* Vero se il personaggio corrente non ha piu' monete (tipi 1..6). */
+/* True if the current character has no more coins (types 1..6). */
 static u8 no_coins_left(void)
 {
     u8 k;
     u8 none = 1;
 
     for (k = 1; k <= 6; ++k) {
-        /* pg+$F0: monete, 7 word passo 2 (0..4 monete, 4 acciaio, 5 gemme, 6 gioielli) */
+        /* ch+$F0: coins, 7 words step 2 (0..4 coins, 4 steel, 5 gems, 6 jewellery) */
         if (CH_W(g_current_char, 0xF0 + k * 2) > 0) {
             none = 0;
         }
@@ -451,8 +451,8 @@ static u8 no_coins_left(void)
 }
 
 /*
- * PORT H065+$12D6: View, Trade: sceglie a chi dare il denaro, poi tipo di
- * moneta e quantita' finche' ne resta o si esce.
+ * PORT H065+$12D6: View, Trade: chooses who to give the money to, then the coin
+ * type and quantity while some remains or until exit.
  */
 static void view_trade(void)
 {
@@ -488,7 +488,7 @@ static void view_trade(void)
             saved = NULL;
             count = 0;
             for (k = 6; k >= 1; --k) {
-                /* pg+$F0: monete, 7 word passo 2 (0..4 monete, 4 acciaio, 5 gemme, 6 gioielli) */
+                /* ch+$F0: coins, 7 words step 2 (0..4 coins, 4 steel, 5 gems, 6 jewellery) */
                 if (CH_W(g_current_char, 0xF0 + k * 2) != 0) {
                     ++count;
                     list = coin_line(list, k, 0);
@@ -509,7 +509,7 @@ static void view_trade(void)
                 coin = coin_type(0x28, chosen->text, 0x50, text);
                 h026_insert(0x50, text, 9, "How much ", 0);
                 h026_append(0x50, text, 0x10, "will you trade? ");
-                /* pg+$F0: monete, 7 word passo 2 (0..4 monete, 4 acciaio, 5 gemme, 6 gioielli) */
+                /* ch+$F0: coins, 7 words step 2 (0..4 coins, 4 steel, 5 gems, 6 jewellery) */
                 amount = input_amount(CH_W(g_current_char, 0xF0 + coin * 2),
                                       0x50, text, 0x0A);
                 transfer_money(coin, amount, &target, &g_current_char);
@@ -529,8 +529,8 @@ static void view_trade(void)
 }
 
 /*
- * PORT H065+$1636: View, Drop: tipo di moneta e quantita' da lasciare,
- * finche' ne resta o si esce.
+ * PORT H065+$1636: View, Drop: coin type and quantity to drop,
+ * while some remains or until exit.
  */
 static void view_drop(void)
 {
@@ -553,7 +553,7 @@ static void view_drop(void)
         saved = NULL;
         count = 0;
         for (k = 6; k >= 1; --k) {
-            /* pg+$F0: monete, 7 word passo 2 (0..4 monete, 4 acciaio, 5 gemme, 6 gioielli) */
+            /* ch+$F0: coins, 7 words step 2 (0..4 coins, 4 steel, 5 gems, 6 jewellery) */
             if (CH_W(g_current_char, 0xF0 + k * 2) != 0) {
                 ++count;
                 list = coin_line(list, k, 1);
@@ -576,7 +576,7 @@ static void view_drop(void)
                 h026_insert(0x50, text, 9, "How much ", 0);
             }
             h026_append(0x50, text, 0x0F, "will you drop? ");
-            /* pg+$F0: monete, 7 word passo 2 (0..4 monete, 4 acciaio, 5 gemme, 6 gioielli) */
+            /* ch+$F0: coins, 7 words step 2 (0..4 coins, 4 steel, 5 gems, 6 jewellery) */
             amount = input_amount(CH_W(g_current_char, 0xF0 + coin * 2),
                                   0x50, text, 0x0A);
             drop_money(coin, amount, g_current_char);
@@ -591,11 +591,11 @@ static void view_drop(void)
 }
 
 /*
- * PORT H065+$196E: View Character: scheda del personaggio corrente e menu
- * con le funzioni disponibili (Items se ha oggetti, Spells se ha
- * incantesimi memorizzati +$1E.., Trade e Drop con del denaro, Heal e
- * Cure, Exit).  *redraw = 1 da Items chiude la schermata.  Alla fine la
- * schermata del gioco e' ridisegnata (H063+$321A).
+ * PORT H065+$196E: View Character: sheet of the current character and menu
+ * with the available functions (Items if it has items, Spells if it has
+ * memorised spells +$1E.., Trade and Drop with some money, Heal and
+ * Cure, Exit).  *redraw = 1 from Items closes the screen.  At the end the
+ * game screen is redrawn (H063+$321A).
  */
 void view_character(u8 *redraw)
 {
@@ -618,13 +618,13 @@ void view_character(u8 *redraw)
         has_spells = 0;
         has_money = 0;
         for (i = 0; i <= 0x39; ++i) {
-            /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
+            /* ch+$1E: memorised spells, $3A bytes (+$1E..+$57); bit 7 = to be memorised */
             if (c->b[0x1E + i] > 0) {
                 has_spells = 1;
             }
         }
         for (i = 1; i <= 6; ++i) {
-            /* pg+$F0: monete, 7 word passo 2 (0..4 monete, 4 acciaio, 5 gemme, 6 gioielli) */
+            /* ch+$F0: coins, 7 words step 2 (0..4 coins, 4 steel, 5 gems, 6 jewellery) */
             if (CH_W(c, 0xF0 + i * 2) > 0) {
                 has_money = 1;
             }
@@ -635,11 +635,11 @@ void view_character(u8 *redraw)
         if (has_spells) {
             h026_append(0x28, menu, 7, "Spells ");
         }
-        /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso); pg+$198: attivo/in
-         * piedi (0 a terra o fuori combattimento); pg+$197: stato: 0 ok, 4 incosciente, 5 morente,
-         * 6-8 morto, $0A a terra */
+        /* ch+$EC: control: <$80 PC, >$7F NPC/AI ($B3 = charmed or confused); ch+$198: active/standing (0
+         * down or out of the combat); ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A
+         * down */
         if ((c->b[0xEC] < 0x80 || (c->b[0x198] != 0 && c->b[0x197] == 1)) &&
-            /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
+            /* $3DE3: game mode (0 menu, 1 view, 2 camp, 5 combat) */
             has_money && H005_B(0x3DE3) != 5) {
             h026_append(0x28, menu, 6, "Trade ");
         }
@@ -656,7 +656,7 @@ void view_character(u8 *redraw)
         key = ui_request_choice(0, "", 0x28, menu, 0x0D, 0x0A, 0x0F, 0, 0,
                                 &special);
         spell = -1;                     /* $FFFF */
-        /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
+        /* $2483: index of the selected option in the row menus (persistent) */
         saved_choice = H005_B(0x2483);
         switch (key) {
         case 'I':                       /* H065+$1B8C */
@@ -675,7 +675,7 @@ void view_character(u8 *redraw)
         default:
             break;
         }
-        /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
+        /* $2483: index of the selected option in the row menus (persistent) */
         H005_B(0x2483) = saved_choice;
         if (!*redraw && (key == 'I' || key == 'T' || key == 'S')) {
             draw_character_sheet();
@@ -684,32 +684,32 @@ void view_character(u8 *redraw)
     redraw_game_screen();
 }
 
-/* Riga della tabella dei tipi di oggetto H005+$336C ($12 byte). */
-/* $336C: tabella dei tipi di oggetto (ogg+$30), $12 byte per tipo; off = campo */
+/* Row of the item type table H005+$336C ($12 bytes). */
+/* $336C: table of the item types (item+$30), $12 bytes per type; off = field */
 #define ITEM_TYPE(t, off) H005_B(0x336C + (t) * 0x12 + (off))
 
 /*
- * PORT H065+$1C48: l'oggetto si puo' cedere?  No se e' pronto ("Must be
- * unreadied"); per le pergamene magiche chiede conferma ("... was going
+ * PORT H065+$1C48: can the item be given away?  Not if it is readied ("Must be
+ * unreadied"); for magic scrolls it asks for confirmation ("... was going
  * to scribe from that scroll / is it Okay to lose it?").
  */
 static u8 can_give_away(CokItem *it)
 {
     u8 ok = 0;                          /* -$1(a5) */
 
-    if (it->b[0x3A]) { /* ogg+$3A: flag oggetto pronto all'uso (Ready) */
+    if (it->b[0x3A]) { /* item+$3A: item readied flag (Ready) */
         show_message_line(0x11, "Must be unreadied");
     } else if (!is_scroll(it)) {
         ok = 1;
-    /* ogg+$44: cariche dell'oggetto magico; incantesimo 1 della pergamena; ogg+$45:
-     * incantesimo/parametro dell'oggetto magico (bit 7 escluso) */
+    /* item+$44: charges of the magic item; spell 1 of the scroll; item+$45:
+     * spell/parameter of the magic item (bit 7 excluded) */
     } else if (it->b[0x44] > 0x7F || it->b[0x45] > 0x7F ||
-               /* ogg+$46: tipo dell'effetto magico: bit7 = effetto passivo, bit 0..6 tipo */
+               /* item+$46: type of the magic effect: bit7 = passive effect, bits 0..6 type */
                it->b[0x46] > 0x7F) {
         draw_character_name(g_current_char, 1, 0x15, 0);
-        H005_SET_W(0x334E, (u16)(h026_strlen(0x0F, /* $334E: (word) cursore del testo: colonna */
+        H005_SET_W(0x334E, (u16)(h026_strlen(0x0F, /* $334E: (word) text cursor: column */
                    (const char *)g_current_char->b) + 2));
-        H005_SET_W(0x334C, 0x15); /* $334C: (word) cursore del testo: riga */
+        H005_SET_W(0x334C, 0x15); /* $334C: (word) text cursor: row */
         word_wrap_text(1, 0x15, 0x26, 0x16, 0x0E, 0, 0, 0x25,
                        " was going to scribe from that scroll");
         if (ask_yes_no(0x17, "is it Okay to lose it? ", 0x0D, 0x0A, 0x0F) ==
@@ -723,20 +723,20 @@ static u8 can_give_away(CokItem *it)
     return ok;
 }
 
-/* PORT H065+$1D80: non fa nulla. */
+/* PORT H065+$1D80: does nothing. */
 static void h065_1d80(CokItem *it)
 {
     (void)it;
 }
 
 /*
- * PORT H065+$1E2C: divide a meta' la quantita' (+$40) in un nuovo
- * oggetto non pronto inserito dopo it ("Can't halve that" se < 2).
+ * PORT H065+$1E2C: halves the quantity (+$40) into a new
+ * unreadied item inserted after it ("Can't halve that" if < 2).
  */
 static void halve_item(CokItem *it)
 {
     CokItem *n;                         /* -$4(a5) */
-    /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
+    /* item+$40: quantity (identical pieces grouped, max 255) */
     u16 half = (u16)(it->b[0x40] >> 1); /* -$6(a5) */
     u16 rest;                           /* -$8(a5) */
 
@@ -744,79 +744,79 @@ static void halve_item(CokItem *it)
         show_message_line(0x10, "Can't halve that");
         return;
     }
-    rest = (u16)(it->b[0x40] - half); /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
+    rest = (u16)(it->b[0x40] - half); /* item+$40: quantity (identical pieces grouped, max 255) */
     n = (CokItem *)exec_alloc_mem(sizeof(CokItem), COK_MEMF_CLEAR);
     memcpy(n->b, it->b, 0x48);
-    n->b[0x40] = (u8)half; /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
-    n->b[0x3A] = 0; /* ogg+$3A: flag oggetto pronto all'uso (Ready) */
+    n->b[0x40] = (u8)half; /* item+$40: quantity (identical pieces grouped, max 255) */
+    n->b[0x3A] = 0; /* item+$3A: item readied flag (Ready) */
     n->next = it->next;
-    it->b[0x40] = (u8)rest; /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
+    it->b[0x40] = (u8)rest; /* item+$40: quantity (identical pieces grouped, max 255) */
     it->next = n;
 }
 
 /*
- * PORT H065+$1EE4: riunisce in it le quantita' degli oggetti uguali del
- * personaggio corrente (al massimo 255 per oggetto: l'eccedenza resta
- * nell'altro, che diventa quello da riempire).
+ * PORT H065+$1EE4: gathers into it the quantities of the identical items of the
+ * current character (at most 255 per item: the excess stays
+ * in the other one, which becomes the one to fill).
  */
 static void join_items(CokItem *it)
 {
     CokItem *target = it;               /* -$c(a5) */
     CokItem *p;                         /* -$4(a5) */
     CokItem *next;                      /* -$8(a5) */
-    /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
+    /* item+$40: quantity (identical pieces grouped, max 255) */
     u16 total = it->b[0x40];            /* -$e(a5) */
 
     for (p = g_current_char->items; p != NULL; p = next) {
         next = p->next;
-        if (p == target || p->b[0x40] == 0 || /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
-            /* ogg+$32: parola 1 del nome (indice 1-based in H005+$406E, $16 byte); ogg+$33: parola
-             * 2 del nome (indice 1-based in H005+$406E, $16 byte) */
+        if (p == target || p->b[0x40] == 0 || /* item+$40: quantity (identical pieces grouped, max 255) */
+            /* item+$32: name word 1 (1-based index into H005+$406E, $16 bytes); item+$33: name
+             * word 2 (1-based index into H005+$406E, $16 bytes) */
             p->b[0x32] != target->b[0x32] || p->b[0x33] != target->b[0x33] ||
-            /* ogg+$34: parola 3 del nome (indice in H005+$406E); nome base del tipo; ogg+$30: tipo
-             * dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
+            /* item+$34: name word 3 (index into H005+$406E); base name of the type; ogg+$30: type
+             * of the item (index into the table H005+$336C, $12 bytes per entry) */
             p->b[0x34] != target->b[0x34] || p->b[0x30] != target->b[0x30] ||
-            /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno */
+            /* item+$36: (word) magic bonus (+n) of the item, signed */
             COK_GET16(p->b + 0x36) != COK_GET16(target->b + 0x36) ||
-            /* ogg+$38: (word) secondo bonus, sommato a CH +$18A quando pronto */
+            /* item+$38: (word) second bonus, added to CH +$18A when readied */
             COK_GET16(p->b + 0x38) != COK_GET16(target->b + 0x38) ||
-            p->b[0x3C] != target->b[0x3C] || /* ogg+$3C: flag oggetto maledetto */
-            /* ogg+$3E: (word) peso unitario dell'oggetto */
+            p->b[0x3C] != target->b[0x3C] || /* item+$3C: cursed item flag */
+            /* item+$3E: (word) unit weight of the item */
             COK_GET16(p->b + 0x3E) != COK_GET16(target->b + 0x3E) ||
-            /* ogg+$44: cariche dell'oggetto magico; incantesimo 1 della pergamena */
+            /* item+$44: charges of the magic item; spell 1 of the scroll */
             p->b[0x44] != target->b[0x44] || p->b[0x44] >= 2 ||
-            /* ogg+$45: incantesimo/parametro dell'oggetto magico (bit 7 escluso); ogg+$46: tipo
-             * dell'effetto magico: bit7 = effetto passivo, bit 0..6 tipo */
+            /* item+$45: spell/parameter of the magic item (bit 7 excluded); item+$46: type of
+             * the magic effect: bit7 = passive effect, bits 0..6 type */
             p->b[0x45] != target->b[0x45] || p->b[0x46] != target->b[0x46]) {
             continue;
         }
-        if (p->b[0x40] + total <= 0xFF) { /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
-            total = (u16)(total + p->b[0x40]); /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
+        if (p->b[0x40] + total <= 0xFF) { /* item+$40: quantity (identical pieces grouped, max 255) */
+            total = (u16)(total + p->b[0x40]); /* item+$40: quantity (identical pieces grouped, max 255) */
             delete_item(g_current_char, p);
         } else {
-            target->b[0x40] = 0xFF; /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
-            /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
+            target->b[0x40] = 0xFF; /* item+$40: quantity (identical pieces grouped, max 255) */
+            /* item+$40: quantity (identical pieces grouped, max 255) */
             p->b[0x40] = (u8)(p->b[0x40] - (0xFF - total));
-            total = p->b[0x40]; /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
+            total = p->b[0x40]; /* item+$40: quantity (identical pieces grouped, max 255) */
             target = p;
         }
     }
-    target->b[0x40] = (u8)total; /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
+    target->b[0x40] = (u8)total; /* item+$40: quantity (identical pieces grouped, max 255) */
 }
 
 /*
- * PORT H065+$2B2E: effetto degli oggetti magici (+$46 con il bit 7) quando
- * diventano pronti (readying) o no, secondo il tipo (bit 0..6).
+ * PORT H065+$2B2E: effect of the magic items (+$46 with bit 7) when
+ * they are readied (readying) or not, according to the type (bits 0..6).
  */
 static void magic_item_ready(CokItem *it, u8 readying)
 {
     Character *c = g_current_char;      /* -$a(a5) */
 
-    /* ogg+$46: tipo dell'effetto magico: bit7 = effetto passivo, bit 0..6 tipo */
+    /* item+$46: type of the magic effect: bit7 = passive effect, bits 0..6 type */
     switch (mask_byte(it->b[0x46], 0x7F)) {
     case 0: case 2:
-        H005_B(0x24E0) = 1; /* $24E0: 1: gli effetti passano al gestore $2A0E (oggetti magici) */
-        /* ogg+$46: tipo dell'effetto magico: bit7 = effetto passivo, bit 0..6 tipo */
+        H005_B(0x24E0) = 1; /* $24E0: 1: the effects go to the handler $2A0E (magic items) */
+        /* item+$46: type of the magic effect: bit7 = passive effect, bits 0..6 type */
         call_effect_handler(it->b[0x46], &c, it, (u8)(readying == 0));
         break;
     case 3: case 5:
@@ -833,37 +833,37 @@ static void magic_item_ready(CokItem *it, u8 readying)
 }
 
 /*
- * PORT H065+$2C04: rende pronto l'oggetto o lo toglie (non se maledetto).
- * Impedimenti: classe, slot gia' occupato ("already using ..."), mani
- * piene, ordine magico delle pergamene ($27), solo kender ($43).
+ * PORT H065+$2C04: readies the item or removes it (not if cursed).
+ * Obstacles: class, slot already in use ("already using ..."), hands
+ * full, magic order of the scrolls ($27), kender only ($43).
  */
 void ready_item(CokItem *it)
 {
     Character *c = g_current_char;      /* -$a(a5) */
-    /* ogg+$46: tipo dell'effetto magico: bit7 = effetto passivo, bit 0..6 tipo */
+    /* item+$46: type of the magic effect: bit7 = passive effect, bits 0..6 type */
     u8 magic = (u8)(it->b[0x46] > 0x7F);        /* -$1(a5) */
     u16 status = 0;                     /* -$4(a5) */
     u16 slot;                           /* -$6(a5) */
 
-    if (it->b[0x3A]) { /* ogg+$3A: flag oggetto pronto all'uso (Ready) */
-        if (it->b[0x3C]) { /* ogg+$3C: flag oggetto maledetto */
+    if (it->b[0x3A]) { /* item+$3A: item readied flag (Ready) */
+        if (it->b[0x3C]) { /* item+$3C: cursed item flag */
             show_message_line(0x0B, "It's Cursed");
         } else {
-            it->b[0x3A] = 0; /* ogg+$3A: flag oggetto pronto all'uso (Ready) */
+            it->b[0x3A] = 0; /* item+$3A: item readied flag (Ready) */
             if (magic) {
                 magic_item_ready(it, 0);
             }
         }
         return;
     }
-    /* pg+$188: mani occupate dagli oggetti pronti (max 2); $336D: tipi di oggetto +1: mani occupate
-     * (si somma a +$188, max 2); ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte
-     * per voce) */
+    /* ch+$188: hands used by the readied items (max 2); $336D: item types +1: hands used (added to
+     * +$188, max 2); ogg+$30: type of the item (index into the table H005+$336C, $12 bytes per
+     * entry) */
     if (c->b[0x188] + ITEM_TYPE(it->b[0x30], 1) > 2) {
         status = 3;
     }
-    /* $336C: tipi di oggetto, $12 byte per tipo (+$30): +0 slot/genere; ogg+$30: tipo dell'oggetto
-     * (indice tabella H005+$336C, $12 byte per voce) */
+    /* $336C: item types, $12 bytes per type (+$30): +0 slot/kind; ogg+$30: type of the item (index
+     * into the table H005+$336C, $12 bytes per entry) */
     slot = ITEM_TYPE(it->b[0x30], 0);
     if (slot <= 8) {
         if (c->readied[slot] != NULL) {
@@ -874,39 +874,39 @@ void ready_item(CokItem *it)
             status = 2;
         }
     }
-    if (it->b[0x30] == 0x27 && /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
-        /* pg+$5F: ordine del mago (1 allineam. 0/3/6, 2 per 1/4/7, 0 nessuno); ogg+$3B: bit 0..2
-         * parole del nome non identificate; bit 5/4 pergamena cl.1/2 */
+    if (it->b[0x30] == 0x27 && /* ogg+$30: type of the item (index into the table H005+$336C, $12 bytes per entry) */
+        /* ch+$5F: mage order (1 alignm. 0/3/6, 2 for 1/4/7, 0 none); item+$3B: bits 0..2
+         * unidentified name words; bit 5/4 scroll cl.1/2 */
         !(g_current_char->b[0x5F] == 1 && mask_byte(it->b[0x3B], 0x20)) &&
-        /* pg+$5F: ordine del mago (1 allineam. 0/3/6, 2 per 1/4/7, 0 nessuno); ogg+$3B: bit 0..2
-         * parole del nome non identificate; bit 5/4 pergamena cl.1/2 */
+        /* ch+$5F: mage order (1 alignm. 0/3/6, 2 for 1/4/7, 0 none); item+$3B: bits 0..2
+         * unidentified name words; bit 5/4 scroll cl.1/2 */
         !(g_current_char->b[0x5F] == 2 && mask_byte(it->b[0x3B], 0x10))) {
         status = 4;
     }
-    /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce); pg+$5B: razza
-     * (0..6, nomi H005+$4D04) */
+    /* ogg+$30: type of the item (index into the table H005+$336C, $12 bytes per entry);
+     * ch+$5B: race (0..6, names H005+$4D04) */
     if (it->b[0x30] == 0x43 && g_current_char->b[0x5B] != 5) {
         status = 5;
     }
-    /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
+    /* ogg+$30: type of the item (index into the table H005+$336C, $12 bytes per entry) */
     if (it->b[0x30] == 0x1E && c->readied[11] != NULL) {
         status = 2;
         slot = 0x0B;
     }
-    /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
+    /* ogg+$30: type of the item (index into the table H005+$336C, $12 bytes per entry) */
     if (it->b[0x30] == 0x0C && c->readied[12] != NULL) {
         status = 2;
         slot = 0x0C;
     }
-    /* $337B: tipi di oggetto +$F: maschera delle classi ammesse (vs +$122); ogg+$30: tipo
-     * dell'oggetto (indice tabella H005+$336C, $12 byte per voce); pg+$122: maschera delle armi
-     * usabili (somma H005+$5040 per classe) */
+    /* $337B: item types +$F: mask of the allowed classes (vs +$122); ogg+$30: type of the item
+     * (index into the table H005+$336C, $12 bytes per entry); ch+$122: mask of the usable
+     * weapons (sum of H005+$5040 per class) */
     if (!mask_byte(ITEM_TYPE(it->b[0x30], 0x0F), c->b[0x122])) {
         status = 1;
     }
     switch (status) {
     case 0:
-        it->b[0x3A] = 1; /* ogg+$3A: flag oggetto pronto all'uso (Ready) */
+        it->b[0x3A] = 1; /* item+$3A: item readied flag (Ready) */
         if (magic) {
             magic_item_ready(it, 1);
         }
@@ -922,8 +922,8 @@ void ready_item(CokItem *it)
         show_message_line(0x50, s_text);
         break;
     case 3:
-        /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento); pg+$19A:
-         * controllo automatico in combattimento (1 = IA) */
+        /* $3DE3: game mode (0 menu, 1 view, 2 camp, 5 combat); ch+$19A: automatic
+         * control in combat (1 = AI) */
         if (!(H005_B(0x3DE3) == 5 && c->b[0x19A])) {
             show_message_line(0x14, "Your hands are full!");
         }
@@ -940,12 +940,12 @@ void ready_item(CokItem *it)
 }
 
 /*
- * Nell'originale la lista degli oggetti e' passata direttamente al menu a
- * elenco: i primi $30 byte di un oggetto hanno la forma di una voce (nome
- * a +$00, flag di intestazione a +$2A, successivo a +$2C).  In C le due
- * strutture sono diverse: si costruisce una lista di voci con gli stessi
- * nomi e flag, e la voce scelta corrisponde all'oggetto nella stessa
- * posizione.
+ * In the original the item list is passed directly to the list
+ * menu: the first $30 bytes of an item have the shape of an entry (name
+ * at +$00, header flag at +$2A, next at +$2C).  In C the two
+ * structures are different: a list of entries is built with the same
+ * names and flags, and the chosen entry matches the item in the same
+ * position.
  */
 static CokMenuItem *s_object_menu;
 
@@ -965,7 +965,7 @@ static CokMenuItem *items_as_menu(Character *c)
                                                        COK_MEMF_CLEAR);
 
         memcpy(n->text, it->b, 0x2A);
-        n->header = it->b[0x2A]; /* ogg+$2A: flag intestazione: copiato in header della voce di menu */
+        n->header = it->b[0x2A]; /* ogg+$2A: header flag: copied into the header of the menu entry */
         n->next = NULL;
         if (tail == NULL) {
             s_object_menu = n;
@@ -993,8 +993,8 @@ static CokItem *menu_item_object(Character *c, CokMenuItem *node)
 }
 
 /*
- * PORT H065+$32F6: dare it a c lo sovraccaricherebbe (o ha gia' 16
- * oggetti)?
+ * PORT H065+$32F6: would giving it to c overload it (or does it already have 16
+ * items)?
  */
 u8 item_overloads(Character *c, CokItem *it)
 {
@@ -1002,14 +1002,14 @@ u8 item_overloads(Character *c, CokItem *it)
     u8 over = 0;                        /* -$1(a5) */
 
     recompute_stats(c);
-    if (c->b[0x14F] > 0x0F) { /* pg+$14F: numero di oggetti posseduti (max 16) */
+    if (c->b[0x14F] > 0x0F) { /* ch+$14F: number of items owned (max 16) */
         over = 1;
     }
-    weight = COK_GET16(&it->b[0x3E]); /* ogg+$3E: (word) peso unitario dell'oggetto */
-    if (it->b[0x40] > 0) { /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
-        weight = (u16)(it->b[0x40] * weight); /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
+    weight = COK_GET16(&it->b[0x3E]); /* item+$3E: (word) unit weight of the item */
+    if (it->b[0x40] > 0) { /* item+$40: quantity (identical pieces grouped, max 255) */
+        weight = (u16)(it->b[0x40] * weight); /* item+$40: quantity (identical pieces grouped, max 255) */
     }
-    if ((s16)(CH_W(c, 0x18C) + weight) > /* pg+$18C: ingombro: peso di oggetti e monete (word) */
+    if ((s16)(CH_W(c, 0x18C) + weight) > /* ch+$18C: encumbrance: weight of items and coins (word) */
         (s16)(str_weight_allowance(c) + 0x5DC)) {
         over = 1;
     }
@@ -1017,8 +1017,8 @@ u8 item_overloads(Character *c, CokItem *it)
 }
 
 /*
- * PORT H065+$347E: ricchezza di c in acciaio (monete 0..4 per i valori
- * H005+$0.., diviso H005+$10).
+ * PORT H065+$347E: wealth of c in steel (coins 0..4 times the values
+ * H005+$0.., divided by H005+$10).
  */
 u32 wealth_in_steel(Character *c)
 {
@@ -1026,16 +1026,16 @@ u32 wealth_in_steel(Character *c)
     u8 k;                               /* -$5(a5) */
 
     for (k = 0; k <= 4; ++k) {
-        /* pg+$F0: monete, 7 word passo 2 (0..4 monete, 4 acciaio, 5 gemme, 6 gioielli) */
+        /* ch+$F0: coins, 7 words step 2 (0..4 coins, 4 steel, 5 gems, 6 jewellery) */
         sum += h015_mulu32(H005_L(k * 4), CH_W(c, 0xF0 + k * 2));
     }
-    /* $10: valore della moneta 5 (long, 50): divisore per la ricchezza in acciaio */
+    /* $10: value of coin 5 (long, 50): divisor for the wealth in steel */
     return (u32)h015_divs32((s32)sum, (s32)H005_L(0x10), NULL);
 }
 
 /*
- * PORT H065+$1D94: Items, Trade: da' l'oggetto a un altro membro del
- * party se non lo sovraccarica.
+ * PORT H065+$1D94: Items, Trade: gives the item to another member of the
+ * party if it does not overload them.
  */
 static void trade_item(CokItem *it)
 {
@@ -1057,9 +1057,9 @@ static void trade_item(CokItem *it)
 }
 
 /*
- * PORT H065+$20EC: Items, Sell: offre meta' del valore (+$42), per
- * l'insieme di +$40 pezzi valore * pezzi / 20; il ricavato in acciaio va
- * al personaggio o, se troppo pesante, in parte nella cassa.
+ * PORT H065+$20EC: Items, Sell: offers half the value (+$42), for
+ * the set of +$40 pieces value * pieces / 20; the proceeds in steel go
+ * to the character or, if too heavy, partly into the pool.
  */
 static void sell_item(CokItem *it)
 {
@@ -1067,17 +1067,17 @@ static void sell_item(CokItem *it)
     u16 amount;                         /* -$4(a5) */
     u16 room;                           /* -$6(a5) */
 
-    if (COK_GET16(&it->b[0x42]) > 0) { /* ogg+$42: (word) valore in monete (Sell offre la meta') */
-        /* ogg+$42: (word) valore in monete (Sell offre la meta') */
+    if (COK_GET16(&it->b[0x42]) > 0) { /* item+$42: (word) value in coins (Sell offers half) */
+        /* item+$42: (word) value in coins (Sell offers half) */
         price = (u16)(COK_GET16(&it->b[0x42]) >> 1);
     }
-    if (it->b[0x40] > 1) { /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
-        /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
+    if (it->b[0x40] > 1) { /* item+$40: quantity (identical pieces grouped, max 255) */
+        /* ogg+$30: type of the item (index into the table H005+$336C, $12 bytes per entry) */
         if (it->b[0x30] != 0x1E || it->b[0x30] != 0x0C) {
-            /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
+            /* item+$40: quantity (identical pieces grouped, max 255) */
             price = (u16)((u32)(it->b[0x40] * price) / 0x14);
         } else {
-            price = (u16)(it->b[0x40] * price); /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
+            price = (u16)(it->b[0x40] * price); /* item+$40: quantity (identical pieces grouped, max 255) */
         }
     }
     build_item_name(s_char, it, 0, 0, 0, 0);
@@ -1093,16 +1093,16 @@ static void sell_item(CokItem *it)
         if (would_overload(g_current_char, amount, &room)) {
             show_message_line(0x27, "Overloaded.  Money will be put in pool.");
             if (room > amount) {
-                CH_PUTW(g_current_char, 0xF8, /* pg+$F8: pezzi d'acciaio (moneta tipo 4) (word) */
+                CH_PUTW(g_current_char, 0xF8, /* ch+$F8: steel pieces (coin type 4) (word) */
                         (u16)(CH_W(g_current_char, 0xF8) + amount));
             } else {
-                CH_PUTW(g_current_char, 0xF8, /* pg+$F8: pezzi d'acciaio (moneta tipo 4) (word) */
+                CH_PUTW(g_current_char, 0xF8, /* ch+$F8: steel pieces (coin type 4) (word) */
                         (u16)(CH_W(g_current_char, 0xF8) + room));
-                /* $2A2E: (long) cassa, pezzi d'acciaio (tipo 4; xp: quantita' x 2) */
+                /* $2A2E: (long) pool, steel pieces (type 4; xp: amount x 2) */
                 H005_SET_L(0x2A2E, H005_L(0x2A2E) + (u16)(amount - room));
             }
         } else {
-            CH_PUTW(g_current_char, 0xF8, /* pg+$F8: pezzi d'acciaio (moneta tipo 4) (word) */
+            CH_PUTW(g_current_char, 0xF8, /* ch+$F8: steel pieces (coin type 4) (word) */
                     (u16)(CH_W(g_current_char, 0xF8) + amount));
         }
     }
@@ -1110,8 +1110,8 @@ static void sell_item(CokItem *it)
 }
 
 /*
- * PORT H065+$2308: Items, Id: per 100 pezzi d'acciaio (del personaggio o
- * della cassa) rivela l'oggetto (azzera i bit 0-2 di +$3B).
+ * PORT H065+$2308: Items, Id: for 100 steel pieces (of the character or
+ * of the pool) reveals the item (clears bits 0-2 of +$3B).
  */
 static void identify_item(CokItem *it, u8 *relist)
 {
@@ -1141,13 +1141,13 @@ static void identify_item(CokItem *it, u8 *relist)
         }
     }
     if (paid) {
-        /* ogg+$3B: bit 0..2 parole del nome non identificate; bit 5/4 pergamena cl.1/2 */
+        /* item+$3B: bits 0..2 unidentified name words; bit 5/4 scroll cl.1/2 */
         if (mask_byte(it->b[0x3B], 7) == 0) {
             copy_text(s_text, "I can't tell anything new about your ", 0x50);
             h026_append(0x50, s_text, 0x28, (const char *)it->b);
             word_wrap_text(1, 0x15, 0x26, 0x16, 0x0E, 0, 1, 0x50, s_text);
         } else {
-            /* ogg+$3B: bit 0..2 parole del nome non identificate; bit 5/4 pergamena cl.1/2 */
+            /* item+$3B: bits 0..2 unidentified name words; bit 5/4 scroll cl.1/2 */
             it->b[0x3B] = mask_byte(it->b[0x3B], 0xF8);
             build_item_name(s_char, it, 0, 0, 0, 0);
             copy_text(s_text, "It looks like some sort of ", 0x50);
@@ -1163,10 +1163,10 @@ static void identify_item(CokItem *it, u8 *relist)
 }
 
 /*
- * PORT H065+$255A: schermata degli oggetti del personaggio corrente:
- * elenco (" Yes"/" No" pronto e nome) e comandi Ready (o View Ready in
- * debug), Use, Trade, Drop, Halve (meno di 16 oggetti), Join, Sell e Id
- * (in citta').  Fino a Exit, a *redraw o a nessun oggetto.
+ * PORT H065+$255A: item screen of the current character:
+ * list (" Yes"/" No" readied and name) and commands Ready (or View Ready in
+ * debug), Use, Trade, Drop, Halve (fewer than 16 items), Join, Sell and Id
+ * (in town).  Until Exit, *redraw or no items left.
  */
 void show_items(u8 *redraw)
 {
@@ -1182,60 +1182,59 @@ void show_items(u8 *redraw)
     u8 saved_choice;                    /* -$4b(a5) */
 
     chosen = NULL;
-    /* pg+$14F: numero di oggetti posseduti (max 16) */
+    /* ch+$14F: number of items owned (max 16) */
     while (key != 'E' && key != 0 && !*redraw && c->b[0x14F] > 0) {
-        count = c->b[0x14F]; /* pg+$14F: numero di oggetti posseduti (max 16) */
+        count = c->b[0x14F]; /* ch+$14F: number of items owned (max 16) */
         if (c->items != NULL) {
-            /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
+            /* ch+$EC: control: <$80 PC, >$7F NPC/AI ($B3 = charmed or confused) */
             u8 trade_ok = (u8)(c->b[0xEC] < 0x80 ||
-                               /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento);
-                                * pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a
-                                * terra */
+                               /* ch+$198: active/standing (0 down or out of the combat); ch+$197: status: 0 ok, 4 unconscious, 5
+                                * dying, 6-8 dead, $0A down */
                                (c->b[0x198] != 0 && c->b[0x197] == 1));
 
-            if (H005_B(0x24D2)) { /* $24D2: debug attivo ("*" in stato, valori extra) */
+            if (H005_B(0x24D2)) { /* $24D2: debug enabled ("*" in the status, extra values) */
                 h026_copy(0x28, menu, 0x0A, "View Ready");
             } else {
                 h026_copy(0x28, menu, 5, "Ready");
             }
             /*
-             * Con $3DE3 = 5 l'originale legge il byte +2 del blocco +$192
-             * anche se e' nullo; qui un blocco nullo vale 0.
+             * With $3DE3 = 5 the original reads byte +2 of the block +$192
+             * even if it is null; here a null block counts as 0.
              */
-            /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento); A+$1CA: (word) se non
-             * nullo nell'area non si lanciano incantesimi */
+            /* ch+$198: active/standing (0 down or out of the combat); A+$1CA: (word) if not
+             * zero no spells can be cast in the area */
             if (c->b[0x198] && COK_GET16(g_state_a + 0x1CA) == 0 &&
-                /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
+                /* $3DE3: game mode (0 menu, 1 view, 2 camp, 5 combat) */
                 (H005_B(0x3DE3) == 2 || H005_B(0x3DE3) == 3 ||
-                 /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
+                 /* $3DE3: game mode (0 menu, 1 view, 2 camp, 5 combat) */
                  H005_B(0x3DE3) == 4 ||
-                 /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
+                 /* $3DE3: game mode (0 menu, 1 view, 2 camp, 5 combat) */
                  (H005_B(0x3DE3) == 5 && c->block_192 != NULL &&
-                  /* turno+$2: flag puo' usare oggetti (azzerato tossendo nella nube) */
+                  /* turn+$2: can use items flag (cleared by coughing in the cloud) */
                   (c->block_192->b)[2] != 0))) {
                 h026_append(0x28, menu, 4, " Use");
             }
-            /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
+            /* $3DE3: game mode (0 menu, 1 view, 2 camp, 5 combat) */
             if (trade_ok && H005_B(0x3DE3) != 5) {
                 h026_append(0x28, menu, 6, " Trade");
             }
             h026_append(0x28, menu, 5, " Drop");
-            if (c->b[0x14F] < 0x10) { /* pg+$14F: numero di oggetti posseduti (max 16) */
+            if (c->b[0x14F] < 0x10) { /* ch+$14F: number of items owned (max 16) */
                 h026_append(0x28, menu, 6, " Halve");
             }
             h026_append(0x28, menu, 5, " Join");
-            /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
+            /* $3DE3: game mode (0 menu, 1 view, 2 camp, 5 combat) */
             if (trade_ok && H005_B(0x3DE3) == 1) {
                 h026_append(0x28, menu, 5, " Sell");
             }
-            /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
+            /* $3DE3: game mode (0 menu, 1 view, 2 camp, 5 combat) */
             if (H005_B(0x3DE3) == 1) {
                 h026_append(0x28, menu, 3, " Id");
             }
             for (it = c->items; it != NULL; it = it->next) {
                 build_item_name(c, it, 0, 0, 1, 0);
             }
-            /* $24A8: 1: la schermata degli oggetti va ridisegnata per intero */
+            /* $24A8: 1: the item screen must be redrawn in full */
             if (first || H005_B(0x24A8)) {
                 draw_items_frame();
                 draw_character_name(c, 1, 1, 1);
@@ -1244,14 +1243,14 @@ void show_items(u8 *redraw)
                 ui_draw_text(1, 3, 0x0F, 0, 0x0A, "Ready Item");
                 relist = 1;
                 first = 0;
-                H005_B(0x24A8) = 0; /* $24A8: 1: la schermata degli oggetti va ridisegnata per intero */
+                H005_B(0x24A8) = 0; /* $24A8: 1: the item screen must be redrawn in full */
             }
             key = list_menu(0, "", 0x28, menu, 0x0D, 0x0A, 0x0F, 1, 5, 0x26,
                             0x16, items_as_menu(c), 1, &relist, &index,
                             &chosen);
             it = menu_item_object(c, chosen);
             if (chosen != NULL) {
-                /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
+                /* $2483: index of the selected option in the row menus (persistent) */
                 saved_choice = H005_B(0x2483);
                 switch (key) {
                 case 'D':               /* H065+$2986 */
@@ -1301,16 +1300,15 @@ void show_items(u8 *redraw)
                     first = 1;
                     break;
                 case 'U':               /* H065+$28D2 */
-                    if (!it->b[0x3A]) { /* ogg+$3A: flag oggetto pronto all'uso (Ready) */
+                    if (!it->b[0x3A]) { /* item+$3A: item readied flag (Ready) */
                         show_message_line(0x0F, "Must be Readied");
                         key = ' ';
                     } else if (is_scroll(it) ||
-                               /* ogg+$45: incantesimo/parametro dell'oggetto magico (bit 7
-                                * escluso); ogg+$46: tipo dell'effetto magico: bit7 = effetto
-                                * passivo, bit 0..6 tipo */
+                               /* item+$45: spell/parameter of the magic item (bit 7 excluded); item+$46: type of the magic
+                                * effect: bit7 = passive effect, bits 0..6 type */
                                (it->b[0x45] > 0 && it->b[0x46] < 0x80)) {
                         use_item(it, redraw);
-                        /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
+                        /* $3DE3: game mode (0 menu, 1 view, 2 camp, 5 combat) */
                         if (H005_B(0x3DE3) != 5) {
                             *redraw = 0;
                         }
@@ -1327,24 +1325,24 @@ void show_items(u8 *redraw)
                 default:
                     break;
                 }
-                /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
+                /* $2483: index of the selected option in the row menus (persistent) */
                 H005_B(0x2483) = saved_choice;
                 recompute_stats(c);
             }
             free_object_menu();
         }
-        if (c->b[0x14F] != count) { /* pg+$14F: numero di oggetti posseduti (max 16) */
+        if (c->b[0x14F] != count) { /* ch+$14F: number of items owned (max 16) */
             relist = 1;
         }
     }
 }
 
 /*
- * PORT H065+$2F82: Use di un oggetto: lancia l'incantesimo della pergamena
- * (scelto dal menu) o quello dell'oggetto magico (+$45, se +$46 < $80).
- * Le pergamene si leggono con successo secondo la classe (altrimenti
- * "oops!"); poi l'incantesimo viene tolto dalla pergamena, o si consuma
- * una carica (+$40, poi +$44) dell'oggetto.
+ * PORT H065+$2F82: Use of an item: casts the spell of the scroll
+ * (chosen from the menu) or that of the magic item (+$45, if +$46 < $80).
+ * Scrolls are read successfully according to the class (otherwise
+ * "oops!"); then the spell is removed from the scroll, or a charge
+ * (+$40, then +$44) of the item is used up.
  */
 void use_item(CokItem *it, u8 *redraw)
 {
@@ -1353,30 +1351,30 @@ void use_item(CokItem *it, u8 *redraw)
     u8 found;                           /* -$5(a5) */
     u16 spell;                          /* -$2(a5) */
 
-    H005_B(0x24D9) = 0; /* $24D9: 1 se l'incantesimo viene da un oggetto (non si dimentica) */
+    H005_B(0x24D9) = 0; /* $24D9: 1 if the spell comes from an item (it is not forgotten) */
     spell = 0;
     if (is_scroll(it)) {
         g_scroll_item = it;
         spell = choose_spell_of_kind(2, 1, &index, &found);
-    /* ogg+$45: incantesimo/parametro dell'oggetto magico (bit 7 escluso); ogg+$46: tipo
-     * dell'effetto magico: bit7 = effetto passivo, bit 0..6 tipo */
+    /* item+$45: spell/parameter of the magic item (bit 7 excluded); item+$46: type of
+     * the magic effect: bit7 = passive effect, bits 0..6 type */
     } else if (it->b[0x45] > 0 && it->b[0x46] < 0x80) {
-        H005_B(0x24D9) = 1; /* $24D9: 1 se l'incantesimo viene da un oggetto (non si dimentica) */
-        /* ogg+$45: incantesimo/parametro dell'oggetto magico (bit 7 escluso) */
+        H005_B(0x24D9) = 1; /* $24D9: 1 if the spell comes from an item (it is not forgotten) */
+        /* item+$45: spell/parameter of the magic item (bit 7 excluded) */
         spell = mask_byte(it->b[0x45], 0x7F);
     }
     if (spell == 0) {
         *redraw = 0;
         return;
     }
-    /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento); pg+$19A: controllo
-     * automatico in combattimento (1 = IA) */
+    /* $3DE3: game mode (0 menu, 1 view, 2 camp, 5 combat); ch+$19A: automatic control in
+     * combat (1 = AI) */
     if (H005_B(0x3DE3) == 5 && !g_current_char->b[0x19A]) {
         redraw_combat_screen();
     }
-    if (H005_B(0x24D9)) { /* $24D9: 1 se l'incantesimo viene da un oggetto (non si dimentica) */
+    if (H005_B(0x24D9)) { /* $24D9: 1 if the spell comes from an item (it is not forgotten) */
         show_char_message(g_current_char, 0x0C, "uses an item", 0x0A, 0);
-        /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
+        /* $3DE3: game mode (0 menu, 1 view, 2 camp, 5 combat) */
         if (H005_B(0x3DE3) == 5) {
             ui_draw_text(0, 0x17, 0x0A, 0, 7, "Item : ");
             build_item_name(g_current_char, it, 5, 0x17, 0, 1);
@@ -1386,44 +1384,44 @@ void use_item(CokItem *it, u8 *redraw)
         message_delay();
         clear_message_area();
     }
-    H005_B(0x24D9) = 1; /* $24D9: 1 se l'incantesimo viene da un oggetto (non si dimentica) */
+    H005_B(0x24D9) = 1; /* $24D9: 1 if the spell comes from an item (it is not forgotten) */
     c = g_current_char;
     if (is_scroll(it)) {
         if (h073_1294(c) == 5 || h073_12ae(c) == 5 ||
             (h073_1294(c) && h073_12ae(c) &&
-             /* pg+$103: livello da mago; pg+$FE: livelli per classe, 8 voci (0 chierico..7
-              * cavaliere); chierico */
+             /* ch+$103: mage level; ch+$FE: levels per class, 8 entries (0 cleric..7
+              * knight); cleric */
              (c->b[0x103] > 0 || c->b[0xFE] > 0))) {
-            /* pg+$19A: controllo automatico in combattimento (1 = IA) */
+            /* ch+$19A: automatic control in combat (1 = AI) */
             cast_spell(spell, c->b[0x19A], 0, redraw);
-        } else if (c->b[0x104] > 9 && roll_dice(1, 0x64) <= 0x4B) { /* pg+$104: livello da ladro */
-            /* pg+$19A: controllo automatico in combattimento (1 = IA) */
+        } else if (c->b[0x104] > 9 && roll_dice(1, 0x64) <= 0x4B) { /* ch+$104: thief level */
+            /* ch+$19A: automatic control in combat (1 = AI) */
             cast_spell(spell, c->b[0x19A], 0, redraw);
         } else {
-            /* $334C: (word) cursore del testo: riga */
+            /* $334C: (word) text cursor: row */
             show_char_message(c, 5, "oops!", (u16)(H005_W(0x334C) + 1), 1);
         }
     } else {
-        /* pg+$19A: controllo automatico in combattimento (1 = IA) */
+        /* ch+$19A: automatic control in combat (1 = AI) */
         cast_spell(spell, g_current_char->b[0x19A], 0, redraw);
     }
-    H005_B(0x24D9) = 0; /* $24D9: 1 se l'incantesimo viene da un oggetto (non si dimentica) */
-    /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
+    H005_B(0x24D9) = 0; /* $24D9: 1 if the spell comes from an item (it is not forgotten) */
+    /* $3DE3: game mode (0 menu, 1 view, 2 camp, 5 combat) */
     if (H005_B(0x3DE3) == 5 && H005_B(0x66 + (spell - 1) * 16 + 0x0B)) {
         *redraw = end_combat_turn(g_current_char);
     }
     if (*redraw) {
         if (is_scroll(it)) {
             remove_scroll_spell(g_current_char, it, spell);
-        /* ogg+$44: cariche dell'oggetto magico; incantesimo 1 della pergamena */
+        /* item+$44: charges of the magic item; spell 1 of the scroll */
         } else if (it->b[0x44] > 0) {
-            if (it->b[0x40] > 1) { /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
-                /* ogg+$40: quantita' (pezzi uguali raggruppati, max 255) */
+            if (it->b[0x40] > 1) { /* item+$40: quantity (identical pieces grouped, max 255) */
+                /* item+$40: quantity (identical pieces grouped, max 255) */
                 it->b[0x40] = (u8)(it->b[0x40] - 1);
             } else {
-                /* ogg+$44: cariche dell'oggetto magico; incantesimo 1 della pergamena */
+                /* item+$44: charges of the magic item; spell 1 of the scroll */
                 it->b[0x44] = (u8)(it->b[0x44] - 1);
-                /* ogg+$44: cariche dell'oggetto magico; incantesimo 1 della pergamena */
+                /* item+$44: charges of the magic item; spell 1 of the scroll */
                 if (it->b[0x44] == 0) {
                     delete_item(g_current_char, it);
                 }
@@ -1433,9 +1431,9 @@ void use_item(CokItem *it, u8 *redraw)
 }
 
 /*
- * PORT H065+$34FC: "Spells <kind>": costruisce l'elenco degli incantesimi
- * (H033+$0D7C; *found = non vuoto) e lo mostra (H033+$00EE).  La cornice
- * si ridisegna con *spell < 0 o mode 1.  Restituisce l'incantesimo scelto.
+ * PORT H065+$34FC: "Spells <kind>": builds the spell list
+ * (H033+$0D7C; *found = not empty) and shows it (H033+$00EE).  The frame
+ * is redrawn with *spell < 0 or mode 1.  Returns the chosen spell.
  */
 u16 choose_spell_of_kind(u16 kind, u16 mode, s16 *spell, u8 *found)
 {

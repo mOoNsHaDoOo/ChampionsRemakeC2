@@ -1,7 +1,7 @@
-/* H022: adattatori graphics.library per view, palette e viewport. */
+/* H022: graphics.library adapters for view, palette and viewport. */
 #include "h022_view.h"
 
-/* PORT H022+$0008: copia GfxBase nella cella del modulo (vedi H016). */
+/* PORT H022+$0008: copies GfxBase into the module cell (see H016). */
 void h022_init(void)
 {
 }
@@ -20,9 +20,9 @@ static struct MonitorSpec *s_monspec;
 #endif
 
 /*
- * PORT H022+$0084.  colors sono word RGB4 big-endian (dati del gioco): su
- * Amiga e' gia' il formato di LoadRGB4; sull'host LoadRGB4 emulata le
- * legge a byte (vedi host/ndk.h).
+ * PORT H022+$0084.  colors are big-endian RGB4 words (game data): on the
+ * Amiga this is already the LoadRGB4 format; on the host the emulated
+ * LoadRGB4 reads them byte by byte (see host/ndk.h).
  */
 void graphics_load_rgb4(struct ViewPort *vp, const u8 *colors, u16 count)
 {
@@ -66,13 +66,13 @@ void graphics_mrg_cop(struct View *view)
 }
 
 /*
- * Non nell'originale.  Su graphics.library V36+ una View senza ViewExtra
- * viene mostrata col monitor di default: se e' diverso da quello dello
- * schermo (per esempio DblPAL in DEVS:Monitors), ogni LoadView che alterna
- * questa View e quella di Intuition cambia BEAMCON0 e il display lampeggia.
- * Qui si danno a view e vp il monitor e la modalita' di mode_vp (lo schermo
- * del gioco).  Va chiamata dopo GetColorMap e prima di MakeVPort/MrgCop.
- * Se qualcosa non va, la View resta com'e' (comportamento 1.3).
+ * Not in the original.  On graphics.library V36+ a View without a ViewExtra
+ * is shown with the default monitor: if it differs from the one of the
+ * screen (for example DblPAL in DEVS:Monitors), every LoadView that alternates
+ * this View and the Intuition one changes BEAMCON0 and the display flashes.
+ * Here view and vp get the monitor and the mode of mode_vp (the game
+ * screen).  To be called after GetColorMap and before MakeVPort/MrgCop.
+ * If something fails, the View stays as it is (1.3 behaviour).
  */
 void graphics_attach_view_mode(struct View *view, struct ViewPort *vp,
                                struct ViewPort *mode_vp)
@@ -131,8 +131,8 @@ void graphics_attach_view_mode(struct View *view, struct ViewPort *vp,
 }
 
 /*
- * Non nell'originale.  Libera quello che ha allocato
- * graphics_attach_view_mode; va chiamata dopo FreeColorMap e
+ * Not in the original.  Frees what graphics_attach_view_mode
+ * allocated; to be called after FreeColorMap and
  * FreeVPortCopLists.
  */
 void graphics_detach_view_mode(struct View *view)

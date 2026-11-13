@@ -1,12 +1,12 @@
 ; ============================================================================
-; GUIDA DEL MODULO H053
-; caricamento e gestione di sequenze/sprite per l'interfaccia.
-; I commenti descrivono l'analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H053
+; loading and handling of sequences/sprites for the interface.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Caricamento e gestione di sequenze/sprite per l'interfaccia. Usa i loader H035 e i servizi di memoria H003.
+; MODULE NOTE
+; Loading and handling of sequences/sprites for the interface. Uses the H035 loaders and the H003 memory services.
 ; --------------------------------------------------------------------------
 ; H053: 504 original bytes; all offsets are section-relative.
         section H053,code
@@ -14,10 +14,10 @@ H053:
 ; Preserved bytes H053+$00000000..$00000004; code/data not fully classified.
         dc.l H053+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H053 [parziale]
-; Scopo: Ingresso del modulo caricamento e gestione di sequenze/sprite per l'interfaccia; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H053+$01F2.
-; Chiamanti diretti: H000+$0162
+; ROUTINE: module_init_H053 [partial]
+; Purpose: Entry of the loading and handling of sequences/sprites for the interface module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H053+$01F2.
+; Direct callers: H000+$0162
 ; --------------------------------------------------------------------------
 L053_00000004:
 ; H053+$00000004: 2f0c  move.l a4, -(a7)
@@ -32,10 +32,10 @@ L053_0000000E:
 ; H053+$0000000E: 600001e2  bra.w $1f2
         bra.w H053+$1F2
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H053_00000012 [parziale]
-; Scopo: Routine del modulo caricamento e gestione di sequenze/sprite per l'interfaccia; richiama H003+$00F6.
-;   - Richiama H003+$00F6.
-; Chiamanti diretti: H010+$0276, H053+$01B6, H053+$015C, H013+$0BE0, H013+$0E14, H013+$0F78 e altri 4
+; ROUTINE: sub_H053_00000012 [partial]
+; Purpose: Routine of the loading and handling of sequences/sprites for the interface module; calls H003+$00F6.
+;   - Calls H003+$00F6.
+; Direct callers: H010+$0276, H053+$01B6, H053+$015C, H013+$0BE0, H013+$0E14, H013+$0F78 and 4 more
 ; --------------------------------------------------------------------------
 L053_00000012:
 ; H053+$00000012: 2f0c  move.l a4, -(a7)
@@ -201,10 +201,10 @@ L053_000000C8:
 ; H053+$000000C8: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H053_01E8 [parziale]
-; Scopo: Trampolino verso H053+$01E8; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H053+$01E8.
-; Chiamanti diretti: H012+$3272, H013+$502E, H012+$34F6, H013+$2D14, H012+$2AD4, H064+$05BE e altri 6
+; ROUTINE: trampoline_H053_01E8 [partial]
+; Purpose: Trampoline to H053+$01E8; the actual body is there.
+;   - Jumps to the actual body at H053+$01E8.
+; Direct callers: H012+$3272, H013+$502E, H012+$34F6, H013+$2D14, H012+$2AD4, H064+$05BE and 6 more
 ; --------------------------------------------------------------------------
 L053_000000CA:
 ; H053+$000000CA: 2f0c  move.l a4, -(a7)
@@ -215,7 +215,7 @@ L053_000000CC:
 L053_000000D0:
 ; H053+$000000D0: 4e55fffc  link.w a5, #$fffc
         link.w a5, #$fffc
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L053_000000D4:
 ; H053+$000000D4: 4ab900003364  tst.l $3364.l
         tst.l (H005+$3364).l
@@ -225,14 +225,14 @@ L053_000000DA:
 L053_000000DE:
 ; H053+$000000DE: 60000108  bra.w $1e8
         bra.w H053+$1E8
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L053_000000E2:
 ; H053+$000000E2: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
 L053_000000EA:
 ; H053+$000000EA: 242dfffc  move.l -$4(a5), d2
         move.l -$4(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L053_000000EE:
 ; H053+$000000EE: b4b900003368  cmp.l $3368.l, d2
         cmp.l (H005+$3368).l, d2
@@ -245,7 +245,7 @@ L053_000000F8:
 L053_000000FC:
 ; H053+$000000FC: 242b018e  move.l $18e(a3), d2
         move.l $18e(a3), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L053_00000100:
 ; H053+$00000100: b4b900003368  cmp.l $3368.l, d2
         cmp.l (H005+$3368).l, d2
@@ -285,7 +285,7 @@ L053_0000012E:
 L053_00000132:
 ; H053+$00000132: 67000012  beq.w $146
         beq.w H053+$146
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L053_00000136:
 ; H053+$00000136: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -296,7 +296,7 @@ L053_0000013C:
 L053_00000140:
 ; H053+$00000140: 4eb9000001dc  jsr $1dc.l
         jsr (H035+$1DC).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L053_00000146:
 ; H053+$00000146: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -306,14 +306,14 @@ L053_0000014C:
 L053_00000150:
 ; H053+$00000150: 256b018e018e  move.l $18e(a3), $18e(a2)
         move.l $18e(a3), $18e(a2)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L053_00000156:
 ; H053+$00000156: 487900003368  pea.l $3368.l
         pea.l (H005+$3368).l
 L053_0000015C:
 ; H053+$0000015C: 6100feb4  bsr.w $12
         bsr.w H053+$12
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L053_00000160:
 ; H053+$00000160: 23edfffc00003368  move.l -$4(a5), $3368.l
         move.l -$4(a5), (H005+$3368).l
@@ -323,7 +323,7 @@ L053_00000168:
 L053_0000016C:
 ; H053+$0000016C: 6600000c  bne.w $17a
         bne.w H053+$17A
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L053_00000170:
 ; H053+$00000170: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -339,7 +339,7 @@ L053_0000017E:
 L053_00000182:
 ; H053+$00000182: 67000012  beq.w $196
         beq.w H053+$196
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L053_00000186:
 ; H053+$00000186: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -350,29 +350,29 @@ L053_0000018C:
 L053_00000190:
 ; H053+$00000190: 4eb9000001dc  jsr $1dc.l
         jsr (H035+$1DC).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L053_00000196:
 ; H053+$00000196: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L053_0000019C:
 ; H053+$0000019C: 23eb018e00003364  move.l $18e(a3), $3364.l
         move.l $18e(a3), (H005+$3364).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L053_000001A4:
 ; H053+$000001A4: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
 L053_000001AA:
 ; H053+$000001AA: 2b6b018efffc  move.l $18e(a3), -$4(a5)
         move.l $18e(a3), -$4(a5)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L053_000001B0:
 ; H053+$000001B0: 487900003368  pea.l $3368.l
         pea.l (H005+$3368).l
 L053_000001B6:
 ; H053+$000001B6: 6100fe5a  bsr.w $12
         bsr.w H053+$12
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L053_000001BA:
 ; H053+$000001BA: 23edfffc00003368  move.l -$4(a5), $3368.l
         move.l -$4(a5), (H005+$3368).l
@@ -382,21 +382,21 @@ L053_000001C2:
 L053_000001C6:
 ; H053+$000001C6: 6600000c  bne.w $1d4
         bne.w H053+$1D4
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L053_000001CA:
 ; H053+$000001CA: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
 L053_000001D0:
 ; H053+$000001D0: 536b067c  subq.w #$1, $67c(a3)
         subq.w #$1, $67c(a3)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L053_000001D4:
 ; H053+$000001D4: 4ab900003368  tst.l $3368.l
         tst.l (H005+$3368).l
 L053_000001DA:
 ; H053+$000001DA: 6600000c  bne.w $1e8
         bne.w H053+$1E8
-; STATO: H005+$3364 = testa della lista del party; H005+$3368 = personaggio corrente
+; STATE: H005+$3364 = head of the party list; H005+$3368 = current character
 L053_000001DE:
 ; H053+$000001DE: 23f90000336400003368  move.l $3364.l, $3368.l
         move.l (H005+$3364).l, (H005+$3368).l

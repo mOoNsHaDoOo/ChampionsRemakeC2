@@ -1,4 +1,4 @@
-/* H015: runtime del compilatore (avvio, uscita, aritmetica a 32 bit). */
+/* H015: compiler runtime (start-up, exit, 32-bit arithmetic). */
 #ifndef COK_H015_RUNTIME_H
 #define COK_H015_RUNTIME_H
 
@@ -12,9 +12,9 @@ s32  h015_divs32(s32 dividend, s32 divisor, u32 *remainder); /* H015+$00BC */
 
 
 /*
- * Numero reale in formato Motorola Fast Floating Point (mathffp): bit
- * 31..8 mantissa (24 bit, normalizzata), bit 7 segno, bit 6..0 esponente
- * in eccesso 64.  0 vale zero.
+ * Real number in Motorola Fast Floating Point format (mathffp): bits
+ * 31..8 mantissa (24 bits, normalised), bit 7 sign, bits 6..0 exponent
+ * in excess 64.  0 is zero.
  */
 typedef u32 CokReal;
 

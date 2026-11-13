@@ -1,4 +1,4 @@
-/* H046: direzione del cursore. */
+/* H046: cursor direction. */
 #ifndef COK_H046_H
 #define COK_H046_H
 #include "cok.h"

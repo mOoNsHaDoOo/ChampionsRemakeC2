@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""Lettore DAX indipendente: elenca i blocchi di un contenitore o ne
-estrae uno, per verificare DAX_LoadBlock (H028+$0DD8) del port.
+"""Independent DAX reader: lists the blocks of a container or
+extracts one, to check DAX_LoadBlock (H028+$0DD8) of the port.
 
-  check_dax.py file.daa                 elenca gli id
-  check_dax.py file.daa id uscita.bin   confronta con l'uscita del port
+  check_dax.py file.daa                 lists the ids
+  check_dax.py file.daa id output.bin   compares with the output of the port
 
-Formato: word dimensione della directory, voci da 9 byte (id, offset long,
-dimensione, dimensione compressa), poi i blocchi.  ".dax" e' little-endian
-e la directory comprende la sua word.  RLE: 0..$7E n+1 letterali,
-$7F..$FE byte ripetuto $100-n volte, $FF ripete il tipo del controllo
-precedente (all'inizio: salta il byte).  Il buffer e' dimensione+$100;
-le scritture oltre il buffer sono errori (H014) e vengono saltate.
+Format: directory size word, 9-byte entries (id, long offset,
+size, compressed size), then the blocks.  ".dax" is little-endian
+and the directory includes its own word.  RLE: 0..$7E n+1 literals,
+$7F..$FE byte repeated $100-n times, $FF repeats the type of the previous
+control (at the start: skips the byte).  The buffer is size+$100;
+writes past the buffer are errors (H014) and are skipped.
 """
 import struct, sys
 
@@ -66,5 +66,5 @@ if len(sys.argv) == 2:
 exp = block(sys.argv[1], int(sys.argv[2]))
 got = open(sys.argv[3], 'rb').read()
 diff = sum(1 for a, b in zip(exp, got) if a != b) + abs(len(exp) - len(got))
-print('%s #%s: %d byte, %d differenze' % (sys.argv[1], sys.argv[2], len(exp), diff))
+print('%s #%s: %d bytes, %d differences' % (sys.argv[1], sys.argv[2], len(exp), diff))
 sys.exit(1 if diff else 0)

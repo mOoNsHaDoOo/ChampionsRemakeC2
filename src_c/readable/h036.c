@@ -2,8 +2,8 @@
 #include "h036.h"
 
 /*
- * PORT H036+$0008: copia DOSBase del runtime H015 nella cella del modulo.
- * In C la base della libreria e' gia' globale: niente da fare.
+ * PORT H036+$0008: copies DOSBase of the H015 runtime into the module cell.
+ * In C the library base is already global: nothing to do.
  */
 void h036_init(void)
 {

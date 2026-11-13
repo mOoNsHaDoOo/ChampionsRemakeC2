@@ -1,4 +1,4 @@
-/* H022: adattatori graphics.library per view, palette e viewport. */
+/* H022: graphics.library adapters for view, palette and viewport. */
 #ifndef COK_H022_VIEW_H
 #define COK_H022_VIEW_H
 
@@ -15,6 +15,6 @@ void graphics_mrg_cop(struct View *view);               /* H022+$00C8 */
 void graphics_load_rgb4(struct ViewPort *vp, const u8 *colors, u16 count);
                                                         /* H022+$0084 */
 void graphics_attach_view_mode(struct View *view, struct ViewPort *vp,
-                               struct ViewPort *mode_vp); /* non nell'originale */
-void graphics_detach_view_mode(struct View *view);      /* non nell'originale */
+                               struct ViewPort *mode_vp); /* not in the original */
+void graphics_detach_view_mode(struct View *view);      /* not in the original */
 #endif

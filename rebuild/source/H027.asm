@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H027
-; Handler di effetti/abilità del gioco; la mappa completa resta parziale.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H027
+; Handlers of the game's effects/abilities; the complete map is still partial.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Handler di effetti e abilita' del gioco. La mappa completa degli effetti resta parziale: le schede indicano le chiamate e lo stato usato.
+; MODULE NOTE
+; Handlers of the game's effects and abilities. The complete map of the effects is still partial: the cards give the calls and the state used.
 ; --------------------------------------------------------------------------
 ; H027: 18156 original bytes; all offsets are section-relative.
         section H027,code
@@ -48,10 +48,10 @@ H027:
         dc.w $0000
         dc.l H027+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H027 [parziale]
-; Scopo: Ingresso del modulo handler di effetti/abilità del gioco; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H027+$46E6.
-; Chiamanti diretti: H000+$01DA
+; ROUTINE: module_init_H027 [partial]
+; Purpose: Entry of the handlers of the game's effects/abilities module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H027+$46E6.
+; Direct callers: H000+$01DA
 ; --------------------------------------------------------------------------
 L027_00000206:
 ; H027+$00000206: 2f0c  move.l a4, -(a7)
@@ -66,12 +66,12 @@ L027_00000210:
 ; H027+$00000210: 600044d4  bra.w $46e6
         bra.w H027+$46E6
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H027_00000214 [parziale]
-; Scopo: Routine del modulo handler di effetti/abilità del gioco; richiama H062+$142C, H063+$2760, H062+$15F2.
-;   - Richiama H062+$142C.
-;   - Richiama H063+$2760.
-;   - Richiama H062+$15F2.
-; Chiamanti diretti: H027+$265A, H027+$3626, H027+$3832
+; ROUTINE: sub_H027_00000214 [partial]
+; Purpose: Routine of the handlers of the game's effects/abilities module; calls H062+$142C, H063+$2760, H062+$15F2.
+;   - Calls H062+$142C.
+;   - Calls H063+$2760.
+;   - Calls H062+$15F2.
+; Direct callers: H027+$265A, H027+$3626, H027+$3832
 ; --------------------------------------------------------------------------
 L027_00000214:
 ; H027+$00000214: 2f0c  move.l a4, -(a7)
@@ -167,10 +167,10 @@ L027_00000284:
 ; H027+$00000284: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H027_00000286 [parziale]
-; Scopo: Routine del modulo handler di effetti/abilità del gioco; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H027+$0A26, H027+$0A2E, H027+$0E66, H027+$1E26, H027+$20CA, H027+$2172 e altri 9
+; ROUTINE: sub_H027_00000286 [partial]
+; Purpose: Routine of the handlers of the game's effects/abilities module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H027+$0A26, H027+$0A2E, H027+$0E66, H027+$1E26, H027+$20CA, H027+$2172 and 9 more
 ; --------------------------------------------------------------------------
 L027_00000286:
 ; H027+$00000286: 2f0c  move.l a4, -(a7)
@@ -221,10 +221,10 @@ L027_000002BC:
 ; H027+$000002BC: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H027_0306 [parziale]
-; Scopo: Trampolino verso H027+$0306; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H027+$0306.
-; Chiamanti diretti: H027+$0930, H027+$18C2, H027+$1974, H027+$20F8
+; ROUTINE: trampoline_H027_0306 [partial]
+; Purpose: Trampoline to H027+$0306; the actual body is there.
+;   - Jumps to the actual body at H027+$0306.
+; Direct callers: H027+$0930, H027+$18C2, H027+$1974, H027+$20F8
 ; --------------------------------------------------------------------------
 L027_000002BE:
 ; H027+$000002BE: 2f0c  move.l a4, -(a7)
@@ -305,10 +305,10 @@ L027_00000310:
 ; H027+$00000310: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H027_00000312 [parziale]
-; Scopo: Routine del modulo handler di effetti/abilità del gioco; richiama H063+$2F12.
-;   - Richiama H063+$2F12.
-; Chiamanti diretti: H027+$1234
+; ROUTINE: sub_H027_00000312 [partial]
+; Purpose: Routine of the handlers of the game's effects/abilities module; calls H063+$2F12.
+;   - Calls H063+$2F12.
+; Direct callers: H027+$1234
 ; --------------------------------------------------------------------------
 L027_00000312:
 ; H027+$00000312: 2f0c  move.l a4, -(a7)
@@ -348,17 +348,17 @@ L027_00000336:
 ; H027+$00000336: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H027_00000338 [parziale]
-; Scopo: Routine del modulo handler di effetti/abilità del gioco; richiama H029+$03E2, H062+$0452, H063+$2760, H063+$1EE8.
-;   - Richiama H029+$03E2.
-;   - Richiama H062+$0452.
-;   - Richiama H063+$2760.
-;   - Richiama H063+$1EE8.
-;   - Richiama H063+$2F12.
-;   - Richiama H063+$2DC6.
-;   - Richiama H062+$15C6.
-;   - Usa lo stato globale: H005+$3DE3 (contesto nativo, 5 nel combattimento); H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H027+$1BD4
+; ROUTINE: sub_H027_00000338 [partial]
+; Purpose: Routine of the handlers of the game's effects/abilities module; calls H029+$03E2, H062+$0452, H063+$2760, H063+$1EE8.
+;   - Calls H029+$03E2.
+;   - Calls H062+$0452.
+;   - Calls H063+$2760.
+;   - Calls H063+$1EE8.
+;   - Calls H063+$2F12.
+;   - Calls H063+$2DC6.
+;   - Calls H062+$15C6.
+;   - Uses the global state: H005+$3DE3 (native context, 5 in combat); H005+$3368 (current character).
+; Direct callers: H027+$1BD4
 ; --------------------------------------------------------------------------
 L027_00000338:
 ; H027+$00000338: 2f0c  move.l a4, -(a7)
@@ -659,7 +659,7 @@ L027_0000049C:
 L027_000004A0:
 ; H027+$000004A0: 66000118  bne.w $5ba
         bne.w H027+$5BA
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L027_000004A4:
 ; H027+$000004A4: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
@@ -918,7 +918,7 @@ L027_000005C8:
 L027_000005CC:
 ; H027+$000005CC: 4e550000  link.w a5, #$0
         link.w a5, #$0
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_000005D0:
 ; H027+$000005D0: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -928,7 +928,7 @@ L027_000005D6:
 L027_000005DC:
 ; H027+$000005DC: 67000022  beq.w $600
         beq.w H027+$600
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_000005E0:
 ; H027+$000005E0: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -938,7 +938,7 @@ L027_000005E6:
 L027_000005EC:
 ; H027+$000005EC: 67000012  beq.w $600
         beq.w H027+$600
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_000005F0:
 ; H027+$000005F0: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -985,7 +985,7 @@ L027_00000624:
 L027_00000628:
 ; H027+$00000628: 4e550000  link.w a5, #$0
         link.w a5, #$0
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_0000062C:
 ; H027+$0000062C: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -995,7 +995,7 @@ L027_00000632:
 L027_00000636:
 ; H027+$00000636: 67000022  beq.w $65a
         beq.w H027+$65A
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_0000063A:
 ; H027+$0000063A: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -1005,7 +1005,7 @@ L027_00000640:
 L027_00000646:
 ; H027+$00000646: 67000012  beq.w $65a
         beq.w H027+$65A
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_0000064A:
 ; H027+$0000064A: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -1701,14 +1701,14 @@ L027_00000962:
 L027_00000964:
 ; H027+$00000964: 4eb900002188  jsr $2188.l
         jsr (H062+$2188).l
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L027_0000096A:
 ; H027+$0000096A: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
 L027_00000972:
 ; H027+$00000972: 6700000e  beq.w $982
         beq.w H027+$982
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_00000976:
 ; H027+$00000976: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -2440,14 +2440,14 @@ L027_00000CE2:
 L027_00000CE8:
 ; H027+$00000CE8: 60b6  bra.b $ca0
         bra.b H027+$CA0
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_00000CEA:
 ; H027+$00000CEA: 2b7900003368fff6  move.l $3368.l, -$a(a5)
         move.l (H005+$3368).l, -$a(a5)
 L027_00000CF2:
 ; H027+$00000CF2: 266d0012  movea.l $12(a5), a3
         movea.l $12(a5), a3
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_00000CF6:
 ; H027+$00000CF6: 23d300003368  move.l (a3), $3368.l
         move.l (a3), (H005+$3368).l
@@ -2482,7 +2482,7 @@ L027_00000D1C:
 L027_00000D20:
 ; H027+$00000D20: 177c0001003a  move.b #$1, $3a(a3)
         move.b #$1, $3a(a3)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_00000D26:
 ; H027+$00000D26: 23edfff600003368  move.l -$a(a5), $3368.l
         move.l -$a(a5), (H005+$3368).l
@@ -2560,7 +2560,7 @@ L027_00000D7A:
 L027_00000D7E:
 ; H027+$00000D7E: 6600002c  bne.w $dac
         bne.w H027+$DAC
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_00000D82:
 ; H027+$00000D82: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -3014,7 +3014,7 @@ L027_00000FA6:
 L027_00000FAA:
 ; H027+$00000FAA: 2413  move.l (a3), d2
         move.l (a3), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_00000FAC:
 ; H027+$00000FAC: b4b900003368  cmp.l $3368.l, d2
         cmp.l (H005+$3368).l, d2
@@ -3696,7 +3696,7 @@ L027_000012C8:
 L027_000012CA:
 ; H027+$000012CA: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H027+$12A6; indici 0..9, default -1.
+; DISPATCH: words relative to H027+$12A6; indices 0..9, default -1.
 L027_000012CE:
 ; H027+$000012CE: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -4602,14 +4602,14 @@ L027_0000174C:
 ; H027+$0000174C: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H027_0000174E [parziale]
-; Scopo: Routine del modulo handler di effetti/abilità del gioco; richiama H063+$2DC6, H062+$156C, H063+$1DC2, H029+$03E2.
-;   - Richiama H063+$2DC6.
-;   - Richiama H062+$156C.
-;   - Richiama H063+$1DC2.
-;   - Richiama H029+$03E2.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H027+$1868
+; ROUTINE: sub_H027_0000174E [partial]
+; Purpose: Routine of the handlers of the game's effects/abilities module; calls H063+$2DC6, H062+$156C, H063+$1DC2, H029+$03E2.
+;   - Calls H063+$2DC6.
+;   - Calls H062+$156C.
+;   - Calls H063+$1DC2.
+;   - Calls H029+$03E2.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H027+$1868
 ; --------------------------------------------------------------------------
 L027_0000174E:
 ; H027+$0000174E: 2f0c  move.l a4, -(a7)
@@ -4620,7 +4620,7 @@ L027_00001750:
 L027_00001754:
 ; H027+$00001754: 4e550000  link.w a5, #$0
         link.w a5, #$0
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_00001758:
 ; H027+$00001758: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -4630,7 +4630,7 @@ L027_0000175E:
 L027_00001762:
 ; H027+$00001762: 67000070  beq.w $17d4
         beq.w H027+$17D4
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_00001766:
 ; H027+$00001766: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -4726,17 +4726,17 @@ L027_000017DC:
 ; H027+$000017DC: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H027_000017DE [parziale]
-; Scopo: Routine del modulo handler di effetti/abilità del gioco; richiama H063+$37B2, H063+$1DC2, H029+$03E2, H063+$0946.
-;   - Richiama H063+$37B2.
-;   - Richiama H063+$1DC2.
-;   - Richiama H029+$03E2.
-;   - Richiama H063+$0946.
-;   - Richiama H062+$15F2.
-;   - Richiama H062+$2188.
-;   - Richiama H063+$0D80.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente); H005+$3DE3 (contesto nativo, 5 nel combattimento).
-; Chiamanti diretti: H027+$1846, H027+$2410, H027+$3926, H027+$3B44, H027+$3C3A
+; ROUTINE: sub_H027_000017DE [partial]
+; Purpose: Routine of the handlers of the game's effects/abilities module; calls H063+$37B2, H063+$1DC2, H029+$03E2, H063+$0946.
+;   - Calls H063+$37B2.
+;   - Calls H063+$1DC2.
+;   - Calls H029+$03E2.
+;   - Calls H063+$0946.
+;   - Calls H062+$15F2.
+;   - Calls H062+$2188.
+;   - Calls H063+$0D80.
+;   - Uses the global state: H005+$3368 (current character); H005+$3DE3 (native context, 5 in combat).
+; Direct callers: H027+$1846, H027+$2410, H027+$3926, H027+$3B44, H027+$3C3A
 ; --------------------------------------------------------------------------
 L027_000017DE:
 ; H027+$000017DE: 2f0c  move.l a4, -(a7)
@@ -4820,7 +4820,7 @@ L027_00001838:
 L027_0000183C:
 ; H027+$0000183C: 4e55fffc  link.w a5, #$fffc
         link.w a5, #$fffc
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_00001840:
 ; H027+$00001840: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -5141,14 +5141,14 @@ L027_000019A6:
 L027_000019A8:
 ; H027+$000019A8: 4eb900002188  jsr $2188.l
         jsr (H062+$2188).l
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L027_000019AE:
 ; H027+$000019AE: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
 L027_000019B6:
 ; H027+$000019B6: 6700000e  beq.w $19c6
         beq.w H027+$19C6
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_000019BA:
 ; H027+$000019BA: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -5230,7 +5230,7 @@ L027_00001A0C:
 L027_00001A10:
 ; H027+$00001A10: 4e55fffe  link.w a5, #$fffe
         link.w a5, #$fffe
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_00001A14:
 ; H027+$00001A14: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -6885,17 +6885,17 @@ L027_00002180:
 ; H027+$00002180: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H027_00002182 [parziale]
-; Scopo: Routine del modulo handler di effetti/abilità del gioco; richiama H063+$0946, H062+$142C, H063+$1DC2, H030+$0B4A.
-;   - Richiama H063+$0946.
-;   - Richiama H062+$142C.
-;   - Richiama H063+$1DC2.
-;   - Richiama H030+$0B4A.
-;   - Richiama H062+$15F2.
-;   - Richiama H062+$02FA.
-;   - Richiama H048+$0F88.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente); H005+$3364 (testa della lista del party); H005+$3DE3 (contesto nativo, 5 nel combattimento).
-; Chiamanti diretti: H027+$225C, H027+$227E, H027+$37D4, H027+$37F6
+; ROUTINE: sub_H027_00002182 [partial]
+; Purpose: Routine of the handlers of the game's effects/abilities module; calls H063+$0946, H062+$142C, H063+$1DC2, H030+$0B4A.
+;   - Calls H063+$0946.
+;   - Calls H062+$142C.
+;   - Calls H063+$1DC2.
+;   - Calls H030+$0B4A.
+;   - Calls H062+$15F2.
+;   - Calls H062+$02FA.
+;   - Calls H048+$0F88.
+;   - Uses the global state: H005+$3368 (current character); H005+$3364 (head of the party list); H005+$3DE3 (native context, 5 in combat).
+; Direct callers: H027+$225C, H027+$227E, H027+$37D4, H027+$37F6
 ; --------------------------------------------------------------------------
 L027_00002182:
 ; H027+$00002182: 2f0c  move.l a4, -(a7)
@@ -7439,7 +7439,7 @@ L027_00002402:
 L027_00002406:
 ; H027+$00002406: 4e55fff8  link.w a5, #$fff8
         link.w a5, #$fff8
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_0000240A:
 ; H027+$0000240A: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -7465,7 +7465,7 @@ L027_00002426:
 L027_00002428:
 ; H027+$00002428: 7800  moveq #$0, d4
         moveq #0, d4
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_0000242A:
 ; H027+$0000242A: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -7514,7 +7514,7 @@ L027_0000245E:
 L027_00002464:
 ; H027+$00002464: 66000148  bne.w $25ae
         bne.w H027+$25AE
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_00002468:
 ; H027+$00002468: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -7537,7 +7537,7 @@ L027_0000247C:
 L027_00002480:
 ; H027+$00002480: 6600012c  bne.w $25ae
         bne.w H027+$25AE
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_00002484:
 ; H027+$00002484: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -7637,7 +7637,7 @@ L027_00002502:
 L027_00002506:
 ; H027+$00002506: 267900003360  movea.l $3360.l, a3
         movea.l (H005+$3360).l, a3
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_0000250C:
 ; H027+$0000250C: 2779000033680048  move.l $3368.l, $48(a3)
         move.l (H005+$3368).l, $48(a3)
@@ -7717,7 +7717,7 @@ L027_00002570:
 L027_00002574:
 ; H027+$00002574: 266dfff8  movea.l -$8(a5), a3
         movea.l -$8(a5), a3
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_00002578:
 ; H027+$00002578: 2779000033680048  move.l $3368.l, $48(a3)
         move.l (H005+$3368).l, $48(a3)
@@ -7727,7 +7727,7 @@ L027_00002580:
 L027_00002584:
 ; H027+$00002584: 42ab004c  clr.l $4c(a3)
         clr.l $4c(a3)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_00002588:
 ; H027+$00002588: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -7738,14 +7738,14 @@ L027_0000258E:
 L027_00002592:
 ; H027+$00002592: 4eb900001be8  jsr $1be8.l
         jsr (H063+$1BE8).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_00002598:
 ; H027+$00002598: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
 L027_0000259E:
 ; H027+$0000259E: 42ab0154  clr.l $154(a3)
         clr.l $154(a3)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_000025A2:
 ; H027+$000025A2: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -8701,7 +8701,7 @@ L027_00002A56:
 L027_00002A58:
 ; H027+$00002A58: 4eb900001dc2  jsr $1dc2.l
         jsr (H063+$1DC2).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_00002A5E:
 ; H027+$00002A5E: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -8712,7 +8712,7 @@ L027_00002A64:
 L027_00002A6A:
 ; H027+$00002A6A: 33c00000251a  move.w d0, $251a.l
         move.w d0, (H005+$251A).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_00002A70:
 ; H027+$00002A70: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -8780,7 +8780,7 @@ L027_00002ABE:
 L027_00002AC0:
 ; H027+$00002AC0: 47f900002520  lea.l $2520.l, a3
         lea.l (H005+$2520).l, a3
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_00002AC6:
 ; H027+$00002AC6: 27b9000033682000  move.l $3368.l, (a3, d2.w)
         move.l (H005+$3368).l, (a3, d2.w)
@@ -8850,7 +8850,7 @@ L027_00002B18:
 L027_00002B1E:
 ; H027+$00002B1E: 266d0012  movea.l $12(a5), a3
         movea.l $12(a5), a3
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_00002B22:
 ; H027+$00002B22: 26b900003368  move.l $3368.l, (a3)
         move.l (H005+$3368).l, (a3)
@@ -9372,11 +9372,11 @@ L027_00002D70:
 L027_00002D72:
 ; H027+$00002D72: 64000262  bcc.w $2fd6
         bcc.w H027+$2FD6
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L027_00002D76:
 ; H027+$00002D76: 2b7900003364ffee  move.l $3364.l, -$12(a5)
         move.l (H005+$3364).l, -$12(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L027_00002D7E:
 ; H027+$00002D7E: 2b7900003364fff2  move.l $3364.l, -$e(a5)
         move.l (H005+$3364).l, -$e(a5)
@@ -9703,7 +9703,7 @@ L027_00002F40:
 L027_00002F46:
 ; H027+$00002F46: 3f3c0016  move.w #$16, -(a7)
         move.w #$16, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L027_00002F4A:
 ; H027+$00002F4A: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
@@ -9904,7 +9904,7 @@ L027_0000303C:
 L027_0000303E:
 ; H027+$0000303E: 177c00b200ec  move.b #$b2, $ec(a3)
         move.b #$b2, $ec(a3)
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L027_00003044:
 ; H027+$00003044: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
@@ -11122,7 +11122,7 @@ L027_0000363C:
 L027_00003640:
 ; H027+$00003640: 42adfff8  clr.l -$8(a5)
         clr.l -$8(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L027_00003644:
 ; H027+$00003644: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -11405,7 +11405,7 @@ L027_0000379E:
 L027_000037A0:
 ; H027+$000037A0: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H027+$378A; indici 0..3, default -1.
+; DISPATCH: words relative to H027+$378A; indices 0..3, default -1.
 L027_000037A4:
 ; H027+$000037A4: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -11568,7 +11568,7 @@ L027_0000384C:
 L027_00003850:
 ; H027+$00003850: 66000084  bne.w $38d6
         bne.w H027+$38D6
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L027_00003854:
 ; H027+$00003854: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
@@ -11713,7 +11713,7 @@ L027_00003918:
 L027_0000391C:
 ; H027+$0000391C: 4e55fffc  link.w a5, #$fffc
         link.w a5, #$fffc
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_00003920:
 ; H027+$00003920: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -11893,7 +11893,7 @@ L027_00003A1A:
 L027_00003A1C:
 ; H027+$00003A1C: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H027+$39EA; indici 0..16, default -1.
+; DISPATCH: words relative to H027+$39EA; indices 0..16, default -1.
 L027_00003A20:
 ; H027+$00003A20: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -12154,7 +12154,7 @@ L027_00003B36:
 L027_00003B3A:
 ; H027+$00003B3A: 4e55fffc  link.w a5, #$fffc
         link.w a5, #$fffc
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_00003B3E:
 ; H027+$00003B3E: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -12270,7 +12270,7 @@ L027_00003BC2:
 L027_00003BC6:
 ; H027+$00003BC6: 4e55fffc  link.w a5, #$fffc
         link.w a5, #$fffc
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_00003BCA:
 ; H027+$00003BCA: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -12365,7 +12365,7 @@ L027_00003C2C:
 L027_00003C30:
 ; H027+$00003C30: 4e55fffc  link.w a5, #$fffc
         link.w a5, #$fffc
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_00003C34:
 ; H027+$00003C34: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -12390,7 +12390,7 @@ L027_00003C4E:
 L027_00003C52:
 ; H027+$00003C52: 66000028  bne.w $3c7c
         bne.w H027+$3C7C
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_00003C56:
 ; H027+$00003C56: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -12400,7 +12400,7 @@ L027_00003C5C:
 L027_00003C62:
 ; H027+$00003C62: 65000012  bcs.w $3c76
         bcs.w H027+$3C76
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_00003C66:
 ; H027+$00003C66: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -13105,7 +13105,7 @@ L027_00003F74:
 L027_00003F78:
 ; H027+$00003F78: 4e55fffe  link.w a5, #$fffe
         link.w a5, #$fffe
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_00003F7C:
 ; H027+$00003F7C: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -13149,7 +13149,7 @@ L027_00003FB0:
 L027_00003FB8:
 ; H027+$00003FB8: 13fc000800002473  move.b #$8, $2473.l
         move.b #$8, (H005+$2473).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_00003FC0:
 ; H027+$00003FC0: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -13169,7 +13169,7 @@ L027_00003FD2:
 L027_00003FD6:
 ; H027+$00003FD6: 4eb900001dc2  jsr $1dc2.l
         jsr (H063+$1DC2).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L027_00003FDC:
 ; H027+$00003FDC: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -13252,7 +13252,7 @@ L027_00004032:
 L027_00004036:
 ; H027+$00004036: 66000046  bne.w $407e
         bne.w H027+$407E
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L027_0000403A:
 ; H027+$0000403A: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
@@ -13332,7 +13332,7 @@ L027_00004094:
 L027_00004098:
 ; H027+$00004098: 66000048  bne.w $40e2
         bne.w H027+$40E2
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L027_0000409C:
 ; H027+$0000409C: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
@@ -13437,7 +13437,7 @@ L027_0000410E:
 L027_00004112:
 ; H027+$00004112: 6600006e  bne.w $4182
         bne.w H027+$4182
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L027_00004116:
 ; H027+$00004116: 0c39000500003de3  cmpi.b #$5, $3de3.l
         cmpi.b #$5, (H005+$3DE3).l
@@ -13712,10 +13712,10 @@ L027_00004274:
 ; H027+$00004274: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H027_00004276 [parziale]
-; Scopo: Routine del modulo handler di effetti/abilità del gioco; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H006+$0902
+; ROUTINE: sub_H027_00004276 [partial]
+; Purpose: Routine of the handlers of the game's effects/abilities module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H006+$0902
 ; --------------------------------------------------------------------------
 L027_00004276:
 ; H027+$00004276: 2f0c  move.l a4, -(a7)

@@ -1,4 +1,4 @@
-/* H007: introduzione (immagini LBM, crediti) e avvio dell'audio. */
+/* H007: introduction (LBM pictures, credits) and audio start-up. */
 #ifndef COK_H007_H
 #define COK_H007_H
 

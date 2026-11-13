@@ -1,12 +1,12 @@
 ; ============================================================================
-; GUIDA DEL MODULO H077
-; effetti visivi di combattimento e incantesimi.
-; I commenti descrivono l'analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H077
+; visual effects of combat and spells.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Effetti visivi di combattimento e incantesimi: animazioni, proiettili e supporto al disegno degli attori. Usa H048.
+; MODULE NOTE
+; Visual effects of combat and spells: animations, missiles and support for drawing the actors. Uses H048.
 ; --------------------------------------------------------------------------
 ; H077: 3100 original bytes; all offsets are section-relative.
         section H077,code
@@ -14,10 +14,10 @@ H077:
 ; Preserved bytes H077+$00000000..$00000004; code/data not fully classified.
         dc.l H077+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H077 [parziale]
-; Scopo: Ingresso del modulo effetti visivi di combattimento e incantesimi; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H077+$0C16.
-; Chiamanti diretti: H000+$0192
+; ROUTINE: module_init_H077 [partial]
+; Purpose: Entry of the visual effects of combat and spells module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H077+$0C16.
+; Direct callers: H000+$0192
 ; --------------------------------------------------------------------------
 L077_00000004:
 ; H077+$00000004: 2f0c  move.l a4, -(a7)
@@ -32,10 +32,10 @@ L077_0000000E:
 ; H077+$0000000E: 60000c06  bra.w $c16
         bra.w H077+$C16
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H077_004C [parziale]
-; Scopo: Trampolino verso H077+$004C; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H077+$004C.
-; Chiamanti diretti: H077+$0210, H077+$0226
+; ROUTINE: trampoline_H077_004C [partial]
+; Purpose: Trampoline to H077+$004C; the actual body is there.
+;   - Jumps to the actual body at H077+$004C.
+; Direct callers: H077+$0210, H077+$0226
 ; --------------------------------------------------------------------------
 L077_00000012:
 ; H077+$00000012: 2f0c  move.l a4, -(a7)
@@ -95,10 +95,10 @@ L077_00000054:
 ; H077+$00000054: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H077_00000056 [parziale]
-; Scopo: Routine del modulo effetti visivi di combattimento e incantesimi; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H077+$0C06
+; ROUTINE: sub_H077_00000056 [partial]
+; Purpose: Routine of the visual effects of combat and spells module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H077+$0C06
 ; --------------------------------------------------------------------------
 L077_00000056:
 ; H077+$00000056: 2f0c  move.l a4, -(a7)
@@ -434,10 +434,10 @@ L077_000001CA:
 ; H077+$000001CA: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H077_000001CC [parziale]
-; Scopo: Routine del modulo effetti visivi di combattimento e incantesimi; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H085+$1402, H085+$1556, H085+$0BF4, H077+$03B2, H077+$0444
+; ROUTINE: sub_H077_000001CC [partial]
+; Purpose: Routine of the visual effects of combat and spells module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H085+$1402, H085+$1556, H085+$0BF4, H077+$03B2, H077+$0444
 ; --------------------------------------------------------------------------
 L077_000001CC:
 ; H077+$000001CC: 2f0c  move.l a4, -(a7)
@@ -557,10 +557,10 @@ L077_00000240:
 ; H077+$00000240: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H077_00000242 [parziale]
-; Scopo: Routine del modulo effetti visivi di combattimento e incantesimi; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H085+$1430, H085+$1560, H085+$0E1A, H085+$0F9C, H085+$0C6E, H077+$04C6 e altri 1
+; ROUTINE: sub_H077_00000242 [partial]
+; Purpose: Routine of the visual effects of combat and spells module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H085+$1430, H085+$1560, H085+$0E1A, H085+$0F9C, H085+$0C6E, H077+$04C6 and 1 more
 ; --------------------------------------------------------------------------
 L077_00000242:
 ; H077+$00000242: 2f0c  move.l a4, -(a7)
@@ -821,10 +821,10 @@ L077_00000376:
 ; H077+$00000376: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H077_00000378 [parziale]
-; Scopo: Routine del modulo effetti visivi di combattimento e incantesimi; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H077+$0AF0, H085+$0F5E, H096+$3A32, H096+$3F3A, H097+$1AFC
+; ROUTINE: sub_H077_00000378 [partial]
+; Purpose: Routine of the visual effects of combat and spells module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H077+$0AF0, H085+$0F5E, H096+$3A32, H096+$3F3A, H097+$1AFC
 ; --------------------------------------------------------------------------
 L077_00000378:
 ; H077+$00000378: 2f0c  move.l a4, -(a7)
@@ -1172,10 +1172,10 @@ L077_00000506:
 ; H077+$00000506: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H077_00000508 [parziale]
-; Scopo: Routine del modulo effetti visivi di combattimento e incantesimi; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H077+$0A92, H077+$0BD0, H033+$15F8, H096+$0FE4
+; ROUTINE: sub_H077_00000508 [partial]
+; Purpose: Routine of the visual effects of combat and spells module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H077+$0A92, H077+$0BD0, H033+$15F8, H096+$0FE4
 ; --------------------------------------------------------------------------
 L077_00000508:
 ; H077+$00000508: 2f0c  move.l a4, -(a7)
@@ -1915,7 +1915,7 @@ L077_0000088E:
 L077_00000890:
 ; H077+$00000890: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H077+$0870; indici 0..8, default -1.
+; DISPATCH: words relative to H077+$0870; indices 0..8, default -1.
 L077_00000894:
 ; H077+$00000894: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -1941,10 +1941,10 @@ L077_000008AA:
 ; H077+$000008AA: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H077_000008AC [parziale]
-; Scopo: Routine del modulo effetti visivi di combattimento e incantesimi; richiama H048+$0044.
-;   - Richiama H048+$0044.
-; Chiamanti diretti: H027+$1A8A, H027+$1E8C, H027+$22DA, H027+$2B86, H027+$31C2, H063+$2E4E e altri 11
+; ROUTINE: sub_H077_000008AC [partial]
+; Purpose: Routine of the visual effects of combat and spells module; calls H048+$0044.
+;   - Calls H048+$0044.
+; Direct callers: H027+$1A8A, H027+$1E8C, H027+$22DA, H027+$2B86, H027+$31C2, H063+$2E4E and 11 more
 ; --------------------------------------------------------------------------
 L077_000008AC:
 ; H077+$000008AC: 2f0c  move.l a4, -(a7)

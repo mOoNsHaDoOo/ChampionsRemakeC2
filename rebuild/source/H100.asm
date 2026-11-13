@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H100
-; Inizializzazione di uno slot con la base custom $DFF000.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H100
+; Initialisation of a slot with the custom base $DFF000.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Inizializzazione di uno slot con la base custom $DFF000.
+; MODULE NOTE
+; Initialisation of a slot with the custom base $DFF000.
 ; --------------------------------------------------------------------------
 ; H100: 28 original bytes; all offsets are section-relative.
         section H100,code
@@ -16,10 +16,10 @@ H100:
         dc.w $0000,$0000
         dc.l H100+$00000004
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H100_00000008 [parziale]
-; Scopo: Routine del modulo inizializzazione di uno slot con la base custom $DFF000; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H000+$0132
+; ROUTINE: sub_H100_00000008 [partial]
+; Purpose: Routine of the initialisation of a slot with the custom base $DFF000 module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H000+$0132
 ; --------------------------------------------------------------------------
 L100_00000008:
 ; H100+$00000008: 4e550000  link.w a5, #$0

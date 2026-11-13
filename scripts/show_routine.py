@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Stampa una routine dell'asm seguendo bra/salti in avanti fino a rts.
+"""Prints a routine of the asm following bra/forward branches up to rts.
 
-Uso: show_routine.py HUNK OFFSET [MAX]
-Mostra offset, istruzione e, per jsr/lea rilocati, il simbolo di destinazione.
+Usage: show_routine.py HUNK OFFSET [MAX]
+Shows offset, instruction and, for relocated jsr/lea, the destination symbol.
 """
 import os, re, sys
 

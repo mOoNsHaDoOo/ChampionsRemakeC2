@@ -1,4 +1,4 @@
-/* H072: il tempio, cure a pagamento per il personaggio corrente. */
+/* H072: the temple, paid healing for the current character. */
 #include <string.h>
 #include "h072.h"
 #include "init_data.h"
@@ -16,15 +16,15 @@
 #include "h065.h"
 #include "h067.h"
 
-/* Dati del modulo sotto a4: g_h072_bss[0xC - off] e' -off(a4). */
+/* Module data below a4: g_h072_bss[0xC - off] is -off(a4). */
 u8 g_h072_bss[0xC];
 
 #include "h072_init_data.h"
 
-/* Tipi di effetto delle malattie (-$C(a4), 6 word). */
+/* Effect types of the diseases (-$C(a4), 6 words). */
 #define DISEASE(i)      COK_GET16(&g_h072_bss[((i) - 1) * 2])
 #define CUR             g_current_char
-#define TEXT_BUF        ((char *)&g_h005[0x3C82])  /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
+#define TEXT_BUF        ((char *)&g_h005[0x3C82])  /* $3C82: generic 80-character text buffer (TEXT_BUF) */
 
 /* PORT H072+$0304 */
 void h072_init(void)
@@ -33,12 +33,12 @@ void h072_init(void)
 }
 
 /*
- * PORT H072+$0312: il personaggio corrente non ne ha bisogno (text, per
- * valore): chiede "cast cure anyway: ".
+ * PORT H072+$0312: the current character does not need it (text, by
+ * value): asks "cast cure anyway: ".
  */
 static u8 cure_anyway(const char *text)
 {
-    char t[0x52];                       /* $C(a5), per valore */
+    char t[0x52];                       /* $C(a5), by value */
     u8 key;                             /* -$1(a5) */
 
     h026_copy(0x50, t, 0x50, text);
@@ -49,23 +49,23 @@ static u8 cure_anyway(const char *text)
 }
 
 /*
- * PORT H072+$036C: "<cura> will only cost <cost> steel pieces." e la
- * domanda "pay for cure"; paga il personaggio (tutto in acciaio) o la
- * cassa, altrimenti "not enough money." e 'N'.  Con 'Y' "is cured.".
+ * PORT H072+$036C: "<cure> will only cost <cost> steel pieces." and the
+ * question "pay for cure"; the character pays (all in steel) or the
+ * pool, otherwise "not enough money." and 'N'.  With 'Y' "is cured.".
  */
 static u8 pay_for_cure(u16 cost, const char *name)
 {
-    char text[0x52];                    /* $E(a5), per valore */
+    char text[0x52];                    /* $E(a5), by value */
     u8 key;                             /* -$1(a5) */
     u16 money;                          /* -$4(a5) */
     u32 pool;                           /* -$8(a5) */
 
     h026_copy(0x50, text, 0x50, name);
     h026_append(0x50, text, 0x10, " will only cost ");
-    /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
+    /* $3C82: generic 80-character text buffer (TEXT_BUF) */
     format_number(0x50, TEXT_BUF, (s32)cost, 0, 0x0A, 0x0A, ' ');
-    trim_leading_spaces(0x50, TEXT_BUF); /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
-    h026_append(0x50, text, 0x50, TEXT_BUF); /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
+    trim_leading_spaces(0x50, TEXT_BUF); /* $3C82: generic 80-character text buffer (TEXT_BUF) */
+    h026_append(0x50, text, 0x50, TEXT_BUF); /* $3C82: generic 80-character text buffer (TEXT_BUF) */
     h026_append(0x50, text, 0x0E, " steel pieces.");
     word_wrap_text(1, 0x11, 0x26, 0x16, 0x0A, 0, 1, 0x50, text);
     key = ask_yes_no(0x0D, "pay for cure ", 0x0D, 0x0A, 0x0F);
@@ -92,7 +92,7 @@ static u8 pay_for_cure(u16 cost, const char *name)
     return key;
 }
 
-/* PORT H072+$050A: Cure Blindness (effetto $21), 500. */
+/* PORT H072+$050A: Cure Blindness (effect $21), 500. */
 static void cure_blindness(void)
 {
     u8 key = 'Y';                       /* -$57(a5) */
@@ -109,7 +109,7 @@ static void cure_blindness(void)
     }
 }
 
-/* PORT H072+$05AA: Cure Disease (i 6 effetti di -$C(a4)), 500. */
+/* PORT H072+$05AA: Cure Disease (the 6 effects of -$C(a4)), 500. */
 static void cure_disease(void)
 {
     u8 key = 'Y';                       /* -$57(a5) */
@@ -128,22 +128,22 @@ static void cure_disease(void)
     if (key == 'Y') {
         key = pay_for_cure(0x1F4, "Cure Disease");
         if (key == 'Y') {
-            H005_B(0x24AA) = 1; /* $24AA: 1 durante le cure: i gestori non riaggiungono effetti */
+            H005_B(0x24AA) = 1; /* $24AA: 1 during healing: the handlers do not add effects again */
             for (i = 1; i <= 6; ++i) {
                 remove_effect(CUR, DISEASE(i), NULL);
             }
             recompute_stat(CUR, 0);
-            H005_B(0x24AA) = 0; /* $24AA: 1 durante le cure: i gestori non riaggiungono effetti */
+            H005_B(0x24AA) = 0; /* $24AA: 1 during healing: the handlers do not add effects again */
         }
     }
 }
 
 /*
- * PORT H072+$06BC: cure delle ferite: 1 leggere (50, 1d8), 2 gravi
- * (175, 2d8+1), 3 critiche (300, 3d8+3), 4 Heal (2500: tutti i punti
- * ferita meno 1d4, e toglie cecita', malattie e l'effetto $44).
- * In Heal l'originale tira 1d4 solo se si paga, ma la cura segue
- * comunque con la variabile -$2(a5) non inizializzata; qui 0.
+ * PORT H072+$06BC: healing of wounds: 1 light (50, 1d8), 2 serious
+ * (175, 2d8+1), 3 critical (300, 3d8+3), 4 Heal (2500: all the hit
+ * points minus 1d4, and removes blindness, diseases and effect $44).
+ * In Heal the original rolls 1d4 only if one pays, but the healing follows
+ * anyway with the uninitialised variable -$2(a5); here 0.
  */
 static void cure_wounds(u16 kind)
 {
@@ -178,12 +178,12 @@ static void cure_wounds(u16 kind)
         if (key == 'Y') {
             amount = roll_dice(1, 4);
         }
-        /* pg+$1A8: punti ferita correnti; pg+$64: punti ferita massimi */
+        /* ch+$1A8: current hit points; ch+$64: maximum hit points */
         if ((u16)(CUR->b[0x1A8] + amount) > CUR->b[0x64]) {
             amount = 0;
             break;
         }
-        /* pg+$64: punti ferita massimi; pg+$1A8: punti ferita correnti */
+        /* ch+$64: maximum hit points; ch+$1A8: current hit points */
         amount = (u16)(CUR->b[0x64] - CUR->b[0x1A8] - amount);
         (void)heal_character(CUR, amount, 0);
         remove_effect(CUR, 0x21, NULL);
@@ -200,11 +200,11 @@ static void cure_wounds(u16 kind)
 }
 
 /*
- * PORT H072+$0910: Raise Dead (2750).  Solo i morti (+$197 = 6 o 1) con
- * +$5B almeno 2 e +$19 almeno 1; il risorto perde un punto di +$19 e,
- * con +$19 da $E in su, punti ferita massimi divisi per i livelli delle
- * classi (calcolo e sottrazione ripetuti per ogni classe, come
- * nell'originale).
+ * PORT H072+$0910: Raise Dead (2750).  Only the dead (+$197 = 6 or 1) with
+ * +$5B at least 2 and +$19 at least 1; the raised one loses a point of +$19 and,
+ * with +$19 from $E up, maximum hit points divided by the levels of the
+ * classes (computation and subtraction repeated for every class, as
+ * in the original).
  */
 static void raise_dead(void)
 {
@@ -219,12 +219,12 @@ static void raise_dead(void)
     u8 barred = 0;                      /* -$65(a5) */
 
     (void)unused;
-    weak = (u8)(c->b[0x19] < 1 ? 1 : 0); /* pg+$19: costituzione corrente */
-    /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+    weak = (u8)(c->b[0x19] < 1 ? 1 : 0); /* ch+$19: current constitution */
+    /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
     if (c->b[0x197] == 6 || c->b[0x197] == 1) {
         dead = 1;
     }
-    if (c->b[0x5B] < 2) { /* pg+$5B: razza (0..6, nomi H005+$4D04) */
+    if (c->b[0x5B] < 2) { /* ch+$5B: race (0..6, names H005+$4D04) */
         barred = 1;
     }
     if (!dead || barred || weak) {
@@ -241,59 +241,59 @@ static void raise_dead(void)
     if (key != 'Y' || !dead || barred) {
         return;
     }
-    H005_B(0x24AA) = 1; /* $24AA: 1 durante le cure: i gestori non riaggiungono effetti */
+    H005_B(0x24AA) = 1; /* $24AA: 1 during healing: the handlers do not add effects again */
     remove_effect(c, 0x20, NULL);
     remove_effect(c, 0x37, NULL);
-    H005_B(0x24AA) = 0; /* $24AA: 1 durante le cure: i gestori non riaggiungono effetti */
-    c->b[0x1A8] = 1; /* pg+$1A8: punti ferita correnti */
-    c->b[0x197] = 0; /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
-    c->b[0x198] = 1; /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
-    if (c->b[0x19] > 0) { /* pg+$19: costituzione corrente */
-        add_to_byte(&c->b[0x19], 0xFFFF); /* pg+$19: costituzione corrente */
+    H005_B(0x24AA) = 0; /* $24AA: 1 during healing: the handlers do not add effects again */
+    c->b[0x1A8] = 1; /* ch+$1A8: current hit points */
+    c->b[0x197] = 0; /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
+    c->b[0x198] = 1; /* ch+$198: active/standing (0 down or out of the combat) */
+    if (c->b[0x19] > 0) { /* ch+$19: current constitution */
+        add_to_byte(&c->b[0x19], 0xFFFF); /* ch+$19: current constitution */
     }
-    /* pg+$64: punti ferita massimi; pg+$123: PF massimi senza costituzione; base -1 slot
-     * incantesimi +$124 */
+    /* ch+$64: maximum hit points; ch+$123: maximum HP without constitution; base -1 of the spell
+     * slots +$124 */
     if (c->b[0x64] > c->b[0x123]) {
-        /* pg+$64: punti ferita massimi; pg+$123: PF massimi senza costituzione; base -1 slot
-         * incantesimi +$124 */
+        /* ch+$64: maximum hit points; ch+$123: maximum HP without constitution; base -1 of the spell
+         * slots +$124 */
         lost = (u16)(c->b[0x64] - c->b[0x123]);
     } else {
         lost = 0;
     }
     levels = 0;
-    if (c->b[0x19] < 0x0E) { /* pg+$19: costituzione corrente */
+    if (c->b[0x19] < 0x0E) { /* ch+$19: current constitution */
         return;
     }
     for (cls = 0; cls <= 7; ++cls) {
-        /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
+        /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
         if (c->b[0xFE + cls] == 0) {
             continue;
         }
         if (cls == 2) {
-            /* pg+$19: costituzione corrente; pg+$FE: livelli per classe, 8 voci (0 chierico..7
-             * cavaliere); chierico */
+            /* ch+$19: current constitution; ch+$FE: levels per class, 8 entries (0 cleric..7
+             * knight); cleric */
             levels = (u16)(levels + (u16)(c->b[0x19] - 0x0E) * c->b[0xFE + cls]);
-        } else if (c->b[0x19] > 0x0F) { /* pg+$19: costituzione corrente */
-            /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
+        } else if (c->b[0x19] > 0x0F) { /* ch+$19: current constitution */
+            /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
             levels = (u16)(levels + c->b[0xFE + cls] * 2);
         } else {
-            /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
+            /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
             levels = (u16)(levels + c->b[0xFE + cls]);
         }
         if (levels > 0) {
             lost = (u16)(lost / levels);
         }
-        /* pg+$19: costituzione corrente; pg+$100: livello da guerriero */
+        /* ch+$19: current constitution; ch+$100: fighter level */
         if (c->b[0x19] < 0x11 || c->b[0x100] > 0 ||
-            /* pg+$100: livello da guerriero; pg+$DC: uso: soglia per i livelli +$106..+$10D e i PF;
-             * !=0 vieta Modify */
+            /* ch+$100: fighter level; ch+$DC: use: threshold for the levels +$106..+$10D and the HP;
+             * !=0 forbids Modify */
             c->b[0x100] > c->b[0xDC]) {
-            add_to_byte(&c->b[0x64], (u16)(0 - lost)); /* pg+$64: punti ferita massimi */
+            add_to_byte(&c->b[0x64], (u16)(0 - lost)); /* ch+$64: maximum hit points */
         }
     }
 }
 
-/* PORT H072+$0C04: Neutralize Poison (effetto $37), 500. */
+/* PORT H072+$0C04: Neutralize Poison (effect $37), 500. */
 static void neutralize_poison(void)
 {
     u8 key = 'Y';                       /* -$57(a5) */
@@ -313,21 +313,21 @@ static void neutralize_poison(void)
     if (key != 'Y' || !poisoned) {
         return;
     }
-    if (CUR->b[0x1A8] == 0) { /* pg+$1A8: punti ferita correnti */
-        CUR->b[0x1A8] = 1; /* pg+$1A8: punti ferita correnti */
+    if (CUR->b[0x1A8] == 0) { /* ch+$1A8: current hit points */
+        CUR->b[0x1A8] = 1; /* ch+$1A8: current hit points */
     }
-    H005_B(0x24AA) = 1; /* $24AA: 1 durante le cure: i gestori non riaggiungono effetti */
+    H005_B(0x24AA) = 1; /* $24AA: 1 during healing: the handlers do not add effects again */
     remove_effect(CUR, 0x37, NULL);
     remove_effect(CUR, 0x16, NULL);
     remove_effect(CUR, 0x0F, NULL);
-    H005_B(0x24AA) = 0; /* $24AA: 1 durante le cure: i gestori non riaggiungono effetti */
-    CUR->b[0x198] = 1; /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
-    CUR->b[0x197] = 0; /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+    H005_B(0x24AA) = 0; /* $24AA: 1 during healing: the handlers do not add effects again */
+    CUR->b[0x198] = 1; /* ch+$198: active/standing (0 down or out of the combat) */
+    CUR->b[0x197] = 0; /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
 }
 
 /*
- * PORT H072+$0D24: Remove Curse (1750): oggetti maledetti (+$3C) o
- * effetto $24; l'azione dell'incantesimo ($2668) sul personaggio.
+ * PORT H072+$0D24: Remove Curse (1750): cursed items (+$3C) or
+ * effect $24; the action of the spell ($2668) on the character.
  */
 static void remove_curse(void)
 {
@@ -337,7 +337,7 @@ static void remove_curse(void)
     u8 key = 'Y';                       /* -$5D(a5) */
 
     for (it = CUR->items; it != NULL && !cursed; it = it->next) {
-        if (it->b[0x3C] != 0) { /* ogg+$3C: flag oggetto maledetto */
+        if (it->b[0x3C] != 0) { /* item+$3C: cursed item flag */
             cursed = 1;
         }
     }
@@ -359,22 +359,22 @@ static void stone_to_flesh(void)
 {
     u8 key = 'Y';                       /* -$57(a5) */
 
-    if (CUR->b[0x197] != 7) { /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+    if (CUR->b[0x197] != 7) { /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
         key = cure_anyway("is not stoned.");
     }
     if (key != 'Y') {
         return;
     }
     key = pay_for_cure(0x3E8, "Stone to Flesh");
-    /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+    /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
     if (key == 'Y' && CUR->b[0x197] == 7) {
-        CUR->b[0x197] = 0; /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
-        CUR->b[0x198] = 1; /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
-        CUR->b[0x1A8] = 1; /* pg+$1A8: punti ferita correnti */
+        CUR->b[0x197] = 0; /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
+        CUR->b[0x198] = 1; /* ch+$198: active/standing (0 down or out of the combat) */
+        CUR->b[0x1A8] = 1; /* ch+$1A8: current hit points */
     }
 }
 
-/* PORT H072+$0EBE: Heal, elenco delle cure ("Heal Exit"). */
+/* PORT H072+$0EBE: Heal, list of the cures ("Heal Exit"). */
 static void heal_menu(void)
 {
     static const char *const names[11] = {  /* -$1CE(a5).. */
@@ -445,9 +445,9 @@ static void heal_menu(void)
 }
 
 /*
- * PORT H072+$120C: il tempio (contesto 1): Heal, View, Take, Pool, Share,
- * Appraise, Exit.  Uscendo con denaro nella cassa un sacerdote chiede se
- * tornare a prenderlo.
+ * PORT H072+$120C: the temple (context 1): Heal, View, Take, Pool, Share,
+ * Appraise, Exit.  When leaving with money in the pool a priest asks whether
+ * to come back for it.
  */
 void temple(void)
 {
@@ -464,14 +464,14 @@ void temple(void)
 
     h026_copy(0x28, poor, 0x1C, "Heal View Pool Appraise Exit");
     h026_copy(0x28, rich, 0x27, "Heal View Take Pool Share Appraise Exit");
-    H005_B(0x3DE3) = 1; /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
-    H005_B(0x24C2) = 0; /* $24C2: 1: nel contesto 1 il ridisegno include la cornice esplorazione */
+    H005_B(0x3DE3) = 1; /* $3DE3: game mode (0 menu, 1 view, 2 camp, 5 combat) */
+    H005_B(0x24C2) = 0; /* $24C2: 1: in context 1 the redraw includes the exploration frame */
     redraw_game_screen();
-    H005_B(0x24C2) = 1; /* $24C2: 1: nel contesto 1 il ridisegno include la cornice esplorazione */
+    H005_B(0x24C2) = 1; /* $24C2: 1: in context 1 the redraw includes the exploration frame */
     draw_party(CUR);
-    /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
+    /* $2A1E: party pool: 7 longs, coins per type 0..6 (4 = steel) */
     h029_fill_bytes(0x1B, &g_h005[0x2A1E], 0x1C, 0);
-    H005_B(0x24E3) = 0; /* $24E3: uso: 1 se la cassa comune ha monete (Pool/Share/Take), mai letto */
+    H005_B(0x24E3) = 0; /* $24E3: use: 1 if the shared pool has coins (Pool/Share/Take), never read */
     done = 0;
     do {
         has_treasure(&money, &items);

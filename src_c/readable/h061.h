@@ -1,10 +1,10 @@
-/* H061: servizi della VM ECL. */
+/* H061: ECL VM services. */
 #ifndef COK_H061_H
 #define COK_H061_H
 #include "character.h"
 #include "h015_runtime.h"
 #include "h008.h"
-char *ecl_string(u16 n);                        /* stringhe -$14C0(a4) */
+char *ecl_string(u16 n);                        /* strings -$14C0(a4) */
 void append_char(u16 len, char *s, u8 ch);      /* H061+$162E */
 u16  make_word(u8 lo, u8 hi);                   /* H061+$1F12 */
 u16  decode_address(u8 lo, u8 hi);              /* H061+$1F3C */
@@ -20,7 +20,7 @@ void read_string_var(u16 slot, u16 addr);       /* H061+$33F0 */
 u8   operand_desc(u16 i);
 u8   operand_lo(u16 i);
 u8   operand_hi(u16 i);
-/* Nodo della pila GOSUB ($2388; 6 byte nell'originale). */
+/* Node of the GOSUB stack ($2388; 6 bytes in the original). */
 typedef struct CokEclFrame {
     u16 pc;                             /* +$00 */
     struct CokEclFrame *next;           /* +$02 */

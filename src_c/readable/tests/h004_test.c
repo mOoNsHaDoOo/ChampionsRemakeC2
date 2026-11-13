@@ -1,6 +1,6 @@
 /*
- * H004+$0C1A: l'immagine di H005 prodotta dal C deve coincidere byte per
- * byte con quella dell'emulatore sull'assembly:
+ * H004+$0C1A: the H005 image produced by the C must match byte for
+ * byte the one of the emulator on the assembly:
  *   python3 scripts/emu68k_init.py 4 C38 h005_expected.bin
  *   ./h004_test h005_expected.bin
  */
@@ -16,11 +16,11 @@ int main(int argc, char **argv)
     unsigned diffs = 0;
 
     if (argc < 2 || (f = fopen(argv[1], "rb")) == NULL) {
-        printf("uso: h004_test h005_expected.bin\n");
+        printf("usage: h004_test h005_expected.bin\n");
         return 2;
     }
     if (fread(expected, 1, H005_SIZE, f) != H005_SIZE) {
-        printf("immagine attesa troppo corta\n");
+        printf("expected image too short\n");
         return 2;
     }
     fclose(f);
@@ -35,9 +35,9 @@ int main(int argc, char **argv)
         }
     }
     if (diffs) {
-        printf("%u byte diversi\n", diffs);
+        printf("%u bytes differ\n", diffs);
         return 1;
     }
-    printf("H005 identico all'emulazione di H004+$0C1A\n");
+    printf("H005 identical to the emulation of H004+$0C1A\n");
     return 0;
 }

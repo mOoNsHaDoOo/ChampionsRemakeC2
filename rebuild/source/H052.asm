@@ -1,12 +1,12 @@
 ; ============================================================================
-; GUIDA DEL MODULO H052
-; inizializzazione di uno slot di stato.
-; I commenti descrivono l'analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H052
+; initialisation of a state slot.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Inizializzazione di uno slot di stato: prepara una struttura globale usata dai moduli successivi.
+; MODULE NOTE
+; Initialisation of a state slot: prepares a global structure used by the following modules.
 ; --------------------------------------------------------------------------
 ; H052: 316 original bytes; all offsets are section-relative.
         section H052,code
@@ -16,10 +16,10 @@ H052:
         dc.w $0000,$0000,$0000,$0000,$0000,$0000,$0000,$0000
         dc.l H052+$00000020
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H052_0114 [parziale]
-; Scopo: Trampolino verso H052+$0114; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H052+$0114.
-; Chiamanti diretti: H000+$00FC
+; ROUTINE: trampoline_H052_0114 [partial]
+; Purpose: Trampoline to H052+$0114; the actual body is there.
+;   - Jumps to the actual body at H052+$0114.
+; Direct callers: H000+$00FC
 ; --------------------------------------------------------------------------
 L052_00000024:
 ; H052+$00000024: 4e550000  link.w a5, #$0

@@ -1,12 +1,12 @@
 ; ============================================================================
-; GUIDA DEL MODULO H075
-; helper di apertura/lettura file.
-; I commenti descrivono l'analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H075
+; file open/read helpers.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Helper di apertura/lettura file: apre, legge e chiude i file usati dai caricatori.
+; MODULE NOTE
+; File open/read helpers: open, read and close the files used by the loaders.
 ; --------------------------------------------------------------------------
 ; H075: 392 original bytes; all offsets are section-relative.
         section H075,code
@@ -15,10 +15,10 @@ H075:
         dc.w $0000,$0000
         dc.l H075+$00000004
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H075_0184 [parziale]
-; Scopo: Trampolino verso H075+$0184; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H075+$0184.
-; Chiamanti diretti: H000+$003C
+; ROUTINE: trampoline_H075_0184 [partial]
+; Purpose: Trampoline to H075+$0184; the actual body is there.
+;   - Jumps to the actual body at H075+$0184.
+; Direct callers: H000+$003C
 ; --------------------------------------------------------------------------
 L075_00000008:
 ; H075+$00000008: 4e550000  link.w a5, #$0
@@ -66,10 +66,10 @@ L075_0000000C:
         dc.l H075+$00000002
         dc.w $4E5D,$4E75
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H075_000000FE [parziale]
-; Scopo: Routine del modulo helper di apertura/lettura file; richiama H002+$01CC.
-;   - Richiama H002+$01CC.
-; Chiamanti diretti: H075+$012C
+; ROUTINE: sub_H075_000000FE [partial]
+; Purpose: Routine of the file open/read helpers module; calls H002+$01CC.
+;   - Calls H002+$01CC.
+; Direct callers: H075+$012C
 ; --------------------------------------------------------------------------
 L075_000000FE:
 ; H075+$000000FE: 4e55fffc  link.w a5, #$fffc
@@ -109,10 +109,10 @@ L075_00000122:
 ; H075+$00000122: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H075_00000124 [parziale]
-; Scopo: Routine del modulo helper di apertura/lettura file; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H020+$0850
+; ROUTINE: sub_H075_00000124 [partial]
+; Purpose: Routine of the file open/read helpers module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H020+$0850
 ; --------------------------------------------------------------------------
 L075_00000124:
 ; H075+$00000124: 4e550000  link.w a5, #$0
@@ -130,10 +130,10 @@ L075_00000130:
 ; H075+$00000130: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H075_00000132 [parziale]
-; Scopo: Routine del modulo helper di apertura/lettura file; richiama H002+$01CC.
-;   - Richiama H002+$01CC.
-; Chiamanti diretti: H020+$08B4
+; ROUTINE: sub_H075_00000132 [partial]
+; Purpose: Routine of the file open/read helpers module; calls H002+$01CC.
+;   - Calls H002+$01CC.
+; Direct callers: H020+$08B4
 ; --------------------------------------------------------------------------
 L075_00000132:
 ; H075+$00000132: 4e55fffa  link.w a5, #$fffa

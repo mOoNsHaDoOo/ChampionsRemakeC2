@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H020
-; Servizi di I/O e diagnostica testuale.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H020
+; I/O services and text diagnostics.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Servizi di I/O e diagnostica testuale: messaggi, output, apertura di file e supporto agli errori. Le routine sono usate trasversalmente dai moduli.
+; MODULE NOTE
+; I/O services and text diagnostics: messages, output, file opening and error support. The routines are used across the modules.
 ; --------------------------------------------------------------------------
 ; H020: 2884 original bytes; all offsets are section-relative.
         section H020,code
@@ -27,10 +27,10 @@ H020:
         dc.w $6F75,$743E,$2000
         dc.l H020+$000000A0
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H020_0B38 [parziale]
-; Scopo: Trampolino verso H020+$0B38; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H020+$0B38.
-; Chiamanti diretti: H000+$0042
+; ROUTINE: trampoline_H020_0B38 [partial]
+; Purpose: Trampoline to H020+$0B38; the actual body is there.
+;   - Jumps to the actual body at H020+$0B38.
+; Direct callers: H000+$0042
 ; --------------------------------------------------------------------------
 L020_000000BA:
 ; H020+$000000BA: 4e550000  link.w a5, #$0
@@ -39,10 +39,10 @@ L020_000000BE:
 ; H020+$000000BE: 60000a78  bra.w $b38
         bra.w H020+$B38
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H020_000000C2 [parziale]
-; Scopo: Routine del modulo servizi di I/O e diagnostica testuale; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H020+$095A, H020+$0118
+; ROUTINE: sub_H020_000000C2 [partial]
+; Purpose: Routine of the I/O services and text diagnostics module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H020+$095A, H020+$0118
 ; --------------------------------------------------------------------------
 L020_000000C2:
 ; H020+$000000C2: 4e550000  link.w a5, #$0
@@ -75,10 +75,10 @@ L020_000000EE:
 ; H020+$000000EE: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H020_000000F0 [parziale]
-; Scopo: Routine del modulo servizi di I/O e diagnostica testuale; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H020+$093A, H020+$0950
+; ROUTINE: sub_H020_000000F0 [partial]
+; Purpose: Routine of the I/O services and text diagnostics module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H020+$093A, H020+$0950
 ; --------------------------------------------------------------------------
 L020_000000F0:
 ; H020+$000000F0: 4e550000  link.w a5, #$0
@@ -368,10 +368,10 @@ L020_00000120:
         dc.l H020+$0000009F
         dc.w $4E5D,$205F,$548F,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H020_0856 [parziale]
-; Scopo: Trampolino verso H020+$0856; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H020+$0856.
-; Chiamanti diretti: H043+$1680, H010+$039A
+; ROUTINE: trampoline_H020_0856 [partial]
+; Purpose: Trampoline to H020+$0856; the actual body is there.
+;   - Jumps to the actual body at H020+$0856.
+; Direct callers: H043+$1680, H010+$039A
 ; --------------------------------------------------------------------------
 L020_0000082E:
 ; H020+$0000082E: 4e550000  link.w a5, #$0
@@ -406,11 +406,11 @@ L020_00000858:
 ; H020+$00000858: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H020_0000085A [parziale]
-; Scopo: Routine del modulo servizi di I/O e diagnostica testuale; richiama H074+$0450, H075+$0132.
-;   - Richiama H074+$0450.
-;   - Richiama H075+$0132.
-; Chiamanti diretti: H043+$166C, H042+$0CA0, H042+$05E2, H020+$00E0, H042+$0742, H042+$0860 e altri 1
+; ROUTINE: sub_H020_0000085A [partial]
+; Purpose: Routine of the I/O services and text diagnostics module; calls H074+$0450, H075+$0132.
+;   - Calls H074+$0450.
+;   - Calls H075+$0132.
+; Direct callers: H043+$166C, H042+$0CA0, H042+$05E2, H020+$00E0, H042+$0742, H042+$0860 and 1 more
 ; --------------------------------------------------------------------------
 L020_0000085A:
 ; H020+$0000085A: 4e55fffc  link.w a5, #$fffc
@@ -496,10 +496,10 @@ L020_000008C0:
 ; H020+$000008C0: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H020_000008C2 [parziale]
-; Scopo: Routine del modulo servizi di I/O e diagnostica testuale; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H043+$167A
+; ROUTINE: sub_H020_000008C2 [partial]
+; Purpose: Routine of the I/O services and text diagnostics module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H043+$167A
 ; --------------------------------------------------------------------------
 L020_000008C2:
 ; H020+$000008C2: 4e55fff4  link.w a5, #$fff4

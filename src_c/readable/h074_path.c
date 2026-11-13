@@ -1,13 +1,13 @@
-/* H074: funzioni per percorsi e nomi di file. */
+/* H074: functions for paths and file names. */
 #include "cok.h"
 
 u32 g_h074_0000;                /* H074+$0000 */
 
 /*
- * Runtime di scrittura su file del compilatore, sostituito da stdio:
- * PORT H074+$0010: scrive un blocco su un file (Seek, Write, IoErr).
- * PORT H074+$009A: gestione del file del runtime usata da H074+$0450.
- * PORT H074+$0450: scrive un carattere sulla console (H020+$085A).
+ * File writing runtime of the compiler, replaced by stdio:
+ * PORT H074+$0010: writes a block to a file (Seek, Write, IoErr).
+ * PORT H074+$009A: runtime file handling used by H074+$0450.
+ * PORT H074+$0450: writes a character to the console (H020+$085A).
  */
 
 /* PORT H074+$0008 */

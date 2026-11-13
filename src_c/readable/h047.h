@@ -1,4 +1,4 @@
-/* H047: editor dell'icona del personaggio. */
+/* H047: character icon editor. */
 #ifndef COK_H047_H
 #define COK_H047_H
 

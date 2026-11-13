@@ -1,4 +1,4 @@
-/* H060: ridisegno della vista dell'esplorazione. */
+/* H060: redraw of the exploration view. */
 #ifndef COK_H060_H
 #define COK_H060_H
 #include "cok.h"

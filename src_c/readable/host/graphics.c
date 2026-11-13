@@ -1,12 +1,12 @@
-/* Build host: graphics.library emulata (solo quanto usa il port). */
+/* Host build: emulated graphics.library (only what the port uses). */
 #include <stdlib.h>
 #include <string.h>
 #include "ndk.h"
 
 /*
- * View di Intuition (GfxBase->ActiView all'avvio): niente ViewPort (il
- * display mostra lo schermo) e una lista Copper con le MOVE COLOR00..31
- * dello schermo in primo piano, che il gioco legge (H029+$1718).
+ * Intuition View (GfxBase->ActiView at start-up): no ViewPort (the
+ * display shows the screen) and a Copper list with the MOVE COLOR00..31
+ * of the screen at the front, which the game reads (H029+$1718).
  */
 static UWORD s_intui_copper[32 * 2 + 2];
 static struct cprlist s_intui_cpr = { NULL, s_intui_copper, 32 + 1 };
@@ -30,8 +30,8 @@ void host_screen_colors_changed(struct ViewPort *vp)
 }
 
 /*
- * I colori arrivano dai dati del gioco (H005), quindi sono word
- * big-endian: si leggono a byte.
+ * The colours come from the game data (H005), so they are big-endian
+ * words: they are read byte by byte.
  */
 void LoadRGB4(struct ViewPort *vp, const UWORD *colors, LONG count)
 {
@@ -59,10 +59,10 @@ void InitBitMap(struct BitMap *bm, LONG depth, LONG width, LONG height)
 }
 
 /*
- * Memoria chip: sull'host memoria normale, non azzerata come sull'Amiga.
- * Due word in piu' in coda: il blitter, con una sorgente non allineata alla
- * word, legge una word oltre la fine della riga (sull'ultima riga, oltre
- * il piano); sull'Amiga e' una lettura innocua, qui deve restare nel blocco.
+ * Chip memory: normal memory on the host, not cleared as on the Amiga.
+ * Two extra words at the end: the blitter, with a source not word-aligned,
+ * reads one word past the end of the row (on the last row, past
+ * the plane); on the Amiga that is a harmless read, here it must stay in the block.
  */
 PLANEPTR AllocRaster(ULONG width, ULONG height)
 {
@@ -82,8 +82,8 @@ void FreeRaster(PLANEPTR p, ULONG width, ULONG height)
 }
 
 /*
- * flags bit 1 = 0: count e' un numero di byte; bit 1 = 1: count e'
- * righe << 16 | byte per riga.  Il bit 0 (attesa del blitter) non conta.
+ * flags bit 1 = 0: count is a number of bytes; bit 1 = 1: count is
+ * rows << 16 | bytes per row.  Bit 0 (wait for the blitter) does not matter.
  */
 void BltClear(void *memory, ULONG count, ULONG flags)
 {
@@ -135,7 +135,7 @@ void FreeColorMap(struct ColorMap *cm)
     }
 }
 
-/* Le liste Copper non esistono sull'host: MakeVPort e MrgCop non fanno nulla. */
+/* Copper lists do not exist on the host: MakeVPort and MrgCop do nothing. */
 void MakeVPort(struct View *view, struct ViewPort *vp)
 {
     (void)view;
@@ -156,7 +156,7 @@ void LoadView(struct View *view)
 void InitRastPort(struct RastPort *rp)
 {
     memset(rp, 0, sizeof(*rp));
-    rp->FgPen = -1;             /* come InitRastPort di AmigaOS: FgPen e */
+    rp->FgPen = -1;             /* like AmigaOS InitRastPort: FgPen and */
     rp->AOlPen = -1;            /* AOlPen a -1, DrawMode JAM2 */
     rp->DrawMode = 1;
 }
@@ -172,11 +172,11 @@ void SetBPen(struct RastPort *rp, ULONG pen)
 }
 
 /*
- * Riempie il rettangolo (estremi compresi) con FgPen, tagliato ai bordi
- * della bitmap; in COMPLEMENT inverte i bit dei piani.  Con AREAOUTLINE
- * (SetOPen) il bordo del rettangolo e' poi ridisegnato con AOlPen, come
- * fa graphics.library: il segno del party sulla mappa all'aperto
- * (H069+$0012, APen $E, OPen 0) e' un quadrato col bordo nero.
+ * Fills the rectangle (ends included) with FgPen, clipped at the edges
+ * of the bitmap; in COMPLEMENT it inverts the plane bits.  With AREAOUTLINE
+ * (SetOPen) the border of the rectangle is then redrawn with AOlPen, as
+ * graphics.library does: the party marker on the outdoor map
+ * (H069+$0012, APen $E, OPen 0) is a square with a black border.
  */
 static void outline_pixel(struct BitMap *bm, LONG x, LONG y, UBYTE pen,
                           UBYTE mode)
@@ -292,13 +292,13 @@ static void put_pixel_bit(UBYTE *plane, UWORD bpr, LONG x, LONG y, int v)
 }
 
 /*
- * Copia un rettangolo piano per piano (piani con il bit di mask) con la
- * funzione logica minterm su B = sorgente e C = destinazione (A sempre 1,
- * come in BltBitMap: contano i bit 4..7 del minterm).  I piani sono
- * elaborati in ordine: se la destinazione ripete lo stesso raster in piu'
- * piani, ogni piano lavora sul risultato del precedente, come sull'Amiga.
- * La sorgente di ogni riga e' letta prima di scrivere, per le
- * sovrapposizioni.  Restituisce il numero di piani elaborati.
+ * Copies a rectangle plane by plane (planes with the mask bit) with the
+ * logic function minterm on B = source and C = destination (A always 1,
+ * as in BltBitMap: bits 4..7 of the minterm matter).  The planes are
+ * processed in order: if the destination repeats the same raster in several
+ * planes, each plane works on the result of the previous one, as on the Amiga.
+ * The source of each row is read before writing, for
+ * overlaps.  Returns the number of planes processed.
  */
 LONG BltBitMap(struct BitMap *src, LONG src_x, LONG src_y,
                struct BitMap *dst, LONG dst_x, LONG dst_y, LONG width,
@@ -342,11 +342,11 @@ LONG BltBitMap(struct BitMap *src, LONG src_x, LONG src_y,
 }
 
 /*
- * Copia attraverso la maschera: dove il bit di mask (un piano largo come
- * src) e' 1 il pixel di src, altrimenti la destinazione resta.  E' l'effetto
- * dei minterm usati dal gioco ($E0, ABC|ABNC|ANBC, e $CA): la ROM ottiene
- * lo stesso risultato con tre BltBitMap (XOR, maschera, XOR).  Tagliato ai
- * bordi della bitmap della RastPort.
+ * Copy through the mask: where the bit of mask (one plane as wide as
+ * src) is 1 the pixel of src, otherwise the destination stays.  It is the effect
+ * of the minterms used by the game ($E0, ABC|ABNC|ANBC, and $CA): the ROM gets
+ * the same result with three BltBitMap (XOR, mask, XOR).  Clipped at the
+ * edges of the bitmap of the RastPort.
  */
 void BltMaskBitMapRastPort(struct BitMap *src, LONG src_x, LONG src_y,
                            struct RastPort *dst, LONG dst_x, LONG dst_y,
@@ -393,7 +393,7 @@ void BltMaskBitMapRastPort(struct BitMap *src, LONG src_x, LONG src_y,
     host_display_changed();
 }
 
-/* Senza liste Copper non c'e' nulla da liberare. */
+/* Without Copper lists there is nothing to free. */
 void FreeVPortCopLists(struct ViewPort *vp)
 {
     (void)vp;

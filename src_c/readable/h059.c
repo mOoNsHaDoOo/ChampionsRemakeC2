@@ -1,4 +1,4 @@
-/* H059: ciclo del combattimento tattico e turni degli attori. */
+/* H059: tactical combat loop and turns of the actors. */
 #include "h059.h"
 #include "globals.h"
 #include "unported.h"
@@ -21,21 +21,21 @@
 #include <string.h>
 
 /*
- * Ordine dei turni del round (H005+$2392).  L'originale azzera 40 voci
- * ($A0 byte) ma scorre fino a $48: le voci oltre la 40 coincidono con
- * $2432..; la lista e' chiusa da NULL e non le raggiunge con al massimo
- * 40 combattenti.  Qui 72 voci.
+ * Turn order of the round (H005+$2392).  The original clears 40 entries
+ * ($A0 bytes) but scans up to $48: the entries beyond 40 overlap
+ * $2432..; the list is terminated by NULL and does not reach them with at most
+ * 40 combatants.  Here 72 entries.
  */
 Character *g_turn_order[0x48];
 
-/* PORT H059+$0122: link/unlk, nessun effetto. */
+/* PORT H059+$0122: link/unlk, no effect. */
 void h059_init(void)
 {
 }
 
 /*
- * PORT H059+$0130: ordina i personaggi per iniziativa (+$4 del turno,
- * dalla piu' alta; a parita' a caso) in H005+$2392.
+ * PORT H059+$0130: sorts the characters by initiative (+$4 of the turn,
+ * highest first; ties at random) into H005+$2392.
  */
 static void build_turn_order(void)
 {
@@ -52,11 +52,11 @@ static void build_turn_order(void)
     for (p = g_party_head; p != NULL; p = p->next) {
         i = 1;
         go = 1;
-        /* turno+$4: (word) iniziativa del round (1d6+destrezza); <=0 turno finito */
+        /* turn+$4: (word) initiative of the round (1d6+dexterity); <=0 turn over */
         v = (s16)COK_GET16(&p->block_192->b[4]);
         while (i < 0x41 && go) {
             if (g_turn_order[i - 1] != NULL) {
-                /* turno+$4: (word) iniziativa del round (1d6+destrezza); <=0 turno finito */
+                /* turn+$4: (word) initiative of the round (1d6+dexterity); <=0 turn over */
                 w = (s16)COK_GET16(&g_turn_order[i - 1]->block_192->b[4]);
             } else {
                 w = -1;
@@ -86,10 +86,10 @@ static void build_turn_order(void)
 }
 
 /*
- * PORT H059+$02AA: fine del combattimento: libera nubi e pozze, chi era
- * incantato torna (stato 3 se restano piu' nemici), gli effetti legati
- * al combattimento cadono, si liberano la mappa e le icone; il gestore
- * $276C torna quello degli incantesimi fuori combattimento.
+ * PORT H059+$02AA: end of the combat: frees clouds and pools, whoever was
+ * charmed comes back (status 3 if more enemies remain), the effects tied
+ * to the combat drop, the map and the icons are freed; the handler
+ * $276C goes back to the one of the spells outside combat.
  */
 static void end_combat_cleanup(void)
 {
@@ -108,12 +108,12 @@ static void end_combat_cleanup(void)
         g_acid_pools = next;
     }
     for (p = g_party_head; p != NULL; p = p->next) {
-        /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+        /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
         if (find_effect(p, 0x0B, &e) && p->b[0x197] == 0) {
-            if (H005_B(0x2A1D) > 1) { /* $2A1D: combattenti attivi del lato 1 (voce 2 di $2A1C) */
-                p->b[0x197] = 3; /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+            if (H005_B(0x2A1D) > 1) { /* $2A1D: active combatants of side 1 (entry 2 of $2A1C) */
+                p->b[0x197] = 3; /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
             } else {
-                p->b[0x197] = 0; /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+                p->b[0x197] = 0; /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
             }
         }
         drop_effects(p);
@@ -125,10 +125,10 @@ static void end_combat_cleanup(void)
 }
 
 /*
- * PORT H059+$03BE: menu del turno: Move (se ha movimento), View Aim, Use
- * (se ha oggetti), Cast (se ha incantesimi e puo'), Turn (chierici che
- * possono scacciare), Yell (paladini senza bersaglio scelto), Done.
- * Restituisce in *key la scelta (lettere, spazio o un tasto speciale
+ * PORT H059+$03BE: turn menu: Move (if it has movement), View Aim, Use
+ * (if it has items), Cast (if it has spells and can), Turn (clerics who
+ * can turn undead), Yell (paladins without a chosen target), Done.
+ * Returns the choice in *key (letters, space or a special key
  * 1/2/3/4/$13).
  */
 static void combat_menu(Character *c, u8 *key)
@@ -138,32 +138,32 @@ static void combat_menu(Character *c, u8 *key)
     u8 flag;                            /* -$2D(a5) */
 
     line[0] = '\0';
-    if (c->block_192->b[8] > 0) { /* turno+$8: punti movimento rimasti nel turno */
+    if (c->block_192->b[8] > 0) { /* turn+$8: movement points left in the turn */
         h026_copy(0x28, line, 5, "Move ");
     }
     h026_append(0x28, line, 9, "View Aim ");
-    if (c->b[0x14F] > 0) { /* pg+$14F: numero di oggetti posseduti (max 16) */
+    if (c->b[0x14F] > 0) { /* ch+$14F: number of items owned (max 16) */
         h026_append(0x28, line, 4, "Use ");
     }
     flag = 0;
     for (i = 0; i <= 0x39; ++i) {
-        /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
+        /* ch+$1E: memorised spells, $3A bytes (+$1E..+$57); bit 7 = to be memorised */
         if (c->b[0x1E + i] > 0) {
             flag = 1;
         }
     }
-    /* turno+$1: flag puo' lanciare incantesimi (non in nube; azzerato attaccando); A+$1CA: (word)
-     * se non nullo nell'area non si lanciano incantesimi */
+    /* turn+$1: can cast spells flag (not in a cloud; cleared when attacking); A+$1CA: (word) if
+     * not zero no spells can be cast in the area */
     if (flag && c->block_192->b[1] && COK_GET16(g_state_a + 0x1CA) == 0) {
         h026_append(0x28, line, 5, "Cast ");
     }
-    /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico; turno+$13: Turn
-     * Undead gia' usati nel combattimento (max H005+$248F); $248F: mostri caricati con +$DF: limite
-     * di Turn Undead (turno +$13) */
+    /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric; turn+$13: Turn Undead already
+     * used in the combat (max H005+$248F); $248F: monsters loaded with +$DF: Turn Undead limit
+     * (turn +$13) */
     if (c->b[0xFE] > 0 && c->block_192->b[0x13] < H005_B(0x248F)) {
         h026_append(0x28, line, 5, "Turn ");
     }
-    if (c->b[0x5B] == 5 && g_h005_2432 == NULL) { /* pg+$5B: razza (0..6, nomi H005+$4D04) */
+    if (c->b[0x5B] == 5 && g_h005_2432 == NULL) { /* ch+$5B: race (0..6, names H005+$4D04) */
         h026_append(0x28, line, 5, "Yell ");
     }
     h026_append(0x28, line, 4, "Done");
@@ -182,9 +182,9 @@ static void combat_menu(Character *c, u8 *key)
 }
 
 /*
- * PORT H059+$0670: attacco di actor a target (dal movimento): un'arma a
- * distanza che non colpisce da vicino non serve; altrimenti, se puo'
- * attaccare, target diventa il bersaglio e parte l'attacco.
+ * PORT H059+$0670: attack of actor on target (from the movement): a ranged
+ * weapon that does not hit at close range is no use; otherwise, if it can
+ * attack, target becomes the target and the attack starts.
  */
 static void melee_attack(Character *actor, Character *target, u8 *done)
 {
@@ -204,7 +204,7 @@ static void melee_attack(Character *actor, Character *target, u8 *done)
     combat_attack(actor, target, 0, NULL, done);
 }
 
-/* Variabili di H059+$0726 lette dalla procedura annidata $0734. */
+/* Variables of H059+$0726 read by the nested procedure $0734. */
 typedef struct MoveFrame {
     Character *c;                       /* $12(a5) */
     u8 *done;                           /* $C(a5) */
@@ -216,26 +216,26 @@ typedef struct MoveFrame {
 } MoveFrame;
 
 /*
- * PORT H059+$0734 (annidata in $0726): Esc annulla il movimento: c torna
- * dov'era con il movimento e la direzione di prima.
+ * PORT H059+$0734 (nested in $0726): Esc cancels the movement: c goes back
+ * where it was with the previous movement and direction.
  */
 static void cancel_move(MoveFrame *f)
 {
-    f->c->block_192->b[8] = (u8)f->moves; /* turno+$8: punti movimento rimasti nel turno */
+    f->c->block_192->b[8] = (u8)f->moves; /* turn+$8: movement points left in the turn */
     redraw_ground(0, 0, combatant_index(f->c));
     *f->done = (u8)!place_combatant(f->c, (u8)f->x0, (u8)f->y0, 0);
     center_view((s16)combatant_x(f->c), (s16)combatant_y(f->c), 0, 8);
-    /* turno+$B: orientamento/fotogramma del combattente (direzione 0..7) */
+    /* turn+$B: facing/frame of the combatant (direction 0..7) */
     f->c->block_192->b[0x0B] = (u8)f->facing;
     f->dir = 8;
 }
 
 /*
- * PORT H059+$0726: modo movimento/attacco: "Move/Attack, Move Left = n"
- * e le frecce (codici speciali $47..$51 del tastierino): verso un
- * combattente attacca, verso fuori mappa chiede "Flee:", altrimenti si
- * muove se il costo della casella (doppio, triplo in diagonale) e'
- * coperto dal movimento rimasto.  Esc annulla, Invio o 'D' chiudono.
+ * PORT H059+$0726: move/attack mode: "Move/Attack, Move Left = n"
+ * and the arrows (special keypad codes $47..$51): towards a
+ * combatant it attacks, towards outside the map it asks "Flee:", otherwise it
+ * moves if the cost of the square (double, triple diagonally) is
+ * covered by the movement left.  Esc cancels, Enter or 'D' close.
  */
 static void move_mode(Character *c, u8 key, u8 *done)
 {
@@ -248,33 +248,33 @@ static void move_mode(Character *c, u8 key, u8 *done)
     u16 cost;                           /* -$18(a5) */
     char msg[0x51];                     /* -$6A(a5) */
 
-    H005_B(0x24CB) = 1; /* $24CB: 1 nel modo Move/Attack: cursore sulla mappa di combattimento */
+    H005_B(0x24CB) = 1; /* $24CB: 1 in Move/Attack mode: cursor on the combat map */
     f.c = c;
     f.done = done;
-    f.moves = c->block_192->b[8]; /* turno+$8: punti movimento rimasti nel turno */
-    f.facing = c->block_192->b[0x0B]; /* turno+$B: orientamento/fotogramma del combattente (direzione 0..7) */
+    f.moves = c->block_192->b[8]; /* turn+$8: movement points left in the turn */
+    f.facing = c->block_192->b[0x0B]; /* turn+$B: facing/frame of the combatant (direction 0..7) */
     f.x0 = (s16)combatant_x(c);
     f.y0 = (s16)combatant_y(c);
     k = key;
     *done = 0;
     f.dir = 8;
     /*
-     * L'originale ricontrolla all'uscita (k = ' ' senza *done): con la
-     * condizione del ciclo quel caso non si presenta.
+     * The original checks again on exit (k = ' ' without *done): with the
+     * loop condition that case does not occur.
      */
     while (k != 0 && k != 0x0D && k != 'D' && !*done) {
         clear_text_cells(0x18, 0x18, 0x27, 0x18);
         if (k == ' ') {
             h026_copy(0x50, msg, 0x19, "Move/Attack, Move Left = ");
-            /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
+            /* $3C82: generic 80-character text buffer (TEXT_BUF) */
             format_number(0x50, (char *)&H005_B(0x3C82),
-                          /* turno+$8: punti movimento rimasti nel turno */
+                          /* turn+$8: movement points left in the turn */
                           (s32)(c->block_192->b[8] >> 1), 0, 0x0A, 2, ' ');
-            /* $3C82: buffer di testo generico di 80 caratteri (TEXT_BUF) */
+            /* $3C82: generic 80-character text buffer (TEXT_BUF) */
             h026_append(0x50, msg, 0x50, (const char *)&H005_B(0x3C82));
             k = ui_request_choice(0x50, msg, 5, " Done", 0x0D, 0x0A, 0x0F, 1,
-                                  /* $249F: uso: byte di scarto per *special ed esiti nei menu di
-                                   * combattimento */
+                                  /* $249F: use: scratch byte for *special and outcomes in the
+                                   * combat menus */
                                   0, &H005_B(0x249F));
         }
         switch (k) {
@@ -302,27 +302,27 @@ static void move_mode(Character *c, u8 key, u8 *done)
                 }
             } else {
                 if (f.dir & 1) {
-                    /* $3EF4: terreno, $41 voci da 4 byte (da 1): +0 costo ($FF invalicabile) */
+                    /* $3EF4: terrain, $41 entries of 4 bytes (from 1): +0 cost ($FF impassable) */
                     cost = (u16)(H005_B(0x3EF4 + (tile - 1) * 4) * 3);
                 } else {
-                    /* $3EF4: terreno, $41 voci da 4 byte (da 1): +0 costo ($FF invalicabile) */
+                    /* $3EF4: terrain, $41 entries of 4 bytes (from 1): +0 cost ($FF impassable) */
                     cost = (u16)(H005_B(0x3EF4 + (tile - 1) * 4) * 2);
                 }
-                /* $3EF4: terreno, $41 voci da 4 byte (da 1): +0 costo ($FF invalicabile) */
+                /* $3EF4: terrain, $41 entries of 4 bytes (from 1): +0 cost ($FF impassable) */
                 if (H005_B(0x3EF4 + (tile - 1) * 4) == 0xFF) {
                     cost = 0xFF;
                 }
-                if (cost > c->block_192->b[8]) { /* turno+$8: punti movimento rimasti nel turno */
+                if (cost > c->block_192->b[8]) { /* turn+$8: movement points left in the turn */
                     show_message_line(0x0E, "can't go there");
                 } else {
                     combat_leave_attacks(c, f.dir);
-                    if (!c->b[0x198]) { /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
+                    if (!c->b[0x198]) { /* ch+$198: active/standing (0 down or out of the combat) */
                         *done = end_combat_turn(c);
                     } else {
-                        if (c->block_192->b[8] > 0) { /* turno+$8: punti movimento rimasti nel turno */
+                        if (c->block_192->b[8] > 0) { /* turn+$8: movement points left in the turn */
                             combat_step(c, f.dir);
                         }
-                        if (!c->b[0x198]) { /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
+                        if (!c->b[0x198]) { /* ch+$198: active/standing (0 down or out of the combat) */
                             *done = end_combat_turn(c);
                         }
                         check_cloud(c, 1);
@@ -337,15 +337,15 @@ static void move_mode(Character *c, u8 key, u8 *done)
             k = ' ';
         }
     }
-    if (c->block_192->b[8] < 2) { /* turno+$8: punti movimento rimasti nel turno */
-        c->block_192->b[8] = 0; /* turno+$8: punti movimento rimasti nel turno */
+    if (c->block_192->b[8] < 2) { /* turn+$8: movement points left in the turn */
+        c->block_192->b[8] = 0; /* turn+$8: movement points left in the turn */
     }
-    H005_B(0x24CB) = 0; /* $24CB: 1 nel modo Move/Attack: cursore sulla mappa di combattimento */
+    H005_B(0x24CB) = 0; /* $24CB: 1 in Move/Attack mode: cursor on the combat map */
 }
 
 /*
- * PORT H059+$0CCA: velocita' del gioco: "gameSpeed (n) :" con Slower (fino
- * a 9) e Faster (fino a 0) su H005+$3DF6.
+ * PORT H059+$0CCA: game speed: "gameSpeed (n) :" with Slower (up
+ * to 9) and Faster (down to 0) on H005+$3DF6.
  */
 static void game_speed_menu(void)
 {
@@ -355,48 +355,48 @@ static void game_speed_menu(void)
 
     while (key != 'E' && key != 0) {
         h026_copy(0x28, title, 0x0B, "gameSpeed (");
-        /* $3DF6: (word) velocita' del gioco 0..9 (pausa dei messaggi) */
+        /* $3DF6: (word) game speed 0..9 (message pause) */
         format_number(0x28, line, (s32)H005_W(0x3DF6), 0, 0x0A, 1, ' ');
         h026_append(0x28, line, 3, ") :");
         h026_append(0x28, title, 0x28, line);
         strcpy(line, " ");
-        if (H005_W(0x3DF6) < 9) { /* $3DF6: (word) velocita' del gioco 0..9 (pausa dei messaggi) */
+        if (H005_W(0x3DF6) < 9) { /* $3DF6: (word) game speed 0..9 (message pause) */
             h026_append(0x28, line, 7, "Slower ");
         }
-        if (H005_W(0x3DF6) > 0) { /* $3DF6: (word) velocita' del gioco 0..9 (pausa dei messaggi) */
+        if (H005_W(0x3DF6) > 0) { /* $3DF6: (word) game speed 0..9 (message pause) */
             h026_append(0x28, line, 7, "Faster ");
         }
         h026_append(0x28, line, 4, "Exit");
         key = ui_request_choice(0x28, title, 0x28, line, 0x0D, 0x0A, 0x0F, 0,
-                                /* $249F: uso: byte di scarto per *special ed esiti nei menu di
-                                 * combattimento */
+                                /* $249F: use: scratch byte for *special and outcomes in the
+                                 * combat menus */
                                 0, &H005_B(0x249F));
         switch (key) {
-        /* $3DF6: (word) velocita' del gioco 0..9 (pausa dei messaggi) */
+        /* $3DF6: (word) game speed 0..9 (message pause) */
         case 'S': H005_SET_W(0x3DF6, H005_W(0x3DF6) + 1); break;
-        /* $3DF6: (word) velocita' del gioco 0..9 (pausa dei messaggi) */
+        /* $3DF6: (word) game speed 0..9 (message pause) */
         case 'F': H005_SET_W(0x3DF6, H005_W(0x3DF6) - 1); break;
         default: break;
         }
     }
 }
 
-/* PORT H059+$0E4A: c passa al controllo automatico e lascia un bersaglio alleato. */
+/* PORT H059+$0E4A: c switches to automatic control and drops an allied target. */
 static void set_auto(Character *c)
 {
-    c->b[0x19A] = 1; /* pg+$19A: controllo automatico in combattimento (1 = IA) */
+    c->b[0x19A] = 1; /* ch+$19A: automatic control in combat (1 = AI) */
     if (c->block_192->target != NULL &&
-        /* pg+$199: lato in combattimento (0 party, 1 avversari) */
+        /* ch+$199: side in combat (0 party, 1 opponents) */
         c->block_192->target->b[0x199] == c->b[0x199]) {
         c->block_192->target = NULL;
     }
 }
 
 /*
- * PORT H059+$0EA0: sottomenu "Done": Guard (se non ha un'arma solo a
- * distanza), Delay (passa in fondo all'ordine del round), Quit (fine
- * turno), Bandage (se un compagno muore), Auto (il computer gioca per
- * lui), Speed, Exit.
+ * PORT H059+$0EA0: "Done" submenu: Guard (if it does not have a ranged-only
+ * weapon), Delay (moves to the end of the round order), Quit (end of
+ * turn), Bandage (if a companion is dying), Auto (the computer plays for
+ * it), Speed, Exit.
  */
 static void done_menu(Character *c, u8 *done)
 {
@@ -417,26 +417,26 @@ static void done_menu(Character *c, u8 *done)
     h026_append(0x28, line, 0x0F, "Auto Speed Exit");
     while (key != 'E' && key != 0 && !*done) {
         key = ui_request_choice(0, "", 0x28, line, 0x0D, 0x0A, 0x0F, 0, 0,
-                                /* $249F: uso: byte di scarto per *special ed esiti nei menu di
-                                 * combattimento */
+                                /* $249F: use: scratch byte for *special and outcomes in the
+                                 * combat menus */
                                 &H005_B(0x249F));
         switch (key) {
         case 'G':
             *done = guard_turn(c);
             break;
         case 'D':
-            /* turno+$4: (word) iniziativa del round (1d6+destrezza); <=0 turno finito */
+            /* turn+$4: (word) initiative of the round (1d6+dexterity); <=0 turn over */
             COK_PUT16(&c->block_192->b[4], 1);
-            i = H005_B(0x2480); /* $2480: posizione corrente nell'ordine dei turni (1..$48, g_turn_order) */
+            i = H005_B(0x2480); /* $2480: current position in the turn order (1..$48, g_turn_order) */
             p = g_turn_order[i];
             while (p != NULL && i < 0x48) {
                 g_turn_order[i - 1] = p;
                 ++i;
-                /* l'originale legge anche la voce $48 (fuori tabella) */
+                /* the original also reads entry $48 (outside the table) */
                 p = (i < 0x48) ? g_turn_order[i] : NULL;
             }
             g_turn_order[i - 1] = c;
-            /* $2480: posizione corrente nell'ordine dei turni (1..$48, g_turn_order) */
+            /* $2480: current position in the turn order (1..$48, g_turn_order) */
             add_to_byte(&H005_B(0x2480), 0xFFFF);
             *done = 1;
             break;
@@ -464,42 +464,42 @@ static void done_menu(Character *c, u8 *done)
 }
 
 /*
- * PORT H059+$1110: turno di un personaggio del giocatore: un incantesimo
- * in corso (+$0 del turno) parte subito; altrimenti il menu finche' il
- * turno non finisce.  Tasti speciali: 1/3 tutti in automatico per il
- * resto del round, 2 magia on/off, 4 H096+$4DE8.
+ * PORT H059+$1110: turn of a player character: a spell
+ * in progress (+$0 of the turn) starts at once; otherwise the menu until the
+ * turn ends.  Special keys: 1/3 everyone on automatic for the
+ * rest of the round, 2 magic on/off, 4 H096+$4DE8.
  */
 static void player_turn(Character *c)
 {
     u8 key;                             /* -$1(a5) */
     u8 done;                            /* -$2(a5) */
-    CokAim area;                        /* -$10(a5): mira (9 byte) */
+    CokAim area;                        /* -$10(a5): aim (9 bytes) */
     u16 spell;                          /* -$12(a5) */
     Character *p;                       /* -$6(a5) */
 
-    if (!c->b[0x198]) { /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
+    if (!c->b[0x198]) { /* ch+$198: active/standing (0 down or out of the combat) */
         done = end_combat_turn(c);
         return;
     }
-    if (c->block_192->b[0] > 0) { /* turno+$0: incantesimo in preparazione da lanciare all'inizio del turno */
-        /* turno+$0: incantesimo in preparazione da lanciare all'inizio del turno */
+    if (c->block_192->b[0] > 0) { /* turn+$0: spell being prepared, cast at the start of the turn */
+        /* turn+$0: spell being prepared, cast at the start of the turn */
         spell = c->block_192->b[0];
-        c->block_192->b[0] = 0; /* turno+$0: incantesimo in preparazione da lanciare all'inizio del turno */
+        c->block_192->b[0] = 0; /* turn+$0: spell being prepared, cast at the start of the turn */
         cast_spell(spell, 0, 1, &done);
         done = end_combat_turn(c);
         return;
     }
     done = 0;
     while (!done) {
-        H005_B(0x2483) = 1; /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
+        H005_B(0x2483) = 1; /* $2483: index of the selected option in the row menus (persistent) */
         combat_menu(c, &key);
-        if (H005_B(0x249D)) { /* $249D: 1 se l'ultima UI_RequestChoice ha dato un tasto speciale */
+        if (H005_B(0x249D)) { /* $249D: 1 if the last UI_RequestChoice gave a special key */
             switch (key) {
             case 1:
             case 3:
-                /* $2480: posizione corrente nell'ordine dei turni (1..$48, g_turn_order) */
+                /* $2480: current position in the turn order (1..$48, g_turn_order) */
                 add_to_byte(&H005_B(0x2480), 0xFFFF);
-                /* turno+$4: (word) iniziativa del round (1d6+destrezza); <=0 turno finito */
+                /* turn+$4: (word) initiative of the round (1d6+dexterity); <=0 turn over */
                 COK_PUT16(&c->block_192->b[4], 0x14);
                 for (p = g_party_head; p != NULL; p = p->next) {
                     set_auto(p);
@@ -509,9 +509,9 @@ static void player_turn(Character *c)
                 done = 1;
                 break;
             case 2:
-                /* $24A0: Magic On/Off (tasto 2): i personaggi in automatico lanciano magie */
+                /* $24A0: Magic On/Off (key 2): characters on automatic cast spells */
                 H005_B(0x24A0) = (u8)(H005_B(0x24A0) == 0);
-                /* $24A0: Magic On/Off (tasto 2): i personaggi in automatico lanciano magie */
+                /* $24A0: Magic On/Off (key 2): characters on automatic cast spells */
                 if (H005_B(0x24A0)) {
                     show_message_line(8, "Magic On");
                 } else {
@@ -533,9 +533,9 @@ static void player_turn(Character *c)
             switch (key) {
             case ' ':
                 for (p = g_party_head; p != NULL; p = p->next) {
-                    /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
+                    /* ch+$EC: control: <$80 PC, >$7F NPC/AI ($B3 = charmed or confused) */
                     if (p->b[0xEC] < 0x80) {
-                        p->b[0x19A] = 0; /* pg+$19A: controllo automatico in combattimento (1 = IA) */
+                        p->b[0x19A] = 0; /* ch+$19A: automatic control in combat (1 = AI) */
                     }
                 }
                 break;
@@ -556,7 +556,7 @@ static void player_turn(Character *c)
                 done = end_combat_turn(c);
                 break;
             case 'U':
-                H005_B(0x2483) = 2; /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
+                H005_B(0x2483) = 2; /* $2483: index of the selected option in the row menus (persistent) */
                 show_items(&done);
                 combat_attacks(c);
                 if (!done) {
@@ -580,48 +580,48 @@ static void player_turn(Character *c)
         }
         if (!done) {
             show_combatant_cursor(c, 2, 1);
-            H005_B(0x24C7) = 1; /* $24C7: 1: pannello del combattente a destra da ridisegnare */
+            H005_B(0x24C7) = 1; /* $24C7: 1: combatant panel on the right to be redrawn */
             draw_combat_status(c);
         }
     }
 }
 
 /*
- * PORT H059+$1498 (Combat_ActorTurn): turno di c: eventi 7, $F e $15,
- * cursore e stato; chi ha ancora iniziativa (+$4 > 0) gioca: in
- * automatico (+$19A, H097+$1D68) o col menu.
+ * PORT H059+$1498 (Combat_ActorTurn): turn of c: events 7, $F and $15,
+ * cursor and status; whoever still has initiative (+$4 > 0) plays: on
+ * automatic (+$19A, H097+$1D68) or with the menu.
  */
 static void actor_turn(Character *c)
 {
-    c->block_192->b[0x11] = 0; /* turno+$11: attacchi subiti nel round */
-    c->block_192->b[0x14] = 0; /* turno+$14: somma (mod 8) degli ottavi fuori orientamento degli attacchi */
-    c->block_192->b[9] = 0; /* turno+$9: flag in guardia (Guard), attacca chi si avvicina */
+    c->block_192->b[0x11] = 0; /* turn+$11: attacks received in the round */
+    c->block_192->b[0x14] = 0; /* turn+$14: sum (mod 8) of the off-facing eighths of the attacks */
+    c->block_192->b[9] = 0; /* turn+$9: on guard flag (Guard), attacks whoever comes close */
     trigger_event(&c, 7);
-    /* turno+$4: (word) iniziativa del round (1d6+destrezza); <=0 turno finito */
+    /* turn+$4: (word) initiative of the round (1d6+dexterity); <=0 turn over */
     if ((s16)COK_GET16(&c->block_192->b[4]) <= 0) {
         return;
     }
-    /* turno+$4: (word) iniziativa del round (1d6+destrezza); <=0 turno finito */
+    /* turn+$4: (word) initiative of the round (1d6+dexterity); <=0 turn over */
     if (COK_GET16(&c->block_192->b[4]) == 0x14) {
-        /* turno+$4: (word) iniziativa del round (1d6+destrezza); <=0 turno finito */
+        /* turn+$4: (word) initiative of the round (1d6+dexterity); <=0 turn over */
         COK_PUT16(&c->block_192->b[4], 0x13);
     }
     g_current_char = c;
-    /* $24C6: 1 se le azioni del combattente vanno disegnate (visibile); pg+$199: lato in
-     * combattimento (0 party, 1 avversari) */
+    /* $24C6: 1 if the combatant's actions must be drawn (visible); ch+$199: side in
+     * combat (0 party, 1 opponents) */
     H005_B(0x24C6) = (u8)(c->b[0x199] == 0 || combatant_visible(c, 0));
     show_combatant_cursor(c, 2, 1);
     recompute_stats(c);
-    H005_B(0x24C7) = 1; /* $24C7: 1: pannello del combattente a destra da ridisegnare */
+    H005_B(0x24C7) = 1; /* $24C7: 1: combatant panel on the right to be redrawn */
     draw_combat_status(c);
     trigger_event(&c, 0x0F);
-    /* turno+$0: incantesimo in preparazione da lanciare all'inizio del turno */
+    /* turn+$0: spell being prepared, cast at the start of the turn */
     if (c->block_192->b[0] == 0) {
         trigger_event(&c, 0x15);
     }
-    /* turno+$4: (word) iniziativa del round (1d6+destrezza); <=0 turno finito */
+    /* turn+$4: (word) initiative of the round (1d6+dexterity); <=0 turn over */
     if (COK_GET16(&c->block_192->b[4]) > 0) {
-        if (c->b[0x19A]) { /* pg+$19A: controllo automatico in combattimento (1 = IA) */
+        if (c->b[0x19A]) { /* ch+$19A: automatic control in combat (1 = AI) */
             monster_turn(c);
         } else {
             player_turn(c);
@@ -631,11 +631,11 @@ static void actor_turn(Character *c)
 }
 
 /*
- * PORT H059+$15EE: fine del round: un minuto di gioco, contatore dei
- * round, forza dei nemici, evento $13, nubi (solo acido) e chi muore
- * peggiora (morto dopo 10 round); "Your Teammate is Dying".  Il
- * combattimento finisce se un lato non c'e' piu' o dopo $2477 round; con
- * solo nemici rimasti si puo' scegliere di continuare.
+ * PORT H059+$15EE: end of the round: one minute of game time, round
+ * counter, enemy strength, event $13, clouds (acid only) and whoever is dying
+ * gets worse (dead after 10 rounds); "Your Teammate is Dying".  The
+ * combat ends if a side is gone or after $2477 rounds; with
+ * only enemies left one can choose to continue.
  */
 static void end_round(u8 *over)
 {
@@ -643,19 +643,19 @@ static void end_round(u8 *over)
     u16 i;                              /* -$8(a5) */
 
     advance_time(1, 1);
-    /* $247C: numero del round del combattimento (0 all'inizio; bit 0 arrotonda) */
+    /* $247C: combat round number (0 at the start; bit 0 rounds) */
     add_to_byte(&H005_B(0x247C), 1);
     enemy_strength();
     i = 1;
     for (p = g_party_head; p != NULL; p = p->next) {
         trigger_event(&p, 0x13);
         check_cloud(p, 0);
-        if (p->b[0x197] == 5) { /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
-            /* turno+$10: round passati sotto zero punti ferita (oltre 9 muore) */
+        if (p->b[0x197] == 5) { /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
+            /* turn+$10: rounds spent below zero hit points (beyond 9 it dies) */
             add_to_byte(&p->block_192->b[0x10], 1);
-            /* turno+$10: round passati sotto zero punti ferita (oltre 9 muore) */
+            /* turn+$10: rounds spent below zero hit points (beyond 9 it dies) */
             if (p->block_192->b[0x10] > 9) {
-                p->b[0x197] = 6; /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+                p->b[0x197] = 6; /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
             }
         }
         ++i;
@@ -666,16 +666,16 @@ static void end_round(u8 *over)
     count_sides();
     center_view((s16)((s16)COK_GET16(g_combat_area + 2) + 3),
                 (s16)((s16)COK_GET16(g_combat_area + 4) + 3), 0xFF, 8);
-    /* $2A1C: combattenti attivi del lato 0; tabella byte indicizzata dal lato; $2A1D: combattenti
-     * attivi del lato 1 (voce 2 di $2A1C) */
+    /* $2A1C: active combatants of side 0; byte table indexed by side; $2A1D: active combatants of
+     * side 1 (entry 2 of $2A1C) */
     if (H005_B(0x2A1C) == 0 || H005_B(0x2A1D) == 0 ||
-        /* $247C: numero del round del combattimento (0 all'inizio; bit 0 arrotonda); $2477: round
-         * limite del combattimento (+$247C + 15) */
+        /* $247C: combat round number (0 at the start; bit 0 rounds); $2477: limit round of the
+         * combat (+$247C + 15) */
         H005_B(0x247C) >= H005_B(0x2477)) {
         *over = 1;
     }
-    /* $2A1C: combattenti attivi del lato 0; tabella byte indicizzata dal lato; $2A1D: combattenti
-     * attivi del lato 1 (voce 2 di $2A1C); $24D7: 1 se e' stata scelta la dimostrazione (Demo) */
+    /* $2A1C: active combatants of side 0; byte table indexed by side; $2A1D: active combatants of
+     * side 1 (entry 2 of $2A1C); $24D7: 1 if the demonstration (Demo) was chosen */
     if (H005_B(0x2A1C) > 0 && H005_B(0x2A1D) == 0 && !H005_B(0x24D7) &&
         ask_yes_no(0x10, "Continue Battle:", 0x0D, 0x0A, 0x0F) == 'Y') {
         *over = 0;
@@ -683,22 +683,22 @@ static void end_round(u8 *over)
 }
 
 /*
- * PORT H059+$1782 (Combat_MainLoop), dal comando COMBAT: avvio (H095),
- * evento $18 per tutti, poi round finche' un lato resta: ordine dei
- * turni, turno di ognuno con le esplosioni dei caduti, fine del round;
- * infine la pulizia.
+ * PORT H059+$1782 (Combat_MainLoop), from the COMBAT command: start (H095),
+ * event $18 for everyone, then rounds while a side remains: turn
+ * order, everyone's turn with the explosions of the fallen, end of the round;
+ * finally the clean-up.
  */
 void combat_main_loop(void)
 {
     u8 over;                            /* -$1(a5) */
     Character *p;                       /* -$6(a5) */
 
-    H005_B(0x3DE3) = 5; /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
+    H005_B(0x3DE3) = 5; /* $3DE3: game mode (0 menu, 1 view, 2 camp, 5 combat) */
     g_handlers_25c0[107] = (CokHandler)combat_spell_targets;
     start_combat();
     over = 0;
-    /* $2A1C: combattenti attivi del lato 0; tabella byte indicizzata dal lato; $2A1D: combattenti
-     * attivi del lato 1 (voce 2 di $2A1C) */
+    /* $2A1C: active combatants of side 0; byte table indexed by side; $2A1D: active combatants of
+     * side 1 (entry 2 of $2A1C) */
     if (H005_B(0x2A1C) == 0 || H005_B(0x2A1D) == 0) {
         over = 1;
     }
@@ -710,26 +710,26 @@ void combat_main_loop(void)
         for (p = g_party_head; p != NULL; p = p->next) {
             combat_prepare_turn(p);
         }
-        /* B+$596: (word) maschera lati sorpresi: bit lato+1 toglie 6 all'iniziativa */
+        /* B+$596: (word) mask of the surprised sides: bit side+1 removes 6 from the initiative */
         COK_PUT16(g_state_b + 0x596, 0);
         build_turn_order();
         p = g_turn_order[0];
-        H005_B(0x2480) = 1; /* $2480: posizione corrente nell'ordine dei turni (1..$48, g_turn_order) */
+        H005_B(0x2480) = 1; /* $2480: current position in the turn order (1..$48, g_turn_order) */
         while (p != NULL) {
             actor_turn(p);
             explode_fallen();
-            /* $2480: posizione corrente nell'ordine dei turni (1..$48, g_turn_order) */
+            /* $2480: current position in the turn order (1..$48, g_turn_order) */
             add_to_byte(&H005_B(0x2480), 1);
-            /* $2480: posizione corrente nell'ordine dei turni (1..$48, g_turn_order) */
+            /* $2480: current position in the turn order (1..$48, g_turn_order) */
             if (H005_B(0x2480) > 0x48) {
                 p = NULL;
             } else {
-                /* $2480: posizione corrente nell'ordine dei turni (1..$48, g_turn_order) */
+                /* $2480: current position in the turn order (1..$48, g_turn_order) */
                 p = g_turn_order[H005_B(0x2480) - 1];
             }
         }
         end_round(&over);
     }
     end_combat_cleanup();
-    H005_B(0x24CE) = 1; /* $24CE: 1: pausa per carattere nella scrittura del testo */
+    H005_B(0x24CE) = 1; /* $24CE: 1: per-character pause when writing text */
 }

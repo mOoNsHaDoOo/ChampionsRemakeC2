@@ -1,18 +1,18 @@
-/* H045: helper aritmetici e di supporto condivisi. */
+/* H045: shared arithmetic and support helpers. */
 #include "h045.h"
 #include "h015_runtime.h"
 
-/* PORT H045+$0004: link/unlk, nessun effetto. */
+/* PORT H045+$0004: link/unlk, no effect. */
 void h045_init(void)
 {
 }
 
 /*
- * PORT H045+$01D6: scrive value in base nel buffer out (al massimo max_len
- * caratteri prima del NUL), con il segno '-' se is_signed e negativo.  Le
- * cifre sono riempite a sinistra con pad fino a width; cifre e
- * riempimento insieme non superano width (le cifre meno significative in
- * piu' sono tagliate).
+ * PORT H045+$01D6: writes value in base into the buffer out (at most max_len
+ * characters before the NUL), with the '-' sign if is_signed and negative.
+ * The digits are padded on the left with pad up to width; digits and
+ * padding together do not exceed width (the extra least significant
+ * digits are cut).
  */
 void format_number(u16 max_len, char *out, s32 value, u8 is_signed,
                    u16 base, u16 width, u8 pad)
@@ -53,10 +53,10 @@ void format_number(u16 max_len, char *out, s32 value, u8 is_signed,
 }
 
 /*
- * PORT H045+$000C (corpo a $0068): legge da s un numero in base base
- * (cifre 0-9 e A-Z), saltando gli spazi iniziali; con is_signed accetta
- * un segno.  Restituisce 0 (senza scrivere *out) se non c'e' un numero o
- * una cifra non e' valida.
+ * PORT H045+$000C (body at $0068): reads from s a number in base base
+ * (digits 0-9 and A-Z), skipping leading spaces; with is_signed it accepts
+ * a sign.  Returns 0 (without writing *out) if there is no number or
+ * a digit is not valid.
  */
 u8 parse_number(u16 len, const char *s, s32 *out, u8 is_signed, u16 base)
 {
@@ -67,7 +67,7 @@ u8 parse_number(u16 len, const char *s, s32 *out, u8 is_signed, u16 base)
     u8 negative = 0;                    /* -$b(a5) */
 
     (void)len;
-    /* PORT H045+$0014 (annidata): salta gli spazi; 0 alla fine della stringa. */
+    /* PORT H045+$0014 (nested): skips spaces; 0 at the end of the string. */
     while (s[pos] != 0 && s[pos] == ' ') {
         ++pos;
     }

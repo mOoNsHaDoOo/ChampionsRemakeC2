@@ -1,4 +1,4 @@
-/* H095: avvio del combattimento (mappa, turni, schieramento). */
+/* H095: combat start (map, turns, deployment). */
 #ifndef COK_H095_H
 #define COK_H095_H
 #include "cok.h"

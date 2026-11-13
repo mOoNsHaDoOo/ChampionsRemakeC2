@@ -1,4 +1,4 @@
-/* H011: palette e servizi del modulo. */
+/* H011: palette and module services. */
 #ifndef COK_H011_H
 #define COK_H011_H
 

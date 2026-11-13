@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H029
-; Record grafici, bitplane, maschere e disegno dei tile.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H029
+; Graphic records, bitplanes, masks and tile drawing.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Record grafici: alloca BitMap e piani, carica blocchi DAA, copia i piani, prepara maschere e disegna tile 24x24 con blit mascherato o diretto.
+; MODULE NOTE
+; Graphic records: allocates BitMap and planes, loads DAA blocks, copies the planes, prepares masks and draws 24x24 tiles with a masked or direct blit.
 ; --------------------------------------------------------------------------
 ; H029: 6084 original bytes; all offsets are section-relative.
         section H029,code
@@ -33,10 +33,10 @@ H029:
         dc.w $7279,$0000
         dc.l H029+$0000006A
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H029 [parziale]
-; Scopo: Ingresso del modulo record grafici, bitplane, maschere e disegno dei tile; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H029+$179C.
-; Chiamanti diretti: H000+$0120
+; ROUTINE: module_init_H029 [partial]
+; Purpose: Entry of the graphic records, bitplanes, masks and tile drawing module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H029+$179C.
+; Direct callers: H000+$0120
 ; --------------------------------------------------------------------------
 L029_00000118:
 ; H029+$00000118: 2f0c  move.l a4, -(a7)
@@ -63,12 +63,12 @@ L029_00000122:
         dc.l H014+$00000018
         dc.w $4E5D,$285F,$205F,$548F,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H029_00000180 [parziale]
-; Scopo: Routine del modulo record grafici, bitplane, maschere e disegno dei tile; richiama H003+$00F6, H021+$0230.
-;   - Richiama H003+$00F6.
-;   - Richiama H021+$0230.
-;   - Usa lo stato globale: H005+$52F6 (puntatore alla finestra del gioco).
-; Chiamanti diretti: H029+$12C6, H029+$02FE
+; ROUTINE: sub_H029_00000180 [partial]
+; Purpose: Routine of the graphic records, bitplanes, masks and tile drawing module; calls H003+$00F6, H021+$0230.
+;   - Calls H003+$00F6.
+;   - Calls H021+$0230.
+;   - Uses the global state: H005+$52F6 (pointer to the game window).
+; Direct callers: H029+$12C6, H029+$02FE
 ; --------------------------------------------------------------------------
 L029_00000180:
 ; H029+$00000180: 2f0c  move.l a4, -(a7)
@@ -98,7 +98,7 @@ L029_0000019A:
 L029_000001A0:
 ; H029+$000001A0: 42acffec  clr.l -$14(a4)
         clr.l -$14(a4)
-; STATO: H005+$52F6 = puntatore alla finestra del gioco
+; STATE: H005+$52F6 = pointer to the game window
 L029_000001A4:
 ; H029+$000001A4: 2f39000052f6  move.l $52f6.l, -(a7)
         move.l (H005+$52F6).l, -(a7)
@@ -116,11 +116,11 @@ L029_000001B4:
 ; H029+$000001B4: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H029_000001B6 [parziale]
-; Scopo: Routine del modulo record grafici, bitplane, maschere e disegno dei tile; richiama H021+$02EE.
-;   - Richiama H021+$02EE.
-;   - Usa lo stato globale: H005+$52F6 (puntatore alla finestra del gioco).
-; Chiamanti diretti: H008+$0A0C, H058+$10A2, H058+$1250
+; ROUTINE: sub_H029_000001B6 [partial]
+; Purpose: Routine of the graphic records, bitplanes, masks and tile drawing module; calls H021+$02EE.
+;   - Calls H021+$02EE.
+;   - Uses the global state: H005+$52F6 (pointer to the game window).
+; Direct callers: H008+$0A0C, H058+$10A2, H058+$1250
 ; --------------------------------------------------------------------------
 L029_000001B6:
 ; H029+$000001B6: 2f0c  move.l a4, -(a7)
@@ -179,7 +179,7 @@ L029_000001FC:
 L029_00000200:
 ; H029+$00000200: 2f0b  move.l a3, -(a7)
         move.l a3, -(a7)
-; STATO: H005+$52F6 = puntatore alla finestra del gioco
+; STATE: H005+$52F6 = pointer to the game window
 L029_00000202:
 ; H029+$00000202: 2f39000052f6  move.l $52f6.l, -(a7)
         move.l (H005+$52F6).l, -(a7)
@@ -233,14 +233,14 @@ L029_00000232:
 ; H029+$00000232: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H029_00000234 [parziale]
-; Scopo: Routine del modulo record grafici, bitplane, maschere e disegno dei tile; richiama H002+$00F2, H002+$0156, H003+$0068, H002+$0122.
-;   - Richiama H002+$00F2.
-;   - Richiama H002+$0156.
-;   - Richiama H003+$0068.
-;   - Richiama H002+$0122.
-;   - Richiama H002+$0014.
-; Chiamanti diretti: H029+$12B2
+; ROUTINE: sub_H029_00000234 [partial]
+; Purpose: Routine of the graphic records, bitplanes, masks and tile drawing module; calls H002+$00F2, H002+$0156, H003+$0068, H002+$0122.
+;   - Calls H002+$00F2.
+;   - Calls H002+$0156.
+;   - Calls H003+$0068.
+;   - Calls H002+$0122.
+;   - Calls H002+$0014.
+; Direct callers: H029+$12B2
 ; --------------------------------------------------------------------------
 L029_00000234:
 ; H029+$00000234: 2f0c  move.l a4, -(a7)
@@ -414,10 +414,10 @@ L029_00000310:
 ; H029+$00000310: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H029_00000312 [parziale]
-; Scopo: Routine del modulo record grafici, bitplane, maschere e disegno dei tile; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H027+$08EA, H027+$2758, H085+$277A, H062+$28EE, H085+$13B0, H085+$1530 e altri 58
+; ROUTINE: sub_H029_00000312 [partial]
+; Purpose: Routine of the graphic records, bitplanes, masks and tile drawing module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H027+$08EA, H027+$2758, H085+$277A, H062+$28EE, H085+$13B0, H085+$1530 and 58 more
 ; --------------------------------------------------------------------------
 L029_00000312:
 ; H029+$00000312: 2f0c  move.l a4, -(a7)
@@ -483,10 +483,10 @@ L029_00000352:
 ; H029+$00000352: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H029_036C [parziale]
-; Scopo: Trampolino verso H029+$036C; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H029+$036C.
-; Chiamanti diretti: H027+$0690, H027+$06FA, H027+$0A5A, H027+$0DE2, H027+$138A, H027+$1A22 e altri 158
+; ROUTINE: trampoline_H029_036C [partial]
+; Purpose: Trampoline to H029+$036C; the actual body is there.
+;   - Jumps to the actual body at H029+$036C.
+; Direct callers: H027+$0690, H027+$06FA, H027+$0A5A, H027+$0DE2, H027+$138A, H027+$1A22 and 158 more
 ; --------------------------------------------------------------------------
 L029_00000354:
 ; H029+$00000354: 2f0c  move.l a4, -(a7)
@@ -525,10 +525,10 @@ L029_00000374:
 ; H029+$00000374: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H029_0390 [parziale]
-; Scopo: Trampolino verso H029+$0390; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H029+$0390.
-; Chiamanti diretti: H027+$30F0, H027+$3E1C, H068+$0D62
+; ROUTINE: trampoline_H029_0390 [partial]
+; Purpose: Trampoline to H029+$0390; the actual body is there.
+;   - Jumps to the actual body at H029+$0390.
+; Direct callers: H027+$30F0, H027+$3E1C, H068+$0D62
 ; --------------------------------------------------------------------------
 L029_00000376:
 ; H029+$00000376: 2f0c  move.l a4, -(a7)
@@ -570,10 +570,10 @@ L029_00000398:
 ; H029+$00000398: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H029_03B2 [parziale]
-; Scopo: Trampolino verso H029+$03B2; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H029+$03B2.
-; Chiamanti diretti: H085+$265E, H027+$38C8, H012+$2552, H013+$5C56, H064+$129A, H068+$0D90 e altri 8
+; ROUTINE: trampoline_H029_03B2 [partial]
+; Purpose: Trampoline to H029+$03B2; the actual body is there.
+;   - Jumps to the actual body at H029+$03B2.
+; Direct callers: H085+$265E, H027+$38C8, H012+$2552, H013+$5C56, H064+$129A, H068+$0D90 and 8 more
 ; --------------------------------------------------------------------------
 L029_0000039A:
 ; H029+$0000039A: 2f0c  move.l a4, -(a7)
@@ -616,10 +616,10 @@ L029_000003BA:
         dc.w $000C,$4604,$C404,$1002,$6000,$0002,$4E5D,$285F
         dc.w $205F,$548F,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H029_000003E2 [parziale]
-; Scopo: Routine del modulo record grafici, bitplane, maschere e disegno dei tile; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H027+$0378, H027+$0426, H027+$060A, H027+$0664, H027+$06C2, H027+$09D8 e altri 103
+; ROUTINE: sub_H029_000003E2 [partial]
+; Purpose: Routine of the graphic records, bitplanes, masks and tile drawing module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H027+$0378, H027+$0426, H027+$060A, H027+$0664, H027+$06C2, H027+$09D8 and 103 more
 ; --------------------------------------------------------------------------
 L029_000003E2:
 ; H029+$000003E2: 2f0c  move.l a4, -(a7)
@@ -665,14 +665,14 @@ L029_00000406:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Allocate_GraphicRecord [verificato]
-; Scopo: Crea il record grafico del gioco e la memoria dei bitplane.
-;   - Allinea la larghezza a 16 pixel.
-;   - Alloca il record da 20 byte e una BitMap da 40 byte.
-;   - Inizializza una bitmap a cinque piani, alloca ciascun raster e lo azzera.
-;   - Se richiesto costruisce anche la bitmap di maschera.
-;   - Memorizza geometria e dimensioni nel record risultante.
-; Chiamanti diretti: H006+$035A, H006+$0374, H006+$0390, H029+$0B48, H029+$0F80, H029+$136E, H035+$05BE, H042+$0202, H042+$07EE, H042+$0912 ...
+; ROUTINE: Allocate_GraphicRecord [verified]
+; Purpose: Creates the graphic record of the game and the bitplane memory.
+;   - Aligns the width to 16 pixels.
+;   - Allocates the 20-byte record and a 40-byte BitMap.
+;   - Initialises a five-plane bitmap, allocates each raster and clears it.
+;   - If requested it also builds the mask bitmap.
+;   - Stores geometry and sizes in the resulting record.
+; Direct callers: H006+$035A, H006+$0374, H006+$0390, H029+$0B48, H029+$0F80, H029+$136E, H035+$05BE, H042+$0202, H042+$07EE, H042+$0912 ...
 ; --------------------------------------------------------------------------
 L029_00000408:
 ; H029+$00000408: 2f0c  move.l a4, -(a7)
@@ -818,7 +818,7 @@ L029_000004A0:
 L029_000004A6:
 ; H029+$000004A6: 426dfffe  clr.w -$2(a5)
         clr.w -$2(a5)
-; PASSO: Ciclo di allocazione dei cinque raster Planes[0..4].
+; STEP: Allocation loop of the five rasters Planes[0..4].
 L029_000004AA:
 ; H029+$000004AA: 0c6d0004fffe  cmpi.w #$4, -$2(a5)
         cmpi.w #$4, -$2(a5)
@@ -951,7 +951,7 @@ L029_00000542:
 L029_00000546:
 ; H029+$00000546: 6400ff62  bcc.w $4aa
         bcc.w H029+$4AA
-; PASSO: Se è richiesta una maschera, alloca e collega una bitmap separata.
+; STEP: If a mask is requested, allocates and links a separate bitmap.
 L029_0000054A:
 ; H029+$0000054A: 0c6d00010010  cmpi.w #$1, $10(a5)
         cmpi.w #$1, $10(a5)
@@ -1211,11 +1211,11 @@ L029_00000678:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Free_GraphicRecord [parziale]
-; Scopo: Libera il record grafico, i raster e la maschera associata.
-;   - Usata prima di rimpiazzare un’immagine e nella pulizia delle risorse.
-;   - Il chiamante passa l’indirizzo del puntatore al record.
-; Chiamanti diretti: H006+$01A2, H010+$0152, H010+$015E, H010+$016A, H010+$0176, H010+$0182, H010+$018E, H010+$01B8, H010+$01E2, H010+$0224 ...
+; ROUTINE: Free_GraphicRecord [partial]
+; Purpose: Frees the graphic record, the rasters and the associated mask.
+;   - Used before replacing a picture and in the clean-up of the resources.
+;   - The caller passes the address of the pointer to the record.
+; Direct callers: H006+$01A2, H010+$0152, H010+$015E, H010+$016A, H010+$0176, H010+$0182, H010+$018E, H010+$01B8, H010+$01E2, H010+$0224 ...
 ; --------------------------------------------------------------------------
 L029_0000067A:
 ; H029+$0000067A: 2f0c  move.l a4, -(a7)
@@ -1441,11 +1441,11 @@ L029_00000764:
 ; H029+$00000764: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H029_00000766 [parziale]
-; Scopo: Routine del modulo record grafici, bitplane, maschere e disegno dei tile; richiama H016+$0084, H016+$0014.
-;   - Richiama H016+$0084.
-;   - Richiama H016+$0014.
-; Chiamanti diretti: H042+$0D2E, H029+$09FE, H029+$1008, H042+$0A48, H066+$121C, H066+$123A
+; ROUTINE: sub_H029_00000766 [partial]
+; Purpose: Routine of the graphic records, bitplanes, masks and tile drawing module; calls H016+$0084, H016+$0014.
+;   - Calls H016+$0084.
+;   - Calls H016+$0014.
+; Direct callers: H042+$0D2E, H029+$09FE, H029+$1008, H042+$0A48, H066+$121C, H066+$123A
 ; --------------------------------------------------------------------------
 L029_00000766:
 ; H029+$00000766: 2f0c  move.l a4, -(a7)
@@ -1883,12 +1883,12 @@ L029_0000091C:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Populate_GraphicPlanes [verificato]
-; Scopo: Copia piani grafici da un buffer nel record già allocato.
-;   - Calcola lo spazio di un piano dalla geometria con allineamento a 16 pixel.
-;   - Copia i piani nel vettore Planes della bitmap a +$10 del record.
-;   - Se esiste la bitmap di maschera richiama il percorso che la prepara.
-; Chiamanti diretti: H029+$0B72, H042+$08AA, H042+$09F2, H042+$0CD4
+; ROUTINE: Populate_GraphicPlanes [verified]
+; Purpose: Copies graphic planes from a buffer into the record already allocated.
+;   - Computes the space of one plane from the geometry with 16-pixel alignment.
+;   - Copies the planes into the Planes vector of the bitmap at +$10 of the record.
+;   - If the mask bitmap exists it calls the path that prepares it.
+; Direct callers: H029+$0B72, H042+$08AA, H042+$09F2, H042+$0CD4
 ; --------------------------------------------------------------------------
 L029_0000091E:
 ; H029+$0000091E: 2f0c  move.l a4, -(a7)
@@ -2113,14 +2113,14 @@ L029_00000A0C:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Load_IndexedGraphicRecord [verificato]
-; Scopo: Carica un record grafico da un contenitore .daa.
-;   - Scarta il precedente record di destinazione se presente.
-;   - Passa nome/ID a DAX_LoadBlock specificando l’estensione .daa.
-;   - Legge il piccolo header grafico, crea il record/bitmap e trasferisce i piani.
-;   - Libera il buffer temporaneo dopo la copia.
-;   - Le varianti native DAA non sono ancora tutte descritte dal decoder Python.
-; Chiamanti diretti: H006+$0120, H006+$07BE, H006+$07DC, H006+$07FC, H034+$00D0, H035+$00CC, H035+$0308, H035+$0338, H035+$03A0, H035+$040E ...
+; ROUTINE: Load_IndexedGraphicRecord [verified]
+; Purpose: Loads a graphic record from a .daa container.
+;   - Discards the previous destination record if present.
+;   - Passes name/ID to DAX_LoadBlock specifying the .daa extension.
+;   - Reads the small graphic header, creates the record/bitmap and transfers the planes.
+;   - Frees the temporary buffer after the copy.
+;   - The native DAA variants are not all described by the Python decoder yet.
+; Direct callers: H006+$0120, H006+$07BE, H006+$07DC, H006+$07FC, H034+$00D0, H035+$00CC, H035+$0308, H035+$0338, H035+$03A0, H035+$040E ...
 ; --------------------------------------------------------------------------
 L029_00000A0E:
 ; H029+$00000A0E: 2f0c  move.l a4, -(a7)
@@ -2179,7 +2179,7 @@ L029_00000A40:
 L029_00000A44:
 ; H029+$00000A44: 2f2d000c  move.l $c(a5), -(a7)
         move.l $c(a5), -(a7)
-; FLUSSO: Chiama Free_GraphicRecord (H029+$067A).
+; FLOW: Calls Free_GraphicRecord (H029+$067A).
 L029_00000A48:
 ; H029+$00000A48: 6100fc30  bsr.w $67a
         bsr.w H029+$67A
@@ -2266,8 +2266,8 @@ L029_00000AB8:
 L029_00000ABC:
 ; H029+$00000ABC: 486dff9a  pea.l -$66(a5)
         pea.l -$66(a5)
-; PASSO: Carica l’ID dal contenitore .daa tramite il caricatore di blocchi.
-; FLUSSO: Chiama DAX_LoadBlock (H028+$0DD8).
+; STEP: Loads the ID from the .daa container through the block loader.
+; FLOW: Calls DAX_LoadBlock (H028+$0DD8).
 L029_00000AC0:
 ; H029+$00000AC0: 4eb900000dd8  jsr $dd8.l
         jsr (FN_DAX_load_block).l
@@ -2380,8 +2380,8 @@ L029_00000B40:
 L029_00000B44:
 ; H029+$00000B44: 2f2d000c  move.l $c(a5), -(a7)
         move.l $c(a5), -(a7)
-; PASSO: Alloca la struttura grafica dopo aver letto il piccolo header del blocco.
-; FLUSSO: Chiama Allocate_GraphicRecord (H029+$0408).
+; STEP: Allocates the graphic structure after reading the small header of the block.
+; FLOW: Calls Allocate_GraphicRecord (H029+$0408).
 L029_00000B48:
 ; H029+$00000B48: 6100f8be  bsr.w $408
         bsr.w H029+$408
@@ -2412,8 +2412,8 @@ L029_00000B6A:
 L029_00000B6E:
 ; H029+$00000B6E: 2f2d000c  move.l $c(a5), -(a7)
         move.l $c(a5), -(a7)
-; PASSO: Copia i piani decompressi nel record/bitmap finale.
-; FLUSSO: Chiama Populate_GraphicPlanes (H029+$091E).
+; STEP: Copies the decompressed planes into the final record/bitmap.
+; FLOW: Calls Populate_GraphicPlanes (H029+$091E).
 L029_00000B72:
 ; H029+$00000B72: 6100fdaa  bsr.w $91e
         bsr.w H029+$91E
@@ -2450,13 +2450,13 @@ L029_00000B92:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Draw_GraphicTile24 [verificato]
-; Scopo: Disegna un riquadro/tile da 24x24 pixel a partire dal record grafico.
-;   - Sceglie il bitmap di destinazione e l’offset verticale del contesto.
-;   - Con maschera prepara un blit mascherato; il ramo accodato usa H049+$04AE.
-;   - Gli altri rami richiamano BltMaskBitMapRastPort o BltBitMap.
-;   - Usa minterm differenti per i percorsi con e senza maschera.
-; Chiamanti diretti: H029+$0DF8, H029+$0E16, H035+$01CC, H063+$2622
+; ROUTINE: Draw_GraphicTile24 [verified]
+; Purpose: Draws a 24x24-pixel box/tile from the graphic record.
+;   - Chooses the destination bitmap and the vertical offset of the context.
+;   - With a mask it prepares a masked blit; the queued branch uses H049+$04AE.
+;   - The other branches call BltMaskBitMapRastPort or BltBitMap.
+;   - Uses different minterms for the paths with and without a mask.
+; Direct callers: H029+$0DF8, H029+$0E16, H035+$01CC, H063+$2622
 ; --------------------------------------------------------------------------
 L029_00000B94:
 ; H029+$00000B94: 2f0c  move.l a4, -(a7)
@@ -2479,7 +2479,7 @@ L029_00000BA4:
 L029_00000BA8:
 ; H029+$00000BA8: 3b42fffa  move.w d2, -$6(a5)
         move.w d2, -$6(a5)
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L029_00000BAC:
 ; H029+$00000BAC: 4a3900003de3  tst.b $3de3.l
         tst.b (H005+$3DE3).l
@@ -2507,7 +2507,7 @@ L029_00000BCC:
 L029_00000BD2:
 ; H029+$00000BD2: 60000016  bra.w $bea
         bra.w H029+$BEA
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L029_00000BD6:
 ; H029+$00000BD6: 2679000052f2  movea.l $52f2.l, a3
         movea.l (H005+$52F2).l, a3
@@ -2604,7 +2604,7 @@ L029_00000C46:
 L029_00000C4A:
 ; H029+$00000C4A: 2f2b0008  move.l $8(a3), -(a7)
         move.l $8(a3), -(a7)
-; FLUSSO: Chiama Queue_BitplaneBlit (H049+$04AE).
+; FLOW: Calls Queue_BitplaneBlit (H049+$04AE).
 L029_00000C4E:
 ; H029+$00000C4E: 4eb9000004ae  jsr $4ae.l
         jsr (H049+$4AE).l
@@ -2665,7 +2665,7 @@ L029_00000C8E:
 L029_00000C92:
 ; H029+$00000C92: 42a7  clr.l -(a7)
         clr.l -(a7)
-; FLUSSO: Chiama Queue_BitplaneBlit (H049+$04AE).
+; FLOW: Calls Queue_BitplaneBlit (H049+$04AE).
 L029_00000C94:
 ; H029+$00000C94: 4eb9000004ae  jsr $4ae.l
         jsr (H049+$4AE).l
@@ -2834,11 +2834,11 @@ L029_00000D56:
 ; H029+$00000D56: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H029_00000D58 [parziale]
-; Scopo: Routine del modulo record grafici, bitplane, maschere e disegno dei tile; richiama H016+$0014.
-;   - Richiama H016+$0014.
-;   - Usa lo stato globale: H005+$52F2 (puntatore allo schermo del gioco).
-; Chiamanti diretti: H063+$290A, H063+$293A, H048+$1534
+; ROUTINE: sub_H029_00000D58 [partial]
+; Purpose: Routine of the graphic records, bitplanes, masks and tile drawing module; calls H016+$0014.
+;   - Calls H016+$0014.
+;   - Uses the global state: H005+$52F2 (pointer to the game screen).
+; Direct callers: H063+$290A, H063+$293A, H048+$1534
 ; --------------------------------------------------------------------------
 L029_00000D58:
 ; H029+$00000D58: 2f0c  move.l a4, -(a7)
@@ -2876,7 +2876,7 @@ L029_00000D7E:
 L029_00000D84:
 ; H029+$00000D84: 60000010  bra.w $d96
         bra.w H029+$D96
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L029_00000D88:
 ; H029+$00000D88: 2679000052f2  movea.l $52f2.l, a3
         movea.l (H005+$52F2).l, a3
@@ -2965,7 +2965,7 @@ L029_00000DF0:
 L029_00000DF4:
 ; H029+$00000DF4: 2f2d000c  move.l $c(a5), -(a7)
         move.l $c(a5), -(a7)
-; FLUSSO: Chiama Draw_GraphicTile24 (H029+$0B94).
+; FLOW: Calls Draw_GraphicTile24 (H029+$0B94).
 L029_00000DF8:
 ; H029+$00000DF8: 6100fd9a  bsr.w $b94
         bsr.w H029+$B94
@@ -2990,7 +2990,7 @@ L029_00000E0E:
 L029_00000E12:
 ; H029+$00000E12: 2f2d000c  move.l $c(a5), -(a7)
         move.l $c(a5), -(a7)
-; FLUSSO: Chiama Draw_GraphicTile24 (H029+$0B94).
+; FLOW: Calls Draw_GraphicTile24 (H029+$0B94).
 L029_00000E16:
 ; H029+$00000E16: 6100fd7c  bsr.w $b94
         bsr.w H029+$B94
@@ -3010,10 +3010,10 @@ L029_00000E24:
 ; H029+$00000E24: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H029_0E88 [parziale]
-; Scopo: Trampolino verso H029+$0E88; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H029+$0E88.
-; Chiamanti diretti: H069+$004A
+; ROUTINE: trampoline_H029_0E88 [partial]
+; Purpose: Trampoline to H029+$0E88; the actual body is there.
+;   - Jumps to the actual body at H029+$0E88.
+; Direct callers: H069+$004A
 ; --------------------------------------------------------------------------
 L029_00000E26:
 ; H029+$00000E26: 2f0c  move.l a4, -(a7)
@@ -3041,7 +3041,7 @@ L029_00000E40:
 L029_00000E44:
 ; H029+$00000E44: 2f0b  move.l a3, -(a7)
         move.l a3, -(a7)
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L029_00000E46:
 ; H029+$00000E46: 2479000052f2  movea.l $52f2.l, a2
         movea.l (H005+$52F2).l, a2
@@ -3122,10 +3122,10 @@ L029_00000E90:
 ; H029+$00000E90: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H029_0EF4 [parziale]
-; Scopo: Trampolino verso H029+$0EF4; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H029+$0EF4.
-; Chiamanti diretti: H042+$029A, H042+$1122, H069+$00D4
+; ROUTINE: trampoline_H029_0EF4 [partial]
+; Purpose: Trampoline to H029+$0EF4; the actual body is there.
+;   - Jumps to the actual body at H029+$0EF4.
+; Direct callers: H042+$029A, H042+$1122, H069+$00D4
 ; --------------------------------------------------------------------------
 L029_00000E92:
 ; H029+$00000E92: 2f0c  move.l a4, -(a7)
@@ -3162,7 +3162,7 @@ L029_00000EB6:
 L029_00000EB8:
 ; H029+$00000EB8: 4267  clr.w -(a7)
         clr.w -(a7)
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L029_00000EBA:
 ; H029+$00000EBA: 2479000052f2  movea.l $52f2.l, a2
         movea.l (H005+$52F2).l, a2
@@ -3234,10 +3234,10 @@ L029_00000EFC:
 ; H029+$00000EFC: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H029_10AC [parziale]
-; Scopo: Trampolino verso H029+$10AC; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H029+$10AC.
-; Chiamanti diretti: H035+$03E0, H035+$044E, H066+$106E, H066+$10B0, H066+$12B4, H066+$12F6 e altri 2
+; ROUTINE: trampoline_H029_10AC [partial]
+; Purpose: Trampoline to H029+$10AC; the actual body is there.
+;   - Jumps to the actual body at H029+$10AC.
+; Direct callers: H035+$03E0, H035+$044E, H066+$106E, H066+$10B0, H066+$12B4, H066+$12F6 and 2 more
 ; --------------------------------------------------------------------------
 L029_00000EFE:
 ; H029+$00000EFE: 2f0c  move.l a4, -(a7)
@@ -3353,7 +3353,7 @@ L029_00000F78:
 L029_00000F7C:
 ; H029+$00000F7C: 486dffec  pea.l -$14(a5)
         pea.l -$14(a5)
-; FLUSSO: Chiama Allocate_GraphicRecord (H029+$0408).
+; FLOW: Calls Allocate_GraphicRecord (H029+$0408).
 L029_00000F80:
 ; H029+$00000F80: 6100f486  bsr.w $408
         bsr.w H029+$408
@@ -3620,7 +3620,7 @@ L029_000010A0:
 L029_000010A4:
 ; H029+$000010A4: 486dffec  pea.l -$14(a5)
         pea.l -$14(a5)
-; FLUSSO: Chiama Free_GraphicRecord (H029+$067A).
+; FLOW: Calls Free_GraphicRecord (H029+$067A).
 L029_000010A8:
 ; H029+$000010A8: 6100f5d0  bsr.w $67a
         bsr.w H029+$67A
@@ -3640,11 +3640,11 @@ L029_000010B6:
 ; H029+$000010B6: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H029_000010B8 [parziale]
-; Scopo: Routine del modulo record grafici, bitplane, maschere e disegno dei tile; richiama H038+$013C, H038+$0118.
-;   - Richiama H038+$013C.
-;   - Richiama H038+$0118.
-; Chiamanti diretti: H047+$1330, H047+$0562, H047+$03A4
+; ROUTINE: sub_H029_000010B8 [partial]
+; Purpose: Routine of the graphic records, bitplanes, masks and tile drawing module; calls H038+$013C, H038+$0118.
+;   - Calls H038+$013C.
+;   - Calls H038+$0118.
+; Direct callers: H047+$1330, H047+$0562, H047+$03A4
 ; --------------------------------------------------------------------------
 L029_000010B8:
 ; H029+$000010B8: 2f0c  move.l a4, -(a7)
@@ -3754,11 +3754,11 @@ L029_00001118:
         dc.l H005+$00003358
         dc.w $4E5D,$285F,$205F,$5C8F,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H029_0000115C [parziale]
-; Scopo: Routine del modulo record grafici, bitplane, maschere e disegno dei tile; richiama H022+$0084.
-;   - Richiama H022+$0084.
-;   - Usa lo stato globale: H005+$52F2 (puntatore allo schermo del gioco).
-; Chiamanti diretti: H029+$12AE
+; ROUTINE: sub_H029_0000115C [partial]
+; Purpose: Routine of the graphic records, bitplanes, masks and tile drawing module; calls H022+$0084.
+;   - Calls H022+$0084.
+;   - Uses the global state: H005+$52F2 (pointer to the game screen).
+; Direct callers: H029+$12AE
 ; --------------------------------------------------------------------------
 L029_0000115C:
 ; H029+$0000115C: 2f0c  move.l a4, -(a7)
@@ -3817,7 +3817,7 @@ L029_000011D4:
 L029_000011DC:
 ; H029+$000011DC: 33fc0fff000052cc  move.w #$fff, $52cc.l
         move.w #$fff, (H005+$52CC).l
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L029_000011E4:
 ; H029+$000011E4: 2679000052f2  movea.l $52f2.l, a3
         movea.l (H005+$52F2).l, a3
@@ -3847,16 +3847,16 @@ L029_00001204:
 ; H029+$00001204: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H029_00001206 [parziale]
-; Scopo: Routine del modulo record grafici, bitplane, maschere e disegno dei tile; richiama H024+$002A, H021+$01D2, H025+$0028, H021+$011E.
-;   - Richiama FN_build_NewScreen_OpenScreen (H024+$002A).
-;   - Richiama H021+$01D2.
-;   - Richiama FN_build_NewWindow_OpenWindow (H025+$0028).
-;   - Richiama H021+$011E.
-;   - Richiama H021+$01FA.
-;   - Richiama H051+$004A.
-;   - Usa lo stato globale: H005+$52F2 (puntatore allo schermo del gioco); H005+$52F6 (puntatore alla finestra del gioco).
-; Chiamanti diretti: H006+$027A
+; ROUTINE: sub_H029_00001206 [partial]
+; Purpose: Routine of the graphic records, bitplanes, masks and tile drawing module; calls H024+$002A, H021+$01D2, H025+$0028, H021+$011E.
+;   - Calls FN_build_NewScreen_OpenScreen (H024+$002A).
+;   - Calls H021+$01D2.
+;   - Calls FN_build_NewWindow_OpenWindow (H025+$0028).
+;   - Calls H021+$011E.
+;   - Calls H021+$01FA.
+;   - Calls H051+$004A.
+;   - Uses the global state: H005+$52F2 (pointer to the game screen); H005+$52F6 (pointer to the game window).
+; Direct callers: H006+$027A
 ; --------------------------------------------------------------------------
 L029_00001206:
 ; H029+$00001206: 2f0c  move.l a4, -(a7)
@@ -3882,15 +3882,15 @@ L029_00001220:
 L029_00001224:
 ; H029+$00001224: 42a7  clr.l -(a7)
         clr.l -(a7)
-; FLUSSO: Chiama Open_GameScreen (H024+$002A).
+; FLOW: Calls Open_GameScreen (H024+$002A).
 L029_00001226:
 ; H029+$00001226: 4eb90000002a  jsr $2a.l
         jsr (FN_build_NewScreen_OpenScreen).l
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L029_0000122C:
 ; H029+$0000122C: 23c0000052f2  move.l d0, $52f2.l
         move.l d0, (H005+$52F2).l
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L029_00001232:
 ; H029+$00001232: 2f39000052f2  move.l $52f2.l, -(a7)
         move.l (H005+$52F2).l, -(a7)
@@ -3922,22 +3922,22 @@ L029_00001252:
 L029_00001258:
 ; H029+$00001258: 42a7  clr.l -(a7)
         clr.l -(a7)
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L029_0000125A:
 ; H029+$0000125A: 2f39000052f2  move.l $52f2.l, -(a7)
         move.l (H005+$52F2).l, -(a7)
 L029_00001260:
 ; H029+$00001260: 42a7  clr.l -(a7)
         clr.l -(a7)
-; FLUSSO: Chiama Open_GameWindow (H025+$0028).
+; FLOW: Calls Open_GameWindow (H025+$0028).
 L029_00001262:
 ; H029+$00001262: 4eb900000028  jsr $28.l
         jsr (FN_build_NewWindow_OpenWindow).l
-; STATO: H005+$52F6 = puntatore alla finestra del gioco
+; STATE: H005+$52F6 = pointer to the game window
 L029_00001268:
 ; H029+$00001268: 23c0000052f6  move.l d0, $52f6.l
         move.l d0, (H005+$52F6).l
-; STATO: H005+$52F6 = puntatore alla finestra del gioco
+; STATE: H005+$52F6 = pointer to the game window
 L029_0000126E:
 ; H029+$0000126E: 2679000052f6  movea.l $52f6.l, a3
         movea.l (H005+$52F6).l, a3
@@ -3957,7 +3957,7 @@ L029_00001284:
 L029_00001286:
 ; H029+$00001286: 6700000e  beq.w $1296
         beq.w H029+$1296
-; STATO: H005+$52F6 = puntatore alla finestra del gioco
+; STATE: H005+$52F6 = pointer to the game window
 L029_0000128A:
 ; H029+$0000128A: 2f39000052f6  move.l $52f6.l, -(a7)
         move.l (H005+$52F6).l, -(a7)
@@ -3978,7 +3978,7 @@ L029_0000129E:
 L029_000012A2:
 ; H029+$000012A2: 266cffe0  movea.l -$20(a4), a3
         movea.l -$20(a4), a3
-; STATO: H005+$52F6 = puntatore alla finestra del gioco
+; STATE: H005+$52F6 = pointer to the game window
 L029_000012A6:
 ; H029+$000012A6: 2779000052f600b8  move.l $52f6.l, $b8(a3)
         move.l (H005+$52F6).l, $b8(a3)
@@ -3998,14 +3998,14 @@ L029_000012BA:
 ; H029+$000012BA: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H029_000012BC [parziale]
-; Scopo: Routine del modulo record grafici, bitplane, maschere e disegno dei tile; richiama H051+$004A, H021+$0242, H021+$010C, H021+$0196.
-;   - Richiama H051+$004A.
-;   - Richiama H021+$0242.
-;   - Richiama H021+$010C.
-;   - Richiama H021+$0196.
-;   - Usa lo stato globale: H005+$52F6 (puntatore alla finestra del gioco); H005+$52F2 (puntatore allo schermo del gioco).
-; Chiamanti diretti: H010+$0348
+; ROUTINE: sub_H029_000012BC [partial]
+; Purpose: Routine of the graphic records, bitplanes, masks and tile drawing module; calls H051+$004A, H021+$0242, H021+$010C, H021+$0196.
+;   - Calls H051+$004A.
+;   - Calls H021+$0242.
+;   - Calls H021+$010C.
+;   - Calls H021+$0196.
+;   - Uses the global state: H005+$52F6 (pointer to the game window); H005+$52F2 (pointer to the game screen).
+; Direct callers: H010+$0348
 ; --------------------------------------------------------------------------
 L029_000012BC:
 ; H029+$000012BC: 2f0c  move.l a4, -(a7)
@@ -4035,7 +4035,7 @@ L029_000012D6:
 L029_000012DA:
 ; H029+$000012DA: 42ab00b8  clr.l $b8(a3)
         clr.l $b8(a3)
-; STATO: H005+$52F6 = puntatore alla finestra del gioco
+; STATE: H005+$52F6 = pointer to the game window
 L029_000012DE:
 ; H029+$000012DE: 2f39000052f6  move.l $52f6.l, -(a7)
         move.l (H005+$52F6).l, -(a7)
@@ -4043,7 +4043,7 @@ L029_000012DE:
 L029_000012E4:
 ; H029+$000012E4: 4eb900000242  jsr $242.l
         jsr (H021+$242).l
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L029_000012EA:
 ; H029+$000012EA: 2f39000052f2  move.l $52f2.l, -(a7)
         move.l (H005+$52F2).l, -(a7)
@@ -4055,7 +4055,7 @@ L029_000012F0:
 L029_000012F6:
 ; H029+$000012F6: 4eb900000196  jsr $196.l
         jsr (H021+$196).l
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L029_000012FC:
 ; H029+$000012FC: 23c0000052f2  move.l d0, $52f2.l
         move.l d0, (H005+$52F2).l
@@ -4069,10 +4069,10 @@ L029_00001306:
 ; H029+$00001306: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H029_00001308 [parziale]
-; Scopo: Routine del modulo record grafici, bitplane, maschere e disegno dei tile; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H029+$13C2, H029+$13D4
+; ROUTINE: sub_H029_00001308 [partial]
+; Purpose: Routine of the graphic records, bitplanes, masks and tile drawing module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H029+$13C2, H029+$13D4
 ; --------------------------------------------------------------------------
 L029_00001308:
 ; H029+$00001308: 2f0c  move.l a4, -(a7)
@@ -4135,12 +4135,12 @@ L029_00001344:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Prepare_DisplayResources [parziale]
-; Scopo: Prepara risorse di display, bitmap e oggetti necessari alla grafica.
-;   - Si appoggia alle basi Intuition e graphics già disponibili.
-;   - Il percorso contiene controlli/aperture delle librerie e gestione dei record grafici.
-;   - La ricostruzione completa della geometria e dei flag di ogni variante resta aperta.
-; Chiamanti diretti: H006+$039C
+; ROUTINE: Prepare_DisplayResources [partial]
+; Purpose: Prepares display resources, bitmaps and objects needed by the graphics.
+;   - Relies on the Intuition and graphics bases already available.
+;   - The path contains library checks/opens and handling of the graphic records.
+;   - The complete reconstruction of the geometry and of the flags of every variant is still open.
+; Direct callers: H006+$039C
 ; --------------------------------------------------------------------------
 L029_00001346:
 ; H029+$00001346: 2f0c  move.l a4, -(a7)
@@ -4172,7 +4172,7 @@ L029_00001366:
 L029_00001368:
 ; H029+$00001368: 487900003d8e  pea.l $3d8e.l
         pea.l (H005+$3D8E).l
-; FLUSSO: Chiama Allocate_GraphicRecord (H029+$0408).
+; FLOW: Calls Allocate_GraphicRecord (H029+$0408).
 L029_0000136E:
 ; H029+$0000136E: 6100f098  bsr.w $408
         bsr.w H029+$408
@@ -4395,14 +4395,14 @@ L029_0000148C:
 ; H029+$0000148C: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H029_0000148E [parziale]
-; Scopo: Routine del modulo record grafici, bitplane, maschere e disegno dei tile; richiama H022+$0014, H022+$0026, H082+$0074, H003+$00F6.
-;   - Richiama H022+$0014.
-;   - Richiama H022+$0026.
-;   - Richiama H082+$0074.
-;   - Richiama H003+$00F6.
-;   - Richiama H018+$0018.
-; Chiamanti diretti: H010+$0342
+; ROUTINE: sub_H029_0000148E [partial]
+; Purpose: Routine of the graphic records, bitplanes, masks and tile drawing module; calls H022+$0014, H022+$0026, H082+$0074, H003+$00F6.
+;   - Calls H022+$0014.
+;   - Calls H022+$0026.
+;   - Calls H082+$0074.
+;   - Calls H003+$00F6.
+;   - Calls H018+$0018.
+; Direct callers: H010+$0342
 ; --------------------------------------------------------------------------
 L029_0000148E:
 ; H029+$0000148E: 2f0c  move.l a4, -(a7)
@@ -4472,7 +4472,7 @@ L029_000014E0:
 L029_000014E6:
 ; H029+$000014E6: 487900003d8e  pea.l $3d8e.l
         pea.l (H005+$3D8E).l
-; FLUSSO: Chiama Free_GraphicRecord (H029+$067A).
+; FLOW: Calls Free_GraphicRecord (H029+$067A).
 L029_000014EC:
 ; H029+$000014EC: 6100f18c  bsr.w $67a
         bsr.w H029+$67A
@@ -4486,11 +4486,11 @@ L029_000014F4:
 ; H029+$000014F4: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H029_000014F6 [parziale]
-; Scopo: Routine del modulo record grafici, bitplane, maschere e disegno dei tile; richiama H010+$0974.
-;   - Richiama H010+$0974.
-;   - Usa lo stato globale: H005+$52F2 (puntatore allo schermo del gioco).
-; Chiamanti diretti: H029+$16B8, H029+$1596
+; ROUTINE: sub_H029_000014F6 [partial]
+; Purpose: Routine of the graphic records, bitplanes, masks and tile drawing module; calls H010+$0974.
+;   - Calls H010+$0974.
+;   - Uses the global state: H005+$52F2 (pointer to the game screen).
+; Direct callers: H029+$16B8, H029+$1596
 ; --------------------------------------------------------------------------
 L029_000014F6:
 ; H029+$000014F6: 2f0c  move.l a4, -(a7)
@@ -4507,7 +4507,7 @@ L029_00001500:
 L029_00001504:
 ; H029+$00001504: 242b003c  move.l $3c(a3), d2
         move.l $3c(a3), d2
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L029_00001508:
 ; H029+$00001508: b4b9000052f2  cmp.l $52f2.l, d2
         cmp.l (H005+$52F2).l, d2
@@ -4531,11 +4531,11 @@ L029_0000151E:
 ; H029+$0000151E: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H029_00001520 [parziale]
-; Scopo: Routine del modulo record grafici, bitplane, maschere e disegno dei tile; richiama H016+$0014.
-;   - Richiama H016+$0014.
-;   - Usa lo stato globale: H005+$52F2 (puntatore allo schermo del gioco).
-; Chiamanti diretti: H029+$16B4, H063+$254C
+; ROUTINE: sub_H029_00001520 [partial]
+; Purpose: Routine of the graphic records, bitplanes, masks and tile drawing module; calls H016+$0014.
+;   - Calls H016+$0014.
+;   - Uses the global state: H005+$52F2 (pointer to the game screen).
+; Direct callers: H029+$16B4, H063+$254C
 ; --------------------------------------------------------------------------
 L029_00001520:
 ; H029+$00001520: 2f0c  move.l a4, -(a7)
@@ -4546,7 +4546,7 @@ L029_00001522:
 L029_00001526:
 ; H029+$00001526: 4e550000  link.w a5, #$0
         link.w a5, #$0
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L029_0000152A:
 ; H029+$0000152A: 2479000052f2  movea.l $52f2.l, a2
         movea.l (H005+$52F2).l, a2
@@ -4615,11 +4615,11 @@ L029_00001574:
 ; H029+$00001574: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H029_00001576 [parziale]
-; Scopo: Routine del modulo record grafici, bitplane, maschere e disegno dei tile; richiama H022+$00A0, H016+$01AC.
-;   - Richiama H022+$00A0.
-;   - Richiama H016+$01AC.
-; Chiamanti diretti: H063+$2592, H063+$272E
+; ROUTINE: sub_H029_00001576 [partial]
+; Purpose: Routine of the graphic records, bitplanes, masks and tile drawing module; calls H022+$00A0, H016+$01AC.
+;   - Calls H022+$00A0.
+;   - Calls H016+$01AC.
+; Direct callers: H063+$2592, H063+$272E
 ; --------------------------------------------------------------------------
 L029_00001576:
 ; H029+$00001576: 2f0c  move.l a4, -(a7)
@@ -4706,11 +4706,11 @@ L029_000015C6:
         dc.w $000E,$4A6C,$FFE4,$6700,$0006,$7401,$6002,$7400
         dc.w $1942,$FFFB,$4E5D,$285F,$4E75
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H029_000016A2 [parziale]
-; Scopo: Routine del modulo record grafici, bitplane, maschere e disegno dei tile; richiama H022+$00A0, H016+$01AC.
-;   - Richiama H022+$00A0.
-;   - Richiama H016+$01AC.
-; Chiamanti diretti: H048+$0DFC, H048+$088E, H048+$0BDA, H048+$033E, H042+$026C, H042+$0EF6 e altri 5
+; ROUTINE: sub_H029_000016A2 [partial]
+; Purpose: Routine of the graphic records, bitplanes, masks and tile drawing module; calls H022+$00A0, H016+$01AC.
+;   - Calls H022+$00A0.
+;   - Calls H016+$01AC.
+; Direct callers: H048+$0DFC, H048+$088E, H048+$0BDA, H048+$033E, H042+$026C, H042+$0EF6 and 5 more
 ; --------------------------------------------------------------------------
 L029_000016A2:
 ; H029+$000016A2: 2f0c  move.l a4, -(a7)
@@ -4763,11 +4763,11 @@ L029_000016DC:
 ; H029+$000016DC: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H029_000016DE [parziale]
-; Scopo: Routine del modulo record grafici, bitplane, maschere e disegno dei tile; richiama H022+$00A0, H016+$01AC.
-;   - Richiama H022+$00A0.
-;   - Richiama H016+$01AC.
-; Chiamanti diretti: H048+$0946, H048+$0F78, H048+$0578, H042+$02A0, H048+$0DDA, H042+$0F40 e altri 5
+; ROUTINE: sub_H029_000016DE [partial]
+; Purpose: Routine of the graphic records, bitplanes, masks and tile drawing module; calls H022+$00A0, H016+$01AC.
+;   - Calls H022+$00A0.
+;   - Calls H016+$01AC.
+; Direct callers: H048+$0946, H048+$0F78, H048+$0578, H042+$02A0, H048+$0DDA, H042+$0F40 and 5 more
 ; --------------------------------------------------------------------------
 L029_000016DE:
 ; H029+$000016DE: 2f0c  move.l a4, -(a7)
@@ -4817,10 +4817,10 @@ L029_00001716:
 ; H029+$00001716: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H029_00001718 [parziale]
-; Scopo: Routine del modulo record grafici, bitplane, maschere e disegno dei tile; richiama H022+$0084.
-;   - Richiama H022+$0084.
-; Chiamanti diretti: H042+$0266, H042+$0EF0, H042+$10E6, H011+$0B82, H095+$25DC
+; ROUTINE: sub_H029_00001718 [partial]
+; Purpose: Routine of the graphic records, bitplanes, masks and tile drawing module; calls H022+$0084.
+;   - Calls H022+$0084.
+; Direct callers: H042+$0266, H042+$0EF0, H042+$10E6, H011+$0B82, H095+$25DC
 ; --------------------------------------------------------------------------
 L029_00001718:
 ; H029+$00001718: 2f0c  move.l a4, -(a7)

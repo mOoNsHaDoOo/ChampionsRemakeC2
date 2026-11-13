@@ -1,12 +1,12 @@
 /*
- * H040: lettore di immagini ILBM sopra il parser IFF (readpict.c di
- * Electronic Arts).
+ * H040: ILBM picture reader on top of the IFF parser (Electronic Arts'
+ * readpict.c).
  *
- * Dati del modulo (nel codice):
- *   $000 buffer di $200 byte per la lettura del BODY
- *   $200 frame del chiamante, riempito al termine
- *   $204 BitMap di destinazione
- *   $208 allocatore dei piani
+ * Module data (in the code):
+ *   $000 $200-byte buffer for reading the BODY
+ *   $200 frame of the caller, filled at the end
+ *   $204 destination BitMap
+ *   $208 plane allocator
  */
 #include "h040.h"
 #include "h015_runtime.h"
@@ -17,18 +17,18 @@ static ILBMFrame *s_frame;              /* H040+$0200 */
 static struct BitMap *s_bitmap;         /* H040+$0204 */
 static IlbmAllocFn s_alloc;             /* H040+$0208 */
 
-/* PORT H040+$0210: link/unlk, nessun effetto. */
+/* PORT H040+$0210: link/unlk, no effect. */
 void h040_init(void)
 {
 }
 
 /*
- * PORT H040+$0218 (GetFoILBM): callback dei FORM.  Un FORM non ILBM viene
- * attraversato (gruppi annidati).  In un FORM ILBM: BMHD e CMAP vanno in
- * una copia locale del frame; al BODY la bitmap ha al massimo 5 piani,
- * tutti in un unico blocco dall'allocatore, e il frame del chiamante
- * riceve la copia locale.  Come nell'originale, BODY senza BMHD e gli
- * errori escono senza CloseRGroup.
+ * PORT H040+$0218 (GetFoILBM): FORM callback.  A non-ILBM FORM is
+ * traversed (nested groups).  In an ILBM FORM: BMHD and CMAP go into
+ * a local copy of the frame; at the BODY the bitmap has at most 5 planes,
+ * all in a single block from the allocator, and the caller's frame
+ * receives the local copy.  As in the original, a BODY without BMHD and
+ * errors exit without CloseRGroup.
  */
 static s32 get_form_ilbm(GroupContext *parent)
 {
@@ -108,8 +108,8 @@ static s32 get_form_ilbm(GroupContext *parent)
 }
 
 /*
- * PORT H040+$04B6 (GetPrILBM): callback dei PROP ILBM: BMHD e CMAP vanno
- * direttamente nel frame del gruppo (ereditati dai FORM del LIST).
+ * PORT H040+$04B6 (GetPrILBM): callback of the ILBM PROPs: BMHD and CMAP go
+ * straight into the frame of the group (inherited by the FORMs of the LIST).
  */
 static s32 get_prop_ilbm(GroupContext *parent)
 {
@@ -139,7 +139,7 @@ static s32 get_prop_ilbm(GroupContext *parent)
     return iffp == END_MARK ? IFF_OKAY : iffp;
 }
 
-/* PORT H040+$05AA (GetLiILBM): un LIST lavora su una copia del frame. */
+/* PORT H040+$05AA (GetLiILBM): a LIST works on a copy of the frame. */
 static s32 get_list_ilbm(GroupContext *parent)
 {
     ILBMFrame new_frame = *(ILBMFrame *)parent->client_frame;
@@ -148,9 +148,9 @@ static s32 get_list_ilbm(GroupContext *parent)
 }
 
 /*
- * PORT H040+$05E4 (Read_ILBM): legge un file ILBM nella bitmap (piani
- * dall'allocatore) e nel frame (BMHD, colori).  Restituisce IFF_DONE se
- * l'immagine e' stata letta, altrimenti un IFFP di errore.
+ * PORT H040+$05E4 (Read_ILBM): reads an ILBM file into the bitmap (planes
+ * from the allocator) and into the frame (BMHD, colours).  Returns IFF_DONE
+ * if the picture was read, otherwise an error IFFP.
  */
 s32 read_ilbm(cok_bptr file, struct BitMap *bitmap, ILBMFrame *frame,
               IlbmAllocFn alloc)

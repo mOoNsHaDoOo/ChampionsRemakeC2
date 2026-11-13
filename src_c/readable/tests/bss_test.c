@@ -1,9 +1,9 @@
 /*
- * Dati prodotti dall'inizializzazione di un modulo, confrontati con
- * l'emulazione dell'assembly.  Per i dati del modulo (sotto a4):
+ * Data produced by the initialisation of a module, compared with the
+ * emulation of the assembly.  For the data of the module (below a4):
  *   python3 scripts/emu68k_init.py 44 84A h044.bin --bss B6
  *   ./bss_test h044 h044.bin
- * Per H005 (moduli che scrivono solo H005, partendo da H005 azzerato):
+ * For H005 (modules that write only H005, starting from a cleared H005):
  *   python3 scripts/emu68k_init.py 32 22 h032.bin
  *   ./bss_test h032 h032.bin
  */
@@ -42,13 +42,13 @@ int main(int argc, char **argv)
         }
     }
     if (argc < 3 || m == sizeof(s_modules) / sizeof(s_modules[0])) {
-        printf("uso: bss_test modulo atteso.bin\n");
+        printf("usage: bss_test module expected.bin\n");
         return 2;
     }
     s_modules[m].init();
     if ((f = fopen(argv[2], "rb")) == NULL ||
         fread(expected, 1, s_modules[m].size, f) != s_modules[m].size) {
-        printf("file atteso non valido\n");
+        printf("invalid expected file\n");
         return 2;
     }
     fclose(f);
@@ -61,7 +61,7 @@ int main(int argc, char **argv)
             ++diffs;
         }
     }
-    printf("%s: %lu byte, %u differenze\n", s_modules[m].name,
+    printf("%s: %lu bytes, %u differences\n", s_modules[m].name,
            (unsigned long)s_modules[m].size, diffs);
     return diffs != 0;
 }

@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H025
-; Costruzione NewWindow e OpenWindow.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H025
+; Building of NewWindow and OpenWindow.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Costruzione di NewWindow e chiamata OpenWindow. La struttura e' preparata sullo stack e passata al wrapper Intuition.
+; MODULE NOTE
+; Building of NewWindow and OpenWindow call. The structure is prepared on the stack and passed to the Intuition wrapper.
 ; --------------------------------------------------------------------------
 ; H025: 264 original bytes; all offsets are section-relative.
         section H025,code
@@ -17,10 +17,10 @@ H025:
         dc.w $0000,$0000,$0000
         dc.l H025+$00000016
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H025 [parziale]
-; Scopo: Ingresso del modulo costruzione NewWindow e OpenWindow; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H025+$00CC.
-; Chiamanti diretti: H000+$0066
+; ROUTINE: module_init_H025 [partial]
+; Purpose: Entry of the NewWindow and OpenWindow building module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H025+$00CC.
+; Direct callers: H000+$0066
 ; --------------------------------------------------------------------------
 L025_0000001A:
 ; H025+$0000001A: 2f0c  move.l a4, -(a7)
@@ -38,12 +38,12 @@ L025_00000024:
 FN_build_NewWindow_OpenWindow:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Open_GameWindow [verificato]
-; Scopo: Compone una NewWindow sullo stack e chiama OpenWindow.
-;   - Copia geometria, IDCMP, flag, titolo e puntatori screen/bitmap.
-;   - Seleziona il tipo di finestra in base alla presenza dello schermo fornito.
-;   - Usa il wrapper H021+$029C.
-; Chiamanti diretti: H029+$1262
+; ROUTINE: Open_GameWindow [verified]
+; Purpose: Builds a NewWindow on the stack and calls OpenWindow.
+;   - Copies geometry, IDCMP, flags, title and screen/bitmap pointers.
+;   - Selects the window type according to whether the screen is supplied.
+;   - Uses the wrapper H021+$029C.
+; Direct callers: H029+$1262
 ; --------------------------------------------------------------------------
 L025_00000028:
 ; H025+$00000028: 2f0c  move.l a4, -(a7)

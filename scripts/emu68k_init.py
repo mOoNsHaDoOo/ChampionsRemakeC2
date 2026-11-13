@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Emulatore minimo 68000 per le routine di inizializzazione dei dati.
+"""Minimal 68000 emulator for the data initialisation routines.
 
-Esegue una routine di rebuild/source (ad esempio H004+$0C38, corpo di
-H004+$0C1A) e restituisce l'immagine di H005 che produce.  Supporta solo il
-sottoinsieme di istruzioni usato da queste routine: per qualsiasi altra
-istruzione si ferma con un errore, cosi' il risultato non e' mai indovinato.
+Runs a routine of rebuild/source (for example H004+$0C38, body of
+H004+$0C1A) and returns the image of H005 that it produces.  It supports only the
+subset of instructions used by these routines: for any other
+instruction it stops with an error, so the result is never guessed.
 
-Uso: emu68k_init.py HUNK START_OFF OUT.bin
+Usage: emu68k_init.py HUNK START_OFF OUT.bin
 """
 import os, re, sys
 
@@ -16,7 +16,7 @@ import hunkbytes
 
 ASM = os.path.join(os.path.dirname(HERE), "rebuild", "source")
 H005_SIZE = 0x531C
-A4_BSS = 0x10000            # area per gli offset negativi di a4 (BSS del modulo)
+A4_BSS = 0x10000            # area for the negative offsets of a4 (BSS of the module)
 
 def load_code(hunk):
     code = {}
@@ -29,7 +29,7 @@ def load_code(hunk):
             last = int(m.group(1), 16)
             code[last] = m.group(2).strip()
             continue
-        # La riga successiva (sorgente) indica la rilocazione: (H005+$X).l
+        # The next line (source) gives the relocation: (H005+$X).l
         if last is not None and line.startswith("        ") and "(H" in line:
             reloc[last] = line.strip()
         last = None if not line.startswith("        ") else last
@@ -45,17 +45,17 @@ class Emu:
         self.h005 = bytearray(H005_SIZE)
         self.bss = bytearray(0x1000)
         self.d = [0] * 8
-        self.a = [0] * 8          # indirizzi simbolici: ('h005', off) / ('hunk', off) / ('bss', off)
+        self.a = [0] * 8          # symbolic addresses: ('h005', off) / ('hunk', off) / ('bss', off)
 
     def a4_slot(self):
-        # move.l a4,-(a7); movea.l $XX(pc), a4 nel prologo del modulo
+        # move.l a4,-(a7); movea.l $XX(pc), a4 in the module prologue
         for off, ins in sorted(self.code.items()):
             m = re.match(r"movea\.l \$([0-9a-f]+)\(pc\), a4", ins)
             if m:
                 return int(m.group(1), 16)
-        raise SystemExit("prologo a4 non trovato")
+        raise SystemExit("a4 prologue not found")
 
-    # ---- memoria -----------------------------------------------------
+    # ---- memory ------------------------------------------------------
     def rd(self, addr, size):
         space, off = addr
         if space == "h005":
@@ -65,7 +65,7 @@ class Emu:
         elif space == "bss":
             b = self.bss[off - A4_BSS + 0x800: off - A4_BSS + 0x800 + size]
         else:
-            raise SystemExit("lettura da %r" % (addr,))
+            raise SystemExit("read from %r" % (addr,))
         return int.from_bytes(bytes(b), "big")
 
     def wr(self, addr, size, val):
@@ -74,7 +74,7 @@ class Emu:
         b = val.to_bytes(size, "big")
         if space == "h005":
             if off < 0 or off + size > H005_SIZE:
-                raise SystemExit("scrittura fuori da H005: $%X" % off)
+                raise SystemExit("write outside H005: $%X" % off)
             self.h005[off:off + size] = b
         elif space == "bss":
             i = off - A4_BSS + 0x800
@@ -83,13 +83,13 @@ class Emu:
             raise SystemExit("scrittura in %r" % (addr,))
 
     def ea(self, text, pc, size):
-        """Risolve un operando di memoria in indirizzo simbolico."""
+        """Resolves a memory operand into a symbolic address."""
         t = text.strip()
         m = re.match(r"^\$([0-9a-f]+)\.l$", t)
         if m:
             r = self.reloc.get(pc, "")
             if "H005" not in r and "(H" in r:
-                raise SystemExit("rilocazione non H005 a $%X: %s" % (pc, r))
+                raise SystemExit("non-H005 relocation at $%X: %s" % (pc, r))
             return ("h005", int(m.group(1), 16))
         m = re.match(r"^(-?)\$([0-9a-f]+)\(a4\)$", t)
         if m:
@@ -121,7 +121,7 @@ class Emu:
             idx = self.d[int(m.group(4))]
             idx = (idx & 0xFFFF) - (0x10000 if idx & 0x8000 else 0) if m.group(5) == "w" else idx
             return (base[0], base[1] + off + idx)
-        raise SystemExit("operando non supportato a $%X: %s" % (pc, text))
+        raise SystemExit("unsupported operand at $%X: %s" % (pc, text))
 
     def src(self, text, pc, size):
         t = text.strip()
@@ -142,7 +142,7 @@ class Emu:
             return
         self.wr(self.ea(t, pc, size), size, val)
 
-    # ---- esecuzione --------------------------------------------------
+    # ---- execution ---------------------------------------------------
     def run(self, start, stop_ins=("unlk a5", "rts")):
         pc = start
         offs = sorted(self.code)
@@ -232,7 +232,7 @@ class Emu:
                     if cnt != 0xFFFF:
                         jump = target
             else:
-                raise SystemExit("istruzione non supportata a $%X: %s" % (pc, ins))
+                raise SystemExit("unsupported instruction at $%X: %s" % (pc, ins))
             pc = jump if jump is not None else nxt[pc]
 
     @staticmethod
@@ -243,9 +243,9 @@ class Emu:
         flags["n"] = 1 if v >> (8 * size - 1) else 0
 
 if __name__ == "__main__":
-    # Uso: emu68k_init.py HUNK START OUT.bin [--bss N]
-    #   senza --bss: scrive l'immagine di H005;
-    #   con --bss N: scrive gli N byte sotto a4 (dati del modulo, da -N a -1).
+    # Usage: emu68k_init.py HUNK START OUT.bin [--bss N]
+    #   without --bss: writes the image of H005;
+    #   with --bss N: writes the N bytes below a4 (module data, from -N to -1).
     hunk, start, out = int(sys.argv[1]), int(sys.argv[2], 16), sys.argv[3]
     e = Emu(hunk)
     e.run(start)
@@ -253,7 +253,7 @@ if __name__ == "__main__":
         n = int(sys.argv[sys.argv.index("--bss") + 1], 16)
         data = bytes(e.bss[0x800 - n:0x800])
         open(out, "wb").write(data)
-        print("ok: %d byte di dati del modulo" % n)
+        print("ok: %d bytes of module data" % n)
     else:
         open(out, "wb").write(bytes(e.h005))
-        print("ok: %d byte non zero" % sum(1 for b in e.h005 if b))
+        print("ok: %d non-zero bytes" % sum(1 for b in e.h005 if b))

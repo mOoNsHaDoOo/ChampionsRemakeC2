@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H028
-; File, richieste disco, caricamento a ID e RLE DAX.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H028
+; Files, disk requests, loading by ID and DAX RLE.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; File e caricamento a ID: percorsi, Seek/Read, directory DAX, decompressione RLE e servizi di caricamento blocchi. H028+$0DD8 e' il caricatore; H028+$09DC il decompressore.
+; MODULE NOTE
+; Files and loading by ID: paths, Seek/Read, DAX directory, RLE decompression and block loading services. H028+$0DD8 is the loader; H028+$09DC the decompressor.
 ; --------------------------------------------------------------------------
 ; H028: 4488 original bytes; all offsets are section-relative.
         section H028,code
@@ -43,10 +43,10 @@ H028:
         dc.w $414D,$3A00
         dc.l H028+$000000FE
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H028 [parziale]
-; Scopo: Ingresso del modulo file, richieste disco, caricamento a ID e RLE DAX; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H028+$1174.
-; Chiamanti diretti: H000+$016E
+; ROUTINE: module_init_H028 [partial]
+; Purpose: Entry of the files, disk requests, loading by ID and DAX RLE module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H028+$1174.
+; Direct callers: H000+$016E
 ; --------------------------------------------------------------------------
 L028_000001B8:
 ; H028+$000001B8: 2f0c  move.l a4, -(a7)
@@ -62,11 +62,11 @@ L028_000001C2:
         bra.w H028+$1174
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Open_WithRetry [parziale]
-; Scopo: Helper di apertura con interazione in caso di supporto/file non disponibile.
-;   - Usa il percorso richiesto e i servizi DOS.
-;   - I messaggi Retry e CANCEL consentono al chiamante di gestire il tentativo successivo.
-; Chiamanti diretti: H028+$07BE, H066+$0A38, H066+$0B4E
+; ROUTINE: Open_WithRetry [partial]
+; Purpose: Open helper with interaction when the medium/file is not available.
+;   - Uses the requested path and the DOS services.
+;   - The Retry and CANCEL messages let the caller handle the next attempt.
+; Direct callers: H028+$07BE, H066+$0A38, H066+$0B4E
 ; --------------------------------------------------------------------------
 L028_000001C6:
 ; H028+$000001C6: 2f0c  move.l a4, -(a7)
@@ -212,7 +212,7 @@ L028_00000286:
 L028_0000028A:
 ; H028+$0000028A: 2b4bffca  move.l a3, -$36(a5)
         move.l a3, -$36(a5)
-; STATO: H005+$52F6 = puntatore alla finestra del gioco
+; STATE: H005+$52F6 = pointer to the game window
 L028_0000028E:
 ; H028+$0000028E: 2f39000052f6  move.l $52f6.l, -(a7)
         move.l (H005+$52F6).l, -(a7)
@@ -275,11 +275,11 @@ L028_000002CE:
 ; H028+$000002CE: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H028_000002D0 [parziale]
-; Scopo: Routine del modulo file, richieste disco, caricamento a ID e RLE DAX; richiama H002+$00DC, H002+$01A2.
-;   - Richiama H002+$00DC.
-;   - Richiama H002+$01A2.
-; Chiamanti diretti: H006+$0258, H028+$05B4, H066+$2A0A, H066+$31C8, H066+$1D5C, H066+$2ABE e altri 3
+; ROUTINE: sub_H028_000002D0 [partial]
+; Purpose: Routine of the files, disk requests, loading by ID and DAX RLE module; calls H002+$00DC, H002+$01A2.
+;   - Calls H002+$00DC.
+;   - Calls H002+$01A2.
+; Direct callers: H006+$0258, H028+$05B4, H066+$2A0A, H066+$31C8, H066+$1D5C, H066+$2ABE and 3 more
 ; --------------------------------------------------------------------------
 L028_000002D0:
 ; H028+$000002D0: 2f0c  move.l a4, -(a7)
@@ -385,16 +385,16 @@ L028_0000033C:
 ; H028+$0000033C: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H028_0000033E [parziale]
-; Scopo: Routine del modulo file, richieste disco, caricamento a ID e RLE DAX; richiama H003+$0068, H026+$0452, H002+$00DC, H002+$0070.
-;   - Richiama H003+$0068.
-;   - Richiama H026+$0452.
-;   - Richiama H002+$00DC.
-;   - Richiama H002+$0070.
-;   - Richiama H002+$01A2.
-;   - Richiama H003+$00F6.
-;   - Richiama H026+$0188.
-; Chiamanti diretti: H066+$09B8, H066+$0A4C
+; ROUTINE: sub_H028_0000033E [partial]
+; Purpose: Routine of the files, disk requests, loading by ID and DAX RLE module; calls H003+$0068, H026+$0452, H002+$00DC, H002+$0070.
+;   - Calls H003+$0068.
+;   - Calls H026+$0452.
+;   - Calls H002+$00DC.
+;   - Calls H002+$0070.
+;   - Calls H002+$01A2.
+;   - Calls H003+$00F6.
+;   - Calls H026+$0188.
+; Direct callers: H066+$09B8, H066+$0A4C
 ; --------------------------------------------------------------------------
 L028_0000033E:
 ; H028+$0000033E: 2f0c  move.l a4, -(a7)
@@ -563,14 +563,14 @@ L028_00000406:
 ; H028+$00000406: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H028_00000408 [parziale]
-; Scopo: Routine del modulo file, richieste disco, caricamento a ID e RLE DAX; richiama H026+$054E, H026+$000C, H026+$0452, H026+$03F6.
-;   - Richiama H026+$054E.
-;   - Richiama H026+$000C.
-;   - Richiama H026+$0452.
-;   - Richiama H026+$03F6.
-;   - Richiama H026+$0188.
-; Chiamanti diretti: H028+$0668
+; ROUTINE: sub_H028_00000408 [partial]
+; Purpose: Routine of the files, disk requests, loading by ID and DAX RLE module; calls H026+$054E, H026+$000C, H026+$0452, H026+$03F6.
+;   - Calls H026+$054E.
+;   - Calls H026+$000C.
+;   - Calls H026+$0452.
+;   - Calls H026+$03F6.
+;   - Calls H026+$0188.
+; Direct callers: H028+$0668
 ; --------------------------------------------------------------------------
 L028_00000408:
 ; H028+$00000408: 2f0c  move.l a4, -(a7)
@@ -873,12 +873,12 @@ L028_00000574:
 ; H028+$00000574: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H028_00000576 [parziale]
-; Scopo: Routine del modulo file, richieste disco, caricamento a ID e RLE DAX; richiama H026+$0188, H026+$01E0, H002+$00F2.
-;   - Richiama H026+$0188.
-;   - Richiama H026+$01E0.
-;   - Richiama H002+$00F2.
-; Chiamanti diretti: H028+$075E, H028+$0788
+; ROUTINE: sub_H028_00000576 [partial]
+; Purpose: Routine of the files, disk requests, loading by ID and DAX RLE module; calls H026+$0188, H026+$01E0, H002+$00F2.
+;   - Calls H026+$0188.
+;   - Calls H026+$01E0.
+;   - Calls H002+$00F2.
+; Direct callers: H028+$075E, H028+$0788
 ; --------------------------------------------------------------------------
 L028_00000576:
 ; H028+$00000576: 2f0c  move.l a4, -(a7)
@@ -999,12 +999,12 @@ L028_000005F8:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Open_ResourceFile [parziale]
-; Scopo: Risolve prefissi e richieste di disco per una risorsa.
-;   - Usa H005+$3D26 come prefisso dei dati.
-;   - Distingue il gruppo delle risorse e prepara richieste Disk Two/Disk Three nei rami previsti.
-;   - Restituisce l’handle tramite il parametro di uscita.
-; Chiamanti diretti: H007+$0536, H007+$0A52, H028+$0C28, H028+$0CC2, H030+$0C32, H043+$062E, H066+$08C6
+; ROUTINE: Open_ResourceFile [partial]
+; Purpose: Resolves prefixes and disk requests for a resource.
+;   - Uses H005+$3D26 as the data prefix.
+;   - Distinguishes the resource group and prepares Disk Two/Disk Three requests in the expected branches.
+;   - Returns the handle through the output parameter.
+; Direct callers: H007+$0536, H007+$0A52, H028+$0C28, H028+$0CC2, H030+$0C32, H043+$062E, H066+$08C6
 ; --------------------------------------------------------------------------
 L028_000005FA:
 ; H028+$000005FA: 2f0c  move.l a4, -(a7)
@@ -1180,7 +1180,7 @@ L028_000006BA:
 L028_000006BE:
 ; H028+$000006BE: 3f3c0050  move.w #$50, -(a7)
         move.w #$50, -(a7)
-; STATO: H005+$3D26 = prefisso dei file dati
+; STATE: H005+$3D26 = prefix of the data files
 L028_000006C2:
 ; H028+$000006C2: 487900003d26  pea.l $3d26.l
         pea.l (H005+$3D26).l
@@ -1216,7 +1216,7 @@ L028_000006EA:
 L028_000006EE:
 ; H028+$000006EE: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$246E = selettore del gruppo risorse
+; STATE: H005+$246E = resource group selector
 L028_000006F0:
 ; H028+$000006F0: 14390000246e  move.b $246e.l, d2
         move.b (H005+$246E).l, d2
@@ -1287,7 +1287,7 @@ L028_00000740:
 L028_00000742:
 ; H028+$00000742: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H028+$072E; indici 0..1, default -1.
+; DISPATCH: words relative to H028+$072E; indices 0..1, default -1.
 L028_00000746:
 ; H028+$00000746: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -1387,7 +1387,7 @@ L028_000007B6:
 L028_000007BA:
 ; H028+$000007BA: 486dffaa  pea.l -$56(a5)
         pea.l -$56(a5)
-; FLUSSO: Chiama Open_WithRetry (H028+$01C6).
+; FLOW: Calls Open_WithRetry (H028+$01C6).
 L028_000007BE:
 ; H028+$000007BE: 6100fa06  bsr.w $1c6
         bsr.w H028+$1C6
@@ -1428,14 +1428,14 @@ L028_000007DE:
 ; H028+$000007DE: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H028_000007E0 [parziale]
-; Scopo: Routine del modulo file, richieste disco, caricamento a ID e RLE DAX; richiama H026+$000C, H026+$0452, H026+$0106, H026+$03F6.
-;   - Richiama H026+$000C.
-;   - Richiama H026+$0452.
-;   - Richiama H026+$0106.
-;   - Richiama H026+$03F6.
-;   - Richiama H026+$0188.
-; Chiamanti diretti: H028+$0994, H066+$2D66
+; ROUTINE: sub_H028_000007E0 [partial]
+; Purpose: Routine of the files, disk requests, loading by ID and DAX RLE module; calls H026+$000C, H026+$0452, H026+$0106, H026+$03F6.
+;   - Calls H026+$000C.
+;   - Calls H026+$0452.
+;   - Calls H026+$0106.
+;   - Calls H026+$03F6.
+;   - Calls H026+$0188.
+; Direct callers: H028+$0994, H066+$2D66
 ; --------------------------------------------------------------------------
 L028_000007E0:
 ; H028+$000007E0: 2f0c  move.l a4, -(a7)
@@ -1672,11 +1672,11 @@ L028_000008EE:
 ; H028+$000008EE: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H028_000008F0 [parziale]
-; Scopo: Routine del modulo file, richieste disco, caricamento a ID e RLE DAX; richiama H026+$0188, H026+$0452.
-;   - Richiama H026+$0188.
-;   - Richiama H026+$0452.
-; Chiamanti diretti: H066+$132C, H066+$2D7C, H066+$1874
+; ROUTINE: sub_H028_000008F0 [partial]
+; Purpose: Routine of the files, disk requests, loading by ID and DAX RLE module; calls H026+$0188, H026+$0452.
+;   - Calls H026+$0188.
+;   - Calls H026+$0452.
+; Direct callers: H066+$132C, H066+$2D7C, H066+$1874
 ; --------------------------------------------------------------------------
 L028_000008F0:
 ; H028+$000008F0: 2f0c  move.l a4, -(a7)
@@ -1861,15 +1861,15 @@ L028_000009DA:
 FN_DAX_decompress_RLE:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: DAX_DecompressRLE [verificato]
-; Scopo: Decompressore RLE usato dal caricatore di blocchi.
-;   - Avanza separatamente indice sorgente e indice destinazione.
-;   - I rami copiano una sequenza letterale o ripetono un byte.
-;   - Controlla i limiti del buffer di uscita e richiama il gestore errori nei rami di sconfinamento.
-;   - La routine originale è stata confrontata in emulazione con il decoder ricostruito su tutti i 239 blocchi DAX.
-; ABI: A5+$0C = dimensione destinazione*; +$10 = dimensione compressa*.
-; ABI: A5+$14 = destinazione*; +$18 = sorgente*.
-; Chiamanti diretti: H028+$1074
+; ROUTINE: DAX_DecompressRLE [verified]
+; Purpose: RLE decompressor used by the block loader.
+;   - Advances source index and destination index separately.
+;   - The branches copy a literal sequence or repeat a byte.
+;   - Checks the limits of the output buffer and calls the error handler in the overflow branches.
+;   - The original routine was compared in emulation with the rebuilt decoder on all 239 DAX blocks.
+; ABI: A5+$0C = destination size*; +$10 = compressed size*.
+; ABI: A5+$14 = destination*; +$18 = source*.
+; Direct callers: H028+$1074
 ; --------------------------------------------------------------------------
 L028_000009DC:
 ; H028+$000009DC: 2f0c  move.l a4, -(a7)
@@ -2194,7 +2194,7 @@ L028_00000B5C:
 L028_00000B5E:
 ; H028+$00000B5E: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H028+$0B4C; indici 0..1, default -1.
+; DISPATCH: words relative to H028+$0B4C; indices 0..1, default -1.
 L028_00000B62:
 ; H028+$00000B62: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -2226,13 +2226,13 @@ L028_00000B7E:
 ; H028+$00000B7E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H028_00000B80 [parziale]
-; Scopo: Routine del modulo file, richieste disco, caricamento a ID e RLE DAX; richiama H026+$0188, H026+$01E0, H002+$0122.
-;   - Richiama H026+$0188.
-;   - Richiama H026+$01E0.
-;   - Richiama H002+$0122.
-;   - Usa lo stato globale: H005+$246E (selettore del gruppo risorse).
-; Chiamanti diretti: H028+$0E3E, H042+$05C8
+; ROUTINE: sub_H028_00000B80 [partial]
+; Purpose: Routine of the files, disk requests, loading by ID and DAX RLE module; calls H026+$0188, H026+$01E0, H002+$0122.
+;   - Calls H026+$0188.
+;   - Calls H026+$01E0.
+;   - Calls H002+$0122.
+;   - Uses the global state: H005+$246E (resource group selector).
+; Direct callers: H028+$0E3E, H042+$05C8
 ; --------------------------------------------------------------------------
 L028_00000B80:
 ; H028+$00000B80: 2f0c  move.l a4, -(a7)
@@ -2356,7 +2356,7 @@ L028_00000BFE:
 L028_00000C02:
 ; H028+$00000C02: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$246E = selettore del gruppo risorse
+; STATE: H005+$246E = resource group selector
 L028_00000C04:
 ; H028+$00000C04: 14390000246e  move.b $246e.l, d2
         move.b (H005+$246E).l, d2
@@ -2381,7 +2381,7 @@ L028_00000C1E:
 L028_00000C24:
 ; H028+$00000C24: 2f2d000c  move.l $c(a5), -(a7)
         move.l $c(a5), -(a7)
-; FLUSSO: Chiama Open_ResourceFile (H028+$05FA).
+; FLOW: Calls Open_ResourceFile (H028+$05FA).
 L028_00000C28:
 ; H028+$00000C28: 6100f9d0  bsr.w $5fa
         bsr.w H028+$5FA
@@ -2444,13 +2444,13 @@ L028_00000C66:
 ; H028+$00000C66: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H028_00000C68 [parziale]
-; Scopo: Routine del modulo file, richieste disco, caricamento a ID e RLE DAX; richiama H003+$0068, H040+$05E4, H003+$0090, H002+$0014.
-;   - Richiama H003+$0068.
-;   - Richiama H040+$05E4.
-;   - Richiama H003+$0090.
-;   - Richiama H002+$0014.
-; Chiamanti diretti: H028+$0D54, H028+$0D64
+; ROUTINE: sub_H028_00000C68 [partial]
+; Purpose: Routine of the files, disk requests, loading by ID and DAX RLE module; calls H003+$0068, H040+$05E4, H003+$0090, H002+$0014.
+;   - Calls H003+$0068.
+;   - Calls H040+$05E4.
+;   - Calls H003+$0090.
+;   - Calls H002+$0014.
+; Direct callers: H028+$0D54, H028+$0D64
 ; --------------------------------------------------------------------------
 L028_00000C68:
 ; H028+$00000C68: 2f0c  move.l a4, -(a7)
@@ -2534,7 +2534,7 @@ L028_00000CBC:
 L028_00000CBE:
 ; H028+$00000CBE: 486dfffc  pea.l -$4(a5)
         pea.l -$4(a5)
-; FLUSSO: Chiama Open_ResourceFile (H028+$05FA).
+; FLOW: Calls Open_ResourceFile (H028+$05FA).
 L028_00000CC2:
 ; H028+$00000CC2: 6100f936  bsr.w $5fa
         bsr.w H028+$5FA
@@ -2571,7 +2571,7 @@ L028_00000CE2:
 L028_00000CE6:
 ; H028+$00000CE6: 48790000004a  pea.l $4a.l
         pea.l (H041+$4A).l
-; FLUSSO: Chiama Read_ILBM (H040+$05E4).
+; FLOW: Calls Read_ILBM (H040+$05E4).
 L028_00000CEC:
 ; H028+$00000CEC: 4eb9000005e4  jsr $5e4.l
         jsr (H040+$5E4).l
@@ -2626,10 +2626,10 @@ L028_00000D34:
 ; H028+$00000D34: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H028_00000D36 [parziale]
-; Scopo: Routine del modulo file, richieste disco, caricamento a ID e RLE DAX; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H066+$1B3A, H066+$0E5A, H047+$093E, H013+$2A8C
+; ROUTINE: sub_H028_00000D36 [partial]
+; Purpose: Routine of the files, disk requests, loading by ID and DAX RLE module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H066+$1B3A, H066+$0E5A, H047+$093E, H013+$2A8C
 ; --------------------------------------------------------------------------
 L028_00000D36:
 ; H028+$00000D36: 2f0c  move.l a4, -(a7)
@@ -2683,11 +2683,11 @@ L028_00000D72:
 ; H028+$00000D72: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H028_00000D74 [parziale]
-; Scopo: Routine del modulo file, richieste disco, caricamento a ID e RLE DAX; richiama H041+$00BE, H003+$00F6.
-;   - Richiama H041+$00BE.
-;   - Richiama H003+$00F6.
-; Chiamanti diretti: H010+$00CE, H013+$5146
+; ROUTINE: sub_H028_00000D74 [partial]
+; Purpose: Routine of the files, disk requests, loading by ID and DAX RLE module; calls H041+$00BE, H003+$00F6.
+;   - Calls H041+$00BE.
+;   - Calls H003+$00F6.
+; Direct callers: H010+$00CE, H013+$5146
 ; --------------------------------------------------------------------------
 L028_00000D74:
 ; H028+$00000D74: 2f0c  move.l a4, -(a7)
@@ -2778,16 +2778,16 @@ L028_00000DD6:
 FN_DAX_load_block:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: DAX_LoadBlock [verificato]
-; Scopo: Trova un ID nella directory, legge e decomprime il blocco corrispondente.
-;   - Legge voci ID/offset/dimensioni; il percorso .dax converte gli interi little-endian.
-;   - Cerca l’ID richiesto e posiziona il file con Seek.
-;   - Alloca un buffer compresso e un buffer di uscita; aggiunge 256 byte di margine alla dimensione runtime.
-;   - Chiama H028+$09DC e libera il buffer compresso.
-; ABI: Dopo il prologo di modulo: A5+$0C = buffer** di uscita; +$10 = dimensione* di uscita.
-; ABI: A5+$14 = ID word; +$16 = estensione*; +$1A = limite estensione word.
-; ABI: A5+$1C = nome base*; +$20 = limite nome word.
-; Chiamanti diretti: H011+$1574, H011+$18E8, H012+$0CC8, H029+$0AC0, H061+$1B7E, H066+$20BA, H066+$2430, H066+$2554
+; ROUTINE: DAX_LoadBlock [verified]
+; Purpose: Finds an ID in the directory, reads and decompresses the matching block.
+;   - Reads ID/offset/size entries; the .dax path converts the little-endian integers.
+;   - Looks for the requested ID and positions the file with Seek.
+;   - Allocates a compressed buffer and an output buffer; adds 256 bytes of margin to the runtime size.
+;   - Calls H028+$09DC and frees the compressed buffer.
+; ABI: After the module prologue: A5+$0C = output buffer**; +$10 = output size*.
+; ABI: A5+$14 = ID word; +$16 = extension*; +$1A = extension limit word.
+; ABI: A5+$1C = base name*; +$20 = name limit word.
+; Direct callers: H011+$1574, H011+$18E8, H012+$0CC8, H029+$0AC0, H061+$1B7E, H066+$20BA, H066+$2430, H066+$2554
 ; --------------------------------------------------------------------------
 L028_00000DD8:
 ; H028+$00000DD8: 2f0c  move.l a4, -(a7)
@@ -3350,7 +3350,7 @@ L028_0000106C:
 L028_00001070:
 ; H028+$00001070: 2f2d0010  move.l $10(a5), -(a7)
         move.l $10(a5), -(a7)
-; FLUSSO: Chiama DAX_DecompressRLE (H028+$09DC).
+; FLOW: Calls DAX_DecompressRLE (H028+$09DC).
 L028_00001074:
 ; H028+$00001074: 6100f966  bsr.w $9dc
         bsr.w H028+$9DC
@@ -3386,10 +3386,10 @@ L028_00001096:
 ; H028+$00001096: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H028_00001098 [parziale]
-; Scopo: Routine del modulo file, richieste disco, caricamento a ID e RLE DAX; opera su H005+$246E (selettore del gruppo risorse).
-;   - Usa lo stato globale: H005+$246E (selettore del gruppo risorse).
-; Chiamanti diretti: H061+$2AC0
+; ROUTINE: sub_H028_00001098 [partial]
+; Purpose: Routine of the files, disk requests, loading by ID and DAX RLE module; works on H005+$246E (resource group selector).
+;   - Uses the global state: H005+$246E (resource group selector).
+; Direct callers: H061+$2AC0
 ; --------------------------------------------------------------------------
 L028_00001098:
 ; H028+$00001098: 2f0c  move.l a4, -(a7)
@@ -3400,7 +3400,7 @@ L028_0000109A:
 L028_0000109E:
 ; H028+$0000109E: 4e550000  link.w a5, #$0
         link.w a5, #$0
-; STATO: H005+$246E = selettore del gruppo risorse
+; STATE: H005+$246E = resource group selector
 L028_000010A2:
 ; H028+$000010A2: 13f90000246e0000246d  move.b $246e.l, $246d.l
         move.b (H005+$246E).l, (H005+$246D).l
@@ -3419,7 +3419,7 @@ L028_000010B4:
 L028_000010BA:
 ; H028+$000010BA: 84fc0003  divu.w #$3, d2
         divu.w #$3, d2
-; STATO: H005+$246E = selettore del gruppo risorse
+; STATE: H005+$246E = resource group selector
 L028_000010BE:
 ; H028+$000010BE: 13c20000246e  move.b d2, $246e.l
         move.b d2, (H005+$246E).l

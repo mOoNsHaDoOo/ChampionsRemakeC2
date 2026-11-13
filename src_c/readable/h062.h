@@ -1,4 +1,4 @@
-/* H062: servizi condivisi sui personaggi (dadi, effetti). */
+/* H062: shared character services (dice, effects). */
 #ifndef COK_H062_H
 #define COK_H062_H
 

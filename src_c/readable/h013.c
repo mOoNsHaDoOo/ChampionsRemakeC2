@@ -1,4 +1,4 @@
-/* H013: Creazione/gestione personaggi e menu principale del party. */
+/* H013: Character creation/management and the party main menu. */
 #include "h013.h"
 #include "h008.h"
 #include "h026_string.h"
@@ -21,15 +21,15 @@
 #include "h066.h"
 #include "h063.h"
 
-/* PORT H013+$0506: link/unlk, nessun effetto. */
+/* PORT H013+$0506: link/unlk, no effect. */
 void h013_init(void)
 {
 }
 
-/* H013 -$52(a4): messaggio di "Free training". */
+/* H013 -$52(a4): "Free training" message. */
 static char s_message[0x52];
 
-/* Voce della tabella del menu principale (-$23A(a5), passo $2C). */
+/* Entry of the main menu table (-$23A(a5), step $2C). */
 typedef struct MainMenuEntry {
     char text[0x2A];
     u8 enabled;                 /* +$2A */
@@ -41,7 +41,7 @@ enum {
     MM_REMOVE, MM_LOAD, MM_SAVE, MM_BEGIN, MM_EXIT, MM_COUNT
 };
 
-/* Copia con dbeq $28: al massimo 41 byte, NUL compreso. */
+/* Copy with dbeq $28: at most 41 bytes, NUL included. */
 static void copy_entry(MainMenuEntry *e, const char *text)
 {
     unsigned i;
@@ -54,7 +54,7 @@ static void copy_entry(MainMenuEntry *e, const char *text)
     }
 }
 
-/* PORT H013+$4C0A: testi del menu principale e voci sempre presenti. */
+/* PORT H013+$4C0A: texts of the main menu and entries always present. */
 static void init_main_menu(MainMenuEntry *items, char *keys)
 {
     unsigned i;
@@ -93,25 +93,25 @@ static void init_main_menu(MainMenuEntry *items, char *keys)
 }
 
 /*
- * PORT H013+$4BFC: menu principale del party.  Ad ogni giro ridisegna la
- * cornice e il personaggio corrente, abilita le voci secondo party e
- * personaggio, mostra il menu (H008+$13C0) ed esegue la funzione scelta
- * (la lettera iniziale della voce).  Esce con "BEGIN Adventuring" (o con
- * la rimozione dell'ultimo personaggio senza un party caricato).
+ * PORT H013+$4BFC: party main menu.  At every round it redraws the
+ * frame and the current character, enables the entries according to party and
+ * character, shows the menu (H008+$13C0) and runs the chosen function
+ * (the initial letter of the entry).  It exits with "BEGIN Adventuring" (or with
+ * the removal of the last character without a loaded party).
  */
 static void copy_text(char *dst, const char *src, u16 max);
 static s16 con_hp_bonus(Character *c, u8 cls);
 
 /*
- * PORT H013+$2D76: aggiustamento dei punti ferita per la costituzione
- * (+$19): 3 -2, 4-6 -1, 7-14 0, 15 +1, 16 +2, 17-19 +2 (classi 2, 4, 7:
- * CON - 14).  Per una costituzione fuori da 3..19 l'originale restituisce
- * la parola non inizializzata del frame; qui 0.
+ * PORT H013+$2D76: hit point adjustment for constitution
+ * (+$19): 3 -2, 4-6 -1, 7-14 0, 15 +1, 16 +2, 17-19 +2 (classes 2, 4, 7:
+ * CON - 14).  For a constitution outside 3..19 the original returns
+ * the uninitialised word of the frame; here 0.
  */
 static s16 con_hp_adjust(u8 cls)
 {
     s16 result = 0;                     /* -$2(a5) */
-    u8 con = g_current_char->b[0x19]; /* pg+$19: costituzione corrente */
+    u8 con = g_current_char->b[0x19]; /* ch+$19: current constitution */
 
     if (con == 3) {
         result = -2;
@@ -134,8 +134,8 @@ static s16 con_hp_adjust(u8 cls)
 }
 
 /*
- * PORT H013+$2E44: punti ferita massimi possibili di c (media sulle
- * classi del personaggio).
+ * PORT H013+$2E44: maximum possible hit points of c (average over the
+ * classes of the character).
  */
 static s16 max_hit_points(Character *c)
 {
@@ -147,16 +147,16 @@ static s16 max_hit_points(Character *c)
     u8 lvl;
 
     for (k = 0; k <= 7; ++k) {
-        lvl = c->b[0xFE + k]; /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
+        lvl = c->b[0xFE + k]; /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
         if (lvl == 0) {
             continue;
         }
         adj = con_hp_adjust(k);
-        if (lvl < H005_B(0x5026 + k)) { /* $5026: livello massimo dei dadi vita per classe (byte, 0..7) */
+        if (lvl < H005_B(0x5026 + k)) { /* $5026: maximum hit dice level per class (byte, 0..7) */
             ++count;
             switch (k) {
             case 0:
-                /* pg+$5E: divinita' del chierico (0 nessuna, 1..7; 6 per le razze 3-4) */
+                /* ch+$5E: deity of the cleric (0 none, 1..7; 6 for races 3-4) */
                 if (c->b[0x5E] <= 4) {
                     sum = (s16)(sum + (adj + 8) * (lvl + 1));
                 } else {
@@ -185,7 +185,7 @@ static s16 max_hit_points(Character *c)
             }
         } else {
             ++count;
-            /* $5026: livello massimo dei dadi vita per classe (byte, 0..7) */
+            /* $5026: maximum hit dice level per class (byte, 0..7) */
             extra = (s16)(lvl - H005_B(0x5026 + k) + 1);
             switch (k) {
             case 0:
@@ -215,8 +215,8 @@ static s16 max_hit_points(Character *c)
 }
 
 /*
- * PORT H013+$30DA: punti ferita minimi di c: somma dei livelli (+1 per le
- * classi 4 e 7) piu' il bonus di costituzione, diviso il numero di classi.
+ * PORT H013+$30DA: minimum hit points of c: sum of the levels (+1 for
+ * classes 4 and 7) plus the constitution bonus, divided by the number of classes.
  */
 static s16 min_hit_points(Character *c)
 {
@@ -226,8 +226,8 @@ static s16 min_hit_points(Character *c)
     u8 k;                               /* -$7(a5) */
 
     for (k = 0; k <= 7; ++k) {
-        if (c->b[0xFE + k] > 0) { /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
-            /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
+        if (c->b[0xFE + k] > 0) { /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
+            /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
             sum = (s16)(sum + c->b[0xFE + k]);
             ++count;
             if (k == 4 || k == 7) {
@@ -235,7 +235,7 @@ static s16 min_hit_points(Character *c)
             }
         }
     }
-    bonus = con_hp_bonus(c, k);         /* k = 8 alla fine del ciclo */
+    bonus = con_hp_bonus(c, k);         /* k = 8 at the end of the loop */
     if (bonus < 0) {
         if (sum > (s16)((bonus < 0 ? -bonus : bonus) + count)) {
             sum = (s16)((sum + bonus) / count);
@@ -248,21 +248,21 @@ static s16 min_hit_points(Character *c)
     return sum;
 }
 
-/* Frame di Modify Character (H013+$31E0) per la procedura annidata. */
+/* Frame of Modify Character (H013+$31E0) for the nested procedure. */
 typedef struct ModifyFrame {
-    u16 field;                          /* -$40(a5): 0-5 caratteristica, 6 nome, 7 PF */
-    u16 cursor;                         /* -$4c(a5): posizione nel nome */
-    char cell[2];                       /* -$4a(a5): carattere sotto il cursore */
+    u16 field;                          /* -$40(a5): 0-5 ability, 6 name, 7 HP */
+    u16 cursor;                         /* -$4c(a5): position in the name */
+    char cell[2];                       /* -$4a(a5): character under the cursor */
 } ModifyFrame;
 
-/* $226C: limiti delle caratteristiche per razza ($20 byte, word min/max); off = voce */
+/* $226C: ability limits per race ($20 bytes, min/max words); off = entry */
 #define RACE_W(off)  H005_W(0x226C + c->b[0x5B] * 32 + (off))
-/* $226C: limiti per razza come RACE_W, voce della forza scelta per sesso (pg+$10E) */
+/* $226C: limits per race like RACE_W, strength entry chosen by sex (pg+$10E) */
 #define RACE_SW(off) H005_W(0x226C + c->b[0x5B] * 32 + c->b[0x10E] * 2 + (off))
-/* $1F9A: minimi delle caratteristiche per classe (12 byte, 6 word); off = voce */
+/* $1F9A: ability minimums per class (12 bytes, 6 words); off = entry */
 #define CLASS_W(off) H005_W(0x1F9A + c->b[0x5C] * 12 + (off))
 
-/* PORT H013+$31EE: disegna il campo f->field (evidenziato o no). */
+/* PORT H013+$31EE: draws the field f->field (highlighted or not). */
 static void modify_draw_field(ModifyFrame *f, u8 highlight)
 {
     Character *c = g_current_char;
@@ -295,36 +295,36 @@ static void modify_draw_field(ModifyFrame *f, u8 highlight)
     }
 }
 
-/* Riporta caratteristiche, punti ferita e nome ai valori salvati. */
+/* Brings abilities, hit points and name back to the saved values. */
 static void modify_restore(Character *c, const u16 *stats, u16 ext_str,
                            u16 hp, const char *name, u8 hp_first)
 {
     u8 i;
 
     for (i = 0; i <= 5; ++i) {
-        /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza corrente */
+        /* ch+$11: current abilities, 6 entries step 2 from +$11; current strength */
         g_current_char->b[0x11 + i * 2] = (u8)stats[i];
     }
-    g_current_char->b[0x1C] = (u8)ext_str; /* pg+$1C: forza eccezionale corrente (18/xx, 1..100) */
-    g_current_char->b[0x64] = (u8)hp; /* pg+$64: punti ferita massimi */
+    g_current_char->b[0x1C] = (u8)ext_str; /* ch+$1C: current exceptional strength (18/xx, 1..100) */
+    g_current_char->b[0x64] = (u8)hp; /* ch+$64: maximum hit points */
     if (hp_first) {
-        /* pg+$1A8: punti ferita correnti; pg+$64: punti ferita massimi */
+        /* ch+$1A8: current hit points; ch+$64: maximum hit points */
         g_current_char->b[0x1A8] = c->b[0x64];
     }
     h026_copy(0x0F, (char *)g_current_char->b, 0x28, name);
     if (!hp_first) {
-        /* pg+$1A8: punti ferita correnti; pg+$64: punti ferita massimi */
+        /* ch+$1A8: current hit points; ch+$64: maximum hit points */
         g_current_char->b[0x1A8] = c->b[0x64];
     }
     recompute_stats(g_current_char);
-    H005_B(0x24DA) = 0; /* $24DA: 1 in Modify Character: il clic sceglie il campo ($2506) */
+    H005_B(0x24DA) = 0; /* $24DA: 1 in Modify Character: the click chooses the field ($2506) */
 }
 
 /*
- * PORT H013+$31E0: Modify Character.  Solo per personaggi appena creati
- * (esperienza iniziale, +$DC = 0).  Con Add/Subtract si cambiano le
- * caratteristiche (entro i limiti di razza e classe), i punti ferita
- * (entro $30DA..$2E44) e il nome; Keep conferma, Exit o Esc ripristinano.
+ * PORT H013+$31E0: Modify Character.  Only for newly created characters
+ * (initial experience, +$DC = 0).  With Add/Subtract one changes the
+ * abilities (within the limits of race and class), the hit points
+ * (within $30DA..$2E44) and the name; Keep confirms, Exit or Esc restore.
  */
 static void modify_character(void)
 {
@@ -332,7 +332,7 @@ static void modify_character(void)
     Character *c;                       /* a3 */
     u16 saved_stats[6];                 /* -$c(a5) */
     u16 saved_ext;                      /* -$e(a5) */
-    u16 saved_hp;                       /* -$10(a5), poi somma */
+    u16 saved_hp;                       /* -$10(a5), then sum */
     s16 sum;                            /* -$10(a5) */
     s16 count;                          /* -$4e(a5) */
     char saved_name[0x2A];              /* -$3a(a5) */
@@ -345,25 +345,25 @@ static void modify_character(void)
     if (!pick_character()) {
         return;
     }
-    xp = CH_L(g_current_char, 0x11E); /* pg+$11E: punti esperienza (long) */
+    xp = CH_L(g_current_char, 0x11E); /* ch+$11E: experience points (long) */
     if (!(xp == 0x5DC || xp == 0x4E3 || xp == 0x7D0 || xp == 0x7D1 ||
           xp == 0x8CB || xp == 0x9C4 || xp == 0x1388) ||
-        /* pg+$DC: uso: soglia per i livelli +$106..+$10D e i PF; !=0 vieta Modify */
+        /* ch+$DC: use: threshold for the levels +$106..+$10D and the HP; !=0 forbids Modify */
         g_current_char->b[0xDC] != 0) {
         h026_copy(0x50, s_message, 0x0F, (const char *)g_current_char->b);
         h026_append(0x50, s_message, 0x13, " can't be modified.");
         show_message(0x50, s_message, 0x0E, 0);
         return;
     }
-    H005_SET_W(0x2506, 0xFF); /* $2506: (word) campo cliccato in Modify Character (0..7), $FF nessuno */
-    H005_B(0x24DA) = 1; /* $24DA: 1 in Modify Character: il clic sceglie il campo ($2506) */
+    H005_SET_W(0x2506, 0xFF); /* $2506: (word) field clicked in Modify Character (0..7), $FF none */
+    H005_B(0x24DA) = 1; /* $24DA: 1 in Modify Character: the click chooses the field ($2506) */
     draw_character_sheet();
     for (idx = 0; idx <= 5; ++idx) {
-        /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza corrente */
+        /* ch+$11: current abilities, 6 entries step 2 from +$11; current strength */
         saved_stats[idx] = g_current_char->b[0x11 + idx * 2];
     }
-    saved_ext = g_current_char->b[0x1C]; /* pg+$1C: forza eccezionale corrente (18/xx, 1..100) */
-    saved_hp = g_current_char->b[0x64]; /* pg+$64: punti ferita massimi */
+    saved_ext = g_current_char->b[0x1C]; /* ch+$1C: current exceptional strength (18/xx, 1..100) */
+    saved_hp = g_current_char->b[0x64]; /* ch+$64: maximum hit points */
     h026_copy(0x28, saved_name, 0x0F, (const char *)g_current_char->b);
     f.cursor = 0;
     f.field = 7;
@@ -375,14 +375,14 @@ static void modify_character(void)
         if (f.field == 6) {
             special = 0;
             wait_for_key();
-            key = G_KEY; /* $5305: tasto/azione pendente dall'input (G_KEY) */
+            key = G_KEY; /* $5305: key/action pending from the input (G_KEY) */
             if (key > '0' && key <= '9') {
-                key = H005_B(0x4F7C + key - '1'); /* $4F7C: traduzione dei tasti cifra 1..9 in tasti azione */
+                key = H005_B(0x4F7C + key - '1'); /* $4F7C: translation of the digit keys 1..9 into action keys */
                 special = 1;
             }
             if (key == 0) {
                 wait_for_key();
-                key = G_KEY; /* $5305: tasto/azione pendente dall'input (G_KEY) */
+                key = G_KEY; /* $5305: key/action pending from the input (G_KEY) */
                 special = 1;
             }
             if (key == 0x1B) {
@@ -416,10 +416,10 @@ static void modify_character(void)
                 }
                 break;
             case 'G':                   /* $3632 */
-                /* $249E: 1 se il tasto viene dal mouse (clic); $2506: (word) campo cliccato in
-                 * Modify Character (0..7), $FF nessuno */
+                /* $249E: 1 if the key comes from the mouse (click); $2506: (word) field
+                 * clicked in Modify Character (0..7), $FF none */
                 if (H005_B(0x249E) && H005_W(0x2506) != 0xFF) {
-                    /* $2506: (word) campo cliccato in Modify Character (0..7), $FF nessuno */
+                    /* $2506: (word) field clicked in Modify Character (0..7), $FF none */
                     f.field = H005_W(0x2506);
                 }
                 break;
@@ -431,149 +431,141 @@ static void modify_character(void)
             case 'S':                   /* $3698: Subtract */
                 if (f.field < 6) {
                     idx = (u8)f.field;
-                    /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza corrente */
+                    /* ch+$11: current abilities, 6 entries step 2 from +$11; current strength */
                     add_to_byte(&c->b[0x11 + idx * 2], 0xFFFF);
                     switch (idx) {
                     case 0:             /* $36D2 */
-                        if (c->b[0x1C] > 0) { /* pg+$1C: forza eccezionale corrente (18/xx, 1..100) */
-                            /* pg+$1C: forza eccezionale corrente (18/xx, 1..100) */
+                        if (c->b[0x1C] > 0) { /* ch+$1C: current exceptional strength (18/xx, 1..100) */
+                            /* ch+$1C: current exceptional strength (18/xx, 1..100) */
                             add_to_byte(&c->b[0x1C], 0xFFFF);
-                            /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza
-                             * corrente */
+                            /* ch+$11: current abilities, 6 entries step 2 from +$11; current
+                             * strength */
                             add_to_byte(&c->b[0x11 + idx * 2], 1);
                         } else {
-                            /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza
-                             * corrente; $226C: limiti caratt. per razza ($20 byte): forza minima
-                             * per sesso (word); pg+$5B: razza (0..6, nomi H005+$4D04); pg+$10E:
-                             * sesso (0 maschio, 1 femmina; nomi H005+$4BD2) */
+                            /* ch+$11: current abilities, 6 entries step 2 from +$11; current strength; $226C: ability limits
+                             * per race ($20 bytes): minimum strength per sex (word); ch+$5B:
+                             * race (0..6, names H005+$4D04); ch+$10E: sex (0 male, 1 female;
+                             * names H005+$4BD2) */
                             if (c->b[0x11] < RACE_SW(0)) {
-                                /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza
-                                 * corrente; $226C: limiti caratt. per razza ($20 byte): forza
-                                 * minima per sesso (word); pg+$5B: razza (0..6, nomi H005+$4D04);
-                                 * pg+$10E: sesso (0 maschio, 1 femmina; nomi H005+$4BD2) */
+                                /* ch+$11: current abilities, 6 entries step 2 from +$11; current strength; $226C: ability limits
+                                 * per race ($20 bytes): minimum strength per sex (word); ch+$5B:
+                                 * race (0..6, names H005+$4D04); ch+$10E: sex (0 male, 1 female;
+                                 * names H005+$4BD2) */
                                 c->b[0x11] = (u8)RACE_SW(0);
                             }
-                            /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza
-                             * corrente; $1F9A: minimi caratteristiche per classe (12 byte, 6 word):
-                             * +0 forza; pg+$5C: classe o combinazione di classi (0..16, nomi
-                             * H005+$4D84) */
+                            /* ch+$11: current abilities, 6 entries step 2 from +$11; current strength; $1F9A: ability minimums
+                             * per class (12 bytes, 6 words): +0 strength; ch+$5C: class or class
+                             * combination (0..16, names H005+$4D84) */
                             if (c->b[0x11] < CLASS_W(0)) {
-                                /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza
-                                 * corrente; $1F9A: minimi caratteristiche per classe (12 byte, 6
-                                 * word): +0 forza; pg+$5C: classe o combinazione di classi (0..16,
-                                 * nomi H005+$4D84) */
+                                /* ch+$11: current abilities, 6 entries step 2 from +$11; current strength; $1F9A: ability minimums
+                                 * per class (12 bytes, 6 words): +0 strength; ch+$5C: class or
+                                 * class combination (0..16, names H005+$4D84) */
                                 c->b[0x11] = (u8)CLASS_W(0);
                             }
                         }
                         break;
                     case 1:             /* $37C4 */
-                        /* pg+$13: intelligenza corrente; $2278: limiti per razza +$C: intelligenza
-                         * minima (word); pg+$5B: razza (0..6, nomi H005+$4D04) */
+                        /* ch+$13: current intelligence; $2278: limits per race +$C: minimum intelligence
+                         * (word); ch+$5B: race (0..6, names H005+$4D04) */
                         if (c->b[0x13] < RACE_W(0x0C)) {
-                            /* pg+$13: intelligenza corrente; $2278: limiti per razza +$C:
-                             * intelligenza minima (word); pg+$5B: razza (0..6, nomi H005+$4D04) */
+                            /* ch+$13: current intelligence; $2278: limits per race +$C: minimum intelligence (word); ch+$5B:
+                             * race (0..6, names H005+$4D04) */
                             c->b[0x13] = (u8)RACE_W(0x0C);
                         }
-                        /* pg+$13: intelligenza corrente; $1F9C: minimi per classe +2: intelligenza
-                         * (word); pg+$5C: classe o combinazione di classi (0..16, nomi H005+$4D84) */
+                        /* ch+$13: current intelligence; $1F9C: minimums per class +2: intelligence (word); ch+$5C: class or
+                         * class combination (0..16, names H005+$4D84) */
                         if (c->b[0x13] < CLASS_W(2)) {
-                            /* pg+$13: intelligenza corrente; $1F9C: minimi per classe +2:
-                             * intelligenza (word); pg+$5C: classe o combinazione di classi (0..16,
-                             * nomi H005+$4D84) */
+                            /* ch+$13: current intelligence; $1F9C: minimums per class +2: intelligence (word); ch+$5C: class
+                             * or class combination (0..16, names H005+$4D84) */
                             c->b[0x13] = (u8)CLASS_W(2);
                         }
                         break;
                     case 2:             /* $385E */
-                        /* pg+$15: saggezza corrente; $227C: limiti per razza +$10: saggezza minima
-                         * (word); pg+$5B: razza (0..6, nomi H005+$4D04) */
+                        /* ch+$15: current wisdom; $227C: limits per race +$10: minimum wisdom
+                         * (word); ch+$5B: race (0..6, names H005+$4D04) */
                         if (c->b[0x15] < RACE_W(0x10)) {
-                            /* pg+$15: saggezza corrente; $227C: limiti per razza +$10: saggezza
-                             * minima (word); pg+$5B: razza (0..6, nomi H005+$4D04) */
+                            /* ch+$15: current wisdom; $227C: limits per race +$10: minimum wisdom (word); ch+$5B:
+                             * race (0..6, names H005+$4D04) */
                             c->b[0x15] = (u8)RACE_W(0x10);
                         }
-                        /* pg+$15: saggezza corrente; $1F9E: minimi per classe +4: saggezza (word);
-                         * pg+$5C: classe o combinazione di classi (0..16, nomi H005+$4D84) */
+                        /* ch+$15: current wisdom; $1F9E: minimums per class +4: wisdom (word); ch+$5C: class or class
+                         * combination (0..16, names H005+$4D84) */
                         if (c->b[0x15] < CLASS_W(4)) {
-                            /* pg+$15: saggezza corrente; $1F9E: minimi per classe +4: saggezza
-                             * (word); pg+$5C: classe o combinazione di classi (0..16, nomi
-                             * H005+$4D84) */
+                            /* ch+$15: current wisdom; $1F9E: minimums per class +4: wisdom (word); ch+$5C: class or
+                             * class combination (0..16, names H005+$4D84) */
                             c->b[0x15] = (u8)CLASS_W(4);
                         }
-                        /* pg+$124: slot incantesimi, 24 byte: tipo*6 + livello-1; chierico liv. 1 */
+                        /* ch+$124: spell slots, 24 bytes: type*6 + level-1; cleric lvl. 1 */
                         if (c->b[0x124] > 0) {
-                            /* pg+$124: slot incantesimi, 24 byte: tipo*6 + livello-1; chierico liv.
-                             * 1 */
+                            /* ch+$124: spell slots, 24 bytes: type*6 + level-1; cleric lvl. 1 */
                             c->b[0x124] = 1;
                         }
                         break;
                     case 3:             /* $390A */
-                        /* pg+$17: destrezza corrente; $2280: limiti per razza +$14: destrezza
-                         * minima (word); pg+$5B: razza (0..6, nomi H005+$4D04) */
+                        /* ch+$17: current dexterity; $2280: limits per race +$14: minimum dexterity
+                         * (word); ch+$5B: race (0..6, names H005+$4D04) */
                         if (c->b[0x17] < RACE_W(0x14)) {
-                            /* pg+$17: destrezza corrente; $2280: limiti per razza +$14: destrezza
-                             * minima (word); pg+$5B: razza (0..6, nomi H005+$4D04) */
+                            /* ch+$17: current dexterity; $2280: limits per race +$14: minimum dexterity (word);
+                             * ch+$5B: race (0..6, names H005+$4D04) */
                             c->b[0x17] = (u8)RACE_W(0x14);
                         }
-                        /* pg+$17: destrezza corrente; $1FA0: minimi per classe +6: destrezza
-                         * (word); pg+$5C: classe o combinazione di classi (0..16, nomi H005+$4D84) */
+                        /* ch+$17: current dexterity; $1FA0: minimums per class +6: dexterity (word); ch+$5C: class or class
+                         * combination (0..16, names H005+$4D84) */
                         if (c->b[0x17] < CLASS_W(6)) {
-                            /* pg+$17: destrezza corrente; $1FA0: minimi per classe +6: destrezza
-                             * (word); pg+$5C: classe o combinazione di classi (0..16, nomi
-                             * H005+$4D84) */
+                            /* ch+$17: current dexterity; $1FA0: minimums per class +6: dexterity (word); ch+$5C: class
+                             * or class combination (0..16, names H005+$4D84) */
                             c->b[0x17] = (u8)CLASS_W(6);
                         }
                         break;
                     case 4:             /* $39A4 */
-                        /* pg+$19: costituzione corrente; $2284: limiti per razza +$18: costituzione
-                         * minima (word); pg+$5B: razza (0..6, nomi H005+$4D04) */
+                        /* ch+$19: current constitution; $2284: limits per race +$18: minimum constitution
+                         * (word); ch+$5B: race (0..6, names H005+$4D04) */
                         if (c->b[0x19] < RACE_W(0x18)) {
-                            /* pg+$19: costituzione corrente; $2284: limiti per razza +$18:
-                             * costituzione minima (word); pg+$5B: razza (0..6, nomi H005+$4D04) */
+                            /* ch+$19: current constitution; $2284: limits per race +$18: minimum constitution (word); ch+$5B:
+                             * race (0..6, names H005+$4D04) */
                             c->b[0x19] = (u8)RACE_W(0x18);
                         }
-                        /* pg+$19: costituzione corrente; $1FA2: minimi per classe +8: costituzione
-                         * (word); pg+$5C: classe o combinazione di classi (0..16, nomi H005+$4D84) */
+                        /* ch+$19: current constitution; $1FA2: minimums per class +8: constitution (word); ch+$5C: class or
+                         * class combination (0..16, names H005+$4D84) */
                         if (c->b[0x19] < CLASS_W(8)) {
-                            /* pg+$19: costituzione corrente; $1FA2: minimi per classe +8:
-                             * costituzione (word); pg+$5C: classe o combinazione di classi (0..16,
-                             * nomi H005+$4D84) */
+                            /* ch+$19: current constitution; $1FA2: minimums per class +8: constitution (word); ch+$5C: class
+                             * or class combination (0..16, names H005+$4D84) */
                             c->b[0x19] = (u8)CLASS_W(8);
                         }
-                        /* pg+$64: punti ferita massimi */
+                        /* ch+$64: maximum hit points */
                         if (c->b[0x64] > (u16)max_hit_points(g_current_char)) {
-                            /* pg+$64: punti ferita massimi */
+                            /* ch+$64: maximum hit points */
                             c->b[0x64] = (u8)max_hit_points(g_current_char);
                         }
-                        /* pg+$1A8: punti ferita correnti; pg+$64: punti ferita massimi */
+                        /* ch+$1A8: current hit points; ch+$64: maximum hit points */
                         c->b[0x1A8] = c->b[0x64];
                         f.field = 6;
                         modify_draw_field(&f, 0);
                         f.field = 4;
                         break;
                     case 5:             /* $3A8E */
-                        /* pg+$1B: carisma corrente; $2288: limiti per razza +$1C: carisma minimo
-                         * (word); pg+$5B: razza (0..6, nomi H005+$4D04) */
+                        /* ch+$1B: current charisma; $2288: limits per race +$1C: minimum charisma
+                         * (word); ch+$5B: race (0..6, names H005+$4D04) */
                         if (c->b[0x1B] < RACE_W(0x1C)) {
-                            /* pg+$1B: carisma corrente; $2288: limiti per razza +$1C: carisma
-                             * minimo (word); pg+$5B: razza (0..6, nomi H005+$4D04) */
+                            /* ch+$1B: current charisma; $2288: limits per race +$1C: minimum charisma (word);
+                             * ch+$5B: race (0..6, names H005+$4D04) */
                             c->b[0x1B] = (u8)RACE_W(0x1C);
                         }
-                        /* pg+$1B: carisma corrente; $1FA4: minimi per classe +$A: carisma (word);
-                         * pg+$5C: classe o combinazione di classi (0..16, nomi H005+$4D84) */
+                        /* ch+$1B: current charisma; $1FA4: minimums per class +$A: charisma (word); ch+$5C: class or
+                         * class combination (0..16, names H005+$4D84) */
                         if (c->b[0x1B] < CLASS_W(0x0A)) {
-                            /* pg+$1B: carisma corrente; $1FA4: minimi per classe +$A: carisma
-                             * (word); pg+$5C: classe o combinazione di classi (0..16, nomi
-                             * H005+$4D84) */
+                            /* ch+$1B: current charisma; $1FA4: minimums per class +$A: charisma (word); ch+$5C: class
+                             * or class combination (0..16, names H005+$4D84) */
                             c->b[0x1B] = (u8)CLASS_W(0x0A);
                         }
                         break;
                     }
                 } else if (f.field == 7) {
-                    add_to_byte(&c->b[0x64], 0xFFFF); /* pg+$64: punti ferita massimi */
-                    if (c->b[0x64] < (u16)min_hit_points(g_current_char)) { /* pg+$64: punti ferita massimi */
-                        c->b[0x64] = (u8)min_hit_points(g_current_char); /* pg+$64: punti ferita massimi */
+                    add_to_byte(&c->b[0x64], 0xFFFF); /* ch+$64: maximum hit points */
+                    if (c->b[0x64] < (u16)min_hit_points(g_current_char)) { /* ch+$64: maximum hit points */
+                        c->b[0x64] = (u8)min_hit_points(g_current_char); /* ch+$64: maximum hit points */
                     }
-                    /* pg+$1A8: punti ferita correnti; pg+$64: punti ferita massimi */
+                    /* ch+$1A8: current hit points; ch+$64: maximum hit points */
                     c->b[0x1A8] = c->b[0x64];
                 } else if (f.cursor == 0) {
                     f.cursor = (u16)(h026_strlen(0x0F,
@@ -585,104 +577,100 @@ static void modify_character(void)
             case 'A':                   /* $3BD8: Add */
                 if (f.field < 6) {
                     idx = (u8)f.field;
-                    /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza corrente */
+                    /* ch+$11: current abilities, 6 entries step 2 from +$11; current strength */
                     add_to_byte(&c->b[0x11 + idx * 2], 1);
                     switch (idx) {
                     case 0:             /* $3C12 */
-                        /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza corrente;
-                         * $2270: limiti per razza +4: forza massima per sesso (word); pg+$5B: razza
-                         * (0..6, nomi H005+$4D04); pg+$10E: sesso (0 maschio, 1 femmina; nomi
-                         * H005+$4BD2) */
+                        /* ch+$11: current abilities, 6 entries step 2 from +$11; current strength; $2270: limits per race
+                         * +4: maximum strength per sex (word); ch+$5B: race (0..6, names
+                         * H005+$4D04); ch+$10E: sex (0 male, 1 female; names H005+$4BD2) */
                         if (c->b[0x11] > RACE_SW(4)) {
-                            /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza
-                             * corrente */
+                            /* ch+$11: current abilities, 6 entries step 2 from +$11; current
+                             * strength */
                             if (c->b[0x11] > 0x12 &&
-                                /* pg+$100: livello da guerriero; pg+$105: livello da cavaliere */
+                                /* ch+$100: fighter level; ch+$105: knight level */
                                 (c->b[0x100] > 0 || c->b[0x105] > 0 ||
-                                 c->b[0x102] > 0) && /* pg+$102: livello da ranger */
-                                /* pg+$1C: forza eccezionale corrente (18/xx, 1..100); $2274: limiti
-                                 * per razza +8: forza eccezionale massima per sesso (word); pg+$5B:
-                                 * razza (0..6, nomi H005+$4D04); pg+$10E: sesso (0 maschio, 1
-                                 * femmina; nomi H005+$4BD2) */
+                                 c->b[0x102] > 0) && /* ch+$102: ranger level */
+                                /* ch+$1C: current exceptional strength (18/xx, 1..100); $2274: limits per race +8: maximum
+                                 * exceptional strength per sex (word); ch+$5B: race (0..6, names
+                                 * H005+$4D04); ch+$10E: sex (0 male, 1 female; names H005+$4BD2) */
                                 c->b[0x1C] < RACE_SW(8)) {
-                                /* pg+$1C: forza eccezionale corrente (18/xx, 1..100) */
+                                /* ch+$1C: current exceptional strength (18/xx, 1..100) */
                                 add_to_byte(&c->b[0x1C], 1);
                             }
-                            /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza
-                             * corrente; $2270: limiti per razza +4: forza massima per sesso (word);
-                             * pg+$5B: razza (0..6, nomi H005+$4D04); pg+$10E: sesso (0 maschio, 1
-                             * femmina; nomi H005+$4BD2) */
+                            /* ch+$11: current abilities, 6 entries step 2 from +$11; current strength; $2270: limits per race
+                             * +4: maximum strength per sex (word); ch+$5B: race (0..6, names
+                             * H005+$4D04); ch+$10E: sex (0 male, 1 female; names H005+$4BD2) */
                             c->b[0x11] = (u8)RACE_SW(4);
                         }
                         break;
                     case 1:             /* $3CE2 */
-                        /* pg+$13: intelligenza corrente; $227A: limiti per razza +$E: intelligenza
-                         * massima (word); pg+$5B: razza (0..6, nomi H005+$4D04) */
+                        /* ch+$13: current intelligence; $227A: limits per race +$E: maximum intelligence
+                         * (word); ch+$5B: race (0..6, names H005+$4D04) */
                         if (c->b[0x13] > RACE_W(0x0E)) {
-                            /* pg+$13: intelligenza corrente; $227A: limiti per razza +$E:
-                             * intelligenza massima (word); pg+$5B: razza (0..6, nomi H005+$4D04) */
+                            /* ch+$13: current intelligence; $227A: limits per race +$E: maximum intelligence (word); ch+$5B:
+                             * race (0..6, names H005+$4D04) */
                             c->b[0x13] = (u8)RACE_W(0x0E);
                         }
                         break;
                     case 2:             /* $3D2E */
-                        /* pg+$15: saggezza corrente; $227E: limiti per razza +$12: saggezza massima
-                         * (word); pg+$5B: razza (0..6, nomi H005+$4D04) */
+                        /* ch+$15: current wisdom; $227E: limits per race +$12: maximum wisdom
+                         * (word); ch+$5B: race (0..6, names H005+$4D04) */
                         if (c->b[0x15] > RACE_W(0x12)) {
-                            /* pg+$15: saggezza corrente; $227E: limiti per razza +$12: saggezza
-                             * massima (word); pg+$5B: razza (0..6, nomi H005+$4D04) */
+                            /* ch+$15: current wisdom; $227E: limits per race +$12: maximum wisdom (word); ch+$5B:
+                             * race (0..6, names H005+$4D04) */
                             c->b[0x15] = (u8)RACE_W(0x12);
                         }
-                        /* pg+$124: slot incantesimi, 24 byte: tipo*6 + livello-1; chierico liv. 1 */
+                        /* ch+$124: spell slots, 24 bytes: type*6 + level-1; cleric lvl. 1 */
                         if (c->b[0x124] > 0) {
-                            /* pg+$124: slot incantesimi, 24 byte: tipo*6 + livello-1; chierico liv.
-                             * 1 */
+                            /* ch+$124: spell slots, 24 bytes: type*6 + level-1; cleric lvl. 1 */
                             c->b[0x124] = 1;
                         }
                         break;
                     case 3:             /* $3D8C */
-                        /* pg+$17: destrezza corrente; $2282: limiti per razza +$16: destrezza
-                         * massima (word); pg+$5B: razza (0..6, nomi H005+$4D04) */
+                        /* ch+$17: current dexterity; $2282: limits per race +$16: maximum dexterity
+                         * (word); ch+$5B: race (0..6, names H005+$4D04) */
                         if (c->b[0x17] > RACE_W(0x16)) {
-                            /* pg+$17: destrezza corrente; $2282: limiti per razza +$16: destrezza
-                             * massima (word); pg+$5B: razza (0..6, nomi H005+$4D04) */
+                            /* ch+$17: current dexterity; $2282: limits per race +$16: maximum dexterity (word);
+                             * ch+$5B: race (0..6, names H005+$4D04) */
                             c->b[0x17] = (u8)RACE_W(0x16);
                         }
                         break;
                     case 4:             /* $3DD8 */
-                        /* pg+$19: costituzione corrente; $2286: limiti per razza +$1A: costituzione
-                         * massima (word); pg+$5B: razza (0..6, nomi H005+$4D04) */
+                        /* ch+$19: current constitution; $2286: limits per race +$1A: maximum constitution
+                         * (word); ch+$5B: race (0..6, names H005+$4D04) */
                         if (c->b[0x19] > RACE_W(0x1A)) {
-                            /* pg+$19: costituzione corrente; $2286: limiti per razza +$1A:
-                             * costituzione massima (word); pg+$5B: razza (0..6, nomi H005+$4D04) */
+                            /* ch+$19: current constitution; $2286: limits per race +$1A: maximum constitution (word); ch+$5B:
+                             * race (0..6, names H005+$4D04) */
                             c->b[0x19] = (u8)RACE_W(0x1A);
                         }
-                        /* pg+$64: punti ferita massimi */
+                        /* ch+$64: maximum hit points */
                         if (c->b[0x64] < (u16)min_hit_points(g_current_char)) {
-                            /* pg+$64: punti ferita massimi */
+                            /* ch+$64: maximum hit points */
                             c->b[0x64] = (u8)min_hit_points(g_current_char);
                         }
-                        /* pg+$1A8: punti ferita correnti; pg+$64: punti ferita massimi */
+                        /* ch+$1A8: current hit points; ch+$64: maximum hit points */
                         c->b[0x1A8] = c->b[0x64];
                         f.field = 6;
                         modify_draw_field(&f, 0);
                         f.field = 4;
                         break;
                     case 5:             /* $3E74 */
-                        /* pg+$1B: carisma corrente; $228A: limiti per razza +$1E: carisma massimo
-                         * (word); pg+$5B: razza (0..6, nomi H005+$4D04) */
+                        /* ch+$1B: current charisma; $228A: limits per race +$1E: maximum charisma
+                         * (word); ch+$5B: race (0..6, names H005+$4D04) */
                         if (c->b[0x1B] > RACE_W(0x1E)) {
-                            /* pg+$1B: carisma corrente; $228A: limiti per razza +$1E: carisma
-                             * massimo (word); pg+$5B: razza (0..6, nomi H005+$4D04) */
+                            /* ch+$1B: current charisma; $228A: limits per race +$1E: maximum charisma (word);
+                             * ch+$5B: race (0..6, names H005+$4D04) */
                             c->b[0x1B] = (u8)RACE_W(0x1E);
                         }
                         break;
                     }
                 } else if (f.field == 7) {
-                    add_to_byte(&c->b[0x64], 1); /* pg+$64: punti ferita massimi */
-                    if (c->b[0x64] > (u16)max_hit_points(g_current_char)) { /* pg+$64: punti ferita massimi */
-                        c->b[0x64] = (u8)max_hit_points(g_current_char); /* pg+$64: punti ferita massimi */
+                    add_to_byte(&c->b[0x64], 1); /* ch+$64: maximum hit points */
+                    if (c->b[0x64] > (u16)max_hit_points(g_current_char)) { /* ch+$64: maximum hit points */
+                        c->b[0x64] = (u8)max_hit_points(g_current_char); /* ch+$64: maximum hit points */
                     }
-                    /* pg+$1A8: punti ferita correnti; pg+$64: punti ferita massimi */
+                    /* ch+$1A8: current hit points; ch+$64: maximum hit points */
                     c->b[0x1A8] = c->b[0x64];
                 } else if (f.cursor == (u16)(h026_strlen(0x0F,
                                (const char *)g_current_char->b) - 1)) {
@@ -736,81 +724,81 @@ static void modify_character(void)
     }
     cleric_spell_slots(g_current_char);
     c = g_current_char;
-    c->b[0xED] = 1; /* pg+$ED: quota del PNG nella spartizione (bit 0-2); 1 dopo Modify */
+    c->b[0xED] = 1; /* ch+$ED: share of the NPC in the division (bits 0-2); 1 after Modify */
     sum = 0;
     count = 0;
     for (k = 0; k <= 7; ++k) {
-        if (c->b[0xFE + k] > 0) { /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
-            /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico; $5026:
-             * livello massimo dei dadi vita per classe (byte, 0..7) */
+        if (c->b[0xFE + k] > 0) { /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
+            /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric; $5026:
+             * maximum hit dice level per class (byte, 0..7) */
             if (c->b[0xFE + k] < H005_B(0x5026 + k)) {
                 if (k == 4) {
-                    /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
+                    /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
                     sum = (s16)(sum + con_hp_adjust(k) * (c->b[0xFE + k] + 1));
                 } else {
-                    /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
+                    /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
                     sum = (s16)(sum + con_hp_adjust(k) * c->b[0xFE + k]);
                 }
             } else {
-                /* $5026: livello massimo dei dadi vita per classe (byte, 0..7) */
+                /* $5026: maximum hit dice level per class (byte, 0..7) */
                 sum = (s16)(sum + (H005_B(0x5026 + k) - 1) * con_hp_adjust(k));
             }
             ++count;
         }
     }
     sum = (s16)(sum / count);
-    /* pg+$123: PF massimi senza costituzione; base -1 slot incantesimi +$124; pg+$64: punti ferita
-     * massimi */
+    /* ch+$123: maximum HP without constitution; base -1 of the spell slots +$124; ch+$64: maximum
+     * hit points */
     c->b[0x123] = (u8)(c->b[0x64] - sum);
     for (idx = 0; idx <= 5; ++idx) {
-        /* pg+$10: caratteristiche base, 6 voci passo 2 (FOR INT SAG DES COS CAR); FOR; pg+$11:
-         * caratteristiche correnti, 6 voci passo 2 da +$11; forza corrente */
+        /* pg+$10: caratteristiche base, 6 voci passo 2 (FOR INT SAG DES COS CAR); FOR; ch+$11:
+         * current abilities, 6 entries step 2 from +$11; current strength */
         g_current_char->b[0x10 + idx * 2] = g_current_char->b[0x11 + idx * 2];
     }
-    /* pg+$1D: forza eccezionale base; pg+$1C: forza eccezionale corrente (18/xx, 1..100) */
+    /* ch+$1D: base exceptional strength; ch+$1C: current exceptional strength (18/xx, 1..100) */
     g_current_char->b[0x1D] = g_current_char->b[0x1C];
-    H005_B(0x24DA) = 0; /* $24DA: 1 in Modify Character: il clic sceglie il campo ($2506) */
+    H005_B(0x24DA) = 0; /* $24DA: 1 in Modify Character: the click chooses the field ($2506) */
     (void)saved_hp;
 }
 
 /*
- * PORT H013+$43E8: promuove c all'ordine di cavalleria successivo (+$5D):
- * il livello da cavaliere (+$105) cala di 1 se l'esperienza non basta,
- * e i punti ferita di quel livello (+$123 / (livello + 1) piu' il bonus di
- * costituzione) vengono tolti.
+ * PORT H013+$43E8: promotes c to the next knightly order (+$5D):
+ * the knight level (+$105) drops by 1 if the experience is not enough,
+ * and the hit points of that level (+$123 / (level + 1) plus the
+ * constitution bonus) are removed.
  */
 static void promote_knight(Character *c)
 {
-    /* pg+$105: livello da cavaliere */
+    /* ch+$105: knight level */
     u8 level = c->b[0x105];             /* -$1(a5) */
     u8 order;                           /* -$2(a5) */
     u16 part;                           /* -$4(a5) */
     s16 adj;                            /* -$6(a5) */
 
-    if (c->b[0x5D] == 1) { /* pg+$5D: ordine di cavalleria (1 Corona, 2 Spada, 3 Rosa) */
+    if (c->b[0x5D] == 1) { /* ch+$5D: knightly order (1 Crown, 2 Sword, 3 Rose) */
         order = 4;
     } else {
         order = 5;
     }
-    if ((s32)CH_L(c, 0x11E) < /* pg+$11E: punti esperienza (long) */
-        /* $1946: tabelle per classe ($9A byte): 11 long soglie XP, poi slot per liv. */
+    if ((s32)CH_L(c, 0x11E) < /* ch+$11E: experience points (long) */
+        /* $1946: per-class tables ($9A bytes): 11 long XP thresholds, then slots per lvl. */
         (s32)H005_L(0x1946 + order * 0x9A + (level - 2) * 4)) {
-        add_to_byte(&c->b[0x105], 0xFFFF); /* pg+$105: livello da cavaliere */
+        add_to_byte(&c->b[0x105], 0xFFFF); /* ch+$105: knight level */
     }
-    /* pg+$123: PF massimi senza costituzione; base -1 slot incantesimi +$124 */
+    /* ch+$123: maximum HP without constitution; base -1 of the spell slots +$124 */
     part = (u16)(c->b[0x123] / (u16)(level + 1));
-    /* pg+$123: PF massimi senza costituzione; base -1 slot incantesimi +$124 */
+    /* ch+$123: maximum HP without constitution; base -1 of the spell slots +$124 */
     add_to_byte(&c->b[0x123], (u16)-(s16)part);
     adj = con_hp_adjust(7);
-    add_to_byte(&c->b[0x64], (u16)-(s16)(part + adj)); /* pg+$64: punti ferita massimi */
-    if (c->b[0x1A8] >= c->b[0x64]) { /* pg+$1A8: punti ferita correnti; pg+$64: punti ferita massimi */
-        c->b[0x1A8] = c->b[0x64]; /* pg+$1A8: punti ferita correnti; pg+$64: punti ferita massimi */
+    add_to_byte(&c->b[0x64], (u16)-(s16)(part + adj)); /* ch+$64: maximum hit points */
+    if (c->b[0x1A8] >= c->b[0x64]) { /* ch+$1A8: current hit points; ch+$64: maximum hit points */
+        c->b[0x1A8] = c->b[0x64]; /* ch+$1A8: current hit points; ch+$64: maximum hit points */
     }
-    add_to_byte(&c->b[0x5D], 1); /* pg+$5D: ordine di cavalleria (1 Corona, 2 Spada, 3 Rosa) */
+    add_to_byte(&c->b[0x5D], 1); /* ch+$5D: knightly order (1 Crown, 2 Sword, 3 Rose) */
     level_derived_values(c);
 }
 
-/* Riga "nome + testo" centrata a col nella riga 9. */
+/* Row "name + text" centred at col on row 9. */
 static void knight_line(Character *c, u16 col, u16 len, const char *text)
 {
     h026_copy(0x50, s_message, 0x0F, (const char *)c->b);
@@ -819,9 +807,9 @@ static void knight_line(Character *c, u16 col, u16 len, const char *text)
 }
 
 /*
- * PORT H013+$4508: Knight Change Classes: un cavaliere della Corona
- * (+$5D = 1) puo' diventare della Spada, uno della Spada (2) della Rosa,
- * se ha livello ed esperienza sufficienti e le caratteristiche minime.
+ * PORT H013+$4508: Knight Change Classes: a Knight of the Crown
+ * (+$5D = 1) can become one of the Sword, one of the Sword (2) one of the Rose,
+ * if it has enough level and experience and the minimum abilities.
  */
 static void knight_change(void)
 {
@@ -843,7 +831,7 @@ static void knight_change(void)
     }
     c = g_current_char;
     draw_screen_frame(1);
-    /* pg+$105: livello da cavaliere; pg+$5D: ordine di cavalleria (1 Corona, 2 Spada, 3 Rosa) */
+    /* ch+$105: knight level; ch+$5D: knightly order (1 Crown, 2 Sword, 3 Rose) */
     if (c->b[0x105] == 0 || c->b[0x5D] == 3) {
         return;
     }
@@ -854,25 +842,25 @@ static void knight_change(void)
     ui_draw_text(col, 3, 0x0A, 0, 0x0F, (const char *)c->b);
     ui_draw_text(7, 5, 0x0A, 0, 0x1A, "is petitioning to become a");
     /*
-     * Con +$5D diverso da 1 e 2 l'originale usa la stringa non
-     * inizializzata del frame; qui e' vuota.
+     * With +$5D other than 1 and 2 the original uses the uninitialised
+     * string of the frame; here it is empty.
      */
     order[0] = 0;
-    if (c->b[0x5D] == 1) { /* pg+$5D: ordine di cavalleria (1 Corona, 2 Spada, 3 Rosa) */
+    if (c->b[0x5D] == 1) { /* ch+$5D: knightly order (1 Crown, 2 Sword, 3 Rose) */
         copy_text(order, "sword", 5);
-    } else if (c->b[0x5D] == 2) { /* pg+$5D: ordine di cavalleria (1 Corona, 2 Spada, 3 Rosa) */
+    } else if (c->b[0x5D] == 2) { /* ch+$5D: knightly order (1 Crown, 2 Sword, 3 Rose) */
         copy_text(order, "rose", 5);
     }
     copy_text(s_message, "Knight Of The ", 0x50);
     h026_append(0x50, s_message, 5, order);
     ui_draw_text(0x0A, 7, 0x0A, 0, 0x50, s_message);
-    /* pg+$5D: ordine di cavalleria (1 Corona, 2 Spada, 3 Rosa) */
+    /* ch+$5D: knightly order (1 Crown, 2 Sword, 3 Rose) */
     if (c->b[0x5D] == 1) {                         /* $46C6 */
         col = (u16)(0x13 - ((u16)(h026_strlen(0x0F, (const char *)c->b) +
                                   0x15) >> 1));
-        if (c->b[0x105] < 2 || /* pg+$105: livello da cavaliere */
-            /* pg+$11E: punti esperienza (long); $1BAE: soglia XP (long) classe 4, livello 2:
-             * requisito Knight of the Sword */
+        if (c->b[0x105] < 2 || /* ch+$105: knight level */
+            /* ch+$11E: experience points (long); $1BAE: XP threshold (long) class 4, level
+             * 2: Knight of the Sword requirement */
             (s32)CH_L(c, 0x11E) < (s32)H005_L(0x1BAE)) {
             knight_line(c, col, 0x16, " is too inExperienced.");
         } else {
@@ -895,13 +883,13 @@ static void knight_change(void)
                 copy_text(options, "Change Exit", 0x0B);
             }
         }
-    /* pg+$5D: ordine di cavalleria (1 Corona, 2 Spada, 3 Rosa) */
+    /* ch+$5D: knightly order (1 Crown, 2 Sword, 3 Rose) */
     } else if (c->b[0x5D] == 2) {                  /* $48CC */
         col = (u16)(0x14 - ((u16)(h026_strlen(0x0F, (const char *)c->b) +
                                   0x15) >> 1));
-        if (c->b[0x105] < 4 || /* pg+$105: livello da cavaliere */
-            /* pg+$11E: punti esperienza (long); $1C50: soglia XP (long) classe 5, terza voce:
-             * requisito Knight of the Rose */
+        if (c->b[0x105] < 4 || /* ch+$105: knight level */
+            /* ch+$11E: experience points (long); $1C50: XP threshold (long) class 5, third
+             * entry: Knight of the Rose requirement */
             (s32)CH_L(c, 0x11E) < (s32)H005_L(0x1C50)) {
             knight_line(c, col, 0x15, " is too inexperienced");
         } else {
@@ -944,8 +932,8 @@ static void knight_change(void)
 }
 
 /*
- * PORT H013+$2B9A: Drop Character: sceglie il personaggio e, confermato
- * due volte, ne cancella i file e lo toglie dal party.
+ * PORT H013+$2B9A: Drop Character: chooses the character and, once confirmed
+ * twice, deletes its files and removes it from the party.
  */
 static void drop_character(void)
 {
@@ -961,7 +949,7 @@ static void drop_character(void)
         h026_append(0x50, s_message, 9, " forever?");
         if (ask_yes_no(0x50, s_message, 0x0E, 0x0A, 0x0F) == 'Y' &&
             ask_yes_no(0x0E, "Are you sure? ", 0x0E, 0x0A, 0x0F) == 'Y') {
-            if (!c->b[0x198]) { /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
+            if (!c->b[0x198]) { /* ch+$198: active/standing (0 down or out of the combat) */
                 copy_text(s_message, "You dump ", 0x50);
                 h026_append(0x50, s_message, 0x0F, (const char *)c->b);
                 h026_append(0x50, s_message, 0x0A, " out back.");
@@ -999,12 +987,12 @@ void main_menu(void)
     u8 key;                             /* -$23D(a5) */
 
     init_main_menu(items, keys);
-    H005_B(0x24A2) = 0; /* $24A2: 1: il clic su un nome del party sceglie il personaggio */
-    /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
+    H005_B(0x24A2) = 0; /* $24A2: 1: clicking a party name selects the character */
+    /* $3DE3: game mode (0 menu, 1 view, 2 camp, 5 combat) */
     saved_context = H005_B(0x3DE3);
-    H005_B(0x3DE3) = 0; /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
+    H005_B(0x3DE3) = 0; /* $3DE3: game mode (0 menu, 1 view, 2 camp, 5 combat) */
     rebuild = 1;
-    H005_B(0x24DE) = 0; /* $24DE: addestramento gratuito (trucco "Free training") */
+    H005_B(0x24DE) = 0; /* $24DE: free training (cheat "Free training") */
     index = 0;
 
     for (;;) {
@@ -1015,8 +1003,8 @@ void main_menu(void)
                 items[MM_DROP].enabled = 1;
                 items[MM_MODIFY].enabled = 1;
                 items[MM_TRAIN].enabled =
-                    /* B+$550: (word) maschera delle classi addestrabili qui (0 nessuna); $24DE:
-                     * addestramento gratuito (trucco "Free training") */
+                    /* B+$550: (word) mask of the classes that can be trained here (0 none);
+                     * $24DE: free training (cheat "Free training") */
                     (u8)(COK_GET16(g_state_b + 0x550) > 0 || H005_B(0x24DE));
                 items[MM_KNIGHT].enabled = items[MM_TRAIN].enabled;
                 items[MM_VIEW].enabled = 1;
@@ -1055,15 +1043,15 @@ void main_menu(void)
                         0x0F, 9, 0x0C, 0x26, 0x16, list, 0, &redraw, &index,
                         &chosen);
         /*
-         * La funzione e' la lettera iniziale della voce scelta.  Con Esc
-         * (voce nulla) l'originale legge il byte all'indirizzo 0; qui 0.
+         * The function is the initial letter of the chosen entry.  With Esc
+         * (null entry) the original reads the byte at address 0; here 0.
          */
         key = chosen != NULL ? (u8)chosen->text[0] : 0;
         if (rebuild) {
             menu_free(&list);
         }
         if (key != 'S' && key != 'E') {
-            H005_B(0x24A3) = 0; /* $24A3: 1 se la partita e' salvata (avviso all'uscita); letto da eff. $36 */
+            H005_B(0x24A3) = 0; /* $24A3: 1 if the game is saved (warning on exit); read by eff. $36 */
         }
         switch (key) {
         case 'C':
@@ -1104,16 +1092,16 @@ void main_menu(void)
         case 'R':
             if (items[MM_REMOVE].enabled && g_current_char != NULL &&
                 pick_character()) {
-                /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
+                /* ch+$EC: control: <$80 PC, >$7F NPC/AI ($B3 = charmed or confused) */
                 if (g_current_char->b[0xEC] < 0x80) {
                     save_character(g_current_char, 0, "");
                     remove_from_party(0, 1);
                 } else {
                     drop_character();
                 }
-                /* $249C: 0 durante il menu del party da ECL $38: Drop non perde il party */
+                /* $249C: 0 during the party menu from ECL $38: Drop does not lose the party */
                 if (g_current_char == NULL && !H005_B(0x249C)) {
-                    /* $24D0: 1 party perduto o uscito: ferma ECL e ciclo dell'esplorazione */
+                    /* $24D0: 1 party lost or gone out: stops ECL and the exploration loop */
                     H005_B(0x24D0) = 1;
                     return;
                 }
@@ -1131,33 +1119,32 @@ void main_menu(void)
             break;
         case 'B':
             if (items[MM_BEGIN].enabled) {
-                H005_B(0x24A2) = 1; /* $24A2: 1: il clic su un nome del party sceglie il personaggio */
-                /* $24D7: 1 se e' stata scelta la dimostrazione (Demo) */
+                H005_B(0x24A2) = 1; /* $24A2: 1: clicking a party name selects the character */
+                /* $24D7: 1 if the demonstration (Demo) was chosen */
                 if (g_party_head != NULL || G_DEMO_FLAG) {
-                    /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
+                    /* $3DE3: game mode (0 menu, 1 view, 2 camp, 5 combat) */
                     H005_B(0x3DE3) = saved_context;
-                    /* $24D1: 1 dopo Load Saved Game: l'area non azzera le sue variabili; $2486: id
-                     * della sequenza caricata in $27BC (nome a $27A6), $FF nessuna */
+                    /* $24D1: 1 after Load Saved Game: the area does not clear its variables; $2486: id of
+                     * the sequence loaded at $27BC (name at $27A6), $FF none */
                     if (!H005_B(0x24D1) && H005_B(0x2486) != 9) {
-                        /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
+                        /* $3DE3: game mode (0 menu, 1 view, 2 camp, 5 combat) */
                         if (H005_B(0x3DE3) == 3 &&
-                            /* A+$270: (word) area citta': niente ridisegno vista ne' EXIT dal campo */
+                            /* A+$270: (word) town area: no view redraw nor EXIT from the camp */
                             COK_GET16(g_state_a + 0x270) == 0) {
                             draw_wild_frame();
                         } else {
                             draw_explore_frame();
                         }
                         draw_party(g_current_char);
-                    /* A+$1E4: (word) numero dell'area ECL corrente (copia di $2498) */
+                    /* A+$1E4: (word) number of the current ECL area (copy of $2498) */
                     } else if (COK_GET16(g_state_a + 0x1E4) == 0 ||
-                               /* A+$270: (word) area citta': niente ridisegno vista ne' EXIT dal
-                                * campo */
+                               /* A+$270: (word) town area: no view redraw nor EXIT from the camp */
                                COK_GET16(g_state_a + 0x270) != 0) {
                         draw_explore_frame();
                         draw_party(g_current_char);
                     }
                     clear_message_line();
-                    /* B+$550: (word) maschera delle classi addestrabili qui (0 nessuna) */
+                    /* B+$550: (word) mask of the classes that can be trained here (0 none) */
                     COK_PUT16(g_state_b + 0x550, 0);
                     free_char_screens();
                     return;
@@ -1168,7 +1155,7 @@ void main_menu(void)
             if (items[MM_EXIT].enabled) {
                 key = ask_yes_no(0x12, "Quit to workbench ", 0x0E, 0x0A, 0x0F);
                 if (key == 'Y') {
-                    /* $24A3: 1 se la partita e' salvata (avviso all'uscita); letto da eff. $36 */
+                    /* $24A3: 1 if the game is saved (warning on exit); read by eff. $36 */
                     if (g_party_head != NULL && !H005_B(0x24A3)) {
                         key = ask_yes_no(0x1E, "Game not saved.  Quit anyway? ",
                                          0x0E, 0x0A, 0x0F);
@@ -1186,19 +1173,18 @@ void main_menu(void)
             break;
         case 'J':
             /*
-             * Trucco: se il terzo argomento della riga di comando e' la
-             * parola di H005+$2358, attiva/disattiva "Free training".
-             * L'originale legge argv[2] in ogni caso; qui solo se esiste.
+             * Cheat: if the third command line argument is the
+             * word of H005+$2358, toggles "Free training".
+             * The original reads argv[2] in any case; here only if it exists.
              */
             if (g_argc > 2 &&
                 h026_compare_nocase(0xFF, g_argv[2], 0x14,
-                                    /* $2358: parola d'ordine dei trucchi (stringa confrontata con
-                                     * argv[2]) */
+                                    /* $2358: cheat password (string compared with argv[2]) */
                                     (const char *)&g_h005[0x2358]) == 1) {
-                /* $24DE: addestramento gratuito (trucco "Free training") */
+                /* $24DE: free training (cheat "Free training") */
                 H005_B(0x24DE) = (u8)(H005_B(0x24DE) == 0);
                 h026_copy(0x50, s_message, 0x0E, "Free training ");
-                if (H005_B(0x24DE)) { /* $24DE: addestramento gratuito (trucco "Free training") */
+                if (H005_B(0x24DE)) { /* $24DE: free training (cheat "Free training") */
                     h026_append(0x50, s_message, 2, "on");
                 } else {
                     h026_append(0x50, s_message, 3, "off");
@@ -1212,7 +1198,7 @@ void main_menu(void)
     }
 }
 
-/* Copia con dbeq: al massimo max + 1 byte, NUL compreso. */
+/* Copy with dbeq: at most max + 1 bytes, NUL included. */
 static void copy_text(char *dst, const char *src, u16 max)
 {
     u16 i;
@@ -1225,21 +1211,21 @@ static void copy_text(char *dst, const char *src, u16 max)
     }
 }
 
-/* PORT H013+$0520: trampolino (bra.w) verso H013+$56CE, la routine qui sotto. */
+/* PORT H013+$0520: trampoline (bra.w) to H013+$56CE, the routine below. */
 /*
- * PORT H013+$56CE (trampolino H013+$0520): bonus ai punti ferita per la
- * costituzione (+$19) dalla tabella H005+$1F4A; le classi 2, 4 e 7 hanno
- * un bonus in piu' oltre 16.
+ * PORT H013+$56CE (trampoline H013+$0520): hit point bonus for
+ * constitution (+$19) from the table H005+$1F4A; classes 2, 4 and 7 have
+ * an extra bonus beyond 16.
  */
 static s16 con_hp_bonus(Character *c, u8 cls)
 {
     s16 bonus = 0;
 
-    /* $1F4A: bonus PF per costituzione (word), indice costituzione-3; pg+$19: costituzione corrente */
+    /* $1F4A: HP bonus by constitution (word), index constitution-3; ch+$19: current constitution */
     bonus = (s16)(bonus + (s16)H005_W((u16)(0x1F4A +
                                             ((s16)c->b[0x19] - 3) * 2)));
     if (cls == 2 || cls == 7 || cls == 4) {
-        switch (c->b[0x19]) { /* pg+$19: costituzione corrente */
+        switch (c->b[0x19]) { /* ch+$19: current constitution */
         case 17:
             bonus += 1;
             break;
@@ -1263,12 +1249,12 @@ static s16 con_hp_bonus(Character *c, u8 cls)
 }
 
 /*
- * PORT H013+$0524: punti ferita iniziali.  Per ogni classe del personaggio
- * selezionata da mask (H005+$5038): sotto il livello massimo dei dadi
- * (H005+$5026) il migliore di due tiri e il bonus di costituzione, sopra un
- * valore fisso (assegnato, non sommato, come nell'originale).  Il totale e
- * il bonus sono divisi per il numero di classi; +$123 riceve i dadi, +$64
- * dadi e bonus, +$1A8 conserva la differenza con +$64.
+ * PORT H013+$0524: initial hit points.  For every class of the character
+ * selected by mask (H005+$5038): below the maximum hit dice level
+ * (H005+$5026) the best of two rolls and the constitution bonus, above it a
+ * fixed value (assigned, not added, as in the original).  The total and
+ * the bonus are divided by the number of classes; +$123 gets the dice, +$64
+ * dice and bonus, +$1A8 keeps the difference with +$64.
  */
 static void roll_hit_points(Character *c, u16 mask, u16 nclasses)
 {
@@ -1283,19 +1269,19 @@ static void roll_hit_points(Character *c, u16 mask, u16 nclasses)
     u8 k;                               /* -$b(a5) */
 
     for (k = 0; k <= 7; ++k) {
-        /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
+        /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
         if (c->b[0xFE + k] == 0 ||
-            /* $5038: bit della classe k (0..7) nella maschera delle classi */
+            /* $5038: bit of class k (0..7) in the class mask */
             mask_byte((u8)mask, H005_B(0x5038 + k)) == 0) {
             continue;
         }
-        /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico; $5026: livello
-         * massimo dei dadi vita per classe (byte, 0..7) */
+        /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric; $5026: maximum hit
+         * dice level per class (byte, 0..7) */
         if (c->b[0xFE + k] < H005_B(0x5026 + k)) {
-            /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
+            /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
             if (c->b[0xFE + k] > 1) {
                 n = 1;
-            /* pg+$5E: divinita' del chierico (0 nessuna, 1..7; 6 per le razze 3-4) */
+            /* ch+$5E: deity of the cleric (0 none, 1..7; 6 for races 3-4) */
             } else if (k == 0 && c->b[0x5E] > 4) {
                 n = 1;
             } else {
@@ -1328,17 +1314,17 @@ static void roll_hit_points(Character *c, u16 mask, u16 nclasses)
     if (hp < 1) {
         hp = 1;
     }
-    /* pg+$123: PF massimi senza costituzione; base -1 slot incantesimi +$124 */
+    /* ch+$123: maximum HP without constitution; base -1 of the spell slots +$124 */
     add_to_byte(&c->b[0x123], (u16)hp);
     bonus = (s16)(bonus / (s16)nclasses);
-    diff = (s16)(c->b[0x64] - c->b[0x1A8]); /* pg+$64: punti ferita massimi; pg+$1A8: punti ferita correnti */
-    add_to_byte(&c->b[0x64], (u16)(hp + bonus)); /* pg+$64: punti ferita massimi */
-    c->b[0x1A8] = (u8)(c->b[0x64] - diff); /* pg+$1A8: punti ferita correnti; pg+$64: punti ferita massimi */
+    diff = (s16)(c->b[0x64] - c->b[0x1A8]); /* ch+$64: maximum hit points; ch+$1A8: current hit points */
+    add_to_byte(&c->b[0x64], (u16)(hp + bonus)); /* ch+$64: maximum hit points */
+    c->b[0x1A8] = (u8)(c->b[0x64] - diff); /* ch+$1A8: current hit points; ch+$64: maximum hit points */
 }
 
 /*
- * PORT H013+$07B2: tre oggetti iniziali ($48 byte) inseriti dopo il primo
- * della lista +$150; +$14F = 3.
+ * PORT H013+$07B2: three initial items ($48 bytes) inserted after the first one
+ * of the list +$150; +$14F = 3.
  */
 static void add_starting_items(Character *c)
 {
@@ -1349,31 +1335,31 @@ static void add_starting_items(Character *c)
                                                 COK_MEMF_CLEAR);
 
         it->next = NULL;
-        it->b[0x2A] = 0; /* ogg+$2A: flag intestazione: copiato in header della voce di menu */
-        it->b[0x3A] = 0; /* ogg+$3A: flag oggetto pronto all'uso (Ready) */
-        it->b[0x3C] = 0; /* ogg+$3C: flag oggetto maledetto */
+        it->b[0x2A] = 0; /* ogg+$2A: header flag: copied into the header of the menu entry */
+        it->b[0x3A] = 0; /* item+$3A: item readied flag (Ready) */
+        it->b[0x3C] = 0; /* item+$3C: cursed item flag */
         switch (i) {
         case 1:
-            /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
+            /* ogg+$30: type of the item (index into the table H005+$336C, $12 bytes per entry) */
             it->b[0x30] = 0x24;
-            it->b[0x34] = 0x24; /* ogg+$34: parola 3 del nome (indice in H005+$406E); nome base del tipo */
-            it->b[0x33] = 0x2F; /* ogg+$33: parola 2 del nome (indice 1-based in H005+$406E, $16 byte) */
-            COK_PUT16(it->b + 0x3E, 0x1C2); /* ogg+$3E: (word) peso unitario dell'oggetto */
-            COK_PUT16(it->b + 0x42, 0); /* ogg+$42: (word) valore in monete (Sell offre la meta') */
+            it->b[0x34] = 0x24; /* item+$34: name word 3 (index into H005+$406E); base name of the type */
+            it->b[0x33] = 0x2F; /* item+$33: name word 2 (1-based index into H005+$406E, $16 bytes) */
+            COK_PUT16(it->b + 0x3E, 0x1C2); /* item+$3E: (word) unit weight of the item */
+            COK_PUT16(it->b + 0x42, 0); /* item+$42: (word) value in coins (Sell offers half) */
             break;
         case 2:
-            /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
+            /* ogg+$30: type of the item (index into the table H005+$336C, $12 bytes per entry) */
             it->b[0x30] = 0x12;
-            it->b[0x34] = 0x12; /* ogg+$34: parola 3 del nome (indice in H005+$406E); nome base del tipo */
-            COK_PUT16(it->b + 0x3E, 0x32); /* ogg+$3E: (word) peso unitario dell'oggetto */
-            COK_PUT16(it->b + 0x42, 0); /* ogg+$42: (word) valore in monete (Sell offre la meta') */
+            it->b[0x34] = 0x12; /* item+$34: name word 3 (index into H005+$406E); base name of the type */
+            COK_PUT16(it->b + 0x3E, 0x32); /* item+$3E: (word) unit weight of the item */
+            COK_PUT16(it->b + 0x42, 0); /* item+$42: (word) value in coins (Sell offers half) */
             break;
         case 3:
-            /* ogg+$30: tipo dell'oggetto (indice tabella H005+$336C, $12 byte per voce) */
+            /* ogg+$30: type of the item (index into the table H005+$336C, $12 bytes per entry) */
             it->b[0x30] = 0x25;
-            it->b[0x34] = 0x25; /* ogg+$34: parola 3 del nome (indice in H005+$406E); nome base del tipo */
-            COK_PUT16(it->b + 0x3E, 0x3C); /* ogg+$3E: (word) peso unitario dell'oggetto */
-            COK_PUT16(it->b + 0x42, 0); /* ogg+$42: (word) valore in monete (Sell offre la meta') */
+            it->b[0x34] = 0x25; /* item+$34: name word 3 (index into H005+$406E); base name of the type */
+            COK_PUT16(it->b + 0x3E, 0x3C); /* item+$3E: (word) unit weight of the item */
+            COK_PUT16(it->b + 0x42, 0); /* item+$42: (word) value in coins (Sell offers half) */
             break;
         default:
             break;
@@ -1385,56 +1371,56 @@ static void add_starting_items(Character *c)
             c->items->next = it;
         }
     }
-    c->b[0x14F] = 3; /* pg+$14F: numero di oggetti posseduti (max 16) */
+    c->b[0x14F] = 3; /* ch+$14F: number of items owned (max 16) */
 }
 
 /*
- * PORT H013+$08C2 (corpo a H013+$097C): figura predefinita del personaggio
- * corrente: +$141 secondo razza, sesso e +$10E, +$142 secondo la classe.
+ * PORT H013+$08C2 (body at H013+$097C): default figure of the current
+ * character: +$141 according to race, sex and +$10E, +$142 according to the class.
  */
 static void set_default_figure(void)
 {
     Character *c = g_current_char;
 
-    if (c->b[0x5B] == 5) { /* pg+$5B: razza (0..6, nomi H005+$4D04) */
-        c->b[0x141] = 3; /* pg+$141: parte della testa dell'icona (0..$0B) */
-    } else if (c->b[0x10E] == 1) { /* pg+$10E: sesso (0 maschio, 1 femmina; nomi H005+$4BD2) */
-        if (c->b[0x144] == 2) { /* pg+$144: taglia dell'icona (1 piccola, 2 grande) */
-            c->b[0x141] = 9; /* pg+$141: parte della testa dell'icona (0..$0B) */
+    if (c->b[0x5B] == 5) { /* ch+$5B: race (0..6, names H005+$4D04) */
+        c->b[0x141] = 3; /* ch+$141: head part of the icon (0..$0B) */
+    } else if (c->b[0x10E] == 1) { /* ch+$10E: sex (0 male, 1 female; names H005+$4BD2) */
+        if (c->b[0x144] == 2) { /* ch+$144: icon size (1 small, 2 large) */
+            c->b[0x141] = 9; /* ch+$141: head part of the icon (0..$0B) */
         } else {
-            c->b[0x141] = 7; /* pg+$141: parte della testa dell'icona (0..$0B) */
+            c->b[0x141] = 7; /* ch+$141: head part of the icon (0..$0B) */
         }
-    } else if (c->b[0x144] == 2) { /* pg+$144: taglia dell'icona (1 piccola, 2 grande) */
-        c->b[0x141] = 5; /* pg+$141: parte della testa dell'icona (0..$0B) */
+    } else if (c->b[0x144] == 2) { /* ch+$144: icon size (1 small, 2 large) */
+        c->b[0x141] = 5; /* ch+$141: head part of the icon (0..$0B) */
     }
-    if (c->b[0xFE] > 0) { /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
-        c->b[0x142] = 0x17; /* pg+$142: figura del corpo dell'icona (>31: icone speciali) */
-    } else if (c->b[0x102] > 0) { /* pg+$102: livello da ranger */
-        c->b[0x142] = 1; /* pg+$142: figura del corpo dell'icona (>31: icone speciali) */
-    /* pg+$105: livello da cavaliere; pg+$100: livello da guerriero */
+    if (c->b[0xFE] > 0) { /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
+        c->b[0x142] = 0x17; /* ch+$142: body figure of the icon (>31: special icons) */
+    } else if (c->b[0x102] > 0) { /* ch+$102: ranger level */
+        c->b[0x142] = 1; /* ch+$142: body figure of the icon (>31: special icons) */
+    /* ch+$105: knight level; ch+$100: fighter level */
     } else if (c->b[0x105] > 0 || c->b[0x100] > 0) {
-        c->b[0x142] = 0x18; /* pg+$142: figura del corpo dell'icona (>31: icone speciali) */
-    } else if (c->b[0x103] > 0) { /* pg+$103: livello da mago */
-        c->b[0x142] = 0x1D; /* pg+$142: figura del corpo dell'icona (>31: icone speciali) */
+        c->b[0x142] = 0x18; /* ch+$142: body figure of the icon (>31: special icons) */
+    } else if (c->b[0x103] > 0) { /* ch+$103: mage level */
+        c->b[0x142] = 0x1D; /* ch+$142: body figure of the icon (>31: special icons) */
     } else {
-        c->b[0x142] = 5; /* pg+$142: figura del corpo dell'icona (>31: icone speciali) */
+        c->b[0x142] = 5; /* ch+$142: body figure of the icon (>31: special icons) */
     }
 }
 
 /*
- * PORT H013+$0990: procedura annidata di Create_Character: eta' massima
- * della razza per la riga cls della tabella H005+$20AC ($30 byte per
- * razza, 6 per riga): base + dadi * facce.
+ * PORT H013+$0990: nested procedure of Create_Character: maximum age
+ * of the race for row cls of the table H005+$20AC ($30 bytes per
+ * race, 6 per row): base + dice * sides.
  */
 static u16 max_age(u8 race, u8 cls)
 {
     u16 row = (u16)(0x20AC + race * 0x30 + cls * 6);
 
-    /* row: riga eta' $20AC: +0 base, +2 dadi, +4 facce (word) */
+    /* row: age row $20AC: +0 base, +2 dice, +4 sides (word) */
     return (u16)(H005_W(row + 4) * H005_W(row + 2) + H005_W(row));
 }
 
-/* Menu a elenco di Create_Character (H008+$13C0), con gli stessi argomenti. */
+/* List menu of Create_Character (H008+$13C0), with the same arguments. */
 static u8 create_menu(CokMenuItem *list, u8 with_exit, u8 *redraw, u16 *index,
                       CokMenuItem **chosen)
 {
@@ -1442,31 +1428,31 @@ static u8 create_menu(CokMenuItem *list, u8 with_exit, u8 *redraw, u16 *index,
                      list, with_exit, redraw, index, chosen);
 }
 
-/* Limiti di eta' della razza (H005+$2066, 5 word per razza). */
+/* Age limits of the race (H005+$2066, 5 words per race). */
 static u16 age_limit(const Character *c, u16 n)
 {
-    /* $2066: limiti di eta' per razza: 5 word ($A byte) per razza; pg+$5B: razza (0..6, nomi
+    /* $2066: age limits per race: 5 words ($A bytes) per race; ch+$5B: race (0..6, names
      * H005+$4D04) */
     return H005_W(0x2066 + c->b[0x5B] * 0x0A + n * 2);
 }
 
-/* Limiti delle caratteristiche della razza (H005+$226C, $20 byte). */
+/* Ability limits of the race (H005+$226C, $20 bytes). */
 static u16 race_limit(const Character *c, u16 off)
 {
-    /* $226C: limiti caratt. per razza ($20 byte): forza minima per sesso (word); pg+$5B: razza
-     * (0..6, nomi H005+$4D04) */
+    /* $226C: ability limits per race ($20 bytes): minimum strength per sex (word); ch+$5B:
+     * race (0..6, names H005+$4D04) */
     return H005_W(0x226C + c->b[0x5B] * 0x20 + off);
 }
 
-/* Minimo della classe per la caratteristica s (H005+$1F9A, 12 byte). */
+/* Class minimum for ability s (H005+$1F9A, 12 bytes). */
 static u16 class_min(const Character *c, u8 s)
 {
-    /* $1F9A: minimi caratteristiche per classe (12 byte, 6 word): +0 forza; pg+$5C: classe o
-     * combinazione di classi (0..16, nomi H005+$4D84) */
+    /* $1F9A: ability minimums per class (12 bytes, 6 words): +0 strength; ch+$5C: class or
+     * class combination (0..16, names H005+$4D84) */
     return H005_W(0x1F9A + c->b[0x5C] * 0x0C + s * 2);
 }
 
-/* Riporta *v tra il minimo e il massimo della razza e il minimo di classe. */
+/* Brings *v between the race minimum and maximum and the class minimum. */
 static void clamp_stat(Character *c, u8 s, u8 *v, u16 min_off, u16 max_off)
 {
     if (*v < race_limit(c, min_off)) {
@@ -1481,19 +1467,19 @@ static void clamp_stat(Character *c, u8 s, u8 *v, u16 min_off, u16 max_off)
 }
 
 /*
- * Procedure annidate H013+$1B2E, $1E28, $1F98, $21DA, $234A, $24F4:
- * correzioni per eta' (+$62) e limiti di razza/sesso/classe della
- * caratteristica s appena tirata (+$11 + 2s).
+ * Nested procedures H013+$1B2E, $1E28, $1F98, $21DA, $234A, $24F4:
+ * adjustments for age (+$62) and race/sex/class limits of the
+ * ability s just rolled (+$11 + 2s).
  */
 static void adjust_stat(Character *c, u8 s)
 {
-    /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza corrente */
+    /* ch+$11: current abilities, 6 entries step 2 from +$11; current strength */
     u8 *v = &c->b[0x11 + s * 2];
-    u16 age = CH_W(c, 0x62); /* pg+$62: eta' (word) */
-    u16 g = (u16)(c->b[0x10E] * 2); /* pg+$10E: sesso (0 maschio, 1 femmina; nomi H005+$4BD2) */
+    u16 age = CH_W(c, 0x62); /* ch+$62: age (word) */
+    u16 g = (u16)(c->b[0x10E] * 2); /* ch+$10E: sex (0 male, 1 female; names H005+$4BD2) */
 
     switch (s) {
-    case 0:                     /* H013+$1B2E: forza */
+    case 0:                     /* H013+$1B2E: strength */
         if (*v > 0 && age > age_limit(c, 0)) {
             add_to_byte(v, 1);
         }
@@ -1507,15 +1493,14 @@ static void adjust_stat(Character *c, u8 s)
             add_to_byte(v, 0xFFFF);
         }
         clamp_stat(c, s, v, g, (u16)(4 + g));
-        if (c->b[0x11] == 18 && /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza corrente */
-            /* pg+$100: livello da guerriero; pg+$102: livello da ranger; pg+$105: livello da
-             * cavaliere */
+        if (c->b[0x11] == 18 && /* ch+$11: current abilities, 6 entries step 2 from +$11; current strength */
+            /* ch+$100: fighter level; ch+$102: ranger level; ch+$105: knight level */
             (c->b[0x100] > 0 || c->b[0x102] > 0 || c->b[0x105] > 0)) {
-            /* pg+$1C: forza eccezionale corrente (18/xx, 1..100) */
+            /* ch+$1C: current exceptional strength (18/xx, 1..100) */
             c->b[0x1C] = (u8)(random_below(0x64) + 1);
-            /* pg+$1C: forza eccezionale corrente (18/xx, 1..100) */
+            /* ch+$1C: current exceptional strength (18/xx, 1..100) */
             if (c->b[0x1C] > race_limit(c, (u16)(8 + g))) {
-                /* pg+$1C: forza eccezionale corrente (18/xx, 1..100) */
+                /* ch+$1C: current exceptional strength (18/xx, 1..100) */
                 c->b[0x1C] = (u8)race_limit(c, (u16)(8 + g));
             }
         }
@@ -1543,7 +1528,7 @@ static void adjust_stat(Character *c, u8 s)
             add_to_byte(v, 1);
         }
         clamp_stat(c, s, v, 0x10, 0x12);
-        /* pg+$5C: classe o combinazione di classi (0..16, nomi H005+$4D84) */
+        /* ch+$5C: class or class combination (0..16, names H005+$4D84) */
         if (*v < 13 && c->b[0x5C] >= 8 && c->b[0x5C] <= 12) {
             *v = 13;
         }
@@ -1578,10 +1563,10 @@ static void adjust_stat(Character *c, u8 s)
 }
 
 /*
- * PORT H013+$0982: Create New Character.  Menu di razza, sesso, classe,
- * divinita' (solo chierici) e allineamento, poi eta', caratteristiche
- * (con nuovo tiro a richiesta), punti ferita, denaro, nome, figura e
- * salvataggio su disco (H066+$1640).  Esc in un menu annulla tutto.
+ * PORT H013+$0982: Create New Character.  Menus of race, sex, class,
+ * deity (clerics only) and alignment, then age, abilities
+ * (with a reroll on request), hit points, money, name, figure and
+ * saving to disk (H066+$1640).  Esc in a menu cancels everything.
  */
 void create_character(void)
 {
@@ -1616,18 +1601,18 @@ void create_character(void)
     ch->items = NULL;
     ch->effects = NULL;
     for (i = 1; i <= 6; ++i) {
-        u8 v = H005_B(0x5228 + i - 1); /* $5227: base i-1 dei 6 registri colore delle icone ($5228) */
+        u8 v = H005_B(0x5228 + i - 1); /* $5227: i-1 base of the 6 colour registers of the icons ($5228) */
 
-        ch->b[0x146 + i - 1] = (u8)(v + ((v + 8) << 4)); /* pg+$145: base -1 colori dell'icona +$146..+$14B */
+        ch->b[0x146 + i - 1] = (u8)(v + ((v + 8) << 4)); /* ch+$145: base -1 of the icon colours +$146..+$14B */
     }
-    ch->b[0x11A] = 0x32; /* pg+$11A: classe d'armatura base codificata (50 = CA 10) */
-    ch->b[0x5A] = 0x28; /* pg+$5A: THAC0 base codificato (60 - THAC0) dalla tabella per livello */
-    ch->b[0x197] = 0; /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
-    ch->b[0x198] = 1; /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
-    ch->b[0xD3] = 1; /* pg+$D3: forma/taglia sulla mappa di combattimento (bit 0-2, >1 grande) */
-    /* pg+$11C: identificativo: casuale per i PG, numero del PNG (icone CPIC) */
+    ch->b[0x11A] = 0x32; /* ch+$11A: encoded base armour class (50 = AC 10) */
+    ch->b[0x5A] = 0x28; /* ch+$5A: encoded base THAC0 (60 - THAC0) from the per-level table */
+    ch->b[0x197] = 0; /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
+    ch->b[0x198] = 1; /* ch+$198: active/standing (0 down or out of the combat) */
+    ch->b[0xD3] = 1; /* ch+$D3: shape/size on the combat map (bits 0-2, >1 large) */
+    /* ch+$11C: identifier: random for PCs, NPC number (CPIC icons) */
     ch->b[0x11C] = (u8)random_below(0x100);
-    ch->b[0x143] = 0x0A; /* pg+$143: posto delle icone 24x24 (0..7 nel party; $0A creazione, $0C editor) */
+    ch->b[0x143] = 0x0A; /* pg+$143: slot of the 24x24 icons (0..7 in the party; $0A creation, $0C editor) */
 
     /* Razza. */
     menu_alloc(8, &list);
@@ -1637,7 +1622,7 @@ void create_character(void)
         node = menu_nth(list, (u16)(race_i + 1));
         copy_text(node->text, "  ", 0x28);
         h026_append(0x28, node->text, 0x0F,
-                    /* $4D04: nomi delle razze (+$5B), 16 byte per voce */
+                    /* $4D04: names of the races (+$5B), 16 bytes per entry */
                     (const char *)&g_h005[0x4D04 + race_i * 16]);
     }
     node = list;
@@ -1652,29 +1637,29 @@ void create_character(void)
             return;
         }
     } while (key != 'S');
-    ch->b[0x5B] = (u8)(index - 1); /* pg+$5B: razza (0..6, nomi H005+$4D04) */
-    switch (ch->b[0x5B]) { /* pg+$5B: razza (0..6, nomi H005+$4D04) */
+    ch->b[0x5B] = (u8)(index - 1); /* ch+$5B: race (0..6, names H005+$4D04) */
+    switch (ch->b[0x5B]) { /* ch+$5B: race (0..6, names H005+$4D04) */
     case 5:                     /* H013+$0C0A */
-        ch->b[0x144] = 1; /* pg+$144: taglia dell'icona (1 piccola, 2 grande) */
+        ch->b[0x144] = 1; /* ch+$144: icon size (1 small, 2 large) */
         add_effect(ch, 0x5C, 0, 0xFF, 0);
         add_effect(ch, 0x5E, 0, 0xFF, 0);
         break;
     case 3: case 4:             /* H013+$0C46 */
-        ch->b[0x144] = 1; /* pg+$144: taglia dell'icona (1 piccola, 2 grande) */
+        ch->b[0x144] = 1; /* ch+$144: icon size (1 small, 2 large) */
         add_effect(ch, 0x5E, 0, 0xFF, 0);
         add_effect(ch, 0x1A, 0, 0xFF, 0);
         add_effect(ch, 0x2F, 0, 0xFF, 0);
         break;
     case 0: case 1:             /* H013+$0C9C */
-        ch->b[0x144] = 2; /* pg+$144: taglia dell'icona (1 piccola, 2 grande) */
+        ch->b[0x144] = 2; /* ch+$144: icon size (1 small, 2 large) */
         add_effect(ch, 0x5F, 0, 0xFF, 0);
         break;
     case 2:                     /* H013+$0CBE */
-        ch->b[0x144] = 2; /* pg+$144: taglia dell'icona (1 piccola, 2 grande) */
+        ch->b[0x144] = 2; /* ch+$144: icon size (1 small, 2 large) */
         add_effect(ch, 0x12, 0, 0xFF, 0);
         break;
     default:                    /* H013+$0CE0 */
-        ch->b[0x144] = 2; /* pg+$144: taglia dell'icona (1 piccola, 2 grande) */
+        ch->b[0x144] = 2; /* ch+$144: icon size (1 small, 2 large) */
         break;
     }
     menu_free(&list);
@@ -1687,7 +1672,7 @@ void create_character(void)
         node = menu_nth(list, (u16)(g + 1));
         copy_text(node->text, "  ", 0x28);
         h026_append(0x28, node->text, 6,
-                    /* $4BD2: nomi del sesso (+$10E), 8 byte per voce */
+                    /* $4BD2: names of the sexes (+$10E), 8 bytes per entry */
                     (const char *)&g_h005[0x4BD2 + g * 8]);
     }
     node = list;
@@ -1702,12 +1687,12 @@ void create_character(void)
             return;
         }
     } while (key != 'S');
-    ch->b[0x10E] = (u8)(index - 1); /* pg+$10E: sesso (0 maschio, 1 femmina; nomi H005+$4BD2) */
+    ch->b[0x10E] = (u8)(index - 1); /* ch+$10E: sex (0 male, 1 female; names H005+$4BD2) */
     menu_free(&list);
 
-    /* Classe: le classi ammesse dalla razza (H005+$21FC). */
-    race = ch->b[0x5B]; /* pg+$5B: razza (0..6, nomi H005+$4D04) */
-    /* $21FC: classi ammesse per razza (16 byte): word numero di classi */
+    /* Class: the classes allowed by the race (H005+$21FC). */
+    race = ch->b[0x5B]; /* ch+$5B: race (0..6, names H005+$4D04) */
+    /* $21FC: classes allowed per race (16 bytes): word number of classes */
     class_count = H005_W(0x21FC + race * 16);
     menu_alloc((u16)(class_count + 1), &list);
     list->header = 1;
@@ -1715,9 +1700,9 @@ void create_character(void)
     for (i = 1; i <= class_count; ++i) {
         node = menu_nth(list, i);
         copy_text(node->text, "  ", 0x28);
-        /* $4D84: nomi delle classi (+$5C), $1C byte per voce */
+        /* $4D84: names of the classes (+$5C), $1C bytes per entry */
         h026_append(0x28, node->text, 0x1A, (const char *)&g_h005[0x4D84 +
-                    /* $21FD: classi ammesse per razza: dal byte +2 i numeri di classe */
+                    /* $21FD: classes allowed per race: from byte +2 the class numbers */
                     H005_B(0x21FC + race * 16 + 2 + i - 1) * 0x1C]);
         if (i == 0xFFFF) {
             break;
@@ -1735,121 +1720,121 @@ void create_character(void)
             return;
         }
     } while (key != 'S');
-    CH_PUTL(ch, 0x11E, 0); /* pg+$11E: punti esperienza (long) */
-    /* pg+$5C: classe o combinazione di classi (0..16, nomi H005+$4D84); $21FD: classi ammesse per
-     * razza: dal byte +2 i numeri di classe; pg+$5B: razza (0..6, nomi H005+$4D04) */
+    CH_PUTL(ch, 0x11E, 0); /* ch+$11E: experience points (long) */
+    /* ch+$5C: class or class combination (0..16, names H005+$4D84); $21FD: classes allowed per
+     * race: from byte +2 the class numbers; ch+$5B: race (0..6, names H005+$4D04) */
     ch->b[0x5C] = H005_B(0x21FC + ch->b[0x5B] * 16 + 2 + index - 1);
-    /* pg+$5C: classe o combinazione di classi (0..16, nomi H005+$4D84) */
-    switch (ch->b[0x5C]) {      /* livelli iniziali ed esperienza */
+    /* ch+$5C: class or class combination (0..16, names H005+$4D84) */
+    switch (ch->b[0x5C]) {      /* initial levels and experience */
     case 0:                     /* H013+$0FBC */
-        ch->b[0xFE] = 1; /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
+        ch->b[0xFE] = 1; /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
         break;
     case 6:                     /* H013+$0FC4 */
-        ch->b[0x104] = 2; /* pg+$104: livello da ladro */
-        CH_PUTL(ch, 0x11E, 0x4E3); /* pg+$11E: punti esperienza (long) */
+        ch->b[0x104] = 2; /* ch+$104: thief level */
+        CH_PUTL(ch, 0x11E, 0x4E3); /* ch+$11E: experience points (long) */
         break;
     case 2:                     /* H013+$0FD6 */
-        ch->b[0x100] = 2; /* pg+$100: livello da guerriero */
-        CH_PUTL(ch, 0x11E, 0x7D1); /* pg+$11E: punti esperienza (long) */
+        ch->b[0x100] = 2; /* ch+$100: fighter level */
+        CH_PUTL(ch, 0x11E, 0x7D1); /* ch+$11E: experience points (long) */
         break;
     case 5:                     /* H013+$0FE8 */
-        ch->b[0x103] = 2; /* pg+$103: livello da mago */
-        CH_PUTL(ch, 0x11E, 0x1388); /* pg+$11E: punti esperienza (long) */
+        ch->b[0x103] = 2; /* ch+$103: mage level */
+        CH_PUTL(ch, 0x11E, 0x1388); /* ch+$11E: experience points (long) */
         break;
     case 4:                     /* H013+$0FFA */
-        ch->b[0x102] = 2; /* pg+$102: livello da ranger */
-        CH_PUTL(ch, 0x11E, 0x8CB); /* pg+$11E: punti esperienza (long) */
+        ch->b[0x102] = 2; /* ch+$102: ranger level */
+        CH_PUTL(ch, 0x11E, 0x8CB); /* ch+$11E: experience points (long) */
         add_effect(ch, 0x69, 0, 0xFF, 0);
         break;
     case 7:                     /* H013+$1026 */
-        ch->b[0x105] = 1; /* pg+$105: livello da cavaliere */
-        CH_PUTL(ch, 0x11E, 0x9C4); /* pg+$11E: punti esperienza (long) */
-        ch->b[0x5D] = 1; /* pg+$5D: ordine di cavalleria (1 Corona, 2 Spada, 3 Rosa) */
+        ch->b[0x105] = 1; /* ch+$105: knight level */
+        CH_PUTL(ch, 0x11E, 0x9C4); /* ch+$11E: experience points (long) */
+        ch->b[0x5D] = 1; /* ch+$5D: knightly order (1 Crown, 2 Sword, 3 Rose) */
         break;
     case 8:                     /* H013+$103E */
-        ch->b[0xFE] = 1; /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
-        ch->b[0x100] = 1; /* pg+$100: livello da guerriero */
-        CH_PUTL(ch, 0x11E, 0x7D1); /* pg+$11E: punti esperienza (long) */
+        ch->b[0xFE] = 1; /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
+        ch->b[0x100] = 1; /* ch+$100: fighter level */
+        CH_PUTL(ch, 0x11E, 0x7D1); /* ch+$11E: experience points (long) */
         break;
     case 9:                     /* H013+$1056 */
-        ch->b[0xFE] = 1; /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
-        ch->b[0x100] = 1; /* pg+$100: livello da guerriero */
-        ch->b[0x103] = 1; /* pg+$103: livello da mago */
-        CH_PUTL(ch, 0x11E, 0x1388); /* pg+$11E: punti esperienza (long) */
+        ch->b[0xFE] = 1; /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
+        ch->b[0x100] = 1; /* ch+$100: fighter level */
+        ch->b[0x103] = 1; /* ch+$103: mage level */
+        CH_PUTL(ch, 0x11E, 0x1388); /* ch+$11E: experience points (long) */
         break;
     case 10:                    /* H013+$1074 */
-        ch->b[0xFE] = 1; /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
-        ch->b[0x102] = 1; /* pg+$102: livello da ranger */
+        ch->b[0xFE] = 1; /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
+        ch->b[0x102] = 1; /* ch+$102: ranger level */
         add_effect(ch, 0x69, 0, 0xFF, 0);
-        CH_PUTL(ch, 0x11E, 0x8CB); /* pg+$11E: punti esperienza (long) */
+        CH_PUTL(ch, 0x11E, 0x8CB); /* ch+$11E: experience points (long) */
         break;
     case 11:                    /* H013+$10A6 */
-        ch->b[0xFE] = 1; /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
-        ch->b[0x103] = 1; /* pg+$103: livello da mago */
-        CH_PUTL(ch, 0x11E, 0x1388); /* pg+$11E: punti esperienza (long) */
+        ch->b[0xFE] = 1; /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
+        ch->b[0x103] = 1; /* ch+$103: mage level */
+        CH_PUTL(ch, 0x11E, 0x1388); /* ch+$11E: experience points (long) */
         break;
     case 12:                    /* H013+$10BE */
-        ch->b[0xFE] = 1; /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
-        ch->b[0x104] = 1; /* pg+$104: livello da ladro */
+        ch->b[0xFE] = 1; /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
+        ch->b[0x104] = 1; /* ch+$104: thief level */
         break;
     case 13:                    /* H013+$10CC */
-        ch->b[0x100] = 1; /* pg+$100: livello da guerriero */
-        ch->b[0x103] = 1; /* pg+$103: livello da mago */
-        CH_PUTL(ch, 0x11E, 0x1388); /* pg+$11E: punti esperienza (long) */
+        ch->b[0x100] = 1; /* ch+$100: fighter level */
+        ch->b[0x103] = 1; /* ch+$103: mage level */
+        CH_PUTL(ch, 0x11E, 0x1388); /* ch+$11E: experience points (long) */
         break;
     case 14:                    /* H013+$10E4 */
-        ch->b[0x100] = 1; /* pg+$100: livello da guerriero */
-        ch->b[0x104] = 1; /* pg+$104: livello da ladro */
-        CH_PUTL(ch, 0x11E, 0x7D1); /* pg+$11E: punti esperienza (long) */
+        ch->b[0x100] = 1; /* ch+$100: fighter level */
+        ch->b[0x104] = 1; /* ch+$104: thief level */
+        CH_PUTL(ch, 0x11E, 0x7D1); /* ch+$11E: experience points (long) */
         break;
     case 15:                    /* H013+$10FC */
-        ch->b[0x100] = 1; /* pg+$100: livello da guerriero */
-        ch->b[0x103] = 1; /* pg+$103: livello da mago */
-        ch->b[0x104] = 1; /* pg+$104: livello da ladro */
-        CH_PUTL(ch, 0x11E, 0x1388); /* pg+$11E: punti esperienza (long) */
+        ch->b[0x100] = 1; /* ch+$100: fighter level */
+        ch->b[0x103] = 1; /* ch+$103: mage level */
+        ch->b[0x104] = 1; /* ch+$104: thief level */
+        CH_PUTL(ch, 0x11E, 0x1388); /* ch+$11E: experience points (long) */
         break;
     case 16:                    /* H013+$111A */
-        ch->b[0x103] = 1; /* pg+$103: livello da mago */
-        ch->b[0x104] = 1; /* pg+$104: livello da ladro */
-        CH_PUTL(ch, 0x11E, 0x1388); /* pg+$11E: punti esperienza (long) */
+        ch->b[0x103] = 1; /* ch+$103: mage level */
+        ch->b[0x104] = 1; /* ch+$104: thief level */
+        CH_PUTL(ch, 0x11E, 0x1388); /* ch+$11E: experience points (long) */
         break;
     default:
         break;
     }
-    if (ch->b[0x104] > 0) { /* pg+$104: livello da ladro */
+    if (ch->b[0x104] > 0) { /* ch+$104: thief level */
         thief_skills(ch);
     }
-    ch->b[0x122] = 0; /* pg+$122: maschera delle armi usabili (somma H005+$5040 per classe) */
-    ch->b[0x5A] = 0; /* pg+$5A: THAC0 base codificato (60 - THAC0) dalla tabella per livello */
+    ch->b[0x122] = 0; /* ch+$122: mask of the usable weapons (sum of H005+$5040 per class) */
+    ch->b[0x5A] = 0; /* ch+$5A: encoded base THAC0 (60 - THAC0) from the per-level table */
     for (k = 0; k <= 7; ++k) {
-        /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
+        /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
         if (ch->b[0xFE + k] > 0) {
-            /* $5158: (word) valore +$5A per classe e livello, $1A byte per classe; pg+$FE: livelli
-             * per classe, 8 voci (0 chierico..7 cavaliere); chierico */
+            /* $5158: (word) +$5A value per class and level, $1A bytes per class; ch+$FE: levels
+             * per class, 8 entries (0 cleric..7 knight); cleric */
             u16 t = H005_W(0x5158 + k * 0x1A + ch->b[0xFE + k] * 2);
 
-            if (t > ch->b[0x5A]) { /* pg+$5A: THAC0 base codificato (60 - THAC0) dalla tabella per livello */
-                /* pg+$5A: THAC0 base codificato (60 - THAC0) dalla tabella per livello */
+            if (t > ch->b[0x5A]) { /* ch+$5A: encoded base THAC0 (60 - THAC0) from the per-level table */
+                /* ch+$5A: encoded base THAC0 (60 - THAC0) from the per-level table */
                 ch->b[0x5A] = (u8)t;
             }
-            /* pg+$122: maschera delle armi usabili (somma H005+$5040 per classe); $5040: bit per
-             * classe sommati in +$122 (classi per gli oggetti) */
+            /* ch+$122: mask of the usable weapons (sum of H005+$5040 per class); $5040:
+             * per-class bits added into +$122 (classes for the items) */
             add_to_byte(&ch->b[0x122], H005_B(0x5040 + k));
         }
     }
     saving_throws(ch);
 
-    /* Divinita' (solo con livelli da chierico). */
-    if (ch->b[0xFE] > 0) { /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
+    /* Deity (only with cleric levels). */
+    if (ch->b[0xFE] > 0) { /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
         menu_free(&list);
-        if (ch->b[0x5B] == 3 || ch->b[0x5B] == 4) { /* pg+$5B: razza (0..6, nomi H005+$4D04) */
+        if (ch->b[0x5B] == 3 || ch->b[0x5B] == 4) { /* ch+$5B: race (0..6, names H005+$4D04) */
             menu_alloc(2, &list);
             list->header = 1;
             copy_text(list->text, "Pick God", 0x28);
             node = menu_nth(list, 1);
             copy_text(node->text, "  ", 0x28);
             h026_append(0x28, node->text, 0x0B,
-                        /* $4C4A: divinita' 6 (unica scelta per le razze 3 e 4) */
+                        /* $4C4A: deity 6 (the only choice for races 3 and 4) */
                         (const char *)&g_h005[0x4C4A]);
         } else {
             menu_alloc(8, &list);
@@ -1859,7 +1844,7 @@ void create_character(void)
                 node = menu_nth(list, i);
                 copy_text(node->text, "  ", 0x28);
                 h026_append(0x28, node->text, 0x0B,
-                            /* $4C02: nomi delle divinita' (+$5E), $0C byte per voce */
+                            /* $4C02: names of the deities (+$5E), $0C bytes per entry */
                             (const char *)&g_h005[0x4C02 + (i & 0xFF) * 0x0C]);
             }
         }
@@ -1875,64 +1860,64 @@ void create_character(void)
                 return;
             }
         } while (key != 'S');
-        if (ch->b[0x5B] == 3 || ch->b[0x5B] == 4) { /* pg+$5B: razza (0..6, nomi H005+$4D04) */
-            ch->b[0x5E] = 6; /* pg+$5E: divinita' del chierico (0 nessuna, 1..7; 6 per le razze 3-4) */
+        if (ch->b[0x5B] == 3 || ch->b[0x5B] == 4) { /* ch+$5B: race (0..6, names H005+$4D04) */
+            ch->b[0x5E] = 6; /* ch+$5E: deity of the cleric (0 none, 1..7; 6 for races 3-4) */
         } else {
-            /* pg+$5E: divinita' del chierico (0 nessuna, 1..7; 6 per le razze 3-4) */
+            /* ch+$5E: deity of the cleric (0 none, 1..7; 6 for races 3-4) */
             ch->b[0x5E] = (u8)index;
         }
-        /* pg+$5E: divinita' del chierico (0 nessuna, 1..7; 6 per le razze 3-4) */
-        switch (ch->b[0x5E]) {  /* allineamenti ammessi e poteri */
+        /* ch+$5E: deity of the cleric (0 none, 1..7; 6 for races 3-4) */
+        switch (ch->b[0x5E]) {  /* allowed alignments and powers */
         case 1:                 /* H013+$1430 */
             god_mask = 0x15;
-            ch->b[0xCA] = 1; /* pg+$CA: incantesimo noto n.101 (Prot. Evil 10'), potere della divinita' 1 */
+            ch->b[0xCA] = 1; /* ch+$CA: known spell no.101 (Prot. Evil 10'), power of deity 1 */
             break;
         case 2:                 /* H013+$1442 */
             god_mask = 0x15;
-            ch->b[0xCB] = 1; /* pg+$CB: incantesimo noto n.102 (Silence 15'), potere della divinita' 2 */
+            ch->b[0xCB] = 1; /* ch+$CB: known spell no.102 (Silence 15'), power of deity 2 */
             break;
         case 3:                 /* H013+$1454 */
             god_mask = 0x15;
-            ch->b[0xCC] = 1; /* pg+$CC: incantesimo noto n.103 (Detect Magic), potere della divinita' 3 */
-            /* pg+$5A: THAC0 base codificato (60 - THAC0) dalla tabella per livello */
+            ch->b[0xCC] = 1; /* ch+$CC: known spell no.103 (Detect Magic), power of deity 3 */
+            /* ch+$5A: encoded base THAC0 (60 - THAC0) from the per-level table */
             add_to_byte(&ch->b[0x5A], 1);
             break;
         case 4:                 /* H013+$1478 */
             god_mask = 0x15;
-            ch->b[0xCD] = 1; /* pg+$CD: incantesimo noto n.104 (Remove Curse), potere della divinita' 4 */
-            ch->b[0xCE] = 1; /* pg+$CE: incantesimo noto n.105 (Bless), potere della divinita' 4 */
-            ch->b[0xCF] = 1; /* pg+$CF: incantesimo noto n.106 (Charm Person), divinita' 4 e 7 */
+            ch->b[0xCD] = 1; /* ch+$CD: known spell no.104 (Remove Curse), power of deity 4 */
+            ch->b[0xCE] = 1; /* ch+$CE: known spell no.105 (Bless), power of deity 4 */
+            ch->b[0xCF] = 1; /* ch+$CF: known spell no.106 (Charm Person), deities 4 and 7 */
             break;
         case 5:                 /* H013+$149E */
             god_mask = 0x2E;
-            ch->b[0xD0] = 1; /* pg+$D0: incantesimo noto n.107 (Burning Hands), potere della divinita' 5 */
+            ch->b[0xD0] = 1; /* ch+$D0: known spell no.107 (Burning Hands), power of deity 5 */
             break;
         case 6:                 /* H013+$14B0 */
             god_mask = 0x2E;
-            if (ch->b[0x5B] == 3 || ch->b[0x5B] == 4) { /* pg+$5B: razza (0..6, nomi H005+$4D04) */
-                /* pg+$5A: THAC0 base codificato (60 - THAC0) dalla tabella per livello */
+            if (ch->b[0x5B] == 3 || ch->b[0x5B] == 4) { /* ch+$5B: race (0..6, names H005+$4D04) */
+                /* ch+$5A: encoded base THAC0 (60 - THAC0) from the per-level table */
                 add_to_byte(&ch->b[0x5A], 1);
             }
             break;
         case 7:                 /* H013+$14E6 */
             god_mask = 0x2E;
-            ch->b[0xCF] = 1; /* pg+$CF: incantesimo noto n.106 (Charm Person), divinita' 4 e 7 */
+            ch->b[0xCF] = 1; /* ch+$CF: known spell no.106 (Charm Person), deities 4 and 7 */
             break;
         default:
             /*
-             * Valore non previsto: l'originale lascia -$66(a5) com'era
-             * nello stack.  Qui 0 (nessun allineamento ammesso).
+             * Unexpected value: the original leaves -$66(a5) as it was
+             * on the stack.  Here 0 (no alignment allowed).
              */
             god_mask = 0;
             break;
         }
     } else {
-        ch->b[0x5E] = 0; /* pg+$5E: divinita' del chierico (0 nessuna, 1..7; 6 per le razze 3-4) */
+        ch->b[0x5E] = 0; /* ch+$5E: deity of the cleric (0 none, 1..7; 6 for races 3-4) */
         god_mask = 0xFF;
     }
     menu_free(&list);
 
-    /* Allineamento: quelli ammessi da classe (H005+$1F78) e divinita'. */
+    /* Alignment: those allowed by class (H005+$1F78) and deity. */
     list = (CokMenuItem *)exec_alloc_mem(sizeof(CokMenuItem), COK_MEMF_CLEAR);
     list->next = NULL;
     list->header = 1;
@@ -1941,9 +1926,8 @@ void create_character(void)
     j = 0;
     for (i = 0; i <= 5; ++i) {
         bits = (u16)(u8)(mask_byte((u8)god_mask,
-                                   /* $1F78: allineamenti ammessi per classe (word, maschera di 6
-                                    * bit); pg+$5C: classe o combinazione di classi (0..16, nomi
-                                    * H005+$4D84) */
+                                   /* $1F78: alignments allowed per class (word, 6-bit mask); ch+$5C: class or class combination
+                                    * (0..16, names H005+$4D84) */
                                    H005_W(0x1F78 + ch->b[0x5C] * 2)) >> i);
         if (mask_byte((u8)bits, 1)) {
             node->next = (CokMenuItem *)exec_alloc_mem(sizeof(CokMenuItem),
@@ -1952,7 +1936,7 @@ void create_character(void)
             node->next = NULL;
             node->header = 0;
             copy_text(node->text, "  ", 0x28);
-            /* $4C62: nomi dell'allineamento (+$10F), $12 byte per voce */
+            /* $4C62: names of the alignments (+$10F), $12 bytes per entry */
             h026_append(0x28, node->text, 0x10, (const char *)&g_h005[0x4C62 +
                         align_values[i] * 0x12]);
             align_ids[j] = align_values[i];
@@ -1971,26 +1955,26 @@ void create_character(void)
             return;
         }
     } while (key != 'S');
-    ch->b[0x10F] = align_ids[index - 1]; /* pg+$10F: allineamento (0..8, malvagi 2/5/8; nomi H005+$4C62) */
-    switch (ch->b[0x10F]) { /* pg+$10F: allineamento (0..8, malvagi 2/5/8; nomi H005+$4C62) */
+    ch->b[0x10F] = align_ids[index - 1]; /* ch+$10F: alignment (0..8, evil 2/5/8; names H005+$4C62) */
+    switch (ch->b[0x10F]) { /* ch+$10F: alignment (0..8, evil 2/5/8; names H005+$4C62) */
     case 0: case 3: case 6:     /* H013+$171E */
-        /* pg+$11E: punti esperienza (long); pg+$FE: livelli per classe, 8 voci (0 chierico..7
-         * cavaliere); chierico */
+        /* ch+$11E: experience points (long); ch+$FE: levels per class, 8 entries (0 cleric..7
+         * knight); cleric */
         if (CH_L(ch, 0x11E) == 0 && ch->b[0xFE] > 0) {
-            CH_PUTL(ch, 0x11E, 0x7D0); /* pg+$11E: punti esperienza (long) */
+            CH_PUTL(ch, 0x11E, 0x7D0); /* ch+$11E: experience points (long) */
         }
-        if (ch->b[0x103] > 0) { /* pg+$103: livello da mago */
-            ch->b[0x5F] = 1; /* pg+$5F: ordine del mago (1 allineam. 0/3/6, 2 per 1/4/7, 0 nessuno) */
+        if (ch->b[0x103] > 0) { /* ch+$103: mage level */
+            ch->b[0x5F] = 1; /* ch+$5F: mage order (1 alignm. 0/3/6, 2 for 1/4/7, 0 none) */
         }
         break;
     case 1: case 4: case 7:     /* H013+$175C */
-        /* pg+$11E: punti esperienza (long); pg+$FE: livelli per classe, 8 voci (0 chierico..7
-         * cavaliere); chierico */
+        /* ch+$11E: experience points (long); ch+$FE: levels per class, 8 entries (0 cleric..7
+         * knight); cleric */
         if (CH_L(ch, 0x11E) == 0 && ch->b[0xFE] > 0) {
-            CH_PUTL(ch, 0x11E, 0x5DC); /* pg+$11E: punti esperienza (long) */
+            CH_PUTL(ch, 0x11E, 0x5DC); /* ch+$11E: experience points (long) */
         }
-        if (ch->b[0x103] > 0) { /* pg+$103: livello da mago */
-            ch->b[0x5F] = 2; /* pg+$5F: ordine del mago (1 allineam. 0/3/6, 2 per 1/4/7, 0 nessuno) */
+        if (ch->b[0x103] > 0) { /* ch+$103: mage level */
+            ch->b[0x5F] = 2; /* ch+$5F: mage order (1 alignm. 0/3/6, 2 for 1/4/7, 0 none) */
         }
         break;
     default:
@@ -1998,27 +1982,27 @@ void create_character(void)
     }
     menu_free(&list);
 
-    /* Eta' (+$62): tirata per una classe, massima per le multiclasse. */
-    if (ch->b[0x5C] <= 7) { /* pg+$5C: classe o combinazione di classi (0..16, nomi H005+$4D84) */
-        /* pg+$5B: razza (0..6, nomi H005+$4D04); pg+$5C: classe o combinazione di classi (0..16,
-         * nomi H005+$4D84) */
+    /* Age (+$62): rolled for one class, the maximum for multi-class characters. */
+    if (ch->b[0x5C] <= 7) { /* ch+$5C: class or class combination (0..16, names H005+$4D84) */
+        /* ch+$5B: race (0..6, names H005+$4D04); ch+$5C: class or class combination (0..16,
+         * names H005+$4D84) */
         u16 row = (u16)(0x20AC + ch->b[0x5B] * 0x30 + ch->b[0x5C] * 6);
 
-        /* pg+$62: eta' (word); row: riga eta' $20AC: +0 base, +2 dadi, +4 facce */
+        /* ch+$62: age (word); row: age row $20AC: +0 base, +2 dice, +4 sides */
         CH_PUTW(ch, 0x62, roll_dice(H005_W(row + 2), H005_W(row + 4)) +
                           H005_W(row));
     } else {
-        switch (ch->b[0x5C]) { /* pg+$5C: classe o combinazione di classi (0..16, nomi H005+$4D84) */
+        switch (ch->b[0x5C]) { /* ch+$5C: class or class combination (0..16, names H005+$4D84) */
         case 8: case 9: case 10: case 11: case 12:
-            /* pg+$5B: razza (0..6, nomi H005+$4D04); pg+$62: eta' (word) */
+            /* ch+$5B: race (0..6, names H005+$4D04); ch+$62: age (word) */
             CH_PUTW(ch, 0x62, max_age(ch->b[0x5B], 0));
             break;
         case 13: case 15: case 16:
-            /* pg+$5B: razza (0..6, nomi H005+$4D04); pg+$62: eta' (word) */
+            /* ch+$5B: race (0..6, names H005+$4D04); ch+$62: age (word) */
             CH_PUTW(ch, 0x62, max_age(ch->b[0x5B], 5));
             break;
         case 14:
-            /* pg+$5B: razza (0..6, nomi H005+$4D04); pg+$62: eta' (word) */
+            /* ch+$5B: race (0..6, names H005+$4D04); ch+$62: age (word) */
             CH_PUTW(ch, 0x62, max_age(ch->b[0x5B], 2));
             break;
         default:
@@ -2031,22 +2015,22 @@ void create_character(void)
     draw_character_sheet();
     do {
         for (k = 0; k <= 7; ++k) {
-            /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
+            /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
             if (g_current_char->b[0xFE + k] > 0) {
-                /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
+                /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
                 g_current_char->b[0xFE + k] = 1;
             }
         }
-        ch->b[0x1C] = 0; /* pg+$1C: forza eccezionale corrente (18/xx, 1..100) */
+        ch->b[0x1C] = 0; /* ch+$1C: current exceptional strength (18/xx, 1..100) */
 
         /*
-         * Caratteristiche: il migliore di 6 tiri di 3d6+1 per ognuna.  Le
-         * correzioni di razza dipendono da -$20(a5), che qui vale sempre 7
-         * (il contatore del menu delle razze): nell'originale non si
-         * applicano mai.
+         * Abilities: the best of 6 rolls of 3d6+1 for each one.  The
+         * race adjustments depend on -$20(a5), which is always 7 here
+         * (the counter of the race menu): in the original they are never
+         * applied.
          */
         for (s = 0; s <= 5; ++s) {
-            /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza corrente */
+            /* ch+$11: current abilities, 6 entries step 2 from +$11; current strength */
             ch->b[0x10 + s * 2 + 1] = 0;
             for (j = 1; j <= 6; ++j) {
                 roll = (u16)(roll_dice(3, 6) + 1);
@@ -2080,63 +2064,63 @@ void create_character(void)
                 default:
                     break;
                 }
-                /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza corrente */
+                /* ch+$11: current abilities, 6 entries step 2 from +$11; current strength */
                 if (ch->b[0x11 + s * 2] < roll) {
-                    /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza corrente */
+                    /* ch+$11: current abilities, 6 entries step 2 from +$11; current strength */
                     ch->b[0x11 + s * 2] = (u8)roll;
                 }
             }
             adjust_stat(ch, s);
-            /* pg+$10: caratteristiche base, 6 voci passo 2 (FOR INT SAG DES COS CAR); FOR; pg+$11:
-             * caratteristiche correnti, 6 voci passo 2 da +$11; forza corrente */
+            /* pg+$10: caratteristiche base, 6 voci passo 2 (FOR INT SAG DES COS CAR); FOR; ch+$11:
+             * current abilities, 6 entries step 2 from +$11; current strength */
             ch->b[0x10 + s * 2] = ch->b[0x11 + s * 2];
             if (s == 0) {
-                /* pg+$1D: forza eccezionale base; pg+$1C: forza eccezionale corrente (18/xx,
-                 * 1..100) */
+                /* ch+$1D: base exceptional strength; ch+$1C: current exceptional strength
+                 * (18/xx, 1..100) */
                 ch->b[0x1D] = ch->b[0x1C];
             }
             draw_stat_value(s, 0);
         }
 
-        ch->b[0x1A8] = ch->b[0x64]; /* pg+$1A8: punti ferita correnti; pg+$64: punti ferita massimi */
-        ch->b[0x110] = 2; /* pg+$110: attacchi ogni 2 round dell'attacco 1 (2 = 1/round, 3 = 3/2) */
-        ch->b[0x112] = 1; /* pg+$112: numero di dadi base dell'attacco 1 (2 voci +$112..+$113) */
-        ch->b[0x114] = 2; /* pg+$114: facce del dado base dell'attacco 1 (2 voci +$114..+$115) */
-        ch->b[0x11B] = 1; /* pg+$11B: applica i bonus della forza a colpire e ai danni (1 per i PG) */
-        ch->b[0xDA] = 0x0C; /* pg+$DA: movimento base (12 alla creazione) */
-        nclasses = 0;           /* -$2e(a5) e' azzerata ma non usata */
+        ch->b[0x1A8] = ch->b[0x64]; /* ch+$1A8: current hit points; ch+$64: maximum hit points */
+        ch->b[0x110] = 2; /* ch+$110: attacks every 2 rounds of attack 1 (2 = 1/round, 3 = 3/2) */
+        ch->b[0x112] = 1; /* ch+$112: number of base dice of attack 1 (2 entries +$112..+$113) */
+        ch->b[0x114] = 2; /* ch+$114: sides of the base die of attack 1 (2 entries +$114..+$115) */
+        ch->b[0x11B] = 1; /* ch+$11B: applies the strength bonuses to hit and to damage (1 for PCs) */
+        ch->b[0xDA] = 0x0C; /* ch+$DA: base movement (12 at creation) */
+        nclasses = 0;           /* -$2e(a5) is cleared but not used */
         gold = 0;
-        /* pg+$124: slot incantesimi, 24 byte: tipo*6 + livello-1; chierico liv. 1 */
+        /* ch+$124: spell slots, 24 bytes: type*6 + level-1; cleric lvl. 1 */
         h029_fill_bytes(0x17, &ch->b[0x124], 0x17, 0);
         for (k = 0; k <= 7; ++k) {
-            /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
+            /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
             if (ch->b[0xFE + k] == 0) {
                 continue;
             }
             switch (k) {
             case 0:             /* H013+$26DC */
-                /* pg+$124: slot incantesimi, 24 byte: tipo*6 + livello-1; chierico liv. 1; pg+$5E:
-                 * divinita' del chierico (0 nessuna, 1..7; 6 per le razze 3-4) */
+                /* ch+$124: spell slots, 24 bytes: type*6 + level-1; cleric lvl. 1; ch+$5E: deity
+                 * of the cleric (0 none, 1..7; 6 for races 3-4) */
                 ch->b[0x124] = (u8)(ch->b[0x5E] <= 4 ? 1 : 2);
                 break;
             case 5:             /* H013+$26FC */
-                ch->b[0x136] = 1; /* pg+$136: slot incantesimi da mago di livello 1 */
+                ch->b[0x136] = 1; /* ch+$136: level 1 mage spell slots */
                 break;
             default:
                 break;
             }
-            switch (k) {        /* denaro iniziale */
+            switch (k) {        /* initial money */
             case 0:             /* H013+$2766 */
                 gold = (u16)(gold + roll_dice(3, 6));
                 cleric_spell_slots(ch);
                 i = 1;
                 j = 0xFF;
                 while (i <= 0x0A && j != 0) {
-                    /* $1476: inc. per classe/livello: 3x4 righe di 10 word ($14), 0 = fine */
+                    /* $1476: inc. per class/level: 3x4 rows of 10 words ($14), 0 = end */
                     j = H005_W(0x1476 + (i - 1) * 2);
                     if (j != 0) {
-                        /* pg+$65: base -1 incantesimi noti +$66+s-1 (s = 1..$6B, flag per
-                         * incantesimo) */
+                        /* ch+$65: base -1 of the known spells +$66+s-1 (s = 1..$6B, flag
+                         * per spell) */
                         ch->b[0x66 + j - 1] = 1;
                     }
                     ++i;
@@ -2147,11 +2131,11 @@ void create_character(void)
                 break;
             case 5:             /* H013+$27DE */
                 gold = (u16)(gold + roll_dice(2, 4));
-                ch->b[0x70] = 1; /* pg+$70: incantesimo noto n.11 (Detect Magic), iniziale del mago */
-                ch->b[0x77] = 1; /* pg+$77: incantesimo noto n.18 (Read Magic), iniziale del mago */
-                ch->b[0x71] = 1; /* pg+$71: incantesimo noto n.12 (Enlarge), iniziale del mago */
-                ch->b[0x74] = 1; /* pg+$74: incantesimo noto n.15 (Magic Missile), mago iniziale/livello 2 */
-                ch->b[0x7A] = 1; /* pg+$7A: incantesimo noto n.21 (Sleep), iniziale del mago */
+                ch->b[0x70] = 1; /* ch+$70: known spell no.11 (Detect Magic), initial for the mage */
+                ch->b[0x77] = 1; /* ch+$77: known spell no.18 (Read Magic), initial for the mage */
+                ch->b[0x71] = 1; /* ch+$71: known spell no.12 (Enlarge), initial for the mage */
+                ch->b[0x74] = 1; /* ch+$74: known spell no.15 (Magic Missile), initial mage/level 2 */
+                ch->b[0x7A] = 1; /* ch+$7A: known spell no.21 (Sleep), initial for the mage */
                 break;
             case 6:             /* H013+$2816 */
                 gold = (u16)(gold + roll_dice(2, 6));
@@ -2164,46 +2148,45 @@ void create_character(void)
             }
             ++nclasses;
         }
-        /* All'uscita dal ciclo k vale 8: la divisione si fa sempre. */
+        /* On loop exit k is 8: the division is always done. */
         if (k != 7) {
             gold = (u16)((gold / nclasses) * 5);
         }
-        CH_PUTW(ch, 0xF8, gold); /* pg+$F8: pezzi d'acciaio (moneta tipo 4) (word) */
-        ch->b[0x64] = 0; /* pg+$64: punti ferita massimi */
-        ch->b[0x123] = 0; /* pg+$123: PF massimi senza costituzione; base -1 slot incantesimi +$124 */
-        ch->b[0x1A8] = 0; /* pg+$1A8: punti ferita correnti */
+        CH_PUTW(ch, 0xF8, gold); /* ch+$F8: steel pieces (coin type 4) (word) */
+        ch->b[0x64] = 0; /* ch+$64: maximum hit points */
+        ch->b[0x123] = 0; /* ch+$123: maximum HP without constitution; base -1 of the spell slots +$124 */
+        ch->b[0x1A8] = 0; /* ch+$1A8: current hit points */
         roll_hit_points(ch, 0xFF, nclasses);
 
-        /* B+$550: (word) maschera delle classi addestrabili qui (0 nessuna) */
+        /* B+$550: (word) mask of the classes that can be trained here (0 none) */
         saved_550 = COK_GET16(g_state_b + 0x550);
-        /* B+$550: (word) maschera delle classi addestrabili qui (0 nessuna) */
+        /* B+$550: (word) mask of the classes that can be trained here (0 none) */
         COK_PUT16(g_state_b + 0x550, 0xFF);
-        H005_B(0x24DF) = 0; /* $24DF: 1 quando Train non ha piu' classi da far salire */
-        H005_B(0x24CF) = 1; /* $24CF: 1 durante la creazione: Train senza messaggi ne' domande */
+        H005_B(0x24DF) = 0; /* $24DF: 1 when Train has no more classes to raise */
+        H005_B(0x24CF) = 1; /* $24CF: 1 during creation: Train without messages or questions */
         do {
             train_character();
-        } while (!H005_B(0x24DF)); /* $24DF: 1 quando Train non ha piu' classi da far salire */
-        /* B+$550: (word) maschera delle classi addestrabili qui (0 nessuna) */
+        } while (!H005_B(0x24DF)); /* $24DF: 1 when Train has no more classes to raise */
+        /* B+$550: (word) mask of the classes that can be trained here (0 none) */
         COK_PUT16(g_state_b + 0x550, saved_550);
-        H005_B(0x24CF) = 0; /* $24CF: 1 durante la creazione: Train senza messaggi ne' domande */
+        H005_B(0x24CF) = 0; /* $24CF: 1 during creation: Train without messages or questions */
 
-        /* Livelli per classe, "n/n/n", alla riga 7. */
+        /* Levels per class, "n/n/n", on row 7. */
         sep = 0;
         copy_text(line, "", 0x28);
         for (k = 0; k <= 7; ++k) {
             Character *c = g_current_char;
 
-            /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
+            /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
             if (c->b[0xFE + k] > 0 ||
-                /* pg+$106: livelli della classe precedente, 8 voci come +$FE; chierico */
+                /* ch+$106: levels of the previous class, 8 entries like +$FE; cleric */
                 (c->b[0x106 + k] < h073_12c8(c) && c->b[0x106 + k] > 0)) {
                 if (sep) {
                     h026_append(0x28, line, 1, "/");
                 }
                 format_number(0x50, s_message,
-                              /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere);
-                               * chierico; pg+$106: livelli della classe precedente, 8 voci come
-                               * +$FE; chierico */
+                              /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric; ch+$106: levels of the
+                               * previous class, 8 entries like +$FE; cleric */
                               (s32)(u16)(c->b[0xFE + k] + c->b[0x106 + k]),
                               0, 0x0A, 2, ' ');
                 h026_append(0x28, line, 0x50, s_message);
@@ -2220,16 +2203,16 @@ void create_character(void)
     do {
         input_line(0x10, "Character name: ", 0x0D, 0, 0x0F, 0x0F,
                    (char *)ch->b);
-    } while (ch->b[0] == 0); /* pg+$0: nome del personaggio (15 caratteri, terminato a +$0F) */
+    } while (ch->b[0] == 0); /* ch+$0: name of the character (15 characters, terminated at +$0F) */
     load_char_screens();
     set_default_figure();
     edit_character_icon();
     for (s = 0; s <= 5; ++s) {
-        /* pg+$10: caratteristiche base, 6 voci passo 2 (FOR INT SAG DES COS CAR); FOR; pg+$11:
-         * caratteristiche correnti, 6 voci passo 2 da +$11; forza corrente */
+        /* pg+$10: caratteristiche base, 6 voci passo 2 (FOR INT SAG DES COS CAR); FOR; ch+$11:
+         * current abilities, 6 entries step 2 from +$11; current strength */
         ch->b[0x10 + s * 2] = ch->b[0x11 + s * 2];
     }
-    /* pg+$1D: forza eccezionale base; pg+$1C: forza eccezionale corrente (18/xx, 1..100) */
+    /* ch+$1D: base exceptional strength; ch+$1C: current exceptional strength (18/xx, 1..100) */
     ch->b[0x1D] = ch->b[0x1C];
     copy_text(s_message, "Save ", 0x50);
     h026_append(0x50, s_message, 0x0F, (const char *)ch->b);
@@ -2240,7 +2223,7 @@ void create_character(void)
         g_current_char = saved;
         return;
     }
-    if (ch->b[0x105] > 0) { /* pg+$105: livello da cavaliere */
+    if (ch->b[0x105] > 0) { /* ch+$105: knight level */
         add_starting_items(ch);
     }
     save_character(ch, 0, "");
@@ -2248,22 +2231,22 @@ void create_character(void)
     g_current_char = saved;
 }
 
-/* Esperienza (long) della tabella H005+$1946 per la riga row e l'indice i. */
+/* Experience (long) of the table H005+$1946 for row row and index i. */
 static s32 xp_table(u8 row, s16 i)
 {
-    /* $1946: tabelle per classe ($9A byte): 11 long soglie XP, poi slot per liv. */
+    /* $1946: per-class tables ($9A bytes): 11 long XP thresholds, then slots per lvl. */
     return (s32)H005_L((u16)(0x1946 + row * 0x9A + i * 4));
 }
 
-/* PORT H013+$051C: trampolino (bra.w) verso H013+$58DC, la routine qui sotto. */
+/* PORT H013+$051C: trampoline (bra.w) to H013+$58DC, the routine below. */
 /*
- * PORT H013+$58DC (trampolino H013+$051C): Train Character.  Le classi
- * con esperienza sufficiente (H005+$1946) e addestrabili qui (maschera
- * dello stato B +$550) salgono di un livello dopo la conferma; poi valori
- * derivati, nuovo incantesimo del mago e punti ferita.  Durante la
- * creazione ($24CF) non ci sono messaggi ne' domande e, quando nessuna
- * classe puo' salire, $24DF = 1.  Con l'addestramento gratuito ($24DE) non
- * serve esperienza.
+ * PORT H013+$58DC (trampoline H013+$051C): Train Character.  The classes
+ * with enough experience (H005+$1946) and trainable here (mask
+ * of state B +$550) go up one level after confirmation; then derived
+ * values, new mage spell and hit points.  During
+ * creation ($24CF) there are no messages or questions and, when no
+ * class can go up, $24DF = 1.  With free training ($24DE) no
+ * experience is needed.
  */
 void train_character(void)
 {
@@ -2288,35 +2271,35 @@ void train_character(void)
     u8 best_k = 0;                      /* -$2f(a5) */
     u8 xp_row = 0;                      /* -$30(a5) */
 
-    /* $24CF: 1 durante la creazione: Train senza messaggi ne' domande */
+    /* $24CF: 1 during creation: Train without messages or questions */
     if (!H005_B(0x24CF) && !pick_character()) {
         return;
     }
-    /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra; $24DE: addestramento
-     * gratuito (trucco "Free training") */
+    /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down; $24DE: free training
+     * (cheat "Free training") */
     if (g_current_char->b[0x197] != 0 && !H005_B(0x24DE)) {
         show_message(0x1E, "we only train conscious people", 0x0E, 0);
         return;
     }
-    /* B+$550: (word) maschera delle classi addestrabili qui (0 nessuna) */
+    /* B+$550: (word) mask of the classes that can be trained here (0 none) */
     allowed = COK_GET16(g_state_b + 0x550);
     c = g_current_char;
     next_xp = 0;
     for (k = 0; k <= 7; ++k) {
         s32 need;
 
-        /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
+        /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
         if (c->b[0xFE + k] == 0) {
             continue;
         }
-        /* $5038: bit della classe k (0..7) nella maschera delle classi */
+        /* $5038: bit of class k (0..7) in the class mask */
         classes = (u16)(classes + H005_B(0x5038 + k));
         blocked = 0;
-        lvl = c->b[0xFE + k]; /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
-        if (c->b[0x5B] == 5 && (k == 2 || k == 4)) { /* pg+$5B: razza (0..6, nomi H005+$4D04) */
-            /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza corrente */
+        lvl = c->b[0xFE + k]; /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
+        if (c->b[0x5B] == 5 && (k == 2 || k == 4)) { /* ch+$5B: race (0..6, names H005+$4D04) */
+            /* ch+$11: current abilities, 6 entries step 2 from +$11; current strength */
             if (lvl == 7 || (lvl == 6 && c->b[0x11] == 0x11) ||
-                /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza corrente */
+                /* ch+$11: current abilities, 6 entries step 2 from +$11; current strength */
                 (lvl == 5 && c->b[0x11] < 0x11)) {
                 blocked = 1;
             }
@@ -2326,58 +2309,58 @@ void train_character(void)
             continue;
         }
         need = xp_table(xp_row, (s16)((u8)(lvl + 1) - 2));
-        /* pg+$11E: punti esperienza (long); $24DE: addestramento gratuito (trucco "Free training") */
+        /* ch+$11E: experience points (long); $24DE: free training (cheat "Free training") */
         if (!((s32)CH_L(c, 0x11E) >= need || H005_B(0x24DE)) || need <= 0) {
             continue;
         }
-        /* $24DE: addestramento gratuito (trucco "Free training"); pg+$11E: punti esperienza (long) */
+        /* $24DE: free training (cheat "Free training"); ch+$11E: experience points (long) */
         if (H005_B(0x24DE) && (u16)need != 0 && (s32)CH_L(c, 0x11E) < need) {
-            CH_PUTL(c, 0x11E, need); /* pg+$11E: punti esperienza (long) */
+            CH_PUTL(c, 0x11E, need); /* ch+$11E: experience points (long) */
         }
-        /* $5038: bit della classe k (0..7) nella maschera delle classi */
+        /* $5038: bit of class k (0..7) in the class mask */
         eligible = (u16)(eligible + H005_B(0x5038 + k));
         xp = xp_table(xp_row, (s16)((u8)(lvl + 2) - 2));
-        if (xp > 0 && (s32)CH_L(c, 0x11E) >= xp && xp > next_xp) { /* pg+$11E: punti esperienza (long) */
+        if (xp > 0 && (s32)CH_L(c, 0x11E) >= xp && xp > next_xp) { /* ch+$11E: experience points (long) */
             next_xp = xp - 1;
         }
     }
-    if (!H005_B(0x24CF)) { /* $24CF: 1 durante la creazione: Train senza messaggi ne' domande */
+    if (!H005_B(0x24CF)) { /* $24CF: 1 during creation: Train without messages or questions */
         /*
-         * Come nell'originale la riga e il livello sono quelli rimasti
-         * dall'ultima classe del ciclo precedente.
+         * As in the original the row and the level are the ones left
+         * from the last class of the previous loop.
          */
         best = 0;
         for (k = 0; k <= 7; ++k) {
-            /* $5038: bit della classe k (0..7) nella maschera delle classi */
+            /* $5038: bit of class k (0..7) in the class mask */
             if (mask_byte((u8)eligible, H005_B(0x5038 + k)) &&
                 best < xp_table(xp_row, (s16)((u8)(lvl + 1) - 2))) {
                 best = xp_table(xp_row, (s16)((u8)(lvl + 1) - 2));
                 best_k = k;
             }
             if (best > 0) {
-                /* $5038: bit della classe k (0..7) nella maschera delle classi */
+                /* $5038: bit of class k (0..7) in the class mask */
                 eligible = or_byte(H005_B(0x5038 + best_k), eligible);
                 xp = xp_table(xp_row, (s16)((u8)(lvl + 2) - 2));
-                /* pg+$11E: punti esperienza (long) */
+                /* ch+$11E: experience points (long) */
                 if (xp > 0 && (s32)CH_L(c, 0x11E) >= xp && xp > next_xp) {
                     next_xp = xp - 1;
                 }
             }
         }
     }
-    /* $24CF: 1 durante la creazione: Train senza messaggi ne' domande */
+    /* $24CF: 1 during creation: Train without messages or questions */
     if (next_xp > 0 && !H005_B(0x24CF)) {
-        CH_PUTL(c, 0x11E, next_xp); /* pg+$11E: punti esperienza (long) */
+        CH_PUTL(c, 0x11E, next_xp); /* ch+$11E: experience points (long) */
     }
-    if (!H005_B(0x24DE)) { /* $24DE: addestramento gratuito (trucco "Free training") */
-        /* $24CF: 1 durante la creazione: Train senza messaggi ne' domande */
+    if (!H005_B(0x24DE)) { /* $24DE: free training (cheat "Free training") */
+        /* $24CF: 1 during creation: Train without messages or questions */
         if (!mask_byte((u8)classes, allowed) && !H005_B(0x24CF)) {
             show_message(0x1E, "We don't train that class here", 0x0E, 0);
             return;
         }
         if (!mask_byte((u8)eligible, allowed)) {
-            H005_B(0x24DF) = 1; /* $24DF: 1 quando Train non ha piu' classi da far salire */
-            if (!H005_B(0x24CF)) { /* $24CF: 1 durante la creazione: Train senza messaggi ne' domande */
+            H005_B(0x24DF) = 1; /* $24DF: 1 when Train has no more classes to raise */
+            if (!H005_B(0x24CF)) { /* $24CF: 1 during creation: Train without messages or questions */
                 show_message(0x15, "Not Enough Experience", 0x0E, 0);
             }
             return;
@@ -2386,21 +2369,21 @@ void train_character(void)
     } else {
         train = eligible;
     }
-    if (!H005_B(0x24CF)) { /* $24CF: 1 durante la creazione: Train senza messaggi ne' domande */
+    if (!H005_B(0x24CF)) { /* $24CF: 1 during creation: Train without messages or questions */
         clear_text_cells(1, 1, 0x26, 0x16);
         row = 4;
         draw_character_name(g_current_char, 4, row, 0);
         ui_draw_text((u16)(h026_strlen(0x0F, (const char *)c->b) + 4), row,
                      0x0A, 0, 0x0D, " will become:");
         for (k = 0; k <= 7; ++k) {
-            /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
+            /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
             if (c->b[0xFE + k] == 0 ||
-                /* $5038: bit della classe k (0..7) nella maschera delle classi */
+                /* $5038: bit of class k (0..7) in the class mask */
                 !mask_byte(H005_B(0x5038 + k), train)) {
                 continue;
             }
             ++row;
-            /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
+            /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
             format_number(0x50, s_message, (s32)(u16)(c->b[0xFE + k] + 1), 0,
                           0x0A, 1, ' ');
             if (row == 5) {
@@ -2410,7 +2393,7 @@ void train_character(void)
             }
             h026_append(0x50, s_message, 1, " ");
             h026_append(0x50, s_message, 0x1A,
-                        /* $4D84: nomi delle classi (+$5C), $1C byte per voce */
+                        /* $4D84: names of the classes (+$5C), $1C bytes per entry */
                         (const char *)&g_h005[0x4D84 + k * 0x1C]);
             ui_draw_text(6, row, 0x0A, 0, 0x50, s_message);
         }
@@ -2422,101 +2405,100 @@ void train_character(void)
     }
 
     nclasses = 0;
-    old_103 = c->b[0x103]; /* pg+$103: livello da mago */
-    old_102 = c->b[0x102]; /* pg+$102: livello da ranger */
-    c->b[0x122] = 0; /* pg+$122: maschera delle armi usabili (somma H005+$5040 per classe) */
+    old_103 = c->b[0x103]; /* ch+$103: mage level */
+    old_102 = c->b[0x102]; /* ch+$102: ranger level */
+    c->b[0x122] = 0; /* ch+$122: mask of the usable weapons (sum of H005+$5040 per class) */
     for (k = 0; k <= 7; ++k) {
-        /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
+        /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
         if (c->b[0xFE + k] == 0) {
             continue;
         }
         ++nclasses;
-        /* $5038: bit della classe k (0..7) nella maschera delle classi */
+        /* $5038: bit of class k (0..7) in the class mask */
         if (mask_byte(H005_B(0x5038 + k), train)) {
-            ++c->b[0xFE + k]; /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
-            /* pg+$DD: uso: contatore scalato a ogni livello in Train (divisore di +$DE) */
+            ++c->b[0xFE + k]; /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
+            /* ch+$DD: use: counter decremented at every level in Train (divisor of +$DE) */
             if (c->b[0xDD] > 0) {
-                /* pg+$DE: uso: in Train perde +$DE/+$DD a ogni livello guadagnato */
+                /* ch+$DE: use: in Train it loses +$DE/+$DD at every level gained */
                 add_to_byte(&c->b[0xDE], (u16)-(s16)((s16)c->b[0xDE] /
-                                                     /* pg+$DD: uso: contatore scalato a ogni
-                                                      * livello in Train (divisore di +$DE) */
+                                                     /* ch+$DD: use: counter decremented at every level in Train (divisor of +$DE) */
                                                      (s16)c->b[0xDD]));
-                /* pg+$DD: uso: contatore scalato a ogni livello in Train (divisore di +$DE) */
+                /* ch+$DD: use: counter decremented at every level in Train (divisor of +$DE) */
                 add_to_byte(&c->b[0xDD], 0xFFFF);
             }
         }
     }
     level_derived_values(g_current_char);
-    /* $24CF: 1 durante la creazione: Train senza messaggi ne' domande; pg+$103: livello da mago;
-     * pg+$102: livello da ranger */
+    /* $24CF: 1 during creation: Train without messages or questions; ch+$103: mage level;
+     * ch+$102: ranger level */
     if (!H005_B(0x24CF) && (c->b[0x103] > old_103 || c->b[0x102] > 8)) {
         spell_value = -1;               /* $FFFF */
         do {
             spell = choose_spell_of_kind(4, 4, &spell_value, &again);
         } while (spell == 0 && again);
         if (spell > 0) {
-            /* pg+$65: base -1 incantesimi noti +$66+s-1 (s = 1..$6B, flag per incantesimo) */
+            /* ch+$65: base -1 of the known spells +$66+s-1 (s = 1..$6B, flag per spell) */
             c->b[0x66 + spell - 1] = 1;
         }
     }
     (void)old_102;
-    if (H005_B(0x24CF)) { /* $24CF: 1 durante la creazione: Train senza messaggi ne' domande */
-        /* pg+$103: livello da mago */
-        switch (c->b[0x103]) {  /* incantesimi del mago per livello */
+    if (H005_B(0x24CF)) { /* $24CF: 1 during creation: Train without messages or questions */
+        /* ch+$103: mage level */
+        switch (c->b[0x103]) {  /* mage spells per level */
         case 2:
-            c->b[0x74] = 1; /* pg+$74: incantesimo noto n.15 (Magic Missile), mago iniziale/livello 2 */
+            c->b[0x74] = 1; /* ch+$74: known spell no.15 (Magic Missile), initial mage/level 2 */
             break;
         case 3:
-            c->b[0x87] = 1; /* pg+$87: incantesimo noto n.34 (Stinking Cloud), mago di livello 3 */
-            c->b[0x6F] = 1; /* pg+$6F: incantesimo noto n.10 (Charm Person), dato al mago di livello 3 */
+            c->b[0x87] = 1; /* ch+$87: known spell no.34 (Stinking Cloud), level 3 mage */
+            c->b[0x6F] = 1; /* ch+$6F: known spell no.10 (Charm Person), given to the level 3 mage */
             break;
         case 4:
-            c->b[0x84] = 1; /* pg+$84: incantesimo noto n.31 (Knock), dato al mago di livello 4 */
+            c->b[0x84] = 1; /* ch+$84: known spell no.31 (Knock), given to the level 4 mage */
             break;
         case 5:
-            c->b[0x94] = 1; /* pg+$94: incantesimo noto n.47 (Fireball), dato al mago di livello 5 */
+            c->b[0x94] = 1; /* ch+$94: known spell no.47 (Fireball), given to the level 5 mage */
             break;
         default:
             break;
         }
     }
-    /* pg+$DB: livello massimo fra le classi (usato anche come dadi vita); pg+$DC: uso: soglia per i
-     * livelli +$106..+$10D e i PF; !=0 vieta Modify */
+    /* ch+$DB: highest level among the classes (also used as hit dice); ch+$DC: use: threshold for
+     * the levels +$106..+$10D and the HP; !=0 forbids Modify */
     if (c->b[0xDB] > c->b[0xDC]) {
         roll_hit_points(g_current_char, train, nclasses);
     }
     c = g_current_char;
     for (k = 0; k <= 7; ++k) {
-        if (c->b[0xFE + k] > 1) { /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
+        if (c->b[0xFE + k] > 1) { /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
             s32 v;
 
             xp_row = class_xp_row(g_current_char, k);
-            /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico */
+            /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric */
             v = xp_table(xp_row, (s16)(c->b[0xFE + k] - 2));
-            if (v > (s32)CH_L(c, 0x11E)) { /* pg+$11E: punti esperienza (long) */
-                CH_PUTL(c, 0x11E, v); /* pg+$11E: punti esperienza (long) */
+            if (v > (s32)CH_L(c, 0x11E)) { /* ch+$11E: experience points (long) */
+                CH_PUTL(c, 0x11E, v); /* ch+$11E: experience points (long) */
             }
         }
     }
 }
 
-/* Allineamento malvagio: (allineamento + 1) multiplo di 3 (2, 5, 8). */
+/* Evil alignment: (alignment + 1) multiple of 3 (2, 5, 8). */
 static u8 is_evil(const Character *c)
 {
-    /* pg+$10F: allineamento (0..8, malvagi 2/5/8; nomi H005+$4C62) */
+    /* ch+$10F: alignment (0..8, evil 2/5/8; names H005+$4C62) */
     return (u8)((u16)(c->b[0x10F] + 1) % 3 == 0);
 }
 
-/* PORT H013+$0518: trampolino (bra.w) verso H013+$52E0, la routine qui sotto. */
+/* PORT H013+$0518: trampoline (bra.w) to H013+$52E0, the routine below. */
 /*
- * PORT H013+$52E0 (trampolino H013+$0518): Add Character to Party.
- * Elenco dei personaggi salvati (H066+$03D0); quello scelto e' caricato,
- * segnato con "* " e aggiunto se non e' gia' nel party, se il party non
- * e' pieno (6 personaggi giocanti, 8 in tutto) e se paladini, ranger
- * (al massimo 3) e allineamenti malvagi sono compatibili; altrimenti il
- * segno e' tolto, con il messaggio del motivo.  Fino a Esc/Exit o party
- * pieno.  Il personaggio rifiutato libera solo il record, come
- * nell'originale (oggetti ed effetti caricati restano allocati).
+ * PORT H013+$52E0 (trampoline H013+$0518): Add Character to Party.
+ * List of the saved characters (H066+$03D0); the chosen one is loaded,
+ * marked with "* " and added if it is not already in the party, if the party is not
+ * full (6 player characters, 8 in all) and if paladins, rangers
+ * (at most 3) and evil alignments are compatible; otherwise the
+ * mark is removed, with the message giving the reason.  Until Esc/Exit or a full
+ * party.  The rejected character frees only the record, as
+ * in the original (the loaded items and effects stay allocated).
  */
 void add_character_to_party(void)
 {
@@ -2528,19 +2510,19 @@ void add_character_to_party(void)
     Character *m;                       /* -$18(a5) */
     char paladin_name[0x2A];            /* -$4e(a5) */
     u16 index;                          /* -$1a(a5) */
-    u16 members = 0;                    /* -$22(a5): nell'originale non
-                                         * inizializzato prima della prima
-                                         * scelta; qui 0 */
+    u16 members = 0;                    /* -$22(a5): in the original not
+                                         * initialised before the first
+                                         * choice; here 0 */
     u16 rangers = 0;                    /* -$24(a5) */
     u8 key;                             /* -$1b(a5) */
     u8 has_evil = 0;                    /* -$1c(a5) */
     u8 has_paladin = 0;                 /* -$1d(a5) */
-    u8 with_exit = 0;                   /* -$1e(a5): non inizializzato
-                                         * nell'originale; qui 0 */
+    u8 with_exit = 0;                   /* -$1e(a5): not initialised
+                                         * in the original; here 0 */
     u8 redraw;                          /* -$20(a5) */
 
     paladin_name[0] = 0;
-    H005_B(0x24E9) = 0; /* $24E9: tipo dei personaggi salvati (0: record $1AA); 0 salta il disco */
+    H005_B(0x24E9) = 0; /* $24E9: type of the saved characters (0: $1AA record); 0 skips the disk */
     list_saved_characters(&names, &files);
     if (names == NULL) {
         return;
@@ -2561,7 +2543,7 @@ void add_character_to_party(void)
             h026_insert(0x28, chosen->text, 2, "* ", 0);
             members = 0;
             if (g_party_head == NULL) {
-                COK_PUT16(g_state_b + 0x67C, 0); /* B+$67C: (word) numero dei membri del party (max 8) */
+                COK_PUT16(g_state_b + 0x67C, 0); /* B+$67C: (word) number of party members (max 8) */
                 add_to_party(c);
                 build_char_icon(1);
             } else {
@@ -2569,49 +2551,49 @@ void add_character_to_party(void)
                 for (m = g_party_head; m != NULL; m = m->next) {
                     if (h026_compare_nocase(0x0F, (const char *)m->b, 0x0F,
                                             (const char *)c->b) == 1 &&
-                        /* pg+$11C: identificativo: casuale per i PG, numero del PNG (icone CPIC) */
+                        /* ch+$11C: identifier: random for PCs, NPC number (CPIC icons) */
                         m->b[0x11C] == c->b[0x11C]) {
-                        break;          /* gia' nel party */
+                        break;          /* already in the party */
                     }
-                    /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
+                    /* ch+$EC: control: <$80 PC, >$7F NPC/AI ($B3 = charmed or confused) */
                     if (m->b[0xEC] < 0x80) {
                         ++members;
                     }
-                    if (m->b[0x102] > 0) { /* pg+$102: livello da ranger */
+                    if (m->b[0x102] > 0) { /* ch+$102: ranger level */
                         ++rangers;
                     }
                     if (is_evil(m)) {
                         has_evil = 1;
                     }
-                    if (m->b[0x101] > 0) { /* pg+$101: livello da paladino */
+                    if (m->b[0x101] > 0) { /* ch+$101: paladin level */
                         has_paladin = 1;
                         h026_copy(0x28, paladin_name, 0x0F,
                                   (const char *)m->b);
                     }
                 }
                 if (m == NULL &&
-                    /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
+                    /* ch+$EC: control: <$80 PC, >$7F NPC/AI ($B3 = charmed or confused) */
                     ((c->b[0xEC] < 0x80 && members < 6) ||
-                     /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
+                     /* ch+$EC: control: <$80 PC, >$7F NPC/AI ($B3 = charmed or confused) */
                      (c->b[0xEC] > 0x7F &&
-                      /* B+$67C: (word) numero dei membri del party (max 8) */
+                      /* B+$67C: (word) number of party members (max 8) */
                       COK_GET16(g_state_b + 0x67C) < 8)) &&
-                    !(c->b[0x101] != 0 && has_evil) && /* pg+$101: livello da paladino */
-                    !(c->b[0x102] != 0 && rangers >= 3) && /* pg+$102: livello da ranger */
+                    !(c->b[0x101] != 0 && has_evil) && /* ch+$101: paladin level */
+                    !(c->b[0x102] != 0 && rangers >= 3) && /* ch+$102: ranger level */
                     !(is_evil(c) && has_paladin)) {
                     add_to_party(c);
                     build_char_icon(1);
-                    /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
+                    /* ch+$EC: control: <$80 PC, >$7F NPC/AI ($B3 = charmed or confused) */
                     if (c->b[0xEC] < 0x80) {
                         ++members;
                     }
                 } else {
                     h026_delete(0x28, chosen->text, 0, 2);
-                    if (c->b[0x101] > 0 && has_evil) { /* pg+$101: livello da paladino */
+                    if (c->b[0x101] > 0 && has_evil) { /* ch+$101: paladin level */
                         show_message_line(0x23,
                             "paladins do not join with evil scum");
                         message_delay();
-                    } else if (c->b[0x102] > 0 && rangers > 2) { /* pg+$102: livello da ranger */
+                    } else if (c->b[0x102] > 0 && rangers > 2) { /* ch+$102: ranger level */
                         show_message_line(0x19, "too many rangers in party");
                     } else if (is_evil(c) && has_paladin) {
                         h026_copy(0x50, s_message, 0x28, paladin_name);
@@ -2624,7 +2606,7 @@ void add_character_to_party(void)
             }
         }
     } while (key != 'E' && key != 0 && members <= 5 &&
-             COK_GET16(g_state_b + 0x67C) <= 7); /* B+$67C: (word) numero dei membri del party (max 8) */
+             COK_GET16(g_state_b + 0x67C) <= 7); /* B+$67C: (word) number of party members (max 8) */
     menu_free(&names);
     menu_free(&files);
 }

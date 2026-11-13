@@ -1,4 +1,4 @@
-/* H001: corpo principale del gioco. */
+/* H001: main body of the game. */
 #ifndef COK_H001_MAIN_H
 #define COK_H001_MAIN_H
 

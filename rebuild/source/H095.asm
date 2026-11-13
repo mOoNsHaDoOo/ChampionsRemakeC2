@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H095
-; Preparazione del combattimento; significato dei campi ancora parziale.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H095
+; Combat setup; meaning of the fields still partial.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Preparazione del combattimento: contesto, attori, callback e strutture. Il significato di molti campi resta parziale.
+; MODULE NOTE
+; Combat setup: context, actors, callbacks and structures. The meaning of many fields is still partial.
 ; --------------------------------------------------------------------------
 ; H095: 10484 original bytes; all offsets are section-relative.
         section H095,code
@@ -71,10 +71,10 @@ H095:
         dc.w $7474,$6C65,$2062,$6567,$696E,$732E,$2E2E,$0000
         dc.l H095+$00000346
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H095 [parziale]
-; Scopo: Ingresso del modulo preparazione del combattimento; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H095+$2670.
-; Chiamanti diretti: H000+$020A
+; ROUTINE: module_init_H095 [partial]
+; Purpose: Entry of the combat setup module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H095+$2670.
+; Direct callers: H000+$020A
 ; --------------------------------------------------------------------------
 L095_00000384:
 ; H095+$00000384: 2f0c  move.l a4, -(a7)
@@ -89,10 +89,10 @@ L095_0000038E:
 ; H095+$0000038E: 600022e0  bra.w $2670
         bra.w H095+$2670
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H095_00000392 [parziale]
-; Scopo: Routine del modulo preparazione del combattimento; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H095+$0876, H095+$08B0, H095+$08C0, H095+$08D4, H095+$092A, H095+$0938 e altri 16
+; ROUTINE: sub_H095_00000392 [partial]
+; Purpose: Routine of the combat setup module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H095+$0876, H095+$08B0, H095+$08C0, H095+$08D4, H095+$092A, H095+$0938 and 16 more
 ; --------------------------------------------------------------------------
 L095_00000392:
 ; H095+$00000392: 2f0c  move.l a4, -(a7)
@@ -212,10 +212,10 @@ L095_00000420:
 ; H095+$00000420: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H095_00000422 [parziale]
-; Scopo: Routine del modulo preparazione del combattimento; richiama H062+$156C.
-;   - Richiama H062+$156C.
-; Chiamanti diretti: H095+$105C
+; ROUTINE: sub_H095_00000422 [partial]
+; Purpose: Routine of the combat setup module; calls H062+$156C.
+;   - Calls H062+$156C.
+; Direct callers: H095+$105C
 ; --------------------------------------------------------------------------
 L095_00000422:
 ; H095+$00000422: 2f0c  move.l a4, -(a7)
@@ -739,11 +739,11 @@ L095_000006F0:
 ; H095+$000006F0: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H095_07B6 [parziale]
-; Scopo: Trampolino verso H095+$07B6; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H095+$07B6.
-;   - Richiama H029+$039A.
-; Chiamanti diretti: H095+$0FE4, H095+$0FF6, H095+$100A, H095+$101E, H095+$09C0, H095+$09E2 e altri 4
+; ROUTINE: trampoline_H095_07B6 [partial]
+; Purpose: Trampoline to H095+$07B6; the actual body is there.
+;   - Jumps to the actual body at H095+$07B6.
+;   - Calls H029+$039A.
+; Direct callers: H095+$0FE4, H095+$0FF6, H095+$100A, H095+$101E, H095+$09C0, H095+$09E2 and 4 more
 ; --------------------------------------------------------------------------
 L095_000006F2:
 ; H095+$000006F2: 2f0c  move.l a4, -(a7)
@@ -758,12 +758,12 @@ L095_000006FC:
 ; H095+$000006FC: 600000b8  bra.w $7b6
         bra.w H095+$7B6
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H095_00000700 [parziale]
-; Scopo: Routine del modulo preparazione del combattimento; richiama H011+$09C8, H011+$01AA, H029+$039A.
-;   - Richiama H011+$09C8.
-;   - Richiama H011+$01AA.
-;   - Richiama H029+$039A.
-; Chiamanti diretti: H095+$07D8, H095+$0812
+; ROUTINE: sub_H095_00000700 [partial]
+; Purpose: Routine of the combat setup module; calls H011+$09C8, H011+$01AA, H029+$039A.
+;   - Calls H011+$09C8.
+;   - Calls H011+$01AA.
+;   - Calls H029+$039A.
+; Direct callers: H095+$07D8, H095+$0812
 ; --------------------------------------------------------------------------
 L095_00000700:
 ; H095+$00000700: 4e550000  link.w a5, #$0
@@ -831,7 +831,7 @@ L095_00000750:
 L095_00000754:
 ; H095+$00000754: 3f2d000c  move.w $c(a5), -(a7)
         move.w $c(a5), -(a7)
-; FLUSSO: Chiama Map_QueryWall (H011+$01AA).
+; FLOW: Calls Map_QueryWall (H011+$01AA).
 L095_00000758:
 ; H095+$00000758: 4eb9000001aa  jsr $1aa.l
         jsr (H011+$1AA).l
@@ -1023,13 +1023,13 @@ L095_00000838:
 ; H095+$00000838: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H095_0F9C [parziale]
-; Scopo: Trampolino verso H095+$0F9C; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H095+$0F9C.
-;   - Richiama H011+$04E2.
-;   - Richiama H029+$0354.
-;   - Usa lo stato globale: H005+$281C (inizio del blocco coordinate/vista).
-; Chiamanti diretti: H095+$1718
+; ROUTINE: trampoline_H095_0F9C [partial]
+; Purpose: Trampoline to H095+$0F9C; the actual body is there.
+;   - Jumps to the actual body at H095+$0F9C.
+;   - Calls H011+$04E2.
+;   - Calls H029+$0354.
+;   - Uses the global state: H005+$281C (start of the coordinates/view block).
+; Direct callers: H095+$1718
 ; --------------------------------------------------------------------------
 L095_0000083A:
 ; H095+$0000083A: 2f0c  move.l a4, -(a7)
@@ -1044,10 +1044,10 @@ L095_00000844:
 ; H095+$00000844: 60000756  bra.w $f9c
         bra.w H095+$F9C
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H095_00000848 [parziale]
-; Scopo: Routine del modulo preparazione del combattimento; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H095+$1028
+; ROUTINE: sub_H095_00000848 [partial]
+; Purpose: Routine of the combat setup module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H095+$1028
 ; --------------------------------------------------------------------------
 L095_00000848:
 ; H095+$00000848: 4e55fffc  link.w a5, #$fffc
@@ -1209,10 +1209,10 @@ L095_00000910:
 ; H095+$00000910: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H095_00000912 [parziale]
-; Scopo: Routine del modulo preparazione del combattimento; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H095+$102E
+; ROUTINE: sub_H095_00000912 [partial]
+; Purpose: Routine of the combat setup module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H095+$102E
 ; --------------------------------------------------------------------------
 L095_00000912:
 ; H095+$00000912: 4e55fffc  link.w a5, #$fffc
@@ -1335,10 +1335,10 @@ L095_000009A2:
 ; H095+$000009A2: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H095_000009A4 [parziale]
-; Scopo: Routine del modulo preparazione del combattimento; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H095+$1034
+; ROUTINE: sub_H095_000009A4 [partial]
+; Purpose: Routine of the combat setup module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H095+$1034
 ; --------------------------------------------------------------------------
 L095_000009A4:
 ; H095+$000009A4: 4e55fff4  link.w a5, #$fff4
@@ -1504,7 +1504,7 @@ L095_00000A68:
 L095_00000A6A:
 ; H095+$00000A6A: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H095+$0A54; indici 0..3, default -1.
+; DISPATCH: words relative to H095+$0A54; indices 0..3, default -1.
 L095_00000A6E:
 ; H095+$00000A6E: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -1576,7 +1576,7 @@ L095_00000ACA:
 L095_00000ACC:
 ; H095+$00000ACC: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H095+$0AB6; indici 0..3, default -1.
+; DISPATCH: words relative to H095+$0AB6; indices 0..3, default -1.
 L095_00000AD0:
 ; H095+$00000AD0: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -1633,7 +1633,7 @@ L095_00000B10:
 L095_00000B12:
 ; H095+$00000B12: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H095+$0AFC; indici 0..3, default -1.
+; DISPATCH: words relative to H095+$0AFC; indices 0..3, default -1.
 L095_00000B16:
 ; H095+$00000B16: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -1738,7 +1738,7 @@ L095_00000B9E:
 L095_00000BA0:
 ; H095+$00000BA0: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H095+$0B8A; indici 0..3, default -1.
+; DISPATCH: words relative to H095+$0B8A; indices 0..3, default -1.
 L095_00000BA4:
 ; H095+$00000BA4: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -1804,7 +1804,7 @@ L095_00000BEE:
 L095_00000BF0:
 ; H095+$00000BF0: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H095+$0BDA; indici 0..3, default -1.
+; DISPATCH: words relative to H095+$0BDA; indices 0..3, default -1.
 L095_00000BF4:
 ; H095+$00000BF4: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -1861,7 +1861,7 @@ L095_00000C34:
 L095_00000C36:
 ; H095+$00000C36: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H095+$0C20; indici 0..3, default -1.
+; DISPATCH: words relative to H095+$0C20; indices 0..3, default -1.
 L095_00000C3A:
 ; H095+$00000C3A: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -1891,7 +1891,7 @@ L095_00000C58:
 L095_00000C5A:
 ; H095+$00000C5A: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H095+$0C44; indici 0..3, default -1.
+; DISPATCH: words relative to H095+$0C44; indices 0..3, default -1.
 L095_00000C5E:
 ; H095+$00000C5E: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -1924,7 +1924,7 @@ L095_00000C7E:
 L095_00000C80:
 ; H095+$00000C80: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H095+$0C68; indici 0..3, default -1.
+; DISPATCH: words relative to H095+$0C68; indices 0..3, default -1.
 L095_00000C84:
 ; H095+$00000C84: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -1995,12 +1995,12 @@ L095_00000CD2:
 ; H095+$00000CD2: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H095_00000CD4 [parziale]
-; Scopo: Routine del modulo preparazione del combattimento; richiama H011+$04E2, H029+$0354.
-;   - Richiama H011+$04E2.
-;   - Richiama H029+$0354.
-;   - Usa lo stato globale: H005+$281C (inizio del blocco coordinate/vista).
-; Chiamanti diretti: H095+$103A
+; ROUTINE: sub_H095_00000CD4 [partial]
+; Purpose: Routine of the combat setup module; calls H011+$04E2, H029+$0354.
+;   - Calls H011+$04E2.
+;   - Calls H029+$0354.
+;   - Uses the global state: H005+$281C (start of the coordinates/view block).
+; Direct callers: H095+$103A
 ; --------------------------------------------------------------------------
 L095_00000CD4:
 ; H095+$00000CD4: 4e55fff2  link.w a5, #$fff2
@@ -2157,7 +2157,7 @@ L095_00000D9A:
 L095_00000D9C:
 ; H095+$00000D9C: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H095+$0D86; indici 0..3, default -1.
+; DISPATCH: words relative to H095+$0D86; indices 0..3, default -1.
 L095_00000DA0:
 ; H095+$00000DA0: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -2262,7 +2262,7 @@ L095_00000E26:
 L095_00000E28:
 ; H095+$00000E28: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H095+$0E12; indici 0..3, default -1.
+; DISPATCH: words relative to H095+$0E12; indices 0..3, default -1.
 L095_00000E2C:
 ; H095+$00000E2C: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -2361,7 +2361,7 @@ L095_00000EAC:
 L095_00000EAE:
 ; H095+$00000EAE: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H095+$0E98; indici 0..3, default -1.
+; DISPATCH: words relative to H095+$0E98; indices 0..3, default -1.
 L095_00000EB2:
 ; H095+$00000EB2: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -2472,7 +2472,7 @@ L095_00000F46:
 L095_00000F48:
 ; H095+$00000F48: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H095+$0F30; indici 0..3, default -1.
+; DISPATCH: words relative to H095+$0F30; indices 0..3, default -1.
 L095_00000F4C:
 ; H095+$00000F4C: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -2560,7 +2560,7 @@ L095_00000FB2:
 L095_00000FB8:
 ; H095+$00000FB8: 6e0000ae  bgt.w $1068
         bgt.w H095+$1068
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L095_00000FBC:
 ; H095+$00000FBC: 34390000281c  move.w $281c.l, d2
         move.w (H005+$281C).l, d2
@@ -2711,10 +2711,10 @@ L095_00001074:
 ; H095+$00001074: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H095_00001076 [parziale]
-; Scopo: Routine del modulo preparazione del combattimento; richiama H062+$156C.
-;   - Richiama H062+$156C.
-; Chiamanti diretti: H095+$15BA
+; ROUTINE: sub_H095_00001076 [partial]
+; Purpose: Routine of the combat setup module; calls H062+$156C.
+;   - Calls H062+$156C.
+; Direct callers: H095+$15BA
 ; --------------------------------------------------------------------------
 L095_00001076:
 ; H095+$00001076: 2f0c  move.l a4, -(a7)
@@ -3049,10 +3049,10 @@ L095_00001218:
 ; H095+$00001218: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H095_13F0 [parziale]
-; Scopo: Trampolino verso H095+$13F0; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H095+$13F0.
-; Chiamanti diretti: H095+$15BE
+; ROUTINE: trampoline_H095_13F0 [partial]
+; Purpose: Trampoline to H095+$13F0; the actual body is there.
+;   - Jumps to the actual body at H095+$13F0.
+; Direct callers: H095+$15BE
 ; --------------------------------------------------------------------------
 L095_0000121A:
 ; H095+$0000121A: 2f0c  move.l a4, -(a7)
@@ -3067,10 +3067,10 @@ L095_00001224:
 ; H095+$00001224: 600001ca  bra.w $13f0
         bra.w H095+$13F0
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H095_00001228 [parziale]
-; Scopo: Routine del modulo preparazione del combattimento; richiama H062+$156C.
-;   - Richiama H062+$156C.
-; Chiamanti diretti: H095+$1478, H095+$14B0, H095+$14E8, H095+$1522, H095+$155C
+; ROUTINE: sub_H095_00001228 [partial]
+; Purpose: Routine of the combat setup module; calls H062+$156C.
+;   - Calls H062+$156C.
+; Direct callers: H095+$1478, H095+$14B0, H095+$14E8, H095+$1522, H095+$155C
 ; --------------------------------------------------------------------------
 L095_00001228:
 ; H095+$00001228: 4e55fffe  link.w a5, #$fffe
@@ -3727,11 +3727,11 @@ L095_00001574:
 ; H095+$00001574: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H095_00001576 [parziale]
-; Scopo: Routine del modulo preparazione del combattimento; richiama H029+$0312.
-;   - Richiama H029+$0312.
-;   - Usa lo stato globale: H005+$3E04 (puntatore stato persistente A, 2048 byte).
-; Chiamanti diretti: H095+$1720
+; ROUTINE: sub_H095_00001576 [partial]
+; Purpose: Routine of the combat setup module; calls H029+$0312.
+;   - Calls H029+$0312.
+;   - Uses the global state: H005+$3E04 (pointer to persistent state A, 2048 bytes).
+; Direct callers: H095+$1720
 ; --------------------------------------------------------------------------
 L095_00001576:
 ; H095+$00001576: 2f0c  move.l a4, -(a7)
@@ -3761,14 +3761,14 @@ L095_00001592:
 L095_00001596:
 ; H095+$00001596: 4eb900000312  jsr $312.l
         jsr (H029+$312).l
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L095_0000159C:
 ; H095+$0000159C: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
 L095_000015A2:
 ; H095+$000015A2: 3b6b0186fffe  move.w $186(a3), -$2(a5)
         move.w $186(a3), -$2(a5)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L095_000015A8:
 ; H095+$000015A8: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -3805,12 +3805,12 @@ L095_000015C6:
         dc.l H014+$00000018
         dc.w $4E5D,$285F,$205F,$548F,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H095_00001630 [parziale]
-; Scopo: Routine del modulo preparazione del combattimento; richiama H035+$0040, H003+$0068.
-;   - Richiama H035+$0040.
-;   - Richiama H003+$0068.
-;   - Usa lo stato globale: H005+$3E04 (puntatore stato persistente A, 2048 byte).
-; Chiamanti diretti: H095+$2572
+; ROUTINE: sub_H095_00001630 [partial]
+; Purpose: Routine of the combat setup module; calls H035+$0040, H003+$0068.
+;   - Calls H035+$0040.
+;   - Calls H003+$0068.
+;   - Uses the global state: H005+$3E04 (pointer to persistent state A, 2048 bytes).
+; Direct callers: H095+$2572
 ; --------------------------------------------------------------------------
 L095_00001630:
 ; H095+$00001630: 2f0c  move.l a4, -(a7)
@@ -3821,7 +3821,7 @@ L095_00001632:
 L095_00001636:
 ; H095+$00001636: 4e55fffa  link.w a5, #$fffa
         link.w a5, #$fffa
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L095_0000163A:
 ; H095+$0000163A: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -3962,7 +3962,7 @@ L095_00001700:
 L095_00001706:
 ; H095+$00001706: 422b0008  clr.b $8(a3)
         clr.b $8(a3)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L095_0000170A:
 ; H095+$0000170A: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -4066,13 +4066,13 @@ L095_0000178E:
 ; H095+$0000178E: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H095_00001790 [parziale]
-; Scopo: Routine del modulo preparazione del combattimento; richiama H063+$13BE, H003+$0068, H029+$0354.
-;   - Richiama H063+$13BE.
-;   - Richiama H003+$0068.
-;   - Richiama H029+$0354.
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party); H005+$3E00 (puntatore stato persistente B, 2048 byte).
-; Chiamanti diretti: H095+$2576
+; ROUTINE: sub_H095_00001790 [partial]
+; Purpose: Routine of the combat setup module; calls H063+$13BE, H003+$0068, H029+$0354.
+;   - Calls H063+$13BE.
+;   - Calls H003+$0068.
+;   - Calls H029+$0354.
+;   - Uses the global state: H005+$3364 (head of the party list); H005+$3E00 (pointer to persistent state B, 2048 bytes).
+; Direct callers: H095+$2576
 ; --------------------------------------------------------------------------
 L095_00001790:
 ; H095+$00001790: 2f0c  move.l a4, -(a7)
@@ -4083,7 +4083,7 @@ L095_00001792:
 L095_00001796:
 ; H095+$00001796: 4e55fff8  link.w a5, #$fff8
         link.w a5, #$fff8
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L095_0000179A:
 ; H095+$0000179A: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -4134,7 +4134,7 @@ L095_000017D8:
 L095_000017DC:
 ; H095+$000017DC: 342dfffa  move.w -$6(a5), d2
         move.w -$6(a5), d2
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L095_000017E0:
 ; H095+$000017E0: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -4277,7 +4277,7 @@ L095_00001898:
 L095_0000189E:
 ; H095+$0000189E: 63000018  bls.w $18b8
         bls.w H095+$18B8
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L095_000018A2:
 ; H095+$000018A2: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -4312,10 +4312,10 @@ L095_000018CA:
 ; H095+$000018CA: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H095_000018CC [parziale]
-; Scopo: Routine del modulo preparazione del combattimento; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H095+$1D26, H095+$1E56
+; ROUTINE: sub_H095_000018CC [partial]
+; Purpose: Routine of the combat setup module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H095+$1D26, H095+$1E56
 ; --------------------------------------------------------------------------
 L095_000018CC:
 ; H095+$000018CC: 2f0c  move.l a4, -(a7)
@@ -4380,10 +4380,10 @@ L095_00001912:
 ; H095+$00001912: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H095_00001914 [parziale]
-; Scopo: Routine del modulo preparazione del combattimento; richiama H048+$113E.
-;   - Richiama H048+$113E.
-; Chiamanti diretti: H095+$1F88
+; ROUTINE: sub_H095_00001914 [partial]
+; Purpose: Routine of the combat setup module; calls H048+$113E.
+;   - Calls H048+$113E.
+; Direct callers: H095+$1F88
 ; --------------------------------------------------------------------------
 L095_00001914:
 ; H095+$00001914: 2f0c  move.l a4, -(a7)
@@ -4670,10 +4670,10 @@ L095_00001A78:
 ; H095+$00001A78: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H095_00001A7A [parziale]
-; Scopo: Routine del modulo preparazione del combattimento; opera su H005+$281C (inizio del blocco coordinate/vista); H005+$3DE3 (contesto nativo, 5 nel combattimento).
-;   - Usa lo stato globale: H005+$281C (inizio del blocco coordinate/vista); H005+$3DE3 (contesto nativo, 5 nel combattimento).
-; Chiamanti diretti: H095+$228C
+; ROUTINE: sub_H095_00001A7A [partial]
+; Purpose: Routine of the combat setup module; works on H005+$281C (start of the coordinates/view block); H005+$3DE3 (native context, 5 in combat).
+;   - Uses the global state: H005+$281C (start of the coordinates/view block); H005+$3DE3 (native context, 5 in combat).
+; Direct callers: H095+$228C
 ; --------------------------------------------------------------------------
 L095_00001A7A:
 ; H095+$00001A7A: 2f0c  move.l a4, -(a7)
@@ -5148,7 +5148,7 @@ L095_00001CD0:
 L095_00001CD2:
 ; H095+$00001CD2: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H095+$1CBC; indici 0..2, default -1.
+; DISPATCH: words relative to H095+$1CBC; indices 0..2, default -1.
 L095_00001CD6:
 ; H095+$00001CD6: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -5302,7 +5302,7 @@ L095_00001D98:
 L095_00001D9C:
 ; H095+$00001D9C: 38332000  move.w (a3, d2.w), d4
         move.w (a3, d2.w), d4
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L095_00001DA0:
 ; H095+$00001DA0: d8790000281c  add.w $281c.l, d4
         add.w (H005+$281C).l, d4
@@ -5375,7 +5375,7 @@ L095_00001DF4:
 L095_00001DF8:
 ; H095+$00001DF8: 3b732000fff6  move.w (a3, d2.w), -$a(a5)
         move.w (a3, d2.w), -$a(a5)
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L095_00001DFE:
 ; H095+$00001DFE: 0c39000300003de3  cmpi.b #$3, $3de3.l
         cmpi.b #$3, (H005+$3DE3).l
@@ -5487,7 +5487,7 @@ L095_00001E8A:
 L095_00001E8E:
 ; H095+$00001E8E: 38332000  move.w (a3, d2.w), d4
         move.w (a3, d2.w), d4
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L095_00001E92:
 ; H095+$00001E92: d8790000281c  add.w $281c.l, d4
         add.w (H005+$281C).l, d4
@@ -5548,7 +5548,7 @@ L095_00001ED2:
 L095_00001ED6:
 ; H095+$00001ED6: 3b732000fff6  move.w (a3, d2.w), -$a(a5)
         move.w (a3, d2.w), -$a(a5)
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L095_00001EDC:
 ; H095+$00001EDC: 0c39000300003de3  cmpi.b #$3, $3de3.l
         cmpi.b #$3, (H005+$3DE3).l
@@ -5732,15 +5732,15 @@ L095_00001FC0:
 ; H095+$00001FC0: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H095_00001FC2 [parziale]
-; Scopo: Routine del modulo preparazione del combattimento; richiama H063+$2B7C, H048+$0956, H029+$0354, H029+$03E2.
-;   - Richiama H063+$2B7C.
-;   - Richiama H048+$0956.
-;   - Richiama H029+$0354.
-;   - Richiama H029+$03E2.
-;   - Richiama H053+$00CA.
-;   - Usa lo stato globale: H005+$3E00 (puntatore stato persistente B, 2048 byte); H005+$3364 (testa della lista del party); H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H095+$2582
+; ROUTINE: sub_H095_00001FC2 [partial]
+; Purpose: Routine of the combat setup module; calls H063+$2B7C, H048+$0956, H029+$0354, H029+$03E2.
+;   - Calls H063+$2B7C.
+;   - Calls H048+$0956.
+;   - Calls H029+$0354.
+;   - Calls H029+$03E2.
+;   - Calls H053+$00CA.
+;   - Uses the global state: H005+$3E00 (pointer to persistent state B, 2048 bytes); H005+$3364 (head of the party list); H005+$3368 (current character).
+; Direct callers: H095+$2582
 ; --------------------------------------------------------------------------
 L095_00001FC2:
 ; H095+$00001FC2: 2f0c  move.l a4, -(a7)
@@ -5831,7 +5831,7 @@ L095_00002030:
 L095_00002036:
 ; H095+$00002036: 38332000  move.w (a3, d2.w), d4
         move.w (a3, d2.w), d4
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L095_0000203A:
 ; H095+$0000203A: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -5859,7 +5859,7 @@ L095_00002056:
 L095_0000205C:
 ; H095+$0000205C: 38332000  move.w (a3, d2.w), d4
         move.w (a3, d2.w), d4
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L095_00002060:
 ; H095+$00002060: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -6178,11 +6178,11 @@ L095_000021FE:
 L095_00002204:
 ; H095+$00002204: 13fc00010000247b  move.b #$1, $247b.l
         move.b #$1, (H005+$247B).l
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L095_0000220C:
 ; H095+$0000220C: 2b7900003364fff8  move.l $3364.l, -$8(a5)
         move.l (H005+$3364).l, -$8(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L095_00002214:
 ; H095+$00002214: 2b7900003364fff4  move.l $3364.l, -$c(a5)
         move.l (H005+$3364).l, -$c(a5)
@@ -6580,7 +6580,7 @@ L095_00002438:
 L095_0000243E:
 ; H095+$0000243E: 42b32000  clr.l (a3, d2.w)
         clr.l (a3, d2.w)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L095_00002442:
 ; H095+$00002442: 23edfff400003368  move.l -$c(a5), $3368.l
         move.l -$c(a5), (H005+$3368).l
@@ -6641,17 +6641,17 @@ L095_00002494:
 ; H095+$00002494: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H095_00002496 [parziale]
-; Scopo: Routine del modulo preparazione del combattimento; richiama H029+$067A, H008+$139E, H030+$0B4A, H030+$0256.
-;   - Richiama H029+$067A.
-;   - Richiama H008+$139E.
-;   - Richiama H030+$0B4A.
-;   - Richiama H030+$0256.
-;   - Richiama H029+$0312.
-;   - Richiama H029+$0408.
-;   - Richiama H048+$0F88.
-;   - Usa lo stato globale: H005+$3E00 (puntatore stato persistente B, 2048 byte); H005+$3364 (testa della lista del party); H005+$3DE3 (contesto nativo, 5 nel combattimento).
-; Chiamanti diretti: H059+$17A0
+; ROUTINE: sub_H095_00002496 [partial]
+; Purpose: Routine of the combat setup module; calls H029+$067A, H008+$139E, H030+$0B4A, H030+$0256.
+;   - Calls H029+$067A.
+;   - Calls H008+$139E.
+;   - Calls H030+$0B4A.
+;   - Calls H030+$0256.
+;   - Calls H029+$0312.
+;   - Calls H029+$0408.
+;   - Calls H048+$0F88.
+;   - Uses the global state: H005+$3E00 (pointer to persistent state B, 2048 bytes); H005+$3364 (head of the party list); H005+$3DE3 (native context, 5 in combat).
+; Direct callers: H059+$17A0
 ; --------------------------------------------------------------------------
 L095_00002496:
 ; H095+$00002496: 2f0c  move.l a4, -(a7)
@@ -6668,21 +6668,21 @@ L095_000024A0:
 L095_000024A6:
 ; H095+$000024A6: 4879000027b2  pea.l $27b2.l
         pea.l (H005+$27B2).l
-; FLUSSO: Chiama Free_GraphicRecord (H029+$067A).
+; FLOW: Calls Free_GraphicRecord (H029+$067A).
 L095_000024AC:
 ; H095+$000024AC: 4eb90000067a  jsr $67a.l
         jsr (H029+$67A).l
 L095_000024B2:
 ; H095+$000024B2: 4879000027b8  pea.l $27b8.l
         pea.l (H005+$27B8).l
-; FLUSSO: Chiama Free_GraphicRecord (H029+$067A).
+; FLOW: Calls Free_GraphicRecord (H029+$067A).
 L095_000024B8:
 ; H095+$000024B8: 4eb90000067a  jsr $67a.l
         jsr (H029+$67A).l
 L095_000024BE:
 ; H095+$000024BE: 487900002798  pea.l $2798.l
         pea.l (H005+$2798).l
-; FLUSSO: Chiama Free_GraphicRecord (H029+$067A).
+; FLOW: Calls Free_GraphicRecord (H029+$067A).
 L095_000024C4:
 ; H095+$000024C4: 4eb90000067a  jsr $67a.l
         jsr (H029+$67A).l
@@ -6721,7 +6721,7 @@ L095_000024FA:
 L095_000024FE:
 ; H095+$000024FE: 486c0026  pea.l $26(a4)
         pea.l $26(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L095_00002502:
 ; H095+$00002502: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -6777,7 +6777,7 @@ L095_00002560:
 L095_00002562:
 ; H095+$00002562: 4eb900000312  jsr $312.l
         jsr (H029+$312).l
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L095_00002568:
 ; H095+$00002568: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -6790,7 +6790,7 @@ L095_00002572:
 L095_00002576:
 ; H095+$00002576: 6100f218  bsr.w $1790
         bsr.w H095+$1790
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L095_0000257A:
 ; H095+$0000257A: 2b7900003364fff0  move.l $3364.l, -$10(a5)
         move.l (H005+$3364).l, -$10(a5)
@@ -6812,11 +6812,11 @@ L095_00002592:
 L095_00002596:
 ; H095+$00002596: 48790000243a  pea.l $243a.l
         pea.l (H005+$243A).l
-; FLUSSO: Chiama Allocate_GraphicRecord (H029+$0408).
+; FLOW: Calls Allocate_GraphicRecord (H029+$0408).
 L095_0000259C:
 ; H095+$0000259C: 4eb900000408  jsr $408.l
         jsr (H029+$408).l
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L095_000025A2:
 ; H095+$000025A2: 2f3900003364  move.l $3364.l, -(a7)
         move.l (H005+$3364).l, -(a7)
@@ -6836,7 +6836,7 @@ L095_000025B2:
 L095_000025B8:
 ; H095+$000025B8: 37420002  move.w d2, $2(a3)
         move.w d2, $2(a3)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L095_000025BC:
 ; H095+$000025BC: 2f3900003364  move.l $3364.l, -(a7)
         move.l (H005+$3364).l, -(a7)
@@ -6864,7 +6864,7 @@ L095_000025D6:
 L095_000025DC:
 ; H095+$000025DC: 4eb900001718  jsr $1718.l
         jsr (H029+$1718).l
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L095_000025E2:
 ; H095+$000025E2: 2b7900003364fff0  move.l $3364.l, -$10(a5)
         move.l (H005+$3364).l, -$10(a5)
@@ -6922,7 +6922,7 @@ L095_0000262C:
 L095_00002632:
 ; H095+$00002632: 4239000024cc  clr.b $24cc.l
         clr.b (H005+$24CC).l
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L095_00002638:
 ; H095+$00002638: 13fc000500003de3  move.b #$5, $3de3.l
         move.b #$5, (H005+$3DE3).l
@@ -6948,7 +6948,7 @@ L095_00002656:
 L095_0000265C:
 ; H095+$0000265C: 427900000014  clr.w $14.l
         clr.w (H005+$14).l
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L095_00002662:
 ; H095+$00002662: 2b7900003364fff0  move.l $3364.l, -$10(a5)
         move.l (H005+$3364).l, -$10(a5)

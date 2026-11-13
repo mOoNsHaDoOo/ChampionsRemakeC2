@@ -1,4 +1,4 @@
-/* H042: sequenze di immagini, testa e corpo, immagine grande. */
+/* H042: picture sequences, head and body, big picture. */
 #ifndef COK_H042_SEQ_H
 #define COK_H042_SEQ_H
 #include "cok.h"

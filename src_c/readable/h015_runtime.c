@@ -1,15 +1,15 @@
 /*
- * H015: runtime del compilatore.
+ * H015: compiler runtime.
  *
- * L'avvio originale (H015+$0196) apre le librerie, divide la riga di
- * comando (da CLI) oppure gestisce il messaggio del Workbench (CurrentDir
- * sulla directory del programma e console "RAW:10/10/320/80/<nome>"), poi
- * continua nel chiamante.  In C la riga di comando e il messaggio del
- * Workbench li gestisce il runtime del compilatore (c.o di SAS/C): qui
- * restano l'apertura e la chiusura delle librerie.
- * PORT H015+$0196 (Runtime_Start): sostituita dall'avvio del compilatore
- * C; le librerie si aprono in h015_runtime_init.
- * PORT H015+$033E (Runtime_Cleanup): vedi h015_runtime_exit.
+ * The original start-up (H015+$0196) opens the libraries, splits the command
+ * line (from CLI) or handles the Workbench message (CurrentDir
+ * on the program directory and console "RAW:10/10/320/80/<name>"), then
+ * continues into the caller.  In C the command line and the Workbench
+ * message are handled by the compiler runtime (SAS/C's c.o): here
+ * only the opening and closing of the libraries remain.
+ * PORT H015+$0196 (Runtime_Start): replaced by the start-up of the C
+ * compiler; the libraries are opened in h015_runtime_init.
+ * PORT H015+$033E (Runtime_Cleanup): see h015_runtime_exit.
  */
 #include <stdlib.h>
 
@@ -20,7 +20,7 @@
 #include <proto/intuition.h>
 #include <proto/layers.h>
 
-/* Basi aperte da H015+$01B0..$01F2 (versione 0). */
+/* Bases opened by H015+$01B0..$01F2 (version 0). */
 struct GfxBase       *GfxBase;
 struct IntuitionBase *IntuitionBase;
 struct Library       *LayersBase;
@@ -31,7 +31,7 @@ struct Library       *MathBase;
 void h015_runtime_start(void)
 {
 #if COK_AMIGA
-    /* dos.library e' gia' aperta da c.o. */
+    /* dos.library is already open from c.o. */
     GfxBase = (struct GfxBase *)OpenLibrary((STRPTR)"graphics.library", 0);
     IntuitionBase = (struct IntuitionBase *)
         OpenLibrary((STRPTR)"intuition.library", 0);
@@ -41,8 +41,8 @@ void h015_runtime_start(void)
 }
 
 /*
- * PORT H015+$0046: H015+$033E chiude la console del Workbench, risponde al
- * messaggio, chiude le librerie e restituisce il codice d'uscita.
+ * PORT H015+$0046: H015+$033E closes the Workbench console, replies to the
+ * message, closes the libraries and returns the exit code.
  */
 void h015_runtime_exit(s32 code)
 {
@@ -55,13 +55,13 @@ void h015_runtime_exit(s32 code)
     exit((int)code);
 }
 
-/* PORT H015+$004A: prodotto a 32 bit (i 32 bit bassi). */
+/* PORT H015+$004A: 32-bit product (the low 32 bits). */
 u32 h015_mulu32(u32 a, u32 b)
 {
     return (u32)(a * b);
 }
 
-/* PORT H015+$006E: d0 = quoziente, d1 = resto, senza segno. */
+/* PORT H015+$006E: d0 = quotient, d1 = remainder, unsigned. */
 u32 h015_divu32(u32 dividend, u32 divisor, u32 *remainder)
 {
     if (remainder != NULL) {
@@ -71,8 +71,8 @@ u32 h015_divu32(u32 dividend, u32 divisor, u32 *remainder)
 }
 
 /*
- * PORT H015+$00BC: divisione con segno.  Il quoziente prende il segno
- * (troncamento verso zero), il resto resta quello dei valori assoluti.
+ * PORT H015+$00BC: signed division.  The quotient takes the sign
+ * (truncation towards zero), the remainder stays the one of the absolute values.
  */
 s32 h015_divs32(s32 dividend, s32 divisor, u32 *remainder)
 {
@@ -86,11 +86,11 @@ s32 h015_divs32(s32 dividend, s32 divisor, u32 *remainder)
 
 #if COK_AMIGA
 /*
- * Su Amiga si chiama mathffp.library come l'originale (MathBase sopra).
- * Prototipi e pragma propri con LONG al posto di FLOAT, agli stessi
- * offset e registri del NDK (SPFix -$1E, SPFlt -$24, SPMul -$4E, SPDiv
- * -$54): nessun tipo float nel C, quindi SAS/C non chiede una libreria
- * matematica (warning 625).
+ * On the Amiga mathffp.library is called like the original (MathBase above).
+ * Own prototypes and pragmas with LONG instead of FLOAT, at the same
+ * offsets and registers as the NDK (SPFix -$1E, SPFlt -$24, SPMul -$4E, SPDiv
+ * -$54): no float type in the C, so SAS/C does not ask for a maths
+ * library (warning 625).
  */
 LONG cok_spfix(LONG fnum);
 LONG cok_spflt(LONG inum);
@@ -101,35 +101,35 @@ LONG cok_spdiv(LONG fnum1, LONG fnum2);
 #pragma libcall MathBase cok_spmul 4e 0102
 #pragma libcall MathBase cok_spdiv 54 0102
 
-/* PORT H015+$010C: SPMul(d1, d0); d0 = primo argomento sulla pila. */
+/* PORT H015+$010C: SPMul(d1, d0); d0 = first argument on the stack. */
 CokReal h015_spmul(CokReal a, CokReal b)
 {
     return (CokReal)cok_spmul((LONG)b, (LONG)a);
 }
 
-/* PORT H015+$0122: SPDiv(d1 divisore, d0 dividendo) = dividend / divisor. */
+/* PORT H015+$0122: SPDiv(d1 divisor, d0 dividend) = dividend / divisor. */
 CokReal h015_spdiv(CokReal dividend, CokReal divisor)
 {
     return (CokReal)cok_spdiv((LONG)divisor, (LONG)dividend);
 }
 
-/* PORT H015+$0172: SPFlt, da intero con segno. */
+/* PORT H015+$0172: SPFlt, from a signed integer. */
 CokReal h015_spflt(s32 n)
 {
     return (CokReal)cok_spflt((LONG)n);
 }
 
-/* PORT H015+$0184: SPFix, parte intera troncata. */
+/* PORT H015+$0184: SPFix, truncated integer part. */
 s32 h015_spfix(CokReal f)
 {
     return (s32)cok_spfix((LONG)f);
 }
 #else
 /*
- * Sull'host non c'e' mathffp: i numeri FFP si convertono in double, il
- * risultato si arrotonda alla singola precisione IEEE (stessi 24 bit di
- * mantissa di FFP) e si riconverte.  Un'eventuale differenza dalla
- * libreria Amiga e' solo nell'arrotondamento dell'ultimo bit.
+ * On the host there is no mathffp: the FFP numbers are converted to double, the
+ * result is rounded to IEEE single precision (the same 24 bits of
+ * mantissa as FFP) and converted back.  Any difference from the
+ * Amiga library is only in the rounding of the last bit.
  */
 static double ffp_value(CokReal f)
 {
@@ -139,7 +139,7 @@ static double ffp_value(CokReal f)
     if ((f & 0xFFFFFF00UL) == 0) {
         return 0.0;
     }
-    v = (double)(f >> 8);               /* mantissa intera, 24 bit */
+    v = (double)(f >> 8);               /* integer mantissa, 24 bits */
     e = (int)(f & 0x7F) - 64 - 24;
     while (e > 0) {
         v *= 2.0;
@@ -154,7 +154,7 @@ static double ffp_value(CokReal f)
 
 static CokReal ffp_make(double d)
 {
-    volatile float f = (float)d;        /* singola precisione */
+    volatile float f = (float)d;        /* single precision */
     double v = f;
     u32 sign = 0;
     int e = 64 + 24;
@@ -175,7 +175,7 @@ static CokReal ffp_make(double d)
         --e;
     }
     if (e > 0x7F) {
-        return 0xFFFFFF7FUL | sign;     /* il massimo */
+        return 0xFFFFFF7FUL | sign;     /* the maximum */
     }
     if (e < 0) {
         return 0;
@@ -189,7 +189,7 @@ CokReal h015_spmul(CokReal a, CokReal b)
     return ffp_make(ffp_value(a) * ffp_value(b));
 }
 
-/* PORT H015+$0122 (SPDiv): dividend / divisor; divisore 0, il massimo. */
+/* PORT H015+$0122 (SPDiv): dividend / divisor; divisor 0, the maximum. */
 CokReal h015_spdiv(CokReal dividend, CokReal divisor)
 {
     double b = ffp_value(divisor);
@@ -206,7 +206,7 @@ CokReal h015_spflt(s32 n)
     return ffp_make((double)n);
 }
 
-/* PORT H015+$0184 (SPFix): troncamento verso zero. */
+/* PORT H015+$0184 (SPFix): truncation towards zero. */
 s32 h015_spfix(CokReal f)
 {
     double v = ffp_value(f);

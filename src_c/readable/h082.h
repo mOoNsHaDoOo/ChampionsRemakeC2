@@ -1,4 +1,4 @@
-/* H082: adattatore graphics.library/FreeCprList. */
+/* H082: graphics.library/FreeCprList adapter. */
 #ifndef COK_H082_H
 #define COK_H082_H
 

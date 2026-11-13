@@ -1,4 +1,4 @@
-/* H029: record grafici, bitplane, maschere e disegno dei tile. */
+/* H029: graphic records, bitplanes, masks and tile drawing. */
 #ifndef COK_H029_GFX_H
 #define COK_H029_GFX_H
 
@@ -18,12 +18,12 @@ void build_gfx_mask(u8 color, struct GfxRecord *r);     /* H029+$0766 */
 void fill_cells(u16 col, u16 row, u16 width, u16 height, u8 pen,
                 struct GfxRecord *unused);              /* H029+$10B8 */
 
-/* Dati del modulo usati altrove (-$4, -$5, -$6, -$9 sotto a4). */
+/* Module data used elsewhere (-$4, -$5, -$6, -$9 below a4). */
 extern struct RastPort *g_offscreen_rp; /* H029+$66 */
 extern u8 g_h029_m5;                    /* H029+$65 */
 extern u8 g_h029_m6;                    /* H029+$64 */
 extern u8 g_h029_m9;                    /* H029+$61 */
-extern u16 g_h029_m8;                   /* H029+$62: View mostrata (H029+$1576) */
+extern u16 g_h029_m8;                   /* H029+$62: View being shown (H029+$1576) */
 void remap_gfx_colors(const u8 from[16], const u8 to[16], s16 frame,
                       struct GfxRecord *rec);           /* H029+$0EFE */
 void transfer_gfx_planes(const u8 *data, u16 offset, u16 last_plane,

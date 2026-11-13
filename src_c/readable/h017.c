@@ -1,4 +1,4 @@
-/* H017: modulo senza codice oltre all'inizializzazione. */
+/* H017: module with no code besides its initialisation. */
 #include "cok.h"
 
 /* PORT H017+$0008: rts. */

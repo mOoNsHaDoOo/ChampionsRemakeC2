@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H056
-; Diagnostica e nomi degli opcode ECL.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H056
+; Diagnostics and names of the ECL opcodes.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Diagnostica e nomi degli opcode ECL: la tabella a H056+$07E2 associa i valori 0-65 ai nomi conservati nel binario. La routine non e' necessariamente attiva in partita.
+; MODULE NOTE
+; Diagnostics and names of the ECL opcodes: the table at H056+$07E2 maps the values 0-65 to the names kept in the binary. The routine is not necessarily active in the game.
 ; --------------------------------------------------------------------------
 ; H056: 2528 original bytes; all offsets are section-relative.
         section H056,code
@@ -53,10 +53,10 @@ H056:
         dc.w $2000,$202C,$2000
         dc.l H056+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H056 [parziale]
-; Scopo: Ingresso del modulo diagnostica e nomi degli opcode ECL; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H056+$09D8.
-; Chiamanti diretti: H000+$017A
+; ROUTINE: module_init_H056 [partial]
+; Purpose: Entry of the diagnostics and names of the ECL opcodes module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H056+$09D8.
+; Direct callers: H000+$017A
 ; --------------------------------------------------------------------------
 L056_0000025A:
 ; H056+$0000025A: 2f0c  move.l a4, -(a7)
@@ -1353,7 +1353,7 @@ L056_00000872:
 L056_00000874:
 ; H056+$00000874: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H056+$07E2; indici 0..65, default -1.
+; DISPATCH: words relative to H056+$07E2; indices 0..65, default -1.
 L056_00000878:
 ; H056+$00000878: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -1373,14 +1373,14 @@ L056_00000884:
 ; H056+$00000884: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H056_00000886 [parziale]
-; Scopo: Routine del modulo diagnostica e nomi degli opcode ECL; richiama H045+$01D6, H030+$0B6C, H026+$01E0, H030+$0256.
-;   - Richiama H045+$01D6.
-;   - Richiama H030+$0B6C.
-;   - Richiama H026+$01E0.
-;   - Richiama H030+$0256.
-;   - Richiama H030+$028A.
-; Chiamanti diretti: H063+$1C00, H060+$0132, H062+$13E6, H012+$26CA
+; ROUTINE: sub_H056_00000886 [partial]
+; Purpose: Routine of the diagnostics and names of the ECL opcodes module; calls H045+$01D6, H030+$0B6C, H026+$01E0, H030+$0256.
+;   - Calls H045+$01D6.
+;   - Calls H030+$0B6C.
+;   - Calls H026+$01E0.
+;   - Calls H030+$0256.
+;   - Calls H030+$028A.
+; Direct callers: H063+$1C00, H060+$0132, H062+$13E6, H012+$26CA
 ; --------------------------------------------------------------------------
 L056_00000886:
 ; H056+$00000886: 2f0c  move.l a4, -(a7)
@@ -1624,7 +1624,7 @@ L056_0000099A:
 L056_0000099E:
 ; H056+$0000099E: 486dffae  pea.l -$52(a5)
         pea.l -$52(a5)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L056_000009A2:
 ; H056+$000009A2: 4eb900000256  jsr $256.l
         jsr (H030+$256).l

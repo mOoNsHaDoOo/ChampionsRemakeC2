@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H003
-; Adattatori alle API exec.library, memoria e copie.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H003
+; exec.library API adapters, memory and copies.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Come H002, ma per exec.library: AllocMem, FreeMem, CopyMem e servizi di memoria. Gli adattatori non controllano il risultato al posto del chiamante.
+; MODULE NOTE
+; Like H002, but for exec.library: AllocMem, FreeMem, CopyMem and memory services. The adapters do not check the result on behalf of the caller.
 ; --------------------------------------------------------------------------
 ; H003: 316 original bytes; all offsets are section-relative.
         section H003,code
@@ -15,10 +15,10 @@ H003:
 ; Preserved bytes H003+$00000000..$00000004; code/data not fully classified.
         dc.l H003+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H003_00000004 [parziale]
-; Scopo: Routine del modulo adattatori alle API exec.library, memoria e copie; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H000+$000C
+; ROUTINE: sub_H003_00000004 [partial]
+; Purpose: Routine of the exec.library API adapters, memory and copies module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H000+$000C
 ; --------------------------------------------------------------------------
 L003_00000004:
 ; H003+$00000004: 4e75  rts 
@@ -32,10 +32,10 @@ L003_00000004:
         dc.w $206F,$0004,$2C78,$0004,$2F57,$0004,$588F,$4EEE
         dc.w $FF22
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_AllocMem [parziale]
-; Scopo: Adattatore a exec.library/AllocMem; incapsula la chiamata alla libreria.
-;   - Chiama exec.library/AllocMem (LVO -198).
-; Chiamanti diretti: H027+$24E8, H027+$26B4, H085+$2706, H041+$001C, H062+$1606, H027+$0C2C e altri 91
+; ROUTINE: wrapper_AllocMem [partial]
+; Purpose: Adapter to exec.library/AllocMem; wraps the library call.
+;   - Calls exec.library/AllocMem (LVO -198).
+; Direct callers: H027+$24E8, H027+$26B4, H085+$2706, H041+$001C, H062+$1606, H027+$0C2C and 91 more
 ; --------------------------------------------------------------------------
 L003_00000068:
 ; H003+$00000068: 202f0008  move.l $8(a7), d0
@@ -56,10 +56,10 @@ L003_0000007A:
 ; H003+$0000007A: 4eeeff3a  jmp -$c6(a6) ; exec.library/AllocMem
         jmp LVO_exec_AllocMem(a6)
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_AvailMem [parziale]
-; Scopo: Adattatore a exec.library/AvailMem; incapsula la chiamata alla libreria.
-;   - Chiama exec.library/AvailMem (LVO -216).
-; Chiamanti diretti: H010+$03C2
+; ROUTINE: wrapper_AvailMem [partial]
+; Purpose: Adapter to exec.library/AvailMem; wraps the library call.
+;   - Calls exec.library/AvailMem (LVO -216).
+; Direct callers: H010+$03C2
 ; --------------------------------------------------------------------------
 L003_0000007E:
 ; H003+$0000007E: 222f0004  move.l $4(a7), d1
@@ -77,10 +77,10 @@ L003_0000008C:
 ; H003+$0000008C: 4eeeff28  jmp -$d8(a6) ; exec.library/AvailMem
         jmp LVO_exec_AvailMem(a6)
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_CopyMem [parziale]
-; Scopo: Adattatore a exec.library/CopyMem; incapsula la chiamata alla libreria.
-;   - Chiama exec.library/CopyMem (LVO -624).
-; Chiamanti diretti: H063+$1CEA, H011+$012A, H007+$05CA, H029+$0B04, H029+$0B2A, H061+$1BAE e altri 40
+; ROUTINE: wrapper_CopyMem [partial]
+; Purpose: Adapter to exec.library/CopyMem; wraps the library call.
+;   - Calls exec.library/CopyMem (LVO -624).
+; Direct callers: H063+$1CEA, H011+$012A, H007+$05CA, H029+$0B04, H029+$0B2A, H061+$1BAE and 40 more
 ; --------------------------------------------------------------------------
 L003_00000090:
 ; H003+$00000090: 206f000c  movea.l $c(a7), a0
@@ -110,10 +110,10 @@ L003_000000A8:
         dc.w $4FEF,$000C,$4EEE,$FF40,$206F,$0004,$2C78,$0004
         dc.w $2F57,$0004,$588F,$4EEE,$FF1C
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_FreeMem [parziale]
-; Scopo: Adattatore a exec.library/FreeMem; incapsula la chiamata alla libreria.
-;   - Chiama exec.library/FreeMem (LVO -210).
-; Chiamanti diretti: H027+$0C8A, H001+$00F6, H042+$0378, H007+$0BA4, H062+$0532, H027+$1644 e altri 61
+; ROUTINE: wrapper_FreeMem [partial]
+; Purpose: Adapter to exec.library/FreeMem; wraps the library call.
+;   - Calls exec.library/FreeMem (LVO -210).
+; Direct callers: H027+$0C8A, H001+$00F6, H042+$0378, H007+$0BA4, H062+$0532, H027+$1644 and 61 more
 ; --------------------------------------------------------------------------
 L003_000000F6:
 ; H003+$000000F6: 226f0008  movea.l $8(a7), a1

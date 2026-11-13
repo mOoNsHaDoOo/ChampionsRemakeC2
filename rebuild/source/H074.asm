@@ -1,12 +1,12 @@
 ; ============================================================================
-; GUIDA DEL MODULO H074
-; helper di percorso/nome file.
-; I commenti descrivono l'analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H074
+; path/file name helpers.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Helper di percorso/nome file: costruzione di nomi, estensioni e chiamate DOS.
+; MODULE NOTE
+; Path/file name helpers: building of names, extensions and DOS calls.
 ; --------------------------------------------------------------------------
 ; H074: 1216 original bytes; all offsets are section-relative.
         section H074,code
@@ -15,10 +15,10 @@ H074:
         dc.w $0000,$0000
         dc.l H074+$00000004
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H074_04B0 [parziale]
-; Scopo: Trampolino verso H074+$04B0; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H074+$04B0.
-; Chiamanti diretti: H000+$0036
+; ROUTINE: trampoline_H074_04B0 [partial]
+; Purpose: Trampoline to H074+$04B0; the actual body is there.
+;   - Jumps to the actual body at H074+$04B0.
+; Direct callers: H000+$0036
 ; --------------------------------------------------------------------------
 L074_00000008:
 ; H074+$00000008: 4e550000  link.w a5, #$0
@@ -27,10 +27,10 @@ L074_0000000C:
 ; H074+$0000000C: 600004a2  bra.w $4b0
         bra.w H074+$4B0
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H074_0092 [parziale]
-; Scopo: Trampolino verso H074+$0092; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H074+$0092.
-; Chiamanti diretti: H074+$00B0
+; ROUTINE: trampoline_H074_0092 [partial]
+; Purpose: Trampoline to H074+$0092; the actual body is there.
+;   - Jumps to the actual body at H074+$0092.
+; Direct callers: H074+$00B0
 ; --------------------------------------------------------------------------
 L074_00000010:
 ; H074+$00000010: 4e55fffc  link.w a5, #$fffc
@@ -147,12 +147,12 @@ L074_00000098:
 ; H074+$00000098: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H074_0000009A [parziale]
-; Scopo: Routine del modulo helper di percorso/nome file; richiama H002+$0156, H002+$0122, H002+$00C0.
-;   - Richiama H002+$0156.
-;   - Richiama H002+$0122.
-;   - Richiama H002+$00C0.
-; Chiamanti diretti: H074+$04A2
+; ROUTINE: sub_H074_0000009A [partial]
+; Purpose: Routine of the path/file name helpers module; calls H002+$0156, H002+$0122, H002+$00C0.
+;   - Calls H002+$0156.
+;   - Calls H002+$0122.
+;   - Calls H002+$00C0.
+; Direct callers: H074+$04A2
 ; --------------------------------------------------------------------------
 L074_0000009A:
 ; H074+$0000009A: 4e55fffc  link.w a5, #$fffc
@@ -371,10 +371,10 @@ L074_0000014E:
         dc.w $177C,$0001,$0001,$246D,$0008,$4212,$4E5D,$205F
         dc.w $508F,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H074_00000450 [parziale]
-; Scopo: Routine del modulo helper di percorso/nome file; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H020+$089C, H020+$0846
+; ROUTINE: sub_H074_00000450 [partial]
+; Purpose: Routine of the path/file name helpers module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H020+$089C, H020+$0846
 ; --------------------------------------------------------------------------
 L074_00000450:
 ; H074+$00000450: 4e55fffc  link.w a5, #$fffc

@@ -1,4 +1,4 @@
-/* H028: file, richieste disco, caricamento per ID e RLE dei DAX. */
+/* H028: files, disk requests, loading by ID and DAX RLE. */
 #include "h028_files.h"
 #include "h002_dos.h"
 #include "h021_intuition.h"
@@ -15,8 +15,8 @@
 u8  g_h028_mf9;                 /* -$F9(a4) */
 struct BitMap *g_char_screen_s; /* -$AA(a4): "charS.LBM" */
 struct BitMap *g_char_screen_t; /* -$AE(a4): "charT.LBM" */
-char g_h028_m52[0x52];          /* -$52(a4): directory alternativa, mai
-                                   scritta nell'asm, quindi sempre "" */
+char g_h028_m52[0x52];          /* -$52(a4): alternative directory, never
+                                   written in the asm, so always "" */
 
 /* PORT H028+$01B8 */
 void h028_init(void)
@@ -27,10 +27,10 @@ void h028_init(void)
 }
 
 /*
- * PORT H028+$02D0: 1 se Lock(name, ACCESS_READ) riesce (il lock viene
- * subito rilasciato), altrimenti 0.  L'originale copia prima il nome sullo
- * stack ((len + 1) arrotondato a pari); Lock legge solo fino al NUL, quindi
- * qui si passa direttamente la stringa.
+ * PORT H028+$02D0: 1 if Lock(name, ACCESS_READ) succeeds (the lock is
+ * released at once), otherwise 0.  The original first copies the name onto the
+ * stack ((len + 1) rounded up to even); Lock reads only up to the NUL, so
+ * here the string is passed directly.
  */
 u8 file_exists(u16 len, const char *name)
 {
@@ -46,10 +46,10 @@ u8 file_exists(u16 len, const char *name)
 }
 
 /*
- * PORT H028+$01C6: richiesta "Retry"/"CANCEL" con il testo dato sulla
- * finestra del gioco (320x70).  Il risultato non e' usato.  L'originale
- * copia prima il testo sullo stack; qui si usa direttamente.  I primi due
- * argomenti non sono letti.
+ * PORT H028+$01C6: "Retry"/"CANCEL" request with the given text on the
+ * game window (320x70).  The result is not used.  The original
+ * first copies the text onto the stack; here it is used directly.  The first two
+ * arguments are not read.
  */
 void disk_request(u16 unused1, u16 unused2, u16 len, char *text)
 {
@@ -86,11 +86,11 @@ void disk_request(u16 unused1, u16 unused2, u16 len, char *text)
 }
 
 /*
- * PORT H028+$0408: divide name in volume/percorso fino ai primi ':' (dir),
- * nome (base) ed estensione dal primo '.' entro $4F caratteri (ext).  Senza
- * ':' base non viene scritta (come nell'originale: il ramo e' saltato).
- * L'originale lavora su una copia di name sullo stack; qui una copia locale
- * di $52 byte, che basta per i nomi passati dal gioco.
+ * PORT H028+$0408: splits name into volume/path up to the first ':' (dir),
+ * name (base) and extension from the first '.' within $4F characters (ext).  Without
+ * ':' base is not written (as in the original: the branch is skipped).
+ * The original works on a copy of name on the stack; here a local copy
+ * of $52 bytes, which is enough for the names passed by the game.
  */
 static void split_resource_name(u16 name_len, const char *name,
                                 u16 dir_max, char *dir, u16 base_max,
@@ -128,7 +128,7 @@ static void split_resource_name(u16 name_len, const char *name,
 }
 
 /*
- * PORT H028+$0576: apre dir + name se esiste; 1 se l'handle non e' nullo.
+ * PORT H028+$0576: opens dir + name if it exists; 1 if the handle is not null.
  */
 static u8 try_open(cok_bptr *file, u16 dir_len, const char *dir,
                    u16 name_len, const char *name)
@@ -145,13 +145,13 @@ static u8 try_open(cok_bptr *file, u16 dir_len, const char *dir,
 }
 
 /*
- * PORT H028+$05FA (Open_ResourceFile): cerca il file nella directory del
- * prefisso dei dati (con "DF0:" sostituito dal disco del gruppo di risorse
- * corrente: 1 "Disk Two:", 2 "Disk Three:") e poi nel volume del nome (o
- * nella directory alternativa del modulo se il nome non ne ha).  Se non lo
- * trova chiede di inserire il disco e riprova all'infinito: il ramo che
- * restituirebbe 0 nell'originale non e' raggiungibile (moveq #0 / tst.b /
- * beq).  Restituisce 1 con l'handle in *file.
+ * PORT H028+$05FA (Open_ResourceFile): looks for the file in the directory of the
+ * data prefix (with "DF0:" replaced by the disk of the current resource
+ * group: 1 "Disk Two:", 2 "Disk Three:") and then in the volume of the name (or
+ * in the alternative directory of the module if the name has none).  If it does not
+ * find it, it asks to insert the disk and retries forever: the branch that
+ * would return 0 in the original is unreachable (moveq #0 / tst.b /
+ * beq).  Returns 1 with the handle in *file.
  */
 u8 open_resource_file(u16 name_len, const char *name, u16 msg_len,
                       const char *msg, u8 unused, cok_bptr *file)
@@ -170,7 +170,7 @@ u8 open_resource_file(u16 name_len, const char *name, u16 msg_len,
     }
     h026_copy(0x14, disk, 0x50, G_DATA_PREFIX);
     if (h026_compare_nocase(0x14, disk, 4, "DF0:") == 1) {
-        /* $246E: disco dei dati / gruppo di risorse corrente (G_RESOURCE_GROUP) */
+        /* $246E: data disk / current resource group (G_RESOURCE_GROUP) */
         switch (G_RESOURCE_GROUP) {
         case 1:
             h026_copy(0x14, disk, 9, "Disk Two:");
@@ -195,13 +195,13 @@ u8 open_resource_file(u16 name_len, const char *name, u16 msg_len,
 }
 
 /*
- * PORT H028+$09DC (DAX_DecompressRLE): decomprime *comp_size byte di src
- * in dst (al massimo *raw_size byte, altrimenti errore H014 "uncompress
- * overuns buffer>").  Byte n di controllo: 0..$7E = n+1 byte letterali;
- * $7F..$FE = il byte seguente ripetuto $100-n volte; $FF ripete il tipo
- * dell'ultimo controllo.  All'inizio quel tipo non e' inizializzato
- * nell'originale (word sullo stack); qui vale -1, cioe' "salta il byte",
- * il ramo predefinito della tabella.
+ * PORT H028+$09DC (DAX_DecompressRLE): decompresses *comp_size bytes of src
+ * into dst (at most *raw_size bytes, otherwise H014 error "uncompress
+ * overuns buffer>").  Control byte n: 0..$7E = n+1 literal bytes;
+ * $7F..$FE = the next byte repeated $100-n times; $FF repeats the type
+ * of the last control.  At the start that type is not initialised
+ * in the original (word on the stack); here it is -1, that is "skip the byte",
+ * the default branch of the table.
  */
 static void dax_decompress_rle(const u8 *src, u8 *dst, u16 *comp_size,
                                u16 *raw_size)
@@ -223,10 +223,10 @@ static void dax_decompress_rle(const u8 *src, u8 *dst, u16 *comp_size,
         if (kind == 0) {
             if ((u16)(di + n + 1) <= *raw_size) {
                 /*
-                 * L'ultimo controllo di alcuni blocchi dichiara piu' byte di
-                 * quelli rimasti: l'originale li legge oltre il buffer
-                 * compresso.  Qui si copiano solo i byte presenti (il
-                 * buffer ha 2 byte di margine) e il resto resta a zero.
+                 * The last control of some blocks declares more bytes than
+                 * the remaining ones: the original reads them past the compressed
+                 * buffer.  Here only the bytes present are copied (the
+                 * buffer has a 2-byte margin) and the rest stays zero.
                  */
                 u32 avail = (u32)*comp_size + 2 - (u32)(u16)(si + 1);
                 u32 want = (u32)(u16)(n + 1);
@@ -245,10 +245,10 @@ static void dax_decompress_rle(const u8 *src, u8 *dst, u16 *comp_size,
                     dst[(u16)(di + j)] = src[(u16)(si + 1)];
                 } else if ((u16)(di + j) == *raw_size) {
                     /*
-                     * L'originale ammette l'indice *raw_size (<=) e scrive un
-                     * byte oltre il buffer, nel margine di arrotondamento di
-                     * AllocMem; in C quel byte non esiste e la scrittura si
-                     * salta.
+                     * The original allows the index *raw_size (<=) and writes one
+                     * byte past the buffer, in the rounding margin of
+                     * AllocMem; in C that byte does not exist and the write is
+                     * skipped.
                      */
                 } else {
                     error_message(0x1A, overrun, (u16)(di + j - *raw_size));
@@ -266,9 +266,9 @@ static void dax_decompress_rle(const u8 *src, u8 *dst, u16 *comp_size,
 }
 
 /*
- * PORT H028+$0B80: apre name+ext con Open_ResourceFile (messaggio del disco
- * del gruppo di risorse corrente, H005+$3E08 + 30 * (gruppo - 1)) e legge
- * la word della dimensione della directory (byte come nel file).
+ * PORT H028+$0B80: opens name+ext with Open_ResourceFile (disk message
+ * of the current resource group, H005+$3E08 + 30 * (group - 1)) and reads
+ * the size word of the directory (bytes as in the file).
  */
 u8 dax_open(u16 name_len, const char *name, u16 ext_len,
                    const char *ext, u8 *dir_size, cok_bptr *file)
@@ -278,12 +278,12 @@ u8 dax_open(u16 name_len, const char *name, u16 ext_len,
     h026_copy(0x50, path, name_len, name);
     h026_append(0x50, path, ext_len, ext);
     if (!open_resource_file(0x50, path, 0x1D,
-                            /* $3E08: messaggi di inserimento disco, 30 byte per gruppo di risorse */
+                            /* $3E08: disk insertion messages, 30 bytes per resource group */
                             (const char *)&g_h005[0x3E08 +
-                                /* $246E: disco dei dati / gruppo di risorse corrente
+                                /* $246E: data disk / current resource group
                                  * (G_RESOURCE_GROUP) */
                                 (s32)((s16)(G_RESOURCE_GROUP - 1) * 0x1E)],
-                            /* $24A4: uso: argomento ignorato di Open_ResourceFile; 1 caricando SPC */
+                            /* $24A4: use: ignored argument of Open_ResourceFile; 1 when loading SPC */
                             H005_B(0x24A4), file)) {
         return 0;
     }
@@ -292,17 +292,17 @@ u8 dax_open(u16 name_len, const char *name, u16 ext_len,
 }
 
 /*
- * PORT H028+$0DD8 (DAX_LoadBlock): cerca id nella directory del contenitore
- * name+ext (voci da 9 byte: id, offset long, dimensione, dimensione
- * compressa), legge il blocco e lo decomprime in *data (*size byte, $100
- * in piu' della dimensione dichiarata).  I file ".dax" sono little-endian:
- * directory e voci vengono girate (H031).  Blocco non trovato: *size = 0 e
- * *data = NULL.  Un blocco compresso oltre $A000 byte e' un errore fatale
+ * PORT H028+$0DD8 (DAX_LoadBlock): looks for id in the directory of the container
+ * name+ext (9-byte entries: id, long offset, size, compressed
+ * size), reads the block and decompresses it into *data (*size bytes, $100
+ * more than the declared size).  The ".dax" files are little-endian:
+ * directory and entries are swapped (H031).  Block not found: *size = 0 and
+ * *data = NULL.  A compressed block beyond $A000 bytes is a fatal error
  * (H010+$0332).
  *
- * Differenza: l'originale legge i campi direttamente nelle variabili
- * (memoria big-endian); qui si leggono in buffer di byte decodificati con
- * COK_GET16/32, identico sull'Amiga e corretto sull'host.
+ * Difference: the original reads the fields straight into the variables
+ * (big-endian memory); here they are read into byte buffers decoded with
+ * COK_GET16/32, identical on the Amiga and correct on the host.
  */
 void dax_load_block(u16 name_len, const char *name, u16 ext_len,
                     const char *ext, u16 id, u16 *size, u8 **data)
@@ -366,8 +366,8 @@ void dax_load_block(u16 name_len, const char *name, u16 ext_len,
         return;
     }
     /*
-     * Due byte in piu' (azzerati): la decompressione puo' leggere il byte
-     * dopo l'ultimo controllo, che nell'originale e' il margine di AllocMem.
+     * Two extra bytes (cleared): the decompression may read the byte
+     * after the last control, which in the original is the AllocMem margin.
      */
     g_dax_buffer = (u8 *)exec_alloc_mem((u32)comp_size + 2, COK_MEMF_CLEAR);
     *data = (u8 *)exec_alloc_mem(*size, COK_MEMF_CLEAR);
@@ -381,8 +381,8 @@ void dax_load_block(u16 name_len, const char *name, u16 ext_len,
 }
 
 /*
- * PORT H028+$0D74: se caricate (flag -$F9), libera le due schermate dei
- * personaggi (charS/charT: piani con H041+$00BE, BitMap di $28 byte).
+ * PORT H028+$0D74: if loaded (flag -$F9), frees the two character
+ * screens (charS/charT: planes with H041+$00BE, BitMap of $28 bytes).
  */
 void free_char_screens(void)
 {
@@ -401,10 +401,10 @@ void free_char_screens(void)
 }
 
 /*
- * PORT H028+$0C68: carica l'immagine ILBM name (parametro per valore) in
- * una BitMap nuova (*bitmap, $28 byte) con i piani di H041+$004A; i suoi
- * 32 colori vanno in H005+$522E ($40 byte), poi H005+$523E = colore 0 e
- * colore 0 = nero.  Messaggio del disco H005+$3E08.
+ * PORT H028+$0C68: loads the ILBM picture name (parameter by value) into
+ * a new BitMap (*bitmap, $28 bytes) with the planes of H041+$004A; its
+ * 32 colours go into H005+$522E ($40 bytes), then H005+$523E = colour 0 and
+ * colour 0 = black.  Disk message H005+$3E08.
  */
 static void load_char_screen(u16 name_len, const char *name,
                              struct BitMap **bitmap)
@@ -416,29 +416,29 @@ static void load_char_screen(u16 name_len, const char *name,
     *bitmap = (struct BitMap *)exec_alloc_mem(sizeof(struct BitMap),
                                               COK_MEMF_CLEAR);
     if (open_resource_file(name_len, name, 0x1D,
-                           /* $3E08: messaggi di inserimento disco, 30 byte per gruppo di risorse */
+                           /* $3E08: disk insertion messages, 30 bytes per resource group */
                            (const char *)&g_h005[0x3E08], 0, &file) &&
         file != 0) {
         (void)read_ilbm(file, *bitmap, &frame, sized_alloc_chip);
         /*
-         * CopyMem dei colori: nel frame sono word native, in H005
-         * big-endian (sull'Amiga e' la stessa copia di $40 byte).
+         * CopyMem of the colours: in the frame they are native words, in H005
+         * big-endian (on the Amiga it is the same $40-byte copy).
          */
         for (i = 0; i < 0x20; ++i) {
-            /* $522E: palette dell'immagine caricata, 32 colori RGB4 ($40 byte) */
+            /* $522E: palette of the loaded picture, 32 RGB4 colours ($40 bytes) */
             H005_SET_W(0x522E + i * 2, frame.color_map[i]);
         }
-        /* $522E: palette dell'immagine caricata, 32 colori RGB4 ($40 byte); $523E: (word) colore 8
-         * della palette $522E (copia del colore 0) */
+        /* $522E: palette of the loaded picture, 32 RGB4 colours ($40 bytes); $523E: (word) colour
+         * 8 of the palette $522E (copy of colour 0) */
         H005_SET_W(0x523E, H005_W(0x522E));
-        H005_SET_W(0x522E, 0); /* $522E: palette dell'immagine caricata, 32 colori RGB4 ($40 byte) */
+        H005_SET_W(0x522E, 0); /* $522E: palette of the loaded picture, 32 RGB4 colours ($40 bytes) */
         dos_close(file);
     }
 }
 
 /*
- * PORT H028+$0D36: carica una sola volta (flag -$F9) le schermate dei
- * personaggi "charS.LBM" e "charT.LBM".
+ * PORT H028+$0D36: loads only once (flag -$F9) the character
+ * screens "charS.LBM" and "charT.LBM".
  */
 void load_char_screens(void)
 {
@@ -450,12 +450,12 @@ void load_char_screens(void)
     g_h028_mf9 = 1;
 }
 
-/* -$F8(a4): FileInfoBlock di H028+$033E. */
+/* -$F8(a4): FileInfoBlock of H028+$033E. */
 static cok_fib *s_fib;
 
 /*
- * PORT H028+$033E: in out il nome del volume dei primi 4 caratteri di path
- * (parametro per valore): Lock e Examine del FileInfoBlock ($104 byte).
+ * PORT H028+$033E: in out the volume name of the first 4 characters of path
+ * (parameter by value): Lock and Examine of the FileInfoBlock ($104 bytes).
  */
 void get_volume_name(char *out, u16 path_len, const char *path)
 {
@@ -468,23 +468,23 @@ void get_volume_name(char *out, u16 path_len, const char *path)
     (void)dos_examine(lock, s_fib);
     dos_unlock(lock);
     /*
-     * L'originale libera il blocco e poi ne legge il nome (sull'Amiga resta
-     * intatto); qui il nome si copia prima di liberarlo.
+     * The original frees the block and then reads its name (on the Amiga it stays
+     * intact); here the name is copied before freeing it.
      */
     h026_copy(0x50, out, 0x6B, s_fib->fib_FileName);
     exec_free_mem(s_fib, sizeof(cok_fib));
 }
 
 /*
- * PORT H028+$07E0: copia in out la stringa str (per valore) senza le
- * occorrenze di pat (confronto senza maiuscole).  L'indice salta la
- * lunghezza di pat dopo ogni cancellazione e la lunghezza non e'
- * ricalcolata: come nell'originale l'ultima posizione non e' controllata.
+ * PORT H028+$07E0: copies into out the string str (by value) without the
+ * occurrences of pat (case-insensitive comparison).  The index skips the
+ * length of pat after every deletion and the length is not
+ * recomputed: as in the original the last position is not checked.
  */
 void remove_substring(u16 str_len, const char *str, u16 pat_len,
                       const char *pat, u16 out_max, char *out)
 {
-    char s[0x100];                      /* copia per valore */
+    char s[0x100];                      /* copy by value */
     char part[0x51];                    /* -$58(a5) */
     u16 plen;                           /* -$4(a5) */
     u16 diff;                           /* -$2(a5) */
@@ -508,8 +508,8 @@ void remove_substring(u16 str_len, const char *str, u16 pat_len,
 }
 
 /*
- * PORT H028+$08F0: nome di file dal nome del personaggio (per valore):
- * tolti " .*,?/#:;|", al massimo 8 caratteri.
+ * PORT H028+$08F0: file name from the character name (by value):
+ * " .*,?/#:;|" removed, at most 8 characters.
  */
 void make_file_name(u16 name_len, const char *name, u16 out_max, char *out)
 {
@@ -531,12 +531,12 @@ void make_file_name(u16 name_len, const char *name, u16 out_max, char *out)
     h026_substr(out_max, out, name_len, copy, 0, 8);
 }
 
-/* PORT H028+$1098: disco dei dati dal valore v ((v+2)/3); il precedente in $246D. */
+/* PORT H028+$1098: data disk from the value v ((v+2)/3); the previous one in $246D. */
 void set_data_disk(u8 v)
 {
-    /* $246D: disco dei dati precedente (copia di +$246E); $246E: disco dei dati / gruppo di risorse
-     * corrente (G_RESOURCE_GROUP) */
+    /* $246D: previous data disk (copy of +$246E); $246E: data disk / current resource group
+     * (G_RESOURCE_GROUP) */
     H005_B(0x246D) = H005_B(0x246E);
-    /* $246E: disco dei dati / gruppo di risorse corrente (G_RESOURCE_GROUP) */
+    /* $246E: data disk / current resource group (G_RESOURCE_GROUP) */
     H005_B(0x246E) = (u8)((u16)(v + 2) / 3);
 }

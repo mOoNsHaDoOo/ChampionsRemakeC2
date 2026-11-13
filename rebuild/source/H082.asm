@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H082
-; Adattatore graphics.library/FreeCprList.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H082
+; graphics.library/FreeCprList adapter.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Adattatore graphics.library/FreeCprList.
+; MODULE NOTE
+; graphics.library/FreeCprList adapter.
 ; --------------------------------------------------------------------------
 ; H082: 156 original bytes; all offsets are section-relative.
         section H082,code
@@ -16,10 +16,10 @@ H082:
         dc.w $0000,$0000
         dc.l H082+$00000004
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H082_00000008 [parziale]
-; Scopo: Routine del modulo adattatore graphics.library/FreeCprList; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H000+$0108
+; ROUTINE: sub_H082_00000008 [partial]
+; Purpose: Routine of the graphics.library/FreeCprList adapter module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H000+$0108
 ; --------------------------------------------------------------------------
 L082_00000008:
 ; H082+$00000008: 41fafffa  lea.l $4(pc), a0
@@ -38,10 +38,10 @@ L082_00000012:
         dc.w $0008,$508F,$4EEE,$FE86,$206F,$0004,$2C7A,$FF9E
         dc.w $2F57,$0004,$588F,$4EEE,$FDDE,$205F,$588F,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_FreeCprList [parziale]
-; Scopo: Adattatore a graphics.library/FreeCprList; incapsula la chiamata alla libreria.
-;   - Chiama graphics.library/FreeCprList (LVO -564).
-; Chiamanti diretti: H029+$14BE
+; ROUTINE: wrapper_FreeCprList [partial]
+; Purpose: Adapter to graphics.library/FreeCprList; wraps the library call.
+;   - Calls graphics.library/FreeCprList (LVO -564).
+; Direct callers: H029+$14BE
 ; --------------------------------------------------------------------------
 L082_00000074:
 ; H082+$00000074: 206f0004  movea.l $4(a7), a0

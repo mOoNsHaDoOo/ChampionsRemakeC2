@@ -1,8 +1,8 @@
 ; ============================================================================
-; GUIDA DEL MODULO H000
-; Avvio: inizializzazione dei moduli e continuazione nel main.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H000
+; Start-up: initialisation of the modules and continuation into main.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; H000: 600 original bytes; all offsets are section-relative.
@@ -12,11 +12,11 @@ H000:
 FN_program_entry:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Entry_InitializeModules [verificato]
-; Scopo: Orchestra l’avvio dei moduli prima del corpo principale.
-;   - Chiama H015+$0042 per predisporre runtime e continuazione.
-;   - Richiama una volta i moduli da H002 a H100.
-;   - Il JMP finale entra in H001+$0058; il ritorno del main raggiunge la pulizia runtime.
+; ROUTINE: Entry_InitializeModules [verified]
+; Purpose: Orchestrates the start-up of the modules before the main body.
+;   - Calls H015+$0042 to set up runtime and continuation.
+;   - Calls the modules from H002 to H100 once.
+;   - The final JMP enters H001+$0058; the return of main reaches the runtime clean-up.
 ; --------------------------------------------------------------------------
 ; -> H015+$0042 (trampoline_H015_0196)
 L000_00000000:

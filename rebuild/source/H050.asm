@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H050
-; Adattatori Exec per i messaggi.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H050
+; Exec adapters for messages.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Adattatori Exec per i messaggi (GetMsg/ReplyMsg/WaitPort).
+; MODULE NOTE
+; Exec adapters for messages (GetMsg/ReplyMsg/WaitPort).
 ; --------------------------------------------------------------------------
 ; H050: 136 original bytes; all offsets are section-relative.
         section H050,code
@@ -15,10 +15,10 @@ H050:
 ; Preserved bytes H050+$00000000..$00000004; code/data not fully classified.
         dc.l H050+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H050_00000004 [parziale]
-; Scopo: Routine del modulo adattatori Exec per i messaggi; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H000+$009C
+; ROUTINE: sub_H050_00000004 [partial]
+; Purpose: Routine of the Exec adapters for messages module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H000+$009C
 ; --------------------------------------------------------------------------
 L050_00000004:
 ; H050+$00000004: 4e75  rts 
@@ -28,10 +28,10 @@ L050_00000004:
         dc.w $FE9E,$226F,$0004,$2C78,$0004,$2F57,$0004,$588F
         dc.w $4EEE,$FE7A
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_GetMsg [parziale]
-; Scopo: Adattatore a exec.library/GetMsg; incapsula la chiamata alla libreria.
-;   - Chiama exec.library/GetMsg (LVO -372).
-; Chiamanti diretti: H010+$089A
+; ROUTINE: wrapper_GetMsg [partial]
+; Purpose: Adapter to exec.library/GetMsg; wraps the library call.
+;   - Calls exec.library/GetMsg (LVO -372).
+; Direct callers: H010+$089A
 ; --------------------------------------------------------------------------
 L050_0000002A:
 ; H050+$0000002A: 206f0004  movea.l $4(a7), a0
@@ -53,10 +53,10 @@ L050_00000038:
         dc.w $508F,$4EEE,$FE92,$226F,$0004,$2C78,$0004,$2F57
         dc.w $0004,$588F,$4EEE,$FE98
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_ReplyMsg [parziale]
-; Scopo: Adattatore a exec.library/ReplyMsg; incapsula la chiamata alla libreria.
-;   - Chiama exec.library/ReplyMsg (LVO -378).
-; Chiamanti diretti: H043+$0790, H010+$095E
+; ROUTINE: wrapper_ReplyMsg [partial]
+; Purpose: Adapter to exec.library/ReplyMsg; wraps the library call.
+;   - Calls exec.library/ReplyMsg (LVO -378).
+; Direct callers: H043+$0790, H010+$095E
 ; --------------------------------------------------------------------------
 L050_00000064:
 ; H050+$00000064: 226f0004  movea.l $4(a7), a1
@@ -74,10 +74,10 @@ L050_00000072:
 ; H050+$00000072: 4eeefe86  jmp -$17a(a6) ; exec.library/ReplyMsg
         jmp LVO_exec_ReplyMsg(a6)
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_WaitPort [parziale]
-; Scopo: Adattatore a exec.library/WaitPort; incapsula la chiamata alla libreria.
-;   - Chiama exec.library/WaitPort (LVO -384).
-; Chiamanti diretti: H010+$098A
+; ROUTINE: wrapper_WaitPort [partial]
+; Purpose: Adapter to exec.library/WaitPort; wraps the library call.
+;   - Calls exec.library/WaitPort (LVO -384).
+; Direct callers: H010+$098A
 ; --------------------------------------------------------------------------
 L050_00000076:
 ; H050+$00000076: 206f0004  movea.l $4(a7), a0

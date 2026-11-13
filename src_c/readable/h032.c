@@ -1,4 +1,4 @@
-/* H032: inizializzazione di una tabella di H005 da $66. */
+/* H032: initialisation of an H005 table at $66. */
 #include "init_data.h"
 
 #include "h032_init_data.h"

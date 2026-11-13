@@ -1,32 +1,32 @@
 /*
- * Build host: visualizzazione dello schermo Amiga con SDL2.
+ * Host build: display of the Amiga screen with SDL2.
  *
- * Si mostra la BitMap planare dello schermo aperto con OpenScreen oppure,
- * dopo LoadView di una View del gioco, quella del suo ViewPort (RasInfo):
- * i pixel sono convertiti in RGB con la ColorMap (RGB4) e mostrati in una
- * finestra SDL ingrandita.
+ * It shows the planar BitMap of the screen opened with OpenScreen or,
+ * after LoadView of a game View, the one of its ViewPort (RasInfo):
+ * the pixels are converted to RGB with the ColorMap (RGB4) and shown in an
+ * enlarged SDL window.
  *
- * Variabili d'ambiente:
- *   COK_SCALE=n          ingrandimento della finestra (predefinito 3);
- *   COK_SCREENSHOT=f.bmp all'uscita salva l'ultimo fotogramma in f.bmp;
- *   COK_SCREENSHOT_AT=t1,t2,...  salva anche f-1.bmp, f-2.bmp, ... ai
- *                        millisecondi indicati dall'avvio del display;
- *   COK_KEYS=ms=Tasto,...  tasti simulati a tempo (vedi host/input.c);
- *   SDL_VIDEODRIVER=dummy  esecuzione senza finestra (test).
+ * Environment variables:
+ *   COK_SCALE=n          window scale factor (default 3);
+ *   COK_SCREENSHOT=f.bmp on exit saves the last frame to f.bmp;
+ *   COK_SCREENSHOT_AT=t1,t2,...  also saves f-1.bmp, f-2.bmp, ... at the
+ *                        given milliseconds from the start of the display;
+ *   COK_KEYS=ms=Key,...  timed simulated keys (see host/input.c);
+ *   SDL_VIDEODRIVER=dummy  run without a window (tests).
  */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 /*
- * Il main e' quello del gioco (h000_entry.c): niente SDL2main, che su
- * Windows sostituirebbe il punto d'ingresso.
+ * main is the game's one (h000_entry.c): no SDL2main, which on
+ * Windows would replace the entry point.
  */
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
 #include "ndk.h"
 
 static struct Screen *s_screen;
-static struct View *s_view;             /* View caricata con LoadView */
+static struct View *s_view;             /* View loaded with LoadView */
 static SDL_Window *s_window;
 static SDL_Renderer *s_renderer;
 static SDL_Texture *s_texture;
@@ -37,7 +37,7 @@ static int s_dirty;
 static Uint32 s_last_present;
 static int s_sdl_ready;
 
-/* ViewPort mostrato: quello della View caricata o quello dello schermo. */
+/* ViewPort shown: the one of the loaded View or the screen one. */
 static struct ViewPort *shown_viewport(void)
 {
     if (s_view != NULL && s_view->ViewPort != NULL) {
@@ -46,7 +46,7 @@ static struct ViewPort *shown_viewport(void)
     return s_screen != NULL ? &s_screen->ViewPort : NULL;
 }
 
-/* Converte la bitmap planare mostrata in s_pixels (ARGB8888). */
+/* Converts the planar bitmap shown into s_pixels (ARGB8888). */
 static void convert(void)
 {
     const struct ViewPort *vp = shown_viewport();
@@ -106,7 +106,7 @@ static void save_screenshot(void)
     }
 }
 
-/* Salva s_pixels in path (BMP). */
+/* Saves s_pixels to path (BMP). */
 static void save_bmp(const char *path)
 {
     SDL_Surface *surface;
@@ -125,7 +125,7 @@ static void save_bmp(const char *path)
     }
 }
 
-/* COK_SCREENSHOT_AT: salvataggi ai tempi indicati. */
+/* COK_SCREENSHOT_AT: saves at the given times. */
 static void timed_screenshots(Uint32 now)
 {
     static int s_done;
@@ -224,7 +224,7 @@ void host_display_attach(struct Screen *screen)
 void host_display_detach(struct Screen *screen)
 {
     if (s_screen == screen) {
-        convert();              /* l'ultimo fotogramma resta per lo screenshot */
+        convert();              /* the last frame stays for the screenshot */
         s_screen = NULL;
     }
 }
@@ -241,8 +241,8 @@ void host_display_changed(void)
 }
 
 /*
- * Mostra lo schermo (al massimo ~60 volte al secondo, oppure subito con
- * force) e smaltisce gli eventi della finestra.
+ * Shows the screen (at most ~60 times per second, or at once with
+ * force) and drains the window events.
  */
 #ifdef COK_AUDIO
 void host_audio_vblank(unsigned long now_ms);
@@ -308,7 +308,7 @@ unsigned long host_ticks_ms(void)
     return s_sdl_ready ? (unsigned long)SDL_GetTicks() : 0;
 }
 
-/* Attende al massimo timeout_ms un evento, poi aggiorna lo schermo. */
+/* Waits at most timeout_ms for an event, then updates the screen. */
 void host_display_wait_event(int timeout_ms)
 {
     SDL_Event ev;
@@ -326,8 +326,8 @@ void host_display_wait_event(int timeout_ms)
 }
 
 /*
- * graphics.library WaitTOF: aspetta il prossimo quadro (60 Hz, display
- * NTSC a 200 righe) e mostra lo schermo.
+ * graphics.library WaitTOF: waits for the next frame (60 Hz, NTSC
+ * display with 200 rows) and shows the screen.
  */
 void WaitTOF(void)
 {
@@ -348,7 +348,7 @@ void WaitTOF(void)
     }
 }
 
-/* Puntatore del mouse: un'immagine vuota nasconde il cursore di sistema. */
+/* Mouse pointer: an empty image hides the system cursor. */
 void host_display_show_cursor(int show)
 {
     if (s_sdl_ready) {

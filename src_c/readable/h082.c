@@ -2,8 +2,8 @@
 #include "h082.h"
 
 /*
- * PORT H082+$0008: copia GfxBase del runtime H015 nella cella del modulo.
- * In C la base della libreria e' gia' globale: niente da fare.
+ * PORT H082+$0008: copies GfxBase of the H015 runtime into the module cell.
+ * In C the library base is already global: nothing to do.
  */
 void h082_init(void)
 {

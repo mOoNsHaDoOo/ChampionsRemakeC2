@@ -1,4 +1,4 @@
-/* H067: monete, gemme, gioielli e condivisione del denaro. */
+/* H067: coins, gems, jewellery and sharing of money. */
 #ifndef COK_H067_H
 #define COK_H067_H
 

@@ -1,6 +1,6 @@
 /*
- * Build host: intuition.library ed exec emulati (solo quanto usa il port).
- * Lo schermo e' una BitMap planare in memoria, mostrata da host/display.c.
+ * Host build: emulated intuition.library and exec (only what the port uses).
+ * The screen is a planar BitMap in memory, shown by host/display.c.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,8 +44,8 @@ void CloseLibrary(struct Library *library)
 }
 
 /*
- * Preferences: sull'host non ci sono preferenze di sistema; gli
- * spostamenti del display (usati solo per la View personalizzata) sono 0.
+ * Preferences: the host has no system preferences; the display
+ * offsets (used only for the custom View) are 0.
  */
 struct Preferences *GetPrefs(struct Preferences *prefs, LONG size)
 {
@@ -58,7 +58,7 @@ static struct Process s_process = { { "Champions of Krynn" }, NULL };
 
 struct Task *FindTask(STRPTR name)
 {
-    (void)name;                 /* il gioco chiede solo il proprio task */
+    (void)name;                 /* the game only asks for its own task */
     return &s_process.pr_Task;
 }
 
@@ -99,7 +99,7 @@ struct Screen *OpenScreen(struct NewScreen *ns)
     s->RastPort.BgPen = (BYTE)ns->BlockPen;
     s->ShowTitle = TRUE;
     host_display_attach(s);
-    s_intuition.FirstScreen = s;    /* il nuovo schermo va in primo piano */
+    s_intuition.FirstScreen = s;    /* the new screen goes to the front */
     host_screen_colors_changed(&s->ViewPort);
     return s;
 }
@@ -127,7 +127,7 @@ struct Window *OpenWindow(struct NewWindow *nw)
     struct Window *w;
 
     if (nw->Screen == NULL) {
-        return NULL;            /* nessun Workbench sull'host */
+        return NULL;            /* no Workbench on the host */
     }
     w = (struct Window *)calloc(1, sizeof(*w));
     if (w == NULL) {
@@ -140,7 +140,7 @@ struct Window *OpenWindow(struct NewWindow *nw)
     w->IDCMPFlags = nw->IDCMPFlags;
     w->Flags = nw->Flags;
     w->WScreen = nw->Screen;
-    /* Finestra BACKDROP|BORDERLESS a schermo intero: disegna sullo schermo. */
+    /* Full-screen BACKDROP|BORDERLESS window: draws on the screen. */
     w->RPort = &nw->Screen->RastPort;
     host_input_open_window(w);
     return w;
@@ -161,12 +161,12 @@ void ShowTitle(struct Screen *screen, LONG show)
 
 LONG CloseWorkBench(void)
 {
-    return TRUE;                /* nessun Workbench da chiudere */
+    return TRUE;                /* no Workbench to close */
 }
 
 ULONG OpenWorkBench(void)
 {
-    return 0;                   /* nessun Workbench: schermo nullo */
+    return 0;                   /* no Workbench: null screen */
 }
 
 void ActivateWindow(struct Window *window)
@@ -181,9 +181,9 @@ void ClearPointer(struct Window *window)
 }
 
 /*
- * Il cursore di sistema sostituisce lo sprite del puntatore: un puntatore
- * di dati tutti a zero (come quello dell'intro) lo nasconde, gli altri lo
- * mostrano.  L'immagine del puntatore non e' riprodotta.
+ * The system cursor replaces the pointer sprite: a pointer whose data is
+ * all zeros (like the intro one) hides it, the others show it.  The
+ * pointer image is not reproduced.
  */
 void SetPointer(struct Window *window, UWORD *data, LONG height, LONG width,
                 LONG x_offset, LONG y_offset)
@@ -196,7 +196,7 @@ void SetPointer(struct Window *window, UWORD *data, LONG height, LONG width,
     (void)width;
     (void)x_offset;
     (void)y_offset;
-    /* Word di controllo e righe: (altezza + 1) * 4 byte. */
+    /* Control words and rows: (height + 1) * 4 bytes. */
     for (i = 0; i < (height + 1) * 4 && p != NULL; ++i) {
         if (p[i] != 0) {
             blank = 0;
@@ -207,11 +207,11 @@ void SetPointer(struct Window *window, UWORD *data, LONG height, LONG width,
 }
 
 /*
- * Richiesta di sistema: il testo va su stderr e si attende un tasto nella
- * finestra: Invio o R = scelta positiva (TRUE), Esc o C = negativa (FALSE).
- * Senza display interattivo (SDL_VIDEODRIVER=dummy) o con
- * COK_NONINTERACTIVE definita il programma termina, perche' il gioco
- * ripeterebbe la richiesta all'infinito.
+ * System request: the text goes to stderr and a key is awaited in the
+ * window: Enter or R = positive choice (TRUE), Esc or C = negative (FALSE).
+ * Without an interactive display (SDL_VIDEODRIVER=dummy) or with
+ * COK_NONINTERACTIVE defined the program exits, because the game
+ * would repeat the request forever.
  */
 BOOL AutoRequest(struct Window *window, struct IntuiText *body,
                  struct IntuiText *pos, struct IntuiText *neg,
@@ -225,7 +225,7 @@ BOOL AutoRequest(struct Window *window, struct IntuiText *body,
     (void)neg_flags;
     (void)width;
     (void)height;
-    fprintf(stderr, "Richiesta:");
+    fprintf(stderr, "Request:");
     for (t = body; t != NULL; t = t->NextText) {
         fprintf(stderr, " %s", t->IText != NULL ? (const char *)t->IText : "");
     }

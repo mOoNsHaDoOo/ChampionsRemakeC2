@@ -1,4 +1,4 @@
-/* H003: adattatori exec.library (memoria). */
+/* H003: exec.library adapters (memory). */
 #ifndef COK_H003_EXEC_H
 #define COK_H003_EXEC_H
 

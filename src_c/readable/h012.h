@@ -1,4 +1,4 @@
-/* H012: ciclo dell'esplorazione e interprete ECL. */
+/* H012: exploration loop and ECL interpreter. */
 #ifndef COK_H012_H
 #define COK_H012_H
 #include "cok.h"

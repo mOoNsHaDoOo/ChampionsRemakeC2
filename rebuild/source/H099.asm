@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H099
-; Helper per dimensioni/buffer di decompressione.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H099
+; Helpers for decompression sizes/buffers.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Helper per dimensioni/buffer di decompressione.
+; MODULE NOTE
+; Helpers for decompression sizes/buffers.
 ; --------------------------------------------------------------------------
 ; H099: 932 original bytes; all offsets are section-relative.
         section H099,code
@@ -32,10 +32,10 @@ H099:
         dc.w $0000,$0000,$0000,$0000,$0000
         dc.l H099+$0000010A
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H099_03A0 [parziale]
-; Scopo: Trampolino verso H099+$03A0; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H099+$03A0.
-; Chiamanti diretti: H000+$00CC
+; ROUTINE: trampoline_H099_03A0 [partial]
+; Purpose: Trampoline to H099+$03A0; the actual body is there.
+;   - Jumps to the actual body at H099+$03A0.
+; Direct callers: H000+$00CC
 ; --------------------------------------------------------------------------
 L099_0000010E:
 ; H099+$0000010E: 4e550000  link.w a5, #$0
@@ -74,10 +74,10 @@ L099_00000112:
         dc.l H099+$00000108
         dc.w $4E5D,$205F,$588F,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H099_01CE [parziale]
-; Scopo: Trampolino verso H099+$01CE; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H099+$01CE.
-; Chiamanti diretti: H087+$018C
+; ROUTINE: trampoline_H099_01CE [partial]
+; Purpose: Trampoline to H099+$01CE; the actual body is there.
+;   - Jumps to the actual body at H099+$01CE.
+; Direct callers: H087+$018C
 ; --------------------------------------------------------------------------
 L099_000001B0:
 ; H099+$000001B0: 4e550000  link.w a5, #$0

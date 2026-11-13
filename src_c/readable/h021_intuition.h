@@ -1,4 +1,4 @@
-/* H021: adattatori intuition.library. */
+/* H021: intuition.library adapters. */
 #ifndef COK_H021_INTUITION_H
 #define COK_H021_INTUITION_H
 

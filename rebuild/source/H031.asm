@@ -1,8 +1,8 @@
 ; ============================================================================
-; GUIDA DEL MODULO H031
-; Conversioni dell’ordine dei byte e valori del formato su disco.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H031
+; Byte order conversions and on-disk format values.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; H031: 212 original bytes; all offsets are section-relative.
@@ -11,10 +11,10 @@ H031:
 ; Preserved bytes H031+$00000000..$00000004; code/data not fully classified.
         dc.l H031+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H031 [parziale]
-; Scopo: Ingresso del modulo conversioni dell'ordine dei byte e valori del formato su disco; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H031+$00CC.
-; Chiamanti diretti: H000+$00EA
+; ROUTINE: module_init_H031 [partial]
+; Purpose: Entry of the byte order conversions and on-disk format values module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H031+$00CC.
+; Direct callers: H000+$00EA
 ; --------------------------------------------------------------------------
 L031_00000004:
 ; H031+$00000004: 2f0c  move.l a4, -(a7)
@@ -29,10 +29,10 @@ L031_0000000E:
 ; H031+$0000000E: 600000bc  bra.w $cc
         bra.w H031+$CC
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H031_00000012 [parziale]
-; Scopo: Routine del modulo conversioni dell'ordine dei byte e valori del formato su disco; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H006+$0882, H006+$08C2, H028+$0E92, H028+$0F24, H028+$0F2E, H031+$0056 e altri 10
+; ROUTINE: sub_H031_00000012 [partial]
+; Purpose: Routine of the byte order conversions and on-disk format values module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H006+$0882, H006+$08C2, H028+$0E92, H028+$0F24, H028+$0F2E, H031+$0056 and 10 more
 ; --------------------------------------------------------------------------
 L031_00000012:
 ; H031+$00000012: 2f0c  move.l a4, -(a7)
@@ -86,10 +86,10 @@ L031_0000003C:
 ; H031+$0000003C: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H031_0000003E [parziale]
-; Scopo: Routine del modulo conversioni dell'ordine dei byte e valori del formato su disco; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H028+$0F38, H066+$237A
+; ROUTINE: sub_H031_0000003E [partial]
+; Purpose: Routine of the byte order conversions and on-disk format values module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H028+$0F38, H066+$237A
 ; --------------------------------------------------------------------------
 L031_0000003E:
 ; H031+$0000003E: 2f0c  move.l a4, -(a7)
@@ -173,10 +173,10 @@ L031_00000088:
 ; H031+$00000088: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H031_0000008A [parziale]
-; Scopo: Routine del modulo conversioni dell'ordine dei byte e valori del formato su disco; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H012+$0DA4, H012+$0DC2, H066+$2152, H066+$21FE, H066+$2214, H066+$22FC e altri 4
+; ROUTINE: sub_H031_0000008A [partial]
+; Purpose: Routine of the byte order conversions and on-disk format values module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H012+$0DA4, H012+$0DC2, H066+$2152, H066+$21FE, H066+$2214, H066+$22FC and 4 more
 ; --------------------------------------------------------------------------
 L031_0000008A:
 ; H031+$0000008A: 2f0c  move.l a4, -(a7)

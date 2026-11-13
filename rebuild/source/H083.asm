@@ -1,12 +1,12 @@
 ; ============================================================================
-; GUIDA DEL MODULO H083
-; inizializzazione di un puntatore globale.
-; I commenti descrivono l'analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H083
+; initialisation of a global pointer.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Inizializzazione di un puntatore globale usato dai moduli successivi.
+; MODULE NOTE
+; Initialisation of a global pointer used by the following modules.
 ; --------------------------------------------------------------------------
 ; H083: 92 original bytes; all offsets are section-relative.
         section H083,code
@@ -15,10 +15,10 @@ H083:
         dc.w $0000,$0000
         dc.l H083+$00000004
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H083_00000008 [parziale]
-; Scopo: Routine del modulo inizializzazione di un puntatore globale; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H000+$010E
+; ROUTINE: sub_H083_00000008 [partial]
+; Purpose: Routine of the initialisation of a global pointer module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H000+$010E
 ; --------------------------------------------------------------------------
 L083_00000008:
 ; H083+$00000008: 41fafffa  lea.l $4(pc), a0

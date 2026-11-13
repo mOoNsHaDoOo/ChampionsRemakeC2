@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H007
-; Introduzione: immagini LBM, crediti e avvio audio.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H007
+; Introduction: LBM pictures, credits and audio start-up.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Percorso introduttivo: carica immagini LBM, mostra crediti e prepara l'audio. Usa il lettore ILBM e i servizi di presentazione.
+; MODULE NOTE
+; Introductory path: loads LBM pictures, shows the credits and prepares the audio. Uses the ILBM reader and the presentation services.
 ; --------------------------------------------------------------------------
 ; H007: 3036 original bytes; all offsets are section-relative.
         section H007,code
@@ -59,10 +59,10 @@ H007:
         dc.w $0074,$6578,$7432,$2E4C,$424D,$0000
         dc.l H007+$00000072
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H007 [parziale]
-; Scopo: Ingresso del modulo introduzione: immagini LBM, crediti e avvio audio; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H007+$0BD6.
-; Chiamanti diretti: H000+$01EC
+; ROUTINE: module_init_H007 [partial]
+; Purpose: Entry of the introduction: LBM pictures, credits and audio start-up module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H007+$0BD6.
+; Direct callers: H000+$01EC
 ; --------------------------------------------------------------------------
 L007_000002C0:
 ; H007+$000002C0: 2f0c  move.l a4, -(a7)
@@ -83,10 +83,10 @@ L007_000002CA:
         dc.w $2B40,$FFFC,$202D,$FFFC,$6000,$0002,$4E5D,$285F
         dc.w $205F,$588F,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H007_00000304 [parziale]
-; Scopo: Routine del modulo introduzione: immagini LBM, crediti e avvio audio; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H007+$0426
+; ROUTINE: sub_H007_00000304 [partial]
+; Purpose: Routine of the introduction: LBM pictures, credits and audio start-up module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H007+$0426
 ; --------------------------------------------------------------------------
 L007_00000304:
 ; H007+$00000304: 2f0c  move.l a4, -(a7)
@@ -155,10 +155,10 @@ L007_00000346:
 ; H007+$00000346: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H007_00000348 [parziale]
-; Scopo: Routine del modulo introduzione: immagini LBM, crediti e avvio audio; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H007+$045C
+; ROUTINE: sub_H007_00000348 [partial]
+; Purpose: Routine of the introduction: LBM pictures, credits and audio start-up module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H007+$045C
 ; --------------------------------------------------------------------------
 L007_00000348:
 ; H007+$00000348: 2f0c  move.l a4, -(a7)
@@ -266,12 +266,12 @@ L007_000003C8:
 ; H007+$000003C8: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H007_000003CA [parziale]
-; Scopo: Routine del modulo introduzione: immagini LBM, crediti e avvio audio; richiama H016+$01AC, H022+$0084.
-;   - Richiama H016+$01AC.
-;   - Richiama H022+$0084.
-;   - Usa lo stato globale: H005+$52F2 (puntatore allo schermo del gioco).
-; Chiamanti diretti: H007+$0B72, H007+$05A4, H007+$0612
+; ROUTINE: sub_H007_000003CA [partial]
+; Purpose: Routine of the introduction: LBM pictures, credits and audio start-up module; calls H016+$01AC, H022+$0084.
+;   - Calls H016+$01AC.
+;   - Calls H022+$0084.
+;   - Uses the global state: H005+$52F2 (pointer to the game screen).
+; Direct callers: H007+$0B72, H007+$05A4, H007+$0612
 ; --------------------------------------------------------------------------
 L007_000003CA:
 ; H007+$000003CA: 2f0c  move.l a4, -(a7)
@@ -403,7 +403,7 @@ L007_0000046C:
 L007_0000046E:
 ; H007+$0000046E: 4eb9000001ac  jsr $1ac.l
         jsr (H016+$1AC).l
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L007_00000474:
 ; H007+$00000474: 2679000052f2  movea.l $52f2.l, a3
         movea.l (H005+$52F2).l, a3
@@ -445,12 +445,12 @@ L007_0000049E:
 ; H007+$0000049E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H007_000004A0 [parziale]
-; Scopo: Routine del modulo introduzione: immagini LBM, crediti e avvio audio; richiama H022+$0084, H016+$01AC.
-;   - Richiama H022+$0084.
-;   - Richiama H016+$01AC.
-;   - Usa lo stato globale: H005+$52F2 (puntatore allo schermo del gioco).
-; Chiamanti diretti: H007+$0A7C, H007+$05B4
+; ROUTINE: sub_H007_000004A0 [partial]
+; Purpose: Routine of the introduction: LBM pictures, credits and audio start-up module; calls H022+$0084, H016+$01AC.
+;   - Calls H022+$0084.
+;   - Calls H016+$01AC.
+;   - Uses the global state: H005+$52F2 (pointer to the game screen).
+; Direct callers: H007+$0A7C, H007+$05B4
 ; --------------------------------------------------------------------------
 L007_000004A0:
 ; H007+$000004A0: 2f0c  move.l a4, -(a7)
@@ -488,7 +488,7 @@ L007_000004C6:
 L007_000004CA:
 ; H007+$000004CA: 68e2  bvc.b $4ae
         bvc.b H007+$4AE
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L007_000004CC:
 ; H007+$000004CC: 2679000052f2  movea.l $52f2.l, a3
         movea.l (H005+$52F2).l, a3
@@ -523,12 +523,12 @@ L007_000004F0:
         rts 
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Intro_LoadLBM [parziale]
-; Scopo: Apre un’immagine introduttiva e la inoltra al percorso di caricamento ILBM.
-;   - Riceve nome risorsa e messaggio di richiesta disco.
-;   - Usa gli helper di apertura file e il lettore grafico.
-;   - Il dettaglio di tutti i flag dell’introduzione resta da completare.
-; Chiamanti diretti: H007+$0ABE, H007+$0AF2, H007+$0B26, H007+$0B58
+; ROUTINE: Intro_LoadLBM [partial]
+; Purpose: Opens an introductory picture and passes it to the ILBM loading path.
+;   - Receives the resource name and the disk request message.
+;   - Uses the file opening helpers and the graphics reader.
+;   - The detail of all the flags of the introduction is still to be completed.
+; Direct callers: H007+$0ABE, H007+$0AF2, H007+$0B26, H007+$0B58
 ; --------------------------------------------------------------------------
 L007_000004F2:
 ; H007+$000004F2: 2f0c  move.l a4, -(a7)
@@ -593,7 +593,7 @@ L007_0000052E:
 L007_00000532:
 ; H007+$00000532: 486cff8e  pea.l -$72(a4)
         pea.l -$72(a4)
-; FLUSSO: Chiama Open_ResourceFile (H028+$05FA).
+; FLOW: Calls Open_ResourceFile (H028+$05FA).
 L007_00000536:
 ; H007+$00000536: 4eb9000005fa  jsr $5fa.l
         jsr (H028+$5FA).l
@@ -645,7 +645,7 @@ L007_00000572:
 L007_00000576:
 ; H007+$00000576: 487afd56  pea.l $2ce(pc)
         pea.l H007+$2CE(pc)
-; FLUSSO: Chiama Read_ILBM (H040+$05E4).
+; FLOW: Calls Read_ILBM (H040+$05E4).
 L007_0000057A:
 ; H007+$0000057A: 4eb9000005e4  jsr $5e4.l
         jsr (H040+$5E4).l
@@ -717,7 +717,7 @@ L007_000005D4:
 L007_000005D6:
 ; H007+$000005D6: 4267  clr.w -(a7)
         clr.w -(a7)
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L007_000005D8:
 ; H007+$000005D8: 2679000052f2  movea.l $52f2.l, a3
         movea.l (H005+$52F2).l, a3
@@ -767,7 +767,7 @@ L007_00000612:
 L007_00000616:
 ; H007+$00000616: 6000001c  bra.w $634
         bra.w H007+$634
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L007_0000061A:
 ; H007+$0000061A: 2679000052f2  movea.l $52f2.l, a3
         movea.l (H005+$52F2).l, a3
@@ -813,12 +813,12 @@ L007_0000064C:
 ; H007+$0000064C: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H007_0000064E [parziale]
-; Scopo: Routine del modulo introduzione: immagini LBM, crediti e avvio audio; richiama H036+$0034, H010+$042E.
-;   - Richiama H036+$0034.
-;   - Richiama H010+$042E.
-;   - Usa lo stato globale: H005+$5305 (byte del tasto/azione pendente).
-; Chiamanti diretti: H007+$09E6, H007+$0AC6, H007+$0AFA, H007+$0B2E, H007+$0B60, H007+$0B82
+; ROUTINE: sub_H007_0000064E [partial]
+; Purpose: Routine of the introduction: LBM pictures, credits and audio start-up module; calls H036+$0034, H010+$042E.
+;   - Calls H036+$0034.
+;   - Calls H010+$042E.
+;   - Uses the global state: H005+$5305 (byte of the pending key/action).
+; Direct callers: H007+$09E6, H007+$0AC6, H007+$0AFA, H007+$0B2E, H007+$0B60, H007+$0B82
 ; --------------------------------------------------------------------------
 L007_0000064E:
 ; H007+$0000064E: 2f0c  move.l a4, -(a7)
@@ -855,7 +855,7 @@ L007_00000674:
 L007_00000678:
 ; H007+$00000678: 4eb90000042e  jsr $42e.l
         jsr (H010+$42E).l
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L007_0000067E:
 ; H007+$0000067E: 4a3900005305  tst.b $5305.l
         tst.b (H005+$5305).l
@@ -908,11 +908,11 @@ L007_000006B2:
 ; H007+$000006B2: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H007_000006B4 [parziale]
-; Scopo: Routine del modulo introduzione: immagini LBM, crediti e avvio audio; richiama H038+$013C, H038+$0118.
-;   - Richiama H038+$013C.
-;   - Richiama H038+$0118.
-; Chiamanti diretti: H007+$0B76, H007+$0BAA
+; ROUTINE: sub_H007_000006B4 [partial]
+; Purpose: Routine of the introduction: LBM pictures, credits and audio start-up module; calls H038+$013C, H038+$0118.
+;   - Calls H038+$013C.
+;   - Calls H038+$0118.
+; Direct callers: H007+$0B76, H007+$0BAA
 ; --------------------------------------------------------------------------
 L007_000006B4:
 ; H007+$000006B4: 2f0c  move.l a4, -(a7)
@@ -962,11 +962,11 @@ L007_000006E8:
 ; H007+$000006E8: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H007_000006EA [parziale]
-; Scopo: Routine del modulo introduzione: immagini LBM, crediti e avvio audio; richiama H044+$02D8, H030+$0256.
-;   - Richiama H044+$02D8.
-;   - Richiama H030+$0256.
-; Chiamanti diretti: H007+$0B7A
+; ROUTINE: sub_H007_000006EA [partial]
+; Purpose: Routine of the introduction: LBM pictures, credits and audio start-up module; calls H044+$02D8, H030+$0256.
+;   - Calls H044+$02D8.
+;   - Calls H030+$0256.
+; Direct callers: H007+$0B7A
 ; --------------------------------------------------------------------------
 L007_000006EA:
 ; H007+$000006EA: 2f0c  move.l a4, -(a7)
@@ -999,7 +999,7 @@ L007_00000708:
 L007_0000070C:
 ; H007+$0000070C: 486c001d  pea.l $1d(a4)
         pea.l $1d(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L007_00000710:
 ; H007+$00000710: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1021,7 +1021,7 @@ L007_00000724:
 L007_00000728:
 ; H007+$00000728: 486c003c  pea.l $3c(a4)
         pea.l $3c(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L007_0000072C:
 ; H007+$0000072C: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1043,7 +1043,7 @@ L007_00000740:
 L007_00000744:
 ; H007+$00000744: 486c0045  pea.l $45(a4)
         pea.l $45(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L007_00000748:
 ; H007+$00000748: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1065,7 +1065,7 @@ L007_0000075C:
 L007_00000760:
 ; H007+$00000760: 486c0054  pea.l $54(a4)
         pea.l $54(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L007_00000764:
 ; H007+$00000764: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1087,7 +1087,7 @@ L007_00000778:
 L007_0000077C:
 ; H007+$0000077C: 486c0058  pea.l $58(a4)
         pea.l $58(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L007_00000780:
 ; H007+$00000780: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1109,7 +1109,7 @@ L007_00000794:
 L007_00000798:
 ; H007+$00000798: 486c0065  pea.l $65(a4)
         pea.l $65(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L007_0000079C:
 ; H007+$0000079C: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1131,7 +1131,7 @@ L007_000007B0:
 L007_000007B4:
 ; H007+$000007B4: 486c0076  pea.l $76(a4)
         pea.l $76(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L007_000007B8:
 ; H007+$000007B8: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1153,7 +1153,7 @@ L007_000007CC:
 L007_000007D0:
 ; H007+$000007D0: 486c008b  pea.l $8b(a4)
         pea.l $8b(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L007_000007D4:
 ; H007+$000007D4: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1175,7 +1175,7 @@ L007_000007E8:
 L007_000007EC:
 ; H007+$000007EC: 486c009d  pea.l $9d(a4)
         pea.l $9d(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L007_000007F0:
 ; H007+$000007F0: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1197,7 +1197,7 @@ L007_00000804:
 L007_00000808:
 ; H007+$00000808: 486c00ab  pea.l $ab(a4)
         pea.l $ab(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L007_0000080C:
 ; H007+$0000080C: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1219,7 +1219,7 @@ L007_00000820:
 L007_00000824:
 ; H007+$00000824: 486c00b7  pea.l $b7(a4)
         pea.l $b7(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L007_00000828:
 ; H007+$00000828: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1241,7 +1241,7 @@ L007_0000083C:
 L007_00000840:
 ; H007+$00000840: 486c00c2  pea.l $c2(a4)
         pea.l $c2(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L007_00000844:
 ; H007+$00000844: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1263,7 +1263,7 @@ L007_00000858:
 L007_0000085C:
 ; H007+$0000085C: 486c00cd  pea.l $cd(a4)
         pea.l $cd(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L007_00000860:
 ; H007+$00000860: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1285,7 +1285,7 @@ L007_00000874:
 L007_00000878:
 ; H007+$00000878: 486c00dd  pea.l $dd(a4)
         pea.l $dd(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L007_0000087C:
 ; H007+$0000087C: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1307,7 +1307,7 @@ L007_00000890:
 L007_00000894:
 ; H007+$00000894: 486c00ee  pea.l $ee(a4)
         pea.l $ee(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L007_00000898:
 ; H007+$00000898: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1329,7 +1329,7 @@ L007_000008AC:
 L007_000008B0:
 ; H007+$000008B0: 486c00fb  pea.l $fb(a4)
         pea.l $fb(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L007_000008B4:
 ; H007+$000008B4: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1351,7 +1351,7 @@ L007_000008C8:
 L007_000008CC:
 ; H007+$000008CC: 486c010b  pea.l $10b(a4)
         pea.l $10b(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L007_000008D0:
 ; H007+$000008D0: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1373,7 +1373,7 @@ L007_000008E4:
 L007_000008E8:
 ; H007+$000008E8: 486c0119  pea.l $119(a4)
         pea.l $119(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L007_000008EC:
 ; H007+$000008EC: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1395,7 +1395,7 @@ L007_00000900:
 L007_00000904:
 ; H007+$00000904: 486c0127  pea.l $127(a4)
         pea.l $127(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L007_00000908:
 ; H007+$00000908: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1417,7 +1417,7 @@ L007_0000091C:
 L007_00000920:
 ; H007+$00000920: 486c0149  pea.l $149(a4)
         pea.l $149(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L007_00000924:
 ; H007+$00000924: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1439,7 +1439,7 @@ L007_00000938:
 L007_0000093C:
 ; H007+$0000093C: 486c016f  pea.l $16f(a4)
         pea.l $16f(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L007_00000940:
 ; H007+$00000940: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1461,7 +1461,7 @@ L007_00000954:
 L007_00000958:
 ; H007+$00000958: 486c0179  pea.l $179(a4)
         pea.l $179(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L007_0000095C:
 ; H007+$0000095C: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1483,7 +1483,7 @@ L007_00000970:
 L007_00000974:
 ; H007+$00000974: 486c0194  pea.l $194(a4)
         pea.l $194(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L007_00000978:
 ; H007+$00000978: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1505,7 +1505,7 @@ L007_0000098C:
 L007_00000990:
 ; H007+$00000990: 486c01b6  pea.l $1b6(a4)
         pea.l $1b6(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L007_00000994:
 ; H007+$00000994: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1527,7 +1527,7 @@ L007_000009A8:
 L007_000009AC:
 ; H007+$000009AC: 486c01db  pea.l $1db(a4)
         pea.l $1db(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L007_000009B0:
 ; H007+$000009B0: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1549,7 +1549,7 @@ L007_000009C4:
 L007_000009C8:
 ; H007+$000009C8: 486c01ea  pea.l $1ea(a4)
         pea.l $1ea(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L007_000009CC:
 ; H007+$000009CC: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1564,13 +1564,13 @@ L007_000009D6:
         rts 
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Intro_LoadAndShow [verificato]
-; Scopo: Gestisce schermate introduttive, risorse LBM e avvio dell’audio.
-;   - Inizializza il sottosistema sonoro.
-;   - Verifica la disponibilità del disco richiesto.
-;   - Carica scrn1b.LBM, scrn2.LBM, text1.LBM e text2.LBM attraverso H007+$04F2.
-;   - Visualizza schermate/crediti e attende gli eventi previsti dal flusso.
-; Chiamanti diretti: H001+$0112, H001+$0232
+; ROUTINE: Intro_LoadAndShow [verified]
+; Purpose: Handles introductory screens, LBM resources and audio start-up.
+;   - Initialises the sound subsystem.
+;   - Checks the availability of the requested disk.
+;   - Loads scrn1b.LBM, scrn2.LBM, text1.LBM and text2.LBM through H007+$04F2.
+;   - Shows screens/credits and waits for the events expected by the flow.
+; Direct callers: H001+$0112, H001+$0232
 ; --------------------------------------------------------------------------
 L007_000009D8:
 ; H007+$000009D8: 2f0c  move.l a4, -(a7)
@@ -1590,7 +1590,7 @@ L007_000009E6:
 L007_000009EA:
 ; H007+$000009EA: 1b40ffff  move.b d0, -$1(a5)
         move.b d0, -$1(a5)
-; FLUSSO: Chiama Audio_Initialize (H043+$0584).
+; FLOW: Calls Audio_Initialize (H043+$0584).
 L007_000009EE:
 ; H007+$000009EE: 4eb900000584  jsr $584.l
         jsr (H043+$584).l
@@ -1603,7 +1603,7 @@ L007_000009F8:
 L007_000009FC:
 ; H007+$000009FC: 4879000027bc  pea.l $27bc.l
         pea.l (H005+$27BC).l
-; FLUSSO: Chiama Free_Sequence (H042+$0300).
+; FLOW: Calls Free_Sequence (H042+$0300).
 L007_00000A02:
 ; H007+$00000A02: 4eb900000300  jsr $300.l
         jsr (H042+$300).l
@@ -1620,7 +1620,7 @@ L007_00000A14:
 L007_00000A1A:
 ; H007+$00000A1A: 2b40fff8  move.l d0, -$8(a5)
         move.l d0, -$8(a5)
-; STATO: H005+$52F6 = puntatore alla finestra del gioco
+; STATE: H005+$52F6 = pointer to the game window
 L007_00000A1E:
 ; H007+$00000A1E: 2f39000052f6  move.l $52f6.l, -(a7)
         move.l (H005+$52F6).l, -(a7)
@@ -1661,7 +1661,7 @@ L007_00000A4A:
 L007_00000A4E:
 ; H007+$00000A4E: 486cff8e  pea.l -$72(a4)
         pea.l -$72(a4)
-; FLUSSO: Chiama Open_ResourceFile (H028+$05FA).
+; FLOW: Calls Open_ResourceFile (H028+$05FA).
 L007_00000A52:
 ; H007+$00000A52: 4eb9000005fa  jsr $5fa.l
         jsr (H028+$5FA).l
@@ -1684,7 +1684,7 @@ L007_00000A6E:
 L007_00000A72:
 ; H007+$00000A72: 3f3c0017  move.w #$17, -(a7)
         move.w #$17, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L007_00000A76:
 ; H007+$00000A76: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
@@ -1739,7 +1739,7 @@ L007_00000AB6:
 L007_00000ABA:
 ; H007+$00000ABA: 1f3c0001  move.b #$1, -(a7)
         move.b #$1, -(a7)
-; FLUSSO: Chiama Intro_LoadLBM (H007+$04F2).
+; FLOW: Calls Intro_LoadLBM (H007+$04F2).
 L007_00000ABE:
 ; H007+$00000ABE: 6100fa32  bsr.w $4f2
         bsr.w H007+$4F2
@@ -1782,7 +1782,7 @@ L007_00000AEA:
 L007_00000AEE:
 ; H007+$00000AEE: 1f3c0001  move.b #$1, -(a7)
         move.b #$1, -(a7)
-; FLUSSO: Chiama Intro_LoadLBM (H007+$04F2).
+; FLOW: Calls Intro_LoadLBM (H007+$04F2).
 L007_00000AF2:
 ; H007+$00000AF2: 6100f9fe  bsr.w $4f2
         bsr.w H007+$4F2
@@ -1825,7 +1825,7 @@ L007_00000B22:
 L007_00000B24:
 ; H007+$00000B24: 4227  clr.b -(a7)
         clr.b -(a7)
-; FLUSSO: Chiama Intro_LoadLBM (H007+$04F2).
+; FLOW: Calls Intro_LoadLBM (H007+$04F2).
 L007_00000B26:
 ; H007+$00000B26: 6100f9ca  bsr.w $4f2
         bsr.w H007+$4F2
@@ -1868,7 +1868,7 @@ L007_00000B54:
 L007_00000B56:
 ; H007+$00000B56: 4227  clr.b -(a7)
         clr.b -(a7)
-; FLUSSO: Chiama Intro_LoadLBM (H007+$04F2).
+; FLOW: Calls Intro_LoadLBM (H007+$04F2).
 L007_00000B58:
 ; H007+$00000B58: 6100f998  bsr.w $4f2
         bsr.w H007+$4F2
@@ -1911,7 +1911,7 @@ L007_00000B86:
 L007_00000B8A:
 ; H007+$00000B8A: 6000fef8  bra.w $a84
         bra.w H007+$A84
-; STATO: H005+$52F6 = puntatore alla finestra del gioco
+; STATE: H005+$52F6 = pointer to the game window
 L007_00000B8E:
 ; H007+$00000B8E: 2f39000052f6  move.l $52f6.l, -(a7)
         move.l (H005+$52F6).l, -(a7)
@@ -1939,14 +1939,14 @@ L007_00000BAE:
 L007_00000BB4:
 ; H007+$00000BB4: 3f3c00fe  move.w #$fe, -(a7)
         move.w #$fe, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L007_00000BB8:
 ; H007+$00000BB8: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
 L007_00000BBE:
 ; H007+$00000BBE: 3f3c00fd  move.w #$fd, -(a7)
         move.w #$fd, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L007_00000BC2:
 ; H007+$00000BC2: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l

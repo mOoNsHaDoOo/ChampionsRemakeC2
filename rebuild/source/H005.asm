@@ -1,8 +1,8 @@
 ; ============================================================================
-; GUIDA DEL MODULO H005
-; Dati globali condivisi; molti campi sono indirizzati in modo assoluto rilocabile.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H005
+; Shared global data; many fields are addressed in a relocatable absolute way.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; H005: 21276 original bytes; all offsets are section-relative.

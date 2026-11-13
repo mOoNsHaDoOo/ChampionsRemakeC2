@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H096
-; Azioni/attacchi e calcoli del combattimento; dettaglio parziale.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H096
+; Combat actions/attacks and calculations; partial detail.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Azioni/attacchi e calcoli del combattimento: attacco, danno, fuga, iniziativa e gestione degli attori.
+; MODULE NOTE
+; Combat actions/attacks and calculations: attack, damage, flight, initiative and handling of the actors.
 ; --------------------------------------------------------------------------
 ; H096: 19972 original bytes; all offsets are section-relative.
         section H096,code
@@ -46,10 +46,10 @@ H096:
         dc.w $7572,$736F,$7220,$6B65,$7973,$2920,$0000
         dc.l H096+$00000002
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H096 [parziale]
-; Scopo: Ingresso del modulo azioni/attacchi e calcoli del combattimento; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H096+$4DFE.
-; Chiamanti diretti: H000+$0204
+; ROUTINE: module_init_H096 [partial]
+; Purpose: Entry of the combat actions/attacks and calculations module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H096+$4DFE.
+; Direct callers: H000+$0204
 ; --------------------------------------------------------------------------
 L096_000001F2:
 ; H096+$000001F2: 2f0c  move.l a4, -(a7)
@@ -64,10 +64,10 @@ L096_000001FC:
 ; H096+$000001FC: 60004c00  bra.w $4dfe
         bra.w H096+$4DFE
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_00000200 [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H096+$035E, H096+$1296
+; ROUTINE: sub_H096_00000200 [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H096+$035E, H096+$1296
 ; --------------------------------------------------------------------------
 L096_00000200:
 ; H096+$00000200: 2f0c  move.l a4, -(a7)
@@ -130,11 +130,11 @@ L096_0000023C:
 ; H096+$0000023C: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_0000023E [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; richiama H062+$083E.
-;   - Richiama H062+$083E.
-;   - Usa lo stato globale: H005+$3E00 (puntatore stato persistente B, 2048 byte).
-; Chiamanti diretti: H096+$041E, H097+$0590, H096+$389A, H096+$112C
+; ROUTINE: sub_H096_0000023E [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; calls H062+$083E.
+;   - Calls H062+$083E.
+;   - Uses the global state: H005+$3E00 (pointer to persistent state B, 2048 bytes).
+; Direct callers: H096+$041E, H097+$0590, H096+$389A, H096+$112C
 ; --------------------------------------------------------------------------
 L096_0000023E:
 ; H096+$0000023E: 2f0c  move.l a4, -(a7)
@@ -169,7 +169,7 @@ L096_0000025E:
 L096_00000262:
 ; H096+$00000262: 342dfffe  move.w -$2(a5), d2
         move.w -$2(a5), d2
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L096_00000266:
 ; H096+$00000266: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -247,15 +247,15 @@ L096_000002CC:
 ; H096+$000002CC: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_000002CE [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; richiama H048+$113E, H062+$083E, H062+$156C, H063+$016A.
-;   - Richiama H048+$113E.
-;   - Richiama H062+$083E.
-;   - Richiama H062+$156C.
-;   - Richiama H063+$016A.
-;   - Richiama H029+$0354.
-;   - Usa lo stato globale: H005+$3E00 (puntatore stato persistente B, 2048 byte).
-; Chiamanti diretti: H059+$1818
+; ROUTINE: sub_H096_000002CE [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; calls H048+$113E, H062+$083E, H062+$156C, H063+$016A.
+;   - Calls H048+$113E.
+;   - Calls H062+$083E.
+;   - Calls H062+$156C.
+;   - Calls H063+$016A.
+;   - Calls H029+$0354.
+;   - Uses the global state: H005+$3E00 (pointer to persistent state B, 2048 bytes).
+; Direct callers: H059+$1818
 ; --------------------------------------------------------------------------
 L096_000002CE:
 ; H096+$000002CE: 2f0c  move.l a4, -(a7)
@@ -453,7 +453,7 @@ L096_000003BA:
 L096_000003C0:
 ; H096+$000003C0: 2f0b  move.l a3, -(a7)
         move.l a3, -(a7)
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L096_000003C2:
 ; H096+$000003C2: 247900003e00  movea.l $3e00.l, a2
         movea.l (H005+$3E00).l, a2
@@ -555,12 +555,12 @@ L096_00000432:
 ; H096+$00000432: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_00000434 [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; richiama H062+$15C6, H062+$083E, H073+$130A.
-;   - Richiama H062+$15C6.
-;   - Richiama H062+$083E.
-;   - Richiama H073+$130A.
-; Chiamanti diretti: H096+$1F90
+; ROUTINE: sub_H096_00000434 [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; calls H062+$15C6, H062+$083E, H073+$130A.
+;   - Calls H062+$15C6.
+;   - Calls H062+$083E.
+;   - Calls H073+$130A.
+; Direct callers: H096+$1F90
 ; --------------------------------------------------------------------------
 L096_00000434:
 ; H096+$00000434: 2f0c  move.l a4, -(a7)
@@ -780,16 +780,16 @@ L096_0000052E:
 ; H096+$0000052E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H096_057E [parziale]
-; Scopo: Trampolino verso H096+$057E; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H096+$057E.
-;   - Richiama H063+$1DC2.
-;   - Richiama H063+$1F34.
-;   - Richiama H026+$01E0.
-;   - Richiama H045+$01D6.
-;   - Richiama H063+$0112.
-;   - Richiama H063+$2984.
-; Chiamanti diretti: H096+$1CC8, H096+$1FC4, H096+$205E
+; ROUTINE: trampoline_H096_057E [partial]
+; Purpose: Trampoline to H096+$057E; the actual body is there.
+;   - Jumps to the actual body at H096+$057E.
+;   - Calls H063+$1DC2.
+;   - Calls H063+$1F34.
+;   - Calls H026+$01E0.
+;   - Calls H045+$01D6.
+;   - Calls H063+$0112.
+;   - Calls H063+$2984.
+; Direct callers: H096+$1CC8, H096+$1FC4, H096+$205E
 ; --------------------------------------------------------------------------
 L096_00000530:
 ; H096+$00000530: 2f0c  move.l a4, -(a7)
@@ -883,7 +883,7 @@ L096_0000058C:
 L096_0000058E:
 ; H096+$0000058E: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H096+$057A; indici 0..1, default -1.
+; DISPATCH: words relative to H096+$057A; indices 0..1, default -1.
 L096_00000592:
 ; H096+$00000592: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -1371,7 +1371,7 @@ L096_00000806:
 L096_0000080A:
 ; H096+$0000080A: 486c0092  pea.l $92(a4)
         pea.l $92(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L096_0000080E:
 ; H096+$0000080E: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1493,14 +1493,14 @@ L096_000008B0:
 ; H096+$000008B0: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_000008B2 [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; richiama H063+$2BDE, H063+$135A, H048+$0F88, H048+$0FBA.
-;   - Richiama H063+$2BDE.
-;   - Richiama H063+$135A.
-;   - Richiama H048+$0F88.
-;   - Richiama H048+$0FBA.
-;   - Richiama H048+$0DF2.
-; Chiamanti diretti: H096+$0C04
+; ROUTINE: sub_H096_000008B2 [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; calls H063+$2BDE, H063+$135A, H048+$0F88, H048+$0FBA.
+;   - Calls H063+$2BDE.
+;   - Calls H063+$135A.
+;   - Calls H048+$0F88.
+;   - Calls H048+$0FBA.
+;   - Calls H048+$0DF2.
+; Direct callers: H096+$0C04
 ; --------------------------------------------------------------------------
 L096_000008B2:
 ; H096+$000008B2: 2f0c  move.l a4, -(a7)
@@ -1694,16 +1694,16 @@ L096_0000099A:
 ; H096+$0000099A: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_0000099C [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; richiama H048+$0AA8, H029+$03E2, H048+$01E8, H048+$0DF2.
-;   - Richiama H048+$0AA8.
-;   - Richiama H029+$03E2.
-;   - Richiama H048+$01E8.
-;   - Richiama H048+$0DF2.
-;   - Richiama H029+$16A2.
-;   - Richiama H048+$0588.
-;   - Richiama H048+$0956.
-; Chiamanti diretti: H059+$0C0A, H097+$1878
+; ROUTINE: sub_H096_0000099C [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; calls H048+$0AA8, H029+$03E2, H048+$01E8, H048+$0DF2.
+;   - Calls H048+$0AA8.
+;   - Calls H029+$03E2.
+;   - Calls H048+$01E8.
+;   - Calls H048+$0DF2.
+;   - Calls H029+$16A2.
+;   - Calls H048+$0588.
+;   - Calls H048+$0956.
+; Direct callers: H059+$0C0A, H097+$1878
 ; --------------------------------------------------------------------------
 L096_0000099C:
 ; H096+$0000099C: 2f0c  move.l a4, -(a7)
@@ -2158,7 +2158,7 @@ L096_00000BE4:
 L096_00000BE8:
 ; H096+$00000BE8: 3f3c0011  move.w #$11, -(a7)
         move.w #$11, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L096_00000BEC:
 ; H096+$00000BEC: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
@@ -2168,7 +2168,7 @@ L096_00000BF2:
 L096_00000BF6:
 ; H096+$00000BF6: 3f3c0012  move.w #$12, -(a7)
         move.w #$12, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L096_00000BFA:
 ; H096+$00000BFA: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
@@ -2228,16 +2228,16 @@ L096_00000C3A:
 ; H096+$00000C3A: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_00000C3C [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; richiama H029+$0312, H048+$0AA8, H063+$2BDE, H063+$135A.
-;   - Richiama H029+$0312.
-;   - Richiama H048+$0AA8.
-;   - Richiama H063+$2BDE.
-;   - Richiama H063+$135A.
-;   - Richiama H063+$3698.
-;   - Richiama H063+$3734.
-;   - Richiama H048+$0F88.
-; Chiamanti diretti: H059+$0BC8, H097+$182C
+; ROUTINE: sub_H096_00000C3C [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; calls H029+$0312, H048+$0AA8, H063+$2BDE, H063+$135A.
+;   - Calls H029+$0312.
+;   - Calls H048+$0AA8.
+;   - Calls H063+$2BDE.
+;   - Calls H063+$135A.
+;   - Calls H063+$3698.
+;   - Calls H063+$3734.
+;   - Calls H048+$0F88.
+; Direct callers: H059+$0BC8, H097+$182C
 ; --------------------------------------------------------------------------
 L096_00000C3C:
 ; H096+$00000C3C: 2f0c  move.l a4, -(a7)
@@ -3216,14 +3216,14 @@ L096_000010F8:
 ; H096+$000010F8: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_000010FA [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; richiama H063+$2BDE, H062+$156C, H062+$1694, H063+$1D44.
-;   - Richiama H063+$2BDE.
-;   - Richiama H062+$156C.
-;   - Richiama H062+$1694.
-;   - Richiama H063+$1D44.
-;   - Richiama H063+$2F12.
-; Chiamanti diretti: H097+$167E, H059+$0ADC
+; ROUTINE: sub_H096_000010FA [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; calls H063+$2BDE, H062+$156C, H062+$1694, H063+$1D44.
+;   - Calls H063+$2BDE.
+;   - Calls H062+$156C.
+;   - Calls H062+$1694.
+;   - Calls H063+$1D44.
+;   - Calls H063+$2F12.
+; Direct callers: H097+$167E, H059+$0ADC
 ; --------------------------------------------------------------------------
 L096_000010FA:
 ; H096+$000010FA: 2f0c  move.l a4, -(a7)
@@ -3396,12 +3396,12 @@ L096_000011D2:
 ; H096+$000011D2: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_000011D4 [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; richiama H063+$3698, H063+$37B2, H062+$083E.
-;   - Richiama H063+$3698.
-;   - Richiama H063+$37B2.
-;   - Richiama H062+$083E.
-; Chiamanti diretti: H096+$0326, H059+$121A, H059+$11CC, H097+$10DC
+; ROUTINE: sub_H096_000011D4 [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; calls H063+$3698, H063+$37B2, H062+$083E.
+;   - Calls H063+$3698.
+;   - Calls H063+$37B2.
+;   - Calls H062+$083E.
+; Direct callers: H096+$0326, H059+$121A, H059+$11CC, H097+$10DC
 ; --------------------------------------------------------------------------
 L096_000011D4:
 ; H096+$000011D4: 2f0c  move.l a4, -(a7)
@@ -3686,13 +3686,13 @@ L096_0000133E:
 ; H096+$0000133E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_00001340 [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; richiama H063+$2DC6, H063+$2BDE, H063+$1DC2, H048+$0AA8.
-;   - Richiama H063+$2DC6.
-;   - Richiama H063+$2BDE.
-;   - Richiama H063+$1DC2.
-;   - Richiama H048+$0AA8.
-; Chiamanti diretti: H096+$3CFE, H059+$06DC, H097+$1C80
+; ROUTINE: sub_H096_00001340 [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; calls H063+$2DC6, H063+$2BDE, H063+$1DC2, H048+$0AA8.
+;   - Calls H063+$2DC6.
+;   - Calls H063+$2BDE.
+;   - Calls H063+$1DC2.
+;   - Calls H048+$0AA8.
+; Direct callers: H096+$3CFE, H059+$06DC, H097+$1C80
 ; --------------------------------------------------------------------------
 L096_00001340:
 ; H096+$00001340: 2f0c  move.l a4, -(a7)
@@ -4125,10 +4125,10 @@ L096_00001560:
 ; H096+$00001560: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H096_1600 [parziale]
-; Scopo: Trampolino verso H096+$1600; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H096+$1600.
-; Chiamanti diretti: H096+$4BE6, H096+$4D32, H096+$44E0, H096+$4128, H097+$1A98, H097+$1C1C e altri 1
+; ROUTINE: trampoline_H096_1600 [partial]
+; Purpose: Trampoline to H096+$1600; the actual body is there.
+;   - Jumps to the actual body at H096+$1600.
+; Direct callers: H096+$4BE6, H096+$4D32, H096+$44E0, H096+$4128, H097+$1A98, H097+$1C1C and 1 more
 ; --------------------------------------------------------------------------
 L096_00001562:
 ; H096+$00001562: 2f0c  move.l a4, -(a7)
@@ -4259,16 +4259,16 @@ L096_00001608:
 ; H096+$00001608: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_0000160A [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; richiama H029+$0312, H063+$1DC2, H008+$139E, H030+$0B4A.
-;   - Richiama H029+$0312.
-;   - Richiama H063+$1DC2.
-;   - Richiama H008+$139E.
-;   - Richiama H030+$0B4A.
-;   - Richiama H029+$03E2.
-;   - Richiama H062+$156C.
-;   - Richiama H073+$130A.
-; Chiamanti diretti: H059+$1244, H097+$0A68
+; ROUTINE: sub_H096_0000160A [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; calls H029+$0312, H063+$1DC2, H008+$139E, H030+$0B4A.
+;   - Calls H029+$0312.
+;   - Calls H063+$1DC2.
+;   - Calls H008+$139E.
+;   - Calls H030+$0B4A.
+;   - Calls H029+$03E2.
+;   - Calls H062+$156C.
+;   - Calls H073+$130A.
+; Direct callers: H059+$1244, H097+$0A68
 ; --------------------------------------------------------------------------
 L096_0000160A:
 ; H096+$0000160A: 2f0c  move.l a4, -(a7)
@@ -4950,7 +4950,7 @@ L096_00001A42:
 L096_00001A48:
 ; H096+$00001A48: 3f3c0015  move.w #$15, -(a7)
         move.w #$15, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L096_00001A4C:
 ; H096+$00001A4C: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
@@ -5091,10 +5091,10 @@ L096_00001B02:
 ; H096+$00001B02: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_00001B04 [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; richiama H063+$2BDE.
-;   - Richiama H063+$2BDE.
-; Chiamanti diretti: H097+$0A56, H096+$19B0
+; ROUTINE: sub_H096_00001B04 [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; calls H063+$2BDE.
+;   - Calls H063+$2BDE.
+; Direct callers: H097+$0A56, H096+$19B0
 ; --------------------------------------------------------------------------
 L096_00001B04:
 ; H096+$00001B04: 2f0c  move.l a4, -(a7)
@@ -5272,16 +5272,16 @@ L096_00001BDE:
 ; H096+$00001BDE: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_00001BE0 [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; richiama H063+$135A, H043+$190E, H029+$03E2, H062+$1780.
-;   - Richiama H063+$135A.
-;   - Richiama H043+$190E.
-;   - Richiama H029+$03E2.
-;   - Richiama H062+$1780.
-;   - Richiama H029+$0354.
-;   - Richiama H063+$13BE.
-;   - Richiama H062+$083E.
-; Chiamanti diretti: H096+$2358
+; ROUTINE: sub_H096_00001BE0 [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; calls H063+$135A, H043+$190E, H029+$03E2, H062+$1780.
+;   - Calls H063+$135A.
+;   - Calls H043+$190E.
+;   - Calls H029+$03E2.
+;   - Calls H062+$1780.
+;   - Calls H029+$0354.
+;   - Calls H063+$13BE.
+;   - Calls H062+$083E.
+; Direct callers: H096+$2358
 ; --------------------------------------------------------------------------
 L096_00001BE0:
 ; H096+$00001BE0: 2f0c  move.l a4, -(a7)
@@ -5350,7 +5350,7 @@ L096_00001C38:
 L096_00001C3C:
 ; H096+$00001C3C: 3f3c000e  move.w #$e, -(a7)
         move.w #$e, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L096_00001C40:
 ; H096+$00001C40: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
@@ -5996,7 +5996,7 @@ L096_00001F6E:
 L096_00001F74:
 ; H096+$00001F74: 3f3c000e  move.w #$e, -(a7)
         move.w #$e, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L096_00001F78:
 ; H096+$00001F78: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
@@ -6155,7 +6155,7 @@ L096_0000203E:
 L096_00002042:
 ; H096+$00002042: 3f3c0010  move.w #$10, -(a7)
         move.w #$10, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L096_00002046:
 ; H096+$00002046: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
@@ -6293,11 +6293,11 @@ L096_000020E4:
 ; H096+$000020E4: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_000020E6 [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; richiama H029+$03E2, H063+$3CA0.
-;   - Richiama H029+$03E2.
-;   - Richiama H063+$3CA0.
-; Chiamanti diretti: H096+$1514, H096+$3D26, H059+$06FE, H097+$1CA8, H096+$096C
+; ROUTINE: sub_H096_000020E6 [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; calls H029+$03E2, H063+$3CA0.
+;   - Calls H029+$03E2.
+;   - Calls H063+$3CA0.
+; Direct callers: H096+$1514, H096+$3D26, H059+$06FE, H097+$1CA8, H096+$096C
 ; --------------------------------------------------------------------------
 L096_000020E6:
 ; H096+$000020E6: 2f0c  move.l a4, -(a7)
@@ -6428,17 +6428,17 @@ L096_00002180:
 ; H096+$00002180: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_00002182 [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; richiama H063+$3CA0, H048+$0230, H048+$0FEC, H063+$1160.
-;   - Richiama H063+$3CA0.
-;   - Richiama H048+$0230.
-;   - Richiama H048+$0FEC.
-;   - Richiama H063+$1160.
-;   - Richiama H063+$36EE.
-;   - Richiama H029+$03E2.
-;   - Richiama H063+$3734.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H096+$1536, H096+$3D92, H059+$0714, H097+$1D18, H096+$10A4, H096+$0982
+; ROUTINE: sub_H096_00002182 [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; calls H063+$3CA0, H048+$0230, H048+$0FEC, H063+$1160.
+;   - Calls H063+$3CA0.
+;   - Calls H048+$0230.
+;   - Calls H048+$0FEC.
+;   - Calls H063+$1160.
+;   - Calls H063+$36EE.
+;   - Calls H029+$03E2.
+;   - Calls H063+$3734.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H096+$1536, H096+$3D92, H059+$0714, H097+$1D18, H096+$10A4, H096+$0982
 ; --------------------------------------------------------------------------
 L096_00002182:
 ; H096+$00002182: 2f0c  move.l a4, -(a7)
@@ -6780,11 +6780,11 @@ L096_0000232E:
 L096_00002330:
 ; H096+$00002330: 6300016c  bls.w $249e
         bls.w H096+$249E
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L096_00002334:
 ; H096+$00002334: 2b7900003368fff4  move.l $3368.l, -$c(a5)
         move.l (H005+$3368).l, -$c(a5)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L096_0000233C:
 ; H096+$0000233C: 23ed001a00003368  move.l $1a(a5), $3368.l
         move.l $1a(a5), (H005+$3368).l
@@ -7047,7 +7047,7 @@ L096_0000248C:
 L096_00002490:
 ; H096+$00002490: 4eb9000013be  jsr $13be.l
         jsr (H063+$13BE).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L096_00002496:
 ; H096+$00002496: 23edfff400003368  move.l -$c(a5), $3368.l
         move.l -$c(a5), (H005+$3368).l
@@ -7160,11 +7160,11 @@ L096_0000251A:
 ; H096+$0000251A: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_0000251C [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; richiama H063+$2DC6, H063+$3698.
-;   - Richiama H063+$2DC6.
-;   - Richiama H063+$3698.
-; Chiamanti diretti: H096+$1E70
+; ROUTINE: sub_H096_0000251C [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; calls H063+$2DC6, H063+$3698.
+;   - Calls H063+$2DC6.
+;   - Calls H063+$3698.
+; Direct callers: H096+$1E70
 ; --------------------------------------------------------------------------
 L096_0000251C:
 ; H096+$0000251C: 2f0c  move.l a4, -(a7)
@@ -7334,12 +7334,12 @@ L096_000025D8:
 ; H096+$000025D8: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_000025DA [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; richiama H048+$0F88, H048+$0FBA, H048+$0154.
-;   - Richiama H048+$0F88.
-;   - Richiama H048+$0FBA.
-;   - Richiama H048+$0154.
-; Chiamanti diretti: H096+$28E4, H097+$07AA
+; ROUTINE: sub_H096_000025DA [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; calls H048+$0F88, H048+$0FBA, H048+$0154.
+;   - Calls H048+$0F88.
+;   - Calls H048+$0FBA.
+;   - Calls H048+$0154.
+; Direct callers: H096+$28E4, H097+$07AA
 ; --------------------------------------------------------------------------
 L096_000025DA:
 ; H096+$000025DA: 2f0c  move.l a4, -(a7)
@@ -7842,17 +7842,17 @@ L096_0000284A:
 ; H096+$0000284A: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_0000284C [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; richiama H033+$11FC, H048+$0F88, H048+$0FBA, H063+$135A.
-;   - Richiama H033+$11FC.
-;   - Richiama H048+$0F88.
-;   - Richiama H048+$0FBA.
-;   - Richiama H063+$135A.
-;   - Richiama H029+$0312.
-;   - Richiama H029+$0354.
-;   - Richiama H063+$2FAA.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H096+$2F3C, H096+$2E30, H096+$2D26, H096+$2B3A
+; ROUTINE: sub_H096_0000284C [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; calls H033+$11FC, H048+$0F88, H048+$0FBA, H063+$135A.
+;   - Calls H033+$11FC.
+;   - Calls H048+$0F88.
+;   - Calls H048+$0FBA.
+;   - Calls H063+$135A.
+;   - Calls H029+$0312.
+;   - Calls H029+$0354.
+;   - Calls H063+$2FAA.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H096+$2F3C, H096+$2E30, H096+$2D26, H096+$2B3A
 ; --------------------------------------------------------------------------
 L096_0000284C:
 ; H096+$0000284C: 2f0c  move.l a4, -(a7)
@@ -7884,7 +7884,7 @@ L096_0000286A:
 L096_0000286C:
 ; H096+$0000286C: 1b42fff5  move.b d2, -$b(a5)
         move.b d2, -$b(a5)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L096_00002870:
 ; H096+$00002870: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -7916,7 +7916,7 @@ L096_00002890:
 L096_00002894:
 ; H096+$00002894: 4eb900004448  jsr $4448.l
         jsr (H096+$4448).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L096_0000289A:
 ; H096+$0000289A: 247900003368  movea.l $3368.l, a2
         movea.l (H005+$3368).l, a2
@@ -7953,7 +7953,7 @@ L096_000028C2:
 L096_000028C6:
 ; H096+$000028C6: 266d000c  movea.l $c(a5), a3
         movea.l $c(a5), a3
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L096_000028CA:
 ; H096+$000028CA: 26b900003368  move.l $3368.l, (a3)
         move.l (H005+$3368).l, (a3)
@@ -7963,7 +7963,7 @@ L096_000028D0:
 L096_000028D6:
 ; H096+$000028D6: 66000018  bne.w $28f0
         bne.w H096+$28F0
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L096_000028DA:
 ; H096+$000028DA: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -8038,7 +8038,7 @@ L096_00002934:
 L096_00002938:
 ; H096+$00002938: 1b7c0001fffe  move.b #$1, -$2(a5)
         move.b #$1, -$2(a5)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L096_0000293E:
 ; H096+$0000293E: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -8070,7 +8070,7 @@ L096_0000295E:
 L096_00002960:
 ; H096+$00002960: 670000b2  beq.w $2a14
         beq.w H096+$2A14
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L096_00002964:
 ; H096+$00002964: 247900003368  movea.l $3368.l, a2
         movea.l (H005+$3368).l, a2
@@ -8159,7 +8159,7 @@ L096_000029CC:
 L096_000029D0:
 ; H096+$000029D0: 67000042  beq.w $2a14
         beq.w H096+$2A14
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L096_000029D4:
 ; H096+$000029D4: 247900003368  movea.l $3368.l, a2
         movea.l (H005+$3368).l, a2
@@ -8297,7 +8297,7 @@ L096_00002A7E:
 L096_00002A84:
 ; H096+$00002A84: 4239000024a9  clr.b $24a9.l
         clr.b (H005+$24A9).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L096_00002A8A:
 ; H096+$00002A8A: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -8308,7 +8308,7 @@ L096_00002A90:
 L096_00002A96:
 ; H096+$00002A96: 33c00000251a  move.w d0, $251a.l
         move.w d0, (H005+$251A).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L096_00002A9C:
 ; H096+$00002A9C: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -8353,7 +8353,7 @@ L096_00002ACE:
 L096_00002AD2:
 ; H096+$00002AD2: 6000060c  bra.w $30e0
         bra.w H096+$30E0
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L096_00002AD6:
 ; H096+$00002AD6: 23f90000336800002520  move.l $3368.l, $2520.l
         move.l (H005+$3368).l, (H005+$2520).l
@@ -8625,7 +8625,7 @@ L096_00002C2E:
 L096_00002C30:
 ; H096+$00002C30: 38334000  move.w (a3, d4.w), d4
         move.w (a3, d4.w), d4
-; DISPATCH: word relative a H096+$2C1A; indici 0..3, default -1.
+; DISPATCH: words relative to H096+$2C1A; indices 0..3, default -1.
 L096_00002C34:
 ; H096+$00002C34: 4eb34000  jsr (a3, d4.w)
         jsr (a3, d4.w)
@@ -8710,7 +8710,7 @@ L096_00002C92:
 L096_00002C94:
 ; H096+$00002C94: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H096+$2C7C; indici 0..3, default -1.
+; DISPATCH: words relative to H096+$2C7C; indices 0..3, default -1.
 L096_00002C98:
 ; H096+$00002C98: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -8832,7 +8832,7 @@ L096_00002D2C:
 L096_00002D2E:
 ; H096+$00002D2E: 670000e4  beq.w $2e14
         beq.w H096+$2E14
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L096_00002D32:
 ; H096+$00002D32: 247900003368  movea.l $3368.l, a2
         movea.l (H005+$3368).l, a2
@@ -8845,7 +8845,7 @@ L096_00002D3C:
 L096_00002D40:
 ; H096+$00002D40: 67000020  beq.w $2d62
         beq.w H096+$2D62
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L096_00002D44:
 ; H096+$00002D44: 247900003368  movea.l $3368.l, a2
         movea.l (H005+$3368).l, a2
@@ -9334,7 +9334,7 @@ L096_00002FA0:
 L096_00002FA4:
 ; H096+$00002FA4: 242dffec  move.l -$14(a5), d2
         move.l -$14(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L096_00002FA8:
 ; H096+$00002FA8: b4b900003368  cmp.l $3368.l, d2
         cmp.l (H005+$3368).l, d2
@@ -9403,7 +9403,7 @@ L096_00003004:
 L096_00003008:
 ; H096+$00003008: 242dffec  move.l -$14(a5), d2
         move.l -$14(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L096_0000300C:
 ; H096+$0000300C: b4b900003368  cmp.l $3368.l, d2
         cmp.l (H005+$3368).l, d2
@@ -9559,7 +9559,7 @@ L096_000030EC:
 L096_000030EE:
 ; H096+$000030EE: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H096+$30C0; indici 0..15, default -1.
+; DISPATCH: words relative to H096+$30C0; indices 0..15, default -1.
 L096_000030F2:
 ; H096+$000030F2: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -9579,17 +9579,17 @@ L096_000030FE:
 ; H096+$000030FE: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_00003100 [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; richiama H065+$34FC, H063+$1D44, H063+$3658, H048+$195E.
-;   - Richiama H065+$34FC.
-;   - Richiama H063+$1D44.
-;   - Richiama H063+$3658.
-;   - Richiama H048+$195E.
-;   - Richiama H063+$1160.
-;   - Richiama H033+$1426.
-;   - Richiama H063+$2F12.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H059+$1238, H097+$0BF4
+; ROUTINE: sub_H096_00003100 [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; calls H065+$34FC, H063+$1D44, H063+$3658, H048+$195E.
+;   - Calls H065+$34FC.
+;   - Calls H063+$1D44.
+;   - Calls H063+$3658.
+;   - Calls H048+$195E.
+;   - Calls H063+$1160.
+;   - Calls H033+$1426.
+;   - Calls H063+$2F12.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H059+$1238, H097+$0BF4
 ; --------------------------------------------------------------------------
 L096_00003100:
 ; H096+$00003100: 2f0c  move.l a4, -(a7)
@@ -9600,7 +9600,7 @@ L096_00003102:
 L096_00003106:
 ; H096+$00003106: 4e55ffec  link.w a5, #$ffec
         link.w a5, #$ffec
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L096_0000310A:
 ; H096+$0000310A: 2b7900003368fff0  move.l $3368.l, -$10(a5)
         move.l (H005+$3368).l, -$10(a5)
@@ -10044,13 +10044,13 @@ L096_00003356:
 ; H096+$00003356: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_00003358 [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; richiama H073+$130A, H063+$2DC6, H029+$0354, H063+$3CA0.
-;   - Richiama H073+$130A.
-;   - Richiama H063+$2DC6.
-;   - Richiama H029+$0354.
-;   - Richiama H063+$3CA0.
-; Chiamanti diretti: H096+$1DC6, H096+$1E90, H096+$04C4
+; ROUTINE: sub_H096_00003358 [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; calls H073+$130A, H063+$2DC6, H029+$0354, H063+$3CA0.
+;   - Calls H073+$130A.
+;   - Calls H063+$2DC6.
+;   - Calls H029+$0354.
+;   - Calls H063+$3CA0.
+; Direct callers: H096+$1DC6, H096+$1E90, H096+$04C4
 ; --------------------------------------------------------------------------
 L096_00003358:
 ; H096+$00003358: 2f0c  move.l a4, -(a7)
@@ -10302,16 +10302,16 @@ L096_00003490:
 ; H096+$00003490: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_00003492 [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; richiama H063+$3CA0, H063+$1FDC, H043+$190E, H063+$2178.
-;   - Richiama H063+$3CA0.
-;   - Richiama H063+$1FDC.
-;   - Richiama H043+$190E.
-;   - Richiama H063+$2178.
-;   - Richiama H048+$0F88.
-;   - Richiama H048+$0FBA.
-;   - Richiama H063+$21D2.
-; Chiamanti diretti: H096+$22C4, H096+$2306
+; ROUTINE: sub_H096_00003492 [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; calls H063+$3CA0, H063+$1FDC, H043+$190E, H063+$2178.
+;   - Calls H063+$3CA0.
+;   - Calls H063+$1FDC.
+;   - Calls H043+$190E.
+;   - Calls H063+$2178.
+;   - Calls H048+$0F88.
+;   - Calls H048+$0FBA.
+;   - Calls H063+$21D2.
+; Direct callers: H096+$22C4, H096+$2306
 ; --------------------------------------------------------------------------
 L096_00003492:
 ; H096+$00003492: 2f0c  move.l a4, -(a7)
@@ -10482,7 +10482,7 @@ L096_00003558:
 L096_0000355E:
 ; H096+$0000355E: 3f3c0014  move.w #$14, -(a7)
         move.w #$14, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L096_00003562:
 ; H096+$00003562: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
@@ -10621,7 +10621,7 @@ L096_000035F0:
 L096_000035F6:
 ; H096+$000035F6: 3f3c0014  move.w #$14, -(a7)
         move.w #$14, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L096_000035FA:
 ; H096+$000035FA: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
@@ -10650,7 +10650,7 @@ L096_00003616:
 L096_0000361C:
 ; H096+$0000361C: 3f3c0010  move.w #$10, -(a7)
         move.w #$10, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L096_00003620:
 ; H096+$00003620: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
@@ -10679,7 +10679,7 @@ L096_0000363C:
 L096_00003642:
 ; H096+$00003642: 3f3c000d  move.w #$d, -(a7)
         move.w #$d, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L096_00003646:
 ; H096+$00003646: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
@@ -10742,7 +10742,7 @@ L096_00003684:
 L096_0000368A:
 ; H096+$0000368A: 3f3c000d  move.w #$d, -(a7)
         move.w #$d, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L096_0000368E:
 ; H096+$0000368E: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
@@ -10802,7 +10802,7 @@ L096_000036C8:
 L096_000036CE:
 ; H096+$000036CE: 3f3c0010  move.w #$10, -(a7)
         move.w #$10, -(a7)
-; FLUSSO: Chiama Audio_Command (H043+$190E).
+; FLOW: Calls Audio_Command (H043+$190E).
 L096_000036D2:
 ; H096+$000036D2: 4eb90000190e  jsr $190e.l
         jsr (H043+$190E).l
@@ -10840,7 +10840,7 @@ L096_0000376E:
 L096_00003770:
 ; H096+$00003770: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H096+$36DC; indici 0..65, default -1.
+; DISPATCH: words relative to H096+$36DC; indices 0..65, default -1.
 L096_00003774:
 ; H096+$00003774: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -10910,10 +10910,10 @@ L096_000037C0:
 ; H096+$000037C0: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_000037C2 [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; opera su H005+$3364 (testa della lista del party).
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H095+$2626, H059+$1616
+; ROUTINE: sub_H096_000037C2 [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; works on H005+$3364 (head of the party list).
+;   - Uses the global state: H005+$3364 (head of the party list).
+; Direct callers: H095+$2626, H059+$1616
 ; --------------------------------------------------------------------------
 L096_000037C2:
 ; H096+$000037C2: 2f0c  move.l a4, -(a7)
@@ -10930,7 +10930,7 @@ L096_000037CC:
 L096_000037D0:
 ; H096+$000037D0: 426dfffc  clr.w -$4(a5)
         clr.w -$4(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L096_000037D4:
 ; H096+$000037D4: 2b7900003364fff8  move.l $3364.l, -$8(a5)
         move.l (H005+$3364).l, -$8(a5)
@@ -11028,11 +11028,11 @@ L096_00003850:
 ; H096+$00003850: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_00003852 [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; richiama H063+$2B4C.
-;   - Richiama H063+$2B4C.
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H097+$0582, H096+$1142
+; ROUTINE: sub_H096_00003852 [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; calls H063+$2B4C.
+;   - Calls H063+$2B4C.
+;   - Uses the global state: H005+$3364 (head of the party list).
+; Direct callers: H097+$0582, H096+$1142
 ; --------------------------------------------------------------------------
 L096_00003852:
 ; H096+$00003852: 2f0c  move.l a4, -(a7)
@@ -11046,7 +11046,7 @@ L096_00003858:
 L096_0000385C:
 ; H096+$0000385C: 426dfffe  clr.w -$2(a5)
         clr.w -$2(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L096_00003860:
 ; H096+$00003860: 2b7900003364fff8  move.l $3364.l, -$8(a5)
         move.l (H005+$3364).l, -$8(a5)
@@ -11148,13 +11148,13 @@ L096_000038DA:
 ; H096+$000038DA: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_000038DC [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; richiama H063+$2B4C, H008+$203C, H063+$2B7C.
-;   - Richiama H063+$2B4C.
-;   - Richiama H008+$203C.
-;   - Richiama H063+$2B7C.
-;   - Usa lo stato globale: H005+$3E00 (puntatore stato persistente B, 2048 byte); H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H096+$3C70, H059+$06B8
+; ROUTINE: sub_H096_000038DC [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; calls H063+$2B4C, H008+$203C, H063+$2B7C.
+;   - Calls H063+$2B4C.
+;   - Calls H008+$203C.
+;   - Calls H063+$2B7C.
+;   - Uses the global state: H005+$3E00 (pointer to persistent state B, 2048 bytes); H005+$3364 (head of the party list).
+; Direct callers: H096+$3C70, H059+$06B8
 ; --------------------------------------------------------------------------
 L096_000038DC:
 ; H096+$000038DC: 2f0c  move.l a4, -(a7)
@@ -11243,14 +11243,14 @@ L096_0000393C:
 L096_00003944:
 ; H096+$00003944: 13fc0001000024db  move.b #$1, $24db.l
         move.b #$1, (H005+$24DB).l
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L096_0000394C:
 ; H096+$0000394C: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
 L096_00003952:
 ; H096+$00003952: 377c00010666  move.w #$1, $666(a3)
         move.w #$1, $666(a3)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L096_00003958:
 ; H096+$00003958: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -11349,16 +11349,16 @@ L096_000039CE:
 ; H096+$000039CE: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_000039D0 [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; richiama H048+$0F88, H048+$0FBA, H077+$0378, H045+$01D6.
-;   - Richiama H048+$0F88.
-;   - Richiama H048+$0FBA.
-;   - Richiama H077+$0378.
-;   - Richiama H045+$01D6.
-;   - Richiama H026+$01E0.
-;   - Richiama H030+$0256.
-;   - Richiama H063+$3698.
-; Chiamanti diretti: H096+$4814
+; ROUTINE: sub_H096_000039D0 [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; calls H048+$0F88, H048+$0FBA, H077+$0378, H045+$01D6.
+;   - Calls H048+$0F88.
+;   - Calls H048+$0FBA.
+;   - Calls H077+$0378.
+;   - Calls H045+$01D6.
+;   - Calls H026+$01E0.
+;   - Calls H030+$0256.
+;   - Calls H063+$3698.
+; Direct callers: H096+$4814
 ; --------------------------------------------------------------------------
 L096_000039D0:
 ; H096+$000039D0: 2f0c  move.l a4, -(a7)
@@ -11558,7 +11558,7 @@ L096_00003ACC:
 L096_00003AD0:
 ; H096+$00003AD0: 486dffd6  pea.l -$2a(a5)
         pea.l -$2a(a5)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L096_00003AD4:
 ; H096+$00003AD4: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -11834,7 +11834,7 @@ L096_00003C2C:
 L096_00003C2E:
 ; H096+$00003C2E: 486dffd5  pea.l -$2b(a5)
         pea.l -$2b(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L096_00003C32:
 ; H096+$00003C32: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -11857,16 +11857,16 @@ L096_00003C46:
 ; H096+$00003C46: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_00003C48 [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; richiama H048+$0F88, H048+$0FBA, H048+$0DF2, H063+$2F12.
-;   - Richiama H048+$0F88.
-;   - Richiama H048+$0FBA.
-;   - Richiama H048+$0DF2.
-;   - Richiama H063+$2F12.
-;   - Richiama H063+$3698.
-;   - Richiama H063+$37B2.
-;   - Richiama H063+$3734.
-; Chiamanti diretti: H096+$491A, H096+$49A8
+; ROUTINE: sub_H096_00003C48 [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; calls H048+$0F88, H048+$0FBA, H048+$0DF2, H063+$2F12.
+;   - Calls H048+$0F88.
+;   - Calls H048+$0FBA.
+;   - Calls H048+$0DF2.
+;   - Calls H063+$2F12.
+;   - Calls H063+$3698.
+;   - Calls H063+$37B2.
+;   - Calls H063+$3734.
+; Direct callers: H096+$491A, H096+$49A8
 ; --------------------------------------------------------------------------
 L096_00003C48:
 ; H096+$00003C48: 2f0c  move.l a4, -(a7)
@@ -12172,16 +12172,16 @@ L096_00003DB8:
 ; H096+$00003DB8: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_00003DBA [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; richiama H029+$0312, H048+$0DF2, H048+$0154, H048+$0F88.
-;   - Richiama H029+$0312.
-;   - Richiama H048+$0DF2.
-;   - Richiama H048+$0154.
-;   - Richiama H048+$0F88.
-;   - Richiama H048+$0FBA.
-;   - Richiama H077+$0378.
-;   - Richiama H045+$01D6.
-; Chiamanti diretti: H096+$489C
+; ROUTINE: sub_H096_00003DBA [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; calls H029+$0312, H048+$0DF2, H048+$0154, H048+$0F88.
+;   - Calls H029+$0312.
+;   - Calls H048+$0DF2.
+;   - Calls H048+$0154.
+;   - Calls H048+$0F88.
+;   - Calls H048+$0FBA.
+;   - Calls H077+$0378.
+;   - Calls H045+$01D6.
+; Direct callers: H096+$489C
 ; --------------------------------------------------------------------------
 L096_00003DBA:
 ; H096+$00003DBA: 2f0c  move.l a4, -(a7)
@@ -12540,7 +12540,7 @@ L096_00003FD0:
 L096_00003FD4:
 ; H096+$00003FD4: 486dffd6  pea.l -$2a(a5)
         pea.l -$2a(a5)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L096_00003FD8:
 ; H096+$00003FD8: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -13019,7 +13019,7 @@ L096_0000422A:
 L096_0000422C:
 ; H096+$0000422C: 48790000249f  pea.l $249f.l
         pea.l (H005+$249F).l
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L096_00004232:
 ; H096+$00004232: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -13274,7 +13274,7 @@ L096_00004428:
 L096_0000442A:
 ; H096+$0000442A: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H096+$4372; indici 0..84, default -1.
+; DISPATCH: words relative to H096+$4372; indices 0..84, default -1.
 L096_0000442E:
 ; H096+$0000442E: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -13300,16 +13300,16 @@ L096_00004446:
 ; H096+$00004446: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H096_46E4 [parziale]
-; Scopo: Trampolino verso H096+$46E4; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H096+$46E4.
-;   - Richiama H063+$1FDC.
-;   - Richiama H029+$0312.
-;   - Richiama H048+$0F88.
-;   - Richiama H048+$0FBA.
-;   - Richiama H048+$0DF2.
-;   - Richiama H048+$0884.
-; Chiamanti diretti: H096+$2894, H059+$11FC
+; ROUTINE: trampoline_H096_46E4 [partial]
+; Purpose: Trampoline to H096+$46E4; the actual body is there.
+;   - Jumps to the actual body at H096+$46E4.
+;   - Calls H063+$1FDC.
+;   - Calls H029+$0312.
+;   - Calls H048+$0F88.
+;   - Calls H048+$0FBA.
+;   - Calls H048+$0DF2.
+;   - Calls H048+$0884.
+; Direct callers: H096+$2894, H059+$11FC
 ; --------------------------------------------------------------------------
 L096_00004448:
 ; H096+$00004448: 2f0c  move.l a4, -(a7)
@@ -13324,13 +13324,13 @@ L096_00004452:
 ; H096+$00004452: 60000290  bra.w $46e4
         bra.w H096+$46E4
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_00004456 [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; richiama H048+$0F88, H048+$0FBA, H048+$110C, H077+$08AC.
-;   - Richiama H048+$0F88.
-;   - Richiama H048+$0FBA.
-;   - Richiama H048+$110C.
-;   - Richiama H077+$08AC.
-; Chiamanti diretti: H096+$4776
+; ROUTINE: sub_H096_00004456 [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; calls H048+$0F88, H048+$0FBA, H048+$110C, H077+$08AC.
+;   - Calls H048+$0F88.
+;   - Calls H048+$0FBA.
+;   - Calls H048+$110C.
+;   - Calls H077+$08AC.
+; Direct callers: H096+$4776
 ; --------------------------------------------------------------------------
 L096_00004456:
 ; H096+$00004456: 4e55fffe  link.w a5, #$fffe
@@ -13523,16 +13523,16 @@ L096_0000452E:
 ; H096+$0000452E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_00004530 [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; richiama H048+$0884, H063+$21D2, H063+$1FDC, H029+$0312.
-;   - Richiama H048+$0884.
-;   - Richiama H063+$21D2.
-;   - Richiama H063+$1FDC.
-;   - Richiama H029+$0312.
-;   - Richiama H048+$0F88.
-;   - Richiama H048+$0FBA.
-;   - Richiama H048+$0DF2.
-; Chiamanti diretti: H096+$478E, H096+$4846, H096+$4866
+; ROUTINE: sub_H096_00004530 [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; calls H048+$0884, H063+$21D2, H063+$1FDC, H029+$0312.
+;   - Calls H048+$0884.
+;   - Calls H063+$21D2.
+;   - Calls H063+$1FDC.
+;   - Calls H029+$0312.
+;   - Calls H048+$0F88.
+;   - Calls H048+$0FBA.
+;   - Calls H048+$0DF2.
+; Direct callers: H096+$478E, H096+$4846, H096+$4866
 ; --------------------------------------------------------------------------
 L096_00004530:
 ; H096+$00004530: 4e55fff4  link.w a5, #$fff4
@@ -14557,7 +14557,7 @@ L096_00004B16:
 L096_00004B18:
 ; H096+$00004B18: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H096+$4A60; indici 0..84, default -1.
+; DISPATCH: words relative to H096+$4A60; indices 0..84, default -1.
 L096_00004B1C:
 ; H096+$00004B1C: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -14640,12 +14640,12 @@ L096_00004B84:
 ; H096+$00004B84: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H096_00004B86 [parziale]
-; Scopo: Routine del modulo azioni/attacchi e calcoli del combattimento; richiama H063+$2BDE, H063+$0946, H062+$156C.
-;   - Richiama H063+$2BDE.
-;   - Richiama H063+$0946.
-;   - Richiama H062+$156C.
-; Chiamanti diretti: H096+$2956, H097+$1F5A, H097+$1B52, H097+$1792
+; ROUTINE: sub_H096_00004B86 [partial]
+; Purpose: Routine of the combat actions/attacks and calculations module; calls H063+$2BDE, H063+$0946, H062+$156C.
+;   - Calls H063+$2BDE.
+;   - Calls H063+$0946.
+;   - Calls H062+$156C.
+; Direct callers: H096+$2956, H097+$1F5A, H097+$1B52, H097+$1792
 ; --------------------------------------------------------------------------
 L096_00004B86:
 ; H096+$00004B86: 2f0c  move.l a4, -(a7)
@@ -15110,10 +15110,10 @@ L096_00004DE6:
 ; H096+$00004DE6: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H096_4DF8 [parziale]
-; Scopo: Trampolino verso H096+$4DF8; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H096+$4DF8.
-; Chiamanti diretti: H097+$01AC, H059+$13F0
+; ROUTINE: trampoline_H096_4DF8 [partial]
+; Purpose: Trampoline to H096+$4DF8; the actual body is there.
+;   - Jumps to the actual body at H096+$4DF8.
+; Direct callers: H097+$01AC, H059+$13F0
 ; --------------------------------------------------------------------------
 L096_00004DE8:
 ; H096+$00004DE8: 2f0c  move.l a4, -(a7)

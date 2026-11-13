@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H016
-; Adattatori graphics.library per blit, attesa e cancellazione raster.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H016
+; graphics.library adapters for blit, waiting and raster clearing.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Adattatori graphics.library per blit, attesa del blitter, cancellazione raster e BltMaskBitMapRastPort. Non programmano direttamente i registri custom.
+; MODULE NOTE
+; graphics.library adapters for blits, blitter wait, raster clearing and BltMaskBitMapRastPort. They do not program the custom registers directly.
 ; --------------------------------------------------------------------------
 ; H016: 436 original bytes; all offsets are section-relative.
         section H016,code
@@ -16,10 +16,10 @@ H016:
         dc.w $0000,$0000
         dc.l H016+$00000004
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H016_00000008 [parziale]
-; Scopo: Routine del modulo adattatori graphics.library per blit, attesa e cancellazione raster; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H000+$001E
+; ROUTINE: sub_H016_00000008 [partial]
+; Purpose: Routine of the graphics.library adapters for blits, waiting and raster clearing module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H000+$001E
 ; --------------------------------------------------------------------------
 L016_00000008:
 ; H016+$00000008: 41fafffa  lea.l $4(pc), a0
@@ -31,10 +31,10 @@ L016_00000012:
 ; H016+$00000012: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_BltBitMap [parziale]
-; Scopo: Adattatore a graphics.library/BltBitMap; incapsula la chiamata alla libreria.
-;   - Chiama graphics.library/BltBitMap (LVO -30).
-; Chiamanti diretti: H063+$2064, H063+$20A6, H063+$210C, H063+$2164, H029+$155C, H006+$0158 e altri 24
+; ROUTINE: wrapper_BltBitMap [partial]
+; Purpose: Adapter to graphics.library/BltBitMap; wraps the library call.
+;   - Calls graphics.library/BltBitMap (LVO -30).
+; Direct callers: H063+$2064, H063+$20A6, H063+$210C, H063+$2164, H029+$155C, H006+$0158 and 24 more
 ; --------------------------------------------------------------------------
 L016_00000014:
 ; H016+$00000014: 206f001c  movea.l $1c(a7), a0
@@ -87,10 +87,10 @@ L016_0000004C:
         dc.w $1C2F,$0004,$2C7A,$FF8A,$2F57,$0016,$4FEF,$0016
         dc.w $4EEE,$FDA2
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_BltClear [parziale]
-; Scopo: Adattatore a graphics.library/BltClear; incapsula la chiamata alla libreria.
-;   - Chiama graphics.library/BltClear (LVO -300).
-; Chiamanti diretti: H029+$053C, H029+$05F2, H029+$07D4, H029+$08D6, H066+$0CCA, H066+$0CEA
+; ROUTINE: wrapper_BltClear [partial]
+; Purpose: Adapter to graphics.library/BltClear; wraps the library call.
+;   - Calls graphics.library/BltClear (LVO -300).
+; Direct callers: H029+$053C, H029+$05F2, H029+$07D4, H029+$08D6, H066+$0CCA, H066+$0CEA
 ; --------------------------------------------------------------------------
 L016_00000084:
 ; H016+$00000084: 226f000c  movea.l $c(a7), a1
@@ -114,10 +114,10 @@ L016_0000009C:
 ; H016+$0000009C: 4eeefed4  jmp -$12c(a6) ; graphics.library/BltClear
         jmp LVO_graphics_BltClear(a6)
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_BltMaskBitMapRastPort [parziale]
-; Scopo: Adattatore a graphics.library/BltMaskBitMapRastPort; incapsula la chiamata alla libreria.
-;   - Chiama graphics.library/BltMaskBitMapRastPort (LVO -636).
-; Chiamanti diretti: H029+$0CF8, H035+$06AC, H011+$07AC, H011+$081A
+; ROUTINE: wrapper_BltMaskBitMapRastPort [partial]
+; Purpose: Adapter to graphics.library/BltMaskBitMapRastPort; wraps the library call.
+;   - Calls graphics.library/BltMaskBitMapRastPort (LVO -636).
+; Direct callers: H029+$0CF8, H035+$06AC, H011+$07AC, H011+$081A
 ; --------------------------------------------------------------------------
 L016_000000A0:
 ; H016+$000000A0: 206f001a  movea.l $1a(a7), a0
@@ -177,10 +177,10 @@ L016_000000D4:
         dc.w $4EEE,$FEDA,$2C7A,$FE62,$4EEE,$FE80,$2C7A,$FE5A
         dc.w $4EEE,$FF1C
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_WaitTOF [parziale]
-; Scopo: Adattatore a graphics.library/WaitTOF; incapsula la chiamata alla libreria.
-;   - Chiama graphics.library/WaitTOF (LVO -270).
-; Chiamanti diretti: H029+$16C6, H029+$1702, H007+$04E6, H007+$046E, H029+$15BC
+; ROUTINE: wrapper_WaitTOF [partial]
+; Purpose: Adapter to graphics.library/WaitTOF; wraps the library call.
+;   - Calls graphics.library/WaitTOF (LVO -270).
+; Direct callers: H029+$16C6, H029+$1702, H007+$04E6, H007+$046E, H029+$15BC
 ; --------------------------------------------------------------------------
 L016_000001AC:
 ; H016+$000001AC: 2c7afe52  movea.l $0(pc), a6

@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H059
-; Ciclo del combattimento tattico e turni degli attori.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H059
+; Tactical combat loop and turns of the actors.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Ciclo del combattimento tattico: iniziativa, turni degli attori, azioni e condizioni di fine. Usa la tabella attori a H005+$2392 e il servizio H059+$1498.
+; MODULE NOTE
+; Tactical combat loop: initiative, turns of the actors, actions and end conditions. Uses the actor table at H005+$2392 and the service H059+$1498.
 ; --------------------------------------------------------------------------
 ; H059: 6340 original bytes; all offsets are section-relative.
         section H059,code
@@ -33,10 +33,10 @@ H059:
         dc.w $7469,$6E75,$6520,$4261,$7474,$6C65,$3A00
         dc.l H059+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H059 [parziale]
-; Scopo: Ingresso del modulo ciclo del combattimento tattico e turni degli attori; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H059+$18BE.
-; Chiamanti diretti: H000+$0216
+; ROUTINE: module_init_H059 [partial]
+; Purpose: Entry of the tactical combat loop and turns of the actors module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H059+$18BE.
+; Direct callers: H000+$0216
 ; --------------------------------------------------------------------------
 L059_00000122:
 ; H059+$00000122: 2f0c  move.l a4, -(a7)
@@ -51,12 +51,12 @@ L059_0000012C:
 ; H059+$0000012C: 60001790  bra.w $18be
         bra.w H059+$18BE
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H059_00000130 [parziale]
-; Scopo: Routine del modulo ciclo del combattimento tattico e turni degli attori; richiama H029+$0312, H062+$156C.
-;   - Richiama H029+$0312.
-;   - Richiama H062+$156C.
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H059+$1834
+; ROUTINE: sub_H059_00000130 [partial]
+; Purpose: Routine of the tactical combat loop and turns of the actors module; calls H029+$0312, H062+$156C.
+;   - Calls H029+$0312.
+;   - Calls H062+$156C.
+;   - Uses the global state: H005+$3364 (head of the party list).
+; Direct callers: H059+$1834
 ; --------------------------------------------------------------------------
 L059_00000130:
 ; H059+$00000130: 2f0c  move.l a4, -(a7)
@@ -67,7 +67,7 @@ L059_00000132:
 L059_00000136:
 ; H059+$00000136: 4e55ffea  link.w a5, #$ffea
         link.w a5, #$ffea
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L059_0000013A:
 ; H059+$0000013A: 2b7900003364fffa  move.l $3364.l, -$6(a5)
         move.l (H005+$3364).l, -$6(a5)
@@ -335,14 +335,14 @@ L059_000002A8:
 ; H059+$000002A8: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H059_000002AA [parziale]
-; Scopo: Routine del modulo ciclo del combattimento tattico e turni degli attori; richiama H003+$00F6, H063+$0946, H062+$17C0, H029+$067A.
-;   - Richiama H003+$00F6.
-;   - Richiama H063+$0946.
-;   - Richiama H062+$17C0.
-;   - Richiama H029+$067A.
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H059+$18AC
+; ROUTINE: sub_H059_000002AA [partial]
+; Purpose: Routine of the tactical combat loop and turns of the actors module; calls H003+$00F6, H063+$0946, H062+$17C0, H029+$067A.
+;   - Calls H003+$00F6.
+;   - Calls H063+$0946.
+;   - Calls H062+$17C0.
+;   - Calls H029+$067A.
+;   - Uses the global state: H005+$3364 (head of the party list).
+; Direct callers: H059+$18AC
 ; --------------------------------------------------------------------------
 L059_000002AA:
 ; H059+$000002AA: 2f0c  move.l a4, -(a7)
@@ -415,7 +415,7 @@ L059_0000030A:
 L059_00000312:
 ; H059+$00000312: 60d0  bra.b $2e4
         bra.b H059+$2E4
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L059_00000314:
 ; H059+$00000314: 2b7900003364fff8  move.l $3364.l, -$8(a5)
         move.l (H005+$3364).l, -$8(a5)
@@ -518,7 +518,7 @@ L059_0000039A:
 L059_000003A0:
 ; H059+$000003A0: 48790000243a  pea.l $243a.l
         pea.l (H005+$243A).l
-; FLUSSO: Chiama Free_GraphicRecord (H029+$067A).
+; FLOW: Calls Free_GraphicRecord (H029+$067A).
 L059_000003A6:
 ; H059+$000003A6: 4eb90000067a  jsr $67a.l
         jsr (H029+$67A).l
@@ -538,14 +538,14 @@ L059_000003BC:
 ; H059+$000003BC: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H059_000003BE [parziale]
-; Scopo: Routine del modulo ciclo del combattimento tattico e turni degli attori; richiama H026+$0188, H026+$01E0, H008+$01FC, H008+$139E.
-;   - Richiama H026+$0188.
-;   - Richiama H026+$01E0.
-;   - Richiama H008+$01FC.
-;   - Richiama H008+$139E.
-;   - Usa lo stato globale: H005+$3E04 (puntatore stato persistente A, 2048 byte).
-; Chiamanti diretti: H059+$1194
+; ROUTINE: sub_H059_000003BE [partial]
+; Purpose: Routine of the tactical combat loop and turns of the actors module; calls H026+$0188, H026+$01E0, H008+$01FC, H008+$139E.
+;   - Calls H026+$0188.
+;   - Calls H026+$01E0.
+;   - Calls H008+$01FC.
+;   - Calls H008+$139E.
+;   - Uses the global state: H005+$3E04 (pointer to persistent state A, 2048 bytes).
+; Direct callers: H059+$1194
 ; --------------------------------------------------------------------------
 L059_000003BE:
 ; H059+$000003BE: 2f0c  move.l a4, -(a7)
@@ -712,7 +712,7 @@ L059_00000484:
 L059_00000488:
 ; H059+$00000488: 67000026  beq.w $4b0
         beq.w H059+$4B0
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L059_0000048C:
 ; H059+$0000048C: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -864,7 +864,7 @@ L059_00000550:
 L059_00000552:
 ; H059+$00000552: 486dffd3  pea.l -$2d(a5)
         pea.l -$2d(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L059_00000556:
 ; H059+$00000556: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -1086,16 +1086,16 @@ L059_0000066E:
 ; H059+$0000066E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H059_00000670 [parziale]
-; Scopo: Routine del modulo ciclo del combattimento tattico e turni degli attori; richiama H063+$3698, H063+$3734, H063+$1D44, H096+$38DC.
-;   - Richiama H063+$3698.
-;   - Richiama H063+$3734.
-;   - Richiama H063+$1D44.
-;   - Richiama H096+$38DC.
-;   - Richiama H096+$1340.
-;   - Richiama H096+$20E6.
-;   - Richiama H096+$2182.
-; Chiamanti diretti: H059+$0AA4
+; ROUTINE: sub_H059_00000670 [partial]
+; Purpose: Routine of the tactical combat loop and turns of the actors module; calls H063+$3698, H063+$3734, H063+$1D44, H096+$38DC.
+;   - Calls H063+$3698.
+;   - Calls H063+$3734.
+;   - Calls H063+$1D44.
+;   - Calls H096+$38DC.
+;   - Calls H096+$1340.
+;   - Calls H096+$20E6.
+;   - Calls H096+$2182.
+; Direct callers: H059+$0AA4
 ; --------------------------------------------------------------------------
 L059_00000670:
 ; H059+$00000670: 2f0c  move.l a4, -(a7)
@@ -1252,16 +1252,16 @@ L059_00000724:
 ; H059+$00000724: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H059_07F6 [parziale]
-; Scopo: Trampolino verso H059+$07F6; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H059+$07F6.
-;   - Richiama H048+$0F88.
-;   - Richiama H048+$0FBA.
-;   - Richiama H030+$0B6C.
-;   - Richiama H026+$0188.
-;   - Richiama H045+$01D6.
-;   - Richiama H026+$01E0.
-; Chiamanti diretti: H059+$11B8
+; ROUTINE: trampoline_H059_07F6 [partial]
+; Purpose: Trampoline to H059+$07F6; the actual body is there.
+;   - Jumps to the actual body at H059+$07F6.
+;   - Calls H048+$0F88.
+;   - Calls H048+$0FBA.
+;   - Calls H030+$0B6C.
+;   - Calls H026+$0188.
+;   - Calls H045+$01D6.
+;   - Calls H026+$01E0.
+; Direct callers: H059+$11B8
 ; --------------------------------------------------------------------------
 L059_00000726:
 ; H059+$00000726: 2f0c  move.l a4, -(a7)
@@ -1276,16 +1276,16 @@ L059_00000730:
 ; H059+$00000730: 600000c4  bra.w $7f6
         bra.w H059+$7F6
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H059_00000734 [parziale]
-; Scopo: Routine del modulo ciclo del combattimento tattico e turni degli attori; richiama H048+$0AA8, H048+$0588, H048+$16D4, H048+$0F88.
-;   - Richiama H048+$0AA8.
-;   - Richiama H048+$0588.
-;   - Richiama H048+$16D4.
-;   - Richiama H048+$0F88.
-;   - Richiama H048+$0FBA.
-;   - Richiama H048+$0DF2.
-;   - Richiama H030+$0B6C.
-; Chiamanti diretti: H059+$093E
+; ROUTINE: sub_H059_00000734 [partial]
+; Purpose: Routine of the tactical combat loop and turns of the actors module; calls H048+$0AA8, H048+$0588, H048+$16D4, H048+$0F88.
+;   - Calls H048+$0AA8.
+;   - Calls H048+$0588.
+;   - Calls H048+$16D4.
+;   - Calls H048+$0F88.
+;   - Calls H048+$0FBA.
+;   - Calls H048+$0DF2.
+;   - Calls H030+$0B6C.
+; Direct callers: H059+$093E
 ; --------------------------------------------------------------------------
 L059_00000734:
 ; H059+$00000734: 4e550000  link.w a5, #$0
@@ -1677,7 +1677,7 @@ L059_00000920:
 L059_00000922:
 ; H059+$00000922: 48790000249f  pea.l $249f.l
         pea.l (H005+$249F).l
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L059_00000928:
 ; H059+$00000928: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -1786,7 +1786,7 @@ L059_00000A3C:
 L059_00000A3E:
 ; H059+$00000A3E: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H059+$098C; indici 0..81, default -1.
+; DISPATCH: words relative to H059+$098C; indices 0..81, default -1.
 L059_00000A42:
 ; H059+$00000A42: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -1956,7 +1956,7 @@ L059_00000B1E:
 L059_00000B20:
 ; H059+$00000B20: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H059+$0AF6; indici 0..11, default -1.
+; DISPATCH: words relative to H059+$0AF6; indices 0..11, default -1.
 L059_00000B24:
 ; H059+$00000B24: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -2296,13 +2296,13 @@ L059_00000CC8:
 ; H059+$00000CC8: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H059_00000CCA [parziale]
-; Scopo: Routine del modulo ciclo del combattimento tattico e turni degli attori; richiama H026+$0188, H045+$01D6, H026+$01E0, H008+$01FC.
-;   - Richiama H026+$0188.
-;   - Richiama H045+$01D6.
-;   - Richiama H026+$01E0.
-;   - Richiama H008+$01FC.
-; Chiamanti diretti: H059+$108C
+; ROUTINE: sub_H059_00000CCA [partial]
+; Purpose: Routine of the tactical combat loop and turns of the actors module; calls H026+$0188, H045+$01D6, H026+$01E0, H008+$01FC.
+;   - Calls H026+$0188.
+;   - Calls H045+$01D6.
+;   - Calls H026+$01E0.
+;   - Calls H008+$01FC.
+; Direct callers: H059+$108C
 ; --------------------------------------------------------------------------
 L059_00000CCA:
 ; H059+$00000CCA: 2f0c  move.l a4, -(a7)
@@ -2512,7 +2512,7 @@ L059_00000DDA:
 L059_00000DDC:
 ; H059+$00000DDC: 48790000249f  pea.l $249f.l
         pea.l (H005+$249F).l
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L059_00000DE2:
 ; H059+$00000DE2: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -2567,7 +2567,7 @@ L059_00000E36:
 L059_00000E38:
 ; H059+$00000E38: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H059+$0E0A; indici 0..13, default -1.
+; DISPATCH: words relative to H059+$0E0A; indices 0..13, default -1.
 L059_00000E3C:
 ; H059+$00000E3C: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -2584,10 +2584,10 @@ L059_00000E48:
 ; H059+$00000E48: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H059_00000E4A [parziale]
-; Scopo: Routine del modulo ciclo del combattimento tattico e turni degli attori; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H059+$13C8, H059+$1096
+; ROUTINE: sub_H059_00000E4A [partial]
+; Purpose: Routine of the tactical combat loop and turns of the actors module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H059+$13C8, H059+$1096
 ; --------------------------------------------------------------------------
 L059_00000E4A:
 ; H059+$00000E4A: 2f0c  move.l a4, -(a7)
@@ -2662,16 +2662,16 @@ L059_00000E9E:
 ; H059+$00000E9E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H059_00000EA0 [parziale]
-; Scopo: Routine del modulo ciclo del combattimento tattico e turni degli attori; richiama H063+$3698, H063+$3734, H026+$0188, H026+$01E0.
-;   - Richiama H063+$3698.
-;   - Richiama H063+$3734.
-;   - Richiama H026+$0188.
-;   - Richiama H026+$01E0.
-;   - Richiama H063+$3980.
-;   - Richiama H008+$01FC.
-;   - Richiama H063+$2F5A.
-; Chiamanti diretti: H059+$127C
+; ROUTINE: sub_H059_00000EA0 [partial]
+; Purpose: Routine of the tactical combat loop and turns of the actors module; calls H063+$3698, H063+$3734, H026+$0188, H026+$01E0.
+;   - Calls H063+$3698.
+;   - Calls H063+$3734.
+;   - Calls H026+$0188.
+;   - Calls H026+$01E0.
+;   - Calls H063+$3980.
+;   - Calls H008+$01FC.
+;   - Calls H063+$2F5A.
+; Direct callers: H059+$127C
 ; --------------------------------------------------------------------------
 L059_00000EA0:
 ; H059+$00000EA0: 2f0c  move.l a4, -(a7)
@@ -2869,7 +2869,7 @@ L059_00000F8A:
 L059_00000F8C:
 ; H059+$00000F8C: 48790000249f  pea.l $249f.l
         pea.l (H005+$249F).l
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L059_00000F92:
 ; H059+$00000F92: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -3137,7 +3137,7 @@ L059_000010F8:
 L059_000010FA:
 ; H059+$000010FA: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H059+$10C2; indici 0..18, default -1.
+; DISPATCH: words relative to H059+$10C2; indices 0..18, default -1.
 L059_000010FE:
 ; H059+$000010FE: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -3160,17 +3160,17 @@ L059_0000110E:
 ; H059+$0000110E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H059_00001110 [parziale]
-; Scopo: Routine del modulo ciclo del combattimento tattico e turni degli attori; richiama H033+$1426, H063+$2F12, H065+$196E, H096+$11D4.
-;   - Richiama H033+$1426.
-;   - Richiama H063+$2F12.
-;   - Richiama H065+$196E.
-;   - Richiama H096+$11D4.
-;   - Richiama H063+$3658.
-;   - Richiama H096+$4448.
-;   - Richiama H065+$255A.
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H059+$15C2
+; ROUTINE: sub_H059_00001110 [partial]
+; Purpose: Routine of the tactical combat loop and turns of the actors module; calls H033+$1426, H063+$2F12, H065+$196E, H096+$11D4.
+;   - Calls H033+$1426.
+;   - Calls H063+$2F12.
+;   - Calls H065+$196E.
+;   - Calls H096+$11D4.
+;   - Calls H063+$3658.
+;   - Calls H096+$4448.
+;   - Calls H065+$255A.
+;   - Uses the global state: H005+$3364 (head of the party list).
+; Direct callers: H059+$15C2
 ; --------------------------------------------------------------------------
 L059_00001110:
 ; H059+$00001110: 2f0c  move.l a4, -(a7)
@@ -3465,7 +3465,7 @@ L059_0000127C:
 L059_00001280:
 ; H059+$00001280: 4e75  rts 
         rts 
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L059_00001282:
 ; H059+$00001282: 2b7900003364fffa  move.l $3364.l, -$6(a5)
         move.l (H005+$3364).l, -$6(a5)
@@ -3541,7 +3541,7 @@ L059_00001342:
 L059_00001344:
 ; H059+$00001344: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H059+$12BE; indici 0..57, default -1.
+; DISPATCH: words relative to H059+$12BE; indices 0..57, default -1.
 L059_00001348:
 ; H059+$00001348: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -3620,7 +3620,7 @@ L059_000013AA:
 L059_000013AE:
 ; H059+$000013AE: 377c00140004  move.w #$14, $4(a3)
         move.w #$14, $4(a3)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L059_000013B4:
 ; H059+$000013B4: 2b7900003364fffa  move.l $3364.l, -$6(a5)
         move.l (H005+$3364).l, -$6(a5)
@@ -3736,7 +3736,7 @@ L059_00001442:
 L059_00001444:
 ; H059+$00001444: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H059+$142C; indici 0..3, default -1.
+; DISPATCH: words relative to H059+$142C; indices 0..3, default -1.
 L059_00001448:
 ; H059+$00001448: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -3802,12 +3802,12 @@ L059_00001496:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Combat_ActorTurn [parziale]
-; Scopo: Gestore del turno/azione del singolo attore nel ciclo tattico.
-;   - Riceve l’attore corrente dal loop di combattimento.
-;   - Passa per menu, grafica tattica e routine degli hunk 95/96/97.
-;   - Non sono ancora attribuite tutte le scelte e i relativi controlli.
-; Chiamanti diretti: H059+$1854
+; ROUTINE: Combat_ActorTurn [partial]
+; Purpose: Handler of the turn/action of the single actor in the tactical loop.
+;   - Receives the current actor from the combat loop.
+;   - Goes through menus, tactical graphics and routines of hunks 95/96/97.
+;   - Not all the choices and their checks are assigned yet.
+; Direct callers: H059+$1854
 ; --------------------------------------------------------------------------
 L059_00001498:
 ; H059+$00001498: 2f0c  move.l a4, -(a7)
@@ -3888,7 +3888,7 @@ L059_000014FA:
 L059_000014FE:
 ; H059+$000014FE: 377c00130004  move.w #$13, $4(a3)
         move.w #$13, $4(a3)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L059_00001504:
 ; H059+$00001504: 23ed000c00003368  move.l $c(a5), $3368.l
         move.l $c(a5), (H005+$3368).l
@@ -4077,17 +4077,17 @@ L059_000015EC:
 ; H059+$000015EC: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H059_000015EE [parziale]
-; Scopo: Routine del modulo ciclo del combattimento tattico e turni degli attori; richiama H058+$064A, H029+$03E2, H096+$37C2, H062+$083E.
-;   - Richiama H058+$064A.
-;   - Richiama H029+$03E2.
-;   - Richiama H096+$37C2.
-;   - Richiama H062+$083E.
-;   - Richiama H062+$1038.
-;   - Richiama H063+$3980.
-;   - Richiama H063+$1D44.
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party); H005+$24D7 (flag del ramo demo).
-; Chiamanti diretti: H059+$18A4
+; ROUTINE: sub_H059_000015EE [partial]
+; Purpose: Routine of the tactical combat loop and turns of the actors module; calls H058+$064A, H029+$03E2, H096+$37C2, H062+$083E.
+;   - Calls H058+$064A.
+;   - Calls H029+$03E2.
+;   - Calls H096+$37C2.
+;   - Calls H062+$083E.
+;   - Calls H062+$1038.
+;   - Calls H063+$3980.
+;   - Calls H063+$1D44.
+;   - Uses the global state: H005+$3364 (head of the party list); H005+$24D7 (flag of the demo branch).
+; Direct callers: H059+$18A4
 ; --------------------------------------------------------------------------
 L059_000015EE:
 ; H059+$000015EE: 2f0c  move.l a4, -(a7)
@@ -4122,7 +4122,7 @@ L059_00001610:
 L059_00001616:
 ; H059+$00001616: 4eb9000037c2  jsr $37c2.l
         jsr (H096+$37C2).l
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L059_0000161C:
 ; H059+$0000161C: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -4352,7 +4352,7 @@ L059_0000173E:
 L059_00001740:
 ; H059+$00001740: 66000036  bne.w $1778
         bne.w H059+$1778
-; STATO: H005+$24D7 = flag del ramo demo
+; STATE: H005+$24D7 = flag of the demo branch
 L059_00001744:
 ; H059+$00001744: 4a39000024d7  tst.b $24d7.l
         tst.b (H005+$24D7).l
@@ -4410,14 +4410,14 @@ L059_00001780:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Combat_MainLoop [parziale]
-; Scopo: Entra nel combattimento tattico e itera sugli attori.
-;   - Imposta il contesto nativo a 5 e cambia il callback condiviso usato da abilità/effetti.
-;   - Richiama la preparazione H095+$2496.
-;   - Scorre il party tramite next +$018E e costruisce/usa la tabella degli attori H005+$2392.
-;   - Per l’attore corrente chiama H059+$1498 e prosegue finché il combattimento termina.
-;   - Iniziativa, IA e condizioni di vittoria complete restano da dettagliare.
-; Chiamanti diretti: H012+$09D8
+; ROUTINE: Combat_MainLoop [partial]
+; Purpose: Enters tactical combat and iterates over the actors.
+;   - Sets the native context to 5 and changes the shared callback used by abilities/effects.
+;   - Calls the preparation H095+$2496.
+;   - Walks the party through next +$018E and builds/uses the actor table H005+$2392.
+;   - For the current actor it calls H059+$1498 and goes on until the combat ends.
+;   - Initiative, AI and complete victory conditions are still to be detailed.
+; Direct callers: H012+$09D8
 ; --------------------------------------------------------------------------
 L059_00001782:
 ; H059+$00001782: 2f0c  move.l a4, -(a7)
@@ -4428,8 +4428,8 @@ L059_00001784:
 L059_00001788:
 ; H059+$00001788: 4e55fffa  link.w a5, #$fffa
         link.w a5, #$fffa
-; PASSO: Contesto 5: combattimento tattico in questo percorso.
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STEP: Context 5: tactical combat in this path.
+; STATE: H005+$3DE3 = native context, 5 in combat
 L059_0000178C:
 ; H059+$0000178C: 13fc000500003de3  move.b #$5, $3de3.l
         move.b #$5, (H005+$3DE3).l
@@ -4473,7 +4473,7 @@ L059_000017C2:
 L059_000017C6:
 ; H059+$000017C6: 1b7c0001ffff  move.b #$1, -$1(a5)
         move.b #$1, -$1(a5)
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L059_000017CC:
 ; H059+$000017CC: 2b7900003364fffa  move.l $3364.l, -$6(a5)
         move.l (H005+$3364).l, -$6(a5)
@@ -4512,7 +4512,7 @@ L059_000017FA:
 L059_000017FE:
 ; H059+$000017FE: 4eb900002b7c  jsr $2b7c.l
         jsr (H063+$2B7C).l
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L059_00001804:
 ; H059+$00001804: 2b7900003364fffa  move.l $3364.l, -$6(a5)
         move.l (H005+$3364).l, -$6(a5)
@@ -4538,7 +4538,7 @@ L059_00001822:
 L059_00001828:
 ; H059+$00001828: 60e2  bra.b $180c
         bra.b H059+$180C
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L059_0000182A:
 ; H059+$0000182A: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -4563,8 +4563,8 @@ L059_0000184C:
 L059_00001850:
 ; H059+$00001850: 2f2dfffa  move.l -$6(a5), -(a7)
         move.l -$6(a5), -(a7)
-; PASSO: Gestisce il turno dell’attore corrente nella tabella di combattimento.
-; FLUSSO: Chiama Combat_ActorTurn (H059+$1498).
+; STEP: Handles the turn of the current actor in the combat table.
+; FLOW: Calls Combat_ActorTurn (H059+$1498).
 L059_00001854:
 ; H059+$00001854: 6100fc42  bsr.w $1498
         bsr.w H059+$1498

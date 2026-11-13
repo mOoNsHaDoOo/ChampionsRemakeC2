@@ -1,12 +1,12 @@
 ; ============================================================================
-; GUIDA DEL MODULO H039
-; servizi di callback/inizializzazione per il parser IFF.
-; I commenti descrivono l'analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H039
+; callback/initialisation services for the IFF parser.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Servizi di callback/inizializzazione per il parser IFF. Le funzioni vengono richiamate dal lettore ILBM e dalla catena di avvio.
+; MODULE NOTE
+; Callback/initialisation services for the IFF parser. The functions are called by the ILBM reader and by the start-up chain.
 ; --------------------------------------------------------------------------
 ; H039: 104 original bytes; all offsets are section-relative.
         section H039,code
@@ -14,10 +14,10 @@ H039:
 ; Preserved bytes H039+$00000000..$00000004; code/data not fully classified.
         dc.l H039+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H039_0064 [parziale]
-; Scopo: Trampolino verso H039+$0064; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H039+$0064.
-; Chiamanti diretti: H000+$008A
+; ROUTINE: trampoline_H039_0064 [partial]
+; Purpose: Trampoline to H039+$0064; the actual body is there.
+;   - Jumps to the actual body at H039+$0064.
+; Direct callers: H000+$008A
 ; --------------------------------------------------------------------------
 L039_00000004:
 ; H039+$00000004: 4e550000  link.w a5, #$0
@@ -26,10 +26,10 @@ L039_00000008:
 ; H039+$00000008: 6000005a  bra.w $64
         bra.w H039+$64
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H039_0022 [parziale]
-; Scopo: Trampolino verso H039+$0022; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H039+$0022.
-; Chiamanti diretti: H086+$0192, H086+$023A, H086+$0412, H087+$0360, H087+$0374
+; ROUTINE: trampoline_H039_0022 [partial]
+; Purpose: Trampoline to H039+$0022; the actual body is there.
+;   - Jumps to the actual body at H039+$0022.
+; Direct callers: H086+$0192, H086+$023A, H086+$0412, H087+$0360, H087+$0374
 ; --------------------------------------------------------------------------
 L039_0000000C:
 ; H039+$0000000C: 4e550000  link.w a5, #$0

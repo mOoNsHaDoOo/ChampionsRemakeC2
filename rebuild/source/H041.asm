@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H041
-; Memoria per le immagini: blocco preceduto dalla dimensione di allocazione.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H041
+; Memory for the pictures: block preceded by the allocation size.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Memoria per immagini: il blocco e' preceduto dalla dimensione di allocazione, usata per liberarlo correttamente.
+; MODULE NOTE
+; Memory for pictures: the block is preceded by the allocation size, used to free it correctly.
 ; --------------------------------------------------------------------------
 ; H041: 240 original bytes; all offsets are section-relative.
         section H041,code
@@ -15,10 +15,10 @@ H041:
 ; Preserved bytes H041+$00000000..$00000004; code/data not fully classified.
         dc.l H041+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H041_00EC [parziale]
-; Scopo: Trampolino verso H041+$00EC; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H041+$00EC.
-; Chiamanti diretti: H000+$00E4
+; ROUTINE: trampoline_H041_00EC [partial]
+; Purpose: Trampoline to H041+$00EC; the actual body is there.
+;   - Jumps to the actual body at H041+$00EC.
+; Direct callers: H000+$00E4
 ; --------------------------------------------------------------------------
 L041_00000004:
 ; H041+$00000004: 4e550000  link.w a5, #$0
@@ -27,10 +27,10 @@ L041_00000008:
 ; H041+$00000008: 600000e2  bra.w $ec
         bra.w H041+$EC
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H041_0000000C [parziale]
-; Scopo: Routine del modulo memoria per le immagini: blocco preceduto dalla dimensione di allocazione; richiama H003+$0068.
-;   - Richiama H003+$0068.
-; Chiamanti diretti: H041+$0058
+; ROUTINE: sub_H041_0000000C [partial]
+; Purpose: Routine of the memory for the pictures: block preceded by the allocation size module; calls H003+$0068.
+;   - Calls H003+$0068.
+; Direct callers: H041+$0058
 ; --------------------------------------------------------------------------
 L041_0000000C:
 ; H041+$0000000C: 4e55fffc  link.w a5, #$fffc
@@ -119,10 +119,10 @@ L041_00000064:
         dc.w $0008,$2F3C,$0000,$0001,$6100,$FF5C,$6000,$0002
         dc.w $4E5D,$205F,$588F,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H041_000000BE [parziale]
-; Scopo: Routine del modulo memoria per le immagini: blocco preceduto dalla dimensione di allocazione; richiama H003+$00F6.
-;   - Richiama H003+$00F6.
-; Chiamanti diretti: H028+$0D96, H028+$0DBA
+; ROUTINE: sub_H041_000000BE [partial]
+; Purpose: Routine of the memory for the pictures: block preceded by the allocation size module; calls H003+$00F6.
+;   - Calls H003+$00F6.
+; Direct callers: H028+$0D96, H028+$0DBA
 ; --------------------------------------------------------------------------
 L041_000000BE:
 ; H041+$000000BE: 4e55fffc  link.w a5, #$fffc

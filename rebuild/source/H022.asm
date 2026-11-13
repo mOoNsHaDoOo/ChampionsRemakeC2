@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H022
-; Adattatori graphics.library per view, palette e viewport.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H022
+; graphics.library adapters for view, palette and viewport.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Adattatori graphics.library per View, ViewPort, ColorMap e palette. Le strutture vengono preparate dai moduli chiamanti.
+; MODULE NOTE
+; graphics.library adapters for View, ViewPort, ColorMap and palette. The structures are prepared by the calling modules.
 ; --------------------------------------------------------------------------
 ; H022: 328 original bytes; all offsets are section-relative.
         section H022,code
@@ -16,10 +16,10 @@ H022:
         dc.w $0000,$0000
         dc.l H022+$00000004
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H022_00000008 [parziale]
-; Scopo: Routine del modulo adattatori graphics.library per view, palette e viewport; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H000+$004E
+; ROUTINE: sub_H022_00000008 [partial]
+; Purpose: Routine of the graphics.library adapters for view, palette and viewport module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H000+$004E
 ; --------------------------------------------------------------------------
 L022_00000008:
 ; H022+$00000008: 41fafffa  lea.l $4(pc), a0
@@ -31,10 +31,10 @@ L022_00000012:
 ; H022+$00000012: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_FreeColorMap [parziale]
-; Scopo: Adattatore a graphics.library/FreeColorMap; incapsula la chiamata alla libreria.
-;   - Chiama graphics.library/FreeColorMap (LVO -576).
-; Chiamanti diretti: H029+$14AA
+; ROUTINE: wrapper_FreeColorMap [partial]
+; Purpose: Adapter to graphics.library/FreeColorMap; wraps the library call.
+;   - Calls graphics.library/FreeColorMap (LVO -576).
+; Direct callers: H029+$14AA
 ; --------------------------------------------------------------------------
 L022_00000014:
 ; H022+$00000014: 206f0004  movea.l $4(a7), a0
@@ -52,10 +52,10 @@ L022_00000022:
 ; H022+$00000022: 4eeefdc0  jmp -$240(a6) ; graphics.library/FreeColorMap
         jmp LVO_graphics_FreeColorMap(a6)
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_FreeVPortCopLists [parziale]
-; Scopo: Adattatore a graphics.library/FreeVPortCopLists; incapsula la chiamata alla libreria.
-;   - Chiama graphics.library/FreeVPortCopLists (LVO -540).
-; Chiamanti diretti: H029+$14B4
+; ROUTINE: wrapper_FreeVPortCopLists [partial]
+; Purpose: Adapter to graphics.library/FreeVPortCopLists; wraps the library call.
+;   - Calls graphics.library/FreeVPortCopLists (LVO -540).
+; Direct callers: H029+$14B4
 ; --------------------------------------------------------------------------
 L022_00000026:
 ; H022+$00000026: 206f0004  movea.l $4(a7), a0
@@ -73,10 +73,10 @@ L022_00000034:
 ; H022+$00000034: 4eeefde4  jmp -$21c(a6) ; graphics.library/FreeVPortCopLists
         jmp LVO_graphics_FreeVPortCopLists(a6)
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_GetColorMap [parziale]
-; Scopo: Adattatore a graphics.library/GetColorMap; incapsula la chiamata alla libreria.
-;   - Chiama graphics.library/GetColorMap (LVO -570).
-; Chiamanti diretti: H029+$1424
+; ROUTINE: wrapper_GetColorMap [partial]
+; Purpose: Adapter to graphics.library/GetColorMap; wraps the library call.
+;   - Calls graphics.library/GetColorMap (LVO -570).
+; Direct callers: H029+$1424
 ; --------------------------------------------------------------------------
 L022_00000038:
 ; H022+$00000038: 202f0004  move.l $4(a7), d0
@@ -97,10 +97,10 @@ L022_00000046:
         dc.w $206F,$0008,$202F,$0004,$2C7A,$FFAC,$2F57,$0008
         dc.w $508F,$4EEE,$FDBA
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_InitView [parziale]
-; Scopo: Adattatore a graphics.library/InitView; incapsula la chiamata alla libreria.
-;   - Chiama graphics.library/InitView (LVO -360).
-; Chiamanti diretti: H029+$13A4
+; ROUTINE: wrapper_InitView [partial]
+; Purpose: Adapter to graphics.library/InitView; wraps the library call.
+;   - Calls graphics.library/InitView (LVO -360).
+; Direct callers: H029+$13A4
 ; --------------------------------------------------------------------------
 L022_00000060:
 ; H022+$00000060: 226f0004  movea.l $4(a7), a1
@@ -118,10 +118,10 @@ L022_0000006E:
 ; H022+$0000006E: 4eeefe98  jmp -$168(a6) ; graphics.library/InitView
         jmp LVO_graphics_InitView(a6)
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_InitVPort [parziale]
-; Scopo: Adattatore a graphics.library/InitVPort; incapsula la chiamata alla libreria.
-;   - Chiama graphics.library/InitVPort (LVO -204).
-; Chiamanti diretti: H029+$13EE
+; ROUTINE: wrapper_InitVPort [partial]
+; Purpose: Adapter to graphics.library/InitVPort; wraps the library call.
+;   - Calls graphics.library/InitVPort (LVO -204).
+; Direct callers: H029+$13EE
 ; --------------------------------------------------------------------------
 L022_00000072:
 ; H022+$00000072: 206f0004  movea.l $4(a7), a0
@@ -139,10 +139,10 @@ L022_00000080:
 ; H022+$00000080: 4eeeff34  jmp -$cc(a6) ; graphics.library/InitVPort
         jmp LVO_graphics_InitVPort(a6)
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_LoadRGB4 [parziale]
-; Scopo: Adattatore a graphics.library/LoadRGB4; incapsula la chiamata alla libreria.
-;   - Chiama graphics.library/LoadRGB4 (LVO -192).
-; Chiamanti diretti: H007+$04E0, H011+$0156, H007+$0488, H044+$01EA, H042+$0288, H029+$11FA e altri 7
+; ROUTINE: wrapper_LoadRGB4 [partial]
+; Purpose: Adapter to graphics.library/LoadRGB4; wraps the library call.
+;   - Calls graphics.library/LoadRGB4 (LVO -192).
+; Direct callers: H007+$04E0, H011+$0156, H007+$0488, H044+$01EA, H042+$0288, H029+$11FA and 7 more
 ; --------------------------------------------------------------------------
 L022_00000084:
 ; H022+$00000084: 206f000a  movea.l $a(a7), a0
@@ -166,10 +166,10 @@ L022_0000009C:
 ; H022+$0000009C: 4eeeff40  jmp -$c0(a6) ; graphics.library/LoadRGB4
         jmp LVO_graphics_LoadRGB4(a6)
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_LoadView [parziale]
-; Scopo: Adattatore a graphics.library/LoadView; incapsula la chiamata alla libreria.
-;   - Chiama graphics.library/LoadView (LVO -222).
-; Chiamanti diretti: H029+$16C0, H029+$16FC, H029+$159E, H029+$15B0
+; ROUTINE: wrapper_LoadView [partial]
+; Purpose: Adapter to graphics.library/LoadView; wraps the library call.
+;   - Calls graphics.library/LoadView (LVO -222).
+; Direct callers: H029+$16C0, H029+$16FC, H029+$159E, H029+$15B0
 ; --------------------------------------------------------------------------
 L022_000000A0:
 ; H022+$000000A0: 226f0004  movea.l $4(a7), a1
@@ -187,10 +187,10 @@ L022_000000AE:
 ; H022+$000000AE: 4eeeff22  jmp -$de(a6) ; graphics.library/LoadView
         jmp LVO_graphics_LoadView(a6)
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_MakeVPort [parziale]
-; Scopo: Adattatore a graphics.library/MakeVPort; incapsula la chiamata alla libreria.
-;   - Chiama graphics.library/MakeVPort (LVO -216).
-; Chiamanti diretti: H029+$1436
+; ROUTINE: wrapper_MakeVPort [partial]
+; Purpose: Adapter to graphics.library/MakeVPort; wraps the library call.
+;   - Calls graphics.library/MakeVPort (LVO -216).
+; Direct callers: H029+$1436
 ; --------------------------------------------------------------------------
 L022_000000B2:
 ; H022+$000000B2: 206f0008  movea.l $8(a7), a0
@@ -211,10 +211,10 @@ L022_000000C4:
 ; H022+$000000C4: 4eeeff28  jmp -$d8(a6) ; graphics.library/MakeVPort
         jmp LVO_graphics_MakeVPort(a6)
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_MrgCop [parziale]
-; Scopo: Adattatore a graphics.library/MrgCop; incapsula la chiamata alla libreria.
-;   - Chiama graphics.library/MrgCop (LVO -210).
-; Chiamanti diretti: H029+$1440
+; ROUTINE: wrapper_MrgCop [partial]
+; Purpose: Adapter to graphics.library/MrgCop; wraps the library call.
+;   - Calls graphics.library/MrgCop (LVO -210).
+; Direct callers: H029+$1440
 ; --------------------------------------------------------------------------
 L022_000000C8:
 ; H022+$000000C8: 226f0004  movea.l $4(a7), a1

@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H015
-; Runtime, aritmetica di supporto e basi delle librerie.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H015
+; Runtime, support arithmetic and library bases.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Runtime del programma: salva il contesto, apre DOS/graphics/intuition/layers/mathffp, distingue CLI e Workbench e richiama la continuazione. Contiene anche piccoli servizi aritmetici.
+; MODULE NOTE
+; Program runtime: saves the context, opens DOS/graphics/intuition/layers/mathffp, tells CLI and Workbench apart and calls the continuation. It also contains small arithmetic services.
 ; --------------------------------------------------------------------------
 ; H015: 1016 original bytes; all offsets are section-relative.
         section H015,code
@@ -19,36 +19,36 @@ H015:
         dc.w $0000,$0000,$0000,$0000,$0000,$0000,$0000
         dc.l H015+$0000003E
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H015_0196 [parziale]
-; Scopo: Trampolino verso H015+$0196; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H015+$0196.
-;   - Chiama exec.library/OpenLibrary (LVO -552).
-;   - Chiama exec.library/OpenLibrary (LVO -552).
-;   - Chiama exec.library/OpenLibrary (LVO -552).
-;   - Chiama exec.library/OpenLibrary (LVO -552).
-; Chiamanti diretti: FN_program_entry (H000+$0000)
+; ROUTINE: trampoline_H015_0196 [partial]
+; Purpose: Trampoline to H015+$0196; the actual body is there.
+;   - Jumps to the actual body at H015+$0196.
+;   - Calls exec.library/OpenLibrary (LVO -552).
+;   - Calls exec.library/OpenLibrary (LVO -552).
+;   - Calls exec.library/OpenLibrary (LVO -552).
+;   - Calls exec.library/OpenLibrary (LVO -552).
+; Direct callers: FN_program_entry (H000+$0000)
 ; --------------------------------------------------------------------------
 L015_00000042:
 ; H015+$00000042: 60000152  bra.w $196
         bra.w H015+$196
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H015_033E [parziale]
-; Scopo: Trampolino verso H015+$033E; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H015+$033E.
-;   - Chiama dos.library/Close (LVO -36).
-;   - Chiama exec.library/Forbid (LVO -132).
-;   - Chiama exec.library/ReplyMsg (LVO -378).
-;   - Chiama exec.library/CloseLibrary (LVO -414).
-; Chiamanti diretti: H010+$0354
+; ROUTINE: trampoline_H015_033E [partial]
+; Purpose: Trampoline to H015+$033E; the actual body is there.
+;   - Jumps to the actual body at H015+$033E.
+;   - Calls dos.library/Close (LVO -36).
+;   - Calls exec.library/Forbid (LVO -132).
+;   - Calls exec.library/ReplyMsg (LVO -378).
+;   - Calls exec.library/CloseLibrary (LVO -414).
+; Direct callers: H010+$0354
 ; --------------------------------------------------------------------------
 L015_00000046:
 ; H015+$00000046: 600002f6  bra.w $33e
         bra.w H015+$33E
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H015_0000004A [parziale]
-; Scopo: Routine del modulo runtime, aritmetica di supporto e basi delle librerie; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H023+$0022, H023+$005C, H030+$0A64, H040+$039C, H040+$03F6, H066+$14A8 e altri 6
+; ROUTINE: sub_H015_0000004A [partial]
+; Purpose: Routine of the runtime, support arithmetic and library bases module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H023+$0022, H023+$005C, H030+$0A64, H040+$039C, H040+$03F6, H066+$14A8 and 6 more
 ; --------------------------------------------------------------------------
 L015_0000004A:
 ; H015+$0000004A: 48e73000  movem.l d2-d3, -(a7)
@@ -99,10 +99,10 @@ L015_0000006C:
 ; H015+$0000006C: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H015_0000006E [parziale]
-; Scopo: Routine del modulo runtime, aritmetica di supporto e basi delle librerie; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H023+$0034, H023+$004E, H023+$006C, H045+$0226, H045+$027C
+; ROUTINE: sub_H015_0000006E [partial]
+; Purpose: Routine of the runtime, support arithmetic and library bases module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H023+$0034, H023+$004E, H023+$006C, H045+$0226, H045+$027C
 ; --------------------------------------------------------------------------
 L015_0000006E:
 ; H015+$0000006E: 2f02  move.l d2, -(a7)
@@ -213,10 +213,10 @@ L015_000000BA:
 ; H015+$000000BA: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H015_000000BC [parziale]
-; Scopo: Routine del modulo runtime, aritmetica di supporto e basi delle librerie; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H087+$00B2, H030+$0A78, H065+$34E8, H070+$1734, H067+$0314, H070+$045C e altri 11
+; ROUTINE: sub_H015_000000BC [partial]
+; Purpose: Routine of the runtime, support arithmetic and library bases module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H087+$00B2, H030+$0A78, H065+$34E8, H070+$1734, H067+$0314, H070+$045C and 11 more
 ; --------------------------------------------------------------------------
 L015_000000BC:
 ; H015+$000000BC: 3f03  move.w d3, -(a7)
@@ -260,10 +260,10 @@ L015_000000D4:
         dc.w $202F,$0008,$222F,$0004,$2C7A,$FF32,$2F57,$0008
         dc.w $508F,$4EEE,$FFB8
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_SPMul [parziale]
-; Scopo: Adattatore a mathffp.library/SPMul; incapsula la chiamata alla libreria.
-;   - Chiama mathffp.library/SPMul (LVO -78).
-; Chiamanti diretti: H061+$3C70, H061+$3CA2, H061+$3CD4, H061+$3D06, H061+$3D38, H061+$3D6A e altri 1
+; ROUTINE: wrapper_SPMul [partial]
+; Purpose: Adapter to mathffp.library/SPMul; wraps the library call.
+;   - Calls mathffp.library/SPMul (LVO -78).
+; Direct callers: H061+$3C70, H061+$3CA2, H061+$3CD4, H061+$3D06, H061+$3D38, H061+$3D6A and 1 more
 ; --------------------------------------------------------------------------
 L015_0000010C:
 ; H015+$0000010C: 202f0008  move.l $8(a7), d0
@@ -284,10 +284,10 @@ L015_0000011E:
 ; H015+$0000011E: 4eeeffb2  jmp -$4e(a6) ; mathffp.library/SPMul
         jmp LVO_mathffp_SPMul(a6)
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_SPDiv [parziale]
-; Scopo: Adattatore a mathffp.library/SPDiv; incapsula la chiamata alla libreria.
-;   - Chiama mathffp.library/SPDiv (LVO -84).
-; Chiamanti diretti: H012+$1522
+; ROUTINE: wrapper_SPDiv [partial]
+; Purpose: Adapter to mathffp.library/SPDiv; wraps the library call.
+;   - Calls mathffp.library/SPDiv (LVO -84).
+; Direct callers: H012+$1522
 ; --------------------------------------------------------------------------
 L015_00000122:
 ; H015+$00000122: 202f0008  move.l $8(a7), d0
@@ -313,10 +313,10 @@ L015_00000134:
         dc.w $0004,$588F,$4EEE,$FFC4,$202F,$0004,$2C7A,$FECC
         dc.w $2F57,$0004,$588F,$4EEE,$FFCA
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_SPFlt [parziale]
-; Scopo: Adattatore a mathffp.library/SPFlt; incapsula la chiamata alla libreria.
-;   - Chiama mathffp.library/SPFlt (LVO -36).
-; Chiamanti diretti: H012+$1506, H012+$1514, H061+$3C62, H061+$3C94, H061+$3CC6, H061+$3CF8 e altri 3
+; ROUTINE: wrapper_SPFlt [partial]
+; Purpose: Adapter to mathffp.library/SPFlt; wraps the library call.
+;   - Calls mathffp.library/SPFlt (LVO -36).
+; Direct callers: H012+$1506, H012+$1514, H061+$3C62, H061+$3C94, H061+$3CC6, H061+$3CF8 and 3 more
 ; --------------------------------------------------------------------------
 L015_00000172:
 ; H015+$00000172: 202f0004  move.l $4(a7), d0
@@ -334,13 +334,13 @@ L015_00000180:
 ; H015+$00000180: 4eeeffdc  jmp -$24(a6) ; mathffp.library/SPFlt
         jmp LVO_mathffp_SPFlt(a6)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H015_00000184 [parziale]
-; Scopo: Servizio del modulo runtime, aritmetica di supporto e basi delle librerie; usa mathffp.library/SPFix, exec.library/OpenLibrary, exec.library/FindTask, dos.library/Input, dos.library/Output, exec.library/WaitPort, exec.library/GetMsg, dos.library/CurrentDir, dos.library/Open, dos.library/Close, exec.library/Forbid, exec.library/ReplyMsg, exec.library/CloseLibrary.
-;   - Chiama mathffp.library/SPFix (LVO -30).
-;   - Chiama exec.library/OpenLibrary (LVO -552).
-;   - Chiama exec.library/OpenLibrary (LVO -552).
-;   - Chiama exec.library/OpenLibrary (LVO -552).
-; Chiamanti diretti: H061+$3C7A, H061+$3CAC, H061+$3CDE, H061+$3D10, H061+$3D42, H061+$3D74 e altri 1
+; ROUTINE: sub_H015_00000184 [partial]
+; Purpose: Service of the runtime, support arithmetic and library bases module; uses mathffp.library/SPFix, exec.library/OpenLibrary, exec.library/FindTask, dos.library/Input, dos.library/Output, exec.library/WaitPort, exec.library/GetMsg, dos.library/CurrentDir, dos.library/Open, dos.library/Close, exec.library/Forbid, exec.library/ReplyMsg, exec.library/CloseLibrary.
+;   - Calls mathffp.library/SPFix (LVO -30).
+;   - Calls exec.library/OpenLibrary (LVO -552).
+;   - Calls exec.library/OpenLibrary (LVO -552).
+;   - Calls exec.library/OpenLibrary (LVO -552).
+; Direct callers: H061+$3C7A, H061+$3CAC, H061+$3CDE, H061+$3D10, H061+$3D42, H061+$3D74 and 1 more
 ; --------------------------------------------------------------------------
 L015_00000184:
 ; H015+$00000184: 202f0004  move.l $4(a7), d0
@@ -361,12 +361,12 @@ L015_00000192:
 FN_runtime_start:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Runtime_Start [verificato]
-; Scopo: Prepara basi delle librerie, processo corrente e ambiente CLI/Workbench.
-;   - Salva stack, D0 e A0 iniziali; legge ExecBase da $4.
-;   - Apre DOS, graphics, intuition, layers e mathffp con versione minima zero.
-;   - FindTask(NULL) e pr_CLI distinguono CLI da Workbench.
-;   - Richiama la continuazione salvata in A5: l’avvio torna alla sequenza H000.
+; ROUTINE: Runtime_Start [verified]
+; Purpose: Prepares the library bases, current process and CLI/Workbench environment.
+;   - Saves the initial stack, D0 and A0; reads ExecBase from $4.
+;   - Opens DOS, graphics, intuition, layers and mathffp with minimum version zero.
+;   - FindTask(NULL) and pr_CLI tell CLI and Workbench apart.
+;   - Calls the continuation saved in A5: the start-up goes back to the H000 sequence.
 ; --------------------------------------------------------------------------
 L015_00000196:
 ; H015+$00000196: 2a5f  movea.l (a7)+, a5
@@ -798,11 +798,11 @@ L015_0000033C:
 FN_runtime_cleanup:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: Runtime_Cleanup [verificato]
-; Scopo: Ripristina l’ambiente dopo il ritorno del programma.
-;   - Ripristina lo stack iniziale.
-;   - Nel percorso Workbench chiude la console e risponde al messaggio di avvio.
-;   - Chiude le cinque librerie e restituisce il codice finale.
+; ROUTINE: Runtime_Cleanup [verified]
+; Purpose: Restores the environment after the program returns.
+;   - Restores the initial stack.
+;   - In the Workbench path it closes the console and replies to the start-up message.
+;   - Closes the five libraries and returns the final code.
 ; --------------------------------------------------------------------------
 L015_0000033E:
 ; H015+$0000033E: 2e7afcda  movea.l $1a(pc), a7

@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""Decoder ILBM indipendente (Python) per verificare Read_ILBM del port.
+"""Independent ILBM decoder (Python) to check Read_ILBM of the port.
 
-Uso: check_ilbm.py file.lbm uscita_del_port.bin
-Produce lo stesso formato di src_c/readable/tests/ilbm_test.c (larghezza in
-byte per riga, righe, piani (max 5), colori RGB4, piani) e confronta.
+Usage: check_ilbm.py file.lbm port_output.bin
+Produces the same format as src_c/readable/tests/ilbm_test.c (width in
+bytes per row, rows, planes (max 5), RGB4 colours, planes) and compares.
 """
 import struct, sys
 
 def decode(path):
     data = open(path, 'rb').read()
-    assert data[0:4] == b'FORM' and data[8:12] == b'ILBM', 'non FORM ILBM'
+    assert data[0:4] == b'FORM' and data[8:12] == b'ILBM', 'not FORM ILBM'
     pos, end = 12, 8 + struct.unpack('>I', data[4:8])[0]
     bmhd = cmap = body = None
     while pos + 8 <= end:
@@ -48,5 +48,5 @@ def decode(path):
 exp = decode(sys.argv[1])
 got = open(sys.argv[2], 'rb').read()
 diff = sum(1 for a, b in zip(exp, got) if a != b) + abs(len(exp) - len(got))
-print('%s: %d byte, %d differenze' % (sys.argv[1], len(exp), diff))
+print('%s: %d bytes, %d differences' % (sys.argv[1], len(exp), diff))
 sys.exit(1 if diff else 0)

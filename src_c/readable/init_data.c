@@ -1,4 +1,4 @@
-/* Applicatore delle tabelle di inizializzazione (vedi init_data.h). */
+/* Applier of the initialisation tables (see init_data.h). */
 #include "init_data.h"
 #include "globals.h"
 
@@ -12,7 +12,7 @@ void init_apply(const InitOp *op, size_t n, u8 *bss, size_t bss_size)
 
         switch (op->kind) {
         case INIT_STR: {
-            /* move.b (a3)+,(a2)+ / dbeq: si ferma dopo il NUL o al limite. */
+            /* move.b (a3)+,(a2)+ / dbeq: stops after the NUL or at the limit. */
             size_t len = strlen(op->text) + 1;
             memcpy(p, op->text, len < op->value ? len : op->value);
             break;

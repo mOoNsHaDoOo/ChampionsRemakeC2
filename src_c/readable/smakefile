@@ -1,12 +1,12 @@
-# Champions of Krynn - port asm -> C, build AmigaOS con SAS/C 6.x.
+# Champions of Krynn - asm -> C port, AmigaOS build with SAS/C 6.x.
 #
-#   smake          compila cok senza audio (i comandi audio si saltano)
-#   smake AUDIO    compila cok con l'audio (DEFINE=COK_AUDIO: H043, H094 e
-#                  i loro adattatori Exec, oggetti *_a.o separati)
-#   smake clean    rimuove oggetti ed eseguibile
+#   smake          builds cok without audio (the audio commands are skipped)
+#   smake AUDIO    builds cok with audio (DEFINE=COK_AUDIO: H043, H094 and
+#                  their Exec adapters, separate *_a.o objects)
+#   smake clean    removes objects and executable
 #
-# Richiede gli header NDK (INCLUDE:) e LIB:c.o, LIB:sc.lib, LIB:amiga.lib.
-# Aggiungere qui ogni nuovo file .c del port.
+# Requires the NDK headers (INCLUDE:) and LIB:c.o, LIB:sc.lib, LIB:amiga.lib.
+# Add every new .c file of the port here.
 
 CC      = sc
 CFLAGS  = NOSTACKCHECK DATA=FAR CODE=FAR
@@ -27,7 +27,7 @@ OBJS = globals.o h000_entry.o h001_main.o h002_dos.o h003_exec.o \
        h087.o h088.o h089.o h091.o h093.o h095.o \
        h096.o h097.o h098.o h099.o h100_custom.o init_data.o
 
-# Moduli che cambiano con COK_AUDIO: senza audio e con audio.
+# Modules that change with COK_AUDIO: without audio and with audio.
 NOAUDIO_OBJS = h043_audio.o h079.o h090.o h092.o h094.o unported.o
 AUDIO_OBJS   = h043_audio_a.o h079_a.o h090_a.o h092_a.o h094_a.o \
                unported_a.o

@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H097
-; Azioni e controllo degli attori in combattimento; dettaglio parziale.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H097
+; Actions and control of the actors in combat; partial detail.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Azioni e controllo degli attori in combattimento: turni, scelte, movimento e condizioni di fine.
+; MODULE NOTE
+; Actions and control of the actors in combat: turns, choices, movement and end conditions.
 ; --------------------------------------------------------------------------
 ; H097: 8296 original bytes; all offsets are section-relative.
         section H097,code
@@ -25,10 +25,10 @@ H097:
         dc.w $6565,$7320,$696E,$2070,$616E,$6963,$0000
         dc.l H097+$00000042
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H097 [parziale]
-; Scopo: Ingresso del modulo azioni e controllo degli attori in combattimento; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H097+$1FAC.
-; Chiamanti diretti: H000+$0210
+; ROUTINE: module_init_H097 [partial]
+; Purpose: Entry of the actions and control of the actors in combat module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H097+$1FAC.
+; Direct callers: H000+$0210
 ; --------------------------------------------------------------------------
 L097_000000A2:
 ; H097+$000000A2: 2f0c  move.l a4, -(a7)
@@ -43,14 +43,14 @@ L097_000000AC:
 ; H097+$000000AC: 60001efe  bra.w $1fac
         bra.w H097+$1FAC
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H097_000000B0 [parziale]
-; Scopo: Routine del modulo azioni e controllo degli attori in combattimento; richiama H010+$042E, H063+$1D44, H029+$03E2, H096+$4DE8.
-;   - Richiama H010+$042E.
-;   - Richiama H063+$1D44.
-;   - Richiama H029+$03E2.
-;   - Richiama H096+$4DE8.
-;   - Usa lo stato globale: H005+$5305 (byte del tasto/azione pendente); H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H097+$1D76, H097+$1F3C, H097+$14D0
+; ROUTINE: sub_H097_000000B0 [partial]
+; Purpose: Routine of the actions and control of the actors in combat module; calls H010+$042E, H063+$1D44, H029+$03E2, H096+$4DE8.
+;   - Calls H010+$042E.
+;   - Calls H063+$1D44.
+;   - Calls H029+$03E2.
+;   - Calls H096+$4DE8.
+;   - Uses the global state: H005+$5305 (byte of the pending key/action); H005+$3364 (head of the party list).
+; Direct callers: H097+$1D76, H097+$1F3C, H097+$14D0
 ; --------------------------------------------------------------------------
 L097_000000B0:
 ; H097+$000000B0: 2f0c  move.l a4, -(a7)
@@ -68,14 +68,14 @@ L097_000000BA:
 L097_000000BE:
 ; H097+$000000BE: 4eb90000042e  jsr $42e.l
         jsr (H010+$42E).l
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L097_000000C4:
 ; H097+$000000C4: 4a3900005305  tst.b $5305.l
         tst.b (H005+$5305).l
 L097_000000CA:
 ; H097+$000000CA: 67000166  beq.w $232
         beq.w H097+$232
-; STATO: H005+$5305 = byte del tasto/azione pendente
+; STATE: H005+$5305 = byte of the pending key/action
 L097_000000CE:
 ; H097+$000000CE: 1b7900005305fffb  move.b $5305.l, -$5(a5)
         move.b (H005+$5305).l, -$5(a5)
@@ -135,7 +135,7 @@ L097_0000011A:
 L097_00000120:
 ; H097+$00000120: 4e75  rts 
         rts 
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L097_00000122:
 ; H097+$00000122: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -277,7 +277,7 @@ L097_00000228:
 L097_0000022A:
 ; H097+$0000022A: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H097+$01BC; indici 0..46, default -1.
+; DISPATCH: words relative to H097+$01BC; indices 0..46, default -1.
 L097_0000022E:
 ; H097+$0000022E: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -303,14 +303,14 @@ L097_00000242:
 ; H097+$00000242: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H097_00000244 [parziale]
-; Scopo: Routine del modulo azioni e controllo degli attori in combattimento; richiama H063+$1EE8, H063+$135A, H063+$3698, H063+$2F12.
-;   - Richiama H063+$1EE8.
-;   - Richiama H063+$135A.
-;   - Richiama H063+$3698.
-;   - Richiama H063+$2F12.
-;   - Richiama H063+$2F5A.
-; Chiamanti diretti: H097+$1F98, H097+$19FA, H097+$18C0, H097+$1B70, H097+$17A4
+; ROUTINE: sub_H097_00000244 [partial]
+; Purpose: Routine of the actions and control of the actors in combat module; calls H063+$1EE8, H063+$135A, H063+$3698, H063+$2F12.
+;   - Calls H063+$1EE8.
+;   - Calls H063+$135A.
+;   - Calls H063+$3698.
+;   - Calls H063+$2F12.
+;   - Calls H063+$2F5A.
+; Direct callers: H097+$1F98, H097+$19FA, H097+$18C0, H097+$1B70, H097+$17A4
 ; --------------------------------------------------------------------------
 L097_00000244:
 ; H097+$00000244: 2f0c  move.l a4, -(a7)
@@ -407,10 +407,10 @@ L097_000002B0:
 ; H097+$000002B0: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H097_000002B2 [parziale]
-; Scopo: Routine del modulo azioni e controllo degli attori in combattimento; richiama H029+$0354.
-;   - Richiama H029+$0354.
-; Chiamanti diretti: H097+$0D52
+; ROUTINE: sub_H097_000002B2 [partial]
+; Purpose: Routine of the actions and control of the actors in combat module; calls H029+$0354.
+;   - Calls H029+$0354.
+; Direct callers: H097+$0D52
 ; --------------------------------------------------------------------------
 L097_000002B2:
 ; H097+$000002B2: 2f0c  move.l a4, -(a7)
@@ -748,17 +748,17 @@ L097_00000438:
 ; H097+$00000438: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H097_0000043A [parziale]
-; Scopo: Routine del modulo azioni e controllo degli attori in combattimento; richiama H062+$1898, H063+$1DC2, H029+$0354, H062+$083E.
-;   - Richiama H062+$1898.
-;   - Richiama H063+$1DC2.
-;   - Richiama H029+$0354.
-;   - Richiama H062+$083E.
-;   - Richiama H096+$3852.
-;   - Richiama H096+$023E.
-;   - Richiama H062+$0452.
-;   - Usa lo stato globale: H005+$3E00 (puntatore stato persistente B, 2048 byte).
-; Chiamanti diretti: H097+$1E44
+; ROUTINE: sub_H097_0000043A [partial]
+; Purpose: Routine of the actions and control of the actors in combat module; calls H062+$1898, H063+$1DC2, H029+$0354, H062+$083E.
+;   - Calls H062+$1898.
+;   - Calls H063+$1DC2.
+;   - Calls H029+$0354.
+;   - Calls H062+$083E.
+;   - Calls H096+$3852.
+;   - Calls H096+$023E.
+;   - Calls H062+$0452.
+;   - Uses the global state: H005+$3E00 (pointer to persistent state B, 2048 bytes).
+; Direct callers: H097+$1E44
 ; --------------------------------------------------------------------------
 L097_0000043A:
 ; H097+$0000043A: 2f0c  move.l a4, -(a7)
@@ -978,7 +978,7 @@ L097_0000054C:
 L097_00000552:
 ; H097+$00000552: 7864  moveq #$64, d4
         moveq #100, d4
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L097_00000554:
 ; H097+$00000554: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -1145,13 +1145,13 @@ L097_0000061E:
 ; H097+$0000061E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H097_075C [parziale]
-; Scopo: Trampolino verso H097+$075C; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H097+$075C.
-;   - Richiama H096+$25DA.
-;   - Richiama H033+$11FC.
-;   - Richiama H063+$2BDE.
-; Chiamanti diretti: H097+$09AA, H097+$0BBE
+; ROUTINE: trampoline_H097_075C [partial]
+; Purpose: Trampoline to H097+$075C; the actual body is there.
+;   - Jumps to the actual body at H097+$075C.
+;   - Calls H096+$25DA.
+;   - Calls H033+$11FC.
+;   - Calls H063+$2BDE.
+; Direct callers: H097+$09AA, H097+$0BBE
 ; --------------------------------------------------------------------------
 L097_00000620:
 ; H097+$00000620: 2f0c  move.l a4, -(a7)
@@ -1166,22 +1166,22 @@ L097_0000062A:
 ; H097+$0000062A: 60000130  bra.w $75c
         bra.w H097+$75C
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H097_0650 [parziale]
-; Scopo: Trampolino verso H097+$0650; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H097+$0650.
-;   - Richiama H077+$08AC.
-;   - Richiama H063+$2B4C.
-;   - Richiama H062+$142C.
-;   - Richiama H096+$25DA.
-;   - Richiama H033+$11FC.
-;   - Richiama H063+$2BDE.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H097+$0866
+; ROUTINE: trampoline_H097_0650 [partial]
+; Purpose: Trampoline to H097+$0650; the actual body is there.
+;   - Jumps to the actual body at H097+$0650.
+;   - Calls H077+$08AC.
+;   - Calls H063+$2B4C.
+;   - Calls H062+$142C.
+;   - Calls H096+$25DA.
+;   - Calls H033+$11FC.
+;   - Calls H063+$2BDE.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H097+$0866
 ; --------------------------------------------------------------------------
 L097_0000062E:
 ; H097+$0000062E: 4e55fffc  link.w a5, #$fffc
         link.w a5, #$fffc
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L097_00000632:
 ; H097+$00000632: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -1291,7 +1291,7 @@ L097_000006B4:
 L097_000006BA:
 ; H097+$000006BA: 48e70810  movem.l d4/a3, -(a7)
         movem.l d4/a3, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L097_000006BE:
 ; H097+$000006BE: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -1692,14 +1692,14 @@ L097_0000088E:
 ; H097+$0000088E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H097_00000890 [parziale]
-; Scopo: Routine del modulo azioni e controllo degli attori in combattimento; richiama H062+$156C, H063+$2B4C, H033+$17E6, H065+$2F82.
-;   - Richiama H062+$156C.
-;   - Richiama H063+$2B4C.
-;   - Richiama H033+$17E6.
-;   - Richiama H065+$2F82.
-;   - Usa lo stato globale: H005+$3E04 (puntatore stato persistente A, 2048 byte).
-; Chiamanti diretti: H097+$1E92
+; ROUTINE: sub_H097_00000890 [partial]
+; Purpose: Routine of the actions and control of the actors in combat module; calls H062+$156C, H063+$2B4C, H033+$17E6, H065+$2F82.
+;   - Calls H062+$156C.
+;   - Calls H063+$2B4C.
+;   - Calls H033+$17E6.
+;   - Calls H065+$2F82.
+;   - Uses the global state: H005+$3E04 (pointer to persistent state A, 2048 bytes).
+; Direct callers: H097+$1E92
 ; --------------------------------------------------------------------------
 L097_00000890:
 ; H097+$00000890: 2f0c  move.l a4, -(a7)
@@ -1769,7 +1769,7 @@ L097_000008E2:
 L097_000008E4:
 ; H097+$000008E4: 630000f2  bls.w $9d8
         bls.w H097+$9D8
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L097_000008E8:
 ; H097+$000008E8: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -1998,11 +1998,11 @@ L097_00000A02:
 ; H097+$00000A02: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H097_00000A04 [parziale]
-; Scopo: Routine del modulo azioni e controllo degli attori in combattimento; richiama H096+$1B04, H096+$160A.
-;   - Richiama H096+$1B04.
-;   - Richiama H096+$160A.
-; Chiamanti diretti: H097+$1EF8
+; ROUTINE: sub_H097_00000A04 [partial]
+; Purpose: Routine of the actions and control of the actors in combat module; calls H096+$1B04, H096+$160A.
+;   - Calls H096+$1B04.
+;   - Calls H096+$160A.
+; Direct callers: H097+$1EF8
 ; --------------------------------------------------------------------------
 L097_00000A04:
 ; H097+$00000A04: 2f0c  move.l a4, -(a7)
@@ -2120,12 +2120,12 @@ L097_00000A86:
 ; H097+$00000A86: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H097_00000A88 [parziale]
-; Scopo: Routine del modulo azioni e controllo degli attori in combattimento; richiama H062+$156C, H063+$2B4C, H096+$3100.
-;   - Richiama H062+$156C.
-;   - Richiama H063+$2B4C.
-;   - Richiama H096+$3100.
-; Chiamanti diretti: H097+$1F1A
+; ROUTINE: sub_H097_00000A88 [partial]
+; Purpose: Routine of the actions and control of the actors in combat module; calls H062+$156C, H063+$2B4C, H096+$3100.
+;   - Calls H062+$156C.
+;   - Calls H063+$2B4C.
+;   - Calls H096+$3100.
+; Direct callers: H097+$1F1A
 ; --------------------------------------------------------------------------
 L097_00000A88:
 ; H097+$00000A88: 2f0c  move.l a4, -(a7)
@@ -2441,15 +2441,15 @@ L097_00000C12:
 ; H097+$00000C12: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H097_00000C14 [parziale]
-; Scopo: Routine del modulo azioni e controllo degli attori in combattimento; richiama H029+$0354, H063+$2BDE, H065+$2C04, H063+$13BE.
-;   - Richiama H029+$0354.
-;   - Richiama H063+$2BDE.
-;   - Richiama H065+$2C04.
-;   - Richiama H063+$13BE.
-;   - Richiama H096+$11D4.
-;   - Richiama H063+$1160.
-; Chiamanti diretti: H097+$1F34, H097+$1BEE
+; ROUTINE: sub_H097_00000C14 [partial]
+; Purpose: Routine of the actions and control of the actors in combat module; calls H029+$0354, H063+$2BDE, H065+$2C04, H063+$13BE.
+;   - Calls H029+$0354.
+;   - Calls H063+$2BDE.
+;   - Calls H065+$2C04.
+;   - Calls H063+$13BE.
+;   - Calls H096+$11D4.
+;   - Calls H063+$1160.
+; Direct callers: H097+$1F34, H097+$1BEE
 ; --------------------------------------------------------------------------
 L097_00000C14:
 ; H097+$00000C14: 2f0c  move.l a4, -(a7)
@@ -3603,12 +3603,12 @@ L097_000011EC:
 ; H097+$000011EC: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H097_000011EE [parziale]
-; Scopo: Routine del modulo azioni e controllo degli attori in combattimento; richiama H048+$113E, H063+$0946, H062+$142C.
-;   - Richiama H048+$113E.
-;   - Richiama H063+$0946.
-;   - Richiama H062+$142C.
-; Chiamanti diretti: H097+$1656
+; ROUTINE: sub_H097_000011EE [partial]
+; Purpose: Routine of the actions and control of the actors in combat module; calls H048+$113E, H063+$0946, H062+$142C.
+;   - Calls H048+$113E.
+;   - Calls H063+$0946.
+;   - Calls H062+$142C.
+; Direct callers: H097+$1656
 ; --------------------------------------------------------------------------
 L097_000011EE:
 ; H097+$000011EE: 2f0c  move.l a4, -(a7)
@@ -4092,16 +4092,16 @@ L097_0000142A:
 ; H097+$0000142A: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H097_0000142C [parziale]
-; Scopo: Routine del modulo azioni e controllo degli attori in combattimento; richiama H045+$01D6, H026+$01E0, H030+$0256, H062+$156C.
-;   - Richiama H045+$01D6.
-;   - Richiama H026+$01E0.
-;   - Richiama H030+$0256.
-;   - Richiama H062+$156C.
-;   - Richiama H063+$3CA0.
-;   - Richiama H096+$10FA.
-;   - Richiama H063+$2F12.
-; Chiamanti diretti: H097+$199E, H097+$1B64
+; ROUTINE: sub_H097_0000142C [partial]
+; Purpose: Routine of the actions and control of the actors in combat module; calls H045+$01D6, H026+$01E0, H030+$0256, H062+$156C.
+;   - Calls H045+$01D6.
+;   - Calls H026+$01E0.
+;   - Calls H030+$0256.
+;   - Calls H062+$156C.
+;   - Calls H063+$3CA0.
+;   - Calls H096+$10FA.
+;   - Calls H063+$2F12.
+; Direct callers: H097+$199E, H097+$1B64
 ; --------------------------------------------------------------------------
 L097_0000142C:
 ; H097+$0000142C: 2f0c  move.l a4, -(a7)
@@ -4223,7 +4223,7 @@ L097_000014BC:
 L097_000014C0:
 ; H097+$000014C0: 487900003c82  pea.l $3c82.l
         pea.l (H005+$3C82).l
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L097_000014C6:
 ; H097+$000014C6: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -5046,16 +5046,16 @@ L097_000018D0:
 ; H097+$000018D0: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H097_000018D2 [parziale]
-; Scopo: Routine del modulo azioni e controllo degli attori in combattimento; richiama H062+$083E, H063+$3980, H096+$1562, H048+$0F88.
-;   - Richiama H062+$083E.
-;   - Richiama H063+$3980.
-;   - Richiama H096+$1562.
-;   - Richiama H048+$0F88.
-;   - Richiama H048+$0FBA.
-;   - Richiama H077+$0378.
-;   - Richiama H063+$2BDE.
-; Chiamanti diretti: H097+$1F88
+; ROUTINE: sub_H097_000018D2 [partial]
+; Purpose: Routine of the actions and control of the actors in combat module; calls H062+$083E, H063+$3980, H096+$1562, H048+$0F88.
+;   - Calls H062+$083E.
+;   - Calls H063+$3980.
+;   - Calls H096+$1562.
+;   - Calls H048+$0F88.
+;   - Calls H048+$0FBA.
+;   - Calls H077+$0378.
+;   - Calls H063+$2BDE.
+; Direct callers: H097+$1F88
 ; --------------------------------------------------------------------------
 L097_000018D2:
 ; H097+$000018D2: 2f0c  move.l a4, -(a7)
@@ -5968,16 +5968,16 @@ L097_00001D66:
 ; H097+$00001D66: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H097_00001D68 [parziale]
-; Scopo: Routine del modulo azioni e controllo degli attori in combattimento; richiama H008+$139E, H063+$1EE8, H063+$2F12, H062+$156C.
-;   - Richiama H008+$139E.
-;   - Richiama H063+$1EE8.
-;   - Richiama H063+$2F12.
-;   - Richiama H062+$156C.
-;   - Richiama H063+$1DC2.
-;   - Richiama H033+$1426.
-;   - Richiama H096+$4B86.
-; Chiamanti diretti: H059+$15B4, H059+$10B6
+; ROUTINE: sub_H097_00001D68 [partial]
+; Purpose: Routine of the actions and control of the actors in combat module; calls H008+$139E, H063+$1EE8, H063+$2F12, H062+$156C.
+;   - Calls H008+$139E.
+;   - Calls H063+$1EE8.
+;   - Calls H063+$2F12.
+;   - Calls H062+$156C.
+;   - Calls H063+$1DC2.
+;   - Calls H033+$1426.
+;   - Calls H096+$4B86.
+; Direct callers: H059+$15B4, H059+$10B6
 ; --------------------------------------------------------------------------
 L097_00001D68:
 ; H097+$00001D68: 2f0c  move.l a4, -(a7)

@@ -1,12 +1,12 @@
 ; ============================================================================
-; GUIDA DEL MODULO H034
-; caricamento risorse 8x8 (8X8D) e messaggi di errore.
-; I commenti descrivono l'analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H034
+; loading of 8x8 resources (8X8D) and error messages.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Caricamento risorse 8x8 (8X8D) e messaggi di errore. Le stringhe del modulo includono 'Unable to load ... from 8x8D'.
+; MODULE NOTE
+; Loading of 8x8 resources (8X8D) and error messages. The strings of the module include 'Unable to load ... from 8x8D'.
 ; --------------------------------------------------------------------------
 ; H034: 472 original bytes; all offsets are section-relative.
         section H034,code
@@ -16,10 +16,10 @@ H034:
         dc.w $6F61,$6420,$0020,$6672,$6F6D,$2038,$7838,$4400
         dc.l H034+$00000000
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H034 [parziale]
-; Scopo: Ingresso del modulo caricamento risorse 8x8 (8X8D) e messaggi di errore; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H034+$01D2.
-; Chiamanti diretti: H000+$014A
+; ROUTINE: module_init_H034 [partial]
+; Purpose: Entry of the loading of 8x8 resources (8X8D) and error messages module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H034+$01D2.
+; Direct callers: H000+$014A
 ; --------------------------------------------------------------------------
 L034_00000024:
 ; H034+$00000024: 2f0c  move.l a4, -(a7)
@@ -34,15 +34,15 @@ L034_0000002E:
 ; H034+$0000002E: 600001a2  bra.w $1d2
         bra.w H034+$1D2
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H034_00000032 [parziale]
-; Scopo: Routine del modulo caricamento risorse 8x8 (8X8D) e messaggi di errore; richiama H045+$01D6, H026+$01E0, H029+$0A0E, H010+$0974.
-;   - Richiama H045+$01D6.
-;   - Richiama H026+$01E0.
-;   - Richiama H029+$0A0E.
-;   - Richiama H010+$0974.
-;   - Richiama H010+$0332.
-;   - Usa lo stato globale: H005+$246E (selettore del gruppo risorse).
-; Chiamanti diretti: H006+$0734, H006+$0740, H011+$1818, H011+$1834
+; ROUTINE: sub_H034_00000032 [partial]
+; Purpose: Routine of the loading of 8x8 resources (8X8D) and error messages module; calls H045+$01D6, H026+$01E0, H029+$0A0E, H010+$0974.
+;   - Calls H045+$01D6.
+;   - Calls H026+$01E0.
+;   - Calls H029+$0A0E.
+;   - Calls H010+$0974.
+;   - Calls H010+$0332.
+;   - Uses the global state: H005+$246E (resource group selector).
+; Direct callers: H006+$0734, H006+$0740, H011+$1818, H011+$1834
 ; --------------------------------------------------------------------------
 L034_00000032:
 ; H034+$00000032: 2f0c  move.l a4, -(a7)
@@ -104,7 +104,7 @@ L034_0000006E:
 L034_00000072:
 ; H034+$00000072: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$246E = selettore del gruppo risorse
+; STATE: H005+$246E = resource group selector
 L034_00000074:
 ; H034+$00000074: 14390000246e  move.b $246e.l, d2
         move.b (H005+$246E).l, d2
@@ -179,7 +179,7 @@ L034_000000C6:
 L034_000000CC:
 ; H034+$000000CC: 48732000  pea.l (a3, d2.w)
         pea.l (a3, d2.w)
-; FLUSSO: Chiama Load_IndexedGraphicRecord (H029+$0A0E).
+; FLOW: Calls Load_IndexedGraphicRecord (H029+$0A0E).
 L034_000000D0:
 ; H034+$000000D0: 4eb900000a0e  jsr $a0e.l
         jsr (H029+$A0E).l
@@ -319,11 +319,11 @@ L034_00000176:
 ; H034+$00000176: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H034_01A8 [parziale]
-; Scopo: Trampolino verso H034+$01A8; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H034+$01A8.
-;   - Richiama H049+$012A.
-; Chiamanti diretti: H044+$0308, H044+$031E, H044+$02C2, H044+$027C, H044+$0298, H044+$035E e altri 28
+; ROUTINE: trampoline_H034_01A8 [partial]
+; Purpose: Trampoline to H034+$01A8; the actual body is there.
+;   - Jumps to the actual body at H034+$01A8.
+;   - Calls H049+$012A.
+; Direct callers: H044+$0308, H044+$031E, H044+$02C2, H044+$027C, H044+$0298, H044+$035E and 28 more
 ; --------------------------------------------------------------------------
 L034_00000178:
 ; H034+$00000178: 2f0c  move.l a4, -(a7)
@@ -349,7 +349,7 @@ L034_00000190:
 L034_00000196:
 ; H034+$00000196: 60000010  bra.w $1a8
         bra.w H034+$1A8
-; STATO: H005+$52F2 = puntatore allo schermo del gioco
+; STATE: H005+$52F2 = pointer to the game screen
 L034_0000019A:
 ; H034+$0000019A: 2679000052f2  movea.l $52f2.l, a3
         movea.l (H005+$52F2).l, a3

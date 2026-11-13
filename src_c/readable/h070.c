@@ -1,4 +1,4 @@
-/* H070: esito del combattimento, esperienza e tesoro. */
+/* H070: combat outcome, experience and treasure. */
 #include <string.h>
 #include "cok.h"
 #include "h070.h"
@@ -21,21 +21,21 @@
 #include "h067.h"
 #include "h071.h"
 
-/* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
+/* $2A1E: party pool: 7 longs, coins per type 0..6 (4 = steel) */
 #define POOL(k)         H005_L(0x2A1E + (k) * 4)
-/* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
+/* $2A1E: party pool: 7 longs, coins per type 0..6 (4 = steel) */
 #define SET_POOL(k, v)  H005_SET_L(0x2A1E + (k) * 4, (v))
 #define TURN(c)         ((c)->block_192)
 
-static u8 s_enemies;                    /* -$1(a4): c'erano nemici */
-static u8 s_fled;                       /* -$2(a4): il party e' fuggito */
+static u8 s_enemies;                    /* -$1(a4): there were enemies */
+static u8 s_fled;                       /* -$2(a4): the party fled */
 
-/* PORT H070+$0272: link/unlk, nessun effetto. */
+/* PORT H070+$0272: link/unlk, no effect. */
 void h070_init(void)
 {
 }
 
-/* Libera la lista del tesoro ($2A3A). */
+/* Frees the treasure list ($2A3A). */
 static void free_treasure(void)
 {
     CokItem *it = g_treasure_items;     /* -$4(a5) */
@@ -50,13 +50,13 @@ static void free_treasure(void)
 }
 
 /*
- * PORT H070+$0280: esperienza per personaggio: per ogni nemico sconfitto
- * (lato 1, stato non 0 ne' 3) il suo valore (+$13C piu' +$13E per i dadi
- * vita +$123), le sue monete (se +$15 del turno = 1) nella cassa e i suoi
- * oggetti nel tesoro (salvo $3E00+$5C6 = 1); poi il valore della cassa e
- * degli oggetti magici del tesoro; diviso per i personaggi rimasti
- * ($3E00+$67C - $2499).  Con divisore 0 l'originale ha un'eccezione: qui
- * il totale.
+ * PORT H070+$0280: experience per character: for every defeated enemy
+ * (side 1, status not 0 nor 3) its value (+$13C plus +$13E for the hit
+ * dice +$123), its coins (if +$15 of the turn = 1) into the pool and its
+ * items into the treasure (unless $3E00+$5C6 = 1); then the value of the pool and
+ * of the magic items of the treasure; divided by the remaining characters
+ * ($3E00+$67C - $2499).  With divisor 0 the original raises an exception: here
+ * the total.
  */
 static void compute_experience(u32 *out)
 {
@@ -70,26 +70,26 @@ static void compute_experience(u32 *out)
 
     for (p = g_party_head; p != NULL; p = p->next) {
         it = p->items;
-        /* pg+$199: lato in combattimento (0 party, 1 avversari); pg+$197: stato: 0 ok, 4
-         * incosciente, 5 morente, 6-8 morto, $0A a terra */
+        /* ch+$199: side in combat (0 party, 1 opponents); ch+$197: status: 0 ok, 4
+         * unconscious, 5 dying, 6-8 dead, $0A down */
         if (p->b[0x199] != 1 || p->b[0x197] == 0 || p->b[0x197] == 3) {
             continue;
         }
         s_enemies = 1;
-        /* turno+$15: 1 = combattente oltre i membri del party, lo lascia a fine scontro */
+        /* turn+$15: 1 = combatant beyond the party members, leaves it at the end of the fight */
         if (TURN(p)->b[0x15] == 1) {
             for (k = 0; k <= 6; ++k) {
-                /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio); pg+$F0:
-                 * monete, 7 word passo 2 (0..4 monete, 4 acciaio, 5 gemme, 6 gioielli); $2A20: word
-                 * bassa del long della cassa per il tipo di moneta 0 */
+                /* $2A1E: party pool: 7 longs, coins per type 0..6 (4 = steel); ch+$F0: coins, 7 words step 2 (0..4
+                 * coins, 4 steel, 5 gems, 6 jewellery); $2A20: low word of the pool long for coin
+                 * type 0 */
                 SET_POOL(k, POOL(k) + CH_W(p, 0xF0 + k * 2));
             }
         }
-        /* pg+$13C: esperienza data dal mostro sconfitto (word); pg+$13E: esperienza del mostro per
-         * punto ferita (moltiplica +$123); pg+$123: PF massimi senza costituzione; base -1 slot
-         * incantesimi +$124 */
+        /* ch+$13C: experience given by the defeated monster (word); ch+$13E: experience of the monster
+         * per hit point (multiplies +$123); ch+$123: maximum HP without constitution; base -1
+         * of the spell slots +$124 */
         xp = xp + CH_W(p, 0x13C) + h015_mulu32(p->b[0x13E], p->b[0x123]);
-        /* B+$5C6: (word) 1: oggetti dei nemici non vanno nel tesoro */
+        /* B+$5C6: (word) 1: the enemies' items do not go into the treasure */
         if (COK_GET16(g_state_b + 0x5C6) == 1) {
             continue;
         }
@@ -98,40 +98,40 @@ static void compute_experience(u32 *out)
             n = (CokItem *)exec_alloc_mem(sizeof(CokItem), COK_MEMF_CLEAR);
             build_item_name(p, it, 0, 0, 0, 0);
             memcpy(n->b, it->b, 0x48);
-            n->b[0x3A] = 0; /* ogg+$3A: flag oggetto pronto all'uso (Ready) */
+            n->b[0x3A] = 0; /* item+$3A: item readied flag (Ready) */
             n->next = g_treasure_items;
             g_treasure_items = n;
         }
     }
     (void)count;
-    /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
+    /* $2A1E: party pool: 7 longs, coins per type 0..6 (4 = steel) */
     xp += (u32)h015_divs32((s32)POOL(0), 0x64, NULL);
-    /* $2A22: (long) cassa, monete del tipo 1 (xp: quantita' / 20) */
+    /* $2A22: (long) pool, coins of type 1 (xp: amount / 20) */
     xp += (u32)h015_divs32((s32)POOL(1), 0x14, NULL);
-    /* $2A26: (long) cassa, monete del tipo 2 (xp: quantita' / 10) */
+    /* $2A26: (long) pool, coins of type 2 (xp: amount / 10) */
     xp += (u32)h015_divs32((s32)POOL(2), 0x0A, NULL);
-    xp += POOL(3); /* $2A2A: (long) cassa, monete del tipo 3 (xp: quantita' x 1) */
-    xp += POOL(4) << 1; /* $2A2E: (long) cassa, pezzi d'acciaio (tipo 4; xp: quantita' x 2) */
-    xp += h015_mulu32(POOL(5), 0xFA); /* $2A32: (long) cassa, monete del tipo 5 (xp: quantita' x 250) */
-    xp += h015_mulu32(POOL(6), 0x898); /* $2A36: (long) cassa, monete del tipo 6 (xp: quantita' x 2200) */
+    xp += POOL(3); /* $2A2A: (long) pool, coins of type 3 (xp: amount x 1) */
+    xp += POOL(4) << 1; /* $2A2E: (long) pool, steel pieces (type 4; xp: amount x 2) */
+    xp += h015_mulu32(POOL(5), 0xFA); /* $2A32: (long) pool, coins of type 5 (xp: amount x 250) */
+    xp += h015_mulu32(POOL(6), 0x898); /* $2A36: (long) pool, coins of type 6 (xp: amount x 2200) */
     for (it = g_treasure_items; it != NULL && it != g_thrown_tail;
          it = it->next) {
-        /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno */
+        /* item+$36: (word) magic bonus (+n) of the item, signed */
         if ((s16)COK_GET16(it->b + 0x36) > 0) {
-            /* ogg+$36: (word) bonus magico (+n) dell'oggetto, con segno */
+            /* item+$36: (word) magic bonus (+n) of the item, signed */
             xp += (u32)((s32)(s16)COK_GET16(it->b + 0x36) * 0x190);
         }
     }
-    /* B+$67C: (word) numero dei membri del party (max 8); $2499: personaggi caduti a fine
-     * combattimento (tolti dal divisore XP) */
+    /* B+$67C: (word) number of party members (max 8); $2499: characters fallen at the end
+     * of the combat (removed from the XP divisor) */
     div = (s32)COK_GET16(g_state_b + 0x67C) - (s32)H005_B(0x2499);
     *out = div != 0 ? (u32)h015_divs32((s32)xp, div, NULL) : xp;
 }
 
 /*
- * PORT H070+$0558: dà xp punti esperienza a chi e' in piedi: il 10% in
- * piu' a chi ha la caratteristica principale della classe oltre 15 (14
- * per la saggezza del chierico), meta' o un terzo alle classi multiple.
+ * PORT H070+$0558: gives xp experience points to whoever is standing: 10%
+ * more to those whose prime requisite of the class is above 15 (14
+ * for the cleric's wisdom), half or a third to multi-class characters.
  */
 static void award_experience(u32 xp)
 {
@@ -139,32 +139,32 @@ static void award_experience(u32 xp)
     u32 v;                              /* -$8(a5) */
     u8 bonus;
 
-    if (COK_GET16(g_state_a + 0x3EA)) { /* A+$3EA: (word) esito e' un prelievo in banca: niente esperienza */
+    if (COK_GET16(g_state_a + 0x3EA)) { /* A+$3EA: (word) outcome is a bank withdrawal: no experience */
         return;
     }
     for (p = g_party_head; p != NULL; p = p->next) {
-        /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento); pg+$197: stato: 0 ok, 4
-         * incosciente, 5 morente, 6-8 morto, $0A a terra */
+        /* ch+$198: active/standing (0 down or out of the combat); ch+$197: status: 0 ok, 4
+         * unconscious, 5 dying, 6-8 dead, $0A down */
         if (!p->b[0x198] || p->b[0x197] == 1) {
             continue;
         }
         v = xp;
         bonus = 0;
-        switch (p->b[0x5C]) { /* pg+$5C: classe o combinazione di classi (0..16, nomi H005+$4D84) */
-        case 0: bonus = (u8)(p->b[0x15] > 0x0E); break; /* pg+$15: saggezza corrente */
-        /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza corrente */
+        switch (p->b[0x5C]) { /* ch+$5C: class or class combination (0..16, names H005+$4D84) */
+        case 0: bonus = (u8)(p->b[0x15] > 0x0E); break; /* ch+$15: current wisdom */
+        /* ch+$11: current abilities, 6 entries step 2 from +$11; current strength */
         case 2: bonus = (u8)(p->b[0x11] > 0x0F); break;
-        /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza corrente; pg+$15:
-         * saggezza corrente */
+        /* ch+$11: current abilities, 6 entries step 2 from +$11; current strength; ch+$15:
+         * current wisdom */
         case 3: bonus = (u8)(p->b[0x11] > 0x0F && p->b[0x15] > 0x0F); break;
         case 4:
-            /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza corrente; pg+$13:
-             * intelligenza corrente */
+            /* ch+$11: current abilities, 6 entries step 2 from +$11; current strength; ch+$13:
+             * current intelligence */
             bonus = (u8)(p->b[0x11] > 0x0F && p->b[0x13] > 0x0F &&
-                         p->b[0x15] > 0x0F); /* pg+$15: saggezza corrente */
+                         p->b[0x15] > 0x0F); /* ch+$15: current wisdom */
             break;
-        case 5: bonus = (u8)(p->b[0x13] > 0x0F); break; /* pg+$13: intelligenza corrente */
-        case 6: bonus = (u8)(p->b[0x17] > 0x0F); break; /* pg+$17: destrezza corrente */
+        case 5: bonus = (u8)(p->b[0x13] > 0x0F); break; /* ch+$13: current intelligence */
+        case 6: bonus = (u8)(p->b[0x17] > 0x0F); break; /* ch+$17: current dexterity */
         case 8: case 0x0A: case 0x0B: case 0x0C: case 0x0D: case 0x0E:
         case 0x10:
             v = (u32)h015_divs32((s32)xp, 2, NULL);
@@ -178,18 +178,18 @@ static void award_experience(u32 xp)
         if (bonus) {
             v = (u32)h015_divs32((s32)xp, 0x0A, NULL) + xp;
         }
-        CH_PUTL(p, 0x11E, CH_L(p, 0x11E) + v); /* pg+$11E: punti esperienza (long) */
+        CH_PUTL(p, 0x11E, CH_L(p, 0x11E) + v); /* ch+$11E: experience points (long) */
     }
 }
 
 /*
- * PORT H070+$0778: esito del combattimento: il party ha perso ($24D0)
- * salvo chi e' rimasto (o rientra con $3E00+$5CC); fuga ($-2(a4)) se
- * qualcuno e' fuggito e nessuno ha vinto; vittoria ($24C0) se qualcuno e'
- * rimasto in piedi.  Toglie gli effetti del combattimento, dà
- * l'esperienza, rimette in piedi chi era fuggito o svenuto e toglie dal
- * party chi non c'e' piu'.  Dove l'originale legge il successivo di un
- * personaggio gia' tolto, qui lo legge prima.
+ * PORT H070+$0778: outcome of the combat: the party has lost ($24D0)
+ * except whoever stayed (or comes back with $3E00+$5CC); fled ($-2(a4)) if
+ * someone fled and nobody won; victory ($24C0) if someone is
+ * still standing.  Removes the combat effects, gives
+ * the experience, stands up whoever had fled or fainted and removes from the
+ * party whoever is no longer there.  Where the original reads the next one of a
+ * character already removed, here it reads it before.
  */
 static void combat_outcome(void)
 {
@@ -202,97 +202,97 @@ static void combat_outcome(void)
     u8 stop;                            /* -$1B(a5) */
     u16 k;                              /* -$1E(a5) */
 
-    H005_B(0x2499) = 0; /* $2499: personaggi caduti a fine combattimento (tolti dal divisore XP) */
-    H005_B(0x24D0) = 1; /* $24D0: 1 party perduto o uscito: ferma ECL e ciclo dell'esplorazione */
+    H005_B(0x2499) = 0; /* $2499: characters fallen at the end of the combat (removed from the XP divisor) */
+    H005_B(0x24D0) = 1; /* $24D0: 1 party lost or gone out: stops ECL and the exploration loop */
     s_fled = 0;
-    /* turno+$15: 1 = combattente oltre i membri del party, lo lascia a fine scontro */
+    /* turn+$15: 1 = combatant beyond the party members, leaves it at the end of the fight */
     for (p = g_party_head; p != NULL && TURN(p)->b[0x15] != 1; p = p->next) {
-        if (p->b[0x197] == 3) { /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+        if (p->b[0x197] == 3) { /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
             s_fled = 1;
         }
     }
     for (p = g_party_head; p != NULL && !alive; p = p->next) {
-        /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento); pg+$197: stato: 0 ok, 4
-         * incosciente, 5 morente, 6-8 morto, $0A a terra */
+        /* ch+$198: active/standing (0 down or out of the combat); ch+$197: status: 0 ok, 4
+         * unconscious, 5 dying, 6-8 dead, $0A down */
         if (p->b[0x198] || p->b[0x197] == 4 || p->b[0x197] == 3 ||
-            p->b[0x197] == 5) { /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+            p->b[0x197] == 5) { /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
             alive = 1;
         }
     }
-    /* B+$5CC: (word) sconfitta non fatale: i caduti si rialzano a 1 PF */
+    /* B+$5CC: (word) non-fatal defeat: the fallen get up with 1 HP */
     if (COK_GET16(g_state_b + 0x5CC) && alive) {
-        H005_B(0x24D0) = 0; /* $24D0: 1 party perduto o uscito: ferma ECL e ciclo dell'esplorazione */
+        H005_B(0x24D0) = 0; /* $24D0: 1 party lost or gone out: stops ECL and the exploration loop */
     }
-    H005_B(0x24C0) = 0; /* $24C0: 1 se il party ha vinto l'ultimo combattimento */
-    if (H005_B(0x24D7)) { /* $24D7: 1 se e' stata scelta la dimostrazione (Demo) */
+    H005_B(0x24C0) = 0; /* $24C0: 1 if the party won the last combat */
+    if (H005_B(0x24D7)) { /* $24D7: 1 if the demonstration (Demo) was chosen */
         return;
     }
-    /* turno+$15: 1 = combattente oltre i membri del party, lo lascia a fine scontro */
+    /* turn+$15: 1 = combatant beyond the party members, leaves it at the end of the fight */
     for (p = g_party_head; p != NULL && TURN(p)->b[0x15] != 1; p = p->next) {
-        /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+        /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
         if ((p->b[0x197] == 3 || p->b[0x197] == 1 || p->b[0x197] == 0) &&
-            /* pg+$199: lato in combattimento (0 party, 1 avversari); pg+$EC: controllo: <$80 PG,
-             * >$7F PNG/IA ($B3 = charme o confuso) */
+            /* ch+$199: side in combat (0 party, 1 opponents); ch+$EC: control: <$80 PC, >$7F
+             * NPC/AI ($B3 = charmed or confused) */
             p->b[0x199] == 0 && p->b[0xEC] < 0x80) {
-            H005_B(0x24D0) = 0; /* $24D0: 1 party perduto o uscito: ferma ECL e ciclo dell'esplorazione */
+            H005_B(0x24D0) = 0; /* $24D0: 1 party lost or gone out: stops ECL and the exploration loop */
         }
-        /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+        /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
         if (p->b[0x197] == 1 || p->b[0x197] == 0) {
-            H005_B(0x24C0) = 1; /* $24C0: 1 se il party ha vinto l'ultimo combattimento */
+            H005_B(0x24C0) = 1; /* $24C0: 1 if the party won the last combat */
             s_fled = 0;
         }
-        /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento); pg+$197: stato: 0 ok, 4
-         * incosciente, 5 morente, 6-8 morto, $0A a terra */
+        /* ch+$198: active/standing (0 down or out of the combat); ch+$197: status: 0 ok, 4
+         * unconscious, 5 dying, 6-8 dead, $0A down */
         if (!p->b[0x198] || p->b[0x197] == 1) {
-            /* $2499: personaggi caduti a fine combattimento (tolti dal divisore XP) */
+            /* $2499: characters fallen at the end of the combat (removed from the XP divisor) */
             add_to_byte(&H005_B(0x2499), 1);
         }
         for (k = 1; k <= 0x0B; ++k) {
             remove_effect(p, effects[k - 1], NULL);
         }
     }
-    if (H005_B(0x24C0)) { /* $24C0: 1 se il party ha vinto l'ultimo combattimento */
+    if (H005_B(0x24C0)) { /* $24C0: 1 if the party won the last combat */
         u32 xp = 0;
 
         compute_experience(&xp);
-        H005_SET_L(0x236E, xp); /* $236E: esperienza guadagnata nel combattimento (long) */
-        award_experience(H005_L(0x236E)); /* $236E: esperienza guadagnata nel combattimento (long) */
+        H005_SET_L(0x236E, xp); /* $236E: experience gained in the combat (long) */
+        award_experience(H005_L(0x236E)); /* $236E: experience gained in the combat (long) */
     }
     p = g_party_head;
-    if (!H005_B(0x24D0)) { /* $24D0: 1 party perduto o uscito: ferma ECL e ciclo dell'esplorazione */
-        /* turno+$15: 1 = combattente oltre i membri del party, lo lascia a fine scontro */
+    if (!H005_B(0x24D0)) { /* $24D0: 1 party lost or gone out: stops ECL and the exploration loop */
+        /* turn+$15: 1 = combatant beyond the party members, leaves it at the end of the fight */
         while (p != NULL && TURN(p)->b[0x15] != 1) {
             if (!s_fled) {
-                /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+                /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
                 switch (p->b[0x197]) {
                 case 3:
-                    /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+                    /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
                     p->b[0x197] = 0;
-                    p->b[0x198] = 1; /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
+                    p->b[0x198] = 1; /* ch+$198: active/standing (0 down or out of the combat) */
                     break;
                 case 4:
-                    /* B+$5CC: (word) sconfitta non fatale: i caduti si rialzano a 1 PF */
+                    /* B+$5CC: (word) non-fatal defeat: the fallen get up with 1 HP */
                     if (COK_GET16(g_state_b + 0x5CC)) {
-                        /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+                        /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
                         p->b[0x197] = 0;
-                        p->b[0x198] = 1; /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
-                        p->b[0x1A8] = 1; /* pg+$1A8: punti ferita correnti */
+                        p->b[0x198] = 1; /* ch+$198: active/standing (0 down or out of the combat) */
+                        p->b[0x1A8] = 1; /* ch+$1A8: current hit points */
                     } else {
-                        /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+                        /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
                         p->b[0x197] = 4;
                     }
                     break;
                 case 5:
-                    if (p->b[0x1A8] > 0) { /* pg+$1A8: punti ferita correnti */
-                        /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+                    if (p->b[0x1A8] > 0) { /* ch+$1A8: current hit points */
+                        /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
                         p->b[0x197] = 0;
-                        p->b[0x198] = 1; /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
-                    /* B+$5CC: (word) sconfitta non fatale: i caduti si rialzano a 1 PF */
+                        p->b[0x198] = 1; /* ch+$198: active/standing (0 down or out of the combat) */
+                    /* B+$5CC: (word) non-fatal defeat: the fallen get up with 1 HP */
                     } else if (COK_GET16(g_state_b + 0x5CC)) {
-                        /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+                        /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
                         p->b[0x197] = 0;
-                        p->b[0x198] = 1; /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
-                        p->b[0x1A8] = 1; /* pg+$1A8: punti ferita correnti */
+                        p->b[0x198] = 1; /* ch+$198: active/standing (0 down or out of the combat) */
+                        p->b[0x1A8] = 1; /* ch+$1A8: current hit points */
                     }
                     break;
                 default:
@@ -300,13 +300,13 @@ static void combat_outcome(void)
                 }
                 p = p->next;
             } else {
-                /* B+$58E: (word) esito lotta: 1 qualcuno fuggito, $80 sconfitta, $81 fuga party */
+                /* B+$58E: (word) fight outcome: 1 someone fled, $80 defeat, $81 party fled */
                 COK_PUT16(g_state_b + 0x58E, 0x81);
-                /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+                /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
                 if (p->b[0x197] == 3) {
-                    /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+                    /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
                     p->b[0x197] = 0;
-                    p->b[0x198] = 1; /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
+                    p->b[0x198] = 1; /* ch+$198: active/standing (0 down or out of the combat) */
                     p = p->next;
                 } else {
                     g_current_char = p;
@@ -319,7 +319,7 @@ static void combat_outcome(void)
         stop = 0;
         while (p != NULL && !stop) {
             n = p->next;
-            /* turno+$15: 1 = combattente oltre i membri del party, lo lascia a fine scontro */
+            /* turn+$15: 1 = combatant beyond the party members, leaves it at the end of the fight */
             if (TURN(p)->b[0x15] != 1) {
                 g_current_char = p;
                 remove_from_party(0, 1);
@@ -328,15 +328,15 @@ static void combat_outcome(void)
             }
             p = n;
         }
-        COK_PUT16(g_state_b + 0x67C, 0); /* B+$67C: (word) numero dei membri del party (max 8) */
+        COK_PUT16(g_state_b + 0x67C, 0); /* B+$67C: (word) number of party members (max 8) */
     }
 }
 
 /*
- * PORT H070+$0B9E: schermata dell'esito: "The party has fled." (tesoro e
- * cassa persi), "You have lost the fight.", "The party has won.", o senza
- * nemici "The party has found Treasure!" (o il prelievo dalla banca); poi
- * l'esperienza per personaggio.
+ * PORT H070+$0B9E: outcome screen: "The party has fled." (treasure and
+ * pool lost), "You have lost the fight.", "The party has won.", or without
+ * enemies "The party has found Treasure!" (or the bank withdrawal); then
+ * the experience per character.
  */
 static void show_outcome(u32 xp)
 {
@@ -350,19 +350,19 @@ static void show_outcome(u32 xp)
             ui_draw_text(1, 3, 0x0A, 0, 0x13, "The party has fled.");
             xp = 0;
             free_treasure();
-            /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
+            /* $2A1E: party pool: 7 longs, coins per type 0..6 (4 = steel) */
             h029_fill_bytes(0x1B, &H005_B(0x2A1E), 0x1C, 0);
-        /* $24C0: 1 se il party ha vinto l'ultimo combattimento; B+$5CC: (word) sconfitta non
-         * fatale: i caduti si rialzano a 1 PF */
+        /* $24C0: 1 if the party won the last combat; B+$5CC: (word) non-fatal defeat: the
+         * fallen get up with 1 HP */
         } else if (!H005_B(0x24C0) && COK_GET16(g_state_b + 0x5CC)) {
-            /* B+$58E: (word) esito lotta: 1 qualcuno fuggito, $80 sconfitta, $81 fuga party */
+            /* B+$58E: (word) fight outcome: 1 someone fled, $80 defeat, $81 party fled */
             COK_PUT16(g_state_b + 0x58E, 0x80);
             ui_draw_text(1, 3, 0x0A, 0, 0x18, "You have lost the fight.");
             xp = 0;
         } else {
             ui_draw_text(1, 3, 0x0A, 0, 0x12, "The party has won.");
         }
-    /* A+$3EA: (word) esito e' un prelievo in banca: niente esperienza */
+    /* A+$3EA: (word) outcome is a bank withdrawal: no experience */
     } else if (COK_GET16(g_state_a + 0x3EA)) {
         ui_draw_text(1, 5, 0x0A, 0, 0x25,
                      "The party makes a withdrawl.  A small");
@@ -375,7 +375,7 @@ static void show_outcome(u32 xp)
     trim_leading_spaces(0x0A, num);
     strcpy(line, "Each character receives ");
     h026_append(0x50, line, 0x0A, num);
-    if (!COK_GET16(g_state_a + 0x3EA)) { /* A+$3EA: (word) esito e' un prelievo in banca: niente esperienza */
+    if (!COK_GET16(g_state_a + 0x3EA)) { /* A+$3EA: (word) outcome is a bank withdrawal: no experience */
         ui_draw_text(1, 5, 0x0A, 0, 0x50, line);
         ui_draw_text(1, 7, 0x0A, 0, 0x12, "experience points.");
     }
@@ -384,9 +384,9 @@ static void show_outcome(u32 xp)
 }
 
 /*
- * Nell'originale la lista degli oggetti e' passata al menu a elenco
- * (forma compatibile con le voci); qui una lista di voci con gli stessi
- * nomi, e l'oggetto nella stessa posizione della voce scelta.
+ * In the original the item list is passed to the list menu
+ * (a shape compatible with the entries); here a list of entries with the same
+ * names, and the item in the same position as the chosen entry.
  */
 static CokMenuItem *s_treasure_menu;
 
@@ -401,7 +401,7 @@ static CokMenuItem *treasure_as_menu(void)
                                                        COK_MEMF_CLEAR);
 
         memcpy(n->text, it->b, 0x2A);
-        n->header = it->b[0x2A]; /* ogg+$2A: flag intestazione: copiato in header della voce di menu */
+        n->header = it->b[0x2A]; /* ogg+$2A: header flag: copied into the header of the menu entry */
         if (tail == NULL) {
             s_treasure_menu = n;
         } else {
@@ -428,8 +428,8 @@ static CokItem *treasure_menu_item(CokMenuItem *node)
 }
 
 /*
- * PORT H070+$0DE0: elenco degli oggetti del tesoro ("Items:", Take):
- * restituisce il tasto e l'oggetto scelto.
+ * PORT H070+$0DE0: list of the treasure items ("Items:", Take):
+ * returns the key and the chosen item.
  */
 static void treasure_list(u16 *index, CokMenuItem **cursor, CokItem **out,
                           u8 *key)
@@ -448,10 +448,10 @@ static void treasure_list(u16 *index, CokMenuItem **cursor, CokItem **out,
 }
 
 /*
- * PORT H070+$0E94 (Take Items): il personaggio corrente prende oggetti
- * dal tesoro (H071+$047C) finche' esce o il tesoro e' vuoto.  Indice e
- * scelta si azzerano una volta sola, prima del ciclo (H070+$0E9E/$0EAA):
- * dopo un Take la selezione resta alla stessa riga.
+ * PORT H070+$0E94 (Take Items): the current character takes items
+ * from the treasure (H071+$047C) until it leaves or the treasure is empty.  Index and
+ * choice are cleared only once, before the loop (H070+$0E9E/$0EAA):
+ * after a Take the selection stays on the same row.
  */
 static void take_items(void)
 {
@@ -495,9 +495,9 @@ static void take_items(void)
 }
 
 /*
- * PORT H070+$0F8A (Take): con monete e oggetti il menu "Money Items
- * Exit" (H e P cambiano personaggio) finche' resta tutto; solo monete
- * H067+$0F72, solo oggetti H070+$0E94.
+ * PORT H070+$0F8A (Take): with coins and items the menu "Money Items
+ * Exit" (H and P change character) while everything remains; coins only
+ * H067+$0F72, items only H070+$0E94.
  */
 static void take_menu(u8 *money, u8 *items)
 {
@@ -545,9 +545,9 @@ static void take_menu(u8 *money, u8 *items)
 }
 
 /*
- * PORT H070+$1136: schermata del tesoro: View, Take, Pool, Share, Detect
- * (se il corrente ha memorizzato un incantesimo di individuazione: 5, $B,
- * $4D, $67) ed Exit, che con tesoro rimasto chiede conferma.
+ * PORT H070+$1136: treasure screen: View, Take, Pool, Share, Detect
+ * (if the current one has memorised a detection spell: 5, $B,
+ * $4D, $67) and Exit, which asks for confirmation when treasure is left.
  */
 static void treasure_screen(void)
 {
@@ -573,10 +573,10 @@ static void treasure_screen(void)
         detect = 0;
         if (items) {
             for (k = 0; k <= 0x39 && !detect; ++k) {
-                /* pg+$1E: incantesimi memorizzati, $3A byte (+$1E..+$57); bit 7 = da memorizzare */
+                /* ch+$1E: memorised spells, $3A bytes (+$1E..+$57); bit 7 = to be memorised */
                 s = g_current_char->b[0x1E + k];
                 if ((s == 5 || s == 0x0B || s == 0x4D || s == 0x67) &&
-                    /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
+                    /* ch+$198: active/standing (0 down or out of the combat) */
                     g_current_char->b[0x198]) {
                     detect = 1;
                     spell = s;
@@ -600,7 +600,7 @@ static void treasure_screen(void)
             draw_party(g_current_char);
             continue;
         }
-        saved = H005_B(0x2483); /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
+        saved = H005_B(0x2483); /* $2483: index of the selected option in the row menus (persistent) */
         switch (key) {
         case 'V':
             view_character(&special);
@@ -640,14 +640,14 @@ static void treasure_screen(void)
         default:
             break;
         }
-        H005_B(0x2483) = saved; /* $2483: indice dell'opzione selezionata nei menu a riga (persistente) */
+        H005_B(0x2483) = saved; /* $2483: index of the selected option in the row menus (persistent) */
     } while (!done);
 }
 
 /*
- * PORT H070+$152E: a fine combattimento toglie dal party i nemici (+$15
- * del turno o lato 1), contando i caduti ($3E00+$590) e i fuggiti
- * ($3E00+$58E), e libera i blocchi del turno degli altri.
+ * PORT H070+$152E: at the end of the combat removes the enemies from the party (+$15
+ * of the turn or side 1), counting the fallen ($3E00+$590) and the fled
+ * ($3E00+$58E), and frees the turn blocks of the others.
  */
 static void remove_combatants(void)
 {
@@ -655,31 +655,31 @@ static void remove_combatants(void)
     Character *p;                       /* -$4(a5) */
     Character *n;                       /* -$8(a5) */
 
-    COK_PUT16(g_state_b + 0x590, 0); /* B+$590: (word) nemici caduti contati a fine combattimento */
+    COK_PUT16(g_state_b + 0x590, 0); /* B+$590: (word) fallen enemies counted at the end of the combat */
     p = g_party_head;
     while (p != NULL) {
-        /* turno+$15: 1 = combattente oltre i membri del party, lo lascia a fine scontro; pg+$199:
-         * lato in combattimento (0 party, 1 avversari) */
+        /* turn+$15: 1 = combatant beyond the party members, leaves it at the end of the fight;
+         * ch+$199: side in combat (0 party, 1 opponents) */
         if (TURN(p)->b[0x15] == 1 || p->b[0x199] == 1) {
             s_enemies = 1;
-            if (p->b[0x198] != 1) { /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
-                COK_PUT16(g_state_b + 0x590, /* B+$590: (word) nemici caduti contati a fine combattimento */
+            if (p->b[0x198] != 1) { /* ch+$198: active/standing (0 down or out of the combat) */
+                COK_PUT16(g_state_b + 0x590, /* B+$590: (word) fallen enemies counted at the end of the combat */
                           COK_GET16(g_state_b + 0x590) + 1);
                 if (first) {
-                    /* A+$3F0: tab. word fasi cicli (idx CH+$5F, 1..3); voce 0 posta a 1 da H070 */
+                    /* A+$3F0: tab. of cycle phase words (idx CH+$5F, 1..3); entry 0 set to 1 by H070 */
                     COK_PUT16(g_state_a + 0x3F0, 1);
                 }
             }
-            /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra; B+$58E:
-             * (word) esito lotta: 1 qualcuno fuggito, $80 sconfitta, $81 fuga party */
+            /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down; B+$58E: (word)
+             * fight outcome: 1 someone fled, $80 defeat, $81 party fled */
             if (p->b[0x197] == 3 && COK_GET16(g_state_b + 0x58E) == 0) {
-                /* B+$58E: (word) esito lotta: 1 qualcuno fuggito, $80 sconfitta, $81 fuga party */
+                /* B+$58E: (word) fight outcome: 1 someone fled, $80 defeat, $81 party fled */
                 COK_PUT16(g_state_b + 0x58E, 1);
             }
             first = 0;
             n = p->next;
             g_current_char = p;
-            /* turno+$15: 1 = combattente oltre i membri del party, lo lascia a fine scontro */
+            /* turn+$15: 1 = combatant beyond the party members, leaves it at the end of the fight */
             remove_from_party((u8)(TURN(p)->b[0x15] == 1), 1);
             p = n;
         } else {
@@ -694,8 +694,8 @@ static void remove_combatants(void)
 }
 
 /*
- * PORT H070+$165C: i personaggi non giocanti (+$EC > $7F, in piedi) con
- * una quota (+$ED & 7) prendono la loro parte di ogni tipo di moneta
+ * PORT H070+$165C: the non-player characters (+$EC > $7F, standing) with
+ * a share (+$ED & 7) take their part of every coin type
  * ("takes and hides his/her share").
  */
 static void npc_shares(void)
@@ -711,12 +711,12 @@ static void npc_shares(void)
     u8 k;                               /* -$D(a5) */
 
     for (p = g_party_head; p != NULL; p = p->next) {
-        /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso); pg+$197: stato: 0 ok, 4
-         * incosciente, 5 morente, 6-8 morto, $0A a terra */
+        /* ch+$EC: control: <$80 PC, >$7F NPC/AI ($B3 = charmed or confused); ch+$197: status: 0 ok,
+         * 4 unconscious, 5 dying, 6-8 dead, $0A down */
         if (p->b[0xEC] > 0x7F && p->b[0x197] == 0) {
-            /* pg+$ED: quota del PNG nella spartizione (bit 0-2); 1 dopo Modify */
+            /* ch+$ED: share of the NPC in the division (bits 0-2); 1 after Modify */
             shares = (u16)(shares + mask_byte(p->b[0xED], 7));
-            /* pg+$ED: quota del PNG nella spartizione (bit 0-2); 1 dopo Modify */
+            /* ch+$ED: share of the NPC in the division (bits 0-2); 1 after Modify */
             total = (u16)(total + mask_byte(p->b[0xED], 7));
         } else {
             ++total;
@@ -724,11 +724,11 @@ static void npc_shares(void)
     }
     if (shares > 0) {
         for (k = 0; k <= 6; ++k) {
-            if ((s32)POOL(k) > 0) { /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
-                /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio) */
+            if ((s32)POOL(k) > 0) { /* $2A1E: party pool: 7 longs, coins per type 0..6 (4 = steel) */
+                /* $2A1E: party pool: 7 longs, coins per type 0..6 (4 = steel) */
                 per = (u16)h015_divs32((s32)POOL(k), (s32)total, NULL);
-                /* $2A1E: cassa del party: 7 long, monete per tipo 0..6 (4 = acciaio); $2A20: word
-                 * bassa del long della cassa per il tipo di moneta 0 */
+                /* $2A1E: party pool: 7 longs, coins per type 0..6 (4 = steel); $2A20: low word of
+                 * the pool long for coin type 0 */
                 SET_POOL(k, POOL(k) - (u32)shares * per);
                 hidden = 1;
             }
@@ -740,12 +740,12 @@ static void npc_shares(void)
     draw_screen_frame(1);
     row = 0;
     for (p = g_party_head; p != NULL; p = p->next) {
-        /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso); pg+$197: stato: 0 ok, 4
-         * incosciente, 5 morente, 6-8 morto, $0A a terra; pg+$ED: quota del PNG nella spartizione
-         * (bit 0-2); 1 dopo Modify */
+        /* ch+$EC: control: <$80 PC, >$7F NPC/AI ($B3 = charmed or confused); ch+$197: status: 0 ok, 4
+         * unconscious, 5 dying, 6-8 dead, $0A down; ch+$ED: share of the NPC in the division
+         * (bits 0-2); 1 after Modify */
         if (p->b[0xEC] > 0x7F && p->b[0x197] == 0 && p->b[0xED] > 0) {
             h026_copy(0x50, text, 0x0F, (const char *)p->b);
-            if (!p->b[0x10E]) { /* pg+$10E: sesso (0 maschio, 1 femmina; nomi H005+$4BD2) */
+            if (!p->b[0x10E]) { /* ch+$10E: sex (0 male, 1 female; names H005+$4BD2) */
                 h026_append(0x50, text, 0x1B, " takes and hides his share.");
             } else {
                 h026_append(0x50, text, 0x1B, " takes and hides her share.");
@@ -760,8 +760,8 @@ static void npc_shares(void)
 }
 
 /*
- * PORT H070+$18BE: gli oggetti lasciati cadere in combattimento ($3360)
- * tornano a chi li aveva (H071+$047C).
+ * PORT H070+$18BE: the items dropped in combat ($3360)
+ * go back to whoever had them (H071+$047C).
  */
 static void return_dropped_items(void)
 {
@@ -786,57 +786,57 @@ static void return_dropped_items(void)
 }
 
 /*
- * PORT H070+$1958: fine del combattimento: oggetti caduti, esito, nemici
- * tolti, valori ricalcolati; se il party c'e' ancora quote dei PNG,
- * esito, tesoro e cassa; altrimenti "The monsters rejoice for the party
- * has been destroyed.".  Nella dimostrazione ($24D7) esce subito.
+ * PORT H070+$1958: end of the combat: dropped items, outcome, enemies
+ * removed, values recomputed; if the party is still there NPC shares,
+ * outcome, treasure and pool; otherwise "The monsters rejoice for the party
+ * has been destroyed.".  In the demonstration ($24D7) it exits at once.
  */
 void combat_end(void)
 {
     Character *p;                       /* -$C(a5) */
 
     return_dropped_items();
-    /* B+$58E: (word) esito lotta: 1 qualcuno fuggito, $80 sconfitta, $81 fuga party */
+    /* B+$58E: (word) fight outcome: 1 someone fled, $80 defeat, $81 party fled */
     COK_PUT16(g_state_b + 0x58E, 0);
     s_enemies = 0;
-    if (!H005_B(0x24D7)) { /* $24D7: 1 se e' stata scelta la dimostrazione (Demo) */
+    if (!H005_B(0x24D7)) { /* $24D7: 1 if the demonstration (Demo) was chosen */
         combat_outcome();
     }
-    H005_B(0x3DE3) = 6; /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
+    H005_B(0x3DE3) = 6; /* $3DE3: game mode (0 menu, 1 view, 2 camp, 5 combat) */
     remove_combatants();
-    if (H005_B(0x24D7)) { /* $24D7: 1 se e' stata scelta la dimostrazione (Demo) */
+    if (H005_B(0x24D7)) { /* $24D7: 1 if the demonstration (Demo) was chosen */
         return;
     }
     for (p = g_party_head; p != NULL; p = p->next) {
         recompute_stats(p);
     }
-    /* $24D0: 1 party perduto o uscito: ferma ECL e ciclo dell'esplorazione; $24C1: uso: azzerato
-     * all'avvio; con 1 esito e caduti trattati diversamente */
+    /* $24D0: 1 party lost or gone out: stops ECL and the exploration loop; $24C1: use: cleared
+     * at start-up; with 1 outcome and fallen handled differently */
     if (!H005_B(0x24D0) || H005_B(0x24C1)) {
         if (s_fled) {
             free_treasure();
         }
-        if (!H005_B(0x24D7)) { /* $24D7: 1 se e' stata scelta la dimostrazione (Demo) */
+        if (!H005_B(0x24D7)) { /* $24D7: 1 if the demonstration (Demo) was chosen */
             npc_shares();
-            show_outcome(H005_L(0x236E)); /* $236E: esperienza guadagnata nel combattimento (long) */
+            show_outcome(H005_L(0x236E)); /* $236E: experience gained in the combat (long) */
             treasure_screen();
         }
         free_treasure();
     } else {
-        /* B+$58E: (word) esito lotta: 1 qualcuno fuggito, $80 sconfitta, $81 fuga party */
+        /* B+$58E: (word) fight outcome: 1 someone fled, $80 defeat, $81 party fled */
         COK_PUT16(g_state_b + 0x58E, 0x80);
         draw_screen_frame(1);
-        H005_SET_W(0x334E, 2); /* $334E: (word) cursore del testo: colonna */
-        H005_SET_W(0x334C, 6); /* $334C: (word) cursore del testo: riga */
+        H005_SET_W(0x334E, 2); /* $334E: (word) text cursor: column */
+        H005_SET_W(0x334C, 6); /* $334C: (word) text cursor: row */
         word_wrap_text(2, 5, 0x25, 0x16, 0x0A, 0, 1, 0x36,
                        "The monsters rejoice for the party has been destroyed.");
         show_message_wait(0x0D, 0, 0x19, "Press any key to continue");
     }
-    H005_B(0x24CE) = 1; /* $24CE: 1: pausa per carattere nella scrittura del testo */
-    COK_PUT16(g_state_b + 0x6E0, 0); /* B+$6E0: (word) bonus al tiro per colpire dei nemici (lato 1) */
-    COK_PUT16(g_state_b + 0x6E2, 0); /* B+$6E2: (word) bonus al tiro per colpire del party (lato 0) */
-    COK_PUT16(g_state_b + 0x6E4, 0); /* B+$6E4: (word) bonus al movimento del party in combattimento */
-    COK_PUT16(g_state_b + 0x5C6, 0); /* B+$5C6: (word) 1: oggetti dei nemici non vanno nel tesoro */
-    COK_PUT16(g_state_b + 0x5CC, 0); /* B+$5CC: (word) sconfitta non fatale: i caduti si rialzano a 1 PF */
-    COK_PUT16(g_state_a + 0x3EA, 0); /* A+$3EA: (word) esito e' un prelievo in banca: niente esperienza */
+    H005_B(0x24CE) = 1; /* $24CE: 1: per-character pause when writing text */
+    COK_PUT16(g_state_b + 0x6E0, 0); /* B+$6E0: (word) to-hit bonus of the enemies (side 1) */
+    COK_PUT16(g_state_b + 0x6E2, 0); /* B+$6E2: (word) to-hit bonus of the party (side 0) */
+    COK_PUT16(g_state_b + 0x6E4, 0); /* B+$6E4: (word) movement bonus of the party in combat */
+    COK_PUT16(g_state_b + 0x5C6, 0); /* B+$5C6: (word) 1: the enemies' items do not go into the treasure */
+    COK_PUT16(g_state_b + 0x5CC, 0); /* B+$5CC: (word) non-fatal defeat: the fallen get up with 1 HP */
+    COK_PUT16(g_state_a + 0x3EA, 0); /* A+$3EA: (word) outcome is a bank withdrawal: no experience */
 }

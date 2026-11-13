@@ -1,4 +1,4 @@
-/* H018: adattatori exec.library per apertura e chiusura delle librerie. */
+/* H018: exec.library adapters for opening and closing libraries. */
 #ifndef COK_H018_LIBS_H
 #define COK_H018_LIBS_H
 

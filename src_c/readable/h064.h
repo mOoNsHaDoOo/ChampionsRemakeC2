@@ -1,4 +1,4 @@
-/* H064: gestori nativi dei comandi ECL. */
+/* H064: native handlers of the ECL commands. */
 #ifndef COK_H064_H
 #define COK_H064_H
 #include "character.h"

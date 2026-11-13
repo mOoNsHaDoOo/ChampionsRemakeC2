@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H037
-; Adattatore graphics.library/InitBitMap.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H037
+; graphics.library/InitBitMap adapter.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; Adattatore graphics.library/InitBitMap.
+; MODULE NOTE
+; graphics.library/InitBitMap adapter.
 ; --------------------------------------------------------------------------
 ; H037: 52 original bytes; all offsets are section-relative.
         section H037,code
@@ -16,10 +16,10 @@ H037:
         dc.w $0000,$0000
         dc.l H037+$00000004
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H037_00000008 [parziale]
-; Scopo: Routine del modulo adattatore graphics.library/InitBitMap; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H000+$0072
+; ROUTINE: sub_H037_00000008 [partial]
+; Purpose: Routine of the graphics.library/InitBitMap adapter module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H000+$0072
 ; --------------------------------------------------------------------------
 L037_00000008:
 ; H037+$00000008: 41fafffa  lea.l $4(pc), a0
@@ -31,10 +31,10 @@ L037_00000012:
 ; H037+$00000012: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: wrapper_InitBitMap [parziale]
-; Scopo: Adattatore a graphics.library/InitBitMap; incapsula la chiamata alla libreria.
-;   - Chiama graphics.library/InitBitMap (LVO -390).
-; Chiamanti diretti: H029+$04A0, H029+$0588, H040+$0376
+; ROUTINE: wrapper_InitBitMap [partial]
+; Purpose: Adapter to graphics.library/InitBitMap; wraps the library call.
+;   - Calls graphics.library/InitBitMap (LVO -390).
+; Direct callers: H029+$04A0, H029+$0588, H040+$0376
 ; --------------------------------------------------------------------------
 L037_00000014:
 ; H037+$00000014: 206f000a  movea.l $a(a7), a0

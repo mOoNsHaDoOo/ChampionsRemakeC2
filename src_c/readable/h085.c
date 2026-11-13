@@ -1,4 +1,4 @@
-/* H085: dati del modulo (nomi dei livelli di incantesimo). */
+/* H085: module data (names of the spell levels). */
 #include "init_data.h"
 #include "h085.h"
 #include "globals.h"
@@ -13,7 +13,7 @@
 #include "h030.h"
 #include "h003_exec.h"
 
-/* Dati del modulo sotto a4: g_h085_bss[0x292 - off] e' -off(a4). */
+/* Module data below a4: g_h085_bss[0x292 - off] is -off(a4). */
 u8 g_h085_bss[0x292];
 u16 g_h085_scroll_count;
 CokItem *g_h085_scroll_items[0x31];
@@ -29,15 +29,15 @@ void h085_init(void)
     INIT_APPLY(s_init_4d1a, g_h085_bss, sizeof(g_h085_bss));
 }
 
-/* Cura il primo bersaglio di dice d8 + bonus (+1d8 per +$5E = 4). */
+/* Heals the first target by dice d8 + bonus (+1d8 for +$5E = 4). */
 static void cure_wounds(u16 dice, u16 extra)
 {
     u16 bonus;                          /* -$2(a5) */
 
-    if (H005_B(0x246C) == 0) { /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
+    if (H005_B(0x246C) == 0) { /* $246C: number of spell targets in g_spell_targets ($2520) */
         return;
     }
-    /* pg+$5E: divinita' del chierico (0 nessuna, 1..7; 6 per le razze 3-4) */
+    /* ch+$5E: deity of the cleric (0 none, 1..7; 6 for races 3-4) */
     if (g_current_char->b[0x5E] == 4) {
         bonus = roll_dice(1, 8);
     } else {
@@ -62,14 +62,14 @@ void cure_serious_wounds(void)
 }
 
 /*
- * PORT H085+$0A1A: toglie al primo bersaglio le malattie ($22, $2B; con
- * $2B anche $2C e $1F e ricalcola la forza).
+ * PORT H085+$0A1A: removes the diseases from the first target ($22, $2B; with
+ * $2B also $2C and $1F and recomputes the strength).
  */
 static u8 cure_target_disease(void)
 {
     u8 ok = 0;                          /* -$1(a5) */
 
-    H005_B(0x24AA) = 1; /* $24AA: 1 durante le cure: i gestori non riaggiungono effetti */
+    H005_B(0x24AA) = 1; /* $24AA: 1 during healing: the handlers do not add effects again */
     if (cure_effect(g_spell_targets[0], 0x22)) {
         ok = 1;
     }
@@ -79,7 +79,7 @@ static u8 cure_target_disease(void)
         remove_effect(g_spell_targets[0], 0x1F, NULL);
         recompute_stat(g_spell_targets[0], 0);
     }
-    H005_B(0x24AA) = 0; /* $24AA: 1 durante le cure: i gestori non riaggiungono effetti */
+    H005_B(0x24AA) = 0; /* $24AA: 1 during healing: the handlers do not add effects again */
     return ok;
 }
 
@@ -90,38 +90,38 @@ void cure_disease(void)
 }
 
 /*
- * PORT H085+$3552: Neutralize Poison: toglie gli effetti $37, $16 e $F
- * (veleno) e rianima il bersaglio; un morto (+$197 = 1) non ha effetto.
+ * PORT H085+$3552: Neutralize Poison: removes the effects $37, $16 and $F
+ * (poison) and revives the target; a dead one (+$197 = 1) has no effect.
  */
 void neutralize_poison(void)
 {
     Character *t = g_spell_targets[0];  /* -$4(a5) */
     CokEffect *e;                       /* -$8(a5) */
 
-    if (t->b[0x197] == 1) { /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+    if (t->b[0x197] == 1) { /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
         g_spell_targets[0] = NULL;
         return;
     }
     if (find_effect(t, 0x37, &e)) {
-        if (t->b[0x1A8] == 0) { /* pg+$1A8: punti ferita correnti */
-            t->b[0x1A8] = 1; /* pg+$1A8: punti ferita correnti */
+        if (t->b[0x1A8] == 0) { /* ch+$1A8: current hit points */
+            t->b[0x1A8] = 1; /* ch+$1A8: current hit points */
         }
-        H005_B(0x24AA) = 1; /* $24AA: 1 durante le cure: i gestori non riaggiungono effetti */
+        H005_B(0x24AA) = 1; /* $24AA: 1 during healing: the handlers do not add effects again */
         remove_effect(t, 0x37, NULL);
         remove_effect(t, 0x16, NULL);
         remove_effect(t, 0x0F, NULL);
-        H005_B(0x24AA) = 0; /* $24AA: 1 durante le cure: i gestori non riaggiungono effetti */
+        H005_B(0x24AA) = 0; /* $24AA: 1 during healing: the handlers do not add effects again */
         show_char_message(t, 0x0D, "is unpoisoned", 0x0A, 1);
-        t->b[0x198] = 1; /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
-        t->b[0x197] = 0; /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+        t->b[0x198] = 1; /* ch+$198: active/standing (0 down or out of the combat) */
+        t->b[0x197] = 0; /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
     } else {
         show_char_message(t, 0x0D, "is unaffected", 0x0A, 1);
     }
 }
 
 /*
- * PORT H085+$0672: durata dell'effetto di spell: tiri fissi per $28, $39,
- * $3B, $3D e $3F, altrimenti byte 4 + livello d'incantatore * byte 5.
+ * PORT H085+$0672: duration of the effect of spell: fixed rolls for $28, $39,
+ * $3B, $3D and $3F, otherwise byte 4 + caster level * byte 5.
  */
 static u16 spell_duration(u16 spell)
 {
@@ -139,7 +139,7 @@ static u16 spell_duration(u16 spell)
         d = (u16)(roll_dice(1, 4) * 10 + 0x28);
         break;
     case 0x3F:
-        /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
+        /* $3DE3: game mode (0 menu, 1 view, 2 camp, 5 combat) */
         if (H005_B(0x3DE3) == 5) {
             d = (u16)(roll_dice(2, 0x0A) * 10);
         } else {
@@ -159,47 +159,47 @@ static u16 spell_duration(u16 spell)
 #define H085_SET_W(off, v) COK_PUT16(&g_h085_bss[(off)], (v))
 
 /*
- * PORT H085+$1EBA: Enlarge: forza 18/00..22 secondo il livello
- * d'incantatore (H085+$0 eccezionale, +$2 forza), se maggiore di quella
- * base.
+ * PORT H085+$1EBA: Enlarge: strength 18/00..22 according to the caster
+ * level (H085+$0 exceptional, +$2 strength), if greater than the
+ * base one.
  */
 void enlarge(void)
 {
     Character *t = g_spell_targets[0];  /* -$6(a5) */
     u16 value;                          /* -$2(a5) */
 
-    /* H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita */
+    /* H085_bss+$2: (word) spell work value: Enlarge strength, remaining HD/HP, % success */
     H085_SET_W(2, 0x12);
-    H085_SET_W(0, 0); /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
-    switch (caster_level(H005_B(0x2471))) { /* $2471: incantesimo in corso di lancio (0 = nessuno) */
-    /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
+    H085_SET_W(0, 0); /* H085_bss+$0: (word) spell work value: % Enlarge strength, Sleep HD cost, level */
+    switch (caster_level(H005_B(0x2471))) { /* $2471: spell being cast (0 = none) */
+    /* H085_bss+$0: (word) spell work value: % Enlarge strength, Sleep HD cost, level */
     case 1:  H085_SET_W(0, 0);    break;
-    /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
+    /* H085_bss+$0: (word) spell work value: % Enlarge strength, Sleep HD cost, level */
     case 2:  H085_SET_W(0, 1);    break;
-    /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
+    /* H085_bss+$0: (word) spell work value: % Enlarge strength, Sleep HD cost, level */
     case 3:  H085_SET_W(0, 0x33); break;
-    /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
+    /* H085_bss+$0: (word) spell work value: % Enlarge strength, Sleep HD cost, level */
     case 4:  H085_SET_W(0, 0x4C); break;
-    /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
+    /* H085_bss+$0: (word) spell work value: % Enlarge strength, Sleep HD cost, level */
     case 5:  H085_SET_W(0, 0x5B); break;
-    /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
+    /* H085_bss+$0: (word) spell work value: % Enlarge strength, Sleep HD cost, level */
     case 6:  H085_SET_W(0, 0x64); break;
-    /* H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita */
+    /* H085_bss+$2: (word) spell work value: Enlarge strength, remaining HD/HP, % success */
     case 7:  H085_SET_W(2, 0x13); break;
-    /* H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita */
+    /* H085_bss+$2: (word) spell work value: Enlarge strength, remaining HD/HP, % success */
     case 8:  H085_SET_W(2, 0x14); break;
-    /* H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita */
+    /* H085_bss+$2: (word) spell work value: Enlarge strength, remaining HD/HP, % success */
     case 9:  H085_SET_W(2, 0x15); break;
     case 10:
-    /* H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita */
+    /* H085_bss+$2: (word) spell work value: Enlarge strength, remaining HD/HP, % success */
     case 11: H085_SET_W(2, 0x16); break;
     default: break;
     }
-    /* H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita;
-     * H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
+    /* H085_bss+$2: (word) spell work value: Enlarge strength, remaining HD/HP, % success;
+     * H085_bss+$0: (word) spell work value: % Enlarge strength, Sleep HD cost, level */
     if (strength_raises(t, H085_W(2), H085_W(0), &value)) {
         show_char_message(t, 0x0B, "is stronger", 0x0A, 1);
-        /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+        /* $2471: spell being cast (0 = none) */
         add_effect(t, 0x0C, spell_duration(H005_B(0x2471)), value, 1);
         recompute_stat(t, 0);
     } else {
@@ -208,9 +208,9 @@ void enlarge(void)
 }
 
 /*
- * PORT H085+$2BD4: Strength: +1d4 (maghi), 1d6 (chierici, ladri) o 1d8
- * (guerrieri) alla forza, con l'eccezionale per i guerrieri.  Senza
- * classi adatte l'originale usa la parola non inizializzata; qui 0.
+ * PORT H085+$2BD4: Strength: +1d4 (mages), 1d6 (clerics, thieves) or 1d8
+ * (fighters) to strength, with the exceptional one for fighters.  Without
+ * suitable classes the original uses the uninitialised word; here 0.
  */
 void strength_spell(void)
 {
@@ -220,38 +220,38 @@ void strength_spell(void)
     u16 str;                            /* -$a(a5) */
     u16 value;                          /* -$c(a5) */
 
-    /* pg+$103: livello da mago; pg+$10B: livello precedente da mago; pg+$DC: uso: soglia per i
-     * livelli +$106..+$10D e i PF; !=0 vieta Modify */
+    /* ch+$103: mage level; ch+$10B: previous mage level; ch+$DC: use: threshold for the levels
+     * +$106..+$10D and the HP; !=0 forbids Modify */
     if (t->b[0x103] > 0 || t->b[0x10B] > t->b[0xDC]) {
         bonus = roll_dice(1, 4);
     }
-    /* pg+$FE: livelli per classe, 8 voci (0 chierico..7 cavaliere); chierico; pg+$106: livelli
-     * della classe precedente, 8 voci come +$FE; chierico; pg+$DC: uso: soglia per i livelli
-     * +$106..+$10D e i PF; !=0 vieta Modify; pg+$104: livello da ladro */
+    /* ch+$FE: levels per class, 8 entries (0 cleric..7 knight); cleric; ch+$106: levels of the
+     * previous class, 8 entries like +$FE; cleric; ch+$DC: use: threshold for the levels
+     * +$106..+$10D and the HP; !=0 forbids Modify; ch+$104: thief level */
     if (t->b[0xFE] > 0 || t->b[0x106] > t->b[0xDC] || t->b[0x104] > 0 ||
-        /* pg+$10C: livello precedente da ladro; pg+$DC: uso: soglia per i livelli +$106..+$10D e i
-         * PF; !=0 vieta Modify */
+        /* ch+$10C: previous thief level; ch+$DC: use: threshold for the levels +$106..+$10D and
+         * the HP; !=0 forbids Modify */
         t->b[0x10C] > t->b[0xDC]) {
         bonus = roll_dice(1, 6);
     }
-    /* pg+$100: livello da guerriero; pg+$108: livello precedente da guerriero; pg+$DC: uso: soglia
-     * per i livelli +$106..+$10D e i PF; !=0 vieta Modify */
+    /* ch+$100: fighter level; ch+$108: previous fighter level; ch+$DC: use: threshold for the
+     * levels +$106..+$10D and the HP; !=0 forbids Modify */
     if (t->b[0x100] > 0 || t->b[0x108] > t->b[0xDC]) {
         bonus = roll_dice(1, 8);
     }
-    /* pg+$11: caratteristiche correnti, 6 voci passo 2 da +$11; forza corrente */
+    /* ch+$11: current abilities, 6 entries step 2 from +$11; current strength */
     str = (u16)(t->b[0x11] + bonus);
     if (str > 0x12) {
-        /* pg+$100: livello da guerriero; pg+$108: livello precedente da guerriero; pg+$DC: uso:
-         * soglia per i livelli +$106..+$10D e i PF; !=0 vieta Modify */
+        /* ch+$100: fighter level; ch+$108: previous fighter level; ch+$DC: use: threshold for
+         * the levels +$106..+$10D and the HP; !=0 forbids Modify */
         if (t->b[0x100] > 0 || t->b[0x108] > t->b[0xDC] ||
-            /* pg+$105: livello da cavaliere; pg+$10D: livello precedente da cavaliere; pg+$DC: uso:
-             * soglia per i livelli +$106..+$10D e i PF; !=0 vieta Modify */
+            /* ch+$105: knight level; ch+$10D: previous knight level; ch+$DC: use: threshold for the
+             * levels +$106..+$10D and the HP; !=0 forbids Modify */
             t->b[0x105] > 0 || t->b[0x10D] > t->b[0xDC] ||
-            /* pg+$102: livello da ranger; pg+$10A: livello precedente da ranger; pg+$DC: uso:
-             * soglia per i livelli +$106..+$10D e i PF; !=0 vieta Modify */
+            /* ch+$102: ranger level; ch+$10A: previous ranger level; ch+$DC: use: threshold
+             * for the levels +$106..+$10D and the HP; !=0 forbids Modify */
             t->b[0x102] > 0 || t->b[0x10A] > t->b[0xDC]) {
-            /* pg+$1C: forza eccezionale corrente (18/xx, 1..100) */
+            /* ch+$1C: current exceptional strength (18/xx, 1..100) */
             ext = (u16)(t->b[0x1C] + (str - 0x12) * 10);
             if (ext > 0x64) {
                 ext = 0x64;
@@ -263,17 +263,17 @@ void strength_spell(void)
     }
     if (strength_raises(t, str, ext, &value)) {
         value = (u16)(bonus + 0x64);
-        /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+        /* $2471: spell being cast (0 = none) */
         add_effect(t, 0x26, spell_duration(H005_B(0x2471)), value, 1);
         recompute_stat(t, 0);
     }
 }
 
 /*
- * PORT H085+$07B6: applica l'incantesimo spell a ogni bersaglio ($2520,
- * $246C): tiro salvezza (byte 8/9), per il byte 2 = $FF un tiro per
- * colpire, poi danno dmg (tipo dmg_type in $2473) ed effetto (byte $A)
- * con la sua durata e il livello level (0: quello d'incantatore).
+ * PORT H085+$07B6: applies spell spell to every target ($2520,
+ * $246C): saving throw (byte 8/9), for byte 2 = $FF a to-hit
+ * roll, then damage dmg (type dmg_type in $2473) and effect (byte $A)
+ * with its duration and level level (0: the caster one).
  */
 void apply_spell_effect(u16 spell, u16 level, u8 b5, u16 dmg, u16 dmg_type,
                         u16 len, const char *text)
@@ -282,15 +282,15 @@ void apply_spell_effect(u16 spell, u16 level, u8 b5, u16 dmg, u16 dmg_type,
     u16 i;                              /* -$4(a5) */
     u8 saved;                           /* -$9(a5) */
     Character *t;
-/* $66: tabella incantesimi, 16 byte per incantesimo (da 1); k/o = campo */
+/* $66: spell table, 16 bytes per spell (from 1); k/o = field */
 #define SP(k) H005_B(0x66 + (spell - 1) * 16 + (k))
 
     if (dmg == 0) {
-        H005_B(0x2473) = 0; /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
+        H005_B(0x2473) = 0; /* $2473: type of the incoming damage (bits: 1 fire, 2 cold, 8, $20) */
     } else {
-        H005_B(0x2473) = (u8)dmg_type; /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
+        H005_B(0x2473) = (u8)dmg_type; /* $2473: type of the incoming damage (bits: 1 fire, 2 cold, 8, $20) */
     }
-    if (H005_B(0x246C) == 0) { /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
+    if (H005_B(0x246C) == 0) { /* $246C: number of spell targets in g_spell_targets ($2520) */
         return;
     }
     if (level == 0) {
@@ -298,7 +298,7 @@ void apply_spell_effect(u16 spell, u16 level, u8 b5, u16 dmg, u16 dmg_type,
     } else {
         lvl = (s16)level;
     }
-    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
+    /* $246C: number of spell targets in g_spell_targets ($2520) */
     for (i = 1; i <= H005_B(0x246C); ++i) {
         if (g_spell_targets[i - 1] == NULL) {
             continue;
@@ -308,12 +308,12 @@ void apply_spell_effect(u16 spell, u16 level, u8 b5, u16 dmg, u16 dmg_type,
         } else {
             saved = saving_throw_roll(g_spell_targets[i - 1], SP(9), 0);
         }
-        /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+        /* $2471: spell being cast (0 = none) */
         if (H005_B(0x66 + (H005_B(0x2471) - 1) * 16 + 2) == 0xFF) {
             recompute_stats(g_spell_targets[i - 1]);
             trigger_event(&g_spell_targets[i - 1], 0x0B);
             t = g_spell_targets[i - 1];
-            /* pg+$19C: classe d'armatura corrente codificata (60 - CA) */
+            /* ch+$19C: encoded current armour class (60 - AC) */
             if (!attack_roll(g_current_char, t, t->b[0x19C])) {
                 dmg = 0;
                 saved = 1;
@@ -328,64 +328,64 @@ void apply_spell_effect(u16 spell, u16 level, u8 b5, u16 dmg, u16 dmg_type,
                                   SP(8), saved, len, text);
         }
     }
-    H005_B(0x2473) = 0; /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
+    H005_B(0x2473) = 0; /* $2473: type of the incoming damage (bits: 1 fire, 2 cold, 8, $20) */
 #undef SP
 }
 
-#define SPELL_NOW H005_B(0x2471) /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+#define SPELL_NOW H005_B(0x2471) /* $2471: spell being cast (0 = none) */
 
-/* Incantesimo con solo effetto e messaggio (H085+$07B6 senza danno). */
+/* Spell with only an effect and a message (H085+$07B6 without damage). */
 static void simple_effect(u16 len, const char *text)
 {
-    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    /* $2471: spell being cast (0 = none) */
     apply_spell_effect(SPELL_NOW, 0, 0, 0, 0, len, text);
 }
 
 
 /*
- * PORT H085+$0AB2: effetto sui bersagli del lato side (gli altri sono
- * tolti; con Bless in combattimento anche chi non e' adatto, H063+$2BDE).
+ * PORT H085+$0AB2: effect on the targets of side side (the others are
+ * removed; with Bless in combat also those not suitable, H063+$2BDE).
  */
 static void side_effect(u8 side, u16 len, const char *text)
 {
     u16 i;                              /* -$2(a5) */
 
-    H005_B(0x24A9) = 1; /* $24A9: 1 se l'incantesimo agisce su area/gruppo (immagini illese) */
-    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
+    H005_B(0x24A9) = 1; /* $24A9: 1 if the spell acts on an area/group (pictures unharmed) */
+    /* $246C: number of spell targets in g_spell_targets ($2520) */
     for (i = 1; i <= H005_B(0x246C); ++i) {
-        /* pg+$199: lato in combattimento (0 party, 1 avversari) */
+        /* ch+$199: side in combat (0 party, 1 opponents) */
         if (g_spell_targets[i - 1]->b[0x199] != side) {
             g_spell_targets[i - 1] = NULL;
-        /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+        /* $2471: spell being cast (0 = none) */
         } else if ((SPELL_NOW == 1 || SPELL_NOW == 0x69) &&
-                   /* $3DE3: modo di gioco (0 menu, 1 vista, 2 campo, 5 combattimento) */
+                   /* $3DE3: game mode (0 menu, 1 view, 2 camp, 5 combat) */
                    H005_B(0x3DE3) == 5 &&
                    count_enemies_near(g_spell_targets[i - 1], 1) > 0) {
             g_spell_targets[i - 1] = NULL;
         }
     }
-    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    /* $2471: spell being cast (0 = none) */
     apply_spell_effect(SPELL_NOW, 0, 0, 0, 0, len, text);
 }
 
 /* PORT H085+$1C60: Bless. */
 void spell_bless(void)
 {
-    /* pg+$199: lato in combattimento (0 party, 1 avversari) */
+    /* ch+$199: side in combat (0 party, 1 opponents) */
     side_effect(g_current_char->b[0x199], 0x0A, "is Blessed");
 }
 
 /* PORT H085+$1C86: Curse. */
 void spell_curse(void)
 {
-    H005_B(0x24A9) = 1; /* $24A9: 1 se l'incantesimo agisce su area/gruppo (immagini illese) */
+    H005_B(0x24A9) = 1; /* $24A9: 1 if the spell acts on an area/group (pictures unharmed) */
     side_effect(other_side(g_current_char), 9, "is Cursed");
 }
 
 /* PORT H085+$1D3C: Cause Light Wounds, 1d8. */
 void spell_cause_light_wounds(void)
 {
-    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    /* $2471: spell being cast (0 = none) */
     apply_spell_effect(SPELL_NOW, 0, 0, roll_damage_dice(1, 8), 8, 0, "");
 }
 
@@ -395,10 +395,10 @@ void spell_resist_cold(void)
     simple_effect(0x11, "is cold-resistant");
 }
 
-/* PORT H085+$1DA6: Burning Hands, danno = livello d'incantatore. */
+/* PORT H085+$1DA6: Burning Hands, damage = caster level. */
 void spell_burning_hands(void)
 {
-    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    /* $2471: spell being cast (0 = none) */
     apply_spell_effect(SPELL_NOW, 0, 0, (u16)caster_level(SPELL_NOW), 9, 0,
                        "");
 }
@@ -412,16 +412,16 @@ void spell_charm_person(void)
     if (t == NULL) {
         return;
     }
-    /* pg+$14C: flag del tipo di creatura (bit usati da effetti e incantesimi); pg+$D3: forma/taglia
-     * sulla mappa di combattimento (bit 0-2, >1 grande) */
+    /* ch+$14C: creature type flags (bits used by effects and spells); ch+$D3: shape/size on the
+     * combat map (bits 0-2, >1 large) */
     if (t->b[0x14C] > 1 || t->b[0xD3] > 1) {
         show_char_message(t, 0x0D, "is unaffected", 0x0A, 1);
         return;
     }
-    apply_spell_effect(SPELL_NOW, /* $2471: incantesimo in corso di lancio (0 = nessuno) */
-                       /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    apply_spell_effect(SPELL_NOW, /* $2471: spell being cast (0 = none) */
+                       /* $2471: spell being cast (0 = none) */
                        (u16)(caster_level(SPELL_NOW) +
-                             /* pg+$199: lato in combattimento (0 party, 1 avversari) */
+                             /* ch+$199: side in combat (0 party, 1 opponents) */
                              (g_current_char->b[0x199] << 7)),
                        1, 0, 0, 0x0A, "is charmed");
     if (find_effect(t, 0x0B, &e)) {
@@ -429,13 +429,13 @@ void spell_charm_person(void)
     }
 }
 
-/* PORT H085+$1FFA: Reduce: annulla Enlarge ($C) se il bersaglio non salva. */
+/* PORT H085+$1FFA: Reduce: cancels Enlarge ($C) if the target does not save. */
 void spell_reduce(void)
 {
     Character *t = g_spell_targets[0];  /* -$8(a5) */
     CokEffect *e;                       /* -$4(a5) */
 
-    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
+    /* $246C: number of spell targets in g_spell_targets ($2520) */
     if (t == NULL || H005_B(0x246C) == 0) {
         return;
     }
@@ -449,23 +449,23 @@ void spell_reduce(void)
     }
 }
 
-/* PORT H085+$2090: Friends (livello 2d4), poi ricalcola il carisma. */
+/* PORT H085+$2090: Friends (level 2d4), then recomputes the charisma. */
 void spell_friends(void)
 {
-    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    /* $2471: spell being cast (0 = none) */
     apply_spell_effect(SPELL_NOW, roll_dice(2, 4), 1, 0, 0, 0x0B,
                        "is friENDly");
     recompute_stat(g_current_char, 5);
 }
 
-/* PORT H085+$20DE: Magic Missile, (livello+1)/2 dadi d4 + altrettanti. */
+/* PORT H085+$20DE: Magic Missile, (level+1)/2 d4 dice + as many. */
 void spell_magic_missile(void)
 {
-    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    /* $2471: spell being cast (0 = none) */
     u16 n = (u16)(caster_level(SPELL_NOW) + 1);   /* -$2(a5) */
     u16 dmg = roll_damage_dice((u16)(n >> 1), 4);
 
-    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    /* $2471: spell being cast (0 = none) */
     apply_spell_effect(SPELL_NOW, 0, 0, (u16)(dmg + (n >> 1)), 8, 0, "");
 }
 
@@ -475,13 +475,13 @@ void spell_shield(void)
     simple_effect(0x0B, "is shielded");
 }
 
-/* PORT H085+$2172: Shocking Grasp, 1d8 + livello. */
+/* PORT H085+$2172: Shocking Grasp, 1d8 + level. */
 void spell_shocking_grasp(void)
 {
     u16 dmg = roll_damage_dice(1, 8);
 
-    dmg = (u16)(dmg + caster_level(SPELL_NOW)); /* $2471: incantesimo in corso di lancio (0 = nessuno) */
-    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    dmg = (u16)(dmg + caster_level(SPELL_NOW)); /* $2471: spell being cast (0 = none) */
+    /* $2471: spell being cast (0 = none) */
     apply_spell_effect(SPELL_NOW, 0, 0, dmg, 0x0C, 0, "");
 }
 
@@ -489,9 +489,9 @@ void spell_shocking_grasp(void)
 #define H085SETW(off, v)  COK_PUT16(&g_h085_bss[(off)], (v))
 
 /*
- * PORT H085+$21C8: Sleep: 4d4 dadi vita (H085+$2); ogni bersaglio ne
- * costa secondo +$DB (H085+$0); morti, gia' addormentati o troppo forti
- * sono tolti.
+ * PORT H085+$21C8: Sleep: 4d4 hit dice (H085+$2); every target
+ * costs according to +$DB (H085+$0); the dead, already asleep or too strong
+ * are removed.
  */
 void spell_sleep(void)
 {
@@ -499,45 +499,45 @@ void spell_sleep(void)
     Character *t;
     u16 i;                              /* -$2(a5) */
 
-    H005_B(0x24A9) = 1; /* $24A9: 1 se l'incantesimo agisce su area/gruppo (immagini illese) */
-    /* H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita */
+    H005_B(0x24A9) = 1; /* $24A9: 1 if the spell acts on an area/group (pictures unharmed) */
+    /* H085_bss+$2: (word) spell work value: Enlarge strength, remaining HD/HP, % success */
     H085SETW(2, roll_dice(4, 4));
-    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
+    /* $246C: number of spell targets in g_spell_targets ($2520) */
     for (i = 1; i <= H005_B(0x246C); ++i) {
         t = g_spell_targets[i - 1];
-        switch (t->b[0xDB]) { /* pg+$DB: livello massimo fra le classi (usato anche come dadi vita) */
+        switch (t->b[0xDB]) { /* ch+$DB: highest level among the classes (also used as hit dice) */
         case 0:
-        /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
+        /* H085_bss+$0: (word) spell work value: % Enlarge strength, Sleep HD cost, level */
         case 1: H085SETW(0, 1); break;
-        /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
+        /* H085_bss+$0: (word) spell work value: % Enlarge strength, Sleep HD cost, level */
         case 2: H085SETW(0, 2); break;
-        /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
+        /* H085_bss+$0: (word) spell work value: % Enlarge strength, Sleep HD cost, level */
         case 3: H085SETW(0, 4); break;
-        /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
+        /* H085_bss+$0: (word) spell work value: % Enlarge strength, Sleep HD cost, level */
         case 4: H085SETW(0, 6); break;
         case 5:
-            if (t->b[0x5B] == 7) { /* pg+$5B: razza (0..6, nomi H005+$4D04) */
-                /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
+            if (t->b[0x5B] == 7) { /* ch+$5B: race (0..6, names H005+$4D04) */
+                /* H085_bss+$0: (word) spell work value: % Enlarge strength, Sleep HD cost, level */
                 H085SETW(0, 0x0A);
             } else {
-                /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
+                /* H085_bss+$0: (word) spell work value: % Enlarge strength, Sleep HD cost, level */
                 H085SETW(0, 0x14);
             }
             break;
         default:
-            /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
+            /* H085_bss+$0: (word) spell work value: % Enlarge strength, Sleep HD cost, level */
             H085SETW(0, 0x14);
             break;
         }
-        /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+        /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
         if (t->b[0x197] == 1 || find_effect(t, 0x35, &e) ||
-            /* H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita;
-             * H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
+            /* H085_bss+$2: (word) spell work value: Enlarge strength, remaining HD/HP, % success;
+             * H085_bss+$0: (word) spell work value: % Enlarge strength, Sleep HD cost, level */
             H085W(2) < H085W(0)) {
             g_spell_targets[i - 1] = NULL;
         } else {
-            /* H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita;
-             * H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
+            /* H085_bss+$2: (word) spell work value: Enlarge strength, remaining HD/HP, % success;
+             * H085_bss+$0: (word) spell work value: % Enlarge strength, Sleep HD cost, level */
             H085SETW(2, (u16)(H085W(2) - H085W(0)));
         }
     }
@@ -556,64 +556,64 @@ void spell_silence(void)
     simple_effect(0x0B, "is silenced");
 }
 
-/* PORT H085+$2414: Slow Poison: rianima l'avvelenato ($37). */
+/* PORT H085+$2414: Slow Poison: revives the poisoned one ($37). */
 void spell_slow_poison(void)
 {
     Character *t = g_spell_targets[0];  /* -$8(a5) */
     CokEffect *e;                       /* -$4(a5) */
 
-    if (t->b[0x197] == 1) { /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
+    if (t->b[0x197] == 1) { /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
         g_spell_targets[0] = NULL;
         return;
     }
     if (find_effect(t, 0x37, &e)) {
-        if (t->b[0x1A8] == 0) { /* pg+$1A8: punti ferita correnti */
-            t->b[0x1A8] = 1; /* pg+$1A8: punti ferita correnti */
+        if (t->b[0x1A8] == 0) { /* ch+$1A8: current hit points */
+            t->b[0x1A8] = 1; /* ch+$1A8: current hit points */
         }
-        t->b[0x197] = 0; /* pg+$197: stato: 0 ok, 4 incosciente, 5 morente, 6-8 morto, $0A a terra */
-        t->b[0x198] = 1; /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
-        /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+        t->b[0x197] = 0; /* ch+$197: status: 0 ok, 4 unconscious, 5 dying, 6-8 dead, $0A down */
+        t->b[0x198] = 1; /* ch+$198: active/standing (0 down or out of the combat) */
+        /* $2471: spell being cast (0 = none) */
         apply_spell_effect(SPELL_NOW, 0xFF, 1, 0, 0, 0x0B, "is affected");
         add_effect(t, 0x0F, 0x0A, 0xFF, 1);
     }
 }
 
 /*
- * PORT H085+$24C6: Snake Charm: i membri del party con il bit $10 di
- * +$14C, attivi e non incantati ($33) finche' bastano i PF di chi lancia.
+ * PORT H085+$24C6: Snake Charm: the party members with bit $10 of
+ * +$14C, active and not charmed ($33) while the caster's HP are enough.
  */
 void spell_snake_charm(void)
 {
     Character *p;                       /* -$4(a5) */
     CokEffect *e;                       /* -$8(a5) */
 
-    /* pg+$1A8: punti ferita correnti; H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF
-     * residui, % riuscita */
+    /* ch+$1A8: current hit points; H085_bss+$2: (word) spell work value: Enlarge strength,
+     * remaining HD/HP, % success */
     H085SETW(2, g_current_char->b[0x1A8]);
-    H005_B(0x246C) = 0; /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
+    H005_B(0x246C) = 0; /* $246C: number of spell targets in g_spell_targets ($2520) */
     for (p = g_party_head; p != NULL; p = p->next) {
-        /* pg+$14C: flag del tipo di creatura (bit usati da effetti e incantesimi); pg+$198:
-         * attivo/in piedi (0 a terra o fuori combattimento) */
+        /* ch+$14C: creature type flags (bits used by effects and spells); ch+$198:
+         * active/standing (0 down or out of the combat) */
         if (mask_byte(p->b[0x14C], 0x10) && p->b[0x198] &&
-            /* H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita;
-             * pg+$1A8: punti ferita correnti */
+            /* H085_bss+$2: (word) spell work value: Enlarge strength, remaining HD/HP, %
+             * success; ch+$1A8: current hit points */
             !find_effect(p, 0x33, &e) && H085W(2) >= p->b[0x1A8]) {
-            /* H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita;
-             * pg+$1A8: punti ferita correnti */
+            /* H085_bss+$2: (word) spell work value: Enlarge strength, remaining HD/HP, %
+             * success; ch+$1A8: current hit points */
             H085SETW(2, (u16)(H085W(2) - p->b[0x1A8]));
-            /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
+            /* $246C: number of spell targets in g_spell_targets ($2520) */
             add_to_byte(&H005_B(0x246C), 1);
-            /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
+            /* $246C: number of spell targets in g_spell_targets ($2520) */
             g_spell_targets[H005_B(0x246C) - 1] = p;
         }
     }
     simple_effect(0x0A, "is charmed");
 }
 
-/* PORT H085+$25B8: Spiritual Hammer: effetto, poi il gestore $17. */
+/* PORT H085+$25B8: Spiritual Hammer: effect, then the handler $17. */
 void spell_spiritual_hammer(void)
 {
-    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    /* $2471: spell being cast (0 = none) */
     apply_spell_effect(SPELL_NOW, 0, 1, 0, 0, 0, "");
     call_effect_handler(0x17, &g_spell_targets[0], NULL, 0);
 }
@@ -624,14 +624,14 @@ void spell_knock(void)
     simple_effect(0x0B, "Knock-Knock");
 }
 
-/* PORT H085+$2628: Mirror Image: 1d4 immagini (nibble alto) e livello. */
+/* PORT H085+$2628: Mirror Image: 1d4 images (high nibble) and level. */
 void spell_mirror_image(void)
 {
     u8 v;                               /* -$1(a5) */
 
     v = (u8)(roll_dice(1, 4) << 4);
-    v = or_byte(v, (u16)caster_level(SPELL_NOW)); /* $2471: incantesimo in corso di lancio (0 = nessuno) */
-    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    v = or_byte(v, (u16)caster_level(SPELL_NOW)); /* $2471: spell being cast (0 = none) */
+    /* $2471: spell being cast (0 = none) */
     apply_spell_effect(SPELL_NOW, v, 0, 0, 0, 0x0D, "is duplicated");
 }
 
@@ -658,24 +658,24 @@ void spell_cause_blindness(void)
 /* PORT H085+$2E40: Cause Disease. */
 void spell_cause_disease(void)
 {
-    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    /* $2471: spell being cast (0 = none) */
     apply_spell_effect(SPELL_NOW, 0, 1, 0, 0, 0x0B, "is diseased");
 }
 
-/* PORT H085+$2E70: Prayer (livello: lato * 16 + livello d'incantatore). */
+/* PORT H085+$2E70: Prayer (level: side * 16 + caster level). */
 void spell_prayer(void)
 {
-    /* pg+$199: lato in combattimento (0 party, 1 avversari) */
+    /* ch+$199: side in combat (0 party, 1 opponents) */
     u16 side = (u16)(g_current_char->b[0x199] << 4);
 
-    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    /* $2471: spell being cast (0 = none) */
     apply_spell_effect(SPELL_NOW, (u16)(side + caster_level(SPELL_NOW)), 0,
                        0, 0, 0x0A, "is praying");
 }
 
 /*
- * PORT H085+$2EC4: Remove Curse: toglie la maledizione ($24) o libera il
- * primo oggetto maledetto (+$3C), annullandone l'effetto magico.
+ * PORT H085+$2EC4: Remove Curse: removes the curse ($24) or frees the
+ * first cursed item (+$3C), cancelling its magic effect.
  */
 void spell_remove_curse(void)
 {
@@ -690,13 +690,13 @@ void spell_remove_curse(void)
     found = 0;
     for (it = g_spell_targets[0]->items; it != NULL && !found;
          it = it->next) {
-        if (it->b[0x3C]) { /* ogg+$3C: flag oggetto maledetto */
+        if (it->b[0x3C]) { /* item+$3C: cursed item flag */
             found = 1;
-            it->b[0x3A] = 0; /* ogg+$3A: flag oggetto pronto all'uso (Ready) */
-            /* ogg+$46: tipo dell'effetto magico: bit7 = effetto passivo, bit 0..6 tipo */
+            it->b[0x3A] = 0; /* item+$3A: item readied flag (Ready) */
+            /* item+$46: type of the magic effect: bit7 = passive effect, bits 0..6 type */
             if (it->b[0x46] > 0x7F) {
-                H005_B(0x24E0) = 1; /* $24E0: 1: gli effetti passano al gestore $2A0E (oggetti magici) */
-                /* ogg+$46: tipo dell'effetto magico: bit7 = effetto passivo, bit 0..6 tipo */
+                H005_B(0x24E0) = 1; /* $24E0: 1: the effects go to the handler $2A0E (magic items) */
+                /* item+$46: type of the magic effect: bit7 = passive effect, bits 0..6 type */
                 call_effect_handler(it->b[0x46], &g_spell_targets[0], it, 1);
                 for (k = 0; k <= 5; ++k) {
                     recompute_stat(g_spell_targets[0], k);
@@ -723,20 +723,20 @@ void spell_blink(void)
 }
 
 /*
- * PORT H085+$302A: effetto sui bersagli del lato side, al massimo quanti
- * il livello d'incantatore; chi ha l'effetto opposto type lo perde invece
- * di ricevere il nuovo.  Poi l'evento $12 per ogni bersaglio.
+ * PORT H085+$302A: effect on the targets of side side, at most as many as
+ * the caster level; whoever has the opposite effect type loses it instead
+ * of getting the new one.  Then event $12 for every target.
  */
 static void side_limited_effect(u16 type, u8 side, u16 len, const char *text)
 {
     s16 left;                           /* -$2(a5) */
     u16 i;                              /* -$4(a5) */
 
-    H005_B(0x24A9) = 1; /* $24A9: 1 se l'incantesimo agisce su area/gruppo (immagini illese) */
-    left = caster_level(SPELL_NOW); /* $2471: incantesimo in corso di lancio (0 = nessuno) */
-    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
+    H005_B(0x24A9) = 1; /* $24A9: 1 if the spell acts on an area/group (pictures unharmed) */
+    left = caster_level(SPELL_NOW); /* $2471: spell being cast (0 = none) */
+    /* $246C: number of spell targets in g_spell_targets ($2520) */
     for (i = 1; i <= H005_B(0x246C); ++i) {
-        /* pg+$199: lato in combattimento (0 party, 1 avversari) */
+        /* ch+$199: side in combat (0 party, 1 opponents) */
         if (g_spell_targets[i - 1]->b[0x199] == side && (u16)left > 0) {
             --left;
             if (cure_effect(g_spell_targets[i - 1], type)) {
@@ -746,9 +746,9 @@ static void side_limited_effect(u16 type, u8 side, u16 len, const char *text)
             g_spell_targets[i - 1] = NULL;
         }
     }
-    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    /* $2471: spell being cast (0 = none) */
     apply_spell_effect(SPELL_NOW, 0, 0, 0, 0, len, text);
-    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
+    /* $246C: number of spell targets in g_spell_targets ($2520) */
     for (i = 1; i <= H005_B(0x246C); ++i) {
         if (g_spell_targets[i - 1] != NULL) {
             trigger_event(&g_spell_targets[i - 1], 0x12);
@@ -756,20 +756,20 @@ static void side_limited_effect(u16 type, u8 side, u16 len, const char *text)
     }
 }
 
-/* PORT H085+$318A: Haste (annulla Slow, $2A). */
+/* PORT H085+$318A: Haste (cancels Slow, $2A). */
 void spell_haste(void)
 {
-    /* pg+$199: lato in combattimento (0 party, 1 avversari) */
+    /* ch+$199: side in combat (0 party, 1 opponents) */
     side_limited_effect(0x2A, g_current_char->b[0x199], 9, "is Hasted");
 }
 
-/* PORT H085+$3224: Slow (annulla Haste, $27). */
+/* PORT H085+$3224: Slow (cancels Haste, $27). */
 void spell_slow(void)
 {
     side_limited_effect(0x27, other_side(g_current_char), 9, "is Slowed");
 }
 
-/* PORT H085+$3252: velocita' (se non c'era Slow, $2A). */
+/* PORT H085+$3252: speed (if there was no Slow, $2A). */
 void spell_speedy(void)
 {
     if (!cure_effect(g_spell_targets[0], 0x2A)) {
@@ -778,8 +778,8 @@ void spell_speedy(void)
 }
 
 /*
- * PORT H085+$331E: forza 21 (effetto $71, 1d4*10+40 round).  Se la forza
- * non sale l'originale usa la parola non inizializzata; qui 0.
+ * PORT H085+$331E: strength 21 (effect $71, 1d4*10+40 rounds).  If the strength
+ * does not rise the original uses the uninitialised word; here 0.
  */
 void spell_strength_21(void)
 {
@@ -793,13 +793,13 @@ void spell_strength_21(void)
     recompute_stat(g_spell_targets[0], 0);
 }
 
-/* PORT H085+$3402: paralisi. */
+/* PORT H085+$3402: paralysis. */
 void spell_paralyze(void)
 {
     simple_effect(0x0C, "is paralyzed");
 }
 
-/* Cura 2d4+2 del primo bersaglio con "is Healed". */
+/* Heals the first target by 2d4+2 with "is Healed". */
 static void heal_2d4(void)
 {
     if (heal_character(g_spell_targets[0], (u16)(roll_dice(2, 4) + 2), 0)) {
@@ -807,32 +807,32 @@ static void heal_2d4(void)
     }
 }
 
-/* PORT H085+$3482: invisibilita'. */
+/* PORT H085+$3482: invisibility. */
 void spell_invisible(void)
 {
     simple_effect(0x0C, "is invisible");
 }
 
-/* PORT H085+$34B0: danno 2d4+2. */
+/* PORT H085+$34B0: damage 2d4+2. */
 void spell_damage_2d4(void)
 {
-    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    /* $2471: spell being cast (0 = none) */
     apply_spell_effect(SPELL_NOW, 0, 0, (u16)(roll_damage_dice(2, 4) + 2),
                        8, 0, "");
 }
 
-/* PORT H085+$34F0: Cause Serious Wounds, 2d8 + 1 (+3 con +$5E = 4). */
+/* PORT H085+$34F0: Cause Serious Wounds, 2d8 + 1 (+3 with +$5E = 4). */
 void spell_cause_serious_wounds(void)
 {
     u16 bonus;                          /* -$2(a5) */
 
-    /* pg+$5E: divinita' del chierico (0 nessuna, 1..7; 6 per le razze 3-4) */
+    /* ch+$5E: deity of the cleric (0 none, 1..7; 6 for races 3-4) */
     if (g_current_char->b[0x5E] == 4) {
         bonus = 3;
     } else {
         bonus = 1;
     }
-    apply_spell_effect(SPELL_NOW, 0, 0, /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    apply_spell_effect(SPELL_NOW, 0, 0, /* $2471: spell being cast (0 = none) */
                        (u16)(roll_damage_dice(2, 8) + bonus), 8, 0, "");
 }
 
@@ -841,9 +841,9 @@ void spell_sticks_to_snakes(void)
 {
     CokEffect *e;                       /* -$4(a5) */
 
-    /* pg+$DB: livello massimo fra le classi (usato anche come dadi vita) */
+    /* ch+$DB: highest level among the classes (also used as hit dice) */
     if (g_spell_targets[0]->b[0xDB] < 6) {
-        /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+        /* $2471: spell being cast (0 = none) */
         apply_spell_effect(SPELL_NOW, (u16)caster_level(SPELL_NOW), 0, 0, 8,
                            0, "");
         if (find_effect(g_spell_targets[0], 3, &e)) {
@@ -855,7 +855,7 @@ void spell_sticks_to_snakes(void)
     }
 }
 
-/* PORT H085+$37E2: Confusion su al massimo 2d8 bersagli. */
+/* PORT H085+$37E2: Confusion on at most 2d8 targets. */
 void spell_confusion(void)
 {
     Character *t;                       /* -$8(a5) */
@@ -863,10 +863,10 @@ void spell_confusion(void)
     u16 i;                              /* -$2(a5) */
     u8 saved;                           /* -$3(a5) */
 
-    if (H005_B(0x246C) > n) { /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
-        H005_B(0x246C) = (u8)n; /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
+    if (H005_B(0x246C) > n) { /* $246C: number of spell targets in g_spell_targets ($2520) */
+        H005_B(0x246C) = (u8)n; /* $246C: number of spell targets in g_spell_targets ($2520) */
     }
-    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
+    /* $246C: number of spell targets in g_spell_targets ($2520) */
     for (i = 1; i <= H005_B(0x246C); ++i) {
         if (g_spell_targets[i - 1] != NULL) {
             t = g_spell_targets[i - 1];
@@ -877,7 +877,7 @@ void spell_confusion(void)
     }
 }
 
-/* PORT H085+$3A5E: Fire Shield: scudo caldo o freddo. */
+/* PORT H085+$3A5E: Fire Shield: warm or cold shield. */
 void spell_fire_shield(void)
 {
     u8 key;                             /* -$1(a5) */
@@ -885,7 +885,7 @@ void spell_fire_shield(void)
     u8 done = 0;                        /* -$3(a5) */
 
     do {
-        if (g_current_char->b[0x19A]) { /* pg+$19A: controllo automatico in combattimento (1 = IA) */
+        if (g_current_char->b[0x19A]) { /* ch+$19A: automatic control in combat (1 = AI) */
             if (roll_dice(1, 0x0A) > 5) {
                 key = 'H';
             } else {
@@ -921,13 +921,13 @@ void spell_fire_shield(void)
     } while (!done);
 }
 
-/* PORT H085+$3C06: Fumble: goffo ($1B) o, se salva, rallentato ($2A). */
+/* PORT H085+$3C06: Fumble: clumsy ($1B) or, if it saves, slowed ($2A). */
 void spell_fumble(void)
 {
     Character *t = g_spell_targets[0];  /* -$4(a5) */
     CokEffect *e;                       /* -$8(a5) */
 
-    H005_B(0x2473) = 0x40; /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
+    H005_B(0x2473) = 0x40; /* $2473: type of the incoming damage (bits: 1 fire, 2 cold, 8, $20) */
     if (!saving_throw_roll(t, 4, 0)) {
         apply_spell_effect_on(t, 0x1B, spell_duration(0x56), 0, 0, 0, 0, 9,
                               "is clumsy");
@@ -941,14 +941,14 @@ void spell_fumble(void)
             call_effect_handler(0x2A, &t, NULL, 0);
         }
     }
-    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    /* $2471: spell being cast (0 = none) */
     apply_spell_effect(SPELL_NOW, 0, 1, 0, 0, 9, "is clumsy");
 }
 
 /* PORT H085+$3D0A: Ice Storm, 3d10. */
 void spell_ice_storm(void)
 {
-    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    /* $2471: spell being cast (0 = none) */
     apply_spell_effect(SPELL_NOW, 0, 0, roll_damage_dice(3, 0x0A), 8, 0, "");
 }
 
@@ -958,19 +958,19 @@ void spell_minor_globe(void)
     simple_effect(0x0C, "is protected");
 }
 
-/* PORT H085+$3D74: effetto senza messaggio. */
+/* PORT H085+$3D74: effect without a message. */
 void spell_silent_3d74(void)
 {
     simple_effect(0, "");
 }
 
-/* PORT H085+$3DA0: effetto senza messaggio. */
+/* PORT H085+$3DA0: effect without a message. */
 void spell_silent_3da0(void)
 {
     simple_effect(0, "");
 }
 
-/* PORT H085+$3DCC: effetto senza messaggio. */
+/* PORT H085+$3DCC: effect without a message. */
 void spell_silent_3dcc(void)
 {
     simple_effect(0, "");
@@ -994,49 +994,49 @@ void spell_invisibility(void)
     simple_effect(0x0C, "is invisible");
 }
 
-/* PORT H085+$3430: cura 2d4+2. */
+/* PORT H085+$3430: heals 2d4+2. */
 void spell_heal_3430(void)
 {
     heal_2d4();
 }
 
-/* PORT H085+$3DF8: cura 2d4+2. */
+/* PORT H085+$3DF8: heals 2d4+2. */
 void spell_heal_3df8(void)
 {
     heal_2d4();
 }
 
 /*
- * PORT H085+$3EE2 (annidata in Dispel Magic, H085+$3ED4).
- * Probabilita' (in H085+$2) di dissolvere un effetto di livello level
- * (H085+$0) con il livello d'incantatore caster: +5% per livello sopra,
- * -2% per livello sotto, 50% alla pari.  Poi il tiro d100.
+ * PORT H085+$3EE2 (nested in Dispel Magic, H085+$3ED4).
+ * Chance (in H085+$2) of dispelling an effect of level level
+ * (H085+$0) with the caster level caster: +5% per level above,
+ * -2% per level below, 50% when equal.  Then the d100 roll.
  */
 static u8 dispel_roll(s16 caster, u16 level)
 {
-    H085SETW(0, level); /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
-    /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
+    H085SETW(0, level); /* H085_bss+$0: (word) spell work value: % Enlarge strength, Sleep HD cost, level */
+    /* H085_bss+$0: (word) spell work value: % Enlarge strength, Sleep HD cost, level */
     if ((u16)caster > H085W(0)) {
-        /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello;
-         * H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita */
+        /* H085_bss+$0: (word) spell work value: % Enlarge strength, Sleep HD cost, level; H085_bss+$2:
+         * (word) spell work value: Enlarge strength, remaining HD/HP, % success */
         H085SETW(2, (u16)(((u16)caster - H085W(0)) * 5 + 0x32));
-    /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello */
+    /* H085_bss+$0: (word) spell work value: % Enlarge strength, Sleep HD cost, level */
     } else if ((u16)caster < H085W(0)) {
-        /* H085_bss+$0: (word) lavoro incantesimi: % forza Enlarge, costo DV Sleep, livello;
-         * H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita */
+        /* H085_bss+$0: (word) spell work value: % Enlarge strength, Sleep HD cost, level; H085_bss+$2:
+         * (word) spell work value: Enlarge strength, remaining HD/HP, % success */
         H085SETW(2, (u16)(0x32 - (H085W(0) - (u16)caster) * 2));
     } else {
-        /* H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita */
+        /* H085_bss+$2: (word) spell work value: Enlarge strength, remaining HD/HP, % success */
         H085SETW(2, 0x32);
     }
-    /* H085_bss+$2: (word) lavoro incantesimi: forza Enlarge, DV/PF residui, % riuscita */
+    /* H085_bss+$2: (word) spell work value: Enlarge strength, remaining HD/HP, % success */
     return (u8)(roll_dice(1, 0x64) <= H085W(2));
 }
 
 /*
- * PORT H085+$3ED4: Dispel Magic: toglie gli effetti con durata del primo
- * bersaglio (una volta per bersaglio), poi dissolve le nubi ($28) del
- * lanciatore nelle 9 caselle attorno a $2518/$251A.
+ * PORT H085+$3ED4: Dispel Magic: removes the effects with a duration of the first
+ * target (once per target), then dispels the clouds ($28) of the
+ * caster in the 9 squares around $2518/$251A.
  */
 void spell_dispel_magic(void)
 {
@@ -1056,18 +1056,18 @@ void spell_dispel_magic(void)
     u8 dispelled;                       /* -$9(a5) */
     u8 found;                           /* -$a(a5) */
 
-    H005_B(0x24A9) = 1; /* $24A9: 1 se l'incantesimo agisce su area/gruppo (immagini illese) */
-    caster = caster_level(SPELL_NOW); /* $2471: incantesimo in corso di lancio (0 = nessuno) */
-    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
+    H005_B(0x24A9) = 1; /* $24A9: 1 if the spell acts on an area/group (pictures unharmed) */
+    caster = caster_level(SPELL_NOW); /* $2471: spell being cast (0 = none) */
+    /* $246C: number of spell targets in g_spell_targets ($2520) */
     for (i = 1; i <= H005_B(0x246C); ++i) {
         dispelled = 0;
         t = g_spell_targets[0];
         for (e = t->effects; e != NULL; e = next) {
             next = e->next;
-            if (e->b[4] < 0xFF && /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
-                /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
+            if (e->b[4] < 0xFF && /* eff+$4: parameter/level of the effect (for $28 high nibble = cloud no.) */
+                /* eff+$4: parameter/level of the effect (for $28 high nibble = cloud no.) */
                 dispel_roll(caster, mask_byte(e->b[4], 0x0F))) {
-                remove_effect(t, e->b[0], e); /* eff+$0: tipo dell'effetto (codice del gestore) */
+                remove_effect(t, e->b[0], e); /* eff+$0: type of the effect (code of the handler) */
                 dispelled = 1;
             }
         }
@@ -1077,24 +1077,24 @@ void spell_dispel_magic(void)
     }
     for (k = 0; k <= 8; ++k) {
         switch (k) {
-        /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518:
-         * (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
+        /* $251A: (word) x of the chosen target square (spells, breaths, telep.); $2518:
+         * (word) y of the chosen target square (spells, breaths, telep.) */
         case 0: x = (s16)H005_W(0x251A); y = (s16)H005_W(0x2518); break;
-        /* $2518: (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
+        /* $2518: (word) y of the chosen target square (spells, breaths, telep.) */
         case 1: y = (s16)(H005_W(0x2518) - 1); break;
-        /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.) */
+        /* $251A: (word) x of the chosen target square (spells, breaths, telep.) */
         case 2: x = (s16)(H005_W(0x251A) + 1); break;
-        /* $2518: (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
+        /* $2518: (word) y of the chosen target square (spells, breaths, telep.) */
         case 3: y = (s16)H005_W(0x2518); break;
-        /* $2518: (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
+        /* $2518: (word) y of the chosen target square (spells, breaths, telep.) */
         case 4: y = (s16)(H005_W(0x2518) + 1); break;
-        /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.) */
+        /* $251A: (word) x of the chosen target square (spells, breaths, telep.) */
         case 5: x = (s16)H005_W(0x251A); break;
-        /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.) */
+        /* $251A: (word) x of the chosen target square (spells, breaths, telep.) */
         case 6: x = (s16)(H005_W(0x251A) - 1); break;
-        /* $2518: (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
+        /* $2518: (word) y of the chosen target square (spells, breaths, telep.) */
         case 7: y = (s16)H005_W(0x2518); break;
-        /* $2518: (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
+        /* $2518: (word) y of the chosen target square (spells, breaths, telep.) */
         case 8: y = (s16)(H005_W(0x2518) - 1); break;
         }
         combat_map_cell(x, y, &count, &tile);
@@ -1106,24 +1106,23 @@ void spell_dispel_magic(void)
         while (p != NULL) {
             p_next = p->next;
             for (i = 1; i <= count; ++i) {
-                /* $5021: base i-1 delle 4 direzioni delle caselle di una nube ($5022) */
+                /* $5021: i-1 base of the 4 directions of the squares of a cloud ($5022) */
                 dir = H005_B(0x5022 + i - 1);
-                if ((s16)(COK_GET16(&p->b[0x1C - 8]) + /* nube+$14: (word) x del centro della nube/pozza */
-                          /* $3EE2: (word) spostamento x per direzione d (passo 2) */
+                if ((s16)(COK_GET16(&p->b[0x1C - 8]) + /* nube+$14: (word) x of the centre of the cloud/pool */
+                          /* $3EE2: (word) x offset for direction d (step 2) */
                           H005_W(0x3EE2 + dir * 2)) == x &&
-                    (s16)(COK_GET16(&p->b[0x1E - 8]) + /* nube+$16: (word) y del centro della nube/pozza */
-                          /* $3ED0: (word) spostamento y per direzione d (passo 2) */
+                    (s16)(COK_GET16(&p->b[0x1E - 8]) + /* nube+$16: (word) y of the centre of the cloud/pool */
+                          /* $3ED0: (word) y offset for direction d (step 2) */
                           H005_W(0x3ED0 + dir * 2)) == y &&
-                    !p->b[0x21 - 8]) { /* nube+$19: flag Dispel Magic gia' fallito su questa nube */
-                    if (dispel_roll(caster, p->owner->b[0x103])) { /* pg+$103: livello da mago */
+                    !p->b[0x21 - 8]) { /* nube+$19: flag Dispel Magic already failed on this cloud */
+                    if (dispel_roll(caster, p->owner->b[0x103])) { /* ch+$103: mage level */
                         found = 0;
                         e = p->owner->effects;
                         while (e != NULL && !found) {
-                            /* eff+$0: tipo dell'effetto (codice del gestore) */
+                            /* eff+$0: type of the effect (code of the handler) */
                             if (e->b[0] == 0x28 && tile == 0x1E &&
-                                /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n.
-                                 * nube); nube+$18: numero della nube (= nibble alto di EF +$4
-                                 * dell'effetto) */
+                                /* eff+$4: parameter/level of the effect (for $28 high nibble = cloud no.); nube+$18: number
+                                 * of the cloud (= high nibble of EF +$4 of the effect) */
                                 (e->b[4] >> 4) == p->b[0x20 - 8]) {
                                 found = 1;
                             } else {
@@ -1134,67 +1133,67 @@ void spell_dispel_magic(void)
                             remove_effect(p->owner, 0x28, e);
                         }
                     } else {
-                        p->b[0x21 - 8] = 1; /* nube+$19: flag Dispel Magic gia' fallito su questa nube */
+                        p->b[0x21 - 8] = 1; /* nube+$19: flag Dispel Magic already failed on this cloud */
                     }
                 }
             }
             p = p_next;
         }
-        /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518:
-         * (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
+        /* $251A: (word) x of the chosen target square (spells, breaths, telep.); $2518:
+         * (word) y of the chosen target square (spells, breaths, telep.) */
         center_view(H005_W(0x251A), H005_W(0x2518), 3, 8);
     }
 }
 
 /*
- * PORT H085+$15FE: palla di fuoco: tanti dadi da 6 quanto il livello del
- * lanciatore (per l'incantesimo $40: 1d3 * 2 + 1) su chi e' entro 2
- * caselle dal punto scelto (in combattimento), vista centrata sul punto.
+ * PORT H085+$15FE: fireball: as many d6 dice as the level of the
+ * caster (for spell $40: 1d3 * 2 + 1) on whoever is within 2
+ * squares of the chosen point (in combat), view centred on the point.
  */
 void spell_fireball(void)
 {
     u16 level;                          /* -$2(a5) */
     u16 k;                              /* -$4(a5) */
 
-    H005_B(0x24A9) = 1; /* $24A9: 1 se l'incantesimo agisce su area/gruppo (immagini illese) */
-    if (H005_B(0x2471) == 0x40) { /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    H005_B(0x24A9) = 1; /* $24A9: 1 if the spell acts on an area/group (pictures unharmed) */
+    if (H005_B(0x2471) == 0x40) { /* $2471: spell being cast (0 = none) */
         level = (u16)(roll_dice(1, 3) * 2 + 1);
     } else {
-        level = (u16)caster_level(H005_B(0x2471)); /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+        level = (u16)caster_level(H005_B(0x2471)); /* $2471: spell being cast (0 = none) */
     }
-    if (COK_GET16(g_state_a + 0x1CC) == 0) { /* A+$1CC: (word) 1 area 3D (mappa 16x16), 0 mappa all'aperto */
-        /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518:
-         * (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
+    if (COK_GET16(g_state_a + 0x1CC) == 0) { /* A+$1CC: (word) 1 3D area (16x16 map), 0 outdoor map */
+        /* $251A: (word) x of the chosen target square (spells, breaths, telep.); $2518:
+         * (word) y of the chosen target square (spells, breaths, telep.) */
         find_in_area((s16)H005_W(0x251A), (s16)H005_W(0x2518), 2, 0xFF, 1,
                      g_combat_area);
-        /* $2479: numero di voci della lista dell'area +$2A3E (4 byte per voce) */
+        /* $2479: number of entries of the area list +$2A3E (4 bytes per entry) */
         for (k = 1; k <= H005_B(0x2479); ++k) {
             g_spell_targets[k - 1] =
-                /* $2A3E: lista dell'area: voci da 4 byte ($2479), byte 0 = n. combattente */
+                /* $2A3E: area list: 4-byte entries ($2479), byte 0 = combatant no. */
                 g_combatants[H005_B(0x2A3E + (k - 1) * 4) - 1];
         }
-        /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520); $2479: numero di
-         * voci della lista dell'area +$2A3E (4 byte per voce) */
+        /* $246C: number of spell targets in g_spell_targets ($2520); $2479: number of entries of
+         * the area list +$2A3E (4 bytes per entry) */
         H005_B(0x246C) = H005_B(0x2479);
     }
-    /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518: (word) y
-     * della casella bersaglio scelta (incantesimi, soffi, telep.) */
+    /* $251A: (word) x of the chosen target square (spells, breaths, telep.); $2518: (word) y of
+     * the chosen target square (spells, breaths, telep.) */
     center_view((s16)H005_W(0x251A), (s16)H005_W(0x2518), 0, 8);
-    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    /* $2471: spell being cast (0 = none) */
     apply_spell_effect(H005_B(0x2471), 0, 0, roll_damage_dice(level, 6), 9,
                        0, "");
 }
 
-/* Frame di H085+$0BB2 visto dalle procedure annidate. */
+/* Frame of H085+$0BB2 seen by the nested procedures. */
 typedef struct BreathFrame {
     CokLine line;                       /* -$60(a5) */
-    u16 hit[0x1E];                      /* -$100(a5): combattenti colpiti */
+    u16 hit[0x1E];                      /* -$100(a5): combatants hit */
     u16 who;                            /* -$10A(a5) */
     u16 tile;                           /* -$10C(a5) */
     u8 done;                            /* -$115(a5) */
 } BreathFrame;
 
-/* PORT H085+$0BC0 (annidata): prepara la linea da (x0, y0) a (x1, y1). */
+/* PORT H085+$0BC0 (nested): prepares the line from (x0, y0) to (x1, y1). */
 static void breath_line(BreathFrame *f, s16 x0, s16 y0, s16 x1, s16 y1)
 {
     f->line.x0 = x0;
@@ -1220,9 +1219,9 @@ static void breath_clamp(s16 *x, s16 *y)
 }
 
 /*
- * PORT H085+$0C62 (annidata): percorre la linea e aggiunge all'elenco
- * dei colpiti i combattenti incontrati che non ci sono gia'.  Con
- * l'elenco pieno l'originale scriverebbe oltre le 30 voci; qui si ferma.
+ * PORT H085+$0C62 (nested): follows the line and adds to the list
+ * of those hit the combatants met that are not already there.  With
+ * the list full the original would write past the 30 entries; here it stops.
  */
 static void breath_trace(BreathFrame *f)
 {
@@ -1251,16 +1250,16 @@ static void breath_trace(BreathFrame *f)
 }
 
 /*
- * PORT H085+$0BB2: area di un soffio da (ax, ay) verso (tx, ty): la linea
- * si prolunga fino alla lunghezza length (in mezzi passi), si ferma alla
- * linea di vista, e raccoglie i combattenti incontrati; con width 2 o 3
- * anche le linee verso i lati della punta (tabelle -$10..-$40), con $FF
- * chi e' entro 3 caselle dalla punta.  I colpiti (tranne il personaggio
- * corrente) diventano i bersagli (g_spell_targets, $246C).
- * Non inizializzati nell'originale: la distanza -$114(a5) passata alla
- * linea di vista (qui $FFFF, cioe' nessun limite: la lunghezza e' gia'
- * limitata dal prolungamento) e la direzione -$112(a5) se la linea non
- * incontra nessuno (qui 0).
+ * PORT H085+$0BB2: area of a breath from (ax, ay) towards (tx, ty): the line
+ * is extended up to the length length (in half steps), stops at the
+ * line of sight, and collects the combatants met; with width 2 or 3
+ * also the lines towards the sides of the tip (tables -$10..-$40), with $FF
+ * whoever is within 3 squares of the tip.  Those hit (except the current
+ * character) become the targets (g_spell_targets, $246C).
+ * Not initialised in the original: the distance -$114(a5) passed to the
+ * line of sight (here $FFFF, that is no limit: the length is already
+ * limited by the extension) and the direction -$112(a5) if the line does not
+ * meet anyone (here 0).
  */
 static void breath_area(s16 ax, s16 ay, s16 tx, s16 ty, u16 width,
                         u16 length)
@@ -1304,9 +1303,9 @@ static void breath_area(s16 ax, s16 ay, s16 tx, s16 ty, u16 width,
             } else {
                 cost = (u16)(cost + 3);
             }
-            /* $3EE2: (word) spostamento x per direzione d (passo 2) */
+            /* $3EE2: (word) x offset for direction d (step 2) */
             tx = (s16)(tx + (s16)H005_W(0x3EE2 + dirs[n] * 2));
-            /* $3ED0: (word) spostamento y per direzione d (passo 2) */
+            /* $3ED0: (word) y offset for direction d (step 2) */
             ty = (s16)(ty + (s16)H005_W(0x3ED0 + dirs[n] * 2));
             if (n == last) {
                 n = 0;
@@ -1362,18 +1361,18 @@ static void breath_area(s16 ax, s16 ay, s16 tx, s16 ty, u16 width,
     }
     if (width == 0xFF) {
         find_in_area(tx, ty, 3, 0xFF, 1, g_combat_area);
-        /* $2479: numero di voci della lista dell'area +$2A3E (4 byte per voce) */
+        /* $2479: number of entries of the area list +$2A3E (4 bytes per entry) */
         for (k = 1; k <= H005_B(0x2479); ++k) {
-            /* $2A3E: lista dell'area: voci da 4 byte ($2479), byte 0 = n. combattente */
+            /* $2A3E: area list: 4-byte entries ($2479), byte 0 = combatant no. */
             f.hit[k - 1] = H005_B(0x2A3E + (k - 1) * 4);
         }
     }
     count = 1;
     slot = 1;
-    H005_B(0x246C) = 0; /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
+    H005_B(0x246C) = 0; /* $246C: number of spell targets in g_spell_targets ($2520) */
     while (count <= 0x1E && f.hit[count - 1] != 0) {
         if (g_combatants[f.hit[count - 1] - 1] != g_current_char) {
-            /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
+            /* $246C: number of spell targets in g_spell_targets ($2520) */
             add_to_byte(&H005_B(0x246C), 1);
             g_spell_targets[slot - 1] = g_combatants[f.hit[count - 1] - 1];
             ++slot;
@@ -1383,11 +1382,11 @@ static void breath_area(s16 ax, s16 ay, s16 tx, s16 ty, u16 width,
 }
 
 /*
- * PORT H085+$172A (effetti $06, $53: freddo; $68: fuoco): soffio del
- * drago.  Le cariche (+$4) si fissano a 1 ($06) o 3 se $247C e' acceso o
- * sono piu' di 3; si sceglie il bersaglio, l'area si calcola con
- * H085+$0BB2 e se colpisce solo avversari ognuno subisce i punti ferita
- * massimi del drago (tiro salvezza 3, danno di tipo 2).
+ * PORT H085+$172A (effects $06, $53: cold; $68: fire): dragon
+ * breath.  The charges (+$4) are set to 1 ($06) or 3 if $247C is set or
+ * they are more than 3; the target is chosen, the area is computed with
+ * H085+$0BB2 and if it hits only opponents each one takes the maximum hit
+ * points of the dragon (saving throw 3, damage of type 2).
  */
 void effect_breath(Character **cp, void *obj, u8 flag)
 {
@@ -1406,48 +1405,48 @@ void effect_breath(Character **cp, void *obj, u8 flag)
 
     (void)flag;
     what[0] = 0;
-    /* $247C: numero del round del combattimento (0 all'inizio; bit 0 arrotonda); eff+$4:
-     * parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
+    /* $247C: combat round number (0 at the start; bit 0 rounds); eff+$4: parameter/level
+     * of the effect (for $28 high nibble = cloud no.) */
     if (H005_B(0x247C) == 0 || e->b[4] > 3) {
-        /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube); eff+$0: tipo
-         * dell'effetto (codice del gestore) */
+        /* eff+$4: parameter/level of the effect (for $28 high nibble = cloud no.); eff+$0:
+         * type of the effect (code of the handler) */
         e->b[4] = (u8)(e->b[0] == 6 ? 1 : 3);
     }
-    if (e->b[4] == 0) { /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
+    if (e->b[4] == 0) { /* eff+$4: parameter/level of the effect (for $28 high nibble = cloud no.) */
         return;
     }
-    if (e->b[0] == 6 || e->b[0] == 0x53) { /* eff+$0: tipo dell'effetto (codice del gestore) */
-        H005_B(0x2473) = 0x22; /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
+    if (e->b[0] == 6 || e->b[0] == 0x53) { /* eff+$0: type of the effect (code of the handler) */
+        H005_B(0x2473) = 0x22; /* $2473: type of the incoming damage (bits: 1 fire, 2 cold, 8, $20) */
         width = 3;
-        length = (u16)(e->b[0] == 6 ? 8 : 7); /* eff+$0: tipo dell'effetto (codice del gestore) */
+        length = (u16)(e->b[0] == 6 ? 8 : 7); /* eff+$0: type of the effect (code of the handler) */
         h026_copy(5, what, 4, "cold");
     }
-    if (e->b[0] == 0x68) { /* eff+$0: tipo dell'effetto (codice del gestore) */
-        H005_B(0x2473) = 0x21; /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
+    if (e->b[0] == 0x68) { /* eff+$0: type of the effect (code of the handler) */
+        H005_B(0x2473) = 0x21; /* $2473: type of the incoming damage (bits: 1 fire, 2 cold, 8, $20) */
         width = 3;
         length = 9;
         h026_copy(5, what, 4, "Fire");
     }
     ax = (s16)combatant_x(*cp);
     ay = (s16)combatant_y(*cp);
-    /* $24C5: esito della scelta del bersaglio (soffi, effetto $42) */
+    /* $24C5: outcome of the target choice (breaths, effect $42) */
     ((void (*)(u8, u8, u8 *))g_handlers_25c0[107])(0x3D, 1, &H005_B(0x24C5));
-    if (!H005_B(0x24C5)) { /* $24C5: esito della scelta del bersaglio (soffi, effetto $42) */
+    if (!H005_B(0x24C5)) { /* $24C5: outcome of the target choice (breaths, effect $42) */
         return;
     }
-    /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518: (word) y
-     * della casella bersaglio scelta (incantesimi, soffi, telep.) */
+    /* $251A: (word) x of the chosen target square (spells, breaths, telep.); $2518: (word) y of
+     * the chosen target square (spells, breaths, telep.) */
     breath_area(ax, ay, (s16)H005_W(0x251A), (s16)H005_W(0x2518), width,
                 length);
-    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
+    /* $246C: number of spell targets in g_spell_targets ($2520) */
     for (k = 1; k <= H005_B(0x246C); ++k) {
-        /* pg+$199: lato in combattimento (0 party, 1 avversari) */
+        /* ch+$199: side in combat (0 party, 1 opponents) */
         if (g_spell_targets[k - 1]->b[0x199] != other_side(*cp)) {
-            H005_B(0x24C5) = 0; /* $24C5: esito della scelta del bersaglio (soffi, effetto $42) */
+            H005_B(0x24C5) = 0; /* $24C5: outcome of the target choice (breaths, effect $42) */
         }
     }
-    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520); $24C5: esito della
-     * scelta del bersaglio (soffi, effetto $42) */
+    /* $246C: number of spell targets in g_spell_targets ($2520); $24C5: outcome of the target
+     * choice (breaths, effect $42) */
     if (H005_B(0x246C) == 0 || !H005_B(0x24C5)) {
         return;
     }
@@ -1461,44 +1460,44 @@ void effect_breath(Character **cp, void *obj, u8 flag)
     animate_missile((s16)combatant_x(*cp), (s16)combatant_y(*cp),
                     (s16)combatant_x(g_spell_targets[0]),
                     (s16)combatant_y(g_spell_targets[0]), 1, 1);
-    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
+    /* $246C: number of spell targets in g_spell_targets ($2520) */
     for (k = 1; k <= H005_B(0x246C); ++k) {
         if (g_spell_targets[k - 1] != NULL) {
             t = g_spell_targets[k - 1];
             saved = saving_throw_roll(t, 3, 0);
-            apply_damage(t, (*cp)->b[0x64], 2, saved); /* pg+$64: punti ferita massimi */
+            apply_damage(t, (*cp)->b[0x64], 2, saved); /* ch+$64: maximum hit points */
         }
     }
-    e->b[4] = (u8)(e->b[4] - 1); /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
+    e->b[4] = (u8)(e->b[4] - 1); /* eff+$4: parameter/level of the effect (for $28 high nibble = cloud no.) */
     r = end_combat_turn(*cp);
     (void)r;
 }
 
 /*
- * PORT H085+$363E: effetto dell'incantesimo sul bersaglio del turno
- * (+$192 +$C), poi l'evento 9; se nessun gestore lo ha annullato ($2475
- * ancora $40) il gestore dell'effetto $40 sul personaggio corrente.
- * L'oggetto passato al gestore e' -$4(a5), non inizializzato
- * nell'originale: qui NULL.
+ * PORT H085+$363E: effect of the spell on the target of the turn
+ * (+$192 +$C), then event 9; if no handler cancelled it ($2475
+ * still $40) the handler of effect $40 on the current character.
+ * The item passed to the handler is -$4(a5), uninitialised
+ * in the original: here NULL.
  */
 void spell_event_9(void)
 {
     Character *target;                  /* -$8(a5) */
 
-    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    /* $2471: spell being cast (0 = none) */
     apply_spell_effect(H005_B(0x2471), 0, 0, 0, 8, 0, "");
     target = g_current_char->block_192->target;
-    H005_B(0x2475) = 0x40; /* $2475: effetto in arrivo (0 = annullato dai gestori) */
+    H005_B(0x2475) = 0x40; /* $2475: incoming effect (0 = cancelled by the handlers) */
     trigger_event(&target, 9);
-    if (H005_B(0x2475) == 0x40) { /* $2475: effetto in arrivo (0 = annullato dai gestori) */
+    if (H005_B(0x2475) == 0x40) { /* $2475: incoming effect (0 = cancelled by the handlers) */
         call_effect_handler(0x40, &g_current_char, NULL, 0);
     }
 }
 
 /*
- * PORT H085+$38AA: teletrasporto del personaggio corrente sul punto
- * scelto ($251A, $2518): ridisegna il terreno dov'era, lo piazza, centra
- * la vista e "teleports".
+ * PORT H085+$38AA: teleport of the current character to the chosen
+ * point ($251A, $2518): redraws the terrain where it was, places it, centres
+ * the view and "teleports".
  */
 void spell_teleport(void)
 {
@@ -1506,8 +1505,8 @@ void spell_teleport(void)
     u8 ok;                              /* -$9(a5) */
 
     redraw_ground(0, 0, combatant_index(c));
-    /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518: (word) y
-     * della casella bersaglio scelta (incantesimi, soffi, telep.) */
+    /* $251A: (word) x of the chosen target square (spells, breaths, telep.); $2518: (word) y of
+     * the chosen target square (spells, breaths, telep.) */
     ok = place_combatant(c, (u8)H005_W(0x251A), (u8)H005_W(0x2518), 0);
     (void)ok;
     center_view((s16)combatant_x(c), (s16)combatant_y(c), 0, 8);
@@ -1515,10 +1514,10 @@ void spell_teleport(void)
 }
 
 /*
- * PORT H085+$1A6C: l'effetto dell'incantesimo corrente su ogni bersaglio,
- * dall'ultimo al primo (dal secondo in poi con il suono 2 e il proiettile
- * dal lanciatore): tiro salvezza (byte 9, con bonus) salvo per $4F e $51
- * sull'ultimo bersaglio; le razze 7 resistono sempre a $17 e $31.
+ * PORT H085+$1A6C: the effect of the current spell on every target,
+ * from the last to the first (from the second on with sound 2 and the missile
+ * from the caster): saving throw (byte 9, with bonus) except for $4F and $51
+ * on the last target; races 7 always resist $17 and $31.
  */
 static void spell_on_targets(s16 bonus, u16 len, const char *text)
 {
@@ -1526,23 +1525,23 @@ static void spell_on_targets(s16 bonus, u16 len, const char *text)
     u8 saved;                           /* -$5(a5) */
     u16 i;                              /* -$8(a5) */
     u8 kind;                            /* -$9(a5) */
-    u16 spell = SPELL_NOW; /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    u16 spell = SPELL_NOW; /* $2471: spell being cast (0 = none) */
 
-    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
+    /* $246C: number of spell targets in g_spell_targets ($2520) */
     for (i = H005_B(0x246C); i >= 1; --i) {
         if (g_spell_targets[i - 1] == NULL) {
             continue;
         }
         t = g_spell_targets[i - 1];
-        if (i < H005_B(0x246C)) { /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
+        if (i < H005_B(0x246C)) { /* $246C: number of spell targets in g_spell_targets ($2520) */
             h043_190e(2);
             load_missile_frames(0x12);
             animate_missile((s16)combatant_x(g_current_char),
                             (s16)combatant_y(g_current_char),
                             (s16)combatant_x(t), (s16)combatant_y(t), 4, 1);
         }
-        spell = SPELL_NOW; /* $2471: incantesimo in corso di lancio (0 = nessuno) */
-        /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
+        spell = SPELL_NOW; /* $2471: spell being cast (0 = none) */
+        /* $246C: number of spell targets in g_spell_targets ($2520) */
         if ((spell == 0x4F || spell == 0x51) && i == H005_B(0x246C)) {
             saved = 1;
             kind = 1;
@@ -1551,7 +1550,7 @@ static void spell_on_targets(s16 bonus, u16 len, const char *text)
                                       bonus);
             kind = H005_B(0x66 + (spell - 1) * 16 + 8);
         }
-        if (t->b[0x5B] == 7 && (spell == 0x17 || spell == 0x31)) { /* pg+$5B: razza (0..6, nomi H005+$4D04) */
+        if (t->b[0x5B] == 7 && (spell == 0x17 || spell == 0x31)) { /* ch+$5B: race (0..6, names H005+$4D04) */
             saved = 1;
         }
         apply_spell_effect_on(t, H005_B(0x66 + (spell - 1) * 16 + 0x0A),
@@ -1562,18 +1561,18 @@ static void spell_on_targets(s16 bonus, u16 len, const char *text)
 }
 
 /*
- * PORT H085+$2338: Hold Person ($17 e altri): il malus al tiro salvezza
- * dipende dal numero di bersagli (1: -2 per $17, -3 per gli altri; 2: -1;
- * 3 o 4: 0).  Con piu' di 4 bersagli l'originale lascia il malus non
- * inizializzato; qui 0.
+ * PORT H085+$2338: Hold Person ($17 and others): the saving throw malus
+ * depends on the number of targets (1: -2 for $17, -3 for the others; 2: -1;
+ * 3 or 4: 0).  With more than 4 targets the original leaves the malus
+ * uninitialised; here 0.
  */
 void spell_hold_person(void)
 {
     s16 bonus = 0;                      /* -$2(a5) */
 
-    switch (H005_B(0x246C)) { /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
+    switch (H005_B(0x246C)) { /* $246C: number of spell targets in g_spell_targets ($2520) */
     case 1:
-        bonus = (s16)(SPELL_NOW == 0x17 ? -2 : -3); /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+        bonus = (s16)(SPELL_NOW == 0x17 ? -2 : -3); /* $2471: spell being cast (0 = none) */
         break;
     case 2:
         bonus = -1;
@@ -1588,18 +1587,18 @@ void spell_hold_person(void)
     spell_on_targets(bonus, 7, "is held");
 }
 
-/* Spostamenti della direzione d (tabelle H005+$3EE2 / $3ED0). */
-#define DIR_DX(d)   ((s16)H005_W(0x3EE2 + (d) * 2))  /* $3EE2: (word) spostamento x per direzione d (passo 2) */
-#define DIR_DY(d)   ((s16)H005_W(0x3ED0 + (d) * 2))  /* $3ED0: (word) spostamento y per direzione d (passo 2) */
+/* Offsets of direction d (tables H005+$3EE2 / $3ED0). */
+#define DIR_DX(d)   ((s16)H005_W(0x3EE2 + (d) * 2))  /* $3EE2: (word) x offset for direction d (step 2) */
+#define DIR_DY(d)   ((s16)H005_W(0x3ED0 + (d) * 2))  /* $3ED0: (word) y offset for direction d (step 2) */
 
 /*
- * PORT H085+$26C0: nube puzzolente sul punto scelto ($251A, $2518): un
- * record in g_clouds ($2514) con il numero della nube di questo
- * lanciatore (nella lista l'originale non conta l'ultimo record),
- * l'effetto $28 per toglierla, e le 4 caselle (direzioni $5022) che
- * diventano $1E se il terreno lo consente (H005+$3EF4 < $FF), salvando
- * il contenuto precedente; poi i combattenti nelle caselle (una volta
- * sola ciascuno) entrano nella nube (H062+$1038).
+ * PORT H085+$26C0: stinking cloud on the chosen point ($251A, $2518): a
+ * record in g_clouds ($2514) with the number of the cloud of this
+ * caster (in the list the original does not count the last record),
+ * effect $28 to remove it, and the 4 squares (directions $5022) that
+ * become $1E if the terrain allows it (H005+$3EF4 < $FF), saving
+ * the previous contents; then the combatants in the squares (once
+ * each) enter the cloud (H062+$1038).
  */
 void spell_stinking_cloud(void)
 {
@@ -1615,8 +1614,8 @@ void spell_stinking_cloud(void)
     s16 x;
     s16 y;
 
-    H005_B(0x24A9) = 1; /* $24A9: 1 se l'incantesimo agisce su area/gruppo (immagini illese) */
-    level = (u16)caster_level(SPELL_NOW); /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    H005_B(0x24A9) = 1; /* $24A9: 1 if the spell acts on an area/group (pictures unharmed) */
+    level = (u16)caster_level(SPELL_NOW); /* $2471: spell being cast (0 = none) */
     r = g_clouds;
     if (g_clouds == NULL) {
         g_clouds = (CokCloud *)exec_alloc_mem(sizeof(CokCloud),
@@ -1633,32 +1632,32 @@ void spell_stinking_cloud(void)
                                              COK_MEMF_CLEAR);
         r = r->next;
     }
-    /* H029+$0312 su $22 byte: tutto il record. */
+    /* H029+$0312 on $22 bytes: the whole record. */
     memset(r, 0, sizeof(CokCloud));
     add_effect(g_current_char, 0x28, level, (u16)(count * 16 + level), 1);
     r->owner = g_current_char;
-    r->b[0x20 - 8] = (u8)count; /* nube+$18: numero della nube (= nibble alto di EF +$4 dell'effetto) */
-    /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); nube+$14: (word)
-     * x del centro della nube/pozza */
+    r->b[0x20 - 8] = (u8)count; /* nube+$18: number of the cloud (= high nibble of EF +$4 of the effect) */
+    /* $251A: (word) x of the chosen target square (spells, breaths, telep.); nube+$14: (word) x of
+     * the centre of the cloud/pool */
     COK_PUT16(&r->b[0x1C - 8], H005_W(0x251A));
-    /* $2518: (word) y della casella bersaglio scelta (incantesimi, soffi, telep.); nube+$16: (word)
-     * y del centro della nube/pozza */
+    /* $2518: (word) y of the chosen target square (spells, breaths, telep.); nube+$16: (word) y of
+     * the centre of the cloud/pool */
     COK_PUT16(&r->b[0x1E - 8], H005_W(0x2518));
     for (i = 1; i <= 4; ++i) {
-        d = H005_B(0x5022 + i - 1); /* $5021: base i-1 delle 4 direzioni delle caselle di una nube ($5022) */
-        /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $3EE2:
-         * (word) spostamento x per direzione d (passo 2) */
+        d = H005_B(0x5022 + i - 1); /* $5021: i-1 base of the 4 directions of the squares of a cloud ($5022) */
+        /* $251A: (word) x of the chosen target square (spells, breaths, telep.); $3EE2:
+         * (word) x offset for direction d (step 2) */
         x = (s16)(H005_W(0x251A) + DIR_DX(d));
-        /* $2518: (word) y della casella bersaglio scelta (incantesimi, soffi, telep.); $3ED0:
-         * (word) spostamento y per direzione d (passo 2) */
+        /* $2518: (word) y of the chosen target square (spells, breaths, telep.); $3ED0:
+         * (word) y offset for direction d (step 2) */
         y = (s16)(H005_W(0x2518) + DIR_DY(d));
         combat_map_cell(x, y, &who[i - 1], &tile);
-        /* $3EF4: terreno, $41 voci da 4 byte (da 1): +0 costo ($FF invalicabile) */
+        /* $3EF4: terrain, $41 entries of 4 bytes (from 1): +0 cost ($FF impassable) */
         if (tile > 0 && H005_B(0x3EF4 + (tile - 1) * 4) < 0xFF) {
-            /* nube+$9: base tabella 4 flag casella coperta +$A..+$D (indice 1..4) */
+            /* nube+$9: base of the table of 4 covered-square flags +$A..+$D (index 1..4) */
             r->b[0x12 - 8 + i - 1] = 1;
         } else {
-            /* nube+$9: base tabella 4 flag casella coperta +$A..+$D (indice 1..4) */
+            /* nube+$9: base of the table of 4 covered-square flags +$A..+$D (index 1..4) */
             r->b[0x12 - 8 + i - 1] = 0;
         }
         if (tile == 0x1E) {
@@ -1667,17 +1666,17 @@ void spell_stinking_cloud(void)
                     continue;
                 }
                 for (k = 1; k <= 4; ++k) {
-                    /* nube+$9: base tabella 4 flag casella coperta +$A..+$D (indice 1..4) */
+                    /* nube+$9: base of the table of 4 covered-square flags +$A..+$D (index 1..4) */
                     if (q->b[0x12 - 8 + k - 1] &&
-                        /* nube+$14: (word) x del centro della nube/pozza */
+                        /* nube+$14: (word) x of the centre of the cloud/pool */
                         (s16)(COK_GET16(&q->b[0x1C - 8]) +
-                              /* $3EE2: (word) spostamento x per direzione d (passo 2); $5021: base
-                               * i-1 delle 4 direzioni delle caselle di una nube ($5022) */
+                              /* $3EE2: (word) x offset for direction d (step 2); $5021: i-1 base of the 4 directions of
+                               * the squares of a cloud ($5022) */
                               DIR_DX(H005_B(0x5022 + k - 1))) == x &&
-                        /* nube+$16: (word) y del centro della nube/pozza */
+                        /* nube+$16: (word) y of the centre of the cloud/pool */
                         (s16)(COK_GET16(&q->b[0x1E - 8]) +
-                              /* $3ED0: (word) spostamento y per direzione d (passo 2); $5021: base
-                               * i-1 delle 4 direzioni delle caselle di una nube ($5022) */
+                              /* $3ED0: (word) y offset for direction d (step 2); $5021: i-1 base of the 4 directions of
+                               * the squares of a cloud ($5022) */
                               DIR_DY(H005_B(0x5022 + k - 1))) == y &&
                         q->b[k - 1] != 0x1E) {
                         tile = q->b[k - 1];
@@ -1685,7 +1684,7 @@ void spell_stinking_cloud(void)
                 }
             }
         } else if (tile == 0x1F) {
-            for (k = 1; k <= H005_B(0x247A); ++k) { /* $247A: numero di corpi nella tabella +$2AE2 (max 8) */
+            for (k = 1; k <= H005_B(0x247A); ++k) { /* $247A: number of bodies in the table +$2AE2 (max 8) */
                 if (g_bodies[k - 1].x == (u16)x &&
                     g_bodies[k - 1].y == (u16)y) {
                     tile = g_bodies[k - 1].tile;
@@ -1693,15 +1692,15 @@ void spell_stinking_cloud(void)
             }
         }
         r->b[i - 1] = (u8)tile;
-        /* nube+$9: base tabella 4 flag casella coperta +$A..+$D (indice 1..4) */
+        /* nube+$9: base of the table of 4 covered-square flags +$A..+$D (index 1..4) */
         if (r->b[0x12 - 8 + i - 1]) {
             g_combat_area[0x0A + (s32)y * 0x64 + x * 2 + 1] = 0x1E;
         }
     }
     show_char_message(g_current_char, 0x17, "Creates a noxious cloud", 0x0A,
                       0);
-    /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518: (word) y
-     * della casella bersaglio scelta (incantesimi, soffi, telep.) */
+    /* $251A: (word) x of the chosen target square (spells, breaths, telep.); $2518: (word) y of
+     * the chosen target square (spells, breaths, telep.) */
     center_view((s16)H005_W(0x251A), (s16)H005_W(0x2518), 0xFF, 8);
     message_delay();
     clear_message_area();
@@ -1720,8 +1719,8 @@ void spell_stinking_cloud(void)
 }
 
 /*
- * PORT H085+$3758: charme ("is charmed", H085+$1A6C senza bonus), poi per
- * chi ha l'effetto $B il suo gestore.
+ * PORT H085+$3758: charm ("is charmed", H085+$1A6C without bonus), then for
+ * whoever has effect $B its handler.
  */
 void spell_charm_monster(void)
 {
@@ -1729,7 +1728,7 @@ void spell_charm_monster(void)
     CokEffect *e;                       /* -$A(a5) */
 
     spell_on_targets(0, 0x0A, "is charmed");
-    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
+    /* $246C: number of spell targets in g_spell_targets ($2520) */
     for (i = 1; i <= H005_B(0x246C); ++i) {
         if (find_effect(g_spell_targets[i - 1], 0x0B, &e)) {
             call_effect_handler(0x0B, &g_spell_targets[i - 1], e, 0);
@@ -1738,11 +1737,11 @@ void spell_charm_monster(void)
 }
 
 /*
- * PORT H085+$3936: paura a cono (area del soffio, larghezza 3, lunghezza
- * 6, verso il punto scelto): chi non supera il tiro salvezza 4 "runs in
- * terror" (effetto $6F con la durata dell'incantesimo $54), fugge
- * (turno +$12, +$19A), passa al controllo del computer (+$EC = $B3) e
- * perde il bersaglio; gli altri "is unaffected".
+ * PORT H085+$3936: cone of fear (breath area, width 3, length
+ * 6, towards the chosen point): whoever fails saving throw 4 "runs in
+ * terror" (effect $6F with the duration of spell $54), flees
+ * (turn +$12, +$19A), passes to computer control (+$EC = $B3) and
+ * loses the target; the others "is unaffected".
  */
 void spell_fear(void)
 {
@@ -1752,20 +1751,20 @@ void spell_fear(void)
     u8 saved;                           /* -$B(a5) */
 
     breath_area((s16)combatant_x(c), (s16)combatant_y(c),
-                /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.);
-                 * $2518: (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
+                /* $251A: (word) x of the chosen target square (spells, breaths, telep.); $2518: (word) y of the
+                 * chosen target square (spells, breaths, telep.) */
                 (s16)H005_W(0x251A), (s16)H005_W(0x2518), 3, 6);
-    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
+    /* $246C: number of spell targets in g_spell_targets ($2520) */
     for (i = 1; i <= H005_B(0x246C); ++i) {
         t = g_spell_targets[i - 1];
         saved = saving_throw_roll(t, 4, 0);
         if (!saved) {
             apply_spell_effect_on(t, 0x6F, spell_duration(0x54), 0, 1, 1,
                                   saved, 0x0E, "runs in terror");
-            t->block_192->b[0x12] = 1; /* turno+$12: flag costretto a fuggire (paura, confusione) */
-            t->b[0x19A] = 1; /* pg+$19A: controllo automatico in combattimento (1 = IA) */
-            if (t->b[0xEC] <= 0x7F) { /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
-                t->b[0xEC] = 0xB3; /* pg+$EC: controllo: <$80 PG, >$7F PNG/IA ($B3 = charme o confuso) */
+            t->block_192->b[0x12] = 1; /* turn+$12: forced to flee flag (fear, confusion) */
+            t->b[0x19A] = 1; /* ch+$19A: automatic control in combat (1 = AI) */
+            if (t->b[0xEC] <= 0x7F) { /* ch+$EC: control: <$80 PC, >$7F NPC/AI ($B3 = charmed or confused) */
+                t->b[0xEC] = 0xB3; /* ch+$EC: control: <$80 PC, >$7F NPC/AI ($B3 = charmed or confused) */
             }
             t->block_192->target = NULL;
         } else {
@@ -1774,15 +1773,15 @@ void spell_fear(void)
     }
 }
 
-/* Riga della tabella del terreno H005+$3EF4 (4 byte per tipo, da 1). */
-/* $3EF4: terreno, $41 voci da 4 byte (da 1): +0 costo ($FF invalicabile) */
+/* Row of the terrain table H005+$3EF4 (4 bytes per type, from 1). */
+/* $3EF4: terrain, $41 entries of 4 bytes (from 1): +0 cost ($FF impassable) */
 #define TERRAIN(tile)   H005_B(0x3EF4 + ((s32)(tile) - 1) * 4)
 
 /*
- * PORT H085+$1234: il fulmine colpisce la casella (x, y): *bounce diventa
- * 1 se e' un muro (terreno $FF, solo con g_state_a +$1CC = 1) e non
- * rimbalzava gia'; il combattente nella casella (se diverso da skip)
- * subisce dmg (tiro salvezza kind, danno di tipo 2).
+ * PORT H085+$1234: the lightning bolt hits the square (x, y): *bounce becomes
+ * 1 if it is a wall (terrain $FF, only with g_state_a +$1CC = 1) and it was not
+ * already bouncing; the combatant in the square (if different from skip)
+ * takes dmg (saving throw kind, damage of type 2).
  */
 static void bolt_hit(s16 x, s16 y, u16 dmg, u8 kind, u16 skip, u8 *bounce)
 {
@@ -1792,9 +1791,9 @@ static void bolt_hit(s16 x, s16 y, u16 dmg, u8 kind, u16 skip, u8 *bounce)
     u8 saved;
 
     combat_map_cell(x, y, &who, &tile);
-    /* $3EF4: terreno, $41 voci da 4 byte (da 1): +0 costo ($FF invalicabile) */
+    /* $3EF4: terrain, $41 entries of 4 bytes (from 1): +0 cost ($FF impassable) */
     if (tile > 0 && TERRAIN(tile) == 0xFF &&
-        /* A+$1CC: (word) 1 area 3D (mappa 16x16), 0 mappa all'aperto */
+        /* A+$1CC: (word) 1 3D area (16x16 map), 0 outdoor map */
         COK_GET16(g_state_a + 0x1CC) == 1 && !*bounce) {
         *bounce = 1;
     } else {
@@ -1809,12 +1808,12 @@ static void bolt_hit(s16 x, s16 y, u16 dmg, u8 kind, u16 skip, u8 *bounce)
 }
 
 /*
- * PORT H085+$1306: il fulmine parte dal punto scelto e prosegue per
- * length caselle (in mezzi passi) nella direzione lanciatore -> punto;
- * si ferma su un ostacolo o su un combattente (diverso dall'ultimo
- * colpito) e lo colpisce; su un muro rimbalza invertendo la direzione
- * (con can_bounce una volta sola, e se il lanciatore e' entro 8 passi
- * il tratto conta 8 in piu').
+ * PORT H085+$1306: the lightning bolt starts from the chosen point and goes on for
+ * length squares (in half steps) in the direction caster -> point;
+ * it stops on an obstacle or on a combatant (different from the last one
+ * hit) and hits it; on a wall it bounces reversing the direction
+ * (with can_bounce only once, and if the caster is within 8 steps
+ * the stretch counts 8 more).
  */
 static void bolt(u16 length, u16 dmg, u8 kind, u8 can_bounce)
 {
@@ -1835,33 +1834,33 @@ static void bolt(u16 length, u16 dmg, u8 kind, u8 can_bounce)
     u16 used = 0;                       /* -$48(a5) */
 
     load_missile_frames(0x13);
-    /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518: (word) y
-     * della casella bersaglio scelta (incantesimi, soffi, telep.) */
+    /* $251A: (word) x of the chosen target square (spells, breaths, telep.); $2518: (word) y of
+     * the chosen target square (spells, breaths, telep.) */
     combat_map_cell((s16)H005_W(0x251A), (s16)H005_W(0x2518), &last_who,
                     &tile);
     ax = (s16)combatant_x(g_current_char);
     ay = (s16)combatant_y(g_current_char);
     may_bounce = can_bounce;
-    /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518: (word) y
-     * della casella bersaglio scelta (incantesimi, soffi, telep.) */
+    /* $251A: (word) x of the chosen target square (spells, breaths, telep.); $2518: (word) y of
+     * the chosen target square (spells, breaths, telep.) */
     if (ax == (s16)H005_W(0x251A) && ay == (s16)H005_W(0x2518)) {
         return;
     }
     left = (u16)(length * 2);
-    H005_B(0x24A9) = 1; /* $24A9: 1 se l'incantesimo agisce su area/gruppo (immagini illese) */
+    H005_B(0x24A9) = 1; /* $24A9: 1 if the spell acts on an area/group (pictures unharmed) */
     while (left > 0) {
         memset(&l1, 0, sizeof(l1));
-        /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.) */
+        /* $251A: (word) x of the chosen target square (spells, breaths, telep.) */
         l1.x0 = (s16)H005_W(0x251A);
-        /* $2518: (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
+        /* $2518: (word) y of the chosen target square (spells, breaths, telep.) */
         l1.y0 = (s16)H005_W(0x2518);
-        /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.) */
+        /* $251A: (word) x of the chosen target square (spells, breaths, telep.) */
         l1.x1 = (s16)((s16)H005_W(0x251A) +
-                      /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.) */
+                      /* $251A: (word) x of the chosen target square (spells, breaths, telep.) */
                       (s16)((s16)H005_W(0x251A) - ax) * sign * (s16)left);
-        /* $2518: (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
+        /* $2518: (word) y of the chosen target square (spells, breaths, telep.) */
         l1.y1 = (s16)((s16)H005_W(0x2518) +
-                      /* $2518: (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
+                      /* $2518: (word) y of the chosen target square (spells, breaths, telep.) */
                       (s16)((s16)H005_W(0x2518) - ay) * sign * (s16)left);
         line_init(&l1);
         do {
@@ -1871,12 +1870,12 @@ static void bolt(u16 length, u16 dmg, u8 kind, u8 can_bounce)
                 do {
                     stepped = line_step(&l1);
                     combat_map_cell(l1.cx, l1.cy, &who, &tile);
-                    /* $3EF4: terreno, $41 voci da 4 byte (da 1): +0 costo ($FF invalicabile) */
+                    /* $3EF4: terrain, $41 entries of 4 bytes (from 1): +0 cost ($FF impassable) */
                     if (TERRAIN(tile) == 1) {
                         bounce = 0;
                     }
                 } while (stepped && (who == 0 || who == last_who) &&
-                         /* $3EF4: terreno, $41 voci da 4 byte (da 1): +0 costo ($FF invalicabile) */
+                         /* $3EF4: terrain, $41 entries of 4 bytes (from 1): +0 cost ($FF impassable) */
                          tile != 0 && TERRAIN(tile) <= 1 && l1.cost < left);
             }
             if (tile == 0) {
@@ -1886,14 +1885,14 @@ static void bolt(u16 length, u16 dmg, u8 kind, u8 can_bounce)
             bolt_hit(l1.cx, l1.cy, dmg, kind, last_who, &bounce);
             last_who = who;
             if (bounce) {
-                /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.) */
+                /* $251A: (word) x of the chosen target square (spells, breaths, telep.) */
                 H005_SET_W(0x251A, (u16)l1.cx);
-                /* $2518: (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
+                /* $2518: (word) y of the chosen target square (spells, breaths, telep.) */
                 H005_SET_W(0x2518, (u16)l1.cy);
                 memset(&l2, 0, sizeof(l2));
-                /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.) */
+                /* $251A: (word) x of the chosen target square (spells, breaths, telep.) */
                 l2.x0 = (s16)H005_W(0x251A);
-                /* $2518: (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
+                /* $2518: (word) y of the chosen target square (spells, breaths, telep.) */
                 l2.y0 = (s16)H005_W(0x2518);
                 l2.x1 = ax;
                 l2.y1 = ay;
@@ -1916,51 +1915,51 @@ static void bolt(u16 length, u16 dmg, u8 kind, u8 can_bounce)
             used = l1.cost;
         } while (!bounce && left != 0);
     }
-    H005_B(0x24A9) = 0; /* $24A9: 1 se l'incantesimo agisce su area/gruppo (immagini illese) */
+    H005_B(0x24A9) = 0; /* $24A9: 1 if the spell acts on an area/group (pictures unharmed) */
 }
 
 /*
- * PORT H085+$31B4: fulmine: livello del lanciatore dadi da 6 (tipo $C),
- * prima sul punto scelto, poi lungo 7 caselle con un rimbalzo.
+ * PORT H085+$31B4: lightning bolt: caster level d6 dice (type $C),
+ * first on the chosen point, then along 7 squares with one bounce.
  */
 void spell_lightning_bolt(void)
 {
     u16 dmg;                            /* -$2(a5) */
     u8 bounce = 1;                      /* -$3(a5) */
 
-    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    /* $2471: spell being cast (0 = none) */
     dmg = roll_dice((u16)caster_level(SPELL_NOW), 6);
-    H005_B(0x2473) = 0x0C; /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
-    /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518: (word) y
-     * della casella bersaglio scelta (incantesimi, soffi, telep.) */
+    H005_B(0x2473) = 0x0C; /* $2473: type of the incoming damage (bits: 1 fire, 2 cold, 8, $20) */
+    /* $251A: (word) x of the chosen target square (spells, breaths, telep.); $2518: (word) y of
+     * the chosen target square (spells, breaths, telep.) */
     bolt_hit((s16)H005_W(0x251A), (s16)H005_W(0x2518), dmg, 4, 0, &bounce);
     bolt(7, dmg, 4, 1);
 }
 
 /*
- * PORT H085+$33A8: scarica (tipo 4): 1d6+20 sul punto scelto, poi 20
- * lungo 3 caselle senza rimbalzo.  Il flag -$1(a5) passato al primo colpo
- * non e' inizializzato nell'originale (e non serve dopo): qui 0.
+ * PORT H085+$33A8: discharge (type 4): 1d6+20 on the chosen point, then 20
+ * along 3 squares without a bounce.  The flag -$1(a5) passed to the first hit
+ * is not initialised in the original (and is not needed afterwards): here 0.
  */
 void spell_bolt_20(void)
 {
     u8 bounce = 0;                      /* -$1(a5) */
 
-    H005_B(0x2473) = 4; /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
-    /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518: (word) y
-     * della casella bersaglio scelta (incantesimi, soffi, telep.) */
+    H005_B(0x2473) = 4; /* $2473: type of the incoming damage (bits: 1 fire, 2 cold, 8, $20) */
+    /* $251A: (word) x of the chosen target square (spells, breaths, telep.); $2518: (word) y of
+     * the chosen target square (spells, breaths, telep.) */
     bolt_hit((s16)H005_W(0x251A), (s16)H005_W(0x2518),
              (u16)(roll_dice(1, 6) + 0x14), 4, 0, &bounce);
     bolt(3, 0x14, 4, 0);
 }
 
-/* Selezione del bersaglio (azione $276C) per lo spell spell. */
+/* Target selection (action $276C) for spell spell. */
 static void select_target_for(u8 spell, u8 *ok)
 {
     ((void (*)(u8, u8, u8 *))g_handlers_25c0[107])(spell, 1, ok);
 }
 
-/* Animazione del proiettile dal combattente c al primo bersaglio. */
+/* Missile animation from combatant c to the first target. */
 static void missile_to_first(Character *c)
 {
     animate_missile((s16)combatant_x(c), (s16)combatant_y(c),
@@ -1968,7 +1967,7 @@ static void missile_to_first(Character *c)
                     (s16)combatant_y(g_spell_targets[0]), 1, 1);
 }
 
-/* Messaggio, direzione verso il primo bersaglio e posa del lanciatore. */
+/* Message, direction towards the first target and pose of the caster. */
 static void breath_pose(Character *c, u16 len, const char *text,
                         u16 missile)
 {
@@ -1981,52 +1980,52 @@ static void breath_pose(Character *c, u16 len, const char *text,
     load_missile_frames(missile);
 }
 
-/* Danno pari ai punti ferita massimi di c a ogni bersaglio (salvezza 3). */
+/* Damage equal to the maximum hit points of c to every target (save 3). */
 static void breath_damage(Character *c)
 {
     u16 k;
     Character *t;
     u8 saved;
 
-    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
+    /* $246C: number of spell targets in g_spell_targets ($2520) */
     for (k = 1; k <= H005_B(0x246C); ++k) {
         if (g_spell_targets[k - 1] != NULL) {
             t = g_spell_targets[k - 1];
             saved = saving_throw_roll(t, 3, 0);
-            apply_damage(t, c->b[0x64], 2, saved); /* pg+$64: punti ferita massimi */
+            apply_damage(t, c->b[0x64], 2, saved); /* ch+$64: maximum hit points */
         }
     }
 }
 
 /*
- * PORT H085+$431A (effetto $4E): una palla di fuoco ($2F, 15d6) sul
- * bersaglio scelto: "throws a fireball", poi l'effetto si toglie.
+ * PORT H085+$431A (effect $4E): a fireball ($2F, 15d6) on the
+ * chosen target: "throws a fireball", then the effect is removed.
  */
 void effect_fireball(Character **cp, void *obj, u8 flag)
 {
     u8 ok;                              /* -$3(a5) */
 
     (void)obj; (void)flag;
-    H005_B(0x24A9) = 1; /* $24A9: 1 se l'incantesimo agisce su area/gruppo (immagini illese) */
+    H005_B(0x24A9) = 1; /* $24A9: 1 if the spell acts on an area/group (pictures unharmed) */
     select_target_for(0x2F, &ok);
     if (!ok) {
         return;
     }
-    H005_B(0x2471) = 0x2F; /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    H005_B(0x2471) = 0x2F; /* $2471: spell being cast (0 = none) */
     center_view((s16)combatant_x(*cp), (s16)combatant_y(*cp), 0, 8);
     show_char_message(*cp, 0x11, "throws a fireball", 0x0A, 1);
     load_missile_frames(0x12);
     missile_to_first(*cp);
-    /* $2471: incantesimo in corso di lancio (0 = nessuno) */
+    /* $2471: spell being cast (0 = none) */
     apply_spell_effect(H005_B(0x2471), 0, 0, roll_damage_dice(0x0F, 6), 9,
                        0, "");
     remove_effect(*cp, 0x4E, NULL);
 }
 
 /*
- * PORT H085+$442E (effetto $54): soffio velenoso nell'area di raggio 3
- * attorno al punto scelto (danno di tipo $20).  Le cariche (+$4) tornano
- * a 3 senza $247C e calano solo se ha colpito qualcuno.
+ * PORT H085+$442E (effect $54): poison breath in the area of radius 3
+ * around the chosen point (damage of type $20).  The charges (+$4) go back
+ * to 3 without $247C and drop only if it hit someone.
  */
 void effect_poison_breath(Character **cp, void *obj, u8 flag)
 {
@@ -2037,10 +2036,10 @@ void effect_poison_breath(Character **cp, void *obj, u8 flag)
     u8 r;                               /* -$B(a5) */
 
     (void)flag;
-    if (H005_B(0x247C) == 0) { /* $247C: numero del round del combattimento (0 all'inizio; bit 0 arrotonda) */
-        e->b[4] = 3; /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
+    if (H005_B(0x247C) == 0) { /* $247C: combat round number (0 at the start; bit 0 rounds) */
+        e->b[4] = 3; /* eff+$4: parameter/level of the effect (for $28 high nibble = cloud no.) */
     }
-    if (e->b[4] == 0) { /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
+    if (e->b[4] == 0) { /* eff+$4: parameter/level of the effect (for $28 high nibble = cloud no.) */
         return;
     }
     ax = (s16)combatant_x(*cp);
@@ -2049,26 +2048,26 @@ void effect_poison_breath(Character **cp, void *obj, u8 flag)
     if (!ok) {
         return;
     }
-    /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518: (word) y
-     * della casella bersaglio scelta (incantesimi, soffi, telep.) */
+    /* $251A: (word) x of the chosen target square (spells, breaths, telep.); $2518: (word) y of
+     * the chosen target square (spells, breaths, telep.) */
     breath_area(ax, ay, (s16)H005_W(0x251A), (s16)H005_W(0x2518), 0xFF, 3);
-    if (H005_B(0x246C) == 0) { /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
+    if (H005_B(0x246C) == 0) { /* $246C: number of spell targets in g_spell_targets ($2520) */
         return;
     }
-    H005_B(0x2473) = 0x20; /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
+    H005_B(0x2473) = 0x20; /* $2473: type of the incoming damage (bits: 1 fire, 2 cold, 8, $20) */
     breath_pose(*cp, 0x0F, "breathes poison", 0x12);
     missile_to_first(*cp);
     breath_damage(*cp);
-    e->b[4] = (u8)(e->b[4] - 1); /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
+    e->b[4] = (u8)(e->b[4] - 1); /* eff+$4: parameter/level of the effect (for $28 high nibble = cloud no.) */
     r = end_combat_turn(*cp);
     (void)r;
 }
 
 /*
- * PORT H085+$4628 (effetto $55): soffio fulmine (tipo $24): "Breathes!",
- * colpo sul punto scelto e fulmine di 10 caselle senza rimbalzo, con
- * danno pari ai punti ferita massimi (salvezza 3).  Il flag -$1(a5) del
- * primo colpo non e' inizializzato nell'originale: qui 0.
+ * PORT H085+$4628 (effect $55): lightning breath (type $24): "Breathes!",
+ * hit on the chosen point and a lightning bolt of 10 squares without a bounce, with
+ * damage equal to the maximum hit points (save 3).  The flag -$1(a5) of the
+ * first hit is not initialised in the original: here 0.
  */
 void effect_lightning_breath(Character **cp, void *obj, u8 flag)
 {
@@ -2079,39 +2078,39 @@ void effect_lightning_breath(Character **cp, void *obj, u8 flag)
     u8 r;
 
     (void)flag;
-    if (H005_B(0x247C) == 0) { /* $247C: numero del round del combattimento (0 all'inizio; bit 0 arrotonda) */
-        e->b[4] = 3; /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
+    if (H005_B(0x247C) == 0) { /* $247C: combat round number (0 at the start; bit 0 rounds) */
+        e->b[4] = 3; /* eff+$4: parameter/level of the effect (for $28 high nibble = cloud no.) */
     }
-    if (e->b[4] == 0) { /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
+    if (e->b[4] == 0) { /* eff+$4: parameter/level of the effect (for $28 high nibble = cloud no.) */
         return;
     }
-    H005_B(0x2473) = 0x24; /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
+    H005_B(0x2473) = 0x24; /* $2473: type of the incoming damage (bits: 1 fire, 2 cold, 8, $20) */
     ax = (s16)combatant_x(*cp);
     ay = (s16)combatant_y(*cp);
-    /* $24C5: esito della scelta del bersaglio (soffi, effetto $42) */
+    /* $24C5: outcome of the target choice (breaths, effect $42) */
     select_target_for(0x33, &H005_B(0x24C5));
-    if (!H005_B(0x24C5)) { /* $24C5: esito della scelta del bersaglio (soffi, effetto $42) */
+    if (!H005_B(0x24C5)) { /* $24C5: outcome of the target choice (breaths, effect $42) */
         return;
     }
     breath_pose(*cp, 9, "Breathes!", 0x13);
-    /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518: (word) y
-     * della casella bersaglio scelta (incantesimi, soffi, telep.) */
+    /* $251A: (word) x of the chosen target square (spells, breaths, telep.); $2518: (word) y of
+     * the chosen target square (spells, breaths, telep.) */
     animate_missile(ax, ay, (s16)H005_W(0x251A), (s16)H005_W(0x2518), 4, 2);
-    /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518: (word) y
-     * della casella bersaglio scelta (incantesimi, soffi, telep.); pg+$64: punti ferita massimi */
+    /* $251A: (word) x of the chosen target square (spells, breaths, telep.); $2518: (word) y of the
+     * chosen target square (spells, breaths, telep.); ch+$64: maximum hit points */
     bolt_hit((s16)H005_W(0x251A), (s16)H005_W(0x2518), (*cp)->b[0x64], 3, 0,
              &bounce);
-    bolt(0x0A, (*cp)->b[0x64], 3, 0); /* pg+$64: punti ferita massimi */
-    e->b[4] = (u8)(e->b[4] - 1); /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
+    bolt(0x0A, (*cp)->b[0x64], 3, 0); /* ch+$64: maximum hit points */
+    e->b[4] = (u8)(e->b[4] - 1); /* eff+$4: parameter/level of the effect (for $28 high nibble = cloud no.) */
     r = end_combat_turn(*cp);
     (void)r;
 }
 
 /*
- * PORT H085+$4798 (effetto $5A): soffio acido (tipo $30) a cono stretto
- * (larghezza 1, lunghezza 6), solo se colpisce soltanto avversari.  Il
- * controllo dei lati gira anche se la scelta del bersaglio e' annullata,
- * sui bersagli precedenti, come nell'originale.
+ * PORT H085+$4798 (effect $5A): acid breath (type $30) in a narrow cone
+ * (width 1, length 6), only if it hits only opponents.  The
+ * check of the sides also runs if the target choice is cancelled,
+ * on the previous targets, as in the original.
  */
 void effect_acid_breath(Character **cp, void *obj, u8 flag)
 {
@@ -2122,49 +2121,49 @@ void effect_acid_breath(Character **cp, void *obj, u8 flag)
     u8 r;
 
     (void)flag;
-    H005_B(0x24C5) = 0; /* $24C5: esito della scelta del bersaglio (soffi, effetto $42) */
-    if (H005_B(0x247C) == 0) { /* $247C: numero del round del combattimento (0 all'inizio; bit 0 arrotonda) */
-        e->b[4] = 3; /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
+    H005_B(0x24C5) = 0; /* $24C5: outcome of the target choice (breaths, effect $42) */
+    if (H005_B(0x247C) == 0) { /* $247C: combat round number (0 at the start; bit 0 rounds) */
+        e->b[4] = 3; /* eff+$4: parameter/level of the effect (for $28 high nibble = cloud no.) */
     }
-    if (e->b[4] == 0) { /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
+    if (e->b[4] == 0) { /* eff+$4: parameter/level of the effect (for $28 high nibble = cloud no.) */
         return;
     }
-    H005_B(0x2473) = 0x30; /* $2473: tipo del danno in arrivo (bit: 1 fuoco, 2 freddo, 8, $20) */
+    H005_B(0x2473) = 0x30; /* $2473: type of the incoming damage (bits: 1 fire, 2 cold, 8, $20) */
     ax = (s16)combatant_x(*cp);
     ay = (s16)combatant_y(*cp);
-    /* $24C5: esito della scelta del bersaglio (soffi, effetto $42) */
+    /* $24C5: outcome of the target choice (breaths, effect $42) */
     select_target_for(0x3D, &H005_B(0x24C5));
-    if (H005_B(0x24C5)) { /* $24C5: esito della scelta del bersaglio (soffi, effetto $42) */
-        /* $251A: (word) x della casella bersaglio scelta (incantesimi, soffi, telep.); $2518:
-         * (word) y della casella bersaglio scelta (incantesimi, soffi, telep.) */
+    if (H005_B(0x24C5)) { /* $24C5: outcome of the target choice (breaths, effect $42) */
+        /* $251A: (word) x of the chosen target square (spells, breaths, telep.); $2518:
+         * (word) y of the chosen target square (spells, breaths, telep.) */
         breath_area(ax, ay, (s16)H005_W(0x251A), (s16)H005_W(0x2518), 1, 6);
     }
-    /* $246C: numero di bersagli dell'incantesimo in g_spell_targets ($2520) */
+    /* $246C: number of spell targets in g_spell_targets ($2520) */
     for (k = 1; k <= H005_B(0x246C); ++k) {
-        /* pg+$199: lato in combattimento (0 party, 1 avversari) */
+        /* ch+$199: side in combat (0 party, 1 opponents) */
         if (g_spell_targets[k - 1]->b[0x199] != other_side(*cp)) {
-            H005_B(0x24C5) = 0; /* $24C5: esito della scelta del bersaglio (soffi, effetto $42) */
+            H005_B(0x24C5) = 0; /* $24C5: outcome of the target choice (breaths, effect $42) */
         }
     }
-    /* $24C5: esito della scelta del bersaglio (soffi, effetto $42); $246C: numero di bersagli
-     * dell'incantesimo in g_spell_targets ($2520) */
+    /* $24C5: outcome of the target choice (breaths, effect $42); $246C: number of spell
+     * targets in g_spell_targets ($2520) */
     if (!H005_B(0x24C5) || H005_B(0x246C) == 0) {
         return;
     }
     breath_pose(*cp, 0x0D, "breathes acid", 0x12);
     missile_to_first(*cp);
     breath_damage(*cp);
-    e->b[4] = (u8)(e->b[4] - 1); /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
+    e->b[4] = (u8)(e->b[4] - 1); /* eff+$4: parameter/level of the effect (for $28 high nibble = cloud no.) */
     r = end_combat_turn(*cp);
     (void)r;
 }
 
 /*
- * PORT H085+$4A02 (effetto $04): nel 75% dei turni.  Con le cariche e il
- * 25%, soffio accecante su un avversario adiacente (l'ultimo trovato):
- * "Breathes!", salvezza 3: 10 di danno, altrimenti 20 e cecita' ($21) e
- * fine del turno.  Se non ha soffiato, fino a due dardi di energia
- * (1d8+2) sul bersaglio scelto: il secondo solo se resta in piedi.
+ * PORT H085+$4A02 (effect $04): in 75% of the turns.  With the charges and the
+ * 25%, blinding breath on an adjacent opponent (the last one found):
+ * "Breathes!", save 3: 10 damage, otherwise 20 and blindness ($21) and
+ * end of the turn.  If it has not breathed, up to two energy bolts
+ * (1d8+2) on the chosen target: the second only if it stays standing.
  */
 void effect_eye_attack(Character **cp, void *obj, u8 flag)
 {
@@ -2176,22 +2175,22 @@ void effect_eye_attack(Character **cp, void *obj, u8 flag)
     Character *c;
 
     (void)flag;
-    if (H005_B(0x247C) == 0) { /* $247C: numero del round del combattimento (0 all'inizio; bit 0 arrotonda) */
-        e->b[4] = 3; /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
+    if (H005_B(0x247C) == 0) { /* $247C: combat round number (0 at the start; bit 0 rounds) */
+        e->b[4] = 3; /* eff+$4: parameter/level of the effect (for $28 high nibble = cloud no.) */
     }
     if (roll_dice(1, 0x64) > 0x4B) {
         return;
     }
-    /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
+    /* eff+$4: parameter/level of the effect (for $28 high nibble = cloud no.) */
     if (e->b[4] != 0 && roll_dice(1, 0x64) <= 0x19) {
         t = NULL;
         find_in_area((s16)combatant_x(*cp), (s16)combatant_y(*cp), 1, 0xFF, 1,
                      g_combat_area);
-        /* $2479: numero di voci della lista dell'area +$2A3E (4 byte per voce) */
+        /* $2479: number of entries of the area list +$2A3E (4 bytes per entry) */
         for (k = 2; k <= H005_B(0x2479); ++k) {
-            /* $2A3E: lista dell'area: voci da 4 byte ($2479), byte 0 = n. combattente */
+            /* $2A3E: area list: 4-byte entries ($2479), byte 0 = combatant no. */
             c = g_combatants[H005_B(0x2A3E + (k - 1) * 4) - 1];
-            if (c->b[0x199] != (*cp)->b[0x199]) { /* pg+$199: lato in combattimento (0 party, 1 avversari) */
+            if (c->b[0x199] != (*cp)->b[0x199]) { /* ch+$199: side in combat (0 party, 1 opponents) */
                 t = c;
             }
         }
@@ -2206,7 +2205,7 @@ void effect_eye_attack(Character **cp, void *obj, u8 flag)
                                       "is blinded");
                 r = end_combat_turn(*cp);
             }
-            /* eff+$4: parametro/livello dell'effetto (per $28 nibble alto = n. nube) */
+            /* eff+$4: parameter/level of the effect (for $28 high nibble = cloud no.) */
             e->b[4] = (u8)(e->b[4] - 1);
         }
     }
@@ -2216,9 +2215,9 @@ void effect_eye_attack(Character **cp, void *obj, u8 flag)
     r = 0;
     k = 0;
     do {
-        /* $24C5: esito della scelta del bersaglio (soffi, effetto $42) */
+        /* $24C5: outcome of the target choice (breaths, effect $42) */
         select_target_for(0x3D, &H005_B(0x24C5));
-        /* $24C5: esito della scelta del bersaglio (soffi, effetto $42) */
+        /* $24C5: outcome of the target choice (breaths, effect $42) */
         if (g_spell_targets[0] != NULL && H005_B(0x24C5)) {
             ++k;
             show_char_message(*cp, 0x15, "Fires An Energy Bolt!", 0x0A, 1);
@@ -2226,7 +2225,7 @@ void effect_eye_attack(Character **cp, void *obj, u8 flag)
             missile_to_first(*cp);
             apply_damage(g_spell_targets[0],
                          (u16)(roll_damage_dice(1, 8) + 2), 0, 0);
-            /* pg+$198: attivo/in piedi (0 a terra o fuori combattimento) */
+            /* ch+$198: active/standing (0 down or out of the combat) */
             if (g_spell_targets[0]->b[0x198] && k == 1) {
                 apply_damage(g_spell_targets[0],
                              (u16)(roll_damage_dice(1, 8) + 2), 0, 0);

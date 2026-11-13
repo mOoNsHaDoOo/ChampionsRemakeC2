@@ -1,13 +1,13 @@
 ; ============================================================================
-; GUIDA DEL MODULO H061
-; Servizi della VM ECL: caricamento, operandi, variabili e controllo del flusso.
-; I commenti descrivono l’analisi del campione; non sono nomi del sorgente originale.
-; Livelli: verificato / parziale. Le aree non commentate non sono date per risolte.
+; MODULE GUIDE H061
+; ECL VM services: loading, operands, variables and flow control.
+; The comments describe the analysis of the sample; they are not names from the original source.
+; Levels: verified / partial. The areas without comments are not to be taken as solved.
 ; ============================================================================
 
 ; --------------------------------------------------------------------------
-; NOTA MODULO
-; VM ECL: caricamento del programma, lettura e valutazione degli operandi, variabili, stack GOSUB/RETURN e controllo del flusso. H061+$1670 legge gli operandi; H061+$1928 resetta l'esecuzione.
+; MODULE NOTE
+; ECL VM: program loading, reading and evaluation of the operands, variables, GOSUB/RETURN stack and flow control. H061+$1670 reads the operands; H061+$1928 resets the execution.
 ; --------------------------------------------------------------------------
 ; H061: 16936 original bytes; all offsets are section-relative.
         section H061,code
@@ -363,10 +363,10 @@ H061:
         dc.w $2074,$6F20,$636F,$6E74,$696E,$7565,$0000
         dc.l H061+$00001512
 ; --------------------------------------------------------------------------
-; ROUTINE: module_init_H061 [parziale]
-; Scopo: Ingresso del modulo servizi della VM ECL: caricamento, operandi, variabili e flusso; imposta la base dati A4 e prosegue nel corpo del modulo.
-;   - Salta al corpo effettivo a H061+$4222.
-; Chiamanti diretti: H000+$021C
+; ROUTINE: module_init_H061 [partial]
+; Purpose: Entry of the ECL VM services: loading, operands, variables and flow module; sets the A4 data base and continues into the module body.
+;   - Jumps to the actual body at H061+$4222.
+; Direct callers: H000+$021C
 ; --------------------------------------------------------------------------
 L061_000015C2:
 ; H061+$000015C2: 2f0c  move.l a4, -(a7)
@@ -393,19 +393,19 @@ L061_000015CC:
         dc.l H014+$00000018
         dc.w $4E5D,$285F,$205F,$548F,$4ED0
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H061_1F12 [parziale]
-; Scopo: Trampolino verso H061+$1F12; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H061+$1F12.
-; Chiamanti diretti: H061+$18DC
+; ROUTINE: trampoline_H061_1F12 [partial]
+; Purpose: Trampoline to H061+$1F12; the actual body is there.
+;   - Jumps to the actual body at H061+$1F12.
+; Direct callers: H061+$18DC
 ; --------------------------------------------------------------------------
 L061_0000162A:
 ; H061+$0000162A: 600008e6  bra.w $1f12
         bra.w H061+$1F12
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H061_0000162E [parziale]
-; Scopo: Routine del modulo servizi della VM ECL: caricamento, operandi, variabili e flusso; richiama H026+$000C.
-;   - Richiama H026+$000C.
-; Chiamanti diretti: H061+$33E2, H061+$3392, H061+$3478, H061+$3556, H061+$35AA, H061+$36CC e altri 1
+; ROUTINE: sub_H061_0000162E [partial]
+; Purpose: Routine of the ECL VM services: loading, operands, variables and flow module; calls H026+$000C.
+;   - Calls H026+$000C.
+; Direct callers: H061+$33E2, H061+$3392, H061+$3478, H061+$3556, H061+$35AA, H061+$36CC and 1 more
 ; --------------------------------------------------------------------------
 L061_0000162E:
 ; H061+$0000162E: 2f0c  move.l a4, -(a7)
@@ -469,13 +469,13 @@ L061_0000166E:
 FN_ECL_read_operands:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_ReadOperands [verificato]
-; Scopo: Legge i descrittori degli operandi dal bytecode e prepara i buffer di esecuzione.
-;   - Per ciascun operando legge descrittore e byte di valore.
-;   - La modalità determina byte aggiuntivi e gestione di riferimenti/stringhe.
-;   - Avanza il PC logico e conserva descrittori/valori nei buffer del modulo.
-;   - Non equivale alla lettura uniforme di word immediate.
-; Chiamanti diretti: H012+$0274, H012+$05E4, H012+$0696, H012+$0B2A, H012+$0B56, H012+$0BF8, H012+$14D6, H012+$15EC, H012+$1DEC, H012+$1E9E ...
+; ROUTINE: ECL_ReadOperands [verified]
+; Purpose: Reads the operand descriptors from the bytecode and prepares the execution buffers.
+;   - For each operand it reads the descriptor and the value byte.
+;   - The mode determines extra bytes and the handling of references/strings.
+;   - Advances the logical PC and keeps descriptors/values in the module buffers.
+;   - It is not the same as a uniform reading of immediate words.
+; Direct callers: H012+$0274, H012+$05E4, H012+$0696, H012+$0B2A, H012+$0B56, H012+$0BF8, H012+$14D6, H012+$15EC, H012+$1DEC, H012+$1E9E ...
 ; --------------------------------------------------------------------------
 L061_00001670:
 ; H061+$00001670: 2f0c  move.l a4, -(a7)
@@ -513,7 +513,7 @@ L061_00001696:
 L061_00001698:
 ; H061+$00001698: 47ecffc0  lea.l -$40(a4), a3
         lea.l -$40(a4), a3
-; STATO: H005+$3DEA = PC logico ECL
+; STATE: H005+$3DEA = logical ECL PC
 L061_0000169C:
 ; H061+$0000169C: 383900003dea  move.w $3dea.l, d4
         move.w (H005+$3DEA).l, d4
@@ -523,7 +523,7 @@ L061_000016A2:
 L061_000016A4:
 ; H061+$000016A4: 04443500  subi.w #$3500, d4
         subi.w #$3500, d4
-; STATO: H005+$3DF8 = puntatore al buffer ECL
+; STATE: H005+$3DF8 = pointer to the ECL buffer
 L061_000016A8:
 ; H061+$000016A8: 247900003df8  movea.l $3df8.l, a2
         movea.l (H005+$3DF8).l, a2
@@ -539,7 +539,7 @@ L061_000016B8:
 L061_000016BA:
 ; H061+$000016BA: 47ecff40  lea.l -$c0(a4), a3
         lea.l -$c0(a4), a3
-; STATO: H005+$3DEA = PC logico ECL
+; STATE: H005+$3DEA = logical ECL PC
 L061_000016BE:
 ; H061+$000016BE: 383900003dea  move.w $3dea.l, d4
         move.w (H005+$3DEA).l, d4
@@ -549,21 +549,21 @@ L061_000016C4:
 L061_000016C6:
 ; H061+$000016C6: 04443500  subi.w #$3500, d4
         subi.w #$3500, d4
-; STATO: H005+$3DF8 = puntatore al buffer ECL
+; STATE: H005+$3DF8 = pointer to the ECL buffer
 L061_000016CA:
 ; H061+$000016CA: 247900003df8  movea.l $3df8.l, a2
         movea.l (H005+$3DF8).l, a2
 L061_000016D0:
 ; H061+$000016D0: 17b240002000  move.b (a2, d4.w), (a3, d2.w)
         move.b (a2, d4.w), (a3, d2.w)
-; STATO: H005+$3DEA = PC logico ECL
+; STATE: H005+$3DEA = logical ECL PC
 L061_000016D6:
 ; H061+$000016D6: 343900003dea  move.w $3dea.l, d2
         move.w (H005+$3DEA).l, d2
 L061_000016DC:
 ; H061+$000016DC: 5442  addq.w #$2, d2
         addq.w #$2, d2
-; STATO: H005+$3DEA = PC logico ECL
+; STATE: H005+$3DEA = logical ECL PC
 L061_000016DE:
 ; H061+$000016DE: 33c200003dea  move.w d2, $3dea.l
         move.w d2, (H005+$3DEA).l
@@ -636,7 +636,7 @@ L061_0000172C:
 L061_00001730:
 ; H061+$00001730: 600000ea  bra.w $181c
         bra.w H061+$181C
-; STATO: H005+$3DEA = PC logico ECL
+; STATE: H005+$3DEA = logical ECL PC
 L061_00001734:
 ; H061+$00001734: 527900003dea  addq.w #$1, $3dea.l
         addq.w #$1, (H005+$3DEA).l
@@ -649,14 +649,14 @@ L061_0000173E:
 L061_00001740:
 ; H061+$00001740: 47ecff80  lea.l -$80(a4), a3
         lea.l -$80(a4), a3
-; STATO: H005+$3DEA = PC logico ECL
+; STATE: H005+$3DEA = logical ECL PC
 L061_00001744:
 ; H061+$00001744: 383900003dea  move.w $3dea.l, d4
         move.w (H005+$3DEA).l, d4
 L061_0000174A:
 ; H061+$0000174A: 04443500  subi.w #$3500, d4
         subi.w #$3500, d4
-; STATO: H005+$3DF8 = puntatore al buffer ECL
+; STATE: H005+$3DF8 = pointer to the ECL buffer
 L061_0000174E:
 ; H061+$0000174E: 247900003df8  movea.l $3df8.l, a2
         movea.l (H005+$3DF8).l, a2
@@ -738,7 +738,7 @@ L061_000017AC:
 L061_000017AE:
 ; H061+$000017AE: 526dfffc  addq.w #$1, -$4(a5)
         addq.w #$1, -$4(a5)
-; STATO: H005+$3DEA = PC logico ECL
+; STATE: H005+$3DEA = logical ECL PC
 L061_000017B2:
 ; H061+$000017B2: 527900003dea  addq.w #$1, $3dea.l
         addq.w #$1, (H005+$3DEA).l
@@ -751,14 +751,14 @@ L061_000017BC:
 L061_000017BE:
 ; H061+$000017BE: 47ecff80  lea.l -$80(a4), a3
         lea.l -$80(a4), a3
-; STATO: H005+$3DEA = PC logico ECL
+; STATE: H005+$3DEA = logical ECL PC
 L061_000017C2:
 ; H061+$000017C2: 383900003dea  move.w $3dea.l, d4
         move.w (H005+$3DEA).l, d4
 L061_000017C8:
 ; H061+$000017C8: 04443500  subi.w #$3500, d4
         subi.w #$3500, d4
-; STATO: H005+$3DF8 = puntatore al buffer ECL
+; STATE: H005+$3DF8 = pointer to the ECL buffer
 L061_000017CC:
 ; H061+$000017CC: 247900003df8  movea.l $3df8.l, a2
         movea.l (H005+$3DF8).l, a2
@@ -789,7 +789,7 @@ L061_000017EC:
 L061_000017F0:
 ; H061+$000017F0: 1f332000  move.b (a3, d2.w), -(a7)
         move.b (a3, d2.w), -(a7)
-; FLUSSO: Chiama ECL_DecodeAddress (H061+$1F3C).
+; FLOW: Calls ECL_DecodeAddress (H061+$1F3C).
 L061_000017F4:
 ; H061+$000017F4: 4eb900001f3c  jsr $1f3c.l
         jsr (H061+$1F3C).l
@@ -834,7 +834,7 @@ L061_0000182A:
 L061_0000182C:
 ; H061+$0000182C: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H061+$1812; indici 0..4, default -1.
+; DISPATCH: words relative to H061+$1812; indices 0..4, default -1.
 L061_00001830:
 ; H061+$00001830: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -847,7 +847,7 @@ L061_00001838:
 L061_0000183C:
 ; H061+$0000183C: 548f  addq.l #$2, a7
         addq.l #$2, a7
-; STATO: H005+$3DEA = PC logico ECL
+; STATE: H005+$3DEA = logical ECL PC
 L061_0000183E:
 ; H061+$0000183E: 527900003dea  addq.w #$1, $3dea.l
         addq.w #$1, (H005+$3DEA).l
@@ -868,12 +868,12 @@ L061_0000184C:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_EvaluateOperand [parziale]
-; Scopo: Valuta un operando già letto nei buffer del modulo.
-;   - Distingue costante, riferimento numerico e altre modalità.
-;   - Alcune modalità accedono a variabili/strutture attraverso gli helper del modulo.
-;   - La mappa di tutte le modalità resta parziale.
-; Chiamanti diretti: H012+$02B4, H012+$02C2, H012+$06C4, H012+$0B34, H012+$0B42, H012+$0C28, H012+$0C46, H012+$14E0, H012+$14EE, H012+$1530 ...
+; ROUTINE: ECL_EvaluateOperand [partial]
+; Purpose: Evaluates an operand already read into the buffers of the module.
+;   - Distinguishes constant, numeric reference and other modes.
+;   - Some modes access variables/structures through the helpers of the module.
+;   - The map of all the modes is still partial.
+; Direct callers: H012+$02B4, H012+$02C2, H012+$06C4, H012+$0B34, H012+$0B42, H012+$0C28, H012+$0C46, H012+$14E0, H012+$14EE, H012+$1530 ...
 ; --------------------------------------------------------------------------
 L061_0000184E:
 ; H061+$0000184E: 2f0c  move.l a4, -(a7)
@@ -1007,7 +1007,7 @@ L061_000018E6:
 L061_000018EA:
 ; H061+$000018EA: 1f2dfff6  move.b -$a(a5), -(a7)
         move.b -$a(a5), -(a7)
-; FLUSSO: Chiama ECL_DecodeAddress (H061+$1F3C).
+; FLOW: Calls ECL_DecodeAddress (H061+$1F3C).
 L061_000018EE:
 ; H061+$000018EE: 4eb900001f3c  jsr $1f3c.l
         jsr (H061+$1F3C).l
@@ -1039,7 +1039,7 @@ L061_00001914:
 L061_00001916:
 ; H061+$00001916: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H061+$18FE; indici 0..4, default -1.
+; DISPATCH: words relative to H061+$18FE; indices 0..4, default -1.
 L061_0000191A:
 ; H061+$0000191A: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -1060,13 +1060,13 @@ L061_00001926:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_ResetExecution [verificato]
-; Scopo: Azzera contesto VM e prepara gli ingressi del programma ECL.
-;   - Azzera flag e stack di chiamata ECL.
+; ROUTINE: ECL_ResetExecution [verified]
+; Purpose: Clears the VM context and prepares the entries of the ECL program.
+;   - Clears flags and the ECL call stack.
 ;   - Pone PC a $3500.
-;   - Legge i vettori iniziali e ne ricava indirizzi logici usati dal ciclo scenario.
-;   - Non sono ancora assegnati nomi applicativi a tutti i cinque ingressi.
-; Chiamanti diretti: H012+$322E, H064+$0FD6
+;   - Reads the initial vectors and derives the logical addresses used by the scenario loop.
+;   - Application names are not yet assigned to all five entries.
+; Direct callers: H012+$322E, H064+$0FD6
 ; --------------------------------------------------------------------------
 L061_00001928:
 ; H061+$00001928: 2f0c  move.l a4, -(a7)
@@ -1117,8 +1117,8 @@ L061_00001972:
 L061_00001978:
 ; H061+$00001978: 13fc00080000248e  move.b #$8, $248e.l
         move.b #$8, (H005+$248E).l
-; PASSO: Il PC logico del programma ECL parte da $3500.
-; STATO: H005+$3DEA = PC logico ECL
+; STEP: The logical PC of the ECL program starts at $3500.
+; STATE: H005+$3DEA = logical ECL PC
 L061_00001980:
 ; H061+$00001980: 33fc350000003dea  move.w #$3500, $3dea.l
         move.w #$3500, (H005+$3DEA).l
@@ -1147,28 +1147,28 @@ L061_000019A8:
 L061_000019AA:
 ; H061+$000019AA: 4eb900000312  jsr $312.l
         jsr (H029+$312).l
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L061_000019B0:
 ; H061+$000019B0: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
 L061_000019B6:
 ; H061+$000019B6: 377c00ff05c2  move.w #$ff, $5c2(a3)
         move.w #$ff, $5c2(a3)
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L061_000019BC:
 ; H061+$000019BC: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
 L061_000019C2:
 ; H061+$000019C2: 426b05a4  clr.w $5a4(a3)
         clr.w $5a4(a3)
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L061_000019C6:
 ; H061+$000019C6: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
 L061_000019CC:
 ; H061+$000019CC: 426b05a6  clr.w $5a6(a3)
         clr.w $5a6(a3)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L061_000019D0:
 ; H061+$000019D0: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -1178,7 +1178,7 @@ L061_000019D6:
 L061_000019DA:
 ; H061+$000019DA: 3f3c0001  move.w #$1, -(a7)
         move.w #$1, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L061_000019DE:
 ; H061+$000019DE: 6100fc90  bsr.w $1670
         bsr.w H061+$1670
@@ -1188,7 +1188,7 @@ L061_000019E2:
 L061_000019E6:
 ; H061+$000019E6: 1f2cff80  move.b -$80(a4), -(a7)
         move.b -$80(a4), -(a7)
-; FLUSSO: Chiama ECL_DecodeAddress (H061+$1F3C).
+; FLOW: Calls ECL_DecodeAddress (H061+$1F3C).
 L061_000019EA:
 ; H061+$000019EA: 4eb900001f3c  jsr $1f3c.l
         jsr (H061+$1F3C).l
@@ -1198,7 +1198,7 @@ L061_000019F0:
 L061_000019F6:
 ; H061+$000019F6: 3f3c0001  move.w #$1, -(a7)
         move.w #$1, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L061_000019FA:
 ; H061+$000019FA: 6100fc74  bsr.w $1670
         bsr.w H061+$1670
@@ -1208,7 +1208,7 @@ L061_000019FE:
 L061_00001A02:
 ; H061+$00001A02: 1f2cff80  move.b -$80(a4), -(a7)
         move.b -$80(a4), -(a7)
-; FLUSSO: Chiama ECL_DecodeAddress (H061+$1F3C).
+; FLOW: Calls ECL_DecodeAddress (H061+$1F3C).
 L061_00001A06:
 ; H061+$00001A06: 4eb900001f3c  jsr $1f3c.l
         jsr (H061+$1F3C).l
@@ -1218,7 +1218,7 @@ L061_00001A0C:
 L061_00001A12:
 ; H061+$00001A12: 3f3c0001  move.w #$1, -(a7)
         move.w #$1, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L061_00001A16:
 ; H061+$00001A16: 6100fc58  bsr.w $1670
         bsr.w H061+$1670
@@ -1228,7 +1228,7 @@ L061_00001A1A:
 L061_00001A1E:
 ; H061+$00001A1E: 1f2cff80  move.b -$80(a4), -(a7)
         move.b -$80(a4), -(a7)
-; FLUSSO: Chiama ECL_DecodeAddress (H061+$1F3C).
+; FLOW: Calls ECL_DecodeAddress (H061+$1F3C).
 L061_00001A22:
 ; H061+$00001A22: 4eb900001f3c  jsr $1f3c.l
         jsr (H061+$1F3C).l
@@ -1238,7 +1238,7 @@ L061_00001A28:
 L061_00001A2E:
 ; H061+$00001A2E: 3f3c0001  move.w #$1, -(a7)
         move.w #$1, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L061_00001A32:
 ; H061+$00001A32: 6100fc3c  bsr.w $1670
         bsr.w H061+$1670
@@ -1248,7 +1248,7 @@ L061_00001A36:
 L061_00001A3A:
 ; H061+$00001A3A: 1f2cff80  move.b -$80(a4), -(a7)
         move.b -$80(a4), -(a7)
-; FLUSSO: Chiama ECL_DecodeAddress (H061+$1F3C).
+; FLOW: Calls ECL_DecodeAddress (H061+$1F3C).
 L061_00001A3E:
 ; H061+$00001A3E: 4eb900001f3c  jsr $1f3c.l
         jsr (H061+$1F3C).l
@@ -1258,7 +1258,7 @@ L061_00001A44:
 L061_00001A4A:
 ; H061+$00001A4A: 3f3c0001  move.w #$1, -(a7)
         move.w #$1, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L061_00001A4E:
 ; H061+$00001A4E: 6100fc20  bsr.w $1670
         bsr.w H061+$1670
@@ -1268,7 +1268,7 @@ L061_00001A52:
 L061_00001A56:
 ; H061+$00001A56: 1f2cff80  move.b -$80(a4), -(a7)
         move.b -$80(a4), -(a7)
-; FLUSSO: Chiama ECL_DecodeAddress (H061+$1F3C).
+; FLOW: Calls ECL_DecodeAddress (H061+$1F3C).
 L061_00001A5A:
 ; H061+$00001A5A: 4eb900001f3c  jsr $1f3c.l
         jsr (H061+$1F3C).l
@@ -1299,7 +1299,7 @@ L061_00001A84:
 L061_00001A88:
 ; H061+$00001A88: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L061_00001A8A:
 ; H061+$00001A8A: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -1333,7 +1333,7 @@ L061_00001AB0:
 L061_00001AB4:
 ; H061+$00001AB4: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L061_00001AB6:
 ; H061+$00001AB6: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -1357,13 +1357,13 @@ L061_00001ACA:
         rts 
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_LoadProgram [verificato]
-; Scopo: Carica un blocco di programma ECL.
-;   - Compone ECL<gruppo>.dax e usa l’ID richiesto.
-;   - Il caricatore aggiunge 256 byte al buffer runtime.
-;   - Copia dal byte 2 per dimensione_runtime-$0102 nel buffer H005+$3DF8.
-;   - La copia esclude i soli due byte iniziali del payload effettivo.
-; Chiamanti diretti: H012+$320E, H064+$0FD0
+; ROUTINE: ECL_LoadProgram [verified]
+; Purpose: Loads a block of ECL program.
+;   - Builds ECL<group>.dax and uses the requested ID.
+;   - The loader adds 256 bytes to the runtime buffer.
+;   - Copies from byte 2 for runtime_size-$0102 into the buffer H005+$3DF8.
+;   - The copy excludes only the first two bytes of the actual payload.
+; Direct callers: H012+$320E, H064+$0FD0
 ; --------------------------------------------------------------------------
 L061_00001ACC:
 ; H061+$00001ACC: 2f0c  move.l a4, -(a7)
@@ -1377,7 +1377,7 @@ L061_00001AD2:
 L061_00001AD6:
 ; H061+$00001AD6: 3f3c1dff  move.w #$1dff, -(a7)
         move.w #$1dff, -(a7)
-; STATO: H005+$3DF8 = puntatore al buffer ECL
+; STATE: H005+$3DF8 = pointer to the ECL buffer
 L061_00001ADA:
 ; H061+$00001ADA: 2f3900003df8  move.l $3df8.l, -(a7)
         move.l (H005+$3DF8).l, -(a7)
@@ -1416,7 +1416,7 @@ L061_00001B04:
 L061_00001B08:
 ; H061+$00001B08: 486c0029  pea.l $29(a4)
         pea.l $29(a4)
-; FLUSSO: Chiama UI_DrawText (H030+$0256).
+; FLOW: Calls UI_DrawText (H030+$0256).
 L061_00001B0C:
 ; H061+$00001B0C: 4eb900000256  jsr $256.l
         jsr (H030+$256).l
@@ -1429,7 +1429,7 @@ L061_00001B16:
 L061_00001B1A:
 ; H061+$00001B1A: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$246E = selettore del gruppo risorse
+; STATE: H005+$246E = resource group selector
 L061_00001B1C:
 ; H061+$00001B1C: 14390000246e  move.b $246e.l, d2
         move.b (H005+$246E).l, d2
@@ -1510,8 +1510,8 @@ L061_00001B76:
 L061_00001B7A:
 ; H061+$00001B7A: 486dfff4  pea.l -$c(a5)
         pea.l -$c(a5)
-; PASSO: Richiede il blocco ECL al caricatore DAX.
-; FLUSSO: Chiama DAX_LoadBlock (H028+$0DD8).
+; STEP: Requests the ECL block from the DAX loader.
+; FLOW: Calls DAX_LoadBlock (H028+$0DD8).
 L061_00001B7E:
 ; H061+$00001B7E: 4eb900000dd8  jsr $dd8.l
         jsr (FN_DAX_load_block).l
@@ -1530,7 +1530,7 @@ L061_00001B92:
 L061_00001B96:
 ; H061+$00001B96: 2f0b  move.l a3, -(a7)
         move.l a3, -(a7)
-; STATO: H005+$3DF8 = puntatore al buffer ECL
+; STATE: H005+$3DF8 = pointer to the ECL buffer
 L061_00001B98:
 ; H061+$00001B98: 2f3900003df8  move.l $3df8.l, -(a7)
         move.l (H005+$3DF8).l, -(a7)
@@ -1546,7 +1546,7 @@ L061_00001BA6:
 L061_00001BAC:
 ; H061+$00001BAC: 2f02  move.l d2, -(a7)
         move.l d2, -(a7)
-; PASSO: Copia payload effettivo meno i due byte iniziali: il margine runtime di 256 byte viene compensato.
+; STEP: Copies the actual payload minus the first two bytes: the 256-byte runtime margin is compensated.
 ; -> H003+$0090 (wrapper_CopyMem)
 L061_00001BAE:
 ; H061+$00001BAE: 4eb900000090  jsr $90.l
@@ -1587,11 +1587,11 @@ L061_00001BD4:
 ; H061+$00001BD4: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H061_00001BD6 [parziale]
-; Scopo: Routine del modulo servizi della VM ECL: caricamento, operandi, variabili e flusso; richiama H003+$0068, H066+$1FDA.
-;   - Richiama H003+$0068.
-;   - Richiama FN_load_MON_CHA_to_runtime_character (H066+$1FDA).
-; Chiamanti diretti: H064+$06F6
+; ROUTINE: sub_H061_00001BD6 [partial]
+; Purpose: Routine of the ECL VM services: loading, operands, variables and flow module; calls H003+$0068, H066+$1FDA.
+;   - Calls H003+$0068.
+;   - Calls FN_load_MON_CHA_to_runtime_character (H066+$1FDA).
+; Direct callers: H064+$06F6
 ; --------------------------------------------------------------------------
 L061_00001BD6:
 ; H061+$00001BD6: 2f0c  move.l a4, -(a7)
@@ -1648,7 +1648,7 @@ L061_00001C0E:
 L061_00001C12:
 ; H061+$00001C12: 2f13  move.l (a3), -(a7)
         move.l (a3), -(a7)
-; FLUSSO: Chiama Load_MonsterRecord (H066+$1FDA).
+; FLOW: Calls Load_MonsterRecord (H066+$1FDA).
 L061_00001C14:
 ; H061+$00001C14: 4eb900001fda  jsr $1fda.l
         jsr (FN_load_MON_CHA_to_runtime_character).l
@@ -1692,11 +1692,11 @@ L061_00001C40:
 ; H061+$00001C40: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H061_00001C42 [parziale]
-; Scopo: Routine del modulo servizi della VM ECL: caricamento, operandi, variabili e flusso; richiama H011+$01AA.
-;   - Richiama H011+$01AA.
-;   - Usa lo stato globale: H005+$3E04 (puntatore stato persistente A, 2048 byte); H005+$3E00 (puntatore stato persistente B, 2048 byte).
-; Chiamanti diretti: H064+$063C, H012+$16E2, H012+$09A4
+; ROUTINE: sub_H061_00001C42 [partial]
+; Purpose: Routine of the ECL VM services: loading, operands, variables and flow module; calls H011+$01AA.
+;   - Calls H011+$01AA.
+;   - Uses the global state: H005+$3E04 (pointer to persistent state A, 2048 bytes); H005+$3E00 (pointer to persistent state B, 2048 bytes).
+; Direct callers: H064+$063C, H012+$16E2, H012+$09A4
 ; --------------------------------------------------------------------------
 L061_00001C42:
 ; H061+$00001C42: 2f0c  move.l a4, -(a7)
@@ -1716,7 +1716,7 @@ L061_00001C50:
 L061_00001C54:
 ; H061+$00001C54: 426dfffa  clr.w -$6(a5)
         clr.w -$6(a5)
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L061_00001C58:
 ; H061+$00001C58: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -1729,7 +1729,7 @@ L061_00001C62:
 L061_00001C66:
 ; H061+$00001C66: 3b7c0002fffa  move.w #$2, -$6(a5)
         move.w #$2, -$6(a5)
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L061_00001C6C:
 ; H061+$00001C6C: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -1766,7 +1766,7 @@ L061_00001C98:
 L061_00001C9C:
 ; H061+$00001C9C: 3f02  move.w d2, -(a7)
         move.w d2, -(a7)
-; FLUSSO: Chiama Map_QueryWall (H011+$01AA).
+; FLOW: Calls Map_QueryWall (H011+$01AA).
 L061_00001C9E:
 ; H061+$00001C9E: 4eb9000001aa  jsr $1aa.l
         jsr (H011+$1AA).l
@@ -1841,7 +1841,7 @@ L061_00001CF6:
 L061_00001CF8:
 ; H061+$00001CF8: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H061+$1CDC; indici 0..6, default -1.
+; DISPATCH: words relative to H061+$1CDC; indices 0..6, default -1.
 L061_00001CFC:
 ; H061+$00001CFC: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -1876,11 +1876,11 @@ L061_00001D1E:
 ; H061+$00001D1E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H061_00001D20 [parziale]
-; Scopo: Routine del modulo servizi della VM ECL: caricamento, operandi, variabili e flusso; richiama H042+$0D70, H042+$0ED2.
-;   - Richiama H042+$0D70.
-;   - Richiama H042+$0ED2.
-; Chiamanti diretti: H064+$0BF8, H061+$1EF2
+; ROUTINE: sub_H061_00001D20 [partial]
+; Purpose: Routine of the ECL VM services: loading, operands, variables and flow module; calls H042+$0D70, H042+$0ED2.
+;   - Calls H042+$0D70.
+;   - Calls H042+$0ED2.
+; Direct callers: H064+$0BF8, H061+$1EF2
 ; --------------------------------------------------------------------------
 L061_00001D20:
 ; H061+$00001D20: 2f0c  move.l a4, -(a7)
@@ -1912,7 +1912,7 @@ L061_00001D44:
 L061_00001D48:
 ; H061+$00001D48: 3f2d000c  move.w $c(a5), -(a7)
         move.w $c(a5), -(a7)
-; FLUSSO: Chiama Load_HeadBody (H042+$0D70).
+; FLOW: Calls Load_HeadBody (H042+$0D70).
 L061_00001D4C:
 ; H061+$00001D4C: 4eb900000d70  jsr $d70.l
         jsr (H042+$D70).l
@@ -1945,14 +1945,14 @@ L061_00001D6C:
 ; H061+$00001D6C: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H061_00001D6E [parziale]
-; Scopo: Routine del modulo servizi della VM ECL: caricamento, operandi, variabili e flusso; richiama H060+$0018, H042+$0406, H042+$0F50, H042+$0254.
-;   - Richiama H060+$0018.
-;   - Richiama H042+$0406.
-;   - Richiama H042+$0F50.
-;   - Richiama H042+$0254.
-;   - Usa lo stato globale: H005+$3E04 (puntatore stato persistente A, 2048 byte); H005+$3DE3 (contesto nativo, 5 nel combattimento); H005+$3E00 (puntatore stato persistente B, 2048 byte).
-; Chiamanti diretti: H064+$0694, H064+$0AFE, H012+$173A, H012+$1A54, H012+$1C30, H012+$1AD6 e altri 2
+; ROUTINE: sub_H061_00001D6E [partial]
+; Purpose: Routine of the ECL VM services: loading, operands, variables and flow module; calls H060+$0018, H042+$0406, H042+$0F50, H042+$0254.
+;   - Calls H060+$0018.
+;   - Calls H042+$0406.
+;   - Calls H042+$0F50.
+;   - Calls H042+$0254.
+;   - Uses the global state: H005+$3E04 (pointer to persistent state A, 2048 bytes); H005+$3DE3 (native context, 5 in combat); H005+$3E00 (pointer to persistent state B, 2048 bytes).
+; Direct callers: H064+$0694, H064+$0AFE, H012+$173A, H012+$1A54, H012+$1C30, H012+$1AD6 and 2 more
 ; --------------------------------------------------------------------------
 L061_00001D6E:
 ; H061+$00001D6E: 2f0c  move.l a4, -(a7)
@@ -2009,7 +2009,7 @@ L061_00001DAA:
 L061_00001DB2:
 ; H061+$00001DB2: 4eb900000018  jsr $18.l
         jsr (H060+$18).l
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L061_00001DB8:
 ; H061+$00001DB8: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -2040,7 +2040,7 @@ L061_00001DD6:
 L061_00001DDA:
 ; H061+$00001DDA: 4879000027bc  pea.l $27bc.l
         pea.l (H005+$27BC).l
-; FLUSSO: Chiama Load_Sequence (H042+$0406).
+; FLOW: Calls Load_Sequence (H042+$0406).
 L061_00001DE0:
 ; H061+$00001DE0: 4eb900000406  jsr $406.l
         jsr (H042+$406).l
@@ -2063,7 +2063,7 @@ L061_00001DFA:
 L061_00001E02:
 ; H061+$00001E02: 4eb900000018  jsr $18.l
         jsr (H060+$18).l
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L061_00001E08:
 ; H061+$00001E08: 0c39000400003de3  cmpi.b #$4, $3de3.l
         cmpi.b #$4, (H005+$3DE3).l
@@ -2076,7 +2076,7 @@ L061_00001E14:
 L061_00001E18:
 ; H061+$00001E18: 4879000027bc  pea.l $27bc.l
         pea.l (H005+$27BC).l
-; FLUSSO: Chiama Show3DSprite (H042+$0F50).
+; FLOW: Calls Show3DSprite (H042+$0F50).
 L061_00001E1E:
 ; H061+$00001E1E: 4eb900000f50  jsr $f50.l
         jsr (H042+$F50).l
@@ -2095,7 +2095,7 @@ L061_00001E30:
 L061_00001E32:
 ; H061+$00001E32: 143900002496  move.b $2496.l, d2
         move.b (H005+$2496).l, d2
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L061_00001E38:
 ; H061+$00001E38: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -2120,7 +2120,7 @@ L061_00001E4E:
 L061_00001E50:
 ; H061+$00001E50: 660000b4  bne.w $1f06
         bne.w H061+$1F06
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L061_00001E54:
 ; H061+$00001E54: 0c39000400003de3  cmpi.b #$4, $3de3.l
         cmpi.b #$4, (H005+$3DE3).l
@@ -2139,7 +2139,7 @@ L061_00001E6A:
 L061_00001E70:
 ; H061+$00001E70: 67000094  beq.w $1f06
         beq.w H061+$1F06
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L061_00001E74:
 ; H061+$00001E74: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -2152,7 +2152,7 @@ L061_00001E7E:
 L061_00001E84:
 ; H061+$00001E84: 13fc0001000024bd  move.b #$1, $24bd.l
         move.b #$1, (H005+$24BD).l
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L061_00001E8C:
 ; H061+$00001E8C: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -2183,7 +2183,7 @@ L061_00001EAC:
 L061_00001EAE:
 ; H061+$00001EAE: 4879000027bc  pea.l $27bc.l
         pea.l (H005+$27BC).l
-; FLUSSO: Chiama Load_Sequence (H042+$0406).
+; FLOW: Calls Load_Sequence (H042+$0406).
 L061_00001EB4:
 ; H061+$00001EB4: 4eb900000406  jsr $406.l
         jsr (H042+$406).l
@@ -2212,7 +2212,7 @@ L061_00001ED6:
 L061_00001EDC:
 ; H061+$00001EDC: 60000028  bra.w $1f06
         bra.w H061+$1F06
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L061_00001EE0:
 ; H061+$00001EE0: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -2256,10 +2256,10 @@ L061_00001F10:
 ; H061+$00001F10: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H061_00001F12 [parziale]
-; Scopo: Routine del modulo servizi della VM ECL: caricamento, operandi, variabili e flusso; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H012+$26F6
+; ROUTINE: sub_H061_00001F12 [partial]
+; Purpose: Routine of the ECL VM services: loading, operands, variables and flow module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H012+$26F6
 ; --------------------------------------------------------------------------
 L061_00001F12:
 ; H061+$00001F12: 2f0c  move.l a4, -(a7)
@@ -2311,11 +2311,11 @@ L061_00001F3A:
         jmp (a0)
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_DecodeAddress [verificato]
-; Scopo: Converte due byte codificati in un indirizzo logico ECL.
-;   - Combina il byte alto e quello basso e sottrae $4B00.
-;   - GOTO usa il risultato come nuovo PC logico.
-; Chiamanti diretti: H012+$02A2, H012+$02D8, H012+$02EE, H012+$0304, H012+$031A, H012+$0646, H012+$065C, H012+$0BB4, H012+$1632, H012+$1E62 ...
+; ROUTINE: ECL_DecodeAddress [verified]
+; Purpose: Converts two encoded bytes into a logical ECL address.
+;   - Combines the high and the low byte and subtracts $4B00.
+;   - GOTO uses the result as the new logical PC.
+; Direct callers: H012+$02A2, H012+$02D8, H012+$02EE, H012+$0304, H012+$031A, H012+$0646, H012+$065C, H012+$0BB4, H012+$1632, H012+$1E62 ...
 ; --------------------------------------------------------------------------
 L061_00001F3C:
 ; H061+$00001F3C: 2f0c  move.l a4, -(a7)
@@ -2369,10 +2369,10 @@ L061_00001F68:
 ; H061+$00001F68: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H061_1F9A [parziale]
-; Scopo: Trampolino verso H061+$1F9A; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H061+$1F9A.
-; Chiamanti diretti: H061+$33DC, H061+$338C
+; ROUTINE: trampoline_H061_1F9A [partial]
+; Purpose: Trampoline to H061+$1F9A; the actual body is there.
+;   - Jumps to the actual body at H061+$1F9A.
+; Direct callers: H061+$33DC, H061+$338C
 ; --------------------------------------------------------------------------
 L061_00001F6A:
 ; H061+$00001F6A: 2f0c  move.l a4, -(a7)
@@ -2428,10 +2428,10 @@ L061_00001FA2:
 ; H061+$00001FA2: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H061_00001FA4 [parziale]
-; Scopo: Routine del modulo servizi della VM ECL: caricamento, operandi, variabili e flusso; logica locale, nessuna chiamata esterna raggiunta.
-;   - Esegue operazioni locali sui dati o sullo stato del modulo.
-; Chiamanti diretti: H061+$33FE, H061+$2BB8, H061+$3042, H061+$2E12
+; ROUTINE: sub_H061_00001FA4 [partial]
+; Purpose: Routine of the ECL VM services: loading, operands, variables and flow module; local logic, no external call reached.
+;   - Performs local operations on the data or on the state of the module.
+; Direct callers: H061+$33FE, H061+$2BB8, H061+$3042, H061+$2E12
 ; --------------------------------------------------------------------------
 L061_00001FA4:
 ; H061+$00001FA4: 2f0c  move.l a4, -(a7)
@@ -2530,10 +2530,10 @@ L061_0000202A:
 ; H061+$0000202A: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H061_0000202C [parziale]
-; Scopo: Routine del modulo servizi della VM ECL: caricamento, operandi, variabili e flusso; opera su H005+$3364 (testa della lista del party).
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H061+$2670, H061+$2680
+; ROUTINE: sub_H061_0000202C [partial]
+; Purpose: Routine of the ECL VM services: loading, operands, variables and flow module; works on H005+$3364 (head of the party list).
+;   - Uses the global state: H005+$3364 (head of the party list).
+; Direct callers: H061+$2670, H061+$2680
 ; --------------------------------------------------------------------------
 L061_0000202C:
 ; H061+$0000202C: 2f0c  move.l a4, -(a7)
@@ -2544,7 +2544,7 @@ L061_0000202E:
 L061_00002032:
 ; H061+$00002032: 4e55fff8  link.w a5, #$fff8
         link.w a5, #$fff8
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L061_00002036:
 ; H061+$00002036: 2b7900003364fffa  move.l $3364.l, -$6(a5)
         move.l (H005+$3364).l, -$6(a5)
@@ -2615,11 +2615,11 @@ L061_0000208C:
 ; H061+$0000208C: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H061_0000208E [parziale]
-; Scopo: Routine del modulo servizi della VM ECL: caricamento, operandi, variabili e flusso; richiama H073+$130A.
-;   - Richiama H073+$130A.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente); H005+$246E (selettore del gruppo risorse); H005+$3E00 (puntatore stato persistente B, 2048 byte).
-; Chiamanti diretti: H061+$2E66
+; ROUTINE: sub_H061_0000208E [partial]
+; Purpose: Routine of the ECL VM services: loading, operands, variables and flow module; calls H073+$130A.
+;   - Calls H073+$130A.
+;   - Uses the global state: H005+$3368 (current character); H005+$246E (resource group selector); H005+$3E00 (pointer to persistent state B, 2048 bytes).
+; Direct callers: H061+$2E66
 ; --------------------------------------------------------------------------
 L061_0000208E:
 ; H061+$0000208E: 2f0c  move.l a4, -(a7)
@@ -3071,7 +3071,7 @@ L061_00002362:
 L061_00002366:
 ; H061+$00002366: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_00002368:
 ; H061+$00002368: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3089,7 +3089,7 @@ L061_00002374:
 L061_0000237A:
 ; H061+$0000237A: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_0000237C:
 ; H061+$0000237C: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3107,7 +3107,7 @@ L061_00002388:
 L061_0000238E:
 ; H061+$0000238E: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_00002390:
 ; H061+$00002390: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3125,7 +3125,7 @@ L061_0000239C:
 L061_000023A2:
 ; H061+$000023A2: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_000023A4:
 ; H061+$000023A4: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3143,7 +3143,7 @@ L061_000023B0:
 L061_000023B6:
 ; H061+$000023B6: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_000023B8:
 ; H061+$000023B8: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3161,7 +3161,7 @@ L061_000023C4:
 L061_000023CA:
 ; H061+$000023CA: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_000023CC:
 ; H061+$000023CC: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3179,7 +3179,7 @@ L061_000023D8:
 L061_000023DE:
 ; H061+$000023DE: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_000023E0:
 ; H061+$000023E0: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3197,7 +3197,7 @@ L061_000023EC:
 L061_000023F2:
 ; H061+$000023F2: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_000023F4:
 ; H061+$000023F4: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3215,7 +3215,7 @@ L061_00002400:
 L061_00002406:
 ; H061+$00002406: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_00002408:
 ; H061+$00002408: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3239,7 +3239,7 @@ L061_0000241E:
 L061_00002420:
 ; H061+$00002420: 5342  subq.w #$1, d2
         subq.w #$1, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_00002422:
 ; H061+$00002422: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3263,7 +3263,7 @@ L061_00002434:
 L061_0000243A:
 ; H061+$0000243A: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_0000243C:
 ; H061+$0000243C: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3278,7 +3278,7 @@ L061_00002448:
         bra.w H061+$27D8
 ; Preserved bytes H061+$0000244C..$0000244E; code/data not fully classified.
         dc.w $4E75
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_0000244E:
 ; H061+$0000244E: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3290,7 +3290,7 @@ L061_00002458:
         bra.w H061+$27D8
 ; Preserved bytes H061+$0000245C..$0000245E; code/data not fully classified.
         dc.w $4E75
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_0000245E:
 ; H061+$0000245E: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3302,7 +3302,7 @@ L061_00002468:
         bra.w H061+$27D8
 ; Preserved bytes H061+$0000246C..$0000246E; code/data not fully classified.
         dc.w $4E75
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_0000246E:
 ; H061+$0000246E: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3314,7 +3314,7 @@ L061_00002478:
         bra.w H061+$27D8
 ; Preserved bytes H061+$0000247C..$0000247E; code/data not fully classified.
         dc.w $4E75
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_0000247E:
 ; H061+$0000247E: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3326,7 +3326,7 @@ L061_00002488:
         bra.w H061+$27D8
 ; Preserved bytes H061+$0000248C..$0000248E; code/data not fully classified.
         dc.w $4E75
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_0000248E:
 ; H061+$0000248E: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3341,7 +3341,7 @@ L061_00002498:
 L061_0000249E:
 ; H061+$0000249E: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_000024A0:
 ; H061+$000024A0: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3351,7 +3351,7 @@ L061_000024A6:
 L061_000024AA:
 ; H061+$000024AA: 7800  moveq #$0, d4
         moveq #0, d4
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_000024AC:
 ; H061+$000024AC: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3361,7 +3361,7 @@ L061_000024B2:
 L061_000024B6:
 ; H061+$000024B6: 48e72800  movem.l d2/d4, -(a7)
         movem.l d2/d4, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_000024BA:
 ; H061+$000024BA: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -3395,7 +3395,7 @@ L061_000024D6:
 L061_000024DC:
 ; H061+$000024DC: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_000024DE:
 ; H061+$000024DE: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3413,7 +3413,7 @@ L061_000024EA:
 L061_000024F0:
 ; H061+$000024F0: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_000024F2:
 ; H061+$000024F2: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3431,7 +3431,7 @@ L061_000024FE:
 L061_00002504:
 ; H061+$00002504: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_00002506:
 ; H061+$00002506: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3449,7 +3449,7 @@ L061_00002512:
 L061_00002518:
 ; H061+$00002518: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_0000251A:
 ; H061+$0000251A: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3467,7 +3467,7 @@ L061_00002526:
 L061_0000252C:
 ; H061+$0000252C: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_0000252E:
 ; H061+$0000252E: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3482,7 +3482,7 @@ L061_0000253A:
         bra.w H061+$27D8
 ; Preserved bytes H061+$0000253E..$00002540; code/data not fully classified.
         dc.w $4E75
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_00002540:
 ; H061+$00002540: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3497,7 +3497,7 @@ L061_0000254A:
 L061_00002550:
 ; H061+$00002550: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_00002552:
 ; H061+$00002552: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3529,7 +3529,7 @@ L061_00002570:
 L061_00002578:
 ; H061+$00002578: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_0000257A:
 ; H061+$0000257A: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3622,14 +3622,14 @@ L061_000025E8:
 L061_000025EA:
 ; H061+$000025EA: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H061+$25CA; indici 0..8, default -1.
+; DISPATCH: words relative to H061+$25CA; indices 0..8, default -1.
 L061_000025EE:
 ; H061+$000025EE: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
 L061_000025F2:
 ; H061+$000025F2: 4e75  rts 
         rts 
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_000025F4:
 ; H061+$000025F4: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3639,7 +3639,7 @@ L061_000025FA:
 L061_000025FE:
 ; H061+$000025FE: 6600001c  bne.w $261c
         bne.w H061+$261C
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_00002602:
 ; H061+$00002602: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3657,7 +3657,7 @@ L061_00002614:
         bra.w H061+$27D8
 ; Preserved bytes H061+$00002618..$0000261C; code/data not fully classified.
         dc.w $6000,$0024
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_0000261C:
 ; H061+$0000261C: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3689,7 +3689,7 @@ L061_00002640:
 L061_00002642:
 ; H061+$00002642: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_00002644:
 ; H061+$00002644: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3707,7 +3707,7 @@ L061_00002650:
 L061_00002656:
 ; H061+$00002656: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_00002658:
 ; H061+$00002658: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3722,7 +3722,7 @@ L061_00002664:
         bra.w H061+$27D8
 ; Preserved bytes H061+$00002668..$0000266A; code/data not fully classified.
         dc.w $4E75
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_0000266A:
 ; H061+$0000266A: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -3734,7 +3734,7 @@ L061_00002674:
         bra.w H061+$27D8
 ; Preserved bytes H061+$00002678..$0000267A; code/data not fully classified.
         dc.w $4E75
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_0000267A:
 ; H061+$0000267A: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -3749,7 +3749,7 @@ L061_00002684:
 L061_0000268A:
 ; H061+$0000268A: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_0000268C:
 ; H061+$0000268C: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -3883,7 +3883,7 @@ L061_0000273A:
 L061_0000273C:
 ; H061+$0000273C: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H061+$26FE; indici 0..22, default -1.
+; DISPATCH: words relative to H061+$26FE; indices 0..22, default -1.
 L061_00002740:
 ; H061+$00002740: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -3893,7 +3893,7 @@ L061_00002744:
 L061_00002746:
 ; H061+$00002746: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$246E = selettore del gruppo risorse
+; STATE: H005+$246E = resource group selector
 L061_00002748:
 ; H061+$00002748: 14390000246e  move.b $246e.l, d2
         move.b (H005+$246E).l, d2
@@ -3905,7 +3905,7 @@ L061_00002750:
         bra.w H061+$27D8
 ; Preserved bytes H061+$00002754..$00002756; code/data not fully classified.
         dc.w $4E75
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L061_00002756:
 ; H061+$00002756: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -3951,7 +3951,7 @@ L061_000027CE:
 L061_000027D0:
 ; H061+$000027D0: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H061+$2770; indici 0..40, default -1.
+; DISPATCH: words relative to H061+$2770; indices 0..40, default -1.
 L061_000027D4:
 ; H061+$000027D4: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -3971,13 +3971,13 @@ L061_000027E0:
 ; H061+$000027E0: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H061_000027E2 [parziale]
-; Scopo: Routine del modulo servizi della VM ECL: caricamento, operandi, variabili e flusso; richiama H028+$1098, H029+$0354, H011+$14EA.
-;   - Richiama H028+$1098.
-;   - Richiama H029+$0354.
-;   - Richiama H011+$14EA.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H061+$2C68
+; ROUTINE: sub_H061_000027E2 [partial]
+; Purpose: Routine of the ECL VM services: loading, operands, variables and flow module; calls H028+$1098, H029+$0354, H011+$14EA.
+;   - Calls H028+$1098.
+;   - Calls H029+$0354.
+;   - Calls H011+$14EA.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H061+$2C68
 ; --------------------------------------------------------------------------
 L061_000027E2:
 ; H061+$000027E2: 2f0c  move.l a4, -(a7)
@@ -4225,7 +4225,7 @@ L061_00002966:
 L061_0000296A:
 ; H061+$0000296A: 342dfffe  move.w -$2(a5), d2
         move.w -$2(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_0000296E:
 ; H061+$0000296E: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -4253,7 +4253,7 @@ L061_0000298C:
 L061_00002992:
 ; H061+$00002992: 342d000c  move.w $c(a5), d2
         move.w $c(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_00002996:
 ; H061+$00002996: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -4263,7 +4263,7 @@ L061_0000299C:
 L061_000029A0:
 ; H061+$000029A0: 4e75  rts 
         rts 
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_000029A2:
 ; H061+$000029A2: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -4273,7 +4273,7 @@ L061_000029A8:
 L061_000029AE:
 ; H061+$000029AE: 4e75  rts 
         rts 
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_000029B0:
 ; H061+$000029B0: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -4283,7 +4283,7 @@ L061_000029B6:
 L061_000029BC:
 ; H061+$000029BC: 4e75  rts 
         rts 
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_000029BE:
 ; H061+$000029BE: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -4293,7 +4293,7 @@ L061_000029C4:
 L061_000029CA:
 ; H061+$000029CA: 4e75  rts 
         rts 
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_000029CC:
 ; H061+$000029CC: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -4303,7 +4303,7 @@ L061_000029D2:
 L061_000029D8:
 ; H061+$000029D8: 4e75  rts 
         rts 
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_000029DA:
 ; H061+$000029DA: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -4313,7 +4313,7 @@ L061_000029E0:
 L061_000029E6:
 ; H061+$000029E6: 4e75  rts 
         rts 
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_000029E8:
 ; H061+$000029E8: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -4326,7 +4326,7 @@ L061_000029F4:
 L061_000029F6:
 ; H061+$000029F6: 342d000c  move.w $c(a5), d2
         move.w $c(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_000029FA:
 ; H061+$000029FA: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -4342,14 +4342,14 @@ L061_00002A06:
 L061_00002A0C:
 ; H061+$00002A0C: 66000018  bne.w $2a26
         bne.w H061+$2A26
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_00002A10:
 ; H061+$00002A10: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
 L061_00002A16:
 ; H061+$00002A16: 422b0197  clr.b $197(a3)
         clr.b $197(a3)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_00002A1A:
 ; H061+$00002A1A: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -4374,14 +4374,14 @@ L061_00002A38:
 L061_00002A3C:
 ; H061+$00002A3C: 60000054  bra.w $2a92
         bra.w H061+$2A92
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_00002A40:
 ; H061+$00002A40: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
 L061_00002A46:
 ; H061+$00002A46: 422b0199  clr.b $199(a3)
         clr.b $199(a3)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_00002A4A:
 ; H061+$00002A4A: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -4391,14 +4391,14 @@ L061_00002A50:
 L061_00002A54:
 ; H061+$00002A54: 4e75  rts 
         rts 
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_00002A56:
 ; H061+$00002A56: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
 L061_00002A5C:
 ; H061+$00002A5C: 422b0199  clr.b $199(a3)
         clr.b $199(a3)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_00002A60:
 ; H061+$00002A60: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -4408,14 +4408,14 @@ L061_00002A66:
 L061_00002A6C:
 ; H061+$00002A6C: 4e75  rts 
         rts 
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_00002A6E:
 ; H061+$00002A6E: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
 L061_00002A74:
 ; H061+$00002A74: 177c00010199  move.b #$1, $199(a3)
         move.b #$1, $199(a3)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_00002A7A:
 ; H061+$00002A7A: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -4448,7 +4448,7 @@ L061_00002A9E:
 L061_00002AA0:
 ; H061+$00002AA0: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H061+$2A8C; indici 0..2, default -1.
+; DISPATCH: words relative to H061+$2A8C; indices 0..2, default -1.
 L061_00002AA4:
 ; H061+$00002AA4: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -4458,7 +4458,7 @@ L061_00002AA8:
 L061_00002AAA:
 ; H061+$00002AAA: 342d000c  move.w $c(a5), d2
         move.w $c(a5), d2
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_00002AAE:
 ; H061+$00002AAE: 267900003368  movea.l $3368.l, a3
         movea.l (H005+$3368).l, a3
@@ -4515,7 +4515,7 @@ L061_00002AEC:
 L061_00002AF0:
 ; H061+$00002AF0: 3f3c0001  move.w #$1, -(a7)
         move.w #$1, -(a7)
-; FLUSSO: Chiama Load_WallDefinitions (H011+$14EA).
+; FLOW: Calls Load_WallDefinitions (H011+$14EA).
 L061_00002AF4:
 ; H061+$00002AF4: 4eb9000014ea  jsr $14ea.l
         jsr (H011+$14EA).l
@@ -4556,7 +4556,7 @@ L061_00002B20:
 L061_00002B24:
 ; H061+$00002B24: 3f3c0002  move.w #$2, -(a7)
         move.w #$2, -(a7)
-; FLUSSO: Chiama Load_WallDefinitions (H011+$14EA).
+; FLOW: Calls Load_WallDefinitions (H011+$14EA).
 L061_00002B28:
 ; H061+$00002B28: 4eb9000014ea  jsr $14ea.l
         jsr (H011+$14EA).l
@@ -4597,7 +4597,7 @@ L061_00002B54:
 L061_00002B58:
 ; H061+$00002B58: 3f3c0003  move.w #$3, -(a7)
         move.w #$3, -(a7)
-; FLUSSO: Chiama Load_WallDefinitions (H011+$14EA).
+; FLOW: Calls Load_WallDefinitions (H011+$14EA).
 L061_00002B5C:
 ; H061+$00002B5C: 4eb9000014ea  jsr $14ea.l
         jsr (H011+$14EA).l
@@ -4629,7 +4629,7 @@ L061_00002B96:
 L061_00002B98:
 ; H061+$00002B98: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H061+$2B68; indici 0..16, default -1.
+; DISPATCH: words relative to H061+$2B68; indices 0..16, default -1.
 L061_00002B9C:
 ; H061+$00002B9C: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -4649,10 +4649,10 @@ L061_00002BA8:
 ; H061+$00002BA8: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H061_00002BAA [parziale]
-; Scopo: Routine del modulo servizi della VM ECL: caricamento, operandi, variabili e flusso; opera su H005+$3E04 (puntatore stato persistente A, 2048 byte); H005+$3DE3 (contesto nativo, 5 nel combattimento); H005+$3E00 (puntatore stato persistente B, 2048 byte).
-;   - Usa lo stato globale: H005+$3E04 (puntatore stato persistente A, 2048 byte); H005+$3DE3 (contesto nativo, 5 nel combattimento); H005+$3E00 (puntatore stato persistente B, 2048 byte).
-; Chiamanti diretti: H064+$045C, H064+$04B8, H064+$0CB8, H064+$133A, H012+$1E84, H064+$13A0 e altri 29
+; ROUTINE: sub_H061_00002BAA [partial]
+; Purpose: Routine of the ECL VM services module: loading, operands, variables and flow; works on H005+$3E04 (pointer to persistent state A, 2048 bytes); H005+$3DE3 (native context, 5 in combat); H005+$3E00 (pointer to persistent state B, 2048 bytes).
+;   - Uses the global state: H005+$3E04 (pointer to persistent state A, 2048 bytes); H005+$3DE3 (native context, 5 in combat); H005+$3E00 (pointer to persistent state B, 2048 bytes).
+; Direct callers: H064+$045C, H064+$04B8, H064+$0CB8, H064+$133A, H012+$1E84, H064+$13A0 and 29 more
 ; --------------------------------------------------------------------------
 L061_00002BAA:
 ; H061+$00002BAA: 2f0c  move.l a4, -(a7)
@@ -4717,7 +4717,7 @@ L061_00002BF6:
 L061_00002BFA:
 ; H061+$00002BFA: 6600003a  bne.w $2c36
         bne.w H061+$2C36
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L061_00002BFE:
 ; H061+$00002BFE: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -4730,7 +4730,7 @@ L061_00002C08:
 L061_00002C0C:
 ; H061+$00002C0C: 67000028  beq.w $2c36
         beq.w H061+$2C36
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L061_00002C10:
 ; H061+$00002C10: 13f900003de300003de2  move.b $3de3.l, $3de2.l
         move.b (H005+$3DE3).l, (H005+$3DE2).l
@@ -4740,14 +4740,14 @@ L061_00002C1A:
 L061_00002C1E:
 ; H061+$00002C1E: 6600000e  bne.w $2c2e
         bne.w H061+$2C2E
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L061_00002C22:
 ; H061+$00002C22: 13fc000300003de3  move.b #$3, $3de3.l
         move.b #$3, (H005+$3DE3).l
 L061_00002C2A:
 ; H061+$00002C2A: 6000000a  bra.w $2c36
         bra.w H061+$2C36
-; STATO: H005+$3DE3 = contesto nativo, 5 nel combattimento
+; STATE: H005+$3DE3 = native context, 5 in combat
 L061_00002C2E:
 ; H061+$00002C2E: 13fc000400003de3  move.b #$4, $3de3.l
         move.b #$4, (H005+$3DE3).l
@@ -4757,7 +4757,7 @@ L061_00002C36:
 L061_00002C3A:
 ; H061+$00002C3A: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L061_00002C3C:
 ; H061+$00002C3C: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -4776,7 +4776,7 @@ L061_00002C4E:
 L061_00002C52:
 ; H061+$00002C52: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L061_00002C54:
 ; H061+$00002C54: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -4804,7 +4804,7 @@ L061_00002C72:
 L061_00002C76:
 ; H061+$00002C76: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3DFC = puntatore stato persistente C, 1024 byte
+; STATE: H005+$3DFC = pointer to persistent state C, 1024 bytes
 L061_00002C78:
 ; H061+$00002C78: 267900003dfc  movea.l $3dfc.l, a3
         movea.l (H005+$3DFC).l, a3
@@ -4820,7 +4820,7 @@ L061_00002C86:
 L061_00002C8A:
 ; H061+$00002C8A: 04423500  subi.w #$3500, d2
         subi.w #$3500, d2
-; STATO: H005+$3DF8 = puntatore al buffer ECL
+; STATE: H005+$3DF8 = pointer to the ECL buffer
 L061_00002C8E:
 ; H061+$00002C8E: 267900003df8  movea.l $3df8.l, a3
         movea.l (H005+$3DF8).l, a3
@@ -4883,7 +4883,7 @@ L061_00002CDC:
 L061_00002CDE:
 ; H061+$00002CDE: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H061+$2CC8; indici 0..1, default -1.
+; DISPATCH: words relative to H061+$2CC8; indices 0..1, default -1.
 L061_00002CE2:
 ; H061+$00002CE2: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -4929,7 +4929,7 @@ L061_00002D1E:
 L061_00002D22:
 ; H061+$00002D22: 13fc0001000024b7  move.b #$1, $24b7.l
         move.b #$1, (H005+$24B7).l
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L061_00002D2A:
 ; H061+$00002D2A: 33ed000c0000281c  move.w $c(a5), $281c.l
         move.w $c(a5), (H005+$281C).l
@@ -5037,7 +5037,7 @@ L061_00002DCA:
 L061_00002DCC:
 ; H061+$00002DCC: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H061+$2DB4; indici 0..4, default -1.
+; DISPATCH: words relative to H061+$2DB4; indices 0..4, default -1.
 L061_00002DD0:
 ; H061+$00002DD0: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -5067,7 +5067,7 @@ L061_00002DF0:
 L061_00002DF2:
 ; H061+$00002DF2: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H061+$2DDA; indici 0..4, default -1.
+; DISPATCH: words relative to H061+$2DDA; indices 0..4, default -1.
 L061_00002DF6:
 ; H061+$00002DF6: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -5087,10 +5087,10 @@ L061_00002E02:
 ; H061+$00002E02: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H061_00002E04 [parziale]
-; Scopo: Routine del modulo servizi della VM ECL: caricamento, operandi, variabili e flusso; opera su H005+$3E04 (puntatore stato persistente A, 2048 byte); H005+$3E00 (puntatore stato persistente B, 2048 byte); H005+$3DFC (puntatore stato persistente C, 1024 byte).
-;   - Usa lo stato globale: H005+$3E04 (puntatore stato persistente A, 2048 byte); H005+$3E00 (puntatore stato persistente B, 2048 byte); H005+$3DFC (puntatore stato persistente C, 1024 byte).
-; Chiamanti diretti: H064+$1328, H061+$18C8
+; ROUTINE: sub_H061_00002E04 [partial]
+; Purpose: Routine of the ECL VM services module: loading, operands, variables and flow; works on H005+$3E04 (pointer to persistent state A, 2048 bytes); H005+$3E00 (pointer to persistent state B, 2048 bytes); H005+$3DFC (pointer to persistent state C, 1024 bytes).
+;   - Uses the global state: H005+$3E04 (pointer to persistent state A, 2048 bytes); H005+$3E00 (pointer to persistent state B, 2048 bytes); H005+$3DFC (pointer to persistent state C, 1024 bytes).
+; Direct callers: H064+$1328, H061+$18C8
 ; --------------------------------------------------------------------------
 L061_00002E04:
 ; H061+$00002E04: 2f0c  move.l a4, -(a7)
@@ -5151,7 +5151,7 @@ L061_00002E48:
 L061_00002E4C:
 ; H061+$00002E4C: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L061_00002E4E:
 ; H061+$00002E4E: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -5190,7 +5190,7 @@ L061_00002E7A:
 L061_00002E7E:
 ; H061+$00002E7E: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L061_00002E80:
 ; H061+$00002E80: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -5214,7 +5214,7 @@ L061_00002E9A:
 L061_00002E9E:
 ; H061+$00002E9E: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3DFC = puntatore stato persistente C, 1024 byte
+; STATE: H005+$3DFC = pointer to persistent state C, 1024 bytes
 L061_00002EA0:
 ; H061+$00002EA0: 267900003dfc  movea.l $3dfc.l, a3
         movea.l (H005+$3DFC).l, a3
@@ -5232,7 +5232,7 @@ L061_00002EB0:
 L061_00002EB4:
 ; H061+$00002EB4: 04423500  subi.w #$3500, d2
         subi.w #$3500, d2
-; STATO: H005+$3DF8 = puntatore al buffer ECL
+; STATE: H005+$3DF8 = pointer to the ECL buffer
 L061_00002EB8:
 ; H061+$00002EB8: 267900003df8  movea.l $3df8.l, a3
         movea.l (H005+$3DF8).l, a3
@@ -5334,7 +5334,7 @@ L061_00002F46:
 L061_00002F4A:
 ; H061+$00002F4A: 60000080  bra.w $2fcc
         bra.w H061+$2FCC
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L061_00002F4E:
 ; H061+$00002F4E: 30390000281c  move.w $281c.l, d0
         move.w (H005+$281C).l, d0
@@ -5351,7 +5351,7 @@ L061_00002F60:
         bra.w H061+$3008
 ; Preserved bytes H061+$00002F64..$00002F66; code/data not fully classified.
         dc.w $4E75
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L061_00002F66:
 ; H061+$00002F66: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -5446,7 +5446,7 @@ L061_00002FD8:
 L061_00002FDA:
 ; H061+$00002FDA: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H061+$2FC2; indici 0..4, default -1.
+; DISPATCH: words relative to H061+$2FC2; indices 0..4, default -1.
 L061_00002FDE:
 ; H061+$00002FDE: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -5476,7 +5476,7 @@ L061_00002FFE:
 L061_00003000:
 ; H061+$00003000: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H061+$2FE8; indici 0..4, default -1.
+; DISPATCH: words relative to H061+$2FE8; indices 0..4, default -1.
 L061_00003004:
 ; H061+$00003004: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -5496,12 +5496,12 @@ L061_00003010:
 ; H061+$00003010: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H061_00003012 [parziale]
-; Scopo: Routine del modulo servizi della VM ECL: caricamento, operandi, variabili e flusso; richiama H026+$000C, H026+$0188.
-;   - Richiama H026+$000C.
-;   - Richiama H026+$0188.
-;   - Usa lo stato globale: H005+$3E04 (puntatore stato persistente A, 2048 byte); H005+$3368 (personaggio corrente); H005+$3E00 (puntatore stato persistente B, 2048 byte).
-; Chiamanti diretti: H064+$0D3E, H064+$04D0
+; ROUTINE: sub_H061_00003012 [partial]
+; Purpose: Routine of the ECL VM services: loading, operands, variables and flow module; calls H026+$000C, H026+$0188.
+;   - Calls H026+$000C.
+;   - Calls H026+$0188.
+;   - Uses the global state: H005+$3E04 (pointer to persistent state A, 2048 bytes); H005+$3368 (current character); H005+$3E00 (pointer to persistent state B, 2048 bytes).
+; Direct callers: H064+$0D3E, H064+$04D0
 ; --------------------------------------------------------------------------
 L061_00003012:
 ; H061+$00003012: 2f0c  move.l a4, -(a7)
@@ -5618,7 +5618,7 @@ L061_0000308C:
 L061_00003090:
 ; H061+$00003090: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L061_00003092:
 ; H061+$00003092: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -5655,7 +5655,7 @@ L061_000030B6:
 L061_000030BA:
 ; H061+$000030BA: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L061_000030BC:
 ; H061+$000030BC: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -5674,7 +5674,7 @@ L061_000030CE:
 L061_000030D2:
 ; H061+$000030D2: 3f3c000f  move.w #$f, -(a7)
         move.w #$f, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_000030D6:
 ; H061+$000030D6: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -5730,7 +5730,7 @@ L061_00003114:
 L061_00003118:
 ; H061+$00003118: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L061_0000311A:
 ; H061+$0000311A: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -5770,7 +5770,7 @@ L061_00003142:
 L061_00003146:
 ; H061+$00003146: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L061_00003148:
 ; H061+$00003148: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -5819,7 +5819,7 @@ L061_0000317A:
 L061_0000317E:
 ; H061+$0000317E: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3DFC = puntatore stato persistente C, 1024 byte
+; STATE: H005+$3DFC = pointer to persistent state C, 1024 bytes
 L061_00003180:
 ; H061+$00003180: 267900003dfc  movea.l $3dfc.l, a3
         movea.l (H005+$3DFC).l, a3
@@ -5859,7 +5859,7 @@ L061_000031A8:
 L061_000031AC:
 ; H061+$000031AC: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3DFC = puntatore stato persistente C, 1024 byte
+; STATE: H005+$3DFC = pointer to persistent state C, 1024 bytes
 L061_000031AE:
 ; H061+$000031AE: 267900003dfc  movea.l $3dfc.l, a3
         movea.l (H005+$3DFC).l, a3
@@ -5905,7 +5905,7 @@ L061_000031DC:
 L061_000031E0:
 ; H061+$000031E0: 04423500  subi.w #$3500, d2
         subi.w #$3500, d2
-; STATO: H005+$3DF8 = puntatore al buffer ECL
+; STATE: H005+$3DF8 = pointer to the ECL buffer
 L061_000031E4:
 ; H061+$000031E4: 267900003df8  movea.l $3df8.l, a3
         movea.l (H005+$3DF8).l, a3
@@ -5936,7 +5936,7 @@ L061_00003204:
 L061_00003208:
 ; H061+$00003208: 04423500  subi.w #$3500, d2
         subi.w #$3500, d2
-; STATO: H005+$3DF8 = puntatore al buffer ECL
+; STATE: H005+$3DF8 = pointer to the ECL buffer
 L061_0000320C:
 ; H061+$0000320C: 267900003df8  movea.l $3df8.l, a3
         movea.l (H005+$3DF8).l, a3
@@ -5969,7 +5969,7 @@ L061_00003230:
 L061_00003232:
 ; H061+$00003232: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H061+$321C; indici 0..3, default -1.
+; DISPATCH: words relative to H061+$321C; indices 0..3, default -1.
 L061_00003236:
 ; H061+$00003236: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -5989,11 +5989,11 @@ L061_00003242:
 ; H061+$00003242: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H061_00003244 [parziale]
-; Scopo: Routine del modulo servizi della VM ECL: caricamento, operandi, variabili e flusso; richiama H029+$0354.
-;   - Richiama H029+$0354.
-;   - Usa lo stato globale: H005+$3DEA (PC logico ECL); H005+$3DF8 (puntatore al buffer ECL).
-; Chiamanti diretti: H061+$1784
+; ROUTINE: sub_H061_00003244 [partial]
+; Purpose: Routine of the ECL VM services: loading, operands, variables and flow module; calls H029+$0354.
+;   - Calls H029+$0354.
+;   - Uses the global state: H005+$3DEA (ECL logical PC); H005+$3DF8 (pointer to the ECL buffer).
+; Direct callers: H061+$1784
 ; --------------------------------------------------------------------------
 L061_00003244:
 ; H061+$00003244: 2f0c  move.l a4, -(a7)
@@ -6052,21 +6052,21 @@ L061_00003282:
 L061_00003288:
 ; H061+$00003288: 64000028  bcc.w $32b2
         bcc.w H061+$32B2
-; STATO: H005+$3DEA = PC logico ECL
+; STATE: H005+$3DEA = logical ECL PC
 L061_0000328C:
 ; H061+$0000328C: 527900003dea  addq.w #$1, $3dea.l
         addq.w #$1, (H005+$3DEA).l
 L061_00003292:
 ; H061+$00003292: 1b6dfffbfffa  move.b -$5(a5), -$6(a5)
         move.b -$5(a5), -$6(a5)
-; STATO: H005+$3DEA = PC logico ECL
+; STATE: H005+$3DEA = logical ECL PC
 L061_00003298:
 ; H061+$00003298: 343900003dea  move.w $3dea.l, d2
         move.w (H005+$3DEA).l, d2
 L061_0000329E:
 ; H061+$0000329E: 04423500  subi.w #$3500, d2
         subi.w #$3500, d2
-; STATO: H005+$3DF8 = puntatore al buffer ECL
+; STATE: H005+$3DF8 = pointer to the ECL buffer
 L061_000032A2:
 ; H061+$000032A2: 267900003df8  movea.l $3df8.l, a3
         movea.l (H005+$3DF8).l, a3
@@ -6217,7 +6217,7 @@ L061_0000334A:
 L061_0000334C:
 ; H061+$0000334C: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H061+$3334; indici 0..3, default -1.
+; DISPATCH: words relative to H061+$3334; indices 0..3, default -1.
 L061_00003350:
 ; H061+$00003350: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -6352,11 +6352,11 @@ L061_000033EE:
 ; H061+$000033EE: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H061_000033F0 [parziale]
-; Scopo: Routine del modulo servizi della VM ECL: caricamento, operandi, variabili e flusso; richiama H026+$0188.
-;   - Richiama H026+$0188.
-;   - Usa lo stato globale: H005+$3E04 (puntatore stato persistente A, 2048 byte); H005+$3368 (personaggio corrente); H005+$3E00 (puntatore stato persistente B, 2048 byte).
-; Chiamanti diretti: H061+$1806
+; ROUTINE: sub_H061_000033F0 [partial]
+; Purpose: Routine of the ECL VM services: loading, operands, variables and flow module; calls H026+$0188.
+;   - Calls H026+$0188.
+;   - Uses the global state: H005+$3E04 (pointer to persistent state A, 2048 bytes); H005+$3368 (current character); H005+$3E00 (pointer to persistent state B, 2048 bytes).
+; Direct callers: H061+$1806
 ; --------------------------------------------------------------------------
 L061_000033F0:
 ; H061+$000033F0: 2f0c  move.l a4, -(a7)
@@ -6427,7 +6427,7 @@ L061_0000343A:
 L061_0000343E:
 ; H061+$0000343E: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L061_00003440:
 ; H061+$00003440: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -6464,7 +6464,7 @@ L061_00003466:
 L061_0000346A:
 ; H061+$0000346A: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3E04 = puntatore stato persistente A, 2048 byte
+; STATE: H005+$3E04 = pointer to persistent state A, 2048 bytes
 L061_0000346C:
 ; H061+$0000346C: 267900003e04  movea.l $3e04.l, a3
         movea.l (H005+$3E04).l, a3
@@ -6513,7 +6513,7 @@ L061_0000349E:
 L061_000034A2:
 ; H061+$000034A2: 3f3c000f  move.w #$f, -(a7)
         move.w #$f, -(a7)
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_000034A6:
 ; H061+$000034A6: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -6536,7 +6536,7 @@ L061_000034BE:
 L061_000034C2:
 ; H061+$000034C2: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L061_000034C4:
 ; H061+$000034C4: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -6576,7 +6576,7 @@ L061_000034EE:
 L061_000034F2:
 ; H061+$000034F2: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3E00 = puntatore stato persistente B, 2048 byte
+; STATE: H005+$3E00 = pointer to persistent state B, 2048 bytes
 L061_000034F4:
 ; H061+$000034F4: 267900003e00  movea.l $3e00.l, a3
         movea.l (H005+$3E00).l, a3
@@ -6610,7 +6610,7 @@ L061_00003514:
 L061_00003518:
 ; H061+$00003518: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3DFC = puntatore stato persistente C, 1024 byte
+; STATE: H005+$3DFC = pointer to persistent state C, 1024 bytes
 L061_0000351A:
 ; H061+$0000351A: 267900003dfc  movea.l $3dfc.l, a3
         movea.l (H005+$3DFC).l, a3
@@ -6650,7 +6650,7 @@ L061_00003544:
 L061_00003548:
 ; H061+$00003548: e342  asl.w #$1, d2
         asl.w #$1, d2
-; STATO: H005+$3DFC = puntatore stato persistente C, 1024 byte
+; STATE: H005+$3DFC = pointer to persistent state C, 1024 bytes
 L061_0000354A:
 ; H061+$0000354A: 267900003dfc  movea.l $3dfc.l, a3
         movea.l (H005+$3DFC).l, a3
@@ -6681,7 +6681,7 @@ L061_00003566:
 L061_0000356A:
 ; H061+$0000356A: 04423500  subi.w #$3500, d2
         subi.w #$3500, d2
-; STATO: H005+$3DF8 = puntatore al buffer ECL
+; STATE: H005+$3DF8 = pointer to the ECL buffer
 L061_0000356E:
 ; H061+$0000356E: 267900003df8  movea.l $3df8.l, a3
         movea.l (H005+$3DF8).l, a3
@@ -6724,7 +6724,7 @@ L061_00003598:
 L061_0000359C:
 ; H061+$0000359C: 04423500  subi.w #$3500, d2
         subi.w #$3500, d2
-; STATO: H005+$3DF8 = puntatore al buffer ECL
+; STATE: H005+$3DF8 = pointer to the ECL buffer
 L061_000035A0:
 ; H061+$000035A0: 267900003df8  movea.l $3df8.l, a3
         movea.l (H005+$3DF8).l, a3
@@ -6766,7 +6766,7 @@ L061_000035CE:
 L061_000035D0:
 ; H061+$000035D0: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H061+$35BA; indici 0..3, default -1.
+; DISPATCH: words relative to H061+$35BA; indices 0..3, default -1.
 L061_000035D4:
 ; H061+$000035D4: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -6786,11 +6786,11 @@ L061_000035E0:
 ; H061+$000035E0: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H061_000035E2 [parziale]
-; Scopo: Routine del modulo servizi della VM ECL: caricamento, operandi, variabili e flusso; richiama H026+$000C, H026+$03F6.
-;   - Richiama H026+$000C.
-;   - Richiama H026+$03F6.
-; Chiamanti diretti: H061+$3744
+; ROUTINE: sub_H061_000035E2 [partial]
+; Purpose: Routine of the ECL VM services: loading, operands, variables and flow module; calls H026+$000C, H026+$03F6.
+;   - Calls H026+$000C.
+;   - Calls H026+$03F6.
+; Direct callers: H061+$3744
 ; --------------------------------------------------------------------------
 L061_000035E2:
 ; H061+$000035E2: 2f0c  move.l a4, -(a7)
@@ -7002,14 +7002,14 @@ L061_000036E4:
 ; H061+$000036E4: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H061_000036E6 [parziale]
-; Scopo: Routine del modulo servizi della VM ECL: caricamento, operandi, variabili e flusso; richiama H008+$01FC, H065+$3390, H063+$0D80, H026+$000C.
-;   - Richiama H008+$01FC.
-;   - Richiama H065+$3390.
-;   - Richiama H063+$0D80.
-;   - Richiama H026+$000C.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H012+$1E4C, H064+$1716, H012+$192E, H072+$13E6, H071+$0B1A, H070+$13F6
+; ROUTINE: sub_H061_000036E6 [partial]
+; Purpose: Routine of the ECL VM services: loading, operands, variables and flow module; calls H008+$01FC, H065+$3390, H063+$0D80, H026+$000C.
+;   - Calls H008+$01FC.
+;   - Calls H065+$3390.
+;   - Calls H063+$0D80.
+;   - Calls H026+$000C.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H012+$1E4C, H064+$1716, H012+$192E, H072+$13E6, H071+$0B1A, H070+$13F6
 ; --------------------------------------------------------------------------
 L061_000036E6:
 ; H061+$000036E6: 2f0c  move.l a4, -(a7)
@@ -7137,7 +7137,7 @@ L061_00003768:
 L061_0000376C:
 ; H061+$0000376C: 486dffd2  pea.l -$2e(a5)
         pea.l -$2e(a5)
-; FLUSSO: Chiama UI_RequestChoice (H008+$01FC).
+; FLOW: Calls UI_RequestChoice (H008+$01FC).
 L061_00003770:
 ; H061+$00003770: 4eb9000001fc  jsr $1fc.l
         jsr (H008+$1FC).l
@@ -7157,7 +7157,7 @@ L061_00003782:
 L061_00003786:
 ; H061+$00003786: 4eb900003390  jsr $3390.l
         jsr (H065+$3390).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_0000378C:
 ; H061+$0000378C: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)
@@ -7322,10 +7322,10 @@ L061_0000385E:
 ; H061+$0000385E: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H061_00003860 [parziale]
-; Scopo: Routine del modulo servizi della VM ECL: caricamento, operandi, variabili e flusso; richiama H008+$13C0.
-;   - Richiama H008+$13C0.
-; Chiamanti diretti: H064+$150A
+; ROUTINE: sub_H061_00003860 [partial]
+; Purpose: Routine of the ECL VM services: loading, operands, variables and flow module; calls H008+$13C0.
+;   - Calls H008+$13C0.
+; Direct callers: H064+$150A
 ; --------------------------------------------------------------------------
 L061_00003860:
 ; H061+$00003860: 2f0c  move.l a4, -(a7)
@@ -7479,11 +7479,11 @@ L061_00003902:
 ; H061+$00003902: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H061_00003904 [parziale]
-; Scopo: Routine del modulo servizi della VM ECL: caricamento, operandi, variabili e flusso; richiama H029+$0312, H026+$0106.
-;   - Richiama H029+$0312.
-;   - Richiama H026+$0106.
-; Chiamanti diretti: H064+$02CC
+; ROUTINE: sub_H061_00003904 [partial]
+; Purpose: Routine of the ECL VM services: loading, operands, variables and flow module; calls H029+$0312, H026+$0106.
+;   - Calls H029+$0312.
+;   - Calls H026+$0106.
+; Direct callers: H064+$02CC
 ; --------------------------------------------------------------------------
 L061_00003904:
 ; H061+$00003904: 2f0c  move.l a4, -(a7)
@@ -7683,10 +7683,10 @@ L061_00003A08:
 ; H061+$00003A08: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H061_00003A0A [parziale]
-; Scopo: Routine del modulo servizi della VM ECL: caricamento, operandi, variabili e flusso; richiama H029+$0312.
-;   - Richiama H029+$0312.
-; Chiamanti diretti: H064+$02FA, H064+$12B0
+; ROUTINE: sub_H061_00003A0A [partial]
+; Purpose: Routine of the ECL VM services: loading, operands, variables and flow module; calls H029+$0312.
+;   - Calls H029+$0312.
+; Direct callers: H064+$02FA, H064+$12B0
 ; --------------------------------------------------------------------------
 L061_00003A0A:
 ; H061+$00003A0A: 2f0c  move.l a4, -(a7)
@@ -7801,11 +7801,11 @@ L061_00003AAA:
 ; H061+$00003AAA: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H061_00003AAC [parziale]
-; Scopo: Routine del modulo servizi della VM ECL: caricamento, operandi, variabili e flusso; richiama H003+$0068.
-;   - Richiama H003+$0068.
-;   - Usa lo stato globale: H005+$3DEA (PC logico ECL).
-; Chiamanti diretti: H064+$024C, H012+$0BCC
+; ROUTINE: sub_H061_00003AAC [partial]
+; Purpose: Routine of the ECL VM services: loading, operands, variables and flow module; calls H003+$0068.
+;   - Calls H003+$0068.
+;   - Uses the global state: H005+$3DEA (ECL logical PC).
+; Direct callers: H064+$024C, H012+$0BCC
 ; --------------------------------------------------------------------------
 L061_00003AAC:
 ; H061+$00003AAC: 2f0c  move.l a4, -(a7)
@@ -7875,7 +7875,7 @@ L061_00003B0A:
 L061_00003B12:
 ; H061+$00003B12: 267900002388  movea.l $2388.l, a3
         movea.l (H005+$2388).l, a3
-; STATO: H005+$3DEA = PC logico ECL
+; STATE: H005+$3DEA = logical ECL PC
 L061_00003B18:
 ; H061+$00003B18: 36b900003dea  move.w $3dea.l, (a3)
         move.w (H005+$3DEA).l, (a3)
@@ -7903,11 +7903,11 @@ L061_00003B32:
 L061_00003B36:
 ; H061+$00003B36: 1f332000  move.b (a3, d2.w), -(a7)
         move.b (a3, d2.w), -(a7)
-; FLUSSO: Chiama ECL_DecodeAddress (H061+$1F3C).
+; FLOW: Calls ECL_DecodeAddress (H061+$1F3C).
 L061_00003B3A:
 ; H061+$00003B3A: 6100e400  bsr.w $1f3c
         bsr.w H061+$1F3C
-; STATO: H005+$3DEA = PC logico ECL
+; STATE: H005+$3DEA = logical ECL PC
 L061_00003B3E:
 ; H061+$00003B3E: 33c000003dea  move.w d0, $3dea.l
         move.w d0, (H005+$3DEA).l
@@ -7927,13 +7927,13 @@ L061_00003B4C:
 ; H061+$00003B4C: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: trampoline_H061_3BEE [parziale]
-; Scopo: Trampolino verso H061+$3BEE; il corpo effettivo è lì.
-;   - Salta al corpo effettivo a H061+$3BEE.
-;   - Richiama H011+$04E2.
-;   - Richiama H011+$01AA.
-;   - Usa lo stato globale: H005+$281C (inizio del blocco coordinate/vista).
-; Chiamanti diretti: H012+$28F0
+; ROUTINE: trampoline_H061_3BEE [partial]
+; Purpose: Trampoline to H061+$3BEE; the actual body is there.
+;   - Jumps to the actual body at H061+$3BEE.
+;   - Calls H011+$04E2.
+;   - Calls H011+$01AA.
+;   - Uses the global state: H005+$281C (start of the coordinates/view block).
+; Direct callers: H012+$28F0
 ; --------------------------------------------------------------------------
 L061_00003B4E:
 ; H061+$00003B4E: 2f0c  move.l a4, -(a7)
@@ -7971,21 +7971,21 @@ L061_00003B78:
 L061_00003B80:
 ; H061+$00003B80: 4e75  rts 
         rts 
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L061_00003B82:
 ; H061+$00003B82: 0c79000f0000281c  cmpi.w #$f, $281c.l
         cmpi.w #$f, (H005+$281C).l
 L061_00003B8A:
 ; H061+$00003B8A: 6c00000c  bge.w $3b98
         bge.w H061+$3B98
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L061_00003B8E:
 ; H061+$00003B8E: 52790000281c  addq.w #$1, $281c.l
         addq.w #$1, (H005+$281C).l
 L061_00003B94:
 ; H061+$00003B94: 60000008  bra.w $3b9e
         bra.w H061+$3B9E
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L061_00003B98:
 ; H061+$00003B98: 42790000281c  clr.w $281c.l
         clr.w (H005+$281C).l
@@ -8010,21 +8010,21 @@ L061_00003BB6:
 L061_00003BBC:
 ; H061+$00003BBC: 4e75  rts 
         rts 
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L061_00003BBE:
 ; H061+$00003BBE: 4a790000281c  tst.w $281c.l
         tst.w (H005+$281C).l
 L061_00003BC4:
 ; H061+$00003BC4: 6f00000c  ble.w $3bd2
         ble.w H061+$3BD2
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L061_00003BC8:
 ; H061+$00003BC8: 53790000281c  subq.w #$1, $281c.l
         subq.w #$1, (H005+$281C).l
 L061_00003BCE:
 ; H061+$00003BCE: 6000000a  bra.w $3bda
         bra.w H061+$3BDA
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L061_00003BD2:
 ; H061+$00003BD2: 33fc000f0000281c  move.w #$f, $281c.l
         move.w #$f, (H005+$281C).l
@@ -8054,11 +8054,11 @@ L061_00003BFA:
 L061_00003BFC:
 ; H061+$00003BFC: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H061+$3BE0; indici 0..6, default -1.
+; DISPATCH: words relative to H061+$3BE0; indices 0..6, default -1.
 L061_00003C00:
 ; H061+$00003C00: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L061_00003C04:
 ; H061+$00003C04: 3f390000281c  move.w $281c.l, -(a7)
         move.w (H005+$281C).l, -(a7)
@@ -8072,7 +8072,7 @@ L061_00003C10:
 L061_00003C16:
 ; H061+$00003C16: 13c000002822  move.b d0, $2822.l
         move.b d0, (H005+$2822).l
-; STATO: H005+$281C = inizio del blocco coordinate/vista
+; STATE: H005+$281C = start of the coordinates/view block
 L061_00003C1C:
 ; H061+$00003C1C: 3f390000281c  move.w $281c.l, -(a7)
         move.w (H005+$281C).l, -(a7)
@@ -8088,7 +8088,7 @@ L061_00003C2A:
 L061_00003C30:
 ; H061+$00003C30: 3f02  move.w d2, -(a7)
         move.w d2, -(a7)
-; FLUSSO: Chiama Map_QueryWall (H011+$01AA).
+; FLOW: Calls Map_QueryWall (H011+$01AA).
 L061_00003C32:
 ; H061+$00003C32: 4eb9000001aa  jsr $1aa.l
         jsr (H011+$1AA).l
@@ -8108,12 +8108,12 @@ L061_00003C4A:
 ; H061+$00003C4A: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H061_00003C4C [parziale]
-; Scopo: Routine del modulo servizi della VM ECL: caricamento, operandi, variabili e flusso; richiama H015+$0172, H015+$010C, H015+$0184.
-;   - Richiama H015+$0172.
-;   - Richiama H015+$010C.
-;   - Richiama H015+$0184.
-; Chiamanti diretti: H012+$154C, H012+$1588
+; ROUTINE: sub_H061_00003C4C [partial]
+; Purpose: Routine of the ECL VM services: loading, operands, variables and flow module; calls H015+$0172, H015+$010C, H015+$0184.
+;   - Calls H015+$0172.
+;   - Calls H015+$010C.
+;   - Calls H015+$0184.
+; Direct callers: H012+$154C, H012+$1588
 ; --------------------------------------------------------------------------
 L061_00003C4C:
 ; H061+$00003C4C: 2f0c  move.l a4, -(a7)
@@ -8455,11 +8455,11 @@ L061_00003DBC:
 ; H061+$00003DBC: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H061_00003DBE [parziale]
-; Scopo: Routine del modulo servizi della VM ECL: caricamento, operandi, variabili e flusso; richiama H062+$156C, H063+$1BE8.
-;   - Richiama H062+$156C.
-;   - Richiama H063+$1BE8.
-; Chiamanti diretti: H012+$155C, H012+$1596
+; ROUTINE: sub_H061_00003DBE [partial]
+; Purpose: Routine of the ECL VM services: loading, operands, variables and flow module; calls H062+$156C, H063+$1BE8.
+;   - Calls H062+$156C.
+;   - Calls H063+$1BE8.
+; Direct callers: H012+$155C, H012+$1596
 ; --------------------------------------------------------------------------
 L061_00003DBE:
 ; H061+$00003DBE: 2f0c  move.l a4, -(a7)
@@ -8608,13 +8608,13 @@ L061_00003E7E:
 FN_ECL_skip_instruction:
 ;
 ; --------------------------------------------------------------------------
-; ROUTINE: ECL_SkipInstruction [verificato]
-; Scopo: Avanza sul bytecode senza eseguire il normale gestore dell’opcode.
-;   - Legge l’opcode al PC corrente.
-;   - Usa una tabella per scegliere quante letture di operando effettuare.
-;   - Il ramo predefinito incrementa soltanto il PC.
-;   - Non va usato da solo come grammatica completa per tutti i dati variabili.
-; Chiamanti diretti: H064+$0F7A
+; ROUTINE: ECL_SkipInstruction [verified]
+; Purpose: Advances over the bytecode without running the normal handler of the opcode.
+;   - Reads the opcode at the current PC.
+;   - Uses a table to choose how many operand reads to do.
+;   - The default branch only increments the PC.
+;   - It must not be used alone as a complete grammar for all the variable data.
+; Direct callers: H064+$0F7A
 ; --------------------------------------------------------------------------
 L061_00003E80:
 ; H061+$00003E80: 2f0c  move.l a4, -(a7)
@@ -8625,25 +8625,25 @@ L061_00003E82:
 L061_00003E86:
 ; H061+$00003E86: 4e550000  link.w a5, #$0
         link.w a5, #$0
-; STATO: H005+$3DEA = PC logico ECL
+; STATE: H005+$3DEA = logical ECL PC
 L061_00003E8A:
 ; H061+$00003E8A: 343900003dea  move.w $3dea.l, d2
         move.w (H005+$3DEA).l, d2
 L061_00003E90:
 ; H061+$00003E90: 04423500  subi.w #$3500, d2
         subi.w #$3500, d2
-; STATO: H005+$3DF8 = puntatore al buffer ECL
+; STATE: H005+$3DF8 = pointer to the ECL buffer
 L061_00003E94:
 ; H061+$00003E94: 267900003df8  movea.l $3df8.l, a3
         movea.l (H005+$3DF8).l, a3
-; STATO: H005+$2493 = opcode ECL corrente
+; STATE: H005+$2493 = current ECL opcode
 L061_00003E9A:
 ; H061+$00003E9A: 13f3200000002493  move.b (a3, d2.w), $2493.l
         move.b (a3, d2.w), (H005+$2493).l
 L061_00003EA2:
 ; H061+$00003EA2: 7400  moveq #$0, d2
         moveq #0, d2
-; STATO: H005+$2493 = opcode ECL corrente
+; STATE: H005+$2493 = current ECL opcode
 L061_00003EA4:
 ; H061+$00003EA4: 143900002493  move.b $2493.l, d2
         move.b (H005+$2493).l, d2
@@ -8653,7 +8653,7 @@ L061_00003EAA:
 L061_00003EAE:
 ; H061+$00003EAE: 3f3c0001  move.w #$1, -(a7)
         move.w #$1, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L061_00003EB2:
 ; H061+$00003EB2: 6100d7bc  bsr.w $1670
         bsr.w H061+$1670
@@ -8663,7 +8663,7 @@ L061_00003EB6:
 L061_00003EB8:
 ; H061+$00003EB8: 3f3c0002  move.w #$2, -(a7)
         move.w #$2, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L061_00003EBC:
 ; H061+$00003EBC: 6100d7b2  bsr.w $1670
         bsr.w H061+$1670
@@ -8673,7 +8673,7 @@ L061_00003EC0:
 L061_00003EC2:
 ; H061+$00003EC2: 3f3c0003  move.w #$3, -(a7)
         move.w #$3, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L061_00003EC6:
 ; H061+$00003EC6: 6100d7a8  bsr.w $1670
         bsr.w H061+$1670
@@ -8683,7 +8683,7 @@ L061_00003ECA:
 L061_00003ECC:
 ; H061+$00003ECC: 3f3c0004  move.w #$4, -(a7)
         move.w #$4, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L061_00003ED0:
 ; H061+$00003ED0: 6100d79e  bsr.w $1670
         bsr.w H061+$1670
@@ -8693,7 +8693,7 @@ L061_00003ED4:
 L061_00003ED6:
 ; H061+$00003ED6: 3f3c0005  move.w #$5, -(a7)
         move.w #$5, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L061_00003EDA:
 ; H061+$00003EDA: 6100d794  bsr.w $1670
         bsr.w H061+$1670
@@ -8703,7 +8703,7 @@ L061_00003EDE:
 L061_00003EE0:
 ; H061+$00003EE0: 3f3c0006  move.w #$6, -(a7)
         move.w #$6, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L061_00003EE4:
 ; H061+$00003EE4: 6100d78a  bsr.w $1670
         bsr.w H061+$1670
@@ -8713,7 +8713,7 @@ L061_00003EE8:
 L061_00003EEA:
 ; H061+$00003EEA: 3f3c0008  move.w #$8, -(a7)
         move.w #$8, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L061_00003EEE:
 ; H061+$00003EEE: 6100d780  bsr.w $1670
         bsr.w H061+$1670
@@ -8723,14 +8723,14 @@ L061_00003EF2:
 L061_00003EF4:
 ; H061+$00003EF4: 3f3c000e  move.w #$e, -(a7)
         move.w #$e, -(a7)
-; FLUSSO: Chiama ECL_ReadOperands (H061+$1670).
+; FLOW: Calls ECL_ReadOperands (H061+$1670).
 L061_00003EF8:
 ; H061+$00003EF8: 6100d776  bsr.w $1670
         bsr.w H061+$1670
 L061_00003EFC:
 ; H061+$00003EFC: 4e75  rts 
         rts 
-; STATO: H005+$3DEA = PC logico ECL
+; STATE: H005+$3DEA = logical ECL PC
 L061_00003EFE:
 ; H061+$00003EFE: 527900003dea  addq.w #$1, $3dea.l
         addq.w #$1, (H005+$3DEA).l
@@ -8768,7 +8768,7 @@ L061_00003F98:
 L061_00003F9A:
 ; H061+$00003F9A: 34332000  move.w (a3, d2.w), d2
         move.w (a3, d2.w), d2
-; DISPATCH: word relative a H061+$3F08; indici 0..64, default -1.
+; DISPATCH: words relative to H061+$3F08; indices 0..64, default -1.
 L061_00003F9E:
 ; H061+$00003F9E: 4eb32000  jsr (a3, d2.w)
         jsr (a3, d2.w)
@@ -8782,11 +8782,11 @@ L061_00003FA6:
 ; H061+$00003FA6: 4e75  rts 
         rts 
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H061_00003FA8 [parziale]
-; Scopo: Routine del modulo servizi della VM ECL: caricamento, operandi, variabili e flusso; richiama H063+$0946.
-;   - Richiama H063+$0946.
-;   - Usa lo stato globale: H005+$3364 (testa della lista del party).
-; Chiamanti diretti: H012+$15D6
+; ROUTINE: sub_H061_00003FA8 [partial]
+; Purpose: Routine of the ECL VM services: loading, operands, variables and flow module; calls H063+$0946.
+;   - Calls H063+$0946.
+;   - Uses the global state: H005+$3364 (head of the party list).
+; Direct callers: H012+$15D6
 ; --------------------------------------------------------------------------
 L061_00003FA8:
 ; H061+$00003FA8: 2f0c  move.l a4, -(a7)
@@ -8797,7 +8797,7 @@ L061_00003FAA:
 L061_00003FAE:
 ; H061+$00003FAE: 4e55fff6  link.w a5, #$fff6
         link.w a5, #$fff6
-; STATO: H005+$3364 = testa della lista del party
+; STATE: H005+$3364 = head of the party list
 L061_00003FB2:
 ; H061+$00003FB2: 2b7900003364fffc  move.l $3364.l, -$4(a5)
         move.l (H005+$3364).l, -$4(a5)
@@ -8996,17 +8996,17 @@ L061_00004090:
 ; H061+$00004090: 4ed0  jmp (a0)
         jmp (a0)
 ; --------------------------------------------------------------------------
-; ROUTINE: sub_H061_00004092 [parziale]
-; Scopo: Routine del modulo servizi della VM ECL: caricamento, operandi, variabili e flusso; richiama H045+$01D6, H026+$01E0, H030+$028A, H030+$0302.
-;   - Richiama H045+$01D6.
-;   - Richiama H026+$01E0.
-;   - Richiama H030+$028A.
-;   - Richiama H030+$0302.
-;   - Richiama H063+$2984.
-;   - Richiama H030+$0B6C.
-;   - Richiama H063+$0D80.
-;   - Usa lo stato globale: H005+$3368 (personaggio corrente).
-; Chiamanti diretti: H012+$20C8, H012+$2176, H012+$20F6, H012+$227E, H012+$21E6, H012+$2192 e altri 2
+; ROUTINE: sub_H061_00004092 [partial]
+; Purpose: Routine of the ECL VM services: loading, operands, variables and flow module; calls H045+$01D6, H026+$01E0, H030+$028A, H030+$0302.
+;   - Calls H045+$01D6.
+;   - Calls H026+$01E0.
+;   - Calls H030+$028A.
+;   - Calls H030+$0302.
+;   - Calls H063+$2984.
+;   - Calls H030+$0B6C.
+;   - Calls H063+$0D80.
+;   - Uses the global state: H005+$3368 (current character).
+; Direct callers: H012+$20C8, H012+$2176, H012+$20F6, H012+$227E, H012+$21E6, H012+$2192 and 2 more
 ; --------------------------------------------------------------------------
 L061_00004092:
 ; H061+$00004092: 2f0c  move.l a4, -(a7)
@@ -9289,7 +9289,7 @@ L061_00004202:
 L061_00004206:
 ; H061+$00004206: 4eb900000b6c  jsr $b6c.l
         jsr (H030+$B6C).l
-; STATO: H005+$3368 = personaggio corrente
+; STATE: H005+$3368 = current character
 L061_0000420C:
 ; H061+$0000420C: 2f3900003368  move.l $3368.l, -(a7)
         move.l (H005+$3368).l, -(a7)

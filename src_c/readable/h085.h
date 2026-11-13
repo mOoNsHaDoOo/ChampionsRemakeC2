@@ -1,4 +1,4 @@
-/* H085: dati del modulo usati da H033 (elenchi degli incantesimi). */
+/* H085: module data used by H033 (spell lists). */
 #ifndef COK_H085_H
 #define COK_H085_H
 
@@ -7,9 +7,9 @@
 #include "h008.h"
 
 /*
- * I primi $292 byte di H085 sono i dati del modulo (a4 = H085+$292).  H033
- * li usa con indirizzi assoluti; parole e puntatori stanno in variabili C,
- * il resto (nomi dei livelli a H085+$1B6) in g_h085_bss[H085 + off].
+ * The first $292 bytes of H085 are the module data (a4 = H085+$292).  H033
+ * uses them with absolute addresses; words and pointers live in C variables,
+ * the rest (level names at H085+$1B6) in g_h085_bss[H085 + off].
  */
 extern u8 g_h085_bss[0x292];
 extern u16 g_h085_scroll_count;              /* H085+$0004 */
@@ -18,7 +18,7 @@ extern u16 g_h085_spell_ids[0x3A];           /* H085+$00CA..$013D */
 extern u16 g_h085_spell_counts[0x3A];        /* H085+$013E..$01B1 */
 extern CokMenuItem *g_h085_spell_list;       /* H085+$01B2 */
 
-/* H085+$1B6 + livello * $16: "Special", "1st Level", ... "9th Level". */
+/* H085+$1B6 + level * $16: "Special", "1st Level", ... "9th Level". */
 #define H085_LEVEL_NAME(level) \
     ((const char *)&g_h085_bss[0x1B6 + (level) * 0x16])
 

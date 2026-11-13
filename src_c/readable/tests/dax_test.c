@@ -1,7 +1,7 @@
 /*
- * Estrae il blocco id dal contenitore name+ext con DAX_LoadBlock (H028) e
- * lo scrive in out (byte decompressi, dimensione dichiarata + $100).
- * Confronto: scripts/check_dax.py.
+ * Extracts block id from the container name+ext with DAX_LoadBlock (H028) and
+ * writes it to out (decompressed bytes, declared size + $100).
+ * Comparison: scripts/check_dax.py.
  *   ./dax_test 8x8d1 .daa 202 out.bin
  */
 #include <stdio.h>
@@ -10,20 +10,20 @@
 #include "../globals.h"
 #include "../h040.h"
 
-/* Messaggio di errore (H014+$0018) e uscita: qui segnalano e proseguono. */
+/* Error message (H014+$0018) and exit: here they report and go on. */
 void error_message(u16 len, const char *msg, u16 value)
 {
     (void)len;
-    printf("errore H014: %s %u\n", msg, value);
+    printf("H014 error: %s %u\n", msg, value);
 }
 
 void quit_game(void)
 {
-    printf("uscita H010+$0332\n");
+    printf("exit H010+$0332\n");
     exit(3);
 }
 
-/* Il lettore ILBM (H040) non serve al test dei DAX. */
+/* The ILBM reader (H040) is not needed by the DAX test. */
 s32 read_ilbm(cok_bptr file, struct BitMap *bitmap, ILBMFrame *frame,
               IlbmAllocFn alloc)
 {
@@ -41,7 +41,7 @@ int main(int argc, char **argv)
     FILE *out;
 
     if (argc < 5) {
-        printf("uso: dax_test nome .ext id out.bin\n");
+        printf("usage: dax_test name .ext id out.bin\n");
         return 2;
     }
     G_RESOURCE_GROUP = 1;

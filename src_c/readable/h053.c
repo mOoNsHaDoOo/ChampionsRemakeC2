@@ -1,17 +1,17 @@
-/* H053: caricamento e gestione di sequenze/sprite per l'interfaccia. */
+/* H053: loading and handling of sequences/sprites for the user interface. */
 #include "h053.h"
 #include "h003_exec.h"
 #include "h035.h"
 #include "globals.h"
 
-/* PORT H053+$0004: link/unlk, nessun effetto. */
+/* PORT H053+$0004: link/unlk, no effect. */
 void h053_init(void)
 {
 }
 
 /*
- * PORT H053+$0012: libera il blocco +$192, la lista degli oggetti (+$150),
- * quella degli effetti (+$E8) e il record, poi azzera *character.
+ * PORT H053+$0012: frees the block +$192, the item list (+$150),
+ * the effect list (+$E8) and the record, then clears *character.
  */
 void free_character(Character **character)
 {
@@ -41,10 +41,10 @@ void free_character(Character **character)
 }
 
 /*
- * PORT H053+$00CA (corpo a $01E8): toglie dal party il personaggio
- * corrente e lo libera; il nuovo corrente e' il precedente (o il primo).
- * free_sprites: libera prima il suo insieme di sprite (+$143); con
- * keep_count = 0 cala il contatore di B+$67C.
+ * PORT H053+$00CA (body at $01E8): removes the current character from the
+ * party and frees it; the new current one is the previous one (or the first).
+ * free_sprites: first frees its sprite set (+$143); with
+ * keep_count = 0 it decrements the counter at B+$67C.
  */
 void remove_from_party(u8 keep_count, u8 free_sprites)
 {
@@ -60,20 +60,20 @@ void remove_from_party(u8 keep_count, u8 free_sprites)
         }
         if (p->next != NULL) {
             if (free_sprites) {
-                /* pg+$143: posto delle icone 24x24 (0..7 nel party; $0A creazione, $0C editor) */
+                /* pg+$143: slot of the 24x24 icons (0..7 in the party; $0A creation, $0C editor) */
                 free_sprite_set(g_current_char->b[0x143]);
             }
             p->next = g_current_char->next;
             free_character(&g_current_char);
             g_current_char = p;
             if (!keep_count) {
-                COK_PUT16(g_state_b + 0x67C, /* B+$67C: (word) numero dei membri del party (max 8) */
+                COK_PUT16(g_state_b + 0x67C, /* B+$67C: (word) number of party members (max 8) */
                           (u16)(COK_GET16(g_state_b + 0x67C) - 1));
             }
         }
     } else {
         if (free_sprites) {
-            /* pg+$143: posto delle icone 24x24 (0..7 nel party; $0A creazione, $0C editor) */
+            /* pg+$143: slot of the 24x24 icons (0..7 in the party; $0A creation, $0C editor) */
             free_sprite_set(g_current_char->b[0x143]);
         }
         g_party_head = g_current_char->next;
@@ -81,7 +81,7 @@ void remove_from_party(u8 keep_count, u8 free_sprites)
         free_character(&g_current_char);
         g_current_char = p;
         if (!keep_count) {
-            COK_PUT16(g_state_b + 0x67C, /* B+$67C: (word) numero dei membri del party (max 8) */
+            COK_PUT16(g_state_b + 0x67C, /* B+$67C: (word) number of party members (max 8) */
                       (u16)(COK_GET16(g_state_b + 0x67C) - 1));
         }
     }

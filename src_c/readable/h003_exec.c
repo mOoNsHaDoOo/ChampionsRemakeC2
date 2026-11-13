@@ -1,6 +1,6 @@
 /*
- * H003: adattatori exec.library.  Sull'host la memoria viene da malloc;
- * MEMF_CLEAR azzera il blocco come fa AllocMem.
+ * H003: exec.library adapters.  On the host the memory comes from malloc;
+ * MEMF_CLEAR clears the block like AllocMem does.
  */
 #include "h003_exec.h"
 
@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #endif
 
-/* PORT H003+$0004: inizializzazione del modulo (solo rts). */
+/* PORT H003+$0004: module initialisation (rts only). */
 void h003_init(void)
 {
 }
@@ -46,9 +46,9 @@ u32 exec_avail_mem(u32 requirements)
 }
 
 /*
- * PORT H003+$0090.  CopyMem non ammette sovrapposizioni (EA usava movmem):
- * sull'host si usa memmove, che da' lo stesso risultato senza
- * sovrapposizione e uno ben definito con.
+ * PORT H003+$0090.  CopyMem does not allow overlaps (EA used movmem):
+ * on the host memmove is used, which gives the same result without
+ * overlap and a well-defined one with it.
  */
 void exec_copy_mem(const void *src, void *dst, u32 size)
 {

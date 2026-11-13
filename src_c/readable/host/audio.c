@@ -1,20 +1,20 @@
 /*
- * Host: audio.device ed Exec per il lettore SoundX (H043/H094), compilato
- * solo con COK_AUDIO.
+ * Host: audio.device and Exec for the SoundX player (H043/H094), compiled
+ * only with COK_AUDIO.
  *
- * audio.device e' emulato sopra SDL2 come i 4 canali di Paula: ogni
- * canale ha la sua coda di CMD_WRITE (dati a 8 bit con segno, lunghezza,
- * periodo, volume 0..64, cicli: 0 = senza fine); ADCMD_PERVOL cambia
- * periodo e volume del suono in corso, ADCMD_FINISH lo interrompe (parte
- * il seguente in coda), CMD_FLUSH svuota tutto.  Il mixer gira nel
- * callback di SDL (clock PAL 3546895 Hz; canali 0 e 3 a sinistra, 1 e 2 a
- * destra).  Le richieste finite tornano alle loro porte solo nel thread
- * principale (BeginIO e VBlank), sotto il lock dell'audio.  Se SDL non
- * apre l'audio ogni richiesta si completa subito, senza suono.
+ * audio.device is emulated on top of SDL2 as the 4 Paula channels: each
+ * channel has its own queue of CMD_WRITE (signed 8-bit data, length,
+ * period, volume 0..64, cycles: 0 = endless); ADCMD_PERVOL changes
+ * period and volume of the sound playing, ADCMD_FINISH stops it (the
+ * next one in the queue starts), CMD_FLUSH empties everything.  The mixer runs in the
+ * SDL callback (PAL clock 3546895 Hz; channels 0 and 3 on the left, 1 and 2 on
+ * the right).  Finished requests go back to their ports only in the main
+ * thread (BeginIO and VBlank), under the audio lock.  If SDL does not
+ * open the audio every request completes at once, without sound.
  *
- * Il server del VBlank registrato gira a 50 Hz dal refresh del display
- * (thread principale, mai fra Disable ed Enable); Cause esegue subito
- * l'interrupt software.  Le porte hanno una coda vera.
+ * The registered VBlank server runs at 50 Hz from the display refresh
+ * (main thread, never between Disable and Enable); Cause runs the
+ * software interrupt at once.  The ports have a real queue.
  */
 #include "ndk.h"
 
@@ -34,12 +34,12 @@
 #define ADIOF_PERVOL_FLAG 0x10
 
 typedef struct HostChannel {
-    struct IOAudio *queue[QUEUE_LEN];   /* [0] = in corso */
+    struct IOAudio *queue[QUEUE_LEN];   /* [0] = playing */
     int count;
-    double pos;                         /* campione corrente */
+    double pos;                         /* current sample */
     UWORD period;
     UWORD volume;
-    UWORD cycles_left;                  /* 0 = senza fine */
+    UWORD cycles_left;                  /* 0 = endless */
 } HostChannel;
 
 static struct Device s_audio_device;
@@ -48,7 +48,7 @@ static HostChannel s_ch[4];
 static struct IOAudio *s_done[DONE_LEN];
 static int s_done_count;
 
-/* Coda di una porta: lista doppia con nodi sentinella come in Exec. */
+/* Queue of a port: doubly linked list with sentinel nodes as in Exec. */
 static void list_init_if_needed(struct List *l)
 {
     if (l->lh_Head == NULL) {
@@ -94,7 +94,7 @@ static void reply(struct IORequest *io)
     }
 }
 
-/* Richiesta finita (nel callback o sotto lock): torna al thread principale. */
+/* Finished request (in the callback or under lock): back to the main thread. */
 static void mark_done(struct IOAudio *io, BYTE error)
 {
     io->ioa_Request.io_Error = error;
@@ -103,7 +103,7 @@ static void mark_done(struct IOAudio *io, BYTE error)
     }
 }
 
-/* Avvia la scrittura in testa alla coda del canale. */
+/* Starts the write at the head of the channel queue. */
 static void start_head(HostChannel *c)
 {
     struct IOAudio *io;
@@ -120,7 +120,7 @@ static void start_head(HostChannel *c)
     c->cycles_left = io->ioa_Cycles;
 }
 
-/* Toglie la scrittura in corso (finita o interrotta) e avvia la seguente. */
+/* Removes the write in progress (finished or stopped) and starts the next one. */
 static void pop_head(HostChannel *c, BYTE error)
 {
     int i;
@@ -172,7 +172,7 @@ static void SDLCALL mix(void *user, Uint8 *stream, int len)
             while (c->count > 0 && c->pos >= (double)io->ioa_Length) {
                 c->pos -= (double)io->ioa_Length;
                 if (c->cycles_left == 0) {
-                    continue;           /* senza fine */
+                    continue;           /* endless */
                 }
                 if (--c->cycles_left == 0) {
                     pop_head(c, 0);
@@ -180,13 +180,13 @@ static void SDLCALL mix(void *user, Uint8 *stream, int len)
                 }
             }
         }
-        /* 2 canali * 127 * 64 per lato: in 16 bit con margine. */
+        /* 2 channels * 127 * 64 per side: in 16 bits with headroom. */
         out[f * 2] = (Sint16)(left * 2);
         out[f * 2 + 1] = (Sint16)(right * 2);
     }
 }
 
-/* Riporta alle loro porte le richieste finite (thread principale). */
+/* Returns the finished requests to their ports (main thread). */
 static void drain_done(void)
 {
     int i;
@@ -266,7 +266,7 @@ void BeginIO(struct IORequest *io)
 
     io->io_Error = 0;
     if (s_dev == 0) {
-        reply(io);                      /* senza audio: subito */
+        reply(io);                      /* without audio: at once */
         return;
     }
     SDL_LockAudioDevice(s_dev);
@@ -340,9 +340,9 @@ void AddIntServer(LONG intnum, struct Interrupt *interrupt)
 }
 
 /*
- * Togliendo il server del VBlank H043 libera subito i campioni ($FE,
- * chiusura): Paula continuerebbe a leggere quella memoria senza danni,
- * il callback dell'host no, quindi qui i canali si svuotano.
+ * When the VBlank server is removed H043 frees the samples at once ($FE,
+ * shutdown): Paula would keep reading that memory harmlessly,
+ * the host callback would not, so here the channels are emptied.
  */
 void RemIntServer(LONG intnum, struct Interrupt *interrupt)
 {
@@ -382,7 +382,7 @@ void Enable(void)
     }
 }
 
-/* Dal refresh del display: i VBlank (20 ms) trascorsi, al piu' 5. */
+/* From the display refresh: the VBlanks (20 ms) elapsed, at most 5. */
 void host_audio_vblank(unsigned long now_ms)
 {
     int n = 0;

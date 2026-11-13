@@ -1,4 +1,4 @@
-/* H049: Disegno di testo/glifi, blitter diretto e nodi QBSBlit. */
+/* H049: Text/glyph drawing, direct blitter and QBSBlit nodes. */
 #include "h049.h"
 #include "custom.h"
 
@@ -7,34 +7,34 @@
 #endif
 
 /*
- * PORT H049+$0008: copia GfxBase del runtime H015 nella cella del modulo.
- * In C la base della libreria e' gia' globale: niente da fare.
+ * PORT H049+$0008: copies GfxBase of the H015 runtime into the module cell.
+ * In C the library base is already global: nothing to do.
  */
 void h049_init(void)
 {
 }
 
 /*
- * Stato del disegno del testo (struttura nel codice a H049+$09BC).
+ * State of the text drawing (structure in the code at H049+$09BC).
  */
 static struct {
     u16 first_mask;             /* +$00: BLTAFWM */
     u16 last_mask;              /* +$02: BLTALWM */
-    u16 offset;                 /* +$04: byte dell'area nel piano */
-    u16 width;                  /* +$06: larghezza in byte (pari) */
-    u16 size;                   /* +$08: BLTSIZE (8 righe) */
-    u16 count;                  /* +$0A: caratteri da disegnare */
-    u8 *glyphs;                 /* +$0C: piano del font (128x32) */
-    struct BitMap *dest;        /* +$10: bitmap di destinazione */
-    u16 rendered;               /* +$14: glifi gia' disegnati in un piano */
-    u16 rendered_plane;         /* +$16: quel piano */
-    u16 rendered_xor;           /* +$18: e la sua inversione (0/$FFFF) */
+    u16 offset;                 /* +$04: byte of the area in the plane */
+    u16 width;                  /* +$06: width in bytes (even) */
+    u16 size;                   /* +$08: BLTSIZE (8 rows) */
+    u16 count;                  /* +$0A: characters to draw */
+    u8 *glyphs;                 /* +$0C: font plane (128x32) */
+    struct BitMap *dest;        /* +$10: destination bitmap */
+    u16 rendered;               /* +$14: glyphs already drawn in a plane */
+    u16 rendered_plane;         /* +$16: that plane */
+    u16 rendered_xor;           /* +$18: and its inversion (0/$FFFF) */
 } s_text;
 
 /*
- * PORT H049+$0438: registra la sorgente dei glifi e la bitmap di
- * destinazione.  Routine in assembly con argomenti sullo stack:
- * $8(a7) (primo argomento) = glifi, $4(a7) = destinazione.
+ * PORT H049+$0438: registers the glyph source and the destination
+ * bitmap.  Assembly routine with arguments on the stack:
+ * $8(a7) (first argument) = glyphs, $4(a7) = destination.
  */
 void h049_set_glyph_planes(u8 *glyphs, struct BitMap *dest)
 {
@@ -42,7 +42,7 @@ void h049_set_glyph_planes(u8 *glyphs, struct BitMap *dest)
     s_text.dest = dest;
 }
 
-/* PORT H049+$044E: lunghezza della stringa fino al NUL (long). */
+/* PORT H049+$044E: length of the string up to the NUL (long). */
 static u32 text_length(const char *text)
 {
     u32 n = 0;
@@ -54,11 +54,11 @@ static u32 text_length(const char *text)
 }
 
 /*
- * PORT H049+$045A (Draw_GlyphRowsCPU): count caratteri 8x8 dal font
- * (16 caratteri per riga di 16 byte, codici da $20; da $60 in su si toglie
- * altri $20) in dest, una riga ogni modulo byte, ogni byte in xor con
- * invert (0 o $FF).  Il confronto con $60 e' con segno: i codici da $80 in
- * su non sono ridotti.
+ * PORT H049+$045A (Draw_GlyphRowsCPU): count 8x8 characters from the font
+ * (16 characters per row of 16 bytes, codes from $20; from $60 up another
+ * $20 is subtracted) into dest, one row every modulo bytes, each byte xored with
+ * invert (0 or $FF).  The comparison with $60 is signed: codes from $80
+ * up are not reduced.
  */
 static void draw_glyph_rows(s16 count, const char *text, u8 *dest,
                             u16 modulo, u8 invert)
@@ -85,21 +85,21 @@ static void draw_glyph_rows(s16 count, const char *text, u8 *dest,
     }
 }
 
-/* Indirizzo dell'area di testo nel piano plane della destinazione. */
+/* Address of the text area in plane plane of the destination. */
 static u8 *text_area(u16 plane)
 {
     return (u8 *)s_text.dest->Planes[plane] + s_text.offset;
 }
 
 /*
- * PORT H049+$0224 (Draw_TextWithBlitter): scrive text (al massimo fino
- * alla colonna 40) nella griglia 40x25 di celle 8x8 della destinazione,
- * con penna fg su sfondo bg.  Per ogni piano (dal 4 allo 0): se i bit di
- * fg e bg coincidono riempie l'area con 0 o 1 (blitter, minterm $CA con
- * A costante e maschere sulle colonne dispari); altrimenti il primo di
- * questi piani riceve i glifi dalla CPU (invertiti se il bit e' di bg) e
- * gli altri li copiano col blitter (dritti o invertiti, minterm $CA/$3A).
- * len non e' usato: conta il NUL.
+ * PORT H049+$0224 (Draw_TextWithBlitter): writes text (at most up to
+ * column 40) into the 40x25 grid of 8x8 cells of the destination,
+ * with pen fg on background bg.  For each plane (from 4 down to 0): if the bits of
+ * fg and bg are the same it fills the area with 0 or 1 (blitter, minterm $CA with
+ * constant A and masks on the odd columns); otherwise the first of
+ * these planes gets the glyphs from the CPU (inverted if the bit is bg's) and
+ * the others copy them with the blitter (straight or inverted, minterm $CA/$3A).
+ * len is not used: the NUL counts.
  */
 void draw_text_blitter(u16 col, u16 row, u16 fg, u16 bg, u16 len,
                        const char *text)
@@ -131,7 +131,7 @@ void draw_text_blitter(u16 col, u16 row, u16 fg, u16 bg, u16 len,
     s_text.size = (u16)(((s16)bytes >> 1) + 0x200);
     s_text.offset = (u16)((u16)((row << 3) * 0x28) + first);
 
-    OwnBlitter();            /* chiamate dirette a graphics.library */
+    OwnBlitter();            /* direct calls to graphics.library */
     for (plane = 4; plane >= 0; --plane) {
         int fg_bit = (fg >> plane) & 1;
         int bg_bit = (bg >> plane) & 1;
@@ -139,7 +139,7 @@ void draw_text_blitter(u16 col, u16 row, u16 fg, u16 bg, u16 len,
         invert = (fg_bit == bg_bit) ? (fg_bit ? 0xFFFF : 0) :
                  (bg_bit ? 0xFFFF : 0);
         if (fg_bit == bg_bit) {
-            /* Area piena: D = B (costante) dentro le maschere, C fuori. */
+            /* Full area: D = B (constant) inside the masks, C outside. */
             WaitBlit();
             CUSTOM_W(BLTCMOD, 0x28 - s_text.width);
             CUSTOM_W(BLTDMOD, 0x28 - s_text.width);
@@ -153,7 +153,7 @@ void draw_text_blitter(u16 col, u16 row, u16 fg, u16 bg, u16 len,
             CUSTOM_P(BLTDPT, text_area((u16)plane));
             CUSTOM_W(BLTSIZE, s_text.size);
         } else if (s_text.rendered) {
-            /* Copia dal piano gia' disegnato, invertita se serve. */
+            /* Copy from the plane already drawn, inverted if needed. */
             WaitBlit();
             CUSTOM_W(BLTBMOD, 0x28 - s_text.width);
             CUSTOM_W(BLTCMOD, 0x28 - s_text.width);
@@ -183,10 +183,10 @@ void draw_text_blitter(u16 col, u16 row, u16 fg, u16 bg, u16 len,
 }
 
 /*
- * PORT H049+$012A: copia la tile 8x8 id (dai cinque set: id 1..$2D nel set
- * 0, poi $2E.., $74.., $BA.., $100..$127) nella cella (x, row) della
- * griglia 40x25 della bitmap dest, piano per piano (dal 4 allo 0).  Il
- * numero della tile nel set e' la colonna di 8 pixel nell'immagine.
+ * PORT H049+$012A: copies the 8x8 tile id (from the five sets: ids 1..$2D in set
+ * 0, then $2E.., $74.., $BA.., $100..$127) into the cell (x, row) of the
+ * 40x25 grid of the bitmap dest, plane by plane (from 4 down to 0).  The
+ * number of the tile in the set is the 8-pixel column in the picture.
  */
 void draw_8x8_tile_raw(u16 x, u16 row, u16 id, struct BitMap *dest,
                        struct GfxRecord **sets)
@@ -245,10 +245,10 @@ void draw_8x8_tile_raw(u16 x, u16 row, u16 id, struct BitMap *dest,
 }
 
 /*
- * Domande della verifica del manuale (dati nel codice, H049+$07F0..$09B2):
- * risposte codificate e 50 voci da 5 byte (pagina, riga, parola,
- * lunghezza, posizione della risposta).  H009+$007E decodifica una
- * risposta: carattere = byte + $46 + lunghezza.
+ * Questions of the manual check (data in the code, H049+$07F0..$09B2):
+ * encoded answers and 50 entries of 5 bytes (page, line, word,
+ * length, position of the answer).  H009+$007E decodes an
+ * answer: character = byte + $46 + length.
  */
 static const u8 s_quiz_answers[0xC9] = {
     0x0F, 0xFD, 0x01, 0xF7, 0x08, 0x02, 0xF9, 0x0B, 0x07, 0xFE, 0x0A, 0x00,
@@ -301,8 +301,8 @@ static const u8 s_quiz_entries[50 * 5] = {
 static QuizEntry s_quiz_result;         /* H049+$07E4 */
 
 /*
- * PORT H049+$079E: voce index della tabella delle domande (in un'area
- * fissa, come l'originale).
+ * PORT H049+$079E: entry index of the question table (in a fixed
+ * area, as the original).
  */
 QuizEntry *quiz_entry(u16 index)
 {
@@ -317,27 +317,27 @@ QuizEntry *quiz_entry(u16 index)
 }
 
 /*
- * PORT H049+$04AE (Queue_BitplaneBlit): copia w x h pixel da src (sx, sy)
- * nella destinazione (dx, dy), un piano per volta (dal piu' alto), col
- * minterm dato.  Con mask (un piano con la geometria di src) dest e' una
- * RastPort e il blitter usa A = maschera, B = sorgente, C/D = destinazione
- * ($F00); senza, dest e' gia' la BitMap e A e' la costante $FFFF ($700).
- * L'originale accoda un bltnode ($4A byte) con QBSBlit e il blitter viene
- * programmato al passaggio del raggio; qui il nodo non c'e' e i blit
- * partono subito, piano per piano, nello stesso ordine e con gli stessi
- * valori dei registri.  Restituiva il nodo (non usato): qui NULL.
- * PORT H049+$06EC (QueuedBlit_Callback): programmava il blitter per un
- * piano del nodo a ogni passaggio; qui e' il ciclo dei piani sopra.
- * PORT H049+$0782 (QueuedBlit_Cleanup): liberava il nodo ($4A byte); qui
- * non c'e' nodo da liberare.
+ * PORT H049+$04AE (Queue_BitplaneBlit): copies w x h pixels from src (sx, sy)
+ * into the destination (dx, dy), one plane at a time (from the highest), with
+ * the given minterm.  With mask (one plane with the geometry of src) dest is a
+ * RastPort and the blitter uses A = mask, B = source, C/D = destination
+ * ($F00); without it, dest is already the BitMap and A is the constant $FFFF ($700).
+ * The original queues a bltnode ($4A bytes) with QBSBlit and the blitter is
+ * programmed as the beam passes; here there is no node and the blits
+ * start at once, plane by plane, in the same order and with the same
+ * register values.  It returned the node (unused): here NULL.
+ * PORT H049+$06EC (QueuedBlit_Callback): programmed the blitter for one
+ * plane of the node at every pass; here it is the loop over the planes above.
+ * PORT H049+$0782 (QueuedBlit_Cleanup): freed the node ($4A bytes); here
+ * there is no node to free.
  */
 void *queue_bitplane_blit(struct BitMap *src, u16 sx, u16 sy, void *dest,
                           u16 dx, u16 dy, u16 w, u16 h, u8 minterm, u8 *mask)
 {
-    struct BitMap *dst;                 /* nodo +$16 */
+    struct BitMap *dst;                 /* node +$16 */
     s16 planes;                         /* +$20 */
     u8 shifted_left = 0;                /* +$22 bit 0 */
-    s16 width;                          /* +$24: larghezza in byte */
+    s16 width;                          /* +$24: width in bytes */
     s16 dst_col;                        /* +$34 */
     s32 dst_off;                        /* +$36 */
     s16 dst_bytes;                      /* +$30 */
@@ -389,7 +389,7 @@ void *queue_bitplane_blit(struct BitMap *src, u16 sx, u16 sy, void *dest,
     src_mod = (s16)(src->BytesPerRow - width);
     dst_mod = (s16)(dst->BytesPerRow - width);
     if (src_bytes < width) {
-        lwm = 0;                /* con +$22 e +$2E > +$32 sempre, l'altro ramo */
+        lwm = 0;                /* with +$22 and +$2E > +$32 always, the other branch */
     }
 
     OwnBlitter();
@@ -418,14 +418,14 @@ void *queue_bitplane_blit(struct BitMap *src, u16 sx, u16 sy, void *dest,
     return NULL;
 }
 
-/* H049+$0AAC: tabella dei byte con i bit invertiti, costruita al primo uso. */
+/* H049+$0AAC: table of the bytes with reversed bits, built on first use. */
 static u16 s_reverse_pending = 0x4E71;
 static u8 s_reverse[0x100];
 
 /*
- * PORT H049+$0A7A: copia rows righe di bytes byte da src a dst
- * specchiandole (byte in ordine inverso, bit invertiti); con un numero
- * dispari di byte la riga ha un byte di riempimento.
+ * PORT H049+$0A7A: copies rows rows of bytes bytes from src to dst
+ * mirroring them (bytes in reverse order, bits reversed); with an odd
+ * number of bytes the row has a pad byte.
  */
 static void mirror_rows(const u8 *src, u8 *dst, u16 bytes, u16 rows)
 {
@@ -444,9 +444,9 @@ static void mirror_rows(const u8 *src, u8 *dst, u16 bytes, u16 rows)
 }
 
 /*
- * PORT H049+$09D6: dst = src specchiato in orizzontale (maschera, se
- * entrambi l'hanno, e i 5 piani dal 4 allo 0); larghezza in byte = +$02
- * e righe = +$00 di dst.
+ * PORT H049+$09D6: dst = src mirrored horizontally (mask, if
+ * both have it, and the 5 planes from 4 down to 0); width in bytes = +$02
+ * and rows = +$00 of dst.
  */
 void mirror_gfx_record(struct GfxRecord *src, struct GfxRecord *dst)
 {
@@ -485,9 +485,9 @@ void mirror_gfx_record(struct GfxRecord *src, struct GfxRecord *dst)
 }
 
 /*
- * PORT H049+$0014: come $012A ma con la maschera del set (piano 0 della
- * BitMap +$0C): i pixel fuori dalla maschera restano quelli di dest.  Il
- * byte della maschera usa il passo di riga dell'immagine.
+ * PORT H049+$0014: like $012A but with the mask of the set (plane 0 of the
+ * BitMap +$0C): the pixels outside the mask stay those of dest.  The
+ * mask byte uses the row stride of the picture.
  */
 void draw_8x8_tile_masked(u16 x, u16 row, u16 id, struct BitMap *dest,
                           struct GfxRecord **sets)

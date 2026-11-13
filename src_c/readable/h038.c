@@ -1,9 +1,9 @@
-/* H038: Adattatori RectFill e selezione delle penne. */
+/* H038: RectFill and pen selection adapters. */
 #include "h038.h"
 
 /*
- * PORT H038+$0008: copia GfxBase del runtime H015 nella cella del modulo.
- * In C la base della libreria e' gia' globale: niente da fare.
+ * PORT H038+$0008: copies GfxBase of the H015 runtime into the module cell.
+ * In C the library base is already global: nothing to do.
  */
 void h038_init(void)
 {
@@ -13,7 +13,7 @@ void h038_init(void)
 #include <proto/graphics.h>
 #endif
 
-/* PORT H038+$0118: le coordinate sono word (move.w), estese da RectFill. */
+/* PORT H038+$0118: the coordinates are words (move.w), extended by RectFill. */
 void graphics_rect_fill(struct RastPort *rp, u16 xmin, u16 ymin, u16 xmax,
                         u16 ymax)
 {
@@ -33,8 +33,8 @@ void graphics_set_bpen(struct RastPort *rp, u16 pen)
 }
 
 /*
- * PORT H038+$01B4: la macro SetOPen in linea: AOlPen = pen (byte) e
- * flag AREAOUTLINE nel RastPort.
+ * PORT H038+$01B4: the SetOPen macro inline: AOlPen = pen (byte) and
+ * the AREAOUTLINE flag in the RastPort.
  */
 void graphics_set_open(struct RastPort *rp, u16 pen)
 {

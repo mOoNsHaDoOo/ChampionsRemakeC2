@@ -1,4 +1,4 @@
-/* H087: lettura dei chunk ILBM (ilbmr.c di Electronic Arts): BMHD, CMAP, BODY. */
+/* H087: reading of ILBM chunks (Electronic Arts' ilbmr.c): BMHD, CMAP, BODY. */
 #ifndef COK_H087_H
 #define COK_H087_H
 
@@ -9,11 +9,11 @@
 #define ID_CMAP COK_MAKE_ID('C', 'M', 'A', 'P')
 #define ID_BODY COK_MAKE_ID('B', 'O', 'D', 'Y')
 
-#define MAX_SRC_PLANES 0x11     /* 16 piani + maschera */
+#define MAX_SRC_PLANES 0x11     /* 16 planes + mask */
 #define MSK_HAS_MASK   1
 #define CMP_BYTE_RUN1  1
 
-/* BitMapHeader (20 byte nel file, big-endian). */
+/* BitMapHeader (20 bytes in the file, big-endian). */
 typedef struct BitMapHeader {
     u16 w;                      /* +$00 */
     u16 h;                      /* +$02 */
@@ -30,13 +30,13 @@ typedef struct BitMapHeader {
     s16 page_height;            /* +$12 */
 } BitMapHeader;
 
-/* ILBMFrame ($66 byte nell'originale): ClientFrame + stato del lettore. */
+/* ILBMFrame ($66 bytes in the original): ClientFrame + reader state. */
 typedef struct ILBMFrame {
     ClientFrame client_frame;   /* +$00 */
     u8 found_bmhd;              /* +$10 */
     u8 n_color_regs;            /* +$11 */
     BitMapHeader bm_hdr;        /* +$12 */
-    u16 color_map[32];          /* +$26: colori RGB4 */
+    u16 color_map[32];          /* +$26: RGB4 colours */
 } ILBMFrame;
 
 s32 ilbm_get_bmhd(GroupContext *context, BitMapHeader *bm_hdr); /* H087+$000C */
